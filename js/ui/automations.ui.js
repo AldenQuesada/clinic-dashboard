@@ -561,6 +561,142 @@
     return `<div class="am-tab-content">${legend}${html}</div>`
   }
 
+  // ── Render tab Fluxos ────────────────────────────────────────
+
+  function _renderFlowsTab() {
+    const flows = [
+      {
+        title: 'Mensagem Recebida (Pipeline Principal)',
+        color: '#2563EB',
+        steps: [
+          { label: 'WhatsApp', icon: 'messageCircle', desc: 'Paciente envia mensagem' },
+          { label: 'Evolution API', icon: 'zap', desc: 'Recebe e envia ao webhook' },
+          { label: 'Parse Message', icon: 'settings', desc: 'Detecta tipo: texto, imagem, audio, secretary_reply' },
+          { label: 'Route Message', icon: 'refreshCw', desc: 'Skip / Secretary / Normal' },
+          { label: 'Guard Check', icon: 'shield', desc: 'ai_enabled, limite 15/dia, spam, emergencia, debounce' },
+          { label: 'Claude API', icon: 'zap', desc: 'Lara gera resposta com contexto + historico' },
+          { label: 'Send WhatsApp', icon: 'send', desc: 'Envia texto + fotos antes/depois' },
+          { label: 'Log Supabase', icon: 'check', desc: 'Registra inbound + outbound + tags' },
+        ]
+      },
+      {
+        title: 'Secretaria Responde pelo Celular/iMac',
+        color: '#059669',
+        steps: [
+          { label: 'WhatsApp', icon: 'messageCircle', desc: 'Secretaria envia msg do celular/iMac' },
+          { label: 'Evolution API', icon: 'zap', desc: 'Evento send.message (source: android/web)' },
+          { label: 'Parse Message', icon: 'settings', desc: 'Detecta fromMe + source != API' },
+          { label: 'Route Message', icon: 'refreshCw', desc: 'Rota para Secretary' },
+          { label: 'Log Secretary', icon: 'check', desc: 'Registra msg + pausa Lara (ai_enabled=false)' },
+          { label: 'Auto-reativacao', icon: 'clock', desc: 'Se lead responde e secretaria nao em 2min → Lara volta' },
+        ]
+      },
+      {
+        title: 'Playbook Full Face (SPIN)',
+        color: '#7C3AED',
+        steps: [
+          { label: 'Entrada', icon: 'messageCircle', desc: 'Lead manda msg com "protocolo", "Lifting 5D"' },
+          { label: 'Situation', icon: 'user', desc: 'Pedir nome + enviar 2 fotos antes/depois' },
+          { label: 'Problem', icon: 'alertCircle', desc: 'Aprofundar dores + foto especifica da queixa' },
+          { label: 'Implication', icon: 'clock', desc: 'Colageno -1-2%/ano + urgencia suave + foto' },
+          { label: 'Need-Payoff', icon: 'zap', desc: 'Lifting 5D + Fotona 4D + cashback integral' },
+          { label: 'Agendamento', icon: 'check', desc: 'Consulta paga (descontada se fechar)' },
+        ]
+      },
+      {
+        title: 'Nudge + Cadencia (Lead parou de responder)',
+        color: '#D97706',
+        steps: [
+          { label: 'Lead para', icon: 'clock', desc: 'Ultima msg foi da Lara, lead nao respondeu' },
+          { label: '30 min', icon: 'alertCircle', desc: 'Toque suave: "Ficou alguma duvida?"' },
+          { label: 'Dia 1 (10h)', icon: 'messageCircle', desc: 'Implicacao + foto antes/depois' },
+          { label: 'Dia 2 (14h)', icon: 'messageCircle', desc: 'Reforco de valor + cashback' },
+          { label: 'Dia 3 (10h)', icon: 'messageCircle', desc: 'Escassez elegante + agenda' },
+          { label: 'Dia 5 (10h)', icon: 'messageCircle', desc: 'Puxao amigavel: "correria te engoliu?"' },
+          { label: 'Dia 7 (10h)', icon: 'messageCircle', desc: 'Porta aberta: "retomo ou encerramos?"' },
+          { label: 'Dia 10 (10h)', icon: 'messageCircle', desc: 'Encerramento: "vou pausar meu contato"' },
+        ]
+      },
+      {
+        title: 'Objecao de Preco',
+        color: '#DC2626',
+        steps: [
+          { label: 'Lead: "ta caro"', icon: 'alertCircle', desc: 'Detecta objecao de preco' },
+          { label: '1. Isolar', icon: 'settings', desc: '"Se investimento nao fosse impeditivo, teria algo mais?"' },
+          { label: '2. ROI', icon: 'zap', desc: 'Redirecionar para resultado + cashback Fotona' },
+          { label: '3. Bifurcacao', icon: 'refreshCw', desc: '"Solucao mais acessivel ou definitiva?"' },
+          { label: '4. Filtro', icon: 'shield', desc: '"Se preco for criterio, talvez nao sejamos a melhor escolha"' },
+          { label: '5. Corte', icon: 'lock', desc: '"Posso ajustar, mas teria que remover parte do protocolo"' },
+        ]
+      },
+      {
+        title: 'Guard System (7 Camadas)',
+        color: '#6B7280',
+        steps: [
+          { label: 'G1: ai_enabled', icon: 'shield', desc: 'Secretaria assumiu? Bloqueia Claude' },
+          { label: 'G1.5: Debounce', icon: 'clock', desc: 'Outra msg nos ultimos 5s? Espera' },
+          { label: 'G2: Limite 15/dia', icon: 'lock', desc: 'Mais de 15 msgs IA hoje? Pausa' },
+          { label: 'G3: Spam', icon: 'x', desc: 'Mesma msg 3x? Ignora' },
+          { label: 'G4: Emergencia', icon: 'alertCircle', desc: 'Urgencia medica? Tag + orientacao' },
+          { label: 'G5: Humano', icon: 'user', desc: '"Falar com alguem"? Pausa IA' },
+          { label: 'G6: Inapropriado', icon: 'shield', desc: 'Ofensas? Pausa silenciosa' },
+          { label: 'G7: Reclamacao', icon: 'alertCircle', desc: '"Procon", "processo"? Encaminha humano' },
+        ]
+      },
+      {
+        title: 'Envio de Fotos Antes/Depois',
+        color: '#0891B2',
+        steps: [
+          { label: 'Lara inclui [FOTO:queixa]', icon: 'messageCircle', desc: 'Claude indica que deve enviar foto' },
+          { label: 'Process Response', icon: 'settings', desc: 'Extrai tag, limpa do texto' },
+          { label: 'Send Text', icon: 'send', desc: 'Envia texto limpo primeiro' },
+          { label: 'Send Photo', icon: 'image', desc: 'Busca 2 fotos no banco (nao repete)' },
+          { label: 'Pergunta final', icon: 'messageCircle', desc: '"Voce se imagina com esse resultado?"' },
+        ]
+      },
+      {
+        title: 'Modo Hibrido Secretaria/Lara',
+        color: '#059669',
+        steps: [
+          { label: 'Secretaria responde', icon: 'user', desc: 'Pelo celular, iMac ou inbox' },
+          { label: 'Lara pausa', icon: 'lock', desc: 'ai_enabled = false (zero resposta dupla)' },
+          { label: 'Paciente responde', icon: 'messageCircle', desc: 'Nova msg inbound na conversa' },
+          { label: '2 min sem resposta', icon: 'clock', desc: 'Secretaria nao respondeu' },
+          { label: 'Lara reativa', icon: 'zap', desc: 'pg_cron detecta e reativa automaticamente' },
+        ]
+      },
+    ]
+
+    let html = '<div class="am-flows-grid">'
+
+    for (const flow of flows) {
+      html += '<div class="am-flow-card">'
+      html += '<div class="am-flow-header" style="border-left:3px solid ' + flow.color + '">'
+      html += '<div class="am-flow-title" style="color:' + flow.color + '">' + flow.title + '</div>'
+      html += '</div>'
+      html += '<div class="am-flow-steps">'
+
+      for (let i = 0; i < flow.steps.length; i++) {
+        const s = flow.steps[i]
+        html += '<div class="am-flow-step">'
+        html += '<div class="am-flow-step-icon" style="background:' + flow.color + '15;color:' + flow.color + '">' + _feather(s.icon, 14) + '</div>'
+        html += '<div class="am-flow-step-info">'
+        html += '<div class="am-flow-step-label">' + s.label + '</div>'
+        html += '<div class="am-flow-step-desc">' + s.desc + '</div>'
+        html += '</div>'
+        html += '</div>'
+        if (i < flow.steps.length - 1) {
+          html += '<div class="am-flow-arrow" style="color:' + flow.color + '">&#8595;</div>'
+        }
+      }
+
+      html += '</div></div>'
+    }
+
+    html += '</div>'
+    return '<div class="am-tab-content">' + html + '</div>'
+  }
+
   // ── Render principal ──────────────────────────────────────────
 
   function _render() {
@@ -604,9 +740,12 @@
           <button class="am-tab${_activeTab === 'inbox' ? ' am-tab-active' : ''}" data-tab="inbox">
             ${_feather('inbox', 14)} Central de Atendimento
           </button>
+          <button class="am-tab${_activeTab === 'flows' ? ' am-tab-active' : ''}" data-tab="flows">
+            ${_feather('refreshCw', 14)} Fluxos
+          </button>
         </div>
 
-        ${_activeTab === 'rules' ? _renderRulesTab() : _activeTab === 'whatsapp' ? _renderWhatsAppTab() : _renderInboxTab()}
+        ${_activeTab === 'rules' ? _renderRulesTab() : _activeTab === 'whatsapp' ? _renderWhatsAppTab() : _activeTab === 'inbox' ? _renderInboxTab() : _renderFlowsTab()}
 
       </div>
 
