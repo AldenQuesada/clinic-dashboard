@@ -443,7 +443,55 @@
           { name: 'precisa_humano', desc: 'Quando IA nao consegue resolver ou detecta reclamacao', status: 'active', type: 'tag' },
           { name: 'perguntou_preco', desc: 'Quando lead pergunta "quanto custa", "valor", "preco"', status: 'active', type: 'tag' },
           { name: 'objecao_preco', desc: 'Quando lead diz "caro", "nao tenho"', status: 'active', type: 'tag' },
-          { name: 'emergencia', desc: 'Quando detecta urgencia medica', status: 'pending', type: 'tag' },
+          { name: 'emergencia', desc: 'Guard detecta urgencia medica via regex', status: 'active', type: 'tag' },
+          { name: 'qualificado', desc: 'Lead demonstrou interesse real no procedimento', status: 'active', type: 'tag' },
+          { name: 'fullface', desc: 'Lead do funil Full Face (Lifting 5D)', status: 'active', type: 'tag' },
+          { name: 'procedimentos', desc: 'Lead do funil Procedimentos Isolados', status: 'active', type: 'tag' },
+        ]
+      },
+      {
+        title: 'Playbook Full Face (SPIN)',
+        icon: 'zap',
+        color: '#7C3AED',
+        description: 'Fluxo SPIN completo para funil Full Face - Protocolo Lifting 5D + Fotona 4D',
+        rules: [
+          { name: 'Fase 0 — Entrada', desc: 'Boas-vindas, pedir nome. Gatilho: msg com "protocolo", "Lifting 5D", "formulario"', status: 'active', type: 'flow' },
+          { name: 'Fase 1 — Situation + Foto', desc: 'Enviar foto antes/depois geral + perguntar queixa principal + listar dores comuns', status: 'active', type: 'flow' },
+          { name: 'Fase 2 — Problem + Foto', desc: 'Aprofundar dores + enviar foto especifica da queixa + "um resultado assim e o que procura?"', status: 'active', type: 'flow' },
+          { name: 'Fase 3 — Implication + Foto', desc: 'Perda colageno 1-2%/ano, quanto antes melhor + enviar mais foto + reconciliar espelho', status: 'active', type: 'flow' },
+          { name: 'Fase 4 — Need-Payoff + Cashback', desc: 'Protocolo Lifting 5D + Fotona 4D + cashback integral + converter para consulta', status: 'active', type: 'flow' },
+          { name: 'Fase 5 — Agendamento', desc: 'Pedir nome completo + disponibilidade. Consulta paga, descontada se fechar', status: 'active', type: 'flow' },
+          { name: 'Fase 6 — Objecao preco', desc: '5 tecnicas: isolar, ROI, bifurcacao, filtro elegante, corte estrategico', status: 'active', type: 'flow' },
+          { name: 'Fase 7 — Objecao experiencia', desc: 'Validar dor, metafora relacionamento, quebrar generalizacao, diagnostico real', status: 'active', type: 'flow' },
+        ]
+      },
+      {
+        title: 'Cadencia Automatica',
+        icon: 'clock',
+        color: '#0891B2',
+        description: 'Follow-ups automaticos para leads que nao responderam (pg_cron cada 30min)',
+        rules: [
+          { name: 'FF Dia 1 (10h) — Implicacao + Foto', desc: 'Perda de colageno + antes/depois + "resultado assim e o que procura?"', status: 'active', type: 'flow' },
+          { name: 'FF Dia 2 (14h) — Valor', desc: '"Continua vendo valor no rejuvenescimento?" + cashback Fotona', status: 'active', type: 'flow' },
+          { name: 'FF Dia 3 (10h) — Escassez', desc: '"Agenda concorrida" + cashback + "ainda faz sentido manter espaco?"', status: 'active', type: 'flow' },
+          { name: 'FF Dia 5 (10h) — Amigavel', desc: '"Desistiu ou a correria te engoliu?"', status: 'active', type: 'flow' },
+          { name: 'FF Dia 7 (10h) — Porta aberta', desc: '"Retomo depois ou encerramos?" + fazer espelho reconhecer', status: 'active', type: 'flow' },
+          { name: 'FF Dia 10 (10h) — Encerramento', desc: '"Vou pausar. Voce nos procurou porque algo pediu atencao."', status: 'active', type: 'flow' },
+          { name: 'Proc Dia 1-5 — Isolados', desc: '4 steps focados na queixa especifica do procedimento', status: 'active', type: 'flow' },
+          { name: 'Horario 8h-20h apenas', desc: 'Cadencia so dispara em horario comercial (fuso Brasilia)', status: 'active', type: 'flow' },
+          { name: 'Para se lead responder', desc: 'Cadencia reseta quando lead manda msg — Lara retoma conversa normal', status: 'active', type: 'flow' },
+        ]
+      },
+      {
+        title: 'Banco de Imagens',
+        icon: 'image',
+        color: '#D97706',
+        description: '9 fotos antes/depois no Supabase Storage, categorizadas por queixa e fase',
+        rules: [
+          { name: 'Fotos armazenadas no Supabase', desc: '9 imagens antes/depois em alta resolucao, URLs publicas', status: 'active', type: 'flow' },
+          { name: 'Categorizadas por queixa', desc: 'olheiras, sulcos, flacidez, contorno, papada, textura, rugas, rejuvenescimento', status: 'active', type: 'flow' },
+          { name: 'Envio via Evolution API', desc: 'Lara envia imagem direto no WhatsApp (sendMedia), nao link', status: 'active', type: 'flow' },
+          { name: 'Tag [FOTO:queixa] no prompt', desc: 'Claude indica quando enviar foto, sistema busca e envia automaticamente', status: 'active', type: 'flow' },
         ]
       },
     ]
