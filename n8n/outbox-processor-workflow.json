@@ -77,7 +77,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_outbox_mark_sent",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_outbox_on_sent",
         "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
@@ -90,7 +90,7 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "p_id", "value": "={{ $('Split Items').item.json.id }}" }
+            { "name": "p_outbox_id", "value": "={{ $('Split Items').item.json.id }}" }
           ]
         },
         "options": {}
