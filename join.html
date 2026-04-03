@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClinicAI — Aceitar Convite</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config/env.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #7C3AED, #5B21B6);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .logo h1 { font-size: 20px; font-weight: 700; color: #111; }
+    .logo p  { font-size: 13px; color: #6B7280; margin-top: 4px; }
+    .alert {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .alert-error   { background: #FEE2E2; color: #DC2626; }
+    .alert-success { background: #F0FDF4; color: #15803D; }
+    .alert-info    { background: #EFF6FF; color: #2563EB; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #D1D5DB;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus { border-color: #7C3AED; }
+    .field { margin-bottom: 14px; }
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #7C3AED, #5B21B6);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      margin-top: 6px;
+    }
+    .btn-primary:disabled { opacity: .6; cursor: default; }
+    .divider {
+      text-align: center;
+      font-size: 12px;
+      color: #9CA3AF;
+      margin: 18px 0;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 42%;
+      height: 1px;
+      background: #E5E7EB;
+    }
+    .divider::before { left: 0; }
+    .divider::after  { right: 0; }
+    #loadingState, #noTokenState, #loginState, #registerState, #successState { display: none; }
+    #loadingState.visible,
+    #noTokenState.visible,
+    #loginState.visible,
+    #registerState.visible,
+    #successState.visible { display: block; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="26" height="26" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.78a16 16 0 0 0 6 6l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16"/>
+      </svg>
+    </div>
+    <h1>ClinicAI</h1>
+    <p id="joinSubtitle">Você foi convidado para entrar na clínica</p>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingState" class="visible">
+    <div style="text-align:center;padding:20px;color:#9CA3AF;font-size:14px">Verificando convite...</div>
+  </div>
+
+  <!-- Token inválido -->
+  <div id="noTokenState">
+    <div class="alert alert-error" style="display:block">
+      Link de convite inválido ou expirado. Solicite um novo convite ao administrador.
+    </div>
+    <a href="login.html" style="display:block;text-align:center;font-size:13px;color:#7C3AED;margin-top:12px">Ir para o login</a>
+  </div>
+
+  <!-- Usuário existente: só login -->
+  <div id="loginState">
+    <div class="alert alert-info" id="loginInfo" style="display:block">
+      Faça login com sua conta para aceitar o convite.
+    </div>
+    <div id="loginErr" class="alert alert-error"></div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" />
+    </div>
+    <button class="btn-primary" id="loginBtn" onclick="doJoinLogin()">Entrar e aceitar convite</button>
+    <a href="login.html" style="display:block;text-align:center;font-size:13px;color:#9CA3AF;margin-top:14px">Cancelar</a>
+  </div>
+
+  <!-- Novo usuário: cadastro + login -->
+  <div id="registerState">
+    <div class="alert alert-info" style="display:block">
+      Crie sua conta para ativar o acesso.
+    </div>
+    <div id="registerErr" class="alert alert-error"></div>
+    <div style="display:flex;gap:10px">
+      <div class="field" style="flex:1">
+        <label>Nome</label>
+        <input type="text" id="regFirstName" placeholder="Ex: Ana" autocomplete="given-name" />
+      </div>
+      <div class="field" style="flex:1">
+        <label>Sobrenome</label>
+        <input type="text" id="regLastName" placeholder="Ex: Silva" autocomplete="family-name" />
+      </div>
+    </div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="regEmail" readonly style="background:#F9FAFB" />
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+    </div>
+    <div class="field">
+      <label>Confirmar senha</label>
+      <input type="password" id="regPasswordConfirm" autocomplete="new-password" />
+    </div>
+    <button class="btn-primary" id="registerBtn" onclick="doJoinRegister()">Criar conta e aceitar convite</button>
+    <a href="login.html" style="display:block;text-align:center;font-size:13px;color:#9CA3AF;margin-top:14px">Cancelar</a>
+  </div>
+
+  <!-- Sucesso -->
+  <div id="successState">
+    <div style="text-align:center;padding:16px 0">
+      <div style="width:52px;height:52px;background:#F0FDF4;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px">
+        <svg width="24" height="24" fill="none" stroke="#16A34A" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#111;margin-bottom:6px">Acesso ativado!</div>
+      <div id="successMsg" style="font-size:13px;color:#6B7280;margin-bottom:20px">Bem-vindo ao ClinicAI.</div>
+      <button class="btn-primary" onclick="window.location.replace('index.html')">Abrir o sistema</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const _env = window.ClinicEnv || {}
+  const SUPABASE_URL = _env.SUPABASE_URL || ''
+  const SUPABASE_KEY = _env.SUPABASE_KEY || ''
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  let _token      = null
+  let _inviteEmail = null
+  let _isNewUser  = false
+
+  function show(id) {
+    ;['loadingState','noTokenState','loginState','registerState','successState']
+      .forEach(s => {
+        const el = document.getElementById(s)
+        if (el) el.classList.toggle('visible', s === id)
+      })
+  }
+
+  async function init() {
+    // Token vem via query param ?token=...
+    const params = new URLSearchParams(window.location.search)
+    _token = params.get('token')
+
+    if (!_token) { show('noTokenState'); return }
+
+    // Verifica se o usuário já está logado
+    const { data: { session } } = await sb.auth.getSession()
+
+    // Obtém o email associado ao convite para pré-preencher
+    // Não há RPC público para isso, então vamos tentar accept direto se logado
+    if (session) {
+      _inviteEmail = session.user.email
+      // Já logado — mostra formulário só para coletar nome (sem campos de senha)
+      document.getElementById('regEmail').value = _inviteEmail
+      document.getElementById('regPassword').closest('.field').style.display = 'none'
+      document.getElementById('regPasswordConfirm').closest('.field').style.display = 'none'
+      document.getElementById('registerBtn').textContent = 'Confirmar e aceitar convite'
+      show('registerState')
+    } else {
+      show('loginState')
+    }
+  }
+
+  async function _tryAccept(firstName, lastName) {
+    try {
+      const { data, error } = await sb.rpc('accept_invitation', {
+        p_raw_token:  _token,
+        p_first_name: firstName || '',
+        p_last_name:  lastName  || '',
+      })
+      if (error) throw error
+      if (!data?.ok) {
+        const msgs = {
+          invalid_or_expired_token: 'Convite inválido ou expirado.',
+          email_mismatch:           'Este convite é para outro e-mail.',
+          already_has_profile:      'Esta conta já possui acesso ativo.',
+        }
+        throw new Error(msgs[data.error] || data.error || 'Erro ao aceitar convite')
+      }
+
+      const ROLE_LABELS = {
+        admin: 'Administrador', therapist: 'Terapeuta',
+        receptionist: 'Recepcionista', viewer: 'Visualizador',
+      }
+      document.getElementById('successMsg').textContent =
+        `Seu acesso foi ativado como ${ROLE_LABELS[data.role] || data.role}.`
+      show('successState')
+    } catch (e) {
+      // Mostra erro na tela de login ou register
+      const errId = _isNewUser ? 'registerErr' : 'loginErr'
+      const errEl = document.getElementById(errId)
+      if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block' }
+      if (!document.getElementById('loginState').classList.contains('visible') &&
+          !document.getElementById('registerState').classList.contains('visible')) {
+        show('loginState')
+      }
+    }
+  }
+
+  async function doJoinLogin() {
+    const email = (document.getElementById('loginEmail')?.value || '').trim()
+    const pass  = (document.getElementById('loginPassword')?.value || '')
+    const errEl = document.getElementById('loginErr')
+    const btn   = document.getElementById('loginBtn')
+
+    if (!email || !pass) {
+      if (errEl) { errEl.textContent = 'Preencha e-mail e senha'; errEl.style.display = 'block' }
+      return
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Entrando...' }
+    if (errEl) errEl.style.display = 'none'
+
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email, password: pass })
+      if (error) {
+        // Usuário não existe: sugere cadastro
+        if (error.message.includes('Invalid login') || error.message.includes('invalid_credentials')) {
+          _inviteEmail = email
+          _isNewUser = true
+          document.getElementById('regEmail').value = email
+          show('registerState')
+          return
+        }
+        throw error
+      }
+      _inviteEmail = email
+      // Após login, coleta nome antes de aceitar
+      document.getElementById('regEmail').value = email
+      document.getElementById('regPassword').closest('.field').style.display = 'none'
+      document.getElementById('regPasswordConfirm').closest('.field').style.display = 'none'
+      document.getElementById('registerBtn').textContent = 'Confirmar e aceitar convite'
+      show('registerState')
+    } catch (e) {
+      if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block' }
+      if (btn)   { btn.disabled = false; btn.textContent = 'Entrar e aceitar convite' }
+    }
+  }
+  window.doJoinLogin = doJoinLogin
+
+  async function doJoinRegister() {
+    const firstName = (document.getElementById('regFirstName')?.value || '').trim()
+    const lastName  = (document.getElementById('regLastName')?.value || '').trim()
+    const email     = (document.getElementById('regEmail')?.value || '').trim()
+    const pass      = (document.getElementById('regPassword')?.value || '')
+    const confirm   = (document.getElementById('regPasswordConfirm')?.value || '')
+    const errEl     = document.getElementById('registerErr')
+    const btn       = document.getElementById('registerBtn')
+
+    if (!firstName) {
+      if (errEl) { errEl.textContent = 'Informe seu nome'; errEl.style.display = 'block' }
+      return
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...' }
+    if (errEl) errEl.style.display = 'none'
+
+    try {
+      // Verifica se já está logado (veio pelo init com sessão ativa)
+      const { data: { session: existingSession } } = await sb.auth.getSession()
+
+      if (!existingSession) {
+        // Novo usuário: cria conta e faz login
+        if (!pass || pass.length < 6) {
+          if (errEl) { errEl.textContent = 'Senha deve ter ao menos 6 caracteres'; errEl.style.display = 'block' }
+          if (btn)   { btn.disabled = false; btn.textContent = 'Criar conta e aceitar convite' }
+          return
+        }
+        if (pass !== confirm) {
+          if (errEl) { errEl.textContent = 'As senhas não coincidem'; errEl.style.display = 'block' }
+          if (btn)   { btn.disabled = false; btn.textContent = 'Criar conta e aceitar convite' }
+          return
+        }
+        const { error: signUpErr } = await sb.auth.signUp({ email, password: pass })
+        if (signUpErr) throw signUpErr
+        const { error: loginErr } = await sb.auth.signInWithPassword({ email, password: pass })
+        if (loginErr) throw loginErr
+      }
+
+      await _tryAccept(firstName, lastName)
+    } catch (e) {
+      if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block' }
+      if (btn)   { btn.disabled = false; btn.textContent = 'Criar conta e aceitar convite' }
+    }
+  }
+  window.doJoinRegister = doJoinRegister
+
+  init()
+</script>
+</body>
+</html>

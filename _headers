@@ -1,0 +1,35 @@
+# ─── Netlify / Cloudflare Pages — Security Headers ────────────────────────────
+# Aplica headers de segurança em todas as respostas.
+# Estes headers substituem (e reforçam) as meta-tags HTTP-equiv do HTML.
+
+/*
+  # Impede que o conteúdo seja renderizado em iframe de outras origens
+  X-Frame-Options: DENY
+
+  # Impede que o browser adivinhe o MIME type
+  X-Content-Type-Options: nosniff
+
+  # Força HTTPS por 1 ano em toda a origem (incluindo subdomínios)
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+
+  # Política de Referrer: não vaza URL (incluindo #token) para terceiros
+  Referrer-Policy: no-referrer
+
+  # Permissões mínimas: câmera, microfone e geolocalização desativadas
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+  # Previne XSS em browsers legados (camada extra, obsoleto em favor de CSP)
+  X-XSS-Protection: 1; mode=block
+
+  # CSP server-level: mais restrito que o meta-tag no HTML
+  # script-src 'self' — sem unsafe-inline (scripts externos apenas)
+  # style-src 'self' 'unsafe-inline' — inline styles necessários (sem servidor SSR)
+  Content-Security-Policy: default-src 'self' https://oqboitkpcvuaudouwvkl.supabase.co; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://oqboitkpcvuaudouwvkl.supabase.co https://viacep.com.br; img-src 'self' data: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+# Cache longo para assets JS imutáveis (quebra de cache via query string no deploy)
+/js/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Sem cache para o HTML (sempre busca a versão mais recente)
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate

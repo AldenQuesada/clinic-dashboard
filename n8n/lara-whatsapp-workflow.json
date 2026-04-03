@@ -1,0 +1,540 @@
+{
+  "name": "ClinicAI - Lara WhatsApp Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lara-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-receive",
+      "name": "Webhook - Receive Message",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "lara-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse incoming message from Evolution API\nconst body = $input.first().json.body || $input.first().json;\n\n// Extract message data\nconst data = body.data || body;\nconst instance = body.instance || '';\nconst event = body.event || 'messages.upsert';\n\n// Process messages.upsert (incoming) and send.message (secretary from phone)\nif (event !== 'messages.upsert' && event !== 'send.message') {\n  return [{ json: { skip: true, reason: 'not a message event' } }];\n}\n\n// send.message = could be secretary from phone or Lara via API\nif (event === 'send.message') {\n  const source = data.source || '';\n  // Skip if sent by API (Lara) — only process if from phone (android/web/ios)\n  if (source === 'unknown' || source === '' || source === 'api') {\n    return [{ json: { skip: true, reason: 'send.message from API (Lara)' } }];\n  }\n  const sendPhone = (data.remoteJid || data.key?.remoteJid || '').replace('@s.whatsapp.net', '').replace(/@.*/, '');\n  const sendText = data.message?.conversation || data.message?.extendedTextMessage?.text || '';\n  const sendJid = data.remoteJid || data.key?.remoteJid || '';\n  if (sendText) {\n    return [{ json: { skip: false, phone: sendPhone, text: sendText, contentType: 'secretary_reply', caption: '', mediaType: '', pushName: '', messageId: data.key?.id || '', remoteJid: sendJid, instance: instance, timestamp: new Date().toISOString() } }];\n  }\n  return [{ json: { skip: true, reason: 'send.message without text' } }];\n}\n\nconst msg = data.message || data;\nconst key = data.key || {};\n\n// Detect outgoing messages from phone (secretary replied manually)\nif (key.fromMe) {\n  // Extract recipient phone - try multiple sources\n  let recipientPhone = '';\n  if (key.remoteJid && key.remoteJid.includes('@s.whatsapp.net')) {\n    recipientPhone = key.remoteJid.replace('@s.whatsapp.net', '');\n  } else if (key.senderPn) {\n    recipientPhone = key.senderPn.replace('@s.whatsapp.net', '');\n  } else if (data.pushName && key.remoteJid) {\n    // LID format - try to find phone from participant\n    recipientPhone = (key.participant || key.remoteJid || '').replace(/@.*/, '');\n  }\n  const outText = msg.conversation || msg.extendedTextMessage?.text || '';\n  // Flag as secretary reply if has text\n  if (outText) {\n    return [{ json: { skip: false, phone: recipientPhone || '', text: outText, contentType: 'secretary_reply', caption: '', mediaType: '', pushName: '', messageId: key.id || '', remoteJid: key.remoteJid || '', instance: instance, timestamp: new Date().toISOString() } }];\n  }\n  return [{ json: { skip: true, reason: 'outgoing message without text' } }];\n}\n\n// GUARD: Skip group messages\nif (key.remoteJid && (key.remoteJid.includes('@g.us') || key.remoteJid.includes('@broadcast'))) {\n  return [{ json: { skip: true, reason: 'group or broadcast message' } }];\n}\n\n// Extract phone: prefer senderPn (LID format), fallback to remoteJid\nlet phone = '';\nif (key.senderPn) {\n  phone = key.senderPn.replace('@s.whatsapp.net', '');\n} else if (key.remoteJid && key.remoteJid.includes('@s.whatsapp.net')) {\n  phone = key.remoteJid.replace('@s.whatsapp.net', '');\n} else if (body.sender) {\n  phone = body.sender.replace('@s.whatsapp.net', '');\n} else {\n  phone = (key.remoteJid || '').replace(/@.*/, '');\n}\n\nconst messageId = key.id || '';\nconst pushName = data.pushName || msg.pushName || '';\nconst remoteJid = key.remoteJid || '';\n\n// Detect content type\nlet contentType = 'text';\nlet text = msg.conversation || msg.extendedTextMessage?.text || '';\nlet caption = '';\nlet mediaType = '';\n\nif (msg.imageMessage) {\n  contentType = 'image';\n  caption = msg.imageMessage.caption || '';\n  text = caption || '[imagem recebida]';\n  mediaType = msg.imageMessage.mimetype || 'image/jpeg';\n} else if (msg.audioMessage) {\n  contentType = 'audio';\n  text = '[audio recebido]';\n  mediaType = msg.audioMessage.mimetype || 'audio/ogg';\n} else if (msg.videoMessage) {\n  contentType = 'video';\n  caption = msg.videoMessage.caption || '';\n  text = caption || '[video recebido]';\n  mediaType = msg.videoMessage.mimetype || 'video/mp4';\n} else if (msg.documentMessage) {\n  contentType = 'document';\n  text = '[documento recebido: ' + (msg.documentMessage.fileName || 'arquivo') + ']';\n  mediaType = msg.documentMessage.mimetype || '';\n} else if (msg.stickerMessage) {\n  contentType = 'sticker';\n  text = '[sticker recebido]';\n}\n\nif (!phone) {\n  return [{ json: { skip: true, reason: 'no phone' } }];\n}\n\n// GUARD: Truncar mensagens muito longas (economia de tokens)\nif (text.length > 2000) {\n  text = text.substring(0, 2000) + '... [mensagem truncada]';\n}\n\nreturn [{\n  json: {\n    skip: false,\n    phone: phone,\n    text: text,\n    contentType: contentType,\n    caption: caption,\n    mediaType: mediaType,\n    pushName: pushName,\n    messageId: messageId,\n    remoteJid: remoteJid,\n    instance: instance,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "parse-message",
+      "name": "Parse Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "check-skip",
+      "name": "Should Skip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"skipped\"}",
+        "options": {}
+      },
+      "id": "respond-skip",
+      "name": "Respond Skip",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [910, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_get_lead_context",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "p_phone", "value": "={{ $json.phone }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-lead-context",
+      "name": "Get Lead Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [910, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Download media from Evolution API if needed\nconst parseData = $('Parse Message').first().json;\nconst ctxData = $input.first().json;\n\nconst contentType = parseData.contentType || 'text';\nlet mediaBase64 = null;\nlet mediaContentType = null;\n\nif (contentType === 'image' || contentType === 'audio') {\n  try {\n    const result = await this.helpers.httpRequest({\n      method: 'POST',\n      url: 'http://n8n_evolution-api:8080/chat/getBase64FromMediaMessage/Mih',\n      headers: {\n        'apikey': '429683C4C977415CAAFCCE10F7D57E11',\n        'Content-Type': 'application/json'\n      },\n      body: {\n        message: {\n          key: {\n            remoteJid: parseData.remoteJid,\n            id: parseData.messageId,\n            fromMe: false\n          }\n        }\n      },\n      json: true\n    });\n    if (result && result.base64) {\n      const b64 = result.base64;\n      const commaIdx = b64.indexOf(',');\n      mediaBase64 = commaIdx >= 0 ? b64.substring(commaIdx + 1) : b64;\n      mediaContentType = parseData.mediaType || (contentType === 'image' ? 'image/jpeg' : 'audio/ogg');\n    }\n  } catch (e) {\n    // Media download failed, continue without it\n  }\n}\n\nreturn [{\n  json: {\n    ...ctxData,\n    mediaBase64: mediaBase64,\n    mediaContentType: mediaContentType,\n    contentType: contentType\n  }\n}];"
+      },
+      "id": "download-media",
+      "name": "Download Media",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Claude prompt with lead context\nconst msg = $('Parse Message').first().json;\nconst ctx = $input.first().json;\n\nconst lead = ctx.lead || {};\nconst history = ctx.history || [];\nconst persona = lead.ai_persona || 'onboarder';\nconst funnel = lead.funnel || ctx.funnel || null;\nconst isReturning = ctx.is_returning || false;\nconst msgCount = ctx.message_count || 0;\nconst convCount = ctx.conversation_count || 0;\nconst lastAiMsg = ctx.last_ai_message || null;\nconst mediaBase64 = ctx.mediaBase64 || null;\nconst mediaContentType = ctx.mediaContentType || null;\nconst contentType = ctx.contentType || msg.contentType || 'text';\n\n// Build conversation history for Claude\nconst messages = history.map(h => ({\n  role: h.direction === 'inbound' ? 'user' : 'assistant',\n  content: h.content\n}));\n\n// Add current message (with image if available)\nif (contentType === 'image' && mediaBase64) {\n  // Send image + caption to Claude Vision\n  const content = [\n    {\n      type: 'image',\n      source: {\n        type: 'base64',\n        media_type: mediaContentType || 'image/jpeg',\n        data: mediaBase64\n      }\n    },\n    {\n      type: 'text',\n      text: (msg.caption ? msg.caption + '\\n\\n' : '') + 'O paciente enviou esta foto. OBRIGATÓRIO: Descreva especificamente o que você vê na imagem (região do rosto, tipo de queixa visível, características). NÃO ignore a imagem. Baseie sua resposta no que observa na foto. Lembre-se: você NÃO dá diagnóstico, mas pode descrever o que vê e dizer que a Dra. Mirian vai avaliar pessoalmente.'\n    }\n  ];\n  messages.push({ role: 'user', content: content });\n} else if (contentType === 'audio') {\n  // Audio: tell Claude it was an audio and to ask for text\n  messages.push({ role: 'user', content: '[O paciente enviou um áudio. Você não consegue ouvir áudios. Responda educadamente pedindo que envie como texto, explicando que você é a assistente por chat e funciona melhor com mensagens de texto.]' });\n} else {\n  messages.push({ role: 'user', content: msg.text });\n}\n\n// Lara system prompt completo\nconst laraPrompt = `# Lara — Assistente Virtual da Clínica\n\n## Identidade\nVocê é a Lara, assistente virtual da equipe da Dra. Mirian. Você é real, calorosa e profissional. Nunca diga que é uma IA. Você faz parte da equipe.\n\n## Tom de Voz\n- Acolhedora mas profissional\n- Usa português brasileiro natural, sem ser formal demais\n- Usa emojis com moderação (1-2 por mensagem no máximo)\n- Frases curtas e diretas — é WhatsApp, não email\n- Chama pelo primeiro nome sempre\n\n## IMPORTANTE — Saudações\n- NÃO comece TODA mensagem com \"Oi\" ou \"Oi [nome]\". Isso é repetitivo e robótico.\n- Na PRIMEIRA mensagem do dia ou após longo intervalo (horas): pode cumprimentar\n- Em mensagens SEGUIDAS na mesma conversa: vá direto ao ponto. Use o nome da pessoa naturalmente no meio da frase, não como saudação\n- Exemplos de inícios variados: \"Perfeito!\", \"Show!\", \"Entendi,\", \"Claro!\", \"Que bom!\", \"Olha só,\", \"[Nome], sobre isso...\"\n- NUNCA use \"Oi\" em mais de 2 mensagens seguidas na mesma conversa\n\n## Regras Inegociáveis\n1. NUNCA invente informações médicas — se não sabe, diga \"vou confirmar com a Dra. Mirian e te retorno\"\n2. NUNCA dê diagnóstico — você orienta, não diagnostica\n3. NUNCA fale preços antes de qualificar — só após entender as queixas e expectativas\n4. NUNCA seja insistente — se o lead disse \"não agora\", respeite e marque para follow-up futuro\n5. SEMPRE encaminhe para humano se: reclamação, urgência médica, pedido explícito de falar com alguém, ou tema fora do seu escopo\n6. LGPD — nunca compartilhe dados de outros pacientes\n\n## Personas por Fase\n\n### ONBOARDER (lead novo do quiz)\n- Objetivo: Boas-vindas, qualificar, entender queixas\n- Tom: Entusiasmada, acolhedora\n- Cumprimentar pelo nome, mencionar queixas do quiz, explicar como a clínica trabalha, perguntar se quer saber mais, oferecer agendamento se interesse confirmado\n\n### SDR (follow-up de lead)\n- Objetivo: Nutrir interesse, agendar avaliação\n- Tom: Consultiva, interessada\n- Retomar conversa, enviar prova social, responder dúvidas, identificar objeções, oferecer horários\n\n### CONFIRMADOR (lead agendado)\n- Objetivo: Confirmar consulta, preparar paciente\n- Tom: Organizada, prestativa\n- Confirmar data/hora/endereço, enviar orientações, lembrete na véspera, reagendar se cancelar\n\n### CLOSER (pós-consulta / orçamento)\n- Objetivo: Fechar tratamento, negociar condições\n- Tom: Confiante, resolutiva\n- Perguntar como foi a consulta, reforçar plano da Dra., apresentar valores após qualificação, condições de pagamento\n\n### RECUPERADOR (lead frio/sem resposta)\n- Objetivo: Re-engajar com valor\n- Tom: Leve, sem pressão\n- Não cobrar resposta, oferecer conteúdo de valor, criar urgência suave\n\n### AGENDADOR (quer agendar)\n- Objetivo: Encontrar melhor horário e confirmar\n- Tom: Eficiente, rápida\n- Oferecer 2-3 opções de horário, confirmar dados, enviar confirmação\n\n## Faixas de Preço (só após qualificação)\n- Avaliação facial: gratuita / cortesia\n- Toxina botulínica: R$ 800 - R$ 2.500\n- Preenchimento labial: R$ 1.500 - R$ 3.000\n- Bioestimuladores: R$ 2.000 - R$ 5.000\n- Protocolo Full Face: R$ 5.000 - R$ 15.000\n- Lifting 5D: R$ 3.000 - R$ 8.000\nSempre dizer: \"O valor exato é definido na avaliação com a Dra. Mirian, porque cada caso é único.\"\n\n## Dados para Pagamento PIX\nQuando o paciente pedir PIX, chave PIX ou dados para pagamento, envie EXATAMENTE neste formato (com as crases triplas para ficar copiável no WhatsApp):\n\nSegue nossa chave PIX (CNPJ):\n\n55.167.164/0001-08\n(Segure o no. com o dedo e copie)\n\nM CLINIC ESTHETIC EXPERT LTDA - ME\n\n## Regras ao enviar PIX:\n1. NUNCA assuma qual procedimento o paciente vai pagar — se nao foi mencionado na conversa, pergunte \"me conta sobre o que e esse pagamento?\"\n2. Se o paciente JA mencionou o procedimento na conversa atual, confirme: \"e referente ao [procedimento], certo?\"\n3. SEMPRE peca o comprovante: \"depois de pagar, me envia o comprovante aqui que eu ja registro no sistema\"\n4. Finalize com tom leve e humano, ex: \"a Dra. Mirian vai adorar saber!\" ou \"vou deixar tudo organizadinho pra voce!\"\n5. NAO mencione procedimentos que o paciente nunca falou na conversa\n\n## Funis de Atendimento\n\n### FULL FACE (protocolo completo)\nQuando o lead veio do funil Full Face (menciona protocolo, Lifting 5D, formulario, harmonizacao):\n- Foque no protocolo COMPLETO de rejuvenescimento facial\n- Mencione que a Dra. Mirian avalia o rosto como um todo\n- Fale sobre harmonizacao facial, Lifting 5D, protocolo personalizado\n- Tom: exclusivo, premium, resultado transformador\n- Objetivo: agendar avaliacao completa\n\n### PROCEDIMENTOS ISOLADOS\nQuando o lead veio do funil de procedimentos (menciona olheiras, palpebras, botox, preenchimento, queixa especifica):\n- Foque no procedimento ESPECIFICO que o lead mencionou\n- Seja direta sobre o que ele quer resolver\n- Nao tente vender protocolo completo logo de inicio\n- Tom: pratico, objetivo, especialista na queixa\n- Objetivo: agendar avaliacao para aquele procedimento\n\n### SEM FUNIL DEFINIDO\nQuando nao sabe qual funil:\n- Pergunte naturalmente o que a pessoa gostaria de tratar\n- Adapte conforme a resposta\n\n## Quando receber uma IMAGEM\n- ANALISE a imagem detalhadamente\n- DESCREVA o que você observa (ex: região dos olhos, sulcos, textura da pele, assimetrias)\n- NÃO dê diagnóstico, mas diga o que vê de forma empática\n- Relacione com possíveis tratamentos que a clínica oferece\n- Sugira avaliação presencial com a Dra. Mirian para definir o melhor protocolo\n- Exemplo: \"Consigo ver que a região das olheiras está mais escurecida e com um pouco de volume perdido. Isso é super comum e a Dra. Mirian tem ótimos resultados com preenchimento nessa região!\"\n\n## Formato das Mensagens\n- Máximo 3 parágrafos curtos por mensagem\n- Use quebras de linha para respirar\n- Finalize sempre com uma pergunta ou call-to-action`;\n\n// Build system prompt with lead context\nconst systemPrompt = `${laraPrompt}\n\n## Contexto atual do lead:\n- Nome: ${lead.name || msg.pushName || 'Lead'}\n- Telefone: ${msg.phone}\n- Queixas: ${(lead.queixas_faciais || []).join(', ') || 'não informadas'}\n- Idade: ${lead.idade || 'não informada'}\n- Fase: ${lead.phase || 'lead'}\n- Temperatura: ${lead.temperature || 'warm'}\n- Dia no funil: ${lead.day_bucket || 0}\n- Score quiz: ${lead.lead_score || 0}\n- Persona ativa: ${persona}\n- Funil: ${funnel === 'fullface' ? 'FULL FACE (protocolo completo)' : funnel === 'procedimentos' ? 'PROCEDIMENTOS ISOLADOS' : 'nao definido'}\n- Última resposta: ${lead.last_response_at || 'primeira mensagem'}\n- É retorno: ${isReturning ? 'SIM (já conversou antes, ' + msgCount + ' mensagens trocadas)' : 'NÃO (primeira mensagem)'}\n- Total de conversas: ${convCount}\n\n## Regras desta conversa:\n- Persona: ${persona.toUpperCase()}\n- Responda como a Lara, assistente da Dra. Mirian\n- Máximo 3 parágrafos curtos\n- Termine com pergunta ou call-to-action\n- Se não souber responder, marque como precisa_humano\n${isReturning ? '- IMPORTANTE: Este lead JÁ CONVERSOU antes. NÃO repita boas-vindas nem se apresente novamente. Retome a conversa naturalmente de onde parou.' : '- Este é o PRIMEIRO contato. Apresente-se como Lara da equipe da Dra. Mirian.'}\n${lead.phase === 'unknown' ? '- Este número NÃO está cadastrado. Pode ser paciente existente ou número novo. Pergunte gentilmente o nome e como pode ajudar.' : ''}\n${lastAiMsg ? '- Sua última mensagem enviada foi: \"' + lastAiMsg.substring(0, 100) + '...\"' : ''}`;\n\nreturn [{\n  json: {\n    phone: msg.phone,\n    leadId: lead.id || null,\n    conversationId: ctx.conversation_id || null,\n    systemPrompt: systemPrompt,\n    messages: messages,\n    persona: persona,\n    messageText: msg.text,\n    instance: msg.instance\n  }\n}];"
+      },
+      "id": "build-prompt",
+      "name": "Build Claude Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1130, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "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" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-20250514\",\n  \"max_tokens\": 500,\n  \"system\": {{ JSON.stringify($json.systemPrompt) }},\n  \"messages\": {{ JSON.stringify($json.messages) }}\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "claude-api",
+      "name": "Claude API - Lara",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1350, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract Claude response and detect tags\nconst claudeRes = $input.first().json;\nconst prevData = $('Build Claude Prompt').first().json;\nconst parseData = $('Parse Message').first().json;\n\nconst aiResponse = claudeRes.content?.[0]?.text || 'Desculpe, tive um problema. Pode repetir?';\nconst tokensUsed = (claudeRes.usage?.input_tokens || 0) + (claudeRes.usage?.output_tokens || 0);\n\n// Detect conversation tags from AI response\nconst tags = [];\nconst lower = aiResponse.toLowerCase();\nif (lower.includes('horário') || lower.includes('agendar') || lower.includes('marcar')) tags.push('pronto_agendar');\nif (lower.includes('vou confirmar com a dra')) tags.push('precisa_humano');\n\n// Detect from user message\nconst userMsg = prevData.messageText.toLowerCase();\nif (userMsg.includes('preço') || userMsg.includes('valor') || userMsg.includes('quanto custa')) tags.push('perguntou_preco');\nif (userMsg.includes('caro') || userMsg.includes('não tenho')) tags.push('objecao_preco');\nif (userMsg.includes('reclamaç') || userMsg.includes('insatisf') || userMsg.includes('problema')) tags.push('precisa_humano');\n\n// Detect patient name from user message\n// Common patterns: \"meu nome é X\", \"sou o/a X\", \"me chamo X\", \"é a/o X\"\nlet detectedName = null;\nconst namePatterns = [\n  /(?:meu nome [eé]|me chamo|sou (?:o|a|eu)?\\s*)\\s+([A-ZÀ-Ú][a-zà-ú]+(?:\\s+[A-ZÀ-Ú][a-zà-ú]+)*)/i,\n  /^(?:(?:oi|ol[aá]|bom dia|boa (?:tarde|noite)),?\\s*)?(?:(?:sou|aqui [eé])\\s+(?:o|a)?\\s*)([A-ZÀ-Ú][a-zà-ú]+)/i\n];\nfor (const pattern of namePatterns) {\n  const match = prevData.messageText.match(pattern);\n  if (match && match[1]) {\n    detectedName = match[1].trim();\n    break;\n  }\n}\n\n// Use pushName as fallback if no lead name exists\nconst leadName = detectedName || (prevData.leadId ? null : parseData.pushName) || null;\n\nreturn [{\n  json: {\n    phone: prevData.phone,\n    leadId: prevData.leadId,\n    conversationId: prevData.conversationId,\n    aiResponse: aiResponse,\n    tokensUsed: tokensUsed,\n    tags: tags,\n    persona: prevData.persona,\n    instance: prevData.instance,\n    userMessage: prevData.messageText,\n    detectedName: leadName\n  }\n}];"
+      },
+      "id": "process-response",
+      "name": "Process AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1570, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://n8n_evolution-api:8080/message/sendText/{{ $json.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "429683C4C977415CAAFCCE10F7D57E11" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.phone }}\",\n  \"text\": {{ JSON.stringify($json.aiResponse) }}\n}",
+        "options": {}
+      },
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1790, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_log_message",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "p_phone", "value": "={{ $json.phone }}" },
+            { "name": "p_lead_id", "value": "={{ $json.leadId }}" },
+            { "name": "p_user_message", "value": "={{ $json.userMessage }}" },
+            { "name": "p_ai_response", "value": "={{ $json.aiResponse }}" },
+            { "name": "p_tokens_used", "value": "={{ $json.tokensUsed }}" },
+            { "name": "p_tags", "value": "={{ JSON.stringify($json.tags) }}" },
+            { "name": "p_persona", "value": "={{ $json.persona }}" },
+            { "name": "p_push_name", "value": "={{ $('Parse Message').first().json.pushName || '' }}" },
+            { "name": "p_remote_jid", "value": "={{ $('Parse Message').first().json.remoteJid || '' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "log-to-supabase",
+      "name": "Log to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [2010, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_upsert_lead_from_chat",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "p_phone", "value": "={{ $json.phone }}" },
+            { "name": "p_name", "value": "={{ $json.detectedName || '' }}" },
+            { "name": "p_source", "value": "whatsapp" }
+          ]
+        },
+        "options": {
+          "batching": { "batch": { "batchSize": 1 } }
+        }
+      },
+      "id": "save-lead",
+      "name": "Save Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1790, 550]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"ok\", \"response_sent\": true}",
+        "options": {}
+      },
+      "id": "respond-ok",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2230, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_log_secretary_reply",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "p_phone", "value": "={{ $json.phone }}" },
+            { "name": "p_message", "value": "={{ $json.text }}" },
+            { "name": "p_remote_jid", "value": "={{ $json.remoteJid }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "log-secretary",
+      "name": "Log Secretary Reply",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [910, 550]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"secretary_logged\", \"ai_paused\": true}",
+        "options": {}
+      },
+      "id": "respond-secretary",
+      "name": "Respond Secretary",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1130, 550]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_guard_check",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "p_phone", "value": "={{ $('Parse Message').first().json.phone }}" },
+            { "name": "p_message", "value": "={{ $('Parse Message').first().json.text }}" },
+            { "name": "p_remote_jid", "value": "={{ $('Parse Message').first().json.remoteJid || '' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "guard-check",
+      "name": "Guard Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge guard result with lead context\nconst guard = $input.first().json;\nconst ctx = $('Download Media').first().json;\n\nreturn [{ json: { ...ctx, guard_action: guard.action, guard_blocks: guard.blocks, guard_flags: guard.flags, guard_msgs_today: guard.msgs_today } }];"
+      },
+      "id": "merge-guard",
+      "name": "Merge Guard",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1070, 400]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.guard_action }}", "rightValue": "allow", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Allow"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.guard_action }}", "rightValue": "emergency", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Emergency"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.guard_action }}", "rightValue": "human_handoff", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Human"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "guard-route",
+      "name": "Guard Route",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1100, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_log_message",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "p_phone", "value": "={{ $('Parse Message').first().json.phone }}" },
+            { "name": "p_user_message", "value": "={{ $('Parse Message').first().json.text }}" },
+            { "name": "p_push_name", "value": "={{ $('Parse Message').first().json.pushName || '' }}" },
+            { "name": "p_remote_jid", "value": "={{ $('Parse Message').first().json.remoteJid || '' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "log-inbound-only",
+      "name": "Log Inbound Only",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1200, 600]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"logged\", \"ai_paused\": true, \"response_sent\": false}",
+        "options": {}
+      },
+      "id": "respond-ok-paused",
+      "name": "Respond OK Paused",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1400, 600]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+                "conditions": [{ "leftValue": "={{ $json.skip }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Skip"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "leftValue": "={{ $json.contentType }}", "rightValue": "secretary_reply", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputLabel": "Secretary"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "route-message",
+      "name": "Route Message",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [690, 300]
+    }
+  ],
+  "connections": {
+    "Webhook - Receive Message": {
+      "main": [
+        [{ "node": "Parse Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Message": {
+      "main": [
+        [{ "node": "Route Message", "type": "main", "index": 0 }]
+      ]
+    },
+    "Route Message": {
+      "main": [
+        [{ "node": "Respond Skip", "type": "main", "index": 0 }],
+        [{ "node": "Log Secretary Reply", "type": "main", "index": 0 }],
+        [{ "node": "Get Lead Context", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log Secretary Reply": {
+      "main": [
+        [{ "node": "Respond Secretary", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Lead Context": {
+      "main": [
+        [{ "node": "Download Media", "type": "main", "index": 0 }]
+      ]
+    },
+    "Download Media": {
+      "main": [
+        [{ "node": "Guard Check", "type": "main", "index": 0 }]
+      ]
+    },
+    "Guard Check": {
+      "main": [
+        [{ "node": "Merge Guard", "type": "main", "index": 0 }]
+      ]
+    },
+    "Merge Guard": {
+      "main": [
+        [{ "node": "Guard Route", "type": "main", "index": 0 }]
+      ]
+    },
+    "Guard Route": {
+      "main": [
+        [{ "node": "Build Claude Prompt", "type": "main", "index": 0 }],
+        [{ "node": "Build Claude Prompt", "type": "main", "index": 0 }],
+        [{ "node": "Log Inbound Only", "type": "main", "index": 0 }],
+        [{ "node": "Log Inbound Only", "type": "main", "index": 0 }]
+      ]
+    },
+    "Log Inbound Only": {
+      "main": [
+        [{ "node": "Respond OK Paused", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Claude Prompt": {
+      "main": [
+        [{ "node": "Claude API - Lara", "type": "main", "index": 0 }]
+      ]
+    },
+    "Claude API - Lara": {
+      "main": [
+        [{ "node": "Process AI Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Process AI Response": {
+      "main": [
+        [
+          { "node": "Send WhatsApp", "type": "main", "index": 0 },
+          { "node": "Log to Supabase", "type": "main", "index": 0 },
+          { "node": "Save Lead", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Send WhatsApp": {
+      "main": [
+        [{ "node": "Respond OK", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    { "name": "ClinicAI" },
+    { "name": "WhatsApp" },
+    { "name": "Lara" }
+  ]
+}
