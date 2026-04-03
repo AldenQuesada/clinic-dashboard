@@ -472,6 +472,7 @@
         color: '#0891B2',
         description: 'Follow-ups automaticos para leads que nao responderam (pg_cron cada 30min)',
         rules: [
+          { name: 'Nudge 30 min', desc: 'Lead parou de responder no meio da conversa → toque suave apos 30min ("Ficou alguma duvida?")', status: 'active', type: 'flow' },
           { name: 'FF Dia 1 (10h) — Implicacao + Foto', desc: 'Perda de colageno + antes/depois + "resultado assim e o que procura?"', status: 'active', type: 'flow' },
           { name: 'FF Dia 2 (14h) — Valor', desc: '"Continua vendo valor no rejuvenescimento?" + cashback Fotona', status: 'active', type: 'flow' },
           { name: 'FF Dia 3 (10h) — Escassez', desc: '"Agenda concorrida" + cashback + "ainda faz sentido manter espaco?"', status: 'active', type: 'flow' },
