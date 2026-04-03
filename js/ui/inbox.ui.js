@@ -31,6 +31,8 @@
   let _filter        = 'all'  // all, urgent, waiting, lara, resolved
   let _search        = ''
   let _refreshTimer  = null
+  let _lastUrgentCount = 0
+  let _realtimeChannel = null
 
   // ── Helpers ─────────────────────────────────────────────────
 
@@ -73,6 +75,39 @@
     return '<svg width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">' + (paths[name] || '') + '</svg>'
   }
 
+  // ── Sound alert for urgent messages ─────────────────────────
+
+  function _playAlertSound() {
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)()
+      var osc = ctx.createOscillator()
+      var gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = 800
+      gain.gain.value = 0.3
+      osc.start()
+      osc.stop(ctx.currentTime + 0.15)
+      setTimeout(function() {
+        var osc2 = ctx.createOscillator()
+        var gain2 = ctx.createGain()
+        osc2.connect(gain2)
+        gain2.connect(ctx.destination)
+        osc2.frequency.value = 1000
+        gain2.gain.value = 0.3
+        osc2.start()
+        osc2.stop(ctx.currentTime + 0.15)
+      }, 200)
+    } catch(e) {}
+  }
+
+  // ── Browser tab notification count ─────────────────────────
+
+  function _updateTabTitle() {
+    var pending = _conversations.filter(function(c) { return c.is_urgent || !c.ai_enabled }).length
+    document.title = pending > 0 ? '(' + pending + ') Central de Atendimento' : 'ClinicAI'
+  }
+
   // ── Init ────────────────────────────────────────────────────
 
   async function init() {
@@ -82,6 +117,7 @@
     _loading = false
     _render()
     _startAutoRefresh()
+    _startRealtime()
   }
 
   function _startAutoRefresh() {
@@ -90,6 +126,10 @@
       var input = document.getElementById('ibxInputField')
       if (input && document.activeElement === input) return
       _loadConversations().then(function () {
+        var newUrgent = _conversations.filter(function(c) { return c.is_urgent }).length
+        if (newUrgent > _lastUrgentCount && _lastUrgentCount >= 0) _playAlertSound()
+        _lastUrgentCount = newUrgent
+        _updateTabTitle()
         var input2 = document.getElementById('ibxInputField')
         if (input2 && document.activeElement === input2) return
         if (_activeId) {
@@ -240,6 +280,7 @@
       '</div>'
 
     _bindEvents(root)
+    _updateTabTitle()
   }
 
   // ── Cards de resumo ─────────────────────────────────────────
@@ -372,6 +413,7 @@
         ) +
         '<button class="ibx-btn ibx-btn-resolve" id="ibxBtnResolve">' + _svg('check', 16) + ' RESOLVER</button>' +
         '<button class="ibx-btn ibx-btn-resolve" id="ibxBtnArchive" style="color:#D97706;border-color:#F59E0B">' + _svg('x', 16) + ' ARQUIVAR</button>' +
+        '<button class="ibx-btn ibx-btn-resolve" id="ibxBtnTransfer" style="color:#2563EB;border-color:#3B82F6">' + _svg('user', 16) + ' DRA. MIRIAN</button>' +
       '</div>' +
     '</div>'
 
@@ -549,6 +591,21 @@
       })
     }
 
+    // Transfer to Dra. Mirian button
+    var transferBtn = root.querySelector('#ibxBtnTransfer')
+    if (transferBtn) {
+      transferBtn.addEventListener('click', async function () {
+        if (!_activeId || !window.InboxService) return
+        if (!confirm('Transferir esta conversa para a Dra. Mirian?')) return
+        transferBtn.disabled = true
+        transferBtn.textContent = 'Transferindo...'
+        await window.InboxService.assumeConversation(_activeId)
+        await window.InboxService.sendMessage(_activeId, 'Entendi! Vou encaminhar sua conversa para a Dra. Mirian. Ela vai entrar em contato com voce em breve!')
+        await _loadConversations()
+        await _loadChat(_activeId)
+      })
+    }
+
     // Send button
     var sendBtn = root.querySelector('#ibxSendBtn')
     var inputField = root.querySelector('#ibxInputField')
@@ -581,11 +638,42 @@
     await _loadChat(_activeId)
   }
 
+  // ── Supabase Realtime ────────────────────────────────────────
+
+  function _startRealtime() {
+    if (!window.supabase?.createClient) return
+    try {
+      var env = window.ClinicEnv || {}
+      if (!env.SUPABASE_URL || !env.SUPABASE_KEY) return
+      var client = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
+      _realtimeChannel = client.channel('wa_messages_changes')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wa_messages' }, function () {
+          _loadConversations().then(function () {
+            var newUrgent = _conversations.filter(function(c) { return c.is_urgent }).length
+            if (newUrgent > _lastUrgentCount && _lastUrgentCount >= 0) _playAlertSound()
+            _lastUrgentCount = newUrgent
+            _updateTabTitle()
+            if (_activeId) {
+              _updateSidebarOnly()
+              _refreshChat()
+            } else {
+              _render()
+            }
+          })
+        })
+        .subscribe()
+    } catch(e) {}
+  }
+
   // ── Cleanup ─────────────────────────────────────────────────
 
   function destroy() {
     if (_refreshTimer) clearInterval(_refreshTimer)
     _refreshTimer = null
+    if (_realtimeChannel) {
+      try { _realtimeChannel.unsubscribe() } catch(e) {}
+      _realtimeChannel = null
+    }
   }
 
   // ── Exposicao global ────────────────────────────────────────

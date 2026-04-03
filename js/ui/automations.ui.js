@@ -218,9 +218,9 @@
         description: 'Sistema de alertas visuais e sonoros para a secretaria',
         rules: [
           { name: 'Card URGENTE pisca vermelho', desc: 'Emergencias, reclamacoes e pedidos de humano — pisca ate resolver', status: 'active', type: 'shield' },
-          { name: 'Som de alerta para msgs urgentes', desc: 'Bipe duplo quando chega mensagem que precisa atencao imediata', status: 'pending', type: 'shield' },
+          { name: 'Som de alerta para msgs urgentes', desc: 'Web Audio API: bipe duplo (800Hz+1000Hz) quando urgentes aumentam', status: 'active', type: 'shield' },
           { name: 'Badge de tags automaticas', desc: 'QUER AGENDAR, PERGUNTOU PRECO, URGENTE, LARA/VOCE — visiveis na lista', status: 'active', type: 'flow' },
-          { name: 'Notificacao no titulo da aba', desc: 'Titulo da aba mostra (N) quando tem msgs pendentes', status: 'pending', type: 'flow' },
+          { name: 'Notificacao no titulo da aba', desc: '(N) Central de Atendimento — conta urgentes + aguardando', status: 'active', type: 'flow' },
         ]
       },
       {
@@ -235,7 +235,7 @@
           { name: 'Resolver conversa', desc: 'Status closed, sai da lista. Reabre auto se paciente mandar nova msg', status: 'active', type: 'flow' },
           { name: 'Arquivar conversa', desc: 'Status archived, sai da lista. Reabre auto se paciente mandar nova msg', status: 'active', type: 'flow' },
           { name: 'Reabrir automatico', desc: 'Conversa closed/archived reabre quando paciente manda nova mensagem', status: 'active', type: 'flow' },
-          { name: 'Transferir para Dra. Mirian', desc: 'Marca conversa como "aguardando doutora" — Lara informa o paciente', status: 'pending', type: 'flow' },
+          { name: 'Transferir para Dra. Mirian', desc: 'Botao azul no chat. Pausa IA + envia msg ao paciente informando transferencia', status: 'active', type: 'flow' },
         ]
       },
       {
@@ -261,7 +261,7 @@
           { name: 'inbox.repository.js', desc: 'Chamadas Supabase — 8 RPCs (list, conversation, assume, release, send, resolve, archive, reopen)', status: 'active', type: 'rule' },
           { name: 'inbox.css', desc: 'Estilos dedicados — cards, chat bubbles, alertas, botoes grandes, responsivo', status: 'active', type: 'rule' },
           { name: 'RPCs Supabase', desc: 'wa_inbox_list, wa_inbox_conversation, wa_inbox_assume, wa_inbox_release, wa_inbox_send, wa_inbox_resolve, wa_inbox_archive, wa_inbox_reopen', status: 'active', type: 'rule' },
-          { name: 'Realtime (Supabase)', desc: 'Subscription em wa_messages para atualizar chat em tempo real', status: 'pending', type: 'rule' },
+          { name: 'Realtime (Supabase)', desc: 'Subscription postgres_changes em wa_messages — inbox atualiza instantaneamente', status: 'active', type: 'rule' },
           { name: 'Outbox Processor', desc: 'Workflow n8n separado, cron 2min, processa fila de envio para cadencias', status: 'active', type: 'rule' },
         ]
       },
@@ -371,7 +371,7 @@
         description: 'Regras para minimizar chamadas desnecessarias a API Claude',
         rules: [
           { name: 'Verificar ai_enabled antes de chamar Claude', desc: 'Guard Check RPC verifica ai_enabled. Se false, so loga inbound sem gastar credito', status: 'active', type: 'shield' },
-          { name: 'Debounce 5 segundos', desc: 'Msgs seguidas agrupadas em 1 chamada ao Claude', status: 'pending', type: 'shield' },
+          { name: 'Debounce 5 segundos', desc: 'Guard verifica se outra msg inbound chegou nos ultimos 5s — se sim, bloqueia (a ultima processa)', status: 'active', type: 'shield' },
           { name: 'Outbox Processor', desc: 'Workflow n8n separado, cron 2min, envia msgs de cadencia via Evolution API', status: 'active', type: 'shield' },
           { name: 'Limite 15 msgs/dia por conversa', desc: 'Guard Check conta msgs AI do dia. Apos 15, pausa IA automaticamente', status: 'active', type: 'shield' },
           { name: 'Ignorar msgs de grupo', desc: 'Parse Message filtra @g.us e @broadcast — zero processamento', status: 'active', type: 'shield' },
