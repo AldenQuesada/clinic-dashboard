@@ -205,10 +205,10 @@
         color: '#2563EB',
         description: 'Estrutura visual da Central de Atendimento da secretaria',
         rules: [
-          { name: 'Cartoes de resumo (topo)', desc: '4 cards: Urgentes (vermelho pulsante), Aguardando Voce (amarelo), Lara Ativa (verde), Resolvidos Hoje (cinza)', status: 'pending', type: 'flow' },
-          { name: 'Lista de conversas (esquerda)', desc: 'Todas as conversas ativas ordenadas por prioridade. Bolinha colorida + nome + preview + timer', status: 'pending', type: 'flow' },
-          { name: 'Conversa aberta (direita)', desc: 'Historico estilo WhatsApp com baloes. Msgs da Lara identificadas. Campo para digitar resposta', status: 'pending', type: 'flow' },
-          { name: 'Botoes grandes e claros', desc: '"ASSUMIR CONVERSA" (amarelo) e "DEVOLVER PARA LARA" (verde) — sempre visiveis', status: 'pending', type: 'flow' },
+          { name: 'Cartoes de resumo (topo)', desc: '4 cards: Urgentes, Aguardando, Lara Ativa, Resolvidos + botao Atualizar', status: 'active', type: 'flow' },
+          { name: 'Lista de conversas (esquerda)', desc: 'Conversas ativas ordenadas por prioridade. Bolinha colorida + nome + preview + timer', status: 'active', type: 'flow' },
+          { name: 'Conversa aberta (direita)', desc: 'Historico estilo WhatsApp com baloes. Msgs da Lara identificadas. Campo para digitar', status: 'active', type: 'flow' },
+          { name: 'Botoes grandes e claros', desc: 'ASSUMIR (amarelo), DEVOLVER PARA LARA (verde), RESOLVER, ARQUIVAR', status: 'active', type: 'flow' },
         ]
       },
       {
@@ -217,11 +217,10 @@
         color: '#DC2626',
         description: 'Sistema de alertas visuais e sonoros para a secretaria',
         rules: [
-          { name: 'Card URGENTE pisca vermelho', desc: 'Emergencias, reclamacoes e pedidos de humano — pisca ate resolver', status: 'pending', type: 'shield' },
+          { name: 'Card URGENTE pisca vermelho', desc: 'Emergencias, reclamacoes e pedidos de humano — pisca ate resolver', status: 'active', type: 'shield' },
           { name: 'Som de alerta para msgs urgentes', desc: 'Bipe duplo quando chega mensagem que precisa atencao imediata', status: 'pending', type: 'shield' },
-          { name: 'Timer ficando vermelho', desc: 'Apos 2 min sem resposta da secretaria, o timer muda de cor alertando', status: 'pending', type: 'shield' },
-          { name: 'Badge de tags automaticas', desc: '"QUER AGENDAR", "PERGUNTOU PRECO", "URGENTE" — visiveis na lista de conversas', status: 'pending', type: 'flow' },
-          { name: 'Notificacao no titulo da aba', desc: 'Titulo da aba do navegador mostra (3) quando tem msgs pendentes', status: 'pending', type: 'flow' },
+          { name: 'Badge de tags automaticas', desc: 'QUER AGENDAR, PERGUNTOU PRECO, URGENTE, LARA/VOCE — visiveis na lista', status: 'active', type: 'flow' },
+          { name: 'Notificacao no titulo da aba', desc: 'Titulo da aba mostra (N) quando tem msgs pendentes', status: 'pending', type: 'flow' },
         ]
       },
       {
@@ -230,9 +229,9 @@
         color: '#059669',
         description: 'O que a secretaria pode fazer na Central de Atendimento',
         rules: [
-          { name: 'Assumir conversa', desc: 'Pausa a Lara, secretaria responde diretamente pelo campo de texto', status: 'pending', type: 'flow' },
-          { name: 'Devolver para Lara', desc: 'Reativa a IA na conversa, Lara retoma de onde parou', status: 'pending', type: 'flow' },
-          { name: 'Enviar mensagem manual', desc: 'Campo de texto para digitar e enviar via WhatsApp — msgs ficam identificadas como "secretaria"', status: 'pending', type: 'flow' },
+          { name: 'Assumir conversa', desc: 'Botao no inbox + resposta pelo celular/iMac pausa a Lara automaticamente', status: 'active', type: 'flow' },
+          { name: 'Devolver para Lara', desc: 'Botao reativa a IA. Reativacao automatica em 2min se secretaria nao responde', status: 'active', type: 'flow' },
+          { name: 'Enviar mensagem manual', desc: 'Campo de texto envia via WhatsApp. Msgs identificadas como "Voce"', status: 'active', type: 'flow' },
           { name: 'Resolver conversa', desc: 'Status closed, sai da lista. Reabre auto se paciente mandar nova msg', status: 'active', type: 'flow' },
           { name: 'Arquivar conversa', desc: 'Status archived, sai da lista. Reabre auto se paciente mandar nova msg', status: 'active', type: 'flow' },
           { name: 'Reabrir automatico', desc: 'Conversa closed/archived reabre quando paciente manda nova mensagem', status: 'active', type: 'flow' },
@@ -245,10 +244,10 @@
         color: '#6B7280',
         description: 'Como as conversas sao organizadas para facilitar o trabalho',
         rules: [
-          { name: 'Urgentes sempre primeiro', desc: 'Conversas com tag emergencia/precisa_humano ficam no topo', status: 'pending', type: 'flow' },
-          { name: 'Depois por tempo', desc: 'Quem mandou msg ha mais tempo aparece antes', status: 'pending', type: 'flow' },
-          { name: 'Filtro por status', desc: 'Tabs: Todas, Urgentes, Aguardando, Lara Ativa, Resolvidas', status: 'pending', type: 'flow' },
-          { name: 'Busca por nome/telefone', desc: 'Campo de busca rapida no topo da lista', status: 'pending', type: 'flow' },
+          { name: 'Urgentes sempre primeiro', desc: 'RPC ordena por is_urgent DESC, last_message_at DESC', status: 'active', type: 'flow' },
+          { name: 'Depois por tempo', desc: 'Quem mandou msg ha mais tempo aparece antes', status: 'active', type: 'flow' },
+          { name: 'Filtro por status', desc: 'Botoes: Todas, Urgentes, Aguardando, Lara Ativa', status: 'active', type: 'flow' },
+          { name: 'Busca por nome/telefone', desc: 'Campo de busca com debounce no topo da lista', status: 'active', type: 'flow' },
         ]
       },
       {
@@ -257,12 +256,13 @@
         color: '#7C3AED',
         description: 'Estrutura de arquivos e modulos do sistema',
         rules: [
-          { name: 'inbox.ui.js', desc: 'Renderizacao completa da pagina — cards, lista, chat, eventos', status: 'pending', type: 'rule' },
-          { name: 'inbox.service.js', desc: 'Logica de negocio — assumir, devolver, enviar, filtrar', status: 'pending', type: 'rule' },
-          { name: 'inbox.repository.js', desc: 'Chamadas Supabase — RPCs wa_inbox_list, wa_inbox_send, etc.', status: 'pending', type: 'rule' },
-          { name: 'inbox.css', desc: 'Estilos dedicados — cards, chat bubbles, alertas, responsivo', status: 'pending', type: 'rule' },
-          { name: 'RPCs Supabase', desc: 'wa_inbox_list, wa_inbox_conversation, wa_inbox_assume, wa_inbox_release, wa_inbox_send', status: 'pending', type: 'rule' },
+          { name: 'inbox.ui.js', desc: 'Renderizacao completa — cards, lista, chat, eventos, auto-refresh 10s', status: 'active', type: 'rule' },
+          { name: 'inbox.service.js', desc: 'Logica de negocio + envio via Evolution API', status: 'active', type: 'rule' },
+          { name: 'inbox.repository.js', desc: 'Chamadas Supabase — 8 RPCs (list, conversation, assume, release, send, resolve, archive, reopen)', status: 'active', type: 'rule' },
+          { name: 'inbox.css', desc: 'Estilos dedicados — cards, chat bubbles, alertas, botoes grandes, responsivo', status: 'active', type: 'rule' },
+          { name: 'RPCs Supabase', desc: 'wa_inbox_list, wa_inbox_conversation, wa_inbox_assume, wa_inbox_release, wa_inbox_send, wa_inbox_resolve, wa_inbox_archive, wa_inbox_reopen', status: 'active', type: 'rule' },
           { name: 'Realtime (Supabase)', desc: 'Subscription em wa_messages para atualizar chat em tempo real', status: 'pending', type: 'rule' },
+          { name: 'Outbox Processor', desc: 'Workflow n8n separado, cron 2min, processa fila de envio para cadencias', status: 'active', type: 'rule' },
         ]
       },
     ]
@@ -355,13 +355,13 @@
         color: '#2563EB',
         description: 'Controle inteligente de quando a IA responde vs secretaria',
         rules: [
-          { name: 'IA ativa 24h — resposta imediata para leads quentes', desc: 'Agendamento, urgencias, perguntas sobre procedimentos e leads quentes: Lara responde na hora, sem esperar secretaria', status: 'pending', type: 'flow' },
-          { name: 'Horario comercial: secretaria tem prioridade', desc: '8h-18h seg-sex, 8h-12h sab — secretaria pode assumir via botao no inbox', status: 'pending', type: 'flow' },
+          { name: 'IA ativa 24h — resposta imediata', desc: 'Lara responde na hora a qualquer mensagem. Guards verificam antes de chamar Claude', status: 'active', type: 'flow' },
+          { name: 'Horario comercial: secretaria tem prioridade', desc: 'Secretaria pode assumir via inbox ou celular. Reativacao automatica em 2min', status: 'active', type: 'flow' },
           { name: 'Reativacao automatica em 2 minutos', desc: 'pg_cron verifica a cada 1 min: se paciente mandou msg e secretaria nao respondeu em 2 min, Lara reativa e responde', status: 'active', type: 'flow' },
-          { name: 'Resposta imediata sem espera', desc: 'Pedido de agendamento, urgencia medica, pergunta sobre procedimento, lead demonstrando interesse → Lara responde na hora', status: 'pending', type: 'flow' },
+          { name: 'Resposta imediata sem espera', desc: 'Lara responde imediatamente. Guard system verifica ai_enabled antes de chamar Claude', status: 'active', type: 'flow' },
           { name: 'Secretaria assume conversa', desc: 'Botao "Assumir" no inbox ou resposta pelo celular pausa a IA automaticamente', status: 'active', type: 'flow' },
           { name: 'Devolver para Lara', desc: 'Botao "Devolver" reativa a IA na conversa', status: 'active', type: 'flow' },
-          { name: 'Fora do horario: Lara 100%', desc: '18h-8h, sabados apos 12h, domingos e feriados — Lara responde tudo automaticamente', status: 'pending', type: 'flow' },
+          { name: 'Fora do horario: Lara 100%', desc: 'Lara responde 24h. Cadencia so dispara 8h-20h (horario Brasilia)', status: 'active', type: 'flow' },
         ]
       },
       {
@@ -372,6 +372,7 @@
         rules: [
           { name: 'Verificar ai_enabled antes de chamar Claude', desc: 'Guard Check RPC verifica ai_enabled. Se false, so loga inbound sem gastar credito', status: 'active', type: 'shield' },
           { name: 'Debounce 5 segundos', desc: 'Msgs seguidas agrupadas em 1 chamada ao Claude', status: 'pending', type: 'shield' },
+          { name: 'Outbox Processor', desc: 'Workflow n8n separado, cron 2min, envia msgs de cadencia via Evolution API', status: 'active', type: 'shield' },
           { name: 'Limite 15 msgs/dia por conversa', desc: 'Guard Check conta msgs AI do dia. Apos 15, pausa IA automaticamente', status: 'active', type: 'shield' },
           { name: 'Ignorar msgs de grupo', desc: 'Parse Message filtra @g.us e @broadcast — zero processamento', status: 'active', type: 'shield' },
           { name: 'Ignorar status/broadcast', desc: 'Eventos != messages.upsert/send.message sao ignorados', status: 'active', type: 'shield' },
