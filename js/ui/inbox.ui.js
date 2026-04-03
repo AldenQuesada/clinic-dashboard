@@ -355,6 +355,8 @@
     if (c.is_urgent) tags += '<span class="ibx-tag ibx-tag-urgent">URGENTE</span>'
     if (c.tags && c.tags.indexOf('pronto_agendar') >= 0) tags += '<span class="ibx-tag ibx-tag-agendar">QUER AGENDAR</span>'
     if (c.tags && c.tags.indexOf('perguntou_preco') >= 0) tags += '<span class="ibx-tag ibx-tag-preco">PERGUNTOU PRECO</span>'
+    if (c.funnel === 'fullface') tags += '<span class="ibx-tag" style="background:#F3E8FF;color:#7C3AED">FULL FACE</span>'
+    else if (c.funnel === 'procedimentos') tags += '<span class="ibx-tag" style="background:#DBEAFE;color:#1E40AF">PROCEDIMENTO</span>'
     if (c.ai_enabled) tags += '<span class="ibx-tag ibx-tag-lara">LARA</span>'
     else tags += '<span class="ibx-tag ibx-tag-humano">VOCE</span>'
 
