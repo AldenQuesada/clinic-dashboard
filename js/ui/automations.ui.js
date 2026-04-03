@@ -373,7 +373,7 @@
           { name: 'Verificar ai_enabled antes de chamar Claude', desc: 'Guard Check RPC verifica ai_enabled. Se false, so loga inbound sem gastar credito', status: 'active', type: 'shield' },
           { name: 'Debounce 5 segundos', desc: 'Guard verifica se outra msg inbound chegou nos ultimos 5s — se sim, bloqueia (a ultima processa)', status: 'active', type: 'shield' },
           { name: 'Outbox Processor', desc: 'Workflow n8n separado, cron 2min, envia msgs de cadencia via Evolution API', status: 'active', type: 'shield' },
-          { name: 'Limite 15 msgs/dia por conversa', desc: 'Guard Check conta msgs AI do dia. Apos 15, pausa IA automaticamente', status: 'active', type: 'shield' },
+          { name: 'Limite 30 msgs/dia por conversa', desc: 'Guard Check conta msgs AI do dia. Apos 15, pausa IA automaticamente', status: 'active', type: 'shield' },
           { name: 'Ignorar msgs de grupo', desc: 'Parse Message filtra @g.us e @broadcast — zero processamento', status: 'active', type: 'shield' },
           { name: 'Ignorar status/broadcast', desc: 'Eventos != messages.upsert/send.message sao ignorados', status: 'active', type: 'shield' },
           { name: 'Truncar mensagens longas', desc: 'Msgs > 2000 chars truncadas no Parse Message — economia de tokens', status: 'active', type: 'shield' },
