@@ -480,6 +480,7 @@
           { name: 'FF Dia 7 (10h) — Porta aberta', desc: '"Retomo depois ou encerramos?" + fazer espelho reconhecer', status: 'active', type: 'flow' },
           { name: 'FF Dia 10 (10h) — Encerramento', desc: '"Vou pausar. Voce nos procurou porque algo pediu atencao."', status: 'active', type: 'flow' },
           { name: 'Proc Dia 1-5 — Isolados', desc: '4 steps focados na queixa especifica do procedimento', status: 'active', type: 'flow' },
+          { name: 'Playbook Olheiras SPIN', desc: 'Smooth Eyes + AH, metafora balde furado, anti-cirurgia, persona Fernanda 45+', status: 'active', type: 'flow' },
           { name: 'Horario 8h-20h apenas', desc: 'Cadencia so dispara em horario comercial (fuso Brasilia)', status: 'active', type: 'flow' },
           { name: 'Para se lead responder', desc: 'Cadencia reseta quando lead manda msg — Lara retoma conversa normal', status: 'active', type: 'flow' },
         ]
@@ -652,6 +653,19 @@
           { label: 'Send Text', icon: 'send', desc: 'Envia texto limpo primeiro' },
           { label: 'Send Photo', icon: 'image', desc: 'Busca 2 fotos no banco (nao repete)' },
           { label: 'Pergunta final', icon: 'messageCircle', desc: '"Voce se imagina com esse resultado?"' },
+        ]
+      },
+      {
+        title: 'Playbook Olheiras (SPIN + Smooth Eyes)',
+        color: '#DC2626',
+        steps: [
+          { label: 'Entrada', icon: 'messageCircle', desc: 'Lead: "quero corrigir olheiras/palpebras"' },
+          { label: 'Situation + Foto', icon: 'image', desc: 'Nome + foto antes/depois + o que incomoda?' },
+          { label: 'Problem + Balde Furado', icon: 'alertCircle', desc: '"De que adianta preencher se a palpebra esta flacida? E agua em balde furado"' },
+          { label: 'Implication', icon: 'clock', desc: 'Pele mais fina do rosto, colageno cai rapido, sem Smooth Eyes = cirurgia' },
+          { label: 'Need-Payoff', icon: 'zap', desc: 'Smooth Eyes (Fotona) + AH. Incluido no protocolo. Evita blefaroplastia' },
+          { label: 'Agendamento', icon: 'check', desc: 'Consulta paga (descontada se fechar)' },
+          { label: 'Objecao cirurgia', icon: 'shield', desc: '"Smooth Eyes existe pra voce NAO precisar de cirurgia"' },
         ]
       },
       {
