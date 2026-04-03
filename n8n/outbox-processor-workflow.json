@@ -66,26 +66,12 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "http://n8n_evolution-api:8080/message/sendText/Mih",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "429683C4C977415CAAFCCE10F7D57E11" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"number\": \"{{ $json.phone }}\",\n  \"text\": {{ JSON.stringify($json.content) }}\n}",
-        "options": {
-          "timeout": 15000
-        }
+        "jsCode": "// Send text or image via Evolution API\nconst item = $input.first().json;\nconst phone = item.phone;\nconst content = item.content;\nconst mediaUrl = item.media_url || null;\nconst mediaCaption = item.media_caption || null;\n\n// If has media_url, send image first, then text\nif (mediaUrl) {\n  try {\n    await this.helpers.httpRequest({\n      method: 'POST',\n      url: 'http://n8n_evolution-api:8080/message/sendMedia/Mih',\n      headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },\n      body: { number: phone, mediatype: 'image', media: mediaUrl, caption: mediaCaption || '' },\n      json: true\n    });\n  } catch(e) {}\n}\n\n// Send text\nif (content) {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'http://n8n_evolution-api:8080/message/sendText/Mih',\n    headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },\n    body: { number: phone, text: content },\n    json: true\n  });\n}\n\nreturn [{ json: { sent: true, phone: phone } }];"
       },
       "id": "send-wa",
       "name": "Send WhatsApp",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [1130, 250]
     },
     {
