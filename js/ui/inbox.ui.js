@@ -101,6 +101,19 @@
     } catch(e) {}
   }
 
+  // ── Browser push notification ──────────────────────────────
+
+  function _sendBrowserNotification(title, body) {
+    if (!('Notification' in window)) return
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body: body, icon: '/favicon.ico', tag: 'clinicai-inbox' })
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then(function(perm) {
+        if (perm === 'granted') new Notification(title, { body: body, icon: '/favicon.ico', tag: 'clinicai-inbox' })
+      })
+    }
+  }
+
   // ── Browser tab notification count ─────────────────────────
 
   function _updateTabTitle() {
@@ -127,7 +140,7 @@
       if (input && document.activeElement === input) return
       _loadConversations().then(function () {
         var newUrgent = _conversations.filter(function(c) { return c.is_urgent }).length
-        if (newUrgent > _lastUrgentCount && _lastUrgentCount >= 0) _playAlertSound()
+        if (newUrgent > _lastUrgentCount && _lastUrgentCount >= 0) { _playAlertSound(); _sendBrowserNotification('Mensagem Urgente', 'Nova mensagem que precisa atencao na Central de Atendimento'); }
         _lastUrgentCount = newUrgent
         _updateTabTitle()
         var input2 = document.getElementById('ibxInputField')
@@ -652,7 +665,7 @@
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wa_messages' }, function () {
           _loadConversations().then(function () {
             var newUrgent = _conversations.filter(function(c) { return c.is_urgent }).length
-            if (newUrgent > _lastUrgentCount && _lastUrgentCount >= 0) _playAlertSound()
+            if (newUrgent > _lastUrgentCount && _lastUrgentCount >= 0) { _playAlertSound(); _sendBrowserNotification('Mensagem Urgente', 'Nova mensagem que precisa atencao na Central de Atendimento'); }
             _lastUrgentCount = newUrgent
             _updateTabTitle()
             if (_activeId) {

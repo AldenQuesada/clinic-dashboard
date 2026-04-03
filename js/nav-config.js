@@ -100,6 +100,11 @@
           defaultActive: true,
         },
         {
+          page:          'analytics-wa',
+          label:         'Analytics WhatsApp',
+          breadcrumb:    'Dashboard > Analytics WhatsApp',
+        },
+        {
           page:          'inbox',
           label:         'Central de Atendimento',
           breadcrumb:    'Dashboard > Central de Atendimento',
@@ -291,6 +296,7 @@
         { page: 'settings-ai',           label: 'IA e Prompts',           breadcrumb: 'Configurações > IA e Prompts' },
         { page: 'settings-tags',         label: 'Tags e Fluxos',          breadcrumb: 'Configurações > Tags e Fluxos' },
         { page: 'settings-automation',   label: 'Automação',              breadcrumb: 'Configurações > Automação' },
+        { page: 'settings-templates',    label: 'Templates de Mensagem',  breadcrumb: 'Configurações > Templates de Mensagem' },
         { page: 'settings-security',     label: 'Segurança',              breadcrumb: 'Configurações > Segurança' },
         { page: 'settings-backups',      label: 'Backups',                breadcrumb: 'Configurações > Backups' },
         { page: 'settings-logs',         label: 'Logs do Sistema',        breadcrumb: 'Configurações > Logs do Sistema' },

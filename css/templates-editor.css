@@ -1,0 +1,379 @@
+/* ============================================================
+   Templates Editor UI — Settings > Templates de Mensagem
+   ============================================================ */
+
+/* ── Layout da pagina ─────────────────────────────────────── */
+.te-page { max-width: 1200px; }
+
+.te-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.te-header-left { flex: 1; min-width: 0; }
+
+.te-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.te-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Loading ──────────────────────────────────────────────── */
+.te-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.te-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent-gold);
+  border-radius: 50%;
+  animation: te-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes te-spin { to { transform: rotate(360deg); } }
+
+/* ── Empty state ──────────────────────────────────────────── */
+.te-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 24px;
+  text-align: center;
+  background: var(--card);
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.te-empty-icon {
+  width: 64px;
+  height: 64px;
+  background: #FFF7ED;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-gold);
+}
+
+.te-empty-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.te-empty-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+/* ── Category groups ─────────────────────────────────────── */
+.te-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.te-category-group {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.te-category-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--bg-secondary, #F9FAFB);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+
+.te-category-header:hover {
+  background: #F3F4F6;
+}
+
+.te-category-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.te-category-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.te-category-count {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--border);
+  color: var(--text-secondary);
+}
+
+.te-category-arrow {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.te-category-group.te-collapsed .te-category-arrow {
+  transform: rotate(-90deg);
+}
+
+.te-category-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.te-category-group.te-collapsed .te-category-body {
+  display: none;
+}
+
+/* ── Template card ────────────────────────────────────────── */
+.te-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+.te-card:last-child { border-bottom: none; }
+
+.te-card:hover { background: #FAFBFC; }
+
+.te-card-inactive { opacity: 0.55; }
+
+.te-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.te-card-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.te-card-slug {
+  font-size: 11px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-muted);
+  background: var(--bg-secondary, #F3F4F6);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.te-card-spacer { flex: 1; }
+
+.te-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Toggle switch (reuses am-toggle pattern) ────────────── */
+.te-toggle {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.te-toggle-input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.te-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: #D1D5DB;
+  border-radius: var(--radius-full);
+  transition: background var(--transition);
+}
+
+.te-toggle-track::before {
+  content: '';
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.te-toggle-input:checked + .te-toggle-track { background: var(--accent-gold); }
+.te-toggle-input:checked + .te-toggle-track::before { transform: translateX(16px); }
+
+/* ── Textarea for editing ─────────────────────────────────── */
+.te-content-area {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-secondary, #F9FAFB);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  resize: vertical;
+  transition: border-color var(--transition);
+}
+
+.te-content-area:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+}
+
+/* ── Variables hint ───────────────────────────────────────── */
+.te-vars-hint {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.te-var-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: #EDE9FE;
+  color: #7C3AED;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.te-var-tag:hover {
+  background: #DDD6FE;
+}
+
+/* ── Save button ──────────────────────────────────────────── */
+.te-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-gold);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), opacity var(--transition);
+}
+
+.te-save-btn:hover { background: #B45309; }
+.te-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.te-save-btn-success {
+  background: #059669;
+}
+
+/* ── Preview panel ────────────────────────────────────────── */
+.te-preview-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.te-preview-toggle:hover { background: #F3F4F6; color: var(--text-primary); }
+.te-preview-toggle.te-active { background: #EDE9FE; color: #7C3AED; border-color: #DDD6FE; }
+
+.te-preview-box {
+  margin-top: 8px;
+  padding: 12px 16px;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #065F46;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Status toast ─────────────────────────────────────────── */
+.te-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: #059669;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  animation: te-toast-in 0.3s ease;
+}
+
+.te-toast-error { background: #DC2626; }
+
+@keyframes te-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

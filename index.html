@@ -22,7 +22,9 @@
   <link rel="stylesheet" href="css/fin-plan.css" />
   <link rel="stylesheet" href="css/sdr.css" />
   <link rel="stylesheet" href="css/automations.css" />
+  <link rel="stylesheet" href="css/templates-editor.css" />
   <link rel="stylesheet" href="css/inbox.css" />
+  <link rel="stylesheet" href="css/analytics.css" />
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1784,6 +1786,11 @@
         </div>
       </div>
 
+      <!-- ==================== PAGE: ANALYTICS WHATSAPP ==================== -->
+      <div class="page" id="page-analytics-wa">
+        <div id="analytics-root"></div>
+      </div>
+
       <!-- ==================== PAGE: CENTRAL DE ATENDIMENTO ==================== -->
       <div class="page" id="page-inbox">
         <div id="inbox-root"></div>
@@ -1792,6 +1799,11 @@
       <!-- ==================== PAGE: AUTOMAÇÕES ==================== -->
       <div class="page" id="page-settings-automation">
         <div id="automations-root"></div>
+      </div>
+
+      <!-- ==================== PAGE: TEMPLATES DE MENSAGEM ==================== -->
+      <div class="page" id="page-settings-templates">
+        <div id="templates-editor-root"></div>
       </div>
 
       <!-- ==================== PAGE: FICHAS DE ANAMNESE ==================== -->
@@ -4338,9 +4350,12 @@
   <script src="js/repositories/rules.repository.js" defer></script>
   <script src="js/services/rules.service.js" defer></script>
   <script src="js/ui/automations.ui.js" defer></script>
+  <script src="js/repositories/templates.repository.js" defer></script>
+  <script src="js/ui/templates-editor.ui.js" defer></script>
   <script src="js/repositories/inbox.repository.js" defer></script>
   <script src="js/services/inbox.service.js" defer></script>
   <script src="js/ui/inbox.ui.js" defer></script>
+  <script src="js/ui/analytics.ui.js" defer></script>
 
   <!-- Budgets — Sprint 11 -->
   <script src="js/repositories/budgets.repository.js" defer></script>

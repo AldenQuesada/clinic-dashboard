@@ -461,8 +461,14 @@
     if (pageId === 'settings-automation' && typeof window.AutomationsUI?.init === 'function') {
       window.AutomationsUI.init()
     }
+    if (pageId === 'settings-templates' && typeof window.TemplatesEditorUI?.init === 'function') {
+      window.TemplatesEditorUI.init()
+    }
     if (pageId === 'inbox' && typeof window.InboxUI?.init === 'function') {
       window.InboxUI.init()
+    }
+    if (pageId === 'analytics-wa' && typeof window.AnalyticsUI?.init === 'function') {
+      window.AnalyticsUI.init()
     }
     if (pageId === 'patients-prontuario' && typeof window._initProntuarioPage === 'function') {
       window._initProntuarioPage()
