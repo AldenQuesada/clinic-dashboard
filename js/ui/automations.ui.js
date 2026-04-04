@@ -1687,7 +1687,7 @@
             <div class="am-field">
               <label class="am-label-sm">Fase</label>
               <select class="am-input" id="bcFilterPhase">
-                <option value="">Todas</option>
+                <option value="">-</option>
                 <option value="lead"${f.filter_phase === 'lead' ? ' selected' : ''}>Lead</option>
                 <option value="agendado"${f.filter_phase === 'agendado' ? ' selected' : ''}>Agendado</option>
                 <option value="compareceu"${f.filter_phase === 'compareceu' ? ' selected' : ''}>Compareceu</option>
@@ -1699,7 +1699,7 @@
             <div class="am-field">
               <label class="am-label-sm">Temperatura</label>
               <select class="am-input" id="bcFilterTemp">
-                <option value="">Todas</option>
+                <option value="">-</option>
                 <option value="hot"${f.filter_temperature === 'hot' ? ' selected' : ''}>Quente</option>
                 <option value="warm"${f.filter_temperature === 'warm' ? ' selected' : ''}>Morno</option>
                 <option value="cold"${f.filter_temperature === 'cold' ? ' selected' : ''}>Frio</option>
@@ -1708,7 +1708,7 @@
             <div class="am-field">
               <label class="am-label-sm">Funil</label>
               <select class="am-input" id="bcFilterFunnel">
-                <option value="">Todos</option>
+                <option value="">-</option>
                 <option value="fullface"${f.filter_funnel === 'fullface' ? ' selected' : ''}>Full Face</option>
                 <option value="procedimentos"${f.filter_funnel === 'procedimentos' ? ' selected' : ''}>Procedimentos</option>
               </select>
@@ -1716,7 +1716,7 @@
             <div class="am-field">
               <label class="am-label-sm">Origem</label>
               <select class="am-input" id="bcFilterSource">
-                <option value="">Todas</option>
+                <option value="">-</option>
                 <option value="quiz"${f.filter_source === 'quiz' ? ' selected' : ''}>Quiz</option>
                 <option value="manual"${f.filter_source === 'manual' ? ' selected' : ''}>Manual</option>
                 <option value="import"${f.filter_source === 'import' ? ' selected' : ''}>Importacao</option>
