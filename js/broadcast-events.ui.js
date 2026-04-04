@@ -292,9 +292,31 @@
         var text = textarea.value
         var selected = text.substring(start, end)
         if (selected) {
-          textarea.value = text.substring(0, start) + wrap + selected + wrap + text.substring(end)
-          textarea.selectionStart = start
-          textarea.selectionEnd = end + (wrap.length * 2)
+          // Toggle: if already wrapped, remove; otherwise add
+          var alreadyWrapped = selected.length >= wrap.length * 2
+            && selected.substring(0, wrap.length) === wrap
+            && selected.substring(selected.length - wrap.length) === wrap
+          // Also check if the surrounding text has the wrap
+          var outerWrapped = start >= wrap.length
+            && text.substring(start - wrap.length, start) === wrap
+            && text.substring(end, end + wrap.length) === wrap
+          if (alreadyWrapped) {
+            // Remove inner wrap
+            var unwrapped = selected.substring(wrap.length, selected.length - wrap.length)
+            textarea.value = text.substring(0, start) + unwrapped + text.substring(end)
+            textarea.selectionStart = start
+            textarea.selectionEnd = start + unwrapped.length
+          } else if (outerWrapped) {
+            // Remove outer wrap
+            textarea.value = text.substring(0, start - wrap.length) + selected + text.substring(end + wrap.length)
+            textarea.selectionStart = start - wrap.length
+            textarea.selectionEnd = end - wrap.length
+          } else {
+            // Add wrap
+            textarea.value = text.substring(0, start) + wrap + selected + wrap + text.substring(end)
+            textarea.selectionStart = start
+            textarea.selectionEnd = end + (wrap.length * 2)
+          }
         } else {
           textarea.value = text.substring(0, start) + wrap + wrap + text.substring(end)
           textarea.selectionStart = textarea.selectionEnd = start + wrap.length
