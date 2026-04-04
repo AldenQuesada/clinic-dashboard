@@ -99,17 +99,6 @@
           breadcrumb:    'Dashboard > Visão Geral',
           defaultActive: true,
         },
-        {
-          page:          'analytics-wa',
-          label:         'Analytics WhatsApp',
-          breadcrumb:    'Dashboard > Analytics WhatsApp',
-        },
-        {
-          page:          'inbox',
-          label:         'Central de Atendimento',
-          breadcrumb:    'Dashboard > Central de Atendimento',
-          highlight:     true,
-        },
       ],
     },
 
@@ -212,15 +201,17 @@
       ],
     },
 
-    // ── Disparos ─────────────────────────────────────────────────
+    // ── WhatsApp ──────────────────────────────────────────────────
     {
-      section: 'broadcasting',
-      icon:    'send',
-      label:   'Disparos',
+      section: 'whatsapp',
+      icon:    'message-circle',
+      label:   'WhatsApp',
       roles:   [],
       plans:   [],
       pages: [
-        { page: 'settings-automation', label: 'Disparos', breadcrumb: 'Disparos > Painel' },
+        { page: 'analytics-wa',         label: 'AI Analytics WhatsApp',  breadcrumb: 'WhatsApp > AI Analytics' },
+        { page: 'inbox',                label: 'Central de WhatsApp',    breadcrumb: 'WhatsApp > Central',           highlight: true },
+        { page: 'settings-automation',  label: 'Disparos',              breadcrumb: 'WhatsApp > Disparos' },
       ],
     },
 
