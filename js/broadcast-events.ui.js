@@ -290,7 +290,15 @@
         var start = textarea.selectionStart
         var end = textarea.selectionEnd
         var text = textarea.value
-        var selected = text.substring(start, end)
+        var rawSelected = text.substring(start, end)
+        // Trim selection — format only the actual text, not surrounding spaces
+        var trimStart = 0
+        var trimEnd = rawSelected.length
+        while (trimStart < trimEnd && rawSelected[trimStart] === ' ') trimStart++
+        while (trimEnd > trimStart && rawSelected[trimEnd - 1] === ' ') trimEnd--
+        var selected = rawSelected.substring(trimStart, trimEnd)
+        start = start + trimStart
+        end = start + selected.length
         if (selected) {
           // Toggle: if already wrapped, remove; otherwise add
           var alreadyWrapped = selected.length >= wrap.length * 2
