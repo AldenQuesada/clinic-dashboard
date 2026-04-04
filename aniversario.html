@@ -39,25 +39,32 @@ a { color: inherit; text-decoration: none; }
 .builder-title { font-size: clamp(22px,5vw,36px); font-weight: 800; margin-bottom: 6px; }
 .builder-sub { font-size: 14px; color: var(--text2); }
 
-/* ── Benefit toggles ──────────────────────────────────────── */
-.toggles { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px; }
-.toggle { display: flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--bg3); border: 2px solid #2a2a2a; border-radius: 12px; cursor: pointer; transition: all .25s; user-select: none; }
+/* ── Toggles layout: vertical stack with progress line ────── */
+.toggles-area { display: flex; gap: 20px; max-width: 600px; margin: 0 auto 36px; align-items: stretch; }
+
+/* Vertical progress line (left side) */
+.progress-line { width: 4px; background: #2a2a2a; border-radius: 2px; position: relative; flex-shrink: 0; margin-left: 8px; }
+.progress-line-fill { width: 100%; background: linear-gradient(180deg, var(--gold), var(--gold-light)); border-radius: 2px; height: 0%; transition: height .5s cubic-bezier(.4,0,.2,1); position: absolute; top: 0; left: 0; }
+
+/* Toggle stack */
+.toggles { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.toggle { display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: var(--bg3); border: 2px solid #2a2a2a; border-radius: 12px; cursor: pointer; transition: all .25s; user-select: none; }
 .toggle:hover { border-color: #444; }
 .toggle.on { border-color: var(--gold); background: linear-gradient(135deg, #1a1710, var(--bg3)); box-shadow: 0 0 20px var(--gold-glow); }
+.toggle.locked { pointer-events: none; opacity: .85; }
 .toggle-dot { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; transition: all .25s; flex-shrink: 0; }
 .toggle.on .toggle-dot { background: var(--gold); border-color: var(--gold); }
 .toggle.on .toggle-dot::after { content: ''; width: 8px; height: 5px; border-left: 2px solid #000; border-bottom: 2px solid #000; transform: rotate(-45deg) translateY(-1px); }
-.toggle-label { font-size: 13px; font-weight: 600; color: var(--text2); transition: color .25s; }
+.toggle-label { font-size: 13px; font-weight: 600; color: var(--text2); transition: color .25s; flex: 1; }
 .toggle.on .toggle-label { color: var(--text); }
 
-/* ── Progress bar (connects toggles) ─────────────────────── */
-.progress-wrap { position: relative; margin: -20px auto 32px; max-width: 700px; padding: 0 20px; }
-.progress-track { height: 4px; background: #2a2a2a; border-radius: 2px; position: relative; overflow: visible; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; width: 0%; transition: width .5s cubic-bezier(.4,0,.2,1); }
-.progress-tip { position: absolute; right: -6px; top: -4px; width: 12px; height: 12px; background: var(--gold); border-radius: 50%; opacity: 0; transition: opacity .3s; }
-.progress-tip.pulsing { opacity: 1; animation: tipPulse 1.2s infinite; }
-.progress-fill.full .progress-tip { animation: none; opacity: 1; }
-@keyframes tipPulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,169,110,.6);transform:scale(1)}50%{box-shadow:0 0 0 8px rgba(201,169,110,0);transform:scale(1.3)} }
+/* "Quero tudo" special — blink + badge */
+.toggle-best { position: relative; }
+.toggle-best:not(.on) { animation: toggleBlink 1.5s infinite; }
+.toggle-best-badge { font-size: 9px; font-weight: 800; color: var(--gold); background: var(--gold-glow2); padding: 3px 10px; border-radius: 6px; letter-spacing: .5px; white-space: nowrap; animation: badgePulse 1.5s infinite; }
+.toggle-best.on .toggle-best-badge { animation: none; opacity: .6; }
+@keyframes toggleBlink { 0%,100%{border-color:#2a2a2a}50%{border-color:var(--gold);box-shadow:0 0 16px var(--gold-glow)} }
+@keyframes badgePulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)} }
 
 /* ── Builder content (hidden until toggle) ────────────────── */
 .builder-content { opacity: 0; transform: translateY(20px); max-height: 0; overflow: hidden; transition: opacity .5s, transform .5s, max-height .5s; pointer-events: none; }
@@ -122,8 +129,8 @@ a { color: inherit; text-decoration: none; }
 /* ── Responsive ───────────────────────────────────────────── */
 @media(max-width:720px) {
   .live { grid-template-columns: 1fr; }
-  .toggles { gap: 6px; }
-  .toggle { padding: 8px 12px; }
+  .toggles-area { max-width: 100%; }
+  .toggle { padding: 10px 14px; }
   .toggle-label { font-size: 12px; }
   .ml-tabs { max-width: 100%; }
   .live-value { font-size: 38px; }
@@ -151,31 +158,26 @@ a { color: inherit; text-decoration: none; }
 
   </div>
 
-  <!-- 4 Benefit toggles -->
-  <div class="toggles reveal" id="toggles">
-    <div class="toggle on" data-benefit="desconto">
-      <div class="toggle-dot"></div>
-      <span class="toggle-label">Desconto</span>
-    </div>
-    <div class="toggle on" data-benefit="parcelas">
-      <div class="toggle-dot"></div>
-      <span class="toggle-label">Mais parcelas</span>
-    </div>
-    <div class="toggle on" data-benefit="procedimentos">
-      <div class="toggle-dot"></div>
-      <span class="toggle-label">Mais procedimentos</span>
-    </div>
-    <div class="toggle" data-benefit="todos">
-      <div class="toggle-dot"></div>
-      <span class="toggle-label">Quero tudo!</span>
-    </div>
-  </div>
-
-  <!-- Progress bar -->
-  <div class="progress-wrap reveal">
-    <div class="progress-track">
-      <div class="progress-fill" id="progressFill">
-        <div class="progress-tip" id="progressTip"></div>
+  <!-- 4 Benefit toggles (vertical + progress line) -->
+  <div class="toggles-area reveal" id="togglesArea">
+    <div class="progress-line"><div class="progress-line-fill" id="progressFill"></div></div>
+    <div class="toggles" id="toggles">
+      <div class="toggle on locked" data-benefit="desconto">
+        <div class="toggle-dot"></div>
+        <span class="toggle-label">Desconto exclusivo de aniversariante</span>
+      </div>
+      <div class="toggle on locked" data-benefit="parcelas">
+        <div class="toggle-dot"></div>
+        <span class="toggle-label">Parcelamento estendido sem juros</span>
+      </div>
+      <div class="toggle on locked" data-benefit="procedimentos">
+        <div class="toggle-dot"></div>
+        <span class="toggle-label">Mais procedimentos de presente</span>
+      </div>
+      <div class="toggle toggle-best" data-benefit="todos">
+        <div class="toggle-dot"></div>
+        <span class="toggle-label">Quero as tres opcoes juntas!</span>
+        <span class="toggle-best-badge">MELHOR OPCAO</span>
       </div>
     </div>
   </div>
@@ -274,25 +276,15 @@ a { color: inherit; text-decoration: none; }
 
   // ── Toggles ────────────────────────────────────────────────
   function initToggles() {
-    document.querySelectorAll('.toggle').forEach(function(t) {
-      t.addEventListener('click', function() {
-        var b = t.dataset.benefit
-        if (b === 'todos') {
-          // Toggle all
-          var allOn = state.benefits.desconto && state.benefits.parcelas && state.benefits.procedimentos
-          var newState = !allOn
-          state.benefits.desconto = newState
-          state.benefits.parcelas = newState
-          state.benefits.procedimentos = newState
-          state.benefits.todos = newState
-        } else {
-          state.benefits[b] = !state.benefits[b]
-          state.benefits.todos = state.benefits.desconto && state.benefits.parcelas && state.benefits.procedimentos
-        }
+    // Only "Quero tudo" is clickable — first 3 are locked (always on)
+    var todosToggle = document.querySelector('.toggle[data-benefit="todos"]')
+    if (todosToggle) {
+      todosToggle.addEventListener('click', function() {
+        state.benefits.todos = !state.benefits.todos
         syncToggles()
         update()
       })
-    })
+    }
   }
 
   function syncToggles() {
@@ -304,32 +296,16 @@ a { color: inherit; text-decoration: none; }
   }
 
   function updateProgress() {
-    var ben = state.benefits
-    var count = (ben.desconto ? 1 : 0) + (ben.parcelas ? 1 : 0) + (ben.procedimentos ? 1 : 0)
-    var allOn = ben.todos
-
-    // Progress fill: 0=0%, 1=25%, 2=50%, 3=75%, all=100%
-    var pct = allOn ? 100 : (count / 4) * 100
+    var allOn = state.benefits.todos
+    // Vertical line: 75% (3 locked) or 100% (all 4)
+    var pct = allOn ? 100 : 75
     var fill = document.getElementById('progressFill')
-    var tip = document.getElementById('progressTip')
     var content = document.getElementById('builderContent')
 
-    if (fill) fill.style.width = pct + '%'
+    if (fill) fill.style.height = pct + '%'
 
-    // Tip: pulses when 3 selected but not all, solid when all
-    if (tip) {
-      if (count === 3 && !allOn) {
-        tip.classList.add('pulsing')
-      } else {
-        tip.classList.remove('pulsing')
-      }
-    }
-    if (fill) fill.classList.toggle('full', allOn)
-
-    // Reveal content when at least 1 toggle is on
-    if (content) {
-      content.classList.toggle('shown', count > 0 || allOn)
-    }
+    // Content always shown (3 are always on)
+    if (content) content.classList.add('shown')
   }
 
   // ── ML tabs ────────────────────────────────────────────────
