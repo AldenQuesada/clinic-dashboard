@@ -1752,6 +1752,18 @@
     return html
   }
 
+  function _waFormat(text) {
+    // Render WhatsApp formatting as HTML
+    // Order matters: bold+italic combo first, then individual
+    text = text.replace(/\*_([^_]+)_\*/g, '<b><i>$1</i></b>')
+    text = text.replace(/_\*([^*]+)\*_/g, '<i><b>$1</b></i>')
+    text = text.replace(/\*([^*]+)\*/g, '<b>$1</b>')
+    text = text.replace(/_([^_]+)_/g, '<i>$1</i>')
+    text = text.replace(/~([^~]+)~/g, '<s>$1</s>')
+    text = text.replace(/```([^`]+)```/g, '<code>$1</code>')
+    return text
+  }
+
   function _renderPhonePreviewInline(content) {
     var now = new Date()
     var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
@@ -1760,6 +1772,7 @@
     if (content && content.trim()) {
       var escaped = _esc(content)
       escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
+      escaped = _waFormat(escaped)
       bubbleContent = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
         + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
     } else {
@@ -2021,6 +2034,7 @@
 
     var escaped = _esc(content)
     escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
+    escaped = _waFormat(escaped)
     chatEl.innerHTML = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
       + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
   }

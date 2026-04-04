@@ -1398,6 +1398,7 @@
   position: relative;
   box-shadow: 0 1px 1px rgba(0,0,0,0.06);
 }
+.bc-wa-bubble code { background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono','Consolas',monospace; font-size: 11px; }
 .bc-wa-bubble::after {
   content: '';
   position: absolute;
