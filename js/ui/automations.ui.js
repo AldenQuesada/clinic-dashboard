@@ -1940,17 +1940,19 @@
           if (window.LeadsService) allLeads = await window.LeadsService.loadAll()
           var selectedIds = _broadcastForm.selected_leads.map(function(l) { return l.id })
           var matches = allLeads.filter(function(l) {
-            if (!l.nome || selectedIds.indexOf(l.id) !== -1) return false
-            return l.nome.toLowerCase().indexOf(q) !== -1
+            var lName = l.name || l.nome || ''
+            if (!lName || selectedIds.indexOf(l.id) !== -1) return false
+            return lName.toLowerCase().indexOf(q) !== -1
           }).slice(0, 8)
 
           if (matches.length === 0) {
             dropdown.innerHTML = '<div class="bc-lead-option bc-lead-empty">Nenhum lead encontrado</div>'
           } else {
             dropdown.innerHTML = matches.map(function(l) {
-              var phone = l.phone || l.telefone || ''
-              return '<div class="bc-lead-option" data-id="' + _esc(l.id) + '" data-nome="' + _esc(l.nome) + '" data-phone="' + _esc(phone) + '">'
-                + '<span class="bc-lead-opt-name">' + _esc(l.nome) + '</span>'
+              var lName = l.name || l.nome || ''
+              var phone = l.phone || l.whatsapp || l.telefone || ''
+              return '<div class="bc-lead-option" data-id="' + _esc(l.id) + '" data-nome="' + _esc(lName) + '" data-phone="' + _esc(phone) + '">'
+                + '<span class="bc-lead-opt-name">' + _esc(lName) + '</span>'
                 + (phone ? '<span class="bc-lead-opt-phone">' + _esc(phone) + '</span>' : '')
                 + '</div>'
             }).join('')
