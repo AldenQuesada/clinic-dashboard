@@ -1590,7 +1590,6 @@
             </div>
           </div>
         </div>
-      </div>
         <div class="bc-throttle-section">
           <label class="am-label">${_feather('shield', 13)} Controle de envio</label>
           <div class="bc-throttle-row">
