@@ -1730,7 +1730,10 @@
       })
     }
 
-    html += '</div></div>'
+    html += '</div></div>' // close bars + compare
+
+    // Bottom row: compare + table side by side
+    html += '<div class="bc-dash-bottom-row">'
 
     // Table
     html += '<div class="bc-dash-table-wrap">'
@@ -1738,7 +1741,7 @@
     html += '<thead><tr><th>Nome</th><th>Enviados</th><th>Falhas</th><th>Data</th><th>Status</th></tr></thead>'
     html += '<tbody>'
     if (sorted.length === 0) {
-      html += '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhum disparo no periodo</td></tr>'
+      html += '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhum disparo</td></tr>'
     } else {
       sorted.slice(0, 20).forEach(function(b) {
         var sent = b.sent_count || 0
@@ -1753,13 +1756,14 @@
         html += '<td>' + sent + '/' + targets + '</td>'
         html += '<td>' + failed + '</td>'
         html += '<td>' + dateStr + '</td>'
-        html += '<td><span class="bc-status-dot" style="background:' + stColor + '"></span> ' + _esc(st) + '</td>'
+        html += '<td><span class="bc-status-dot" style="background:' + stColor + '"></span></td>'
         html += '</tr>'
       })
     }
     html += '</tbody></table></div>'
 
-    html += '</div>'
+    html += '</div>' // close bottom-row
+    html += '</div>' // close dashboard
     return html
   }
 
