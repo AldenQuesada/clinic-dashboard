@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redirecionando...</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0A0A0A;color:#F5F5F5;font-family:-apple-system,'SF Pro Display',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.wrap{text-align:center;padding:40px}
+.spinner{width:32px;height:32px;border:3px solid #333;border-top-color:#C9A96E;border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.msg{font-size:14px;color:#A0A0A0}
+.err{color:#EF4444;font-size:13px;margin-top:12px;display:none}
+.err a{color:#C9A96E;text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="spinner" id="spinner"></div>
+  <div class="msg" id="msg">Redirecionando...</div>
+  <div class="err" id="err">Link n&atilde;o encontrado. <a href="/">Voltar ao in&iacute;cio</a></div>
+</div>
+<script>
+(function(){
+  var SB_URL = 'https://oqboitkpcvuaudouwvkl.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0';
+
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('c');
+
+  if (!code) { showError(); return; }
+
+  fetch(SB_URL + '/rest/v1/rpc/short_link_resolve', {
+    method: 'POST',
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_code: code })
+  })
+  .then(function(r) { return r.json() })
+  .then(function(data) {
+    if (data && data.ok && data.url) {
+      window.location.replace(data.url);
+    } else {
+      showError();
+    }
+  })
+  .catch(function() { showError(); });
+
+  function showError() {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('msg').style.display = 'none';
+    document.getElementById('err').style.display = 'block';
+  }
+})();
+</script>
+</body>
+</html>
