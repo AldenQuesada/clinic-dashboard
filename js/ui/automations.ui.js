@@ -2234,8 +2234,8 @@
       })
     })
 
-    // Format buttons (bold, italic, strikethrough, mono)
-    document.querySelectorAll('.bc-fmt-btn').forEach(function(btn) {
+    // Format buttons (bold, italic, strikethrough, mono) — exclude emoji toggle
+    document.querySelectorAll('.bc-fmt-btn[data-wrap]').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var textarea = document.getElementById('bcContent')
         if (!textarea) return
