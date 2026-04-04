@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!ok) return
   }
 
+  // Force-clear global search (browser autofill ignores autocomplete=off)
+  var _gsi = document.getElementById('globalSearchInput')
+  if (_gsi) { _gsi.value = ''; setTimeout(function() { if (_gsi) _gsi.value = '' }, 100) }
+
   // Garante seeds de tags no localStorage (antes do Supabase carregar)
   if (window.TagEngine) window.TagEngine.ensureSeeds()
   // Sincroniza config de Tags do Supabase → localStorage (fire-and-forget)
