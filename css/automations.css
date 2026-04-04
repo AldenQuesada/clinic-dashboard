@@ -1482,6 +1482,37 @@
   border-radius: 2px;
 }
 
+/* ── Media upload in editor ───────────────────────────────── */
+.bc-media-options { display: flex; align-items: center; gap: 8px; }
+.bc-media-upload-btn { display: flex; align-items: center; gap: 5px; padding: 8px 14px; background: rgba(0,0,0,0.03); border: 1.5px dashed var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: all 0.12s; white-space: nowrap; }
+.bc-media-upload-btn:hover { background: rgba(0,0,0,0.05); border-color: var(--accent-gold); color: var(--accent-gold); }
+.bc-media-preview { position: relative; display: inline-block; margin-top: 8px; }
+.bc-media-preview img { max-width: 120px; max-height: 80px; border-radius: 8px; border: 1px solid var(--border); }
+.bc-media-remove { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; background: var(--danger); color: #fff; border: 2px solid #fff; border-radius: 50%; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.bc-media-pos { display: flex; gap: 16px; margin-top: 8px; }
+.bc-pos-label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+.bc-pos-label input[type="radio"] { accent-color: var(--accent-gold); }
+
+/* ── Broadcast analytics in detail view ──────────────────── */
+.bc-analytics { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.bc-analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+.bc-metric { background: rgba(0,0,0,0.02); border-radius: 10px; padding: 14px; }
+.bc-metric-value { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.bc-metric-value small { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.bc-metric-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.bc-metric-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.bc-metric-bar div { height: 100%; border-radius: 2px; transition: width 0.4s; }
+.bc-analytics-detail { margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.02); border-radius: 10px; }
+
+/* ── Rules documentation tab ─────────────────────────────── */
+.bc-rules-section { margin-bottom: 16px; }
+.bc-rules-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 700; }
+.bc-rules-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.bc-rules-title { font-size: 13px; }
+.bc-rules-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.bc-rules-list li { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding-left: 4px; }
+.bc-rules-list li svg { flex-shrink: 0; color: #10B981; margin-top: 2px; }
+
 @media (max-width: 768px) {
   .bc-v2 { flex-direction: column; height: auto; }
   .bc-stats { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 200px; }
@@ -1489,4 +1520,5 @@
   .bc-slide-panel { width: 100vw; }
   .bc-filters-grid { grid-template-columns: 1fr; }
   .bc-detail-stats { flex-direction: column; }
+  .bc-analytics-grid { grid-template-columns: 1fr; }
 }

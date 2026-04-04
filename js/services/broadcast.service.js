@@ -74,11 +74,18 @@
     return _repo().remove(id)
   }
 
+  async function getBroadcastStats(id) {
+    if (!_repo()) return _unavailable()
+    if (!id) return { ok: false, error: 'broadcast id obrigatorio' }
+    return _repo().stats(id)
+  }
+
   window.BroadcastService = Object.freeze({
     loadBroadcasts,
     createBroadcast,
     startBroadcast,
     cancelBroadcast,
     deleteBroadcast,
+    getBroadcastStats,
   })
 })()

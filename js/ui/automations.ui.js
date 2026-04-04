@@ -97,6 +97,7 @@
       content: '',
       media_url: '',
       media_caption: '',
+      media_position: 'above',
       filter_phase: '',
       filter_temperature: '',
       filter_funnel: '',
@@ -1435,7 +1436,9 @@
 
   var _bcRefreshTimer = null
   var _bcPanelOpen = true
-  var _bcPanelTab = 'history' // 'editor' | 'history'
+  var _bcPanelTab = 'history' // 'editor' | 'history' | 'rules'
+  var _bcStats = null
+  var _bcUploading = false
 
   async function _loadBroadcasts() {
     if (!window.BroadcastService) return
@@ -1471,12 +1474,12 @@
   function _bcSaveFormFields() {
     var n = document.getElementById('bcName')
     var u = document.getElementById('bcMediaUrl')
-    var c = document.getElementById('bcMediaCaption')
     var t = document.getElementById('bcContent')
     if (n) _broadcastForm.name = n.value
     if (u) _broadcastForm.media_url = u.value
-    if (c) _broadcastForm.media_caption = c.value
     if (t) _broadcastForm.content = t.value
+    var posRadio = document.querySelector('input[name="bcMediaPos"]:checked')
+    if (posRadio) _broadcastForm.media_position = posRadio.value
   }
 
   function _renderBroadcastTab() {
@@ -1610,12 +1613,15 @@
     html += '<div class="bc-slide-tabs">'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'editor' ? ' active' : '') + '" data-panel-tab="editor">Editor</button>'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'rules' ? ' active' : '') + '" data-panel-tab="rules">Regras</button>'
     html += '</div>'
 
     // Body
     html += '<div class="bc-slide-body">'
     if (_bcPanelTab === 'editor') {
       html += _renderBroadcastFormBody()
+    } else if (_bcPanelTab === 'rules') {
+      html += _renderBroadcastRulesTab()
     } else {
       html += _renderBroadcastHistoryTab()
     }
@@ -1721,12 +1727,18 @@
           </div>
         </div>
         <div class="am-field">
-          <label class="am-label">URL da midia (opcional)</label>
-          <input class="am-input" id="bcMediaUrl" placeholder="https://... (imagem ou video)" value="${_esc(f.media_url)}">
-        </div>
-        <div class="am-field">
-          <label class="am-label">Legenda da midia</label>
-          <input class="am-input" id="bcMediaCaption" placeholder="Legenda da foto/video" value="${_esc(f.media_caption)}">
+          <label class="am-label">Imagem ou Link</label>
+          <div class="bc-media-options">
+            <button type="button" class="bc-media-upload-btn" id="bcMediaUploadBtn">${_feather('image', 14)} Enviar imagem</button>
+            <span style="font-size:11px;color:var(--text-muted)">ou</span>
+            <input class="am-input" id="bcMediaUrl" placeholder="https://... (URL da imagem ou link)" value="${_esc(f.media_url)}" style="flex:1">
+          </div>
+          <input type="file" id="bcMediaFile" accept="image/*" style="display:none">
+          ${f.media_url ? '<div class="bc-media-preview"><img src="' + _esc(f.media_url) + '" alt="preview"><button type="button" class="bc-media-remove" id="bcMediaRemove">' + _feather('x', 10) + '</button></div>' : ''}
+          <div class="bc-media-pos">
+            <label class="bc-pos-label"><input type="radio" name="bcMediaPos" value="above" ${f.media_position !== 'below' ? 'checked' : ''}> Acima do texto</label>
+            <label class="bc-pos-label"><input type="radio" name="bcMediaPos" value="below" ${f.media_position === 'below' ? 'checked' : ''}> Abaixo do texto</label>
+          </div>
         </div>
         <div class="bc-filters-section">
           <label class="am-label">Segmentacao <span style="font-weight:400;text-transform:none;font-size:10px;color:var(--text-muted)">(opcional se selecionar leads)</span></label>
@@ -1878,6 +1890,23 @@
           </div>
         </div>
         ${st === 'sending' ? '<div class="bc-progress"><div class="bc-progress-bar" style="width:' + progress + '%"></div><span class="bc-progress-text">' + progress + '%</span></div>' : ''}
+        ${_bcStats && _bcStats.ok ? (function() {
+          var s = _bcStats
+          return '<div class="bc-analytics">'
+            + '<label class="am-label">Metricas</label>'
+            + '<div class="bc-analytics-grid">'
+            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.send_rate || 0) + '%</div><div class="bc-metric-label">Taxa envio</div><div class="bc-metric-bar"><div style="width:' + (s.send_rate || 0) + '%;background:#10B981"></div></div></div>'
+            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.response_rate || 0) + '%</div><div class="bc-metric-label">Responderam</div><div class="bc-metric-bar"><div style="width:' + (s.response_rate || 0) + '%;background:#2563EB"></div></div></div>'
+            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.delivered || 0) + ' <small>de ' + (s.sent || 0) + '</small></div><div class="bc-metric-label">Entregues</div><div class="bc-metric-bar"><div style="width:' + (s.delivery_rate || 0) + '%;background:#8B5CF6"></div></div></div>'
+            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.read || 0) + ' <small>de ' + (s.sent || 0) + '</small></div><div class="bc-metric-label">Lidos</div><div class="bc-metric-bar"><div style="width:' + (s.read_rate || 0) + '%;background:#F59E0B"></div></div></div>'
+            + '</div>'
+            + '<div class="bc-analytics-detail">'
+            + '<div class="bc-stat-row"><span class="bc-stat-label">Responderam</span><span class="bc-stat-num">' + (s.responded || 0) + '</span></div>'
+            + '<div class="bc-stat-row"><span class="bc-stat-label">Sem resposta</span><span class="bc-stat-num">' + ((s.sent || 0) - (s.responded || 0)) + '</span></div>'
+            + '<div class="bc-stat-row"><span class="bc-stat-label">Falhas de envio</span><span class="bc-stat-num" style="color:var(--danger)">' + (s.failed || 0) + '</span></div>'
+            + '</div>'
+            + '</div>'
+        })() : ''}
         ${filterTags.length > 0 ? '<div class="bc-detail-section"><label class="am-label">Filtros</label><div class="bc-card-filters">' + filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') + '</div></div>' : ''}
         <div class="bc-detail-dates">
           <span>${_feather('calendar', 12)} Criado: ${date}</span>
@@ -1889,6 +1918,94 @@
         ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('play', 14) + ' Iniciar Disparo</button>' : ''}
         ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '">' + _feather('xCircle', 14) + ' Cancelar</button>' : ''}
       </div>`
+  }
+
+  function _renderBroadcastRulesTab() {
+    var sections = [
+      {
+        title: 'Segmentacao e Filtros',
+        icon: 'tag',
+        color: '#7C3AED',
+        rules: [
+          'Filtros por fase, temperatura, funil e origem sao cumulativos (AND)',
+          'Leads selecionados manualmente recebem o disparo independente dos filtros',
+          'Pelo menos um filtro ou um lead manual e obrigatorio para criar um disparo',
+          'Leads sem telefone valido sao automaticamente excluidos'
+        ]
+      },
+      {
+        title: 'Selecao Manual de Leads',
+        icon: 'userCheck',
+        color: '#2563EB',
+        rules: [
+          'Busque por nome para encontrar leads no sistema',
+          'Leads manuais sao adicionados alem dos filtros (OR)',
+          'Maximo recomendado: 200 leads por disparo',
+          'Leads duplicados (por filtro + manual) sao automaticamente deduplicados'
+        ]
+      },
+      {
+        title: 'Controle de Envio (Throttle)',
+        icon: 'shield',
+        color: '#10B981',
+        rules: [
+          'Lotes de 5 a 20 pessoas com intervalo de 5 a 60 minutos',
+          'Configuracao padrao (10/10min) envia ~60 msgs/hora — seguro para WhatsApp',
+          'Nunca exceda 200 mensagens/hora para evitar bloqueio temporario',
+          'O sistema respeita automaticamente os limites configurados'
+        ]
+      },
+      {
+        title: 'Personalizacao da Mensagem',
+        icon: 'edit2',
+        color: '#F59E0B',
+        rules: [
+          'Use [nome] para inserir o nome do lead automaticamente',
+          'Use [queixa] para inserir a queixa principal do lead',
+          'Formatacao WhatsApp: *negrito*, _italico_, ~riscado~, ```mono```',
+          'Imagens podem ser posicionadas acima ou abaixo do texto'
+        ]
+      },
+      {
+        title: 'Ciclo de Vida do Disparo',
+        icon: 'refreshCw',
+        color: '#6366F1',
+        rules: [
+          'Rascunho: disparo criado, aguardando inicio',
+          'Enviando: mensagens sendo entregues em lotes',
+          'Concluido: todos os lotes foram processados',
+          'Cancelado: envio interrompido, msgs pendentes removidas'
+        ]
+      },
+      {
+        title: 'Arquitetura Tecnica',
+        icon: 'settings',
+        color: '#64748B',
+        rules: [
+          'wa_broadcasts armazena metadados do disparo',
+          'wa_outbox recebe uma fila de mensagens por destinatario',
+          'O worker n8n processa a fila respeitando batch_size e batch_interval',
+          'Estatisticas (entrega, leitura, resposta) sao calculadas em tempo real via RPC'
+        ]
+      }
+    ]
+
+    var html = ''
+    for (var i = 0; i < sections.length; i++) {
+      var s = sections[i]
+      html += '<div class="bc-rules-section">'
+      html += '<div class="bc-rules-header" style="color:' + s.color + '">'
+      html += '<span class="bc-rules-icon" style="background:' + s.color + '15;color:' + s.color + '">' + _feather(s.icon, 15) + '</span>'
+      html += '<span class="bc-rules-title">' + s.title + '</span>'
+      html += '</div>'
+      html += '<ul class="bc-rules-list">'
+      for (var j = 0; j < s.rules.length; j++) {
+        html += '<li>' + _feather('check', 11) + ' ' + s.rules[j] + '</li>'
+      }
+      html += '</ul>'
+      html += '</div>'
+    }
+    return html
   }
 
   function _bindBroadcastEvents(root) {
@@ -1978,11 +2095,85 @@
 
     // History tab item click — show detail in center, panel stays open
     root.querySelectorAll('.bc-hist-item').forEach(function(item) {
-      item.addEventListener('click', function() {
+      item.addEventListener('click', async function() {
         _broadcastSelected = item.dataset.id
         _broadcastMode = 'detail'
         _bcPanelTab = 'history'
+        _bcStats = null
         _render()
+        // Load stats async
+        if (window.BroadcastService && window.BroadcastService.getBroadcastStats) {
+          var result = await window.BroadcastService.getBroadcastStats(item.dataset.id)
+          if (result && result.ok && result.data) {
+            _bcStats = result.data
+            _render()
+          }
+        }
+      })
+    })
+
+    // Media upload button → trigger file input
+    var uploadBtn = document.getElementById('bcMediaUploadBtn')
+    var fileInput = document.getElementById('bcMediaFile')
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', function() { fileInput.click() })
+      fileInput.addEventListener('change', async function() {
+        if (!fileInput.files || !fileInput.files[0]) return
+        var file = fileInput.files[0]
+        if (!file.type.startsWith('image/')) {
+          _showToast('Selecione um arquivo de imagem', 'error')
+          return
+        }
+        _bcUploading = true
+        uploadBtn.textContent = 'Enviando...'
+        uploadBtn.disabled = true
+        try {
+          var ts = Date.now()
+          var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+          var path = 'broadcasts/' + ts + '-' + safeName
+          var sbUrl = 'https://oqboitkpcvuaudouwvkl.supabase.co'
+          var sbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0'
+          var uploadUrl = sbUrl + '/storage/v1/object/media/' + path
+          var resp = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+              'apikey': sbKey,
+              'Authorization': 'Bearer ' + sbKey,
+              'Content-Type': file.type,
+              'x-upsert': 'true'
+            },
+            body: file
+          })
+          if (!resp.ok) throw new Error('Upload falhou: ' + resp.status)
+          var publicUrl = sbUrl + '/storage/v1/object/public/media/' + path
+          _bcSaveFormFields()
+          _broadcastForm.media_url = publicUrl
+          _bcUploading = false
+          _render()
+          _showToast('Imagem enviada com sucesso')
+        } catch (err) {
+          _bcUploading = false
+          _showToast('Erro no upload: ' + err.message, 'error')
+          uploadBtn.textContent = 'Enviar imagem'
+          uploadBtn.disabled = false
+        }
+      })
+    }
+
+    // Media remove
+    var removeMedia = document.getElementById('bcMediaRemove')
+    if (removeMedia) {
+      removeMedia.addEventListener('click', function() {
+        _bcSaveFormFields()
+        _broadcastForm.media_url = ''
+        _render()
+      })
+    }
+
+    // Media position radios
+    document.querySelectorAll('input[name="bcMediaPos"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        _broadcastForm.media_position = radio.value
       })
     })
 
@@ -2147,7 +2338,8 @@
         var name = (document.getElementById('bcName') || {}).value || ''
         var content = (document.getElementById('bcContent') || {}).value || ''
         var mediaUrl = (document.getElementById('bcMediaUrl') || {}).value || ''
-        var mediaCaption = (document.getElementById('bcMediaCaption') || {}).value || ''
+        var mediaPosRadio = document.querySelector('input[name="bcMediaPos"]:checked')
+        var mediaPosition = mediaPosRadio ? mediaPosRadio.value : 'above'
         var filterPhase = (document.getElementById('bcFilterPhase') || {}).value || ''
         var filterTemp = (document.getElementById('bcFilterTemp') || {}).value || ''
         var filterFunnel = (document.getElementById('bcFilterFunnel') || {}).value || ''
@@ -2173,7 +2365,8 @@
           name: name.trim(),
           content: content.trim(),
           media_url: mediaUrl.trim() || null,
-          media_caption: mediaCaption.trim() || null,
+          media_caption: null,
+          media_position: mediaPosition,
           target_filter: filter,
           batch_size: batchSize,
           batch_interval_min: batchInterval,
