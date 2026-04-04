@@ -224,6 +224,80 @@ a { color: inherit; text-decoration: none; }
 <section class="trust">
   <p class="trust-text">Oferta exclusiva de anivers&aacute;rio, preparada com carinho pela <span class="trust-name">Dra. Miriam de Paula</span>. V&aacute;lida por tempo limitado.</p>
 </section>
+<!--
+============================================================
+REGRAS DE NEGOCIO — CAMPANHAS DE ANIVERSARIO
+============================================================
+
+FLUXO MENSAL:
+1. Scanner diario (cron 7h) cria campanhas para aniversariantes em 31 dias
+2. Auto-exclude aplica regras inteligentes
+3. Secretaria revisa painel: ativa/desativa leads individuais
+4. Enqueue diario envia mensagens dos leads ativos no D-30, D-29, D-28
+5. Guards mid-sequence cancelam se lead engajou entre mensagens
+
+REGRAS DE AUTO-EXCLUSAO (aplicadas pelo scanner):
+- R1: Orcamento em aberto → OFF automatico (override: sim)
+- R2: Procedimento nos ultimos 30 dias → OFF automatico (override: sim)
+- R3: Agendamento nos proximos 7 dias → OFF automatico (override: sim)
+- R4: Canal nao-whatsapp (presencial/telefone/email) → OFF automatico (override: sim)
+- R5: wa_opt_in = false → OFF bloqueado (override: nao)
+- R6: Sem telefone → OFF bloqueado (override: nao)
+
+GUARDS MID-SEQUENCE (verificados antes de cada mensagem):
+- G1: Lead respondeu no WhatsApp apos inicio → cancela, status=responded
+- G2: Orcamento criado apos inicio da campanha → cancela, reason=new_budget
+- G3: Canal mudou de whatsapp para outro → cancela, reason=human_channel
+
+SEGMENTOS:
+- Paciente: phase='paciente' sem orcamento aberto
+- Orcamento: tem budget com status NOT IN (approved, lost, cancelled)
+- Paciente+Orcamento: phase='paciente' E tem orcamento aberto
+
+TEMPLATES (3 mensagens default, editaveis no dashboard):
+- D-30 Oportunidade (10h) — primeiro contato, apresenta oferta
+- D-29 Lembrete (10h) — urgencia, "so ate amanha"
+- D-28 Ultima chance (10h) — scarcity, "ultimo dia"
+- Todas incluem link: aniversario.html
+
+PRECOS CONFIGURADOS NESTA PAGINA:
+- 1ml: R$ 1.200 (de R$ 1.500) — 6x R$ 200
+  Areas: Labios ou Olheiras
+  Bonus: Fotona Regeneracao + Anovator A5
+- 2ml: R$ 2.100 (de R$ 3.000) — 10x R$ 210
+  Areas: Labios + Olheiras
+  Bonus: + Estimulo de Colageno
+- 3ml: R$ 3.000 (de R$ 4.500) — 12x R$ 250
+  Areas: Labios + Olheiras + Efeito Lifting
+  Bonus: + Smooth Eyes
+
+TOGGLES INTERATIVOS (lead seleciona):
+- Desconto exclusivo de aniversariante (locked ON)
+- Parcelamento estendido sem juros (locked ON)
+- Mais procedimentos de presente (locked ON)
+- Quero as tres opcoes juntas! (desmarcado, pisca MELHOR OPCAO)
+
+WHATSAPP CTA:
+- Numero: configurar em var WA no script
+- Mensagem dinamica: ml + preco + beneficios selecionados
+
+RPCs RELACIONADAS:
+- wa_birthday_scan() — cria campanhas
+- wa_birthday_enqueue() — enfileira com guards
+- wa_birthday_auto_exclude() — aplica regras
+- wa_birthday_toggle_lead(id, bool) — ativa/desativa lead
+- wa_birthday_pause_all() / resume_all()
+- wa_birthday_list(segment, status, month)
+- wa_birthday_stats(year)
+- wa_birthday_templates_list / save / delete
+- wa_birthday_upcoming(days)
+
+CRON N8N:
+- Workflow: y1LljPLY4Qlvkaf5 (Birthday Scanner)
+- Schedule: diario as 7h
+- Fluxo: scan → log → enqueue → log
+============================================================
+-->
 <footer class="footer">Cl&iacute;nica Mirian de Paula &middot; Maring&aacute;, PR</footer>
 <canvas class="confetti-overlay" id="confettiCanvas"></canvas>
 
