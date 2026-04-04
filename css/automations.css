@@ -1572,8 +1572,8 @@
 .bc-dash-metric-tab { padding: 5px 12px; border: 1.5px solid var(--border); background: transparent; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.12s; }
 .bc-dash-metric-tab:hover { border-color: #D1D5DB; color: var(--text-secondary); }
 .bc-dash-metric-tab.active { background: #fff; font-weight: 700; }
-.bc-dash-bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.bc-dash-compare { background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.bc-dash-bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.bc-dash-compare { background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
 .bc-dash-compare-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .bc-dash-section-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
 .bc-dash-sort { padding: 4px 10px; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; background: #fff; color: var(--text-secondary); cursor: pointer; }

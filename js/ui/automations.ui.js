@@ -1701,9 +1701,13 @@
     var maxSent = 1
     topBars.forEach(function(b) { if ((b.sent_count || 0) > maxSent) maxSent = b.sent_count })
 
+    // Bottom row: compare LEFT + table RIGHT
+    html += '<div class="bc-dash-bottom-row">'
+
+    // LEFT: Comparativo
     html += '<div class="bc-dash-compare">'
     html += '<div class="bc-dash-compare-header">'
-    html += '<span class="bc-dash-section-title">Comparativo de Performance</span>'
+    html += '<span class="bc-dash-section-title">Comparativo</span>'
     html += '<select class="bc-dash-sort" id="bcDashSort">'
     html += '<option value="sent"' + (_bcDashSort === 'sent' ? ' selected' : '') + '>Enviados</option>'
     html += '<option value="rate"' + (_bcDashSort === 'rate' ? ' selected' : '') + '>Taxa envio</option>'
@@ -1711,9 +1715,8 @@
     html += '</select>'
     html += '</div>'
     html += '<div class="bc-dash-bars">'
-
     if (topBars.length === 0) {
-      html += '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">Nenhum disparo no periodo</div>'
+      html += '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">Sem dados</div>'
     } else {
       topBars.forEach(function(b) {
         var sent = b.sent_count || 0
@@ -1723,19 +1726,15 @@
         var color = rate >= 90 ? '#10B981' : rate >= 70 ? '#F59E0B' : rate >= 50 ? '#F97316' : '#EF4444'
         if (sent === 0 && targets === 0) color = '#9CA3AF'
         html += '<div class="bc-dash-bar-row">'
-        html += '<span class="bc-dash-bar-name" title="' + _esc(b.name || 'Sem nome') + '">' + _esc(b.name || 'Sem nome') + '</span>'
+        html += '<span class="bc-dash-bar-name" title="' + _esc(b.name || '') + '">' + _esc(b.name || '') + '</span>'
         html += '<div class="bc-dash-bar-track"><div class="bc-dash-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
-        html += '<span class="bc-dash-bar-val">' + sent + ' env &middot; ' + rate + '%</span>'
+        html += '<span class="bc-dash-bar-val">' + sent + ' &middot; ' + rate + '%</span>'
         html += '</div>'
       })
     }
-
     html += '</div></div>' // close bars + compare
 
-    // Bottom row: compare + table side by side
-    html += '<div class="bc-dash-bottom-row">'
-
-    // Table
+    // RIGHT: Table
     html += '<div class="bc-dash-table-wrap">'
     html += '<table class="bc-dash-table">'
     html += '<thead><tr><th>Nome</th><th>Enviados</th><th>Falhas</th><th>Data</th><th>Status</th></tr></thead>'
