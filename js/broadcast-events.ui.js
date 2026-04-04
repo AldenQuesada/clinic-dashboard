@@ -478,10 +478,11 @@
         window.BroadcastUI.setState('broadcastSaving', false)
 
         if (result && result.ok) {
+          var hasSchedule = curForm.scheduled_at && curForm.scheduled_at.length > 0
           _showToast(editId ? 'Disparo atualizado!' : 'Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios encontrados')
           window.BroadcastUI.setState('broadcastSelected', editId || result.data?.id || null)
           window.BroadcastUI.setState('broadcastMode', 'detail')
-          window.BroadcastUI.setState('bcPanelTab', 'history')
+          window.BroadcastUI.setState('bcPanelTab', hasSchedule ? 'scheduled' : 'history')
           window.BroadcastUI.setState('_editingBroadcastId', null)
           await window.BroadcastUI.loadBroadcasts()
         } else {

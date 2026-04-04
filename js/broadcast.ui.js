@@ -284,7 +284,7 @@
     html += '<div class="bc-slide-tabs">'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'editor' ? ' active' : '') + '" data-panel-tab="editor">Editor</button>'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
-    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'scheduled' ? ' active' : '') + '" data-panel-tab="scheduled">Programados' + (scheduledCount > 0 ? ' <span class="bc-tab-badge">' + scheduledCount + '</span>' : '') + '</button>'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'scheduled' ? ' active' : '') + '" data-panel-tab="scheduled" style="position:relative">Programados' + (scheduledCount > 0 ? '<span class="bc-tab-badge-top">' + scheduledCount + '</span>' : '') + '</button>'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'rules' ? ' active' : '') + '" data-panel-tab="rules">Regras</button>'
     html += '</div>'
 
