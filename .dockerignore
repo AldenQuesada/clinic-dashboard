@@ -1,0 +1,9 @@
+.git
+.aios-core
+node_modules
+n8n
+supabase
+.claude
+*.md
+Dockerfile
+.dockerignore
