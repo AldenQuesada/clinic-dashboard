@@ -46,6 +46,7 @@
       batch_size: 10,
       batch_interval_min: 10,
       selected_leads: [],  // {id, nome, phone}
+      scheduled_at: '',  // '' = enviar agora, 'YYYY-MM-DDTHH:MM' = agendado
     }
   }
 
@@ -94,6 +95,13 @@
     if (t) _broadcastForm.content = t.value
     var posRadio = document.querySelector('input[name="bcMediaPos"]:checked')
     if (posRadio) _broadcastForm.media_position = posRadio.value
+    var schedMode = document.querySelector('input[name="bcScheduleMode"]:checked')
+    var schedInput = document.getElementById('bcScheduleAt')
+    if (schedMode && schedMode.value === 'scheduled' && schedInput && schedInput.value) {
+      _broadcastForm.scheduled_at = schedInput.value
+    } else {
+      _broadcastForm.scheduled_at = ''
+    }
   }
 
   function _waFormat(text) {
@@ -315,7 +323,8 @@
         html += filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('')
       }
       html += '</div>'
-      html += '<div class="bc-hist-meta">' + date + ' ' + time + ' &middot; ' + (b.sent_count || 0) + '/' + (b.total_targets || 0) + ' env.</div>'
+      var schedInfo = b.scheduled_at ? ' &middot; ' + _feather('clock', 10) + ' ' + new Date(b.scheduled_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''
+      html += '<div class="bc-hist-meta">' + date + ' ' + time + ' &middot; ' + (b.sent_count || 0) + '/' + (b.total_targets || 0) + ' env.' + schedInfo + '</div>'
 
       if (isDeleting) {
         html += '<div class="bc-hist-delete-confirm">'
@@ -458,6 +467,14 @@
             </div>
           </div>
           <small class="am-hint">${_feather('shield', 11)} Protecao contra bloqueio do WhatsApp</small>
+        </div>
+        <div class="bc-schedule-section">
+          <label class="am-label">${_feather('clock', 13)} Agendamento</label>
+          <div class="bc-schedule-row">
+            <label class="bc-pos-label"><input type="radio" name="bcScheduleMode" value="now" ${!f.scheduled_at ? 'checked' : ''}> Enviar agora</label>
+            <label class="bc-pos-label"><input type="radio" name="bcScheduleMode" value="scheduled" ${f.scheduled_at ? 'checked' : ''}> Agendar para</label>
+            <input type="datetime-local" class="am-input bc-schedule-input" id="bcScheduleAt" value="${_esc(f.scheduled_at)}" ${!f.scheduled_at ? 'disabled' : ''}>
+          </div>
         </div>`
   }
 
@@ -469,6 +486,7 @@
     var date = b.created_at ? new Date(b.created_at).toLocaleString('pt-BR') : '--'
     var startDate = b.started_at ? new Date(b.started_at).toLocaleString('pt-BR') : '--'
     var endDate = b.completed_at ? new Date(b.completed_at).toLocaleString('pt-BR') : '--'
+    var schedDate = b.scheduled_at ? new Date(b.scheduled_at).toLocaleString('pt-BR') : null
     var progress = b.total_targets > 0 ? Math.round((b.sent_count / b.total_targets) * 100) : 0
 
     var filterTags = []
@@ -504,6 +522,7 @@
       })() : ''}
       <div class="bc-info-strip">
         <div class="bc-info-dates">
+          ${schedDate ? '<span style="color:var(--accent-gold);font-weight:600">' + _feather('clock', 11) + ' Agendado: ' + schedDate + '</span>' : ''}
           <span>${_feather('calendar', 11)} Criado: ${date}</span>
           ${b.started_at ? '<span>' + _feather('play', 11) + ' Iniciado: ' + startDate + '</span>' : ''}
           ${b.completed_at ? '<span>' + _feather('checkCircle', 11) + ' Finalizado: ' + endDate + '</span>' : ''}

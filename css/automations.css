@@ -1240,6 +1240,11 @@
   gap: 10px;
   margin-top: 8px;
 }
+.bc-schedule-section { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 10px; }
+.bc-schedule-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.bc-schedule-input { max-width: 200px; font-size: 12px; padding: 7px 10px; }
+.bc-schedule-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .bc-throttle-separator {
   font-size: 12px;
   color: var(--text-muted);

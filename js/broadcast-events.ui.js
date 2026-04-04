@@ -211,6 +211,17 @@
       })
     })
 
+    // Schedule mode radios
+    document.querySelectorAll('input[name="bcScheduleMode"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        var schedInput = document.getElementById('bcScheduleAt')
+        if (schedInput) {
+          schedInput.disabled = (radio.value === 'now')
+          if (radio.value === 'now') schedInput.value = ''
+        }
+      })
+    })
+
     // Real-time phone preview binding
     var contentEl = root.querySelector('#bcContent')
     if (contentEl) {
@@ -422,6 +433,7 @@
           batch_size: batchSize,
           batch_interval_min: batchInterval,
           selected_lead_ids: curForm.selected_leads.map(function(l) { return l.id }),
+          scheduled_at: curForm.scheduled_at ? new Date(curForm.scheduled_at).toISOString() : null,
         })
 
         window.BroadcastUI.setState('broadcastSaving', false)
