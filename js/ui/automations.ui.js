@@ -1860,65 +1860,56 @@
       if (b.target_filter.source_type) filterTags.push('Origem: ' + b.target_filter.source_type)
     }
 
+    var s = _bcStats && _bcStats.ok ? _bcStats : null
+    var noResponse = s ? ((s.sent || 0) - (s.responded || 0)) : 0
+
     return `
-      <div class="bc-panel-header">
-        <div style="display:flex;align-items:center;gap:10px">
-          <h3>${_esc(b.name)}</h3>
+      <div class="bc-detail-topbar">
+        <div class="bc-detail-topbar-left">
+          <h3 class="bc-detail-title">${_esc(b.name)}</h3>
           <span class="bc-status" style="background:${_bcStatusColor(st)}20;color:${_bcStatusColor(st)}">${_bcStatusLabel(st)}</span>
+          ${filterTags.length > 0 ? filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') : ''}
         </div>
-        <div style="display:flex;gap:6px">
-          ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '" style="padding:6px 14px;font-size:12px">' + _feather('play', 13) + ' Iniciar</button>' : ''}
-          ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '" style="padding:5px 12px;font-size:11px">' + _feather('xCircle', 13) + ' Cancelar</button>' : ''}
+        <div class="bc-detail-topbar-right">
+          ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('play', 13) + ' Iniciar</button>' : ''}
+          ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '">' + _feather('xCircle', 13) + ' Cancelar</button>' : ''}
         </div>
       </div>
-      <div class="bc-panel-body">
-        <div class="bc-detail-section">
-          <label class="am-label">Mensagem</label>
-          <div class="bc-detail-msg">${_esc(b.content)}</div>
+      ${st === 'sending' ? '<div class="bc-progress" style="margin-bottom:16px"><div class="bc-progress-bar" style="width:' + progress + '%"></div><span class="bc-progress-text">' + progress + '%</span></div>' : ''}
+      <div class="bc-detail-msg">${_esc(b.content)}</div>
+      ${b.media_url ? (function() {
+        var u = b.media_url.toLowerCase()
+        var isImg = u.indexOf('.jpg') >= 0 || u.indexOf('.jpeg') >= 0 || u.indexOf('.png') >= 0 || u.indexOf('.gif') >= 0 || u.indexOf('.webp') >= 0 || u.indexOf('supabase.co/storage') >= 0
+        if (isImg) return '<div class="bc-detail-media" style="margin:12px 0"><img src="' + _esc(b.media_url) + '" alt="media"></div>'
+        return '<div class="bc-detail-link" style="margin:12px 0"><a href="' + _esc(b.media_url) + '" target="_blank" rel="noopener">' + _feather('link', 13) + ' ' + _esc(b.media_caption || b.media_url) + '</a></div>'
+      })() : ''}
+      <div class="bc-detail-split">
+        <div class="bc-detail-left">
+          <div class="bc-detail-stats-compact">
+            <div class="bc-stat-mini"><span class="bc-stat-mini-val">${b.total_targets || 0}</span><span class="bc-stat-mini-lbl">Destinatarios</span></div>
+            <div class="bc-stat-mini"><span class="bc-stat-mini-val">${b.sent_count || 0}</span><span class="bc-stat-mini-lbl">Enviados</span></div>
+            <div class="bc-stat-mini"><span class="bc-stat-mini-val" ${b.failed_count > 0 ? 'style="color:var(--danger)"' : ''}>${b.failed_count || 0}</span><span class="bc-stat-mini-lbl">Falhas</span></div>
+          </div>
+          ${s ? '<div class="bc-metrics-col">'
+            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.send_rate || 0) + '%;background:#10B981"></div></div><span class="bc-metric-pct">' + (s.send_rate || 0) + '%</span><span class="bc-metric-lbl">Envio</span></div>'
+            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.response_rate || 0) + '%;background:#2563EB"></div></div><span class="bc-metric-pct">' + (s.response_rate || 0) + '%</span><span class="bc-metric-lbl">Resposta</span></div>'
+            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.delivery_rate || 0) + '%;background:#8B5CF6"></div></div><span class="bc-metric-pct">' + (s.delivery_rate || 0) + '%</span><span class="bc-metric-lbl">Entrega</span></div>'
+            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.read_rate || 0) + '%;background:#F59E0B"></div></div><span class="bc-metric-pct">' + (s.read_rate || 0) + '%</span><span class="bc-metric-lbl">Leitura</span></div>'
+            + '</div>' : ''}
+          <div class="bc-detail-dates">
+            <span>${_feather('calendar', 12)} ${date}</span>
+            ${b.started_at ? '<span>' + _feather('play', 12) + ' ' + startDate + '</span>' : ''}
+            ${b.completed_at ? '<span>' + _feather('checkCircle', 12) + ' ' + endDate + '</span>' : ''}
+          </div>
         </div>
-        ${b.media_url ? (function() {
-          var u = b.media_url.toLowerCase()
-          var isImg = u.indexOf('.jpg') >= 0 || u.indexOf('.jpeg') >= 0 || u.indexOf('.png') >= 0 || u.indexOf('.gif') >= 0 || u.indexOf('.webp') >= 0 || u.indexOf('supabase.co/storage') >= 0
-          if (isImg) return '<div class="bc-detail-section"><label class="am-label">Imagem</label><div class="bc-detail-media"><img src="' + _esc(b.media_url) + '" alt="media"></div></div>'
-          return '<div class="bc-detail-section"><label class="am-label">Link</label><div class="bc-detail-link"><a href="' + _esc(b.media_url) + '" target="_blank" rel="noopener">' + _feather('link', 13) + ' ' + _esc(b.media_caption || b.media_url) + '</a></div></div>'
-        })() : ''}
-        <div class="bc-detail-stats">
-          <div class="bc-stat">
-            <span class="bc-stat-value">${b.total_targets || 0}</span>
-            <span class="bc-stat-label">Destinatarios</span>
+        <div class="bc-detail-right">
+          <div class="bc-leads-seg">
+            <div class="bc-seg-item bc-seg-all"><span class="bc-seg-icon" style="background:#6B728020;color:#6B7280">${_feather('userCheck', 13)}</span><span class="bc-seg-num">${b.total_targets || 0}</span><span class="bc-seg-lbl">Todos</span></div>
+            <div class="bc-seg-item bc-seg-sent"><span class="bc-seg-icon" style="background:#10B98120;color:#10B981">${_feather('check', 13)}</span><span class="bc-seg-num">${b.sent_count || 0}</span><span class="bc-seg-lbl">Enviados</span></div>
+            ${s ? '<div class="bc-seg-item bc-seg-resp"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">${_feather('messageCircle', 13)}</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
+            ${s ? '<div class="bc-seg-item bc-seg-noresp"><span class="bc-seg-icon" style="background:#F59E0B20;color:#F59E0B">${_feather('clock', 13)}</span><span class="bc-seg-num">' + noResponse + '</span><span class="bc-seg-lbl">Sem resposta</span></div>' : ''}
+            <div class="bc-seg-item bc-seg-fail"><span class="bc-seg-icon" style="background:#EF444420;color:#EF4444">${_feather('alertCircle', 13)}</span><span class="bc-seg-num">${b.failed_count || 0}</span><span class="bc-seg-lbl">Falhas</span></div>
           </div>
-          <div class="bc-stat">
-            <span class="bc-stat-value">${b.sent_count || 0}</span>
-            <span class="bc-stat-label">Enviados</span>
-          </div>
-          <div class="bc-stat">
-            <span class="bc-stat-value" ${b.failed_count > 0 ? 'style="color:var(--danger)"' : ''}>${b.failed_count || 0}</span>
-            <span class="bc-stat-label">Falhas</span>
-          </div>
-        </div>
-        ${st === 'sending' ? '<div class="bc-progress"><div class="bc-progress-bar" style="width:' + progress + '%"></div><span class="bc-progress-text">' + progress + '%</span></div>' : ''}
-        ${_bcStats && _bcStats.ok ? (function() {
-          var s = _bcStats
-          return '<div class="bc-analytics">'
-            + '<label class="am-label">Metricas</label>'
-            + '<div class="bc-analytics-grid">'
-            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.send_rate || 0) + '%</div><div class="bc-metric-label">Taxa envio</div><div class="bc-metric-bar"><div style="width:' + (s.send_rate || 0) + '%;background:#10B981"></div></div></div>'
-            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.response_rate || 0) + '%</div><div class="bc-metric-label">Responderam</div><div class="bc-metric-bar"><div style="width:' + (s.response_rate || 0) + '%;background:#2563EB"></div></div></div>'
-            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.delivered || 0) + ' <small>de ' + (s.sent || 0) + '</small></div><div class="bc-metric-label">Entregues</div><div class="bc-metric-bar"><div style="width:' + (s.delivery_rate || 0) + '%;background:#8B5CF6"></div></div></div>'
-            + '<div class="bc-metric"><div class="bc-metric-value">' + (s.read || 0) + ' <small>de ' + (s.sent || 0) + '</small></div><div class="bc-metric-label">Lidos</div><div class="bc-metric-bar"><div style="width:' + (s.read_rate || 0) + '%;background:#F59E0B"></div></div></div>'
-            + '</div>'
-            + '<div class="bc-analytics-detail">'
-            + '<div class="bc-stat-row"><span class="bc-stat-label">Responderam</span><span class="bc-stat-num">' + (s.responded || 0) + '</span></div>'
-            + '<div class="bc-stat-row"><span class="bc-stat-label">Sem resposta</span><span class="bc-stat-num">' + ((s.sent || 0) - (s.responded || 0)) + '</span></div>'
-            + '<div class="bc-stat-row"><span class="bc-stat-label">Falhas de envio</span><span class="bc-stat-num" style="color:var(--danger)">' + (s.failed || 0) + '</span></div>'
-            + '</div>'
-            + '</div>'
-        })() : ''}
-        ${filterTags.length > 0 ? '<div class="bc-detail-section"><label class="am-label">Filtros</label><div class="bc-card-filters">' + filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') + '</div></div>' : ''}
-        <div class="bc-detail-dates">
-          <span>${_feather('calendar', 12)} Criado: ${date}</span>
-          ${b.started_at ? '<span>' + _feather('play', 12) + ' Iniciado: ' + startDate + '</span>' : ''}
-          ${b.completed_at ? '<span>' + _feather('checkCircle', 12) + ' Finalizado: ' + endDate + '</span>' : ''}
         </div>
       </div>
       `
