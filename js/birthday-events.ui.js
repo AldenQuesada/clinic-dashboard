@@ -162,15 +162,22 @@
 
     var previewLead = { name: 'Maria', queixas: 'flacidez e rugas', age_turning: 45, has_open_budget: true, budget_title: 'Lifting 5D', budget_total: 3500 }
 
+    var checkSvg = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg>'
+
     function _updatePreview() {
       var linkInput = document.getElementById('bdayTmplLink')
       var text = textarea.value
       if (linkInput && linkInput.value.trim()) text += '\n\n' + linkInput.value.trim()
       var resolved = window.BirthdayService.resolveVariables(text, previewLead)
       var formatted = window.BirthdayTemplatesUI.waFormat(resolved)
+      formatted = formatted.replace(/\[(nome|queixas|idade|orcamento)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
       var h = hourInput ? parseInt(hourInput.value) || 10 : 10
       var hStr = (h < 10 ? '0' : '') + h + ':00'
-      chat.innerHTML = '<div class="bday-phone-bubble">' + formatted + '</div><div class="bday-phone-time">' + hStr + '</div>'
+      if (formatted && formatted.trim()) {
+        chat.innerHTML = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + formatted + '</div><div class="bc-wa-bubble-time">' + hStr + ' ' + checkSvg + '</div></div>'
+      } else {
+        chat.innerHTML = '<div class="bc-wa-empty">Digite a mensagem ao lado para ver o preview</div>'
+      }
     }
 
     textarea.addEventListener('input', _updatePreview)
@@ -179,20 +186,20 @@
     if (linkInput) linkInput.addEventListener('input', _updatePreview)
   }
 
-  // ── Formatting toolbar ─────────────────────────────────────
+  // ── Formatting toolbar (reuses bc-* classes from broadcast) ─
   function _attachFormattingToolbar() {
     var textarea = document.getElementById('bdayTmplContent')
     if (!textarea) return
 
-    // Tag insertion ([nome], [queixas], etc)
-    document.querySelectorAll('.bday-bar-tag').forEach(function (btn) {
+    // Tag insertion ([nome], [queixas], etc) — bc-tag-btn class
+    document.querySelectorAll('.bc-tag-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         _insertAtCursor(textarea, btn.dataset.tag)
       })
     })
 
-    // Wrap formatting (*bold*, _italic_, ~strike~, ```mono```)
-    document.querySelectorAll('.bday-bar-fmt').forEach(function (btn) {
+    // Wrap formatting (*bold*, _italic_, ~strike~, ```mono```) — bc-fmt-btn class
+    document.querySelectorAll('.bc-fmt-btn').forEach(function (btn) {
       if (!btn.dataset.wrap) return
       btn.addEventListener('click', function () {
         var wrap = btn.dataset.wrap
@@ -202,7 +209,6 @@
         var selected = text.substring(start, end)
 
         if (selected) {
-          // Check if already wrapped — toggle off
           var before = text.substring(Math.max(0, start - wrap.length), start)
           var after = text.substring(end, end + wrap.length)
           if (before === wrap && after === wrap) {
@@ -223,17 +229,17 @@
       })
     })
 
-    // Emoji picker
+    // Emoji picker — bc-emoji-* classes
     var emojiToggle = document.getElementById('bdayEmojiToggle')
     var emojiPicker = document.getElementById('bdayEmojiPicker')
     if (emojiToggle && emojiPicker) {
       emojiToggle.addEventListener('click', function () {
-        emojiPicker.classList.toggle('bday-emoji-open')
+        emojiPicker.classList.toggle('open')
       })
-      document.querySelectorAll('.bday-emoji-btn').forEach(function (btn) {
+      document.querySelectorAll('.bc-emoji-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
           _insertAtCursor(textarea, btn.dataset.emoji)
-          emojiPicker.classList.remove('bday-emoji-open')
+          emojiPicker.classList.remove('open')
         })
       })
     }

@@ -87,33 +87,13 @@
 .bday-tl-btn:hover { color: var(--accent); }
 .bday-tl-btn-del:hover { color: #EF4444; }
 
-/* Timeline card body (split: text + phone) */
-.bday-tl-card-body { display: flex; gap: 14px; padding: 12px 14px; }
-.bday-tl-text-preview { flex: 1; font-size: 12px; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap; }
+/* Timeline card collapsed preview */
+.bday-tl-text-preview { padding: 10px 14px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
 
-/* Mini phone preview */
-.bday-phone-mini { width: 180px; flex-shrink: 0; background: #ECE5DD; border-radius: 8px; padding: 6px; font-size: 10px; }
-.bday-phone-mini-header { background: #075E54; color: #fff; font-size: 9px; font-weight: 700; padding: 4px 8px; border-radius: 4px 4px 0 0; margin: -6px -6px 6px; }
-.bday-phone-mini-bubble { background: #DCF8C6; padding: 6px 8px; border-radius: 6px; line-height: 1.4; word-break: break-word; color: #303030; }
-
-/* ── Edit form (inside timeline) ──────────────────────────── */
+/* ── Edit form (inside timeline card) ─────────────────────── */
 .bday-tl-edit { padding: 14px; }
-.bday-edit-split { display: flex; gap: 16px; margin: 10px 0; }
-.bday-edit-left { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.bday-edit-right { width: 260px; flex-shrink: 0; }
-
-/* Phone preview (full) */
-.bday-phone-preview { background: #0B141A; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.2); }
-.bday-phone-notch { height: 20px; background: #0B141A; display: flex; align-items: center; justify-content: center; }
-.bday-phone-notch::after { content: ''; width: 60px; height: 4px; background: #1a2730; border-radius: 2px; }
-.bday-phone-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #1F2C33; }
-.bday-phone-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
-.bday-phone-name { font-size: 12px; font-weight: 600; color: #E9EDEF; }
-.bday-phone-chat { padding: 12px; background: #0B141A url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='60' fill='%230B141A'/%3E%3Cpath d='M0 0h10v10H0z' fill='%230d1a21' opacity='.3'/%3E%3C/svg%3E") repeat; min-height: 180px; max-height: 280px; overflow-y: auto; }
-.bday-phone-bubble { background: #005C4B; color: #E9EDEF; padding: 8px 10px; border-radius: 0 8px 8px 8px; font-size: 12px; line-height: 1.5; word-break: break-word; max-width: 220px; }
-.bday-phone-bubble b { font-weight: 700; }
-.bday-phone-bubble i { font-style: italic; }
-.bday-phone-time { font-size: 9px; color: #8696A0; text-align: right; margin-top: 4px; }
+.bday-tl-edit .am-field { margin-bottom: 10px; }
+.bday-tl-edit .am-label { font-size: 10px; }
 
 /* ── Form elements ────────────────────────────────────────── */
 .bday-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -131,31 +111,11 @@
 .bday-btn-cancel { background: var(--bg-secondary); color: var(--text-muted); }
 .bday-btn-cancel:hover { color: var(--text-primary); }
 
-/* ── Formatting toolbar ────────────────────────────────────── */
-.bday-tags-bar { display: flex; align-items: center; gap: 4px; padding: 6px 8px; background: var(--bg-secondary); border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; flex-wrap: wrap; }
-.bday-bar-hint { font-size: 10px; color: var(--text-muted); font-weight: 600; margin-right: 2px; }
-.bday-bar-tag { padding: 2px 7px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 4px; font-size: 10px; font-weight: 600; color: var(--accent); cursor: pointer; transition: all .12s; }
-.bday-bar-tag:hover { border-color: var(--accent); background: rgba(201,169,110,.08); }
-.bday-bar-sep { width: 1px; height: 16px; background: var(--border); margin: 0 2px; }
-.bday-bar-fmt { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 4px; font-size: 12px; color: var(--text-primary); cursor: pointer; transition: all .12s; }
-.bday-bar-fmt:hover { border-color: var(--accent); color: var(--accent); }
-.bday-bar-mono { font-size: 10px; font-family: monospace; }
-
-/* Textarea with toolbar attached */
-.bday-tags-bar + .bday-textarea,
-.bday-form-field .bday-textarea { border-radius: 6px 6px 0 0; }
-.bday-form-field:has(.bday-tags-bar) .bday-textarea { border-bottom: none; border-radius: 6px 6px 0 0; }
-
-/* Emoji picker */
-.bday-emoji-wrap { position: relative; }
-.bday-emoji-toggle { font-size: 16px !important; line-height: 1; }
-.bday-emoji-picker { display: none; position: absolute; bottom: 34px; right: 0; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 8px; width: 240px; box-shadow: 0 4px 16px rgba(0,0,0,.15); z-index: 100; }
-.bday-emoji-picker.bday-emoji-open { display: flex; flex-wrap: wrap; gap: 2px; }
-.bday-emoji-btn { width: 30px; height: 30px; border: none; background: none; font-size: 18px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background .1s; }
-.bday-emoji-btn:hover { background: var(--bg-secondary); }
-
-/* Phone preview sticky */
-.bday-phone-sticky { position: sticky; top: 20px; }
+/* ── Editor layout (timeline + fixed phone) ───────────────── */
+.bday-editor-layout { display: flex; gap: 20px; align-items: flex-start; }
+.bday-timeline-editing { flex: 1; min-width: 0; }
+.bday-phone-fixed { width: 280px; flex-shrink: 0; position: sticky; top: 20px; }
+.bday-phone-fixed .bc-phone { width: 100%; min-height: 420px; }
 
 /* ── Variables hint ────────────────────────────────────────── */
 .bday-tmpl-vars { margin-top: 14px; padding: 10px 14px; background: var(--bg-secondary); border-radius: 8px; font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
