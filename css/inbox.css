@@ -504,6 +504,21 @@
 
 @keyframes ibx-spin { to { transform: rotate(360deg); } }
 
+/* ── Image messages ────────────────────────────────────── */
+.ibx-msg-image {
+  max-width: 220px;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+.ibx-msg-image:hover { opacity: 0.9; }
+.ibx-msg-caption {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 900px) {
   .ibx-cards { grid-template-columns: repeat(2, 1fr); }

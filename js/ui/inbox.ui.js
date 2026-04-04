@@ -472,7 +472,7 @@
       msgClass += 'ibx-msg-inbound'
     } else {
       msgClass += 'ibx-msg-outbound'
-      if (msg.sender === 'lara') {
+      if (msg.sender === 'lara' || msg.sender === 'ai') {
         msgClass += ' ibx-msg-lara'
         senderLabel = '<span class="ibx-msg-sender ibx-msg-sender-lara">Lara</span>'
       } else {
@@ -481,10 +481,16 @@
       }
     }
 
-    var content = _esc(msg.content || '').replace(/\n/g, '<br>')
+    var contentHtml = ''
+    if (msg.content_type === 'image' && msg.media_url) {
+      contentHtml = '<img src="' + _esc(msg.media_url) + '" class="ibx-msg-image" alt="' + _esc(msg.content || '') + '" loading="lazy">'
+      if (msg.content) contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
+    } else {
+      contentHtml = _esc(msg.content || '').replace(/\n/g, '<br>')
+    }
 
     return '<div class="' + msgClass + '">' +
-      '<div>' + content + '</div>' +
+      '<div>' + contentHtml + '</div>' +
       '<div class="ibx-msg-meta">' +
         senderLabel +
         '<span class="ibx-msg-time">' + _timeShort(msg.sent_at) + '</span>' +
