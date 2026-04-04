@@ -50,6 +50,19 @@ a { color: inherit; text-decoration: none; }
 .toggle-label { font-size: 13px; font-weight: 600; color: var(--text2); transition: color .25s; }
 .toggle.on .toggle-label { color: var(--text); }
 
+/* ── Progress bar (connects toggles) ─────────────────────── */
+.progress-wrap { position: relative; margin: -20px auto 32px; max-width: 700px; padding: 0 20px; }
+.progress-track { height: 4px; background: #2a2a2a; border-radius: 2px; position: relative; overflow: visible; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; width: 0%; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.progress-tip { position: absolute; right: -6px; top: -4px; width: 12px; height: 12px; background: var(--gold); border-radius: 50%; opacity: 0; transition: opacity .3s; }
+.progress-tip.pulsing { opacity: 1; animation: tipPulse 1.2s infinite; }
+.progress-fill.full .progress-tip { animation: none; opacity: 1; }
+@keyframes tipPulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,169,110,.6);transform:scale(1)}50%{box-shadow:0 0 0 8px rgba(201,169,110,0);transform:scale(1.3)} }
+
+/* ── Builder content (hidden until toggle) ────────────────── */
+.builder-content { opacity: 0; transform: translateY(20px); max-height: 0; overflow: hidden; transition: opacity .5s, transform .5s, max-height .5s; pointer-events: none; }
+.builder-content.shown { opacity: 1; transform: translateY(0); max-height: 2000px; pointer-events: all; }
+
 /* ── ML Slider ────────────────────────────────────────────── */
 .ml-section { margin-bottom: 32px; }
 .ml-tabs { display: flex; gap: 0; background: var(--bg3); border-radius: 14px; padding: 4px; max-width: 500px; margin: 0 auto; }
@@ -152,14 +165,26 @@ a { color: inherit; text-decoration: none; }
       <div class="toggle-dot"></div>
       <span class="toggle-label">Mais procedimentos</span>
     </div>
-    <div class="toggle on" data-benefit="todos">
+    <div class="toggle" data-benefit="todos">
       <div class="toggle-dot"></div>
       <span class="toggle-label">Quero tudo!</span>
     </div>
   </div>
 
+  <!-- Progress bar -->
+  <div class="progress-wrap reveal">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill">
+        <div class="progress-tip" id="progressTip"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Builder content (revealed progressively) -->
+  <div class="builder-content" id="builderContent">
+
   <!-- ML selector -->
-  <div class="ml-section reveal">
+  <div class="ml-section">
     <div class="ml-tabs" id="mlTabs">
       <div class="ml-tab active" data-ml="1"><span class="ml-tab-ml">1ml</span><span class="ml-tab-label">Labios</span></div>
       <div class="ml-tab" data-ml="2"><span class="ml-tab-ml">2ml</span><span class="ml-tab-label">Labios + olheiras</span></div>
@@ -188,8 +213,9 @@ a { color: inherit; text-decoration: none; }
       Quero meu presente
     </a>
     <div class="cta-sub">Voce sera redirecionada para o WhatsApp da clinica</div>
-
   </div>
+
+  </div><!-- close builder-content -->
 </section>
 
 <section class="trust">
@@ -244,7 +270,7 @@ a { color: inherit; text-decoration: none; }
     }
   }
 
-  var state = { ml: 1, benefits: { desconto: true, parcelas: true, procedimentos: true, todos: true } }
+  var state = { ml: 1, benefits: { desconto: true, parcelas: true, procedimentos: true, todos: false } }
 
   // ── Toggles ────────────────────────────────────────────────
   function initToggles() {
@@ -274,6 +300,36 @@ a { color: inherit; text-decoration: none; }
       var b = t.dataset.benefit
       t.classList.toggle('on', state.benefits[b])
     })
+    updateProgress()
+  }
+
+  function updateProgress() {
+    var ben = state.benefits
+    var count = (ben.desconto ? 1 : 0) + (ben.parcelas ? 1 : 0) + (ben.procedimentos ? 1 : 0)
+    var allOn = ben.todos
+
+    // Progress fill: 0=0%, 1=25%, 2=50%, 3=75%, all=100%
+    var pct = allOn ? 100 : (count / 4) * 100
+    var fill = document.getElementById('progressFill')
+    var tip = document.getElementById('progressTip')
+    var content = document.getElementById('builderContent')
+
+    if (fill) fill.style.width = pct + '%'
+
+    // Tip: pulses when 3 selected but not all, solid when all
+    if (tip) {
+      if (count === 3 && !allOn) {
+        tip.classList.add('pulsing')
+      } else {
+        tip.classList.remove('pulsing')
+      }
+    }
+    if (fill) fill.classList.toggle('full', allOn)
+
+    // Reveal content when at least 1 toggle is on
+    if (content) {
+      content.classList.toggle('shown', count > 0 || allOn)
+    }
   }
 
   // ── ML tabs ────────────────────────────────────────────────
@@ -439,6 +495,7 @@ a { color: inherit; text-decoration: none; }
     initMlTabs()
     initReveal()
     initConfetti()
+    syncToggles()
     update()
   })
 })()
