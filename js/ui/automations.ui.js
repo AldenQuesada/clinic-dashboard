@@ -1682,7 +1682,7 @@
           <input class="am-input" id="bcMediaCaption" placeholder="Legenda da foto/video" value="${_esc(f.media_caption)}">
         </div>
         <div class="bc-filters-section">
-          <label class="am-label">Segmentacao</label>
+          <label class="am-label">Segmentacao <span style="font-weight:400;text-transform:none;font-size:10px;color:var(--text-muted)">(opcional se selecionar leads)</span></label>
           <div class="bc-filters-grid">
             <div class="am-field">
               <label class="am-label-sm">Fase</label>

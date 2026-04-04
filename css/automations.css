@@ -1369,16 +1369,16 @@
 .bc-phone-col {
   display: flex;
   align-items: flex-start;
-  justify-content: center;
-  padding: 20px 12px;
+  justify-content: flex-end;
+  padding: 20px 8px 20px 12px;
   background: #F8F9FA;
   border-left: 1px solid var(--border);
   overflow-y: auto;
 }
 
 .bc-phone {
-  width: 280px;
-  min-height: 500px;
+  width: 260px;
+  min-height: 460px;
   background: #fff;
   border-radius: 32px;
   box-shadow: 0 0 0 2px #1a1a1a, 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
