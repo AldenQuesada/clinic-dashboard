@@ -1897,8 +1897,9 @@
     }
 
     // Delete broadcast — step 1: show confirm
-    root.querySelectorAll('.bc-hist-del-btn').forEach(function(btn) {
+    document.querySelectorAll('.bc-hist-del-btn').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
+        e.preventDefault()
         e.stopPropagation()
         _bcDeleteConfirm = btn.dataset.id
         _render()
@@ -1906,8 +1907,9 @@
     })
 
     // Delete broadcast — step 2: confirm yes
-    root.querySelectorAll('.bc-hist-del-yes').forEach(function(btn) {
+    document.querySelectorAll('.bc-hist-del-yes').forEach(function(btn) {
       btn.addEventListener('click', async function(e) {
+        e.preventDefault()
         e.stopPropagation()
         var id = btn.dataset.id
         _bcDeleteConfirm = null
@@ -1924,8 +1926,9 @@
     })
 
     // Delete broadcast — step 2: confirm no
-    root.querySelectorAll('.bc-hist-del-no').forEach(function(btn) {
+    document.querySelectorAll('.bc-hist-del-no').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
+        e.preventDefault()
         e.stopPropagation()
         _bcDeleteConfirm = null
         _render()
