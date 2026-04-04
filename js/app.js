@@ -25,9 +25,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!ok) return
   }
 
-  // Force-clear global search (browser autofill ignores autocomplete=off)
+  // Setup contenteditable search input (immune to browser autofill)
   var _gsi = document.getElementById('globalSearchInput')
-  if (_gsi) { _gsi.value = ''; setTimeout(function() { if (_gsi) _gsi.value = '' }, 100) }
+  if (_gsi) {
+    _gsi.textContent = ''
+    _gsi.addEventListener('input', function() { globalSearch(_gsi.textContent.trim()) })
+    _gsi.addEventListener('keydown', function(e) { globalSearchKeydown(e) })
+    _gsi.addEventListener('paste', function(e) {
+      e.preventDefault()
+      var text = (e.clipboardData || window.clipboardData).getData('text')
+      document.execCommand('insertText', false, text)
+    })
+  }
 
   // Garante seeds de tags no localStorage (antes do Supabase carregar)
   if (window.TagEngine) window.TagEngine.ensureSeeds()
@@ -400,7 +409,7 @@ function initGlobalSearch() {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault()
       const input = document.getElementById('globalSearchInput')
-      if (input) { input.focus(); input.select() }
+      if (input) { input.focus() }
     }
     if (e.key === 'Escape') closeGlobalSearch()
   })
@@ -607,7 +616,7 @@ function globalSearchViewAll() {
   // Transfere a query para o campo de busca da página de leads e recarrega
   const sub = document.querySelector('.nav-subitem[data-page="leads-all"]')
   if (sub) handleSubItemClick(sub)
-  const q = document.getElementById('globalSearchInput')?.value || ''
+  const q = document.getElementById('globalSearchInput')?.textContent?.trim() || ''
   setTimeout(() => {
     const leadsInput = document.getElementById('leadsSearchInput')
     if (leadsInput && q) {

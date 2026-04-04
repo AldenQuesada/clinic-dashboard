@@ -97,21 +97,16 @@
 
       <div class="header-spacer"></div>
 
-      <!-- Search -->
+      <!-- Search (contenteditable div prevents ALL browser autofill) -->
       <div class="header-search" style="position:relative">
         <span class="search-icon"><i data-feather="search"></i></span>
-        <input
+        <div
           id="globalSearchInput"
-          type="search"
-          placeholder="Buscar leads, pacientes... (⌘K)"
           class="search-input"
-          autocomplete="off"
-          name="clinicai-search-nofill"
-          data-lpignore="true"
-          data-form-type="other"
-          oninput="globalSearch(this.value)"
-          onkeydown="globalSearchKeydown(event)"
-        />
+          contenteditable="true"
+          role="textbox"
+          data-placeholder="Buscar leads, pacientes... (⌘K)"
+        ></div>
         <span class="search-shortcut" id="globalSearchShortcut">⌘K</span>
         <!-- Dropdown de resultados -->
         <div id="globalSearchDrop" style="

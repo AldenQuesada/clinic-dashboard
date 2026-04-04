@@ -535,6 +535,17 @@ ul {
   background: none;
   font-size: 13px;
   color: var(--text-primary);
+  border: none;
+  outline: none;
+  min-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.search-input:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .search-input::placeholder {
