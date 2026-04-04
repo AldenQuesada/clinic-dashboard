@@ -134,10 +134,10 @@
 .bday-switch { position: relative; display: inline-block; width: 32px; height: 18px; }
 .bday-switch-sm { width: 28px; height: 16px; }
 .bday-switch input { opacity: 0; width: 0; height: 0; }
-.bday-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 18px; transition: .2s; }
+.bday-slider { position: absolute; cursor: pointer; inset: 0; background: #EF4444; border-radius: 18px; transition: .2s; }
 .bday-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; bottom: 2px; background: #fff; border-radius: 50%; transition: .2s; }
 .bday-switch-sm .bday-slider::before { width: 12px; height: 12px; }
-.bday-switch input:checked + .bday-slider { background: var(--accent); }
+.bday-switch input:checked + .bday-slider { background: #10B981; }
 .bday-switch input:checked + .bday-slider::before { transform: translateX(14px); }
 .bday-switch-sm input:checked + .bday-slider::before { transform: translateX(12px); }
 
