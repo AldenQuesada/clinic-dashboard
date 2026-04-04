@@ -688,7 +688,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ p_phone: $json.phone, p_lead_id: $json.leadId || null, p_user_message: $json.userMessage || \"\", p_ai_response: ($json.aiResponse || \"\") + ($json.followUp ? String.fromCharCode(10,10) + $json.followUp : \"\"), p_tokens_used: $json.tokensUsed || 0, p_tags: JSON.stringify($json.tags || []), p_persona: $json.persona || \"onboarder\", p_detected_name: $json.detectedName || null, p_conversation_id: $json.conversationId || null, p_photo_urls: $json.photoUrls && $json.photoUrls.length > 0 ? $json.photoUrls : null, p_photo_captions: $json.photoCaptions && $json.photoCaptions.length > 0 ? $json.photoCaptions : null }) }}",
+        "jsonBody": "={{ JSON.stringify({ p_phone: $json.phone, p_lead_id: $json.leadId || null, p_user_message: $json.userMessage || \"\", p_ai_response: $json.aiResponse || \"\", p_tokens_used: $json.tokensUsed || 0, p_tags: JSON.stringify($json.tags || []), p_persona: $json.persona || \"onboarder\", p_detected_name: $json.detectedName || null, p_conversation_id: $json.conversationId || null, p_photo_urls: $json.photoUrls && $json.photoUrls.length > 0 ? $json.photoUrls : null, p_photo_captions: $json.photoCaptions && $json.photoCaptions.length > 0 ? $json.photoCaptions : null, p_follow_up: $json.followUp || null }) }}",
         "options": {}
       }
     }
