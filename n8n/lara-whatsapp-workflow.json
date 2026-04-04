@@ -247,13 +247,6 @@
       "position": [2010, 300]
     },
     {
-      "id": "save-lead-orig",
-      "name": "Placeholder Removed",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [1790, 550]
-    },
-    {
       "parameters": {
         "respondWith": "json",
         "responseBody": "={\"status\": \"ok\", \"response_sent\": true}",
