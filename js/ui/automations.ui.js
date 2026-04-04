@@ -1468,6 +1468,17 @@
     return { draft: '#6B7280', sending: '#F59E0B', completed: '#10B981', cancelled: '#EF4444' }[st] || '#6B7280'
   }
 
+  function _bcSaveFormFields() {
+    var n = document.getElementById('bcName')
+    var u = document.getElementById('bcMediaUrl')
+    var c = document.getElementById('bcMediaCaption')
+    var t = document.getElementById('bcContent')
+    if (n) _broadcastForm.name = n.value
+    if (u) _broadcastForm.media_url = u.value
+    if (c) _broadcastForm.media_caption = c.value
+    if (t) _broadcastForm.content = t.value
+  }
+
   function _renderBroadcastTab() {
     if (_broadcastLoading) {
       return '<div class="am-tab-content"><div class="am-loading"><div class="am-spinner"></div><span>Carregando disparos...</span></div></div>'
@@ -1693,6 +1704,11 @@
             <span class="bc-tag-hint">Inserir:</span>
             <button type="button" class="bc-tag-btn" data-tag="[nome]">[nome]</button>
             <button type="button" class="bc-tag-btn" data-tag="[queixa]">[queixa]</button>
+            <span class="bc-fmt-sep"></span>
+            <button type="button" class="bc-fmt-btn" data-wrap="*" title="Negrito"><b>N</b></button>
+            <button type="button" class="bc-fmt-btn" data-wrap="_" title="Italico"><i>I</i></button>
+            <button type="button" class="bc-fmt-btn" data-wrap="~" title="Riscado"><s>R</s></button>
+            <button type="button" class="bc-fmt-btn bc-fmt-mono" data-wrap="\`\`\`" title="Monoespaco">{ }</button>
           </div>
         </div>
         <div class="am-field">
@@ -1982,6 +1998,30 @@
       })
     })
 
+    // Format buttons (bold, italic, strikethrough, mono)
+    document.querySelectorAll('.bc-fmt-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var textarea = document.getElementById('bcContent')
+        if (!textarea) return
+        var wrap = btn.dataset.wrap
+        var start = textarea.selectionStart
+        var end = textarea.selectionEnd
+        var text = textarea.value
+        var selected = text.substring(start, end)
+        if (selected) {
+          textarea.value = text.substring(0, start) + wrap + selected + wrap + text.substring(end)
+          textarea.selectionStart = start
+          textarea.selectionEnd = end + (wrap.length * 2)
+        } else {
+          textarea.value = text.substring(0, start) + wrap + wrap + text.substring(end)
+          textarea.selectionStart = textarea.selectionEnd = start + wrap.length
+        }
+        textarea.focus()
+        _broadcastForm.content = textarea.value
+        _updatePhonePreview(textarea.value)
+      })
+    })
+
     // Lead search + select
     var searchInput = document.getElementById('bcLeadSearch')
     var dropdown = document.getElementById('bcLeadDropdown')
@@ -2026,6 +2066,7 @@
         var opt = e.target.closest('.bc-lead-option')
         if (!opt || opt.classList.contains('bc-lead-empty')) return
         e.preventDefault()
+        _bcSaveFormFields()
         _broadcastForm.selected_leads.push({
           id: opt.dataset.id,
           nome: opt.dataset.nome,
@@ -2038,9 +2079,10 @@
     }
 
     // Remove lead chip
-    root.querySelectorAll('.bc-chip-remove').forEach(function(btn) {
+    document.querySelectorAll('.bc-chip-remove').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var id = btn.dataset.id
+        _bcSaveFormFields()
         _broadcastForm.selected_leads = _broadcastForm.selected_leads.filter(function(l) { return l.id !== id })
         _render()
       })
