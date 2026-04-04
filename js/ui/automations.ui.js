@@ -1433,6 +1433,8 @@
 
   // ── Broadcast Tab ─────────────────────────────────────────────
 
+  var _bcRefreshTimer = null
+
   async function _loadBroadcasts() {
     if (!window.BroadcastService) return
     _broadcastLoading = true
@@ -1441,6 +1443,20 @@
     _broadcasts = (result && result.ok && Array.isArray(result.data)) ? result.data : []
     _broadcastLoading = false
     _render()
+    _scheduleBroadcastRefresh()
+  }
+
+  function _scheduleBroadcastRefresh() {
+    if (_bcRefreshTimer) { clearTimeout(_bcRefreshTimer); _bcRefreshTimer = null }
+    var hasSending = _broadcasts.some(function(b) { return b.status === 'sending' })
+    if (hasSending && _activeTab === 'broadcasts') {
+      _bcRefreshTimer = setTimeout(async function() {
+        var result = await window.BroadcastService.loadBroadcasts()
+        _broadcasts = (result && result.ok && Array.isArray(result.data)) ? result.data : []
+        _render()
+        _scheduleBroadcastRefresh()
+      }, 5000)
+    }
   }
 
   function _bcStatusLabel(st) {
