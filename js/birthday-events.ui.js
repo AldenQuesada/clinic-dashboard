@@ -19,6 +19,7 @@
     _attachSegFilters()
     _attachTemplateActions()
     _attachTemplateForm()
+    _attachFormattingToolbar()
     _attachLivePreview()
   }
 
@@ -156,15 +157,95 @@
   function _attachLivePreview() {
     var textarea = document.getElementById('bdayTmplContent')
     var chat = document.getElementById('bdayPhoneChat')
+    var hourInput = document.getElementById('bdayTmplHour')
     if (!textarea || !chat) return
 
     var previewLead = { name: 'Maria', queixas: 'flacidez e rugas', age_turning: 45, has_open_budget: true, budget_title: 'Lifting 5D', budget_total: 3500 }
 
-    textarea.addEventListener('input', function () {
-      var resolved = window.BirthdayService.resolveVariables(textarea.value, previewLead)
+    function _updatePreview() {
+      var linkInput = document.getElementById('bdayTmplLink')
+      var text = textarea.value
+      if (linkInput && linkInput.value.trim()) text += '\n\n' + linkInput.value.trim()
+      var resolved = window.BirthdayService.resolveVariables(text, previewLead)
       var formatted = window.BirthdayTemplatesUI.waFormat(resolved)
-      chat.innerHTML = '<div class="bday-phone-bubble">' + formatted + '</div><div class="bday-phone-time">10:00</div>'
+      var h = hourInput ? parseInt(hourInput.value) || 10 : 10
+      var hStr = (h < 10 ? '0' : '') + h + ':00'
+      chat.innerHTML = '<div class="bday-phone-bubble">' + formatted + '</div><div class="bday-phone-time">' + hStr + '</div>'
+    }
+
+    textarea.addEventListener('input', _updatePreview)
+    if (hourInput) hourInput.addEventListener('input', _updatePreview)
+    var linkInput = document.getElementById('bdayTmplLink')
+    if (linkInput) linkInput.addEventListener('input', _updatePreview)
+  }
+
+  // ── Formatting toolbar ─────────────────────────────────────
+  function _attachFormattingToolbar() {
+    var textarea = document.getElementById('bdayTmplContent')
+    if (!textarea) return
+
+    // Tag insertion ([nome], [queixas], etc)
+    document.querySelectorAll('.bday-bar-tag').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _insertAtCursor(textarea, btn.dataset.tag)
+      })
     })
+
+    // Wrap formatting (*bold*, _italic_, ~strike~, ```mono```)
+    document.querySelectorAll('.bday-bar-fmt').forEach(function (btn) {
+      if (!btn.dataset.wrap) return
+      btn.addEventListener('click', function () {
+        var wrap = btn.dataset.wrap
+        var start = textarea.selectionStart
+        var end = textarea.selectionEnd
+        var text = textarea.value
+        var selected = text.substring(start, end)
+
+        if (selected) {
+          // Check if already wrapped — toggle off
+          var before = text.substring(Math.max(0, start - wrap.length), start)
+          var after = text.substring(end, end + wrap.length)
+          if (before === wrap && after === wrap) {
+            textarea.value = text.substring(0, start - wrap.length) + selected + text.substring(end + wrap.length)
+            textarea.selectionStart = start - wrap.length
+            textarea.selectionEnd = end - wrap.length
+          } else {
+            textarea.value = text.substring(0, start) + wrap + selected + wrap + text.substring(end)
+            textarea.selectionStart = start + wrap.length
+            textarea.selectionEnd = end + wrap.length
+          }
+        } else {
+          textarea.value = text.substring(0, start) + wrap + wrap + text.substring(end)
+          textarea.selectionStart = textarea.selectionEnd = start + wrap.length
+        }
+        textarea.focus()
+        textarea.dispatchEvent(new Event('input'))
+      })
+    })
+
+    // Emoji picker
+    var emojiToggle = document.getElementById('bdayEmojiToggle')
+    var emojiPicker = document.getElementById('bdayEmojiPicker')
+    if (emojiToggle && emojiPicker) {
+      emojiToggle.addEventListener('click', function () {
+        emojiPicker.classList.toggle('bday-emoji-open')
+      })
+      document.querySelectorAll('.bday-emoji-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          _insertAtCursor(textarea, btn.dataset.emoji)
+          emojiPicker.classList.remove('bday-emoji-open')
+        })
+      })
+    }
+  }
+
+  function _insertAtCursor(textarea, text) {
+    var start = textarea.selectionStart
+    var end = textarea.selectionEnd
+    textarea.value = textarea.value.substring(0, start) + text + textarea.value.substring(end)
+    textarea.selectionStart = textarea.selectionEnd = start + text.length
+    textarea.focus()
+    textarea.dispatchEvent(new Event('input'))
   }
 
   // ── Toast helper ───────────────────────────────────────────

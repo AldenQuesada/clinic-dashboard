@@ -137,9 +137,14 @@
     return html
   }
 
+  // ── Emoji set ───────────────────────────────────────────────
+  var _emojis = ['😊','😍','🔥','✨','💜','🌟','❤️','👏','🎉','💪','👋','🙏','💋','😉','🥰','💎','🌸','⭐','📍','📅','⏰','📞','💰','🎁','✅','❌','⚡','🏆','💡','🤝','👨‍⚕️','💆','🪞','💄','🌺','💫','🎂','🥳','🍰','🎊']
+
   // ── Edit form ──────────────────────────────────────────────
   function _renderEditForm(t) {
     var resolved = window.BirthdayService.resolveVariables(t.content || '', _previewLead)
+    var hour = t.send_hour || 10
+    var hourStr = (hour < 10 ? '0' : '') + hour + ':00'
 
     var html = '<div class="bday-tl-edit">'
 
@@ -147,22 +152,63 @@
     html += '<div class="bday-form-row">'
     html += '<div class="bday-form-field" style="flex:2"><label>Titulo</label><input class="bday-input" id="bdayTmplLabel" value="' + _esc(t.label || '') + '" placeholder="Ex: Oportunidade"></div>'
     html += '<div class="bday-form-field bday-form-sm"><label>D- antes</label><input class="bday-input" id="bdayTmplOffset" type="number" min="1" max="90" value="' + (t.day_offset || 30) + '"></div>'
-    html += '<div class="bday-form-field bday-form-sm"><label>Hora</label><input class="bday-input" id="bdayTmplHour" type="number" min="0" max="23" value="' + (t.send_hour || 10) + '"></div>'
+    html += '<div class="bday-form-field bday-form-sm"><label>Hora</label><input class="bday-input" id="bdayTmplHour" type="number" min="0" max="23" value="' + hour + '"></div>'
     html += '<div class="bday-form-field bday-form-sm"><label>Ordem</label><input class="bday-input" id="bdayTmplOrder" type="number" min="1" max="99" value="' + (t.sort_order || 1) + '"></div>'
     html += '</div>'
 
     // Content + live phone preview side-by-side
     html += '<div class="bday-edit-split">'
 
-    // Editor (left)
+    // ── Editor (left) ────────────────────────────────────────
     html += '<div class="bday-edit-left">'
-    html += '<div class="bday-form-field"><label>Mensagem</label><textarea class="bday-textarea" id="bdayTmplContent" rows="8" placeholder="Escreva a mensagem aqui...">' + _esc(t.content || '') + '</textarea></div>'
-    html += '<div class="bday-form-field"><label>Imagem (URL)</label><input class="bday-input" id="bdayTmplMedia" value="' + _esc(t.media_url || '') + '" placeholder="https://..."></div>'
+
+    // Textarea with formatting toolbar
+    html += '<div class="bday-form-field">'
+    html += '<label>Mensagem</label>'
+    html += '<textarea class="bday-textarea" id="bdayTmplContent" rows="10" placeholder="Escreva a mensagem aqui...&#10;&#10;Use [nome] para personalizar.&#10;Quebras de linha serao mantidas.">' + _esc(t.content || '') + '</textarea>'
+
+    // Formatting toolbar (identical structure to broadcast)
+    html += '<div class="bday-tags-bar">'
+    html += '<span class="bday-bar-hint">Inserir:</span>'
+    html += '<button type="button" class="bday-bar-tag" data-tag="[nome]">[nome]</button>'
+    html += '<button type="button" class="bday-bar-tag" data-tag="[queixas]">[queixas]</button>'
+    html += '<button type="button" class="bday-bar-tag" data-tag="[idade]">[idade]</button>'
+    html += '<button type="button" class="bday-bar-tag" data-tag="[orcamento]">[orcamento]</button>'
+    html += '<span class="bday-bar-sep"></span>'
+    html += '<button type="button" class="bday-bar-fmt" data-wrap="*" title="Negrito"><b>N</b></button>'
+    html += '<button type="button" class="bday-bar-fmt" data-wrap="_" title="Italico"><i>I</i></button>'
+    html += '<button type="button" class="bday-bar-fmt" data-wrap="~" title="Riscado"><s>R</s></button>'
+    html += '<button type="button" class="bday-bar-fmt bday-bar-mono" data-wrap="```" title="Monoespaco">{ }</button>'
+    html += '<span class="bday-bar-sep"></span>'
+    // Emoji picker
+    html += '<div class="bday-emoji-wrap">'
+    html += '<button type="button" class="bday-bar-fmt bday-emoji-toggle" id="bdayEmojiToggle" title="Emojis">&#128578;</button>'
+    html += '<div class="bday-emoji-picker" id="bdayEmojiPicker">'
+    _emojis.forEach(function (e) {
+      html += '<button type="button" class="bday-emoji-btn" data-emoji="' + e + '">' + e + '</button>'
+    })
+    html += '</div>'
+    html += '</div>'
+    html += '</div>' // close tags-bar
+    html += '</div>' // close form-field
+
+    // Media: image URL + link
+    html += '<div class="bday-form-field">'
+    html += '<label>Imagem (URL)</label>'
+    html += '<input class="bday-input" id="bdayTmplMedia" value="' + _esc(t.media_url || '') + '" placeholder="https://... (URL da imagem)">'
     html += '</div>'
 
-    // Phone preview (right)
+    // Link field
+    html += '<div class="bday-form-field">'
+    html += '<label>' + _ico('link', 12) + ' Link (anexado ao final da mensagem)</label>'
+    html += '<input class="bday-input" id="bdayTmplLink" value="' + _esc(t.link_url || '') + '" placeholder="https://... (link para agendamento, site, etc)">'
+    html += '</div>'
+
+    html += '</div>' // close bday-edit-left
+
+    // ── Phone preview (right, fixed) ─────────────────────────
     html += '<div class="bday-edit-right">'
-    html += '<div class="bday-phone-preview">'
+    html += '<div class="bday-phone-preview bday-phone-sticky">'
     html += '<div class="bday-phone-notch"></div>'
     html += '<div class="bday-phone-header">'
     html += '<div class="bday-phone-avatar">M</div>'
@@ -170,10 +216,10 @@
     html += '</div>'
     html += '<div class="bday-phone-chat" id="bdayPhoneChat">'
     html += '<div class="bday-phone-bubble">' + _waFormat(resolved) + '</div>'
-    html += '<div class="bday-phone-time">10:00</div>'
+    html += '<div class="bday-phone-time">' + hourStr + '</div>'
     html += '</div>'
     html += '</div>'
-    html += '</div>'
+    html += '</div>' // close bday-edit-right
 
     html += '</div>' // close split
 
