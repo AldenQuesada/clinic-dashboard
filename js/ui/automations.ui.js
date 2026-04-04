@@ -1476,7 +1476,8 @@
     var u = document.getElementById('bcMediaUrl')
     var t = document.getElementById('bcContent')
     if (n) _broadcastForm.name = n.value
-    if (u) _broadcastForm.media_url = u.value
+    // Only overwrite media_url from input if it has a value (upload sets it directly)
+    if (u && u.value) _broadcastForm.media_url = u.value
     if (t) _broadcastForm.content = t.value
     var posRadio = document.querySelector('input[name="bcMediaPos"]:checked')
     if (posRadio) _broadcastForm.media_position = posRadio.value
@@ -2219,8 +2220,8 @@
         var textarea = document.getElementById('bcContent')
         if (!textarea) return
         var emoji = btn.dataset.emoji
-        var start = textarea.selectionStart
         var text = textarea.value
+        var start = textarea === document.activeElement ? textarea.selectionStart : text.length
         textarea.value = text.substring(0, start) + emoji + text.substring(start)
         textarea.selectionStart = textarea.selectionEnd = start + emoji.length
         textarea.focus()
@@ -2335,11 +2336,11 @@
     var saveBtn = document.getElementById('bcSaveBtn')
     if (saveBtn) {
       saveBtn.addEventListener('click', async function() {
-        var name = (document.getElementById('bcName') || {}).value || ''
-        var content = (document.getElementById('bcContent') || {}).value || ''
-        var mediaUrl = (document.getElementById('bcMediaUrl') || {}).value || ''
-        var mediaPosRadio = document.querySelector('input[name="bcMediaPos"]:checked')
-        var mediaPosition = mediaPosRadio ? mediaPosRadio.value : 'above'
+        _bcSaveFormFields()
+        var name = _broadcastForm.name || ''
+        var content = _broadcastForm.content || ''
+        var mediaUrl = _broadcastForm.media_url || ''
+        var mediaPosition = _broadcastForm.media_position || 'above'
         var filterPhase = (document.getElementById('bcFilterPhase') || {}).value || ''
         var filterTemp = (document.getElementById('bcFilterTemp') || {}).value || ''
         var filterFunnel = (document.getElementById('bcFilterFunnel') || {}).value || ''
