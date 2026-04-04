@@ -125,10 +125,10 @@
       item.addEventListener('click', async function() {
         window.BroadcastUI.setState('broadcastSelected', item.dataset.id)
         window.BroadcastUI.setState('broadcastMode', 'detail')
-        window.BroadcastUI.setState('bcPanelTab', 'history')
         window.BroadcastUI.setState('bcStats', null)
         window.BroadcastUI.setState('bcSegment', 'all')
         window.BroadcastUI.setState('bcSegmentLeads', [])
+        window.BroadcastUI.setState('bcConfirmSend', false)
         _render()
         // Load stats async
         if (window.BroadcastService && window.BroadcastService.getBroadcastStats) {
@@ -539,6 +539,84 @@
         window.BroadcastUI.setState('broadcastMode', 'new')
         window.BroadcastUI.setState('bcPanelTab', 'editor')
         window.BroadcastUI.setState('_editingBroadcastId', id)
+        _render()
+      })
+    })
+
+    // Clone from history list
+    document.querySelectorAll('.bc-hist-clone-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault()
+        e.stopPropagation()
+        var id = btn.dataset.id
+        var broadcasts = window.BroadcastUI.getState().broadcasts
+        var b = broadcasts.find(function(x) { return x.id === id })
+        if (!b) return
+        var form = {
+          name: (b.name || '') + ' (copia)',
+          content: b.content || '',
+          media_url: b.media_url || '',
+          media_caption: b.media_caption || '',
+          media_position: b.media_position || 'above',
+          filter_phase: (b.target_filter && b.target_filter.phase) || '',
+          filter_temperature: (b.target_filter && b.target_filter.temperature) || '',
+          filter_funnel: (b.target_filter && b.target_filter.funnel) || '',
+          filter_source: (b.target_filter && b.target_filter.source_type) || '',
+          batch_size: b.batch_size || 10,
+          batch_interval_min: b.batch_interval_min || 10,
+          selected_leads: [],
+          scheduled_at: '',
+        }
+        window.BroadcastUI.setState('broadcastForm', form)
+        window.BroadcastUI.setState('broadcastMode', 'new')
+        window.BroadcastUI.setState('bcPanelTab', 'editor')
+        window.BroadcastUI.setState('_editingBroadcastId', null)
+        _render()
+      })
+    })
+
+    // Pre-send button — show checklist
+    document.querySelectorAll('.bc-presend-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        window.BroadcastUI.setState('bcConfirmSend', true)
+        _render()
+      })
+    })
+
+    // Confirm cancel
+    document.querySelectorAll('.bc-confirm-no').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        window.BroadcastUI.setState('bcConfirmSend', false)
+        _render()
+      })
+    })
+
+    // Clone from detail
+    document.querySelectorAll('.bc-clone-detail-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = btn.dataset.id
+        var broadcasts = window.BroadcastUI.getState().broadcasts
+        var b = broadcasts.find(function(x) { return x.id === id })
+        if (!b) return
+        var form = {
+          name: (b.name || '') + ' (copia)',
+          content: b.content || '',
+          media_url: b.media_url || '',
+          media_caption: b.media_caption || '',
+          media_position: b.media_position || 'above',
+          filter_phase: (b.target_filter && b.target_filter.phase) || '',
+          filter_temperature: (b.target_filter && b.target_filter.temperature) || '',
+          filter_funnel: (b.target_filter && b.target_filter.funnel) || '',
+          filter_source: (b.target_filter && b.target_filter.source_type) || '',
+          batch_size: b.batch_size || 10,
+          batch_interval_min: b.batch_interval_min || 10,
+          selected_leads: [],
+          scheduled_at: '',
+        }
+        window.BroadcastUI.setState('broadcastForm', form)
+        window.BroadcastUI.setState('broadcastMode', 'new')
+        window.BroadcastUI.setState('bcPanelTab', 'editor')
+        window.BroadcastUI.setState('_editingBroadcastId', null)
         _render()
       })
     })

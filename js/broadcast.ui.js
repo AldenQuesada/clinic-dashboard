@@ -32,6 +32,7 @@
   var _bcUploading = false
   var _bcDeleteConfirm = null // id do broadcast em confirmacao de delete
   var _editingBroadcastId = null // id quando editando broadcast existente
+  var _bcConfirmSend = false // mostra checklist de confirmacao
 
   function _emptyBroadcastForm() {
     return {
@@ -397,7 +398,10 @@
 
       html += '</div>'
       if (!isDeleting) {
+        html += '<div class="bc-hist-actions">'
+        html += '<button class="bc-hist-clone-btn" data-id="' + b.id + '" title="Reaproveitar">' + _feather('refreshCw', 13) + '</button>'
         html += '<button class="bc-hist-del-btn" data-id="' + b.id + '" title="Deletar">' + _feather('trash2', 13) + '</button>'
+        html += '</div>'
       }
       html += '</div>'
     }
@@ -569,11 +573,27 @@
           ${filterTags.length > 0 ? filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') : ''}
         </div>
         <div class="bc-detail-topbar-right">
+          ${st === 'draft' ? '<button class="am-btn-ghost bc-clone-detail-btn" data-id="' + b.id + '">' + _feather('refreshCw', 13) + '</button>' : ''}
           ${st === 'draft' ? '<button class="am-btn-ghost bc-edit-btn" data-id="' + b.id + '">' + _feather('edit2', 13) + ' Editar</button>' : ''}
-          ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('play', 13) + ' Iniciar</button>' : ''}
+          ${st === 'draft' && !_bcConfirmSend ? '<button class="am-btn-primary bc-presend-btn" data-id="' + b.id + '">' + _feather('play', 13) + ' Iniciar</button>' : ''}
           ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '">' + _feather('xCircle', 13) + ' Cancelar</button>' : ''}
         </div>
       </div>
+      ${_bcConfirmSend && st === 'draft' ? '<div class="bc-confirm-send">'
+        + '<div class="bc-confirm-title">' + _feather('shield', 14) + ' Confirmar envio</div>'
+        + '<div class="bc-confirm-checks">'
+        + '<div class="bc-confirm-item">' + _feather('userCheck', 12) + ' <b>' + (b.total_targets || 0) + '</b> destinatarios</div>'
+        + (filterTags.length > 0 ? '<div class="bc-confirm-item">' + _feather('tag', 12) + ' Filtros: ' + filterTags.join(', ') + '</div>' : '<div class="bc-confirm-item">' + _feather('tag', 12) + ' Sem filtros (leads manuais)</div>')
+        + '<div class="bc-confirm-item">' + _feather('messageCircle', 12) + ' Mensagem: ' + _esc((b.content || '').substring(0, 50)) + (b.content && b.content.length > 50 ? '...' : '') + '</div>'
+        + (b.media_url ? '<div class="bc-confirm-item">' + _feather('image', 12) + ' Com midia (' + (b.media_position || 'above') + ')</div>' : '')
+        + '<div class="bc-confirm-item">' + _feather('shield', 12) + ' Lote: ' + (b.batch_size || 10) + ' a cada ' + (b.batch_interval_min || 10) + 'min</div>'
+        + (b.scheduled_at ? '<div class="bc-confirm-item">' + _feather('clock', 12) + ' Agendado: ' + new Date(b.scheduled_at).toLocaleString('pt-BR') + '</div>' : '<div class="bc-confirm-item">' + _feather('zap', 12) + ' Envio imediato</div>')
+        + '</div>'
+        + '<div class="bc-confirm-actions">'
+        + '<button class="am-btn-secondary bc-confirm-no">Voltar</button>'
+        + '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('check', 14) + ' Confirmar envio</button>'
+        + '</div>'
+        + '</div>' : ''}
       ${st === 'sending' ? '<div class="bc-progress" style="margin-bottom:16px"><div class="bc-progress-bar" style="width:' + progress + '%"></div><span class="bc-progress-text">' + progress + '%</span></div>' : ''}
       <div class="bc-detail-msg">${_esc(b.content)}</div>
       ${b.media_url ? (function() {
@@ -726,6 +746,7 @@
         uploading: _bcUploading,
         deleteConfirm: _bcDeleteConfirm,
         editingId: _editingBroadcastId,
+        confirmSend: _bcConfirmSend,
       }
     },
     setState: function(key, val) {
@@ -742,6 +763,7 @@
       if (key === 'bcUploading') _bcUploading = val
       if (key === 'bcDeleteConfirm') _bcDeleteConfirm = val
       if (key === '_editingBroadcastId') _editingBroadcastId = val
+      if (key === 'bcConfirmSend') _bcConfirmSend = val
       if (key === 'broadcasts') _broadcasts = val
     },
     emptyForm: _emptyBroadcastForm,
