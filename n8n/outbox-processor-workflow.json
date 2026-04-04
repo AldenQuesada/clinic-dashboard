@@ -66,7 +66,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Send text or image via Evolution API\nconst item = $input.first().json;\nconst phone = item.phone;\nconst content = item.content;\nconst mediaUrl = item.media_url || null;\nconst mediaCaption = item.media_caption || null;\n\n// If has media_url, send image first, then text\nif (mediaUrl) {\n  try {\n    await this.helpers.httpRequest({\n      method: 'POST',\n      url: 'http://n8n_evolution-api:8080/message/sendMedia/Mih',\n      headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },\n      body: { number: phone, mediatype: 'image', media: mediaUrl, caption: mediaCaption || '' },\n      json: true\n    });\n  } catch(e) {}\n}\n\n// Send text\nif (content) {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'http://n8n_evolution-api:8080/message/sendText/Mih',\n    headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },\n    body: { number: phone, text: content },\n    json: true\n  });\n}\n\nreturn [{ json: { sent: true, phone: phone } }];"
+        "jsCode": "// Send text or image via Evolution API — capture wa_message_id for receipt tracking\nconst item = $input.first().json;\nconst phone = item.phone;\nconst content = item.content;\nconst mediaUrl = item.media_url || null;\nconst mediaCaption = item.media_caption || null;\nlet waMessageId = null;\n\n// If has media_url, send image first, then text\nif (mediaUrl) {\n  try {\n    const mediaResp = await this.helpers.httpRequest({\n      method: 'POST',\n      url: 'http://n8n_evolution-api:8080/message/sendMedia/Mih',\n      headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },\n      body: { number: phone, mediatype: 'image', media: mediaUrl, caption: mediaCaption || '' },\n      json: true\n    });\n    if (mediaResp && mediaResp.key && mediaResp.key.id) waMessageId = mediaResp.key.id;\n  } catch(e) {}\n}\n\n// Send text\nif (content) {\n  const textResp = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'http://n8n_evolution-api:8080/message/sendText/Mih',\n    headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },\n    body: { number: phone, text: content },\n    json: true\n  });\n  // Text message ID takes priority (it's the main content)\n  if (textResp && textResp.key && textResp.key.id) waMessageId = textResp.key.id;\n}\n\nreturn [{ json: { sent: true, phone: phone, wa_message_id: waMessageId } }];"
       },
       "id": "send-wa",
       "name": "Send WhatsApp",
@@ -90,7 +90,8 @@
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "p_outbox_id", "value": "={{ $('Split Items').item.json.id }}" }
+            { "name": "p_outbox_id", "value": "={{ $('Split Items').item.json.id }}" },
+            { "name": "p_wa_message_id", "value": "={{ $('Send WhatsApp').item.json.wa_message_id }}" }
           ]
         },
         "options": {}

@@ -95,6 +95,8 @@
     // Only overwrite media_url from input if it has a value (upload sets it directly)
     if (u && u.value) _broadcastForm.media_url = u.value
     if (t) _broadcastForm.content = t.value
+    var cap = document.getElementById('bcMediaCaption')
+    if (cap) _broadcastForm.media_caption = cap.value
     var posRadio = document.querySelector('input[name="bcMediaPos"]:checked')
     if (posRadio) _broadcastForm.media_position = posRadio.value
     var schedMode = document.querySelector('input[name="bcScheduleMode"]:checked')
@@ -446,6 +448,7 @@
           </div>
           <input type="file" id="bcMediaFile" accept="image/*" style="display:none">
           ${f.media_url ? '<div class="bc-media-preview"><img src="' + _esc(f.media_url) + '" alt="preview"><button type="button" class="bc-media-remove" id="bcMediaRemove">' + _feather('x', 10) + '</button></div>' : ''}
+          <input class="am-input" id="bcMediaCaption" placeholder="Legenda da imagem (opcional)" value="${_esc(f.media_caption)}" style="margin-top:6px${f.media_url ? '' : ';display:none'}">
           <div class="bc-media-pos">
             <label class="bc-pos-label"><input type="radio" name="bcMediaPos" value="above" ${f.media_position !== 'below' ? 'checked' : ''}> Acima do texto</label>
             <label class="bc-pos-label"><input type="radio" name="bcMediaPos" value="below" ${f.media_position === 'below' ? 'checked' : ''}> Abaixo do texto</label>
@@ -621,6 +624,9 @@
           <div class="bc-leads-seg">
             <div class="bc-seg-item${_bcSegment === 'all' ? ' bc-seg-active' : ''}" data-seg="all"><span class="bc-seg-icon" style="background:#6B728020;color:#6B7280">${_feather('userCheck', 13)}</span><span class="bc-seg-num">${b.total_targets || 0}</span><span class="bc-seg-lbl">Todos</span></div>
             <div class="bc-seg-item${_bcSegment === 'sent' ? ' bc-seg-active' : ''}" data-seg="sent"><span class="bc-seg-icon" style="background:#10B98120;color:#10B981">${_feather('check', 13)}</span><span class="bc-seg-num">${b.sent_count || 0}</span><span class="bc-seg-lbl">Enviados</span></div>
+            ${s ? '<div class="bc-seg-item' + (_bcSegment === 'responded' ? ' bc-seg-active' : '') + '" data-seg="responded"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">' + _feather('messageCircle', 13) + '</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
+            ${s ? '<div class="bc-seg-item' + (_bcSegment === 'delivered' ? ' bc-seg-active' : '') + '" data-seg="delivered"><span class="bc-seg-icon" style="background:#0EA5E920;color:#0EA5E9">' + _feather('checkCircle', 13) + '</span><span class="bc-seg-num">' + (s.delivered || 0) + '</span><span class="bc-seg-lbl">Entregues</span></div>' : ''}
+            ${s ? '<div class="bc-seg-item' + (_bcSegment === 'read' ? ' bc-seg-active' : '') + '" data-seg="read"><span class="bc-seg-icon" style="background:#8B5CF620;color:#8B5CF6">' + _feather('eye', 13) + '</span><span class="bc-seg-num">' + (s.read || 0) + '</span><span class="bc-seg-lbl">Lidos</span></div>' : ''}
             ${s ? '<div class="bc-seg-item' + (_bcSegment === 'responded' ? ' bc-seg-active' : '') + '" data-seg="responded"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">' + _feather('messageCircle', 13) + '</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
             ${s ? '<div class="bc-seg-item' + (_bcSegment === 'no_response' ? ' bc-seg-active' : '') + '" data-seg="no_response"><span class="bc-seg-icon" style="background:#F59E0B20;color:#F59E0B">' + _feather('clock', 13) + '</span><span class="bc-seg-num">' + noResponse + '</span><span class="bc-seg-lbl">Sem resposta</span></div>' : ''}
             <div class="bc-seg-item${_bcSegment === 'failed' ? ' bc-seg-active' : ''}" data-seg="failed"><span class="bc-seg-icon" style="background:#EF444420;color:#EF4444">${_feather('alertCircle', 13)}</span><span class="bc-seg-num">${b.failed_count || 0}</span><span class="bc-seg-lbl">Falhas</span></div>

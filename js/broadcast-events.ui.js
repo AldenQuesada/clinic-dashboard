@@ -463,7 +463,7 @@
           name: name.trim(),
           content: content.trim(),
           media_url: mediaUrl.trim() || null,
-          media_caption: null,
+          media_caption: curForm.media_caption ? curForm.media_caption.trim() : null,
           media_position: mediaPosition,
           target_filter: filter,
           batch_size: batchSize,

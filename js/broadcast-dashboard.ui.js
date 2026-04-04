@@ -55,8 +55,12 @@
     var metrics = [
       { key: 'sent', label: 'Enviados', color: '#10B981' },
       { key: 'rate', label: 'Taxa envio', color: '#C9A96E' },
+      { key: 'dlv', label: 'Entregues', color: '#0EA5E9' },
+      { key: 'dlv_rate', label: 'Taxa entrega', color: '#0284C7' },
+      { key: 'read', label: 'Lidos', color: '#8B5CF6' },
+      { key: 'read_rate', label: 'Taxa leitura', color: '#7C3AED' },
       { key: 'resp', label: 'Responderam', color: '#2563EB' },
-      { key: 'resp_rate', label: 'Taxa resposta', color: '#8B5CF6' },
+      { key: 'resp_rate', label: 'Taxa resposta', color: '#1D4ED8' },
       { key: 'failed', label: 'Falhas', color: '#EF4444' },
       { key: 'targets', label: 'Destinatarios', color: '#6B7280' }
     ]
@@ -68,12 +72,19 @@
 
     // Get values per broadcast for selected metric
     var activeMetric = metrics.find(function(m) { return m.key === _bcDashMetric }) || metrics[0]
+    var isPercentMetric = ['rate','dlv_rate','read_rate','resp_rate'].indexOf(_bcDashMetric) >= 0
     var values = sorted.map(function(b) {
       var sent = b.sent_count || 0
       var targets = b.total_targets || 0
       var responded = b.responded || 0
+      var delivered = b.delivered || 0
+      var readCount = b.read || 0
       if (_bcDashMetric === 'sent') return sent
       if (_bcDashMetric === 'rate') return targets > 0 ? Math.round((sent / targets) * 100) : 0
+      if (_bcDashMetric === 'dlv') return delivered
+      if (_bcDashMetric === 'dlv_rate') return sent > 0 ? Math.round((delivered / sent) * 100) : 0
+      if (_bcDashMetric === 'read') return readCount
+      if (_bcDashMetric === 'read_rate') return sent > 0 ? Math.round((readCount / sent) * 100) : 0
       if (_bcDashMetric === 'resp') return responded
       if (_bcDashMetric === 'resp_rate') return sent > 0 ? Math.round((responded / sent) * 100) : 0
       if (_bcDashMetric === 'failed') return b.failed_count || 0
@@ -99,9 +110,9 @@
 
     // Y grid + labels
     for (var i = 0; i <= 4; i++) {
-      var yVal = (_bcDashMetric === 'rate' || _bcDashMetric === 'resp_rate') ? (i * 25) : Math.round(maxVal * i / 4)
+      var yVal = isPercentMetric ? (i * 25) : Math.round(maxVal * i / 4)
       var yPos = PADT + chartH - (i / 4) * chartH
-      svg += '<text x="' + (PAD - 5) + '" y="' + (yPos + 3) + '" text-anchor="end" fill="#9CA3AF" font-size="9">' + yVal + ((_bcDashMetric === 'rate' || _bcDashMetric === 'resp_rate') ? '%' : '') + '</text>'
+      svg += '<text x="' + (PAD - 5) + '" y="' + (yPos + 3) + '" text-anchor="end" fill="#9CA3AF" font-size="9">' + yVal + (isPercentMetric ? '%' : '') + '</text>'
       svg += '<line x1="' + PAD + '" y1="' + yPos + '" x2="' + (W - PADR) + '" y2="' + yPos + '" stroke="#E5E7EB" stroke-dasharray="3,3"/>'
     }
 
@@ -116,7 +127,7 @@
     svg += '<line x1="' + PAD + '" y1="' + PADT + '" x2="' + PAD + '" y2="' + (PADT + chartH) + '" stroke="#E5E7EB"/>'
 
     // Line + area fill
-    var yMaxChart = (_bcDashMetric === 'rate' || _bcDashMetric === 'resp_rate') ? 100 : maxVal
+    var yMaxChart = isPercentMetric ? 100 : maxVal
     var points = values.map(function(v, idx) {
       var px = PAD + (n > 1 ? (idx / (n - 1)) * chartW : chartW / 2)
       var py = PADT + chartH - (v / yMaxChart) * chartH
@@ -136,7 +147,7 @@
     values.forEach(function(v, idx) {
       var px = PAD + (n > 1 ? (idx / (n - 1)) * chartW : chartW / 2)
       var py = PADT + chartH - (v / yMaxChart) * chartH
-      var valLabel = v + ((_bcDashMetric === 'rate' || _bcDashMetric === 'resp_rate') ? '%' : '')
+      var valLabel = v + (isPercentMetric ? '%' : '')
       var nameLabel = _esc(names[idx]).substring(0, 15)
       // Hover group
       svg += '<g class="bc-chart-dot">'
@@ -170,13 +181,19 @@
     var totalTargets = 0
     var totalCompleted = 0
     var totalResponded = 0
+    var totalDelivered = 0
+    var totalRead = 0
     filtered.forEach(function(b) {
       totalEnviados += (b.sent_count || 0)
       totalTargets += (b.total_targets || 0)
       totalResponded += (b.responded || 0)
+      totalDelivered += (b.delivered || 0)
+      totalRead += (b.read || 0)
       if (b.status === 'completed') totalCompleted++
     })
     var taxaEnvio = totalTargets > 0 ? Math.round((totalEnviados / totalTargets) * 100) : 0
+    var taxaEntrega = totalEnviados > 0 ? Math.round((totalDelivered / totalEnviados) * 100) : 0
+    var taxaLeitura = totalEnviados > 0 ? Math.round((totalRead / totalEnviados) * 100) : 0
     var taxaResposta = totalEnviados > 0 ? Math.round((totalResponded / totalEnviados) * 100) : 0
 
     var html = '<div class="bc-dashboard">'
@@ -203,6 +220,8 @@
     html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + totalDisparos + '</span><span class="bc-dash-kpi-lbl">Disparos</span></div>'
     html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + totalEnviados + '</span><span class="bc-dash-kpi-lbl">Enviados</span></div>'
     html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + taxaEnvio + '%</span><span class="bc-dash-kpi-lbl">Taxa envio</span></div>'
+    html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + taxaEntrega + '%</span><span class="bc-dash-kpi-lbl">Taxa entrega</span></div>'
+    html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + taxaLeitura + '%</span><span class="bc-dash-kpi-lbl">Taxa leitura</span></div>'
     html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + totalResponded + '</span><span class="bc-dash-kpi-lbl">Responderam</span></div>'
     html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + taxaResposta + '%</span><span class="bc-dash-kpi-lbl">Taxa resp.</span></div>'
     html += '</div>'
