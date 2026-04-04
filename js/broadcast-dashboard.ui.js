@@ -53,12 +53,12 @@
 
     // Metric selector tabs
     var metrics = [
-      { key: 'sent', label: 'Envi', color: '#10B981' },
-      { key: 'rate', label: 'Taxa', color: '#C9A96E' },
-      { key: 'resp', label: 'Resp', color: '#2563EB' },
-      { key: 'resp_rate', label: 'T.Re', color: '#8B5CF6' },
-      { key: 'failed', label: 'Falh', color: '#EF4444' },
-      { key: 'targets', label: 'Dest', color: '#6B7280' }
+      { key: 'sent', label: 'Enviados', color: '#10B981' },
+      { key: 'rate', label: 'Taxa envio', color: '#C9A96E' },
+      { key: 'resp', label: 'Responderam', color: '#2563EB' },
+      { key: 'resp_rate', label: 'Taxa resposta', color: '#8B5CF6' },
+      { key: 'failed', label: 'Falhas', color: '#EF4444' },
+      { key: 'targets', label: 'Destinatarios', color: '#6B7280' }
     ]
     var metricTabs = '<div class="bc-dash-metric-tabs">'
     metrics.forEach(function(m) {
@@ -108,7 +108,7 @@
     // X labels (broadcast names + dates)
     for (var j = 0; j < n; j++) {
       var x = PAD + (n > 1 ? (j / (n - 1)) * chartW : chartW / 2)
-      svg += '<text x="' + x + '" y="' + (H - 18) + '" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="600">' + _esc(names[j]).substring(0, 12) + '</text>'
+      svg += '<text x="' + x + '" y="' + (H - 18) + '" text-anchor="middle" fill="#6B7280" font-size="7" font-weight="600">' + _esc(names[j]).substring(0, 4) + '</text>'
       svg += '<text x="' + x + '" y="' + (H - 6) + '" text-anchor="middle" fill="#9CA3AF" font-size="8">' + labels[j] + '</text>'
     }
 
