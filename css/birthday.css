@@ -177,6 +177,62 @@
 .bday-st-paused { background: #FEF3C7; color: #D97706; }
 .bday-st-cancelled { background: #FEE2E2; color: #DC2626; }
 
+/* ── Rules tab ────────────────────────────────────────────── */
+.bday-rules-section { margin-bottom: 28px; }
+.bday-rules-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.bday-rules-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 8px; }
+.bday-rules-note { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; margin-top: 10px; }
+
+/* Steps */
+.bday-rules-steps { display: flex; flex-direction: column; gap: 0; position: relative; padding-left: 20px; }
+.bday-rules-steps::before { content: ''; position: absolute; left: 14px; top: 20px; bottom: 20px; width: 2px; background: var(--border); }
+.bday-rule-step { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; position: relative; }
+.bday-rule-step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; z-index: 1; margin-left: -20px; }
+.bday-rule-step-icon { color: var(--accent); flex-shrink: 0; margin-top: 2px; }
+.bday-rule-step-content { display: flex; flex-direction: column; gap: 2px; }
+.bday-rule-step-content strong { font-size: 13px; color: var(--text-primary); }
+.bday-rule-step-content span { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+/* Table */
+.bday-rules-table { overflow-x: auto; }
+.bday-rules-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.bday-rules-table th { text-align: left; padding: 8px 12px; background: var(--bg-secondary); color: var(--text-muted); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+.bday-rules-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.bday-rules-table td strong { color: var(--text-primary); }
+.bday-rules-table tr:last-child td { border-bottom: none; }
+
+/* Guard cards */
+.bday-rules-guards { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.bday-guard-card { display: flex; align-items: flex-start; gap: 12px; padding: 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; }
+.bday-guard-icon { flex-shrink: 0; margin-top: 2px; }
+.bday-guard-card strong { font-size: 13px; display: block; margin-bottom: 2px; }
+.bday-guard-card p { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin: 0; }
+
+/* Segments info */
+.bday-rules-segs { display: flex; flex-direction: column; gap: 6px; }
+.bday-seg-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+.bday-seg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.bday-seg-info strong { min-width: 130px; }
+.bday-seg-info span { color: var(--text-muted); font-size: 12px; }
+
+/* Template info */
+.bday-rules-timeline { display: flex; flex-direction: column; gap: 6px; }
+.bday-tmpl-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+.bday-tmpl-badge { font-size: 11px; font-weight: 800; color: #fff; background: var(--accent); padding: 2px 8px; border-radius: 6px; flex-shrink: 0; }
+.bday-tmpl-info strong { min-width: 100px; }
+.bday-tmpl-info .bday-tmpl-hour { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.bday-tmpl-info .bday-tmpl-desc { font-size: 11px; color: var(--text-muted); }
+
+/* Variables */
+.bday-rules-vars { display: flex; flex-direction: column; gap: 4px; }
+.bday-var-info { display: flex; align-items: center; gap: 10px; padding: 8px 14px; font-size: 13px; }
+.bday-var-info code { background: var(--bg-secondary); padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; color: var(--accent); min-width: 100px; }
+.bday-var-info span { color: var(--text-muted); font-size: 12px; }
+
+/* Link */
+.bday-rules-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--accent); transition: all .15s; }
+.bday-rules-link:hover { border-color: var(--accent); }
+
 /* ── Empty state ──────────────────────────────────────────── */
 .bday-empty { text-align: center; padding: 30px; color: var(--text-muted); font-size: 12px; }
 

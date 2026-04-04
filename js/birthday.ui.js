@@ -51,6 +51,7 @@
     html += _tabBtn('dashboard', 'bar-chart-2', 'Painel')
     html += _tabBtn('timeline', 'git-branch', 'Timeline')
     html += _tabBtn('campaigns', 'users', 'Campanhas')
+    html += _tabBtn('rules', 'book-open', 'Regras')
     html += '</div>'
     var paused = window.BirthdayService.isPaused()
     if (paused) {
@@ -71,6 +72,7 @@
     if (_tab === 'dashboard') html += _renderDashboard()
     else if (_tab === 'timeline') html += window.BirthdayTemplatesUI ? window.BirthdayTemplatesUI.render() : ''
     else if (_tab === 'campaigns') html += _renderCampaigns()
+    else if (_tab === 'rules') html += _renderRules()
 
     html += '</div>'
     root.innerHTML = html
@@ -262,6 +264,105 @@
 
     html += '</div>'
     return html
+  }
+
+  // ── Rules ──────────────────────────────────────────────────
+  function _renderRules() {
+    var html = ''
+
+    // Fluxo mensal
+    html += '<div class="bday-rules-section">'
+    html += '<div class="bday-rules-title">' + _ico('git-branch', 18) + ' Fluxo mensal</div>'
+    html += '<div class="bday-rules-steps">'
+    html += _ruleStep(1, 'scanner', 'Scanner di\u00e1rio', 'Cron roda \u00e0s 7h, cria campanhas para aniversariantes nos pr\u00f3ximos 31 dias.')
+    html += _ruleStep(2, 'shield', 'Auto-exclus\u00e3o', 'Regras inteligentes excluem leads com or\u00e7amento aberto, procedimento recente, agendamento ou atendimento ativo.')
+    html += _ruleStep(3, 'user-check', 'Revis\u00e3o manual', 'Secret\u00e1ria revisa o painel na aba Campanhas: ativa/desativa leads individuais.')
+    html += _ruleStep(4, 'send', 'Envio autom\u00e1tico', 'Mensagens D-30, D-29, D-28 s\u00e3o enviadas via WhatsApp nos hor\u00e1rios configurados.')
+    html += _ruleStep(5, 'check-circle', 'Guards mid-sequence', 'Antes de cada mensagem, verifica se o lead j\u00e1 engajou. Se sim, cancela as restantes.')
+    html += '</div></div>'
+
+    // Regras de auto-exclusao
+    html += '<div class="bday-rules-section">'
+    html += '<div class="bday-rules-title">' + _ico('shield', 18) + ' Regras de auto-exclus\u00e3o</div>'
+    html += '<div class="bday-rules-table"><table>'
+    html += '<thead><tr><th>Regra</th><th>Condi\u00e7\u00e3o</th><th>A\u00e7\u00e3o</th><th>Override?</th></tr></thead><tbody>'
+    html += _ruleRow('Or\u00e7amento em aberto', 'Lead tem or\u00e7amento com status pendente/rascunho', 'OFF autom\u00e1tico', 'Sim')
+    html += _ruleRow('Procedimento recente', 'Fez procedimento nos \u00faltimos 30 dias', 'OFF autom\u00e1tico', 'Sim')
+    html += _ruleRow('Agendamento pr\u00f3ximo', 'Tem consulta agendada nos pr\u00f3ximos 7 dias', 'OFF autom\u00e1tico', 'Sim')
+    html += _ruleRow('Atendimento ativo', 'Canal mudou de WhatsApp (presencial/telefone/email)', 'OFF autom\u00e1tico', 'Sim')
+    html += _ruleRow('WhatsApp desativado', 'Lead com wa_opt_in = false', 'OFF bloqueado', 'N\u00e3o')
+    html += _ruleRow('Sem telefone', 'Lead sem n\u00famero de telefone cadastrado', 'OFF bloqueado', 'N\u00e3o')
+    html += '</tbody></table></div></div>'
+
+    // Guards mid-sequence
+    html += '<div class="bday-rules-section">'
+    html += '<div class="bday-rules-title">' + _ico('alert-triangle', 18) + ' Guards mid-sequence</div>'
+    html += '<p class="bday-rules-desc">Verificados <strong>antes de cada mensagem</strong> ser enviada. Se qualquer guard dispara, as mensagens restantes s\u00e3o canceladas automaticamente.</p>'
+    html += '<div class="bday-rules-guards">'
+    html += _guardCard('message-circle', 'Lead respondeu', 'Se o lead enviou qualquer mensagem no WhatsApp ap\u00f3s o in\u00edcio da campanha, a sequ\u00eancia para. Status: respondeu.', '#8B5CF6')
+    html += _guardCard('file-text', 'Or\u00e7amento criado', 'Se a secret\u00e1ria criou um or\u00e7amento para o lead ap\u00f3s o in\u00edcio da campanha. Status: cancelada.', '#F59E0B')
+    html += _guardCard('phone', 'Canal mudou', 'Se o lead passou a ser atendido por telefone, presencial ou email. Status: cancelada.', '#EF4444')
+    html += '</div></div>'
+
+    // Segmentos
+    html += '<div class="bday-rules-section">'
+    html += '<div class="bday-rules-title">' + _ico('layers', 18) + ' Segmentos</div>'
+    html += '<div class="bday-rules-segs">'
+    html += _segInfo('Paciente', 'Lead na fase paciente, sem or\u00e7amento aberto', '#10B981')
+    html += _segInfo('Or\u00e7amento', 'Lead com or\u00e7amento pendente/rascunho', '#2563EB')
+    html += _segInfo('Paciente + Or\u00e7amento', 'Paciente que tamb\u00e9m tem or\u00e7amento aberto', '#F59E0B')
+    html += '</div></div>'
+
+    // Templates
+    html += '<div class="bday-rules-section">'
+    html += '<div class="bday-rules-title">' + _ico('edit-3', 18) + ' Sequ\u00eancia de mensagens (edit\u00e1vel na aba Timeline)</div>'
+    html += '<div class="bday-rules-timeline">'
+    html += _tmplInfo('D-30', 'Oportunidade', '10h', 'Primeiro contato, apresenta a oferta de anivers\u00e1rio com link da p\u00e1gina interativa.')
+    html += _tmplInfo('D-29', 'Lembrete', '10h', 'Urg\u00eancia: "s\u00f3 at\u00e9 amanh\u00e3". Refor\u00e7a as 3 op\u00e7\u00f5es.')
+    html += _tmplInfo('D-28', '\u00daltima chance', '10h', 'Scarcity: "\u00faltimo dia, volta pro valor normal".')
+    html += '</div>'
+    html += '<p class="bday-rules-note">' + _ico('info', 13) + ' Voc\u00ea pode adicionar mais mensagens, mudar o D+ e a hora na aba Timeline.</p>'
+    html += '</div>'
+
+    // Variaveis
+    html += '<div class="bday-rules-section">'
+    html += '<div class="bday-rules-title">' + _ico('code', 18) + ' Vari\u00e1veis dispon\u00edveis nas mensagens</div>'
+    html += '<div class="bday-rules-vars">'
+    html += _varInfo('[nome]', 'Primeiro nome do lead')
+    html += _varInfo('[queixas]', 'Queixas faciais/corporais do lead (do quiz)')
+    html += _varInfo('[idade]', 'Idade que o lead vai fazer')
+    html += _varInfo('[orcamento]', 'T\u00edtulo e valor do or\u00e7amento aberto')
+    html += '</div></div>'
+
+    // Landing page
+    html += '<div class="bday-rules-section">'
+    html += '<div class="bday-rules-title">' + _ico('external-link', 18) + ' P\u00e1gina interativa de presente</div>'
+    html += '<p class="bday-rules-desc">Link inclu\u00eddo automaticamente nas mensagens:</p>'
+    html += '<a class="bday-rules-link" href="https://clinicai-dashboard.px1hdq.easypanel.host/aniversario.html" target="_blank">' + _ico('gift', 14) + ' clinicai-dashboard.px1hdq.easypanel.host/aniversario.html</a>'
+    html += '<p class="bday-rules-desc" style="margin-top:8px">A lead escolhe: desconto, parcelamento, mais procedimentos. 3 faixas de ml (1ml, 2ml, 3ml) com pre\u00e7os, parcelas e b\u00f4nus progressivos.</p>'
+    html += '</div>'
+
+    return html
+  }
+
+  // ── Rules helpers ──────────────────────────────────────────
+  function _ruleStep(num, icon, title, desc) {
+    return '<div class="bday-rule-step"><div class="bday-rule-step-num">' + num + '</div><div class="bday-rule-step-icon">' + _ico(icon, 16) + '</div><div class="bday-rule-step-content"><strong>' + title + '</strong><span>' + desc + '</span></div></div>'
+  }
+  function _ruleRow(rule, condition, action, override) {
+    return '<tr><td><strong>' + rule + '</strong></td><td>' + condition + '</td><td>' + action + '</td><td>' + override + '</td></tr>'
+  }
+  function _guardCard(icon, title, desc, color) {
+    return '<div class="bday-guard-card" style="border-left:3px solid ' + color + '"><div class="bday-guard-icon" style="color:' + color + '">' + _ico(icon, 18) + '</div><div><strong>' + title + '</strong><p>' + desc + '</p></div></div>'
+  }
+  function _segInfo(name, desc, color) {
+    return '<div class="bday-seg-info"><span class="bday-seg-dot" style="background:' + color + '"></span><strong>' + name + '</strong><span>' + desc + '</span></div>'
+  }
+  function _tmplInfo(day, label, hour, desc) {
+    return '<div class="bday-tmpl-info"><span class="bday-tmpl-badge">' + day + '</span><strong>' + label + '</strong><span class="bday-tmpl-hour">' + hour + '</span><span class="bday-tmpl-desc">' + desc + '</span></div>'
+  }
+  function _varInfo(code, desc) {
+    return '<div class="bday-var-info"><code>' + code + '</code><span>' + desc + '</span></div>'
   }
 
   // ── Mount ──────────────────────────────────────────────────
