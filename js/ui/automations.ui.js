@@ -1517,7 +1517,140 @@
     }
 
     var layoutClass = isFormMode ? 'bc-layout-form' : 'bc-layout'
-    return '<div class="am-tab-content"><div class="' + layoutClass + '">' + listHtml + panelHtml + phoneHtml + '</div></div>'
+    var docsHtml = _renderBroadcastDocs()
+    return '<div class="am-tab-content"><div class="' + layoutClass + '">' + listHtml + panelHtml + phoneHtml + '</div>' + docsHtml + '</div>'
+  }
+
+  function _renderBroadcastDocs() {
+    var sections = [
+      {
+        title: 'Segmentacao e Filtros',
+        icon: 'tag',
+        color: '#2563EB',
+        description: 'Como os filtros selecionam destinatarios do disparo',
+        rules: [
+          { name: 'Fase do lead', desc: 'Filtra por fase do funil: lead, agendado, compareceu, orcamento, paciente, perdido', status: 'active', type: 'flow' },
+          { name: 'Temperatura', desc: 'Filtra por temperatura: quente (hot), morno (warm), frio (cold)', status: 'active', type: 'flow' },
+          { name: 'Funil', desc: 'Filtra por funil: Full Face ou Procedimentos', status: 'active', type: 'flow' },
+          { name: 'Origem', desc: 'Filtra por fonte: Quiz, Manual ou Importacao', status: 'active', type: 'flow' },
+          { name: 'Filtros combinados (AND)', desc: 'Multiplos filtros aplicam restricao cumulativa — lead deve bater em TODOS', status: 'active', type: 'rule' },
+          { name: 'Requisito base: wa_opt_in', desc: 'So envia para leads com opt-in ativo e nao deletados', status: 'active', type: 'shield' },
+        ]
+      },
+      {
+        title: 'Selecao Manual de Leads',
+        icon: 'userCheck',
+        color: '#059669',
+        description: 'Selecionar leads especificos por nome para o disparo',
+        rules: [
+          { name: 'Busca por nome', desc: 'Campo de busca com autocomplete — digita 2+ letras e mostra ate 8 resultados', status: 'active', type: 'flow' },
+          { name: 'Chips removiveis', desc: 'Leads selecionados aparecem como chips com botao X para remover', status: 'active', type: 'flow' },
+          { name: 'UNION com filtros', desc: 'Leads manuais + filtrados combinados sem duplicatas (UNION SQL)', status: 'active', type: 'flow' },
+          { name: 'So manuais (sem filtro)', desc: 'Se nao selecionar filtros, envia apenas para os leads escolhidos', status: 'active', type: 'flow' },
+          { name: 'Validacao obrigatoria', desc: 'Obrigatorio ter pelo menos 1 filtro OU 1 lead selecionado', status: 'active', type: 'shield' },
+        ]
+      },
+      {
+        title: 'Controle de Envio (Throttle)',
+        icon: 'shield',
+        color: '#DC2626',
+        description: 'Protecao contra bloqueio do WhatsApp com envio escalonado',
+        rules: [
+          { name: 'Lote configuravel', desc: 'Selecionar quantos envios por lote: 5, 10, 15 ou 20 pessoas', status: 'active', type: 'flow' },
+          { name: 'Intervalo configuravel', desc: 'Tempo entre lotes: 5, 10, 15, 20, 30 min ou 1 hora', status: 'active', type: 'flow' },
+          { name: 'scheduled_at escalonado', desc: 'SQL usa row_number() para distribuir scheduled_at por batch no outbox', status: 'active', type: 'shield' },
+          { name: 'Outbox processor respeita horario', desc: 'n8n busca pending WHERE scheduled_at <= now() — sem mudanca no workflow', status: 'active', type: 'shield' },
+          { name: 'Estimativa de tempo', desc: 'Toast mostra tempo estimado total ao iniciar disparo', status: 'active', type: 'flow' },
+        ]
+      },
+      {
+        title: 'Personalizacao da Mensagem',
+        icon: 'messageCircle',
+        color: '#7C3AED',
+        description: 'Variaveis e preview em tempo real',
+        rules: [
+          { name: 'Tag [nome]', desc: 'Substituida pelo nome do lead no envio', status: 'active', type: 'flow' },
+          { name: 'Tag [queixa]', desc: 'Substituida pela queixa principal do lead', status: 'active', type: 'flow' },
+          { name: 'Botoes de insercao', desc: 'Clique para inserir tags na posicao do cursor', status: 'active', type: 'flow' },
+          { name: 'Preview WhatsApp real-time', desc: 'Telefone mockup na direita mostra preview conforme digita', status: 'active', type: 'flow' },
+          { name: 'Quebras de linha preservadas', desc: 'white-space: pre-wrap no bubble — Enter = nova linha no WhatsApp', status: 'active', type: 'flow' },
+          { name: 'Midia opcional', desc: 'URL de imagem/video com legenda — enviado como content_type=image', status: 'active', type: 'flow' },
+        ]
+      },
+      {
+        title: 'Ciclo de Vida do Disparo',
+        icon: 'refreshCw',
+        color: '#D97706',
+        description: 'Status e operacoes do broadcast',
+        rules: [
+          { name: 'Draft → Sending', desc: 'Ao clicar Iniciar Disparo, enfileira mensagens no outbox com throttle', status: 'active', type: 'flow' },
+          { name: 'Sending → Completed', desc: 'n8n processa outbox a cada 2min — ao zerar pendentes, marca completed', status: 'active', type: 'flow' },
+          { name: 'Cancelamento', desc: 'Remove mensagens pending/processing do outbox, marca cancelled', status: 'active', type: 'flow' },
+          { name: 'Contagem de falhas', desc: 'failed_count rastreia envios que falharam apos max_attempts', status: 'active', type: 'shield' },
+          { name: 'Progresso visual', desc: 'Barra de progresso na sidebar mostra sent_count / total_targets', status: 'active', type: 'flow' },
+        ]
+      },
+      {
+        title: 'Arquitetura Tecnica',
+        icon: 'settings',
+        color: '#6B7280',
+        description: 'Stack e componentes do sistema de broadcasting',
+        rules: [
+          { name: 'Tabela wa_broadcasts', desc: 'Armazena campanha: nome, conteudo, filtros, selected_lead_ids, batch config, status, contadores', status: 'active', type: 'flow' },
+          { name: 'Tabela wa_outbox', desc: 'Fila de envio: cada msg individual com scheduled_at, broadcast_id, priority=7', status: 'active', type: 'flow' },
+          { name: '4 RPCs Supabase', desc: 'wa_broadcast_create, wa_broadcast_start, wa_broadcast_list, wa_broadcast_cancel', status: 'active', type: 'flow' },
+          { name: 'n8n Outbox Processor', desc: 'Workflow cron 2min: fetch_pending → split → Evolution API → mark_sent', status: 'active', type: 'flow' },
+          { name: 'RLS por clinica', desc: 'Row Level Security isola dados por clinic_id', status: 'active', type: 'shield' },
+          { name: 'Repository + Service pattern', desc: 'broadcast.repository.js (RPC puro) → broadcast.service.js (validacao)', status: 'active', type: 'flow' },
+        ]
+      },
+    ]
+
+    var statusIcon = function(s) {
+      if (s === 'active') return '<span class="am-status am-status-active" title="Ativo">&#10003;</span>'
+      return '<span class="am-status am-status-pending" title="Pendente">&#9675;</span>'
+    }
+    var typeIcon = function(t) {
+      var map = { shield: 'shield', flow: 'refreshCw', rule: 'lock', tag: 'zap' }
+      return _feather(map[t] || 'zap', 12)
+    }
+
+    var html = '<div class="am-wa-sections" style="margin-top:20px">'
+    for (var i = 0; i < sections.length; i++) {
+      var section = sections[i]
+      var activeCount = section.rules.filter(function(r) { return r.status === 'active' }).length
+      var totalCount = section.rules.length
+
+      html += '<div class="am-wa-section">'
+      html += '<div class="am-wa-section-header">'
+      html += '<div class="am-wa-section-icon" style="background:' + section.color + '15;color:' + section.color + '">' + _feather(section.icon, 18) + '</div>'
+      html += '<div class="am-wa-section-info">'
+      html += '<div class="am-wa-section-title">' + section.title + '</div>'
+      html += '<div class="am-wa-section-desc">' + section.description + '</div>'
+      html += '</div>'
+      html += '<div class="am-wa-section-count"><span class="am-wa-count-badge" style="background:' + (activeCount === totalCount ? '#05966915' : '#D9770615') + ';color:' + (activeCount === totalCount ? '#059669' : '#D97706') + '">' + activeCount + '/' + totalCount + '</span></div>'
+      html += '</div>'
+      html += '<div class="am-wa-rules">'
+      for (var j = 0; j < section.rules.length; j++) {
+        var r = section.rules[j]
+        html += '<div class="am-wa-rule ' + (r.status === 'active' ? 'am-wa-rule-active' : 'am-wa-rule-pending') + '">'
+        html += '<div class="am-wa-rule-status">' + statusIcon(r.status) + '</div>'
+        html += '<div class="am-wa-rule-type">' + typeIcon(r.type) + '</div>'
+        html += '<div class="am-wa-rule-info">'
+        html += '<div class="am-wa-rule-name">' + r.name + '</div>'
+        html += '<div class="am-wa-rule-desc">' + r.desc + '</div>'
+        html += '</div></div>'
+      }
+      html += '</div></div>'
+    }
+    html += '</div>'
+
+    var legend = '<div class="am-wa-legend">'
+    legend += '<span class="am-wa-legend-item"><span class="am-status am-status-active">&#10003;</span> Implementado e ativo</span>'
+    legend += '<span class="am-wa-legend-item"><span class="am-status am-status-pending">&#9675;</span> Planejado</span>'
+    legend += '</div>'
+
+    return legend + html
   }
 
   function _renderBroadcastForm() {
