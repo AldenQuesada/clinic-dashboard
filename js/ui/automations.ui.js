@@ -1437,6 +1437,8 @@
   var _bcRefreshTimer = null
   var _bcPanelOpen = true
   var _bcPanelTab = 'history' // 'editor' | 'history' | 'rules'
+  var _bcDashPeriod = '7d'
+  var _bcDashSort = 'sent'
   var _bcStats = null
   var _bcSegment = 'all'
   var _bcSegmentLeads = []
@@ -1501,13 +1503,8 @@
     } else if (_broadcastMode === 'detail' && _broadcastSelected) {
       centerHtml += '<div class="bc-center-detail">' + _renderBroadcastDetail() + '</div>'
     } else {
-      // Empty state
-      centerHtml += '<div class="bc-center-empty">'
-      centerHtml += _feather('messageCircle', 40)
-      centerHtml += '<h3>Disparos em massa</h3>'
-      centerHtml += '<p>Selecione um disparo no historico ou crie um novo</p>'
-      centerHtml += '<button class="am-btn-primary" id="bcNewBtn2">' + _feather('plus', 14) + ' Novo Disparo</button>'
-      centerHtml += '</div>'
+      // Analytics dashboard
+      centerHtml += _renderBroadcastDashboard()
     }
     centerHtml += '</div>'
 
@@ -1515,6 +1512,237 @@
     var panelHtml = _renderBroadcastSlidePanel()
 
     return '<div class="am-tab-content"><div class="bc-v2">' + statsHtml + centerHtml + '</div>' + panelHtml + '</div>'
+  }
+
+  // ── Broadcast Dashboard ─────────────────────────────────────
+
+  function _filterBroadcastsByPeriod(period) {
+    if (period === 'all') return _broadcasts.slice()
+    var now = new Date()
+    var cutoff
+    if (period === 'today') {
+      cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    } else if (period === '7d') {
+      cutoff = now.getTime() - 7 * 86400000
+    } else if (period === 'month') {
+      cutoff = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+    } else if (period === '90d') {
+      cutoff = now.getTime() - 90 * 86400000
+    } else {
+      return _broadcasts.slice()
+    }
+    return _broadcasts.filter(function(b) {
+      var ts = b.created_at ? new Date(b.created_at).getTime() : 0
+      return ts >= cutoff
+    })
+  }
+
+  function _renderBcLineChart(filtered) {
+    var byDay = {}
+    var sentByDay = {}
+    filtered.forEach(function(b) {
+      var d = b.created_at ? new Date(b.created_at).toISOString().substring(0, 10) : null
+      if (!d) return
+      byDay[d] = (byDay[d] || 0) + 1
+      sentByDay[d] = (sentByDay[d] || 0) + (b.sent_count || 0)
+    })
+
+    var dates = Object.keys(byDay).sort()
+    if (dates.length === 0) return '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">Sem dados no periodo</div>'
+
+    // Fill date gaps
+    var start = new Date(dates[0])
+    var end = new Date(dates[dates.length - 1])
+    var allDates = []
+    for (var d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      allDates.push(d.toISOString().substring(0, 10))
+    }
+    if (allDates.length < 2) allDates = dates
+
+    var values = allDates.map(function(d) { return byDay[d] || 0 })
+    var sentValues = allDates.map(function(d) { return sentByDay[d] || 0 })
+    var maxVal = Math.max(Math.max.apply(null, values), Math.max.apply(null, sentValues), 1)
+
+    var W = 500, H = 160, PAD = 35, PADR = 10, PADT = 10, PADB = 25
+    var chartW = W - PAD - PADR
+    var chartH = H - PADT - PADB
+
+    function buildPoints(vals) {
+      return vals.map(function(v, i) {
+        var x = PAD + (i / Math.max(vals.length - 1, 1)) * chartW
+        var y = PADT + chartH - (v / maxVal) * chartH
+        return x.toFixed(1) + ',' + y.toFixed(1)
+      }).join(' ')
+    }
+
+    var line1 = buildPoints(values)
+    var line2 = buildPoints(sentValues)
+
+    var yLabels = ''
+    for (var i = 0; i <= 4; i++) {
+      var yVal = Math.round(maxVal * i / 4)
+      var yPos = PADT + chartH - (i / 4) * chartH
+      yLabels += '<text x="' + (PAD - 5) + '" y="' + (yPos + 3) + '" text-anchor="end" fill="#9CA3AF" font-size="9">' + yVal + '</text>'
+      yLabels += '<line x1="' + PAD + '" y1="' + yPos + '" x2="' + (W - PADR) + '" y2="' + yPos + '" stroke="#E5E7EB" stroke-dasharray="3,3"/>'
+    }
+
+    var xLabels = ''
+    var step = Math.max(1, Math.floor(allDates.length / 7))
+    for (var j = 0; j < allDates.length; j += step) {
+      var x = PAD + (j / Math.max(allDates.length - 1, 1)) * chartW
+      var label = allDates[j].substring(5).replace('-', '/')
+      xLabels += '<text x="' + x + '" y="' + (H - 5) + '" text-anchor="middle" fill="#9CA3AF" font-size="9">' + label + '</text>'
+    }
+
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">'
+    svg += yLabels + xLabels
+    svg += '<line x1="' + PAD + '" y1="' + PADT + '" x2="' + PAD + '" y2="' + (PADT + chartH) + '" stroke="#E5E7EB"/>'
+    svg += '<polyline points="' + line1 + '" fill="none" stroke="#C9A96E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    svg += '<polyline points="' + line2 + '" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3"/>'
+    values.forEach(function(v, idx) {
+      var cx = PAD + (idx / Math.max(values.length - 1, 1)) * chartW
+      var cy = PADT + chartH - (v / maxVal) * chartH
+      svg += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3" fill="#C9A96E"/>'
+    })
+    svg += '</svg>'
+
+    return '<div class="bc-dash-chart">'
+      + '<div class="bc-dash-chart-title">Volume de disparos</div>'
+      + svg
+      + '<div class="bc-dash-legend">'
+      + '<span><span class="bc-dash-legend-dot" style="background:#C9A96E"></span>Disparos</span>'
+      + '<span><span class="bc-dash-legend-dot" style="background:#10B981"></span>Enviados</span>'
+      + '</div></div>'
+  }
+
+  function _renderBroadcastDashboard() {
+    var filtered = _filterBroadcastsByPeriod(_bcDashPeriod)
+
+    // KPI calculations
+    var totalDisparos = filtered.length
+    var totalEnviados = 0
+    var totalTargets = 0
+    var totalCompleted = 0
+    filtered.forEach(function(b) {
+      totalEnviados += (b.sent_count || 0)
+      totalTargets += (b.total_targets || 0)
+      if (b.status === 'completed') totalCompleted++
+    })
+    var taxaEnvio = totalTargets > 0 ? Math.round((totalEnviados / totalTargets) * 100) : 0
+    var taxaConclusion = totalDisparos > 0 ? Math.round((totalCompleted / totalDisparos) * 100) : 0
+
+    var html = '<div class="bc-dashboard">'
+
+    // Period filter tabs
+    html += '<div class="bc-dash-top-row">'
+    html += '<div class="bc-dash-filters">'
+    var periods = [
+      { key: 'today', label: 'Hoje' },
+      { key: '7d', label: '7 dias' },
+      { key: 'month', label: 'Mes' },
+      { key: '90d', label: '90 dias' },
+      { key: 'all', label: 'Todos' }
+    ]
+    periods.forEach(function(p) {
+      html += '<button class="bc-dash-filter' + (_bcDashPeriod === p.key ? ' active' : '') + '" data-period="' + p.key + '">' + p.label + '</button>'
+    })
+    html += '</div>'
+    html += '<button class="am-btn-primary bc-dash-new-btn" id="bcNewBtn2">' + _feather('plus', 14) + ' Novo Disparo</button>'
+    html += '</div>'
+
+    // KPI cards
+    html += '<div class="bc-dash-kpis">'
+    html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + totalDisparos + '</span><span class="bc-dash-kpi-lbl">Disparos</span></div>'
+    html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + totalEnviados + '</span><span class="bc-dash-kpi-lbl">Enviados</span></div>'
+    html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + taxaEnvio + '%</span><span class="bc-dash-kpi-lbl">Taxa envio</span></div>'
+    html += '<div class="bc-dash-kpi"><span class="bc-dash-kpi-val">' + taxaConclusion + '%</span><span class="bc-dash-kpi-lbl">Concluidos</span></div>'
+    html += '</div>'
+
+    // Line chart
+    html += _renderBcLineChart(filtered)
+
+    // Comparison bar chart
+    var sorted = filtered.slice()
+    if (_bcDashSort === 'sent') {
+      sorted.sort(function(a, b) { return (b.sent_count || 0) - (a.sent_count || 0) })
+    } else if (_bcDashSort === 'rate') {
+      sorted.sort(function(a, b) {
+        var rA = (a.total_targets || 0) > 0 ? (a.sent_count || 0) / a.total_targets : 0
+        var rB = (b.total_targets || 0) > 0 ? (b.sent_count || 0) / b.total_targets : 0
+        return rB - rA
+      })
+    } else {
+      sorted.sort(function(a, b) {
+        var tA = a.created_at ? new Date(a.created_at).getTime() : 0
+        var tB = b.created_at ? new Date(b.created_at).getTime() : 0
+        return tB - tA
+      })
+    }
+
+    var topBars = sorted.slice(0, 10)
+    var maxSent = 1
+    topBars.forEach(function(b) { if ((b.sent_count || 0) > maxSent) maxSent = b.sent_count })
+
+    html += '<div class="bc-dash-compare">'
+    html += '<div class="bc-dash-compare-header">'
+    html += '<span class="bc-dash-section-title">Comparativo de Performance</span>'
+    html += '<select class="bc-dash-sort" id="bcDashSort">'
+    html += '<option value="sent"' + (_bcDashSort === 'sent' ? ' selected' : '') + '>Enviados</option>'
+    html += '<option value="rate"' + (_bcDashSort === 'rate' ? ' selected' : '') + '>Taxa envio</option>'
+    html += '<option value="date"' + (_bcDashSort === 'date' ? ' selected' : '') + '>Data</option>'
+    html += '</select>'
+    html += '</div>'
+    html += '<div class="bc-dash-bars">'
+
+    if (topBars.length === 0) {
+      html += '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">Nenhum disparo no periodo</div>'
+    } else {
+      topBars.forEach(function(b) {
+        var sent = b.sent_count || 0
+        var targets = b.total_targets || 0
+        var rate = targets > 0 ? Math.round((sent / targets) * 100) : 0
+        var pct = maxSent > 0 ? Math.round((sent / maxSent) * 100) : 0
+        var color = rate >= 90 ? '#10B981' : rate >= 70 ? '#F59E0B' : rate >= 50 ? '#F97316' : '#EF4444'
+        if (sent === 0 && targets === 0) color = '#9CA3AF'
+        html += '<div class="bc-dash-bar-row">'
+        html += '<span class="bc-dash-bar-name" title="' + _esc(b.name || 'Sem nome') + '">' + _esc(b.name || 'Sem nome') + '</span>'
+        html += '<div class="bc-dash-bar-track"><div class="bc-dash-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
+        html += '<span class="bc-dash-bar-val">' + sent + ' env &middot; ' + rate + '%</span>'
+        html += '</div>'
+      })
+    }
+
+    html += '</div></div>'
+
+    // Table
+    html += '<div class="bc-dash-table-wrap">'
+    html += '<table class="bc-dash-table">'
+    html += '<thead><tr><th>Nome</th><th>Enviados</th><th>Falhas</th><th>Data</th><th>Status</th></tr></thead>'
+    html += '<tbody>'
+    if (sorted.length === 0) {
+      html += '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Nenhum disparo no periodo</td></tr>'
+    } else {
+      sorted.slice(0, 20).forEach(function(b) {
+        var sent = b.sent_count || 0
+        var targets = b.total_targets || 0
+        var failed = b.failed_count || 0
+        var dt = b.created_at ? new Date(b.created_at) : null
+        var dateStr = dt ? (dt.getDate().toString().padStart(2, '0') + '/' + (dt.getMonth() + 1).toString().padStart(2, '0') + ' ' + dt.getHours().toString().padStart(2, '0') + ':' + dt.getMinutes().toString().padStart(2, '0')) : '-'
+        var st = b.status || 'draft'
+        var stColor = st === 'completed' ? '#10B981' : st === 'sending' ? '#F59E0B' : st === 'cancelled' ? '#EF4444' : '#6B7280'
+        html += '<tr>'
+        html += '<td>' + _esc(b.name || 'Sem nome') + '</td>'
+        html += '<td>' + sent + '/' + targets + '</td>'
+        html += '<td>' + failed + '</td>'
+        html += '<td>' + dateStr + '</td>'
+        html += '<td><span class="bc-status-dot" style="background:' + stColor + '"></span> ' + _esc(st) + '</td>'
+        html += '</tr>'
+      })
+    }
+    html += '</tbody></table></div>'
+
+    html += '</div>'
+    return html
   }
 
   function _renderBroadcastStats() {
@@ -2448,6 +2676,23 @@
         }
       })
     })
+
+    // Dashboard period filter buttons
+    document.querySelectorAll('.bc-dash-filter').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        _bcDashPeriod = btn.dataset.period
+        _render()
+      })
+    })
+
+    // Dashboard sort select
+    var dashSort = document.getElementById('bcDashSort')
+    if (dashSort) {
+      dashSort.addEventListener('change', function() {
+        _bcDashSort = dashSort.value
+        _render()
+      })
+    }
   }
 
   // ── Toast ─────────────────────────────────────────────────────
