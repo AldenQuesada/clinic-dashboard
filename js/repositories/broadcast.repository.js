@@ -83,6 +83,21 @@
     return _rpc('wa_broadcast_leads', { p_broadcast_id: id, p_segment: segment || 'all' })
   }
 
+  async function reschedule(id, data) {
+    return _rpc('wa_broadcast_reschedule', {
+      p_broadcast_id: id,
+      p_name: data.name,
+      p_content: data.content,
+      p_media_url: data.media_url || null,
+      p_target_filter: data.target_filter || {},
+      p_scheduled_at: data.scheduled_at || null,
+      p_batch_size: data.batch_size || 10,
+      p_batch_interval_min: data.batch_interval_min || 10,
+      p_selected_lead_ids: data.selected_lead_ids && data.selected_lead_ids.length > 0 ? data.selected_lead_ids : null,
+      p_media_position: data.media_position || 'above',
+    })
+  }
+
   async function update(id, data) {
     return _rpc('wa_broadcast_update', {
       p_broadcast_id: id,
@@ -105,6 +120,7 @@
     list,
     create,
     update,
+    reschedule,
     start,
     cancel,
     remove,

@@ -281,7 +281,7 @@
     html += '</div>'
 
     // Tabs
-    var scheduledCount = _broadcasts.filter(function(b) { return b.status === 'draft' && b.scheduled_at }).length
+    var scheduledCount = _broadcasts.filter(function(b) { return b.scheduled_at && new Date(b.scheduled_at) > new Date() && (b.status === 'draft' || b.status === 'sending') }).length
     html += '<div class="bc-slide-tabs">'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'editor' ? ' active' : '') + '" data-panel-tab="editor">Editor</button>'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
@@ -317,7 +317,7 @@
   }
 
   function _renderBroadcastScheduledTab() {
-    var scheduled = _broadcasts.filter(function(b) { return b.status === 'draft' && b.scheduled_at })
+    var scheduled = _broadcasts.filter(function(b) { return b.scheduled_at && new Date(b.scheduled_at) > new Date() && (b.status === 'draft' || b.status === 'sending') })
     if (scheduled.length === 0) {
       return '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px">' + _feather('clock', 24) + '<div style="margin-top:8px">Nenhum disparo programado</div></div>'
     }
@@ -353,7 +353,7 @@
 
   function _renderBroadcastHistoryTab() {
     // Filter out scheduled drafts (they show in Programados tab)
-    var historyList = _broadcasts.filter(function(b) { return !(b.status === 'draft' && b.scheduled_at) })
+    var historyList = _broadcasts.filter(function(b) { return !(b.scheduled_at && new Date(b.scheduled_at) > new Date() && (b.status === 'draft' || b.status === 'sending')) })
     if (historyList.length === 0) {
       return '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px">Nenhum disparo ainda</div>'
     }

@@ -479,11 +479,32 @@
 
         if (result && result.ok) {
           var hasSchedule = curForm.scheduled_at && curForm.scheduled_at.length > 0
-          _showToast(editId ? 'Disparo atualizado!' : 'Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios encontrados')
-          window.BroadcastUI.setState('broadcastSelected', editId || result.data?.id || null)
-          window.BroadcastUI.setState('broadcastMode', 'detail')
+          var broadcastId = editId || result.data?.id || null
+
+          if (hasSchedule && broadcastId) {
+            // Scheduled: auto-start to enqueue with future scheduled_at
+            if (editId) {
+              // Editing: reschedule (clears old outbox, resets to draft, then start)
+              await window.BroadcastService.rescheduleBroadcast(editId, saveData)
+            }
+            // Start to enqueue messages with scheduled_at in the future
+            await window.BroadcastUI.loadBroadcasts()
+            var startResult = await window.BroadcastService.startBroadcast(broadcastId)
+            if (startResult && startResult.ok) {
+              _showToast('Programado para ' + new Date(curForm.scheduled_at).toLocaleString('pt-BR'))
+            } else {
+              _showToast('Erro ao programar: ' + (startResult?.error || ''), 'error')
+            }
+          } else {
+            _showToast(editId ? 'Disparo atualizado!' : 'Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios')
+          }
+
+          // Return to dashboard (not detail)
+          window.BroadcastUI.setState('broadcastSelected', null)
+          window.BroadcastUI.setState('broadcastMode', 'dashboard')
           window.BroadcastUI.setState('bcPanelTab', hasSchedule ? 'scheduled' : 'history')
           window.BroadcastUI.setState('_editingBroadcastId', null)
+          window.BroadcastUI.setState('bcConfirmSend', false)
           await window.BroadcastUI.loadBroadcasts()
         } else {
           _showToast(result?.error || 'Erro ao salvar disparo', 'error')
@@ -644,6 +665,9 @@
             msg += ' (~' + est + 'min para concluir)'
           }
           _showToast(msg)
+          window.BroadcastUI.setState('broadcastSelected', null)
+          window.BroadcastUI.setState('broadcastMode', 'dashboard')
+          window.BroadcastUI.setState('bcConfirmSend', false)
           await window.BroadcastUI.loadBroadcasts()
         } else {
           _showToast(result?.error || 'Erro ao iniciar', 'error')
