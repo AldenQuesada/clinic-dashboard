@@ -45,7 +45,7 @@
   // ── Broadcast ─────────────────────────────────────────────────
 
   async function list() {
-    return _rpc('wa_broadcast_list')
+    return _rpc('wa_broadcast_list_with_stats')
   }
 
   async function create(data) {

@@ -1574,7 +1574,7 @@
 .bc-dash-filter:hover { border-color: #D1D5DB; color: var(--text-secondary); }
 .bc-dash-filter.active { background: var(--accent-gold); color: #fff; border-color: var(--accent-gold); }
 .bc-dash-new-btn { font-size: 12px; padding: 6px 14px; }
-.bc-dash-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.bc-dash-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
 .bc-dash-kpi { background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
 .bc-dash-kpi-val { display: block; font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1; }
 .bc-dash-kpi-lbl { display: block; font-size: 11px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
