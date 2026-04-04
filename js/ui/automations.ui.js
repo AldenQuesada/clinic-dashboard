@@ -1906,8 +1906,8 @@
           <div class="bc-leads-seg">
             <div class="bc-seg-item bc-seg-all"><span class="bc-seg-icon" style="background:#6B728020;color:#6B7280">${_feather('userCheck', 13)}</span><span class="bc-seg-num">${b.total_targets || 0}</span><span class="bc-seg-lbl">Todos</span></div>
             <div class="bc-seg-item bc-seg-sent"><span class="bc-seg-icon" style="background:#10B98120;color:#10B981">${_feather('check', 13)}</span><span class="bc-seg-num">${b.sent_count || 0}</span><span class="bc-seg-lbl">Enviados</span></div>
-            ${s ? '<div class="bc-seg-item bc-seg-resp"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">${_feather('messageCircle', 13)}</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
-            ${s ? '<div class="bc-seg-item bc-seg-noresp"><span class="bc-seg-icon" style="background:#F59E0B20;color:#F59E0B">${_feather('clock', 13)}</span><span class="bc-seg-num">' + noResponse + '</span><span class="bc-seg-lbl">Sem resposta</span></div>' : ''}
+            ${s ? '<div class="bc-seg-item bc-seg-resp"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">' + _feather('messageCircle', 13) + '</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
+            ${s ? '<div class="bc-seg-item bc-seg-noresp"><span class="bc-seg-icon" style="background:#F59E0B20;color:#F59E0B">' + _feather('clock', 13) + '</span><span class="bc-seg-num">' + noResponse + '</span><span class="bc-seg-lbl">Sem resposta</span></div>' : ''}
             <div class="bc-seg-item bc-seg-fail"><span class="bc-seg-icon" style="background:#EF444420;color:#EF4444">${_feather('alertCircle', 13)}</span><span class="bc-seg-num">${b.failed_count || 0}</span><span class="bc-seg-lbl">Falhas</span></div>
           </div>
         </div>
