@@ -280,9 +280,11 @@
     html += '</div>'
 
     // Tabs
+    var scheduledCount = _broadcasts.filter(function(b) { return b.status === 'draft' && b.scheduled_at }).length
     html += '<div class="bc-slide-tabs">'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'editor' ? ' active' : '') + '" data-panel-tab="editor">Editor</button>'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'scheduled' ? ' active' : '') + '" data-panel-tab="scheduled">Programados' + (scheduledCount > 0 ? ' <span class="bc-tab-badge">' + scheduledCount + '</span>' : '') + '</button>'
     html += '<button class="bc-slide-tab' + (_bcPanelTab === 'rules' ? ' active' : '') + '" data-panel-tab="rules">Regras</button>'
     html += '</div>'
 
@@ -290,6 +292,8 @@
     html += '<div class="bc-slide-body">'
     if (_bcPanelTab === 'editor') {
       html += _renderBroadcastFormBody()
+    } else if (_bcPanelTab === 'scheduled') {
+      html += _renderBroadcastScheduledTab()
     } else if (_bcPanelTab === 'rules') {
       html += _renderBroadcastRulesTab()
     } else {
@@ -311,14 +315,51 @@
     return html
   }
 
+  function _renderBroadcastScheduledTab() {
+    var scheduled = _broadcasts.filter(function(b) { return b.status === 'draft' && b.scheduled_at })
+    if (scheduled.length === 0) {
+      return '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px">' + _feather('clock', 24) + '<div style="margin-top:8px">Nenhum disparo programado</div></div>'
+    }
+
+    var html = ''
+    for (var i = 0; i < scheduled.length; i++) {
+      var b = scheduled[i]
+      var schedDate = new Date(b.scheduled_at)
+      var dateStr = schedDate.toLocaleDateString('pt-BR')
+      var timeStr = schedDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      var now = new Date()
+      var diff = schedDate.getTime() - now.getTime()
+      var diffMin = Math.round(diff / 60000)
+      var countdown = ''
+      if (diffMin > 1440) countdown = Math.floor(diffMin / 1440) + 'd'
+      else if (diffMin > 60) countdown = Math.floor(diffMin / 60) + 'h ' + (diffMin % 60) + 'min'
+      else if (diffMin > 0) countdown = diffMin + 'min'
+      else countdown = 'agora'
+
+      html += '<div class="bc-hist-item' + (_broadcastSelected === b.id ? ' bc-hist-active' : '') + '" data-id="' + b.id + '">'
+      html += '<span class="bc-hist-dot" style="background:var(--accent-gold)"></span>'
+      html += '<div class="bc-hist-info">'
+      html += '<div class="bc-hist-top">'
+      html += '<span class="bc-hist-name">' + _esc(b.name) + '</span>'
+      html += '</div>'
+      html += '<div class="bc-hist-meta">' + _feather('clock', 10) + ' ' + dateStr + ' ' + timeStr + ' &middot; ' + (b.total_targets || 0) + ' dest. &middot; em ' + countdown + '</div>'
+      html += '</div>'
+      html += '<button class="bc-hist-del-btn" data-id="' + b.id + '" title="Deletar">' + _feather('trash2', 13) + '</button>'
+      html += '</div>'
+    }
+    return html
+  }
+
   function _renderBroadcastHistoryTab() {
-    if (_broadcasts.length === 0) {
+    // Filter out scheduled drafts (they show in Programados tab)
+    var historyList = _broadcasts.filter(function(b) { return !(b.status === 'draft' && b.scheduled_at) })
+    if (historyList.length === 0) {
       return '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px">Nenhum disparo ainda</div>'
     }
 
     var html = ''
-    for (var i = 0; i < _broadcasts.length; i++) {
-      var b = _broadcasts[i]
+    for (var i = 0; i < historyList.length; i++) {
+      var b = historyList[i]
       var st = b.status || 'draft'
       var d = b.created_at ? new Date(b.created_at) : null
       var date = d ? d.toLocaleDateString('pt-BR') : '--'
