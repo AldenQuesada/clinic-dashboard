@@ -80,6 +80,11 @@
     return _repo().stats(id)
   }
 
+  async function getBroadcastLeads(id, segment) {
+    if (!_repo()) return _unavailable()
+    return _repo().leads(id, segment)
+  }
+
   window.BroadcastService = Object.freeze({
     loadBroadcasts,
     createBroadcast,
@@ -87,5 +92,6 @@
     cancelBroadcast,
     deleteBroadcast,
     getBroadcastStats,
+    getBroadcastLeads,
   })
 })()

@@ -79,6 +79,10 @@
     return _rpc('wa_broadcast_stats', { p_broadcast_id: id })
   }
 
+  async function leads(id, segment) {
+    return _rpc('wa_broadcast_leads', { p_broadcast_id: id, p_segment: segment || 'all' })
+  }
+
   // ── Expose ────────────────────────────────────────────────────
 
   window.BroadcastRepository = Object.freeze({
@@ -88,5 +92,6 @@
     cancel,
     remove,
     stats,
+    leads,
   })
 })()

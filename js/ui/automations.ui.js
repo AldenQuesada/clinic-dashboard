@@ -1438,6 +1438,8 @@
   var _bcPanelOpen = true
   var _bcPanelTab = 'history' // 'editor' | 'history' | 'rules'
   var _bcStats = null
+  var _bcSegment = 'all'
+  var _bcSegmentLeads = []
   var _bcUploading = false
 
   async function _loadBroadcasts() {
@@ -1882,19 +1884,21 @@
         if (isImg) return '<div class="bc-detail-media" style="margin:12px 0"><img src="' + _esc(b.media_url) + '" alt="media"></div>'
         return '<div class="bc-detail-link" style="margin:12px 0"><a href="' + _esc(b.media_url) + '" target="_blank" rel="noopener">' + _feather('link', 13) + ' ' + _esc(b.media_caption || b.media_url) + '</a></div>'
       })() : ''}
+      ${s ? '<div class="bc-metrics-col" style="margin-bottom:14px">'
+        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.send_rate || 0) + '%;background:#10B981"></div></div><span class="bc-metric-pct">' + (s.send_rate || 0) + '%</span><span class="bc-metric-lbl">Envio</span></div>'
+        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.response_rate || 0) + '%;background:#2563EB"></div></div><span class="bc-metric-pct">' + (s.response_rate || 0) + '%</span><span class="bc-metric-lbl">Resposta</span></div>'
+        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.delivery_rate || 0) + '%;background:#8B5CF6"></div></div><span class="bc-metric-pct">' + (s.delivery_rate || 0) + '%</span><span class="bc-metric-lbl">Entrega</span></div>'
+        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.read_rate || 0) + '%;background:#F59E0B"></div></div><span class="bc-metric-pct">' + (s.read_rate || 0) + '%</span><span class="bc-metric-lbl">Leitura</span></div>'
+        + '</div>' : ''}
       <div class="bc-detail-split">
         <div class="bc-detail-left">
-          <div class="bc-detail-stats-compact">
-            <div class="bc-stat-mini"><span class="bc-stat-mini-val">${b.total_targets || 0}</span><span class="bc-stat-mini-lbl">Destinatarios</span></div>
-            <div class="bc-stat-mini"><span class="bc-stat-mini-val">${b.sent_count || 0}</span><span class="bc-stat-mini-lbl">Enviados</span></div>
-            <div class="bc-stat-mini"><span class="bc-stat-mini-val" ${b.failed_count > 0 ? 'style="color:var(--danger)"' : ''}>${b.failed_count || 0}</span><span class="bc-stat-mini-lbl">Falhas</span></div>
+          <div class="bc-leads-seg">
+            <div class="bc-seg-item${_bcSegment === 'all' ? ' bc-seg-active' : ''}" data-seg="all"><span class="bc-seg-icon" style="background:#6B728020;color:#6B7280">${_feather('userCheck', 13)}</span><span class="bc-seg-num">${b.total_targets || 0}</span><span class="bc-seg-lbl">Todos</span></div>
+            <div class="bc-seg-item${_bcSegment === 'sent' ? ' bc-seg-active' : ''}" data-seg="sent"><span class="bc-seg-icon" style="background:#10B98120;color:#10B981">${_feather('check', 13)}</span><span class="bc-seg-num">${b.sent_count || 0}</span><span class="bc-seg-lbl">Enviados</span></div>
+            ${s ? '<div class="bc-seg-item' + (_bcSegment === 'responded' ? ' bc-seg-active' : '') + '" data-seg="responded"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">' + _feather('messageCircle', 13) + '</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
+            ${s ? '<div class="bc-seg-item' + (_bcSegment === 'no_response' ? ' bc-seg-active' : '') + '" data-seg="no_response"><span class="bc-seg-icon" style="background:#F59E0B20;color:#F59E0B">' + _feather('clock', 13) + '</span><span class="bc-seg-num">' + noResponse + '</span><span class="bc-seg-lbl">Sem resposta</span></div>' : ''}
+            <div class="bc-seg-item${_bcSegment === 'failed' ? ' bc-seg-active' : ''}" data-seg="failed"><span class="bc-seg-icon" style="background:#EF444420;color:#EF4444">${_feather('alertCircle', 13)}</span><span class="bc-seg-num">${b.failed_count || 0}</span><span class="bc-seg-lbl">Falhas</span></div>
           </div>
-          ${s ? '<div class="bc-metrics-col">'
-            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.send_rate || 0) + '%;background:#10B981"></div></div><span class="bc-metric-pct">' + (s.send_rate || 0) + '%</span><span class="bc-metric-lbl">Envio</span></div>'
-            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.response_rate || 0) + '%;background:#2563EB"></div></div><span class="bc-metric-pct">' + (s.response_rate || 0) + '%</span><span class="bc-metric-lbl">Resposta</span></div>'
-            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.delivery_rate || 0) + '%;background:#8B5CF6"></div></div><span class="bc-metric-pct">' + (s.delivery_rate || 0) + '%</span><span class="bc-metric-lbl">Entrega</span></div>'
-            + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.read_rate || 0) + '%;background:#F59E0B"></div></div><span class="bc-metric-pct">' + (s.read_rate || 0) + '%</span><span class="bc-metric-lbl">Leitura</span></div>'
-            + '</div>' : ''}
           <div class="bc-detail-dates">
             <span>${_feather('calendar', 12)} ${date}</span>
             ${b.started_at ? '<span>' + _feather('play', 12) + ' ' + startDate + '</span>' : ''}
@@ -1902,12 +1906,10 @@
           </div>
         </div>
         <div class="bc-detail-right">
-          <div class="bc-leads-seg">
-            <div class="bc-seg-item bc-seg-all"><span class="bc-seg-icon" style="background:#6B728020;color:#6B7280">${_feather('userCheck', 13)}</span><span class="bc-seg-num">${b.total_targets || 0}</span><span class="bc-seg-lbl">Todos</span></div>
-            <div class="bc-seg-item bc-seg-sent"><span class="bc-seg-icon" style="background:#10B98120;color:#10B981">${_feather('check', 13)}</span><span class="bc-seg-num">${b.sent_count || 0}</span><span class="bc-seg-lbl">Enviados</span></div>
-            ${s ? '<div class="bc-seg-item bc-seg-resp"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">' + _feather('messageCircle', 13) + '</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
-            ${s ? '<div class="bc-seg-item bc-seg-noresp"><span class="bc-seg-icon" style="background:#F59E0B20;color:#F59E0B">' + _feather('clock', 13) + '</span><span class="bc-seg-num">' + noResponse + '</span><span class="bc-seg-lbl">Sem resposta</span></div>' : ''}
-            <div class="bc-seg-item bc-seg-fail"><span class="bc-seg-icon" style="background:#EF444420;color:#EF4444">${_feather('alertCircle', 13)}</span><span class="bc-seg-num">${b.failed_count || 0}</span><span class="bc-seg-lbl">Falhas</span></div>
+          <div class="bc-seg-leads-list" id="bcSegLeadsList">
+            ${_bcSegmentLeads.length > 0 ? _bcSegmentLeads.map(function(l) {
+              return '<div class="bc-seg-lead">' + _feather('userCheck', 12) + ' <span>' + _esc(l.name || 'Sem nome') + '</span><small>' + _esc(l.phone || '') + '</small></div>'
+            }).join('') : '<div class="bc-seg-leads-empty">Selecione um segmento para ver os leads</div>'}
           </div>
         </div>
       </div>
@@ -2094,6 +2096,8 @@
         _broadcastMode = 'detail'
         _bcPanelTab = 'history'
         _bcStats = null
+        _bcSegment = 'all'
+        _bcSegmentLeads = []
         _render()
         // Load stats async
         if (window.BroadcastService && window.BroadcastService.getBroadcastStats) {
@@ -2381,6 +2385,23 @@
         }
       })
     }
+
+    // Segment click — load leads for that segment
+    document.querySelectorAll('.bc-seg-item[data-seg]').forEach(function(item) {
+      item.addEventListener('click', async function() {
+        var seg = item.dataset.seg
+        _bcSegment = seg
+        _bcSegmentLeads = []
+        _render()
+        if (window.BroadcastService && window.BroadcastService.getBroadcastLeads && _broadcastSelected) {
+          var result = await window.BroadcastService.getBroadcastLeads(_broadcastSelected, seg)
+          if (result && result.ok && Array.isArray(result.data)) {
+            _bcSegmentLeads = result.data
+          }
+          _render()
+        }
+      })
+    })
 
     // Start buttons
     root.querySelectorAll('.bc-start-btn').forEach(function(btn) {

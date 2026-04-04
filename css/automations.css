@@ -1524,10 +1524,20 @@
 /* Lead segmentation cards */
 .bc-leads-seg { display: flex; flex-direction: column; gap: 6px; }
 .bc-seg-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(0,0,0,0.015); border-radius: 8px; cursor: default; transition: background 0.1s; }
-.bc-seg-item:hover { background: rgba(0,0,0,0.03); }
+.bc-seg-item:hover { background: rgba(0,0,0,0.04); }
+.bc-seg-active { background: rgba(201,169,110,0.08) !important; border-left: 3px solid var(--accent-gold); }
 .bc-seg-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .bc-seg-num { font-size: 16px; font-weight: 800; color: var(--text-primary); min-width: 28px; }
 .bc-seg-lbl { font-size: 12px; color: var(--text-secondary); }
+
+/* Segment leads list (right side) */
+.bc-seg-leads-list { max-height: 300px; overflow-y: auto; }
+.bc-seg-lead { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-primary); }
+.bc-seg-lead:last-child { border-bottom: none; }
+.bc-seg-lead svg { color: var(--text-muted); flex-shrink: 0; }
+.bc-seg-lead span { flex: 1; font-weight: 500; }
+.bc-seg-lead small { font-size: 11px; color: var(--text-muted); font-family: 'SF Mono','Consolas',monospace; }
+.bc-seg-leads-empty { padding: 24px; text-align: center; font-size: 12px; color: var(--text-muted); font-style: italic; }
 
 /* ── Rules documentation tab ─────────────────────────────── */
 .bc-rules-section { margin-bottom: 16px; }
