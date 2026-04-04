@@ -101,6 +101,8 @@
       filter_temperature: '',
       filter_funnel: '',
       filter_source: '',
+      batch_size: 10,
+      batch_interval_min: 10,
     }
   }
 
@@ -1589,6 +1591,34 @@
           </div>
         </div>
       </div>
+        <div class="bc-throttle-section">
+          <label class="am-label">${_feather('shield', 13)} Controle de envio</label>
+          <div class="bc-throttle-row">
+            <div class="am-field">
+              <label class="am-label-sm">Enviar por lote</label>
+              <select class="am-input" id="bcBatchSize">
+                <option value="5"${f.batch_size === 5 ? ' selected' : ''}>5 pessoas</option>
+                <option value="10"${f.batch_size === 10 || !f.batch_size ? ' selected' : ''}>10 pessoas</option>
+                <option value="15"${f.batch_size === 15 ? ' selected' : ''}>15 pessoas</option>
+                <option value="20"${f.batch_size === 20 ? ' selected' : ''}>20 pessoas</option>
+              </select>
+            </div>
+            <div class="bc-throttle-separator">a cada</div>
+            <div class="am-field">
+              <label class="am-label-sm">Intervalo</label>
+              <select class="am-input" id="bcBatchInterval">
+                <option value="5"${f.batch_interval_min === 5 ? ' selected' : ''}>5 min</option>
+                <option value="10"${f.batch_interval_min === 10 || !f.batch_interval_min ? ' selected' : ''}>10 min</option>
+                <option value="15"${f.batch_interval_min === 15 ? ' selected' : ''}>15 min</option>
+                <option value="20"${f.batch_interval_min === 20 ? ' selected' : ''}>20 min</option>
+                <option value="30"${f.batch_interval_min === 30 ? ' selected' : ''}>30 min</option>
+                <option value="60"${f.batch_interval_min === 60 ? ' selected' : ''}>1 hora</option>
+              </select>
+            </div>
+          </div>
+          <small class="am-hint">${_feather('shield', 11)} Protecao contra bloqueio do WhatsApp</small>
+        </div>
+      </div>
       <div class="bc-panel-footer">
         <button class="am-btn-secondary" id="bcCancelForm">Cancelar</button>
         <button class="am-btn-primary" id="bcSaveBtn" ${_broadcastSaving ? 'disabled' : ''}>
@@ -1772,6 +1802,8 @@
         var filterTemp = (root.querySelector('#bcFilterTemp') || {}).value || ''
         var filterFunnel = (root.querySelector('#bcFilterFunnel') || {}).value || ''
         var filterSource = (root.querySelector('#bcFilterSource') || {}).value || ''
+        var batchSize = parseInt((root.querySelector('#bcBatchSize') || {}).value) || 10
+        var batchInterval = parseInt((root.querySelector('#bcBatchInterval') || {}).value) || 10
 
         if (!name.trim() || !content.trim()) {
           _showToast('Nome e mensagem sao obrigatorios', 'error')
@@ -1793,6 +1825,8 @@
           media_url: mediaUrl.trim() || null,
           media_caption: mediaCaption.trim() || null,
           target_filter: filter,
+          batch_size: batchSize,
+          batch_interval_min: batchInterval,
         })
 
         _broadcastSaving = false
@@ -1823,7 +1857,10 @@
         btn.textContent = 'Iniciando...'
         var result = await window.BroadcastService.startBroadcast(id)
         if (result && result.ok) {
-          _showToast('Disparo iniciado! ' + (result.data?.enqueued || 0) + ' mensagens na fila')
+          var est = result.data?.estimated_minutes || 0
+          var msg = 'Disparo iniciado! ' + (result.data?.enqueued || 0) + ' msgs'
+          if (est > 0) msg += ' (~' + est + 'min para concluir)'
+          _showToast(msg)
           await _loadBroadcasts()
         } else {
           _showToast(result?.error || 'Erro ao iniciar', 'error')

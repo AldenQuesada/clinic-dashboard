@@ -1211,7 +1211,27 @@
   margin-top: 4px;
 }
 
-/* ── Secondary button ──────────────────────────────────��──── */
+/* ── Throttle section ─────────────────────────────────────── */
+.bc-throttle-section {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 10px;
+}
+.bc-throttle-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+.bc-throttle-separator {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding-bottom: 11px;
+  white-space: nowrap;
+}
+
+/* ── Secondary button ─────────────────────────────────────── */
 .am-btn-secondary {
   display: inline-flex;
   align-items: center;

@@ -56,6 +56,8 @@
       p_media_caption: data.media_caption || null,
       p_target_filter: data.target_filter || {},
       p_scheduled_at: data.scheduled_at || null,
+      p_batch_size: data.batch_size || 10,
+      p_batch_interval_min: data.batch_interval_min || 10,
     })
   }
 
