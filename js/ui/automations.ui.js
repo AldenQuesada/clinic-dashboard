@@ -1439,6 +1439,7 @@
   var _bcPanelTab = 'history' // 'editor' | 'history' | 'rules'
   var _bcDashPeriod = '7d'
   var _bcDashSort = 'sent'
+  var _bcDashMetric = 'sent' // sent | rate | failed | targets
   var _bcStats = null
   var _bcSegment = 'all'
   var _bcSegmentLeads = []
@@ -1538,81 +1539,98 @@
   }
 
   function _renderBcLineChart(filtered) {
-    var byDay = {}
-    var sentByDay = {}
-    filtered.forEach(function(b) {
-      var d = b.created_at ? new Date(b.created_at).toISOString().substring(0, 10) : null
-      if (!d) return
-      byDay[d] = (byDay[d] || 0) + 1
-      sentByDay[d] = (sentByDay[d] || 0) + (b.sent_count || 0)
+    // Sort by date
+    var sorted = filtered.slice().sort(function(a, b) {
+      return (a.created_at || '').localeCompare(b.created_at || '')
     })
+    if (sorted.length === 0) return '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">Sem dados no periodo</div>'
 
-    var dates = Object.keys(byDay).sort()
-    if (dates.length === 0) return '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">Sem dados no periodo</div>'
+    // Metric selector tabs
+    var metrics = [
+      { key: 'sent', label: 'Enviados', color: '#10B981' },
+      { key: 'rate', label: 'Taxa envio', color: '#C9A96E' },
+      { key: 'failed', label: 'Falhas', color: '#EF4444' },
+      { key: 'targets', label: 'Destinatarios', color: '#2563EB' }
+    ]
+    var metricTabs = '<div class="bc-dash-metric-tabs">'
+    metrics.forEach(function(m) {
+      metricTabs += '<button class="bc-dash-metric-tab' + (_bcDashMetric === m.key ? ' active' : '') + '" data-metric="' + m.key + '" style="' + (_bcDashMetric === m.key ? 'border-color:' + m.color + ';color:' + m.color : '') + '">' + m.label + '</button>'
+    })
+    metricTabs += '</div>'
 
-    // Fill date gaps
-    var start = new Date(dates[0])
-    var end = new Date(dates[dates.length - 1])
-    var allDates = []
-    for (var d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      allDates.push(d.toISOString().substring(0, 10))
-    }
-    if (allDates.length < 2) allDates = dates
+    // Get values per broadcast for selected metric
+    var activeMetric = metrics.find(function(m) { return m.key === _bcDashMetric }) || metrics[0]
+    var values = sorted.map(function(b) {
+      if (_bcDashMetric === 'sent') return b.sent_count || 0
+      if (_bcDashMetric === 'rate') return (b.total_targets || 0) > 0 ? Math.round(((b.sent_count || 0) / b.total_targets) * 100) : 0
+      if (_bcDashMetric === 'failed') return b.failed_count || 0
+      if (_bcDashMetric === 'targets') return b.total_targets || 0
+      return 0
+    })
+    var labels = sorted.map(function(b) {
+      var d = b.created_at ? new Date(b.created_at) : null
+      return d ? (d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0')) : '-'
+    })
+    var names = sorted.map(function(b) { return b.name || '' })
 
-    var values = allDates.map(function(d) { return byDay[d] || 0 })
-    var sentValues = allDates.map(function(d) { return sentByDay[d] || 0 })
-    var maxVal = Math.max(Math.max.apply(null, values), Math.max.apply(null, sentValues), 1)
+    var maxVal = Math.max.apply(null, values)
+    if (maxVal <= 0) maxVal = 1
 
-    var W = 500, H = 160, PAD = 35, PADR = 10, PADT = 10, PADB = 25
+    // SVG
+    var W = 500, H = 180, PAD = 40, PADR = 15, PADT = 10, PADB = 40
     var chartW = W - PAD - PADR
     var chartH = H - PADT - PADB
-
-    function buildPoints(vals) {
-      return vals.map(function(v, i) {
-        var x = PAD + (i / Math.max(vals.length - 1, 1)) * chartW
-        var y = PADT + chartH - (v / maxVal) * chartH
-        return x.toFixed(1) + ',' + y.toFixed(1)
-      }).join(' ')
-    }
-
-    var line1 = buildPoints(values)
-    var line2 = buildPoints(sentValues)
-
-    var yLabels = ''
-    for (var i = 0; i <= 4; i++) {
-      var yVal = Math.round(maxVal * i / 4)
-      var yPos = PADT + chartH - (i / 4) * chartH
-      yLabels += '<text x="' + (PAD - 5) + '" y="' + (yPos + 3) + '" text-anchor="end" fill="#9CA3AF" font-size="9">' + yVal + '</text>'
-      yLabels += '<line x1="' + PAD + '" y1="' + yPos + '" x2="' + (W - PADR) + '" y2="' + yPos + '" stroke="#E5E7EB" stroke-dasharray="3,3"/>'
-    }
-
-    var xLabels = ''
-    var step = Math.max(1, Math.floor(allDates.length / 7))
-    for (var j = 0; j < allDates.length; j += step) {
-      var x = PAD + (j / Math.max(allDates.length - 1, 1)) * chartW
-      var label = allDates[j].substring(5).replace('-', '/')
-      xLabels += '<text x="' + x + '" y="' + (H - 5) + '" text-anchor="middle" fill="#9CA3AF" font-size="9">' + label + '</text>'
-    }
+    var n = values.length
 
     var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">'
-    svg += yLabels + xLabels
+
+    // Y grid + labels
+    for (var i = 0; i <= 4; i++) {
+      var yVal = _bcDashMetric === 'rate' ? (i * 25) : Math.round(maxVal * i / 4)
+      var yMax = _bcDashMetric === 'rate' ? 100 : maxVal
+      var yPos = PADT + chartH - (i / 4) * chartH
+      svg += '<text x="' + (PAD - 5) + '" y="' + (yPos + 3) + '" text-anchor="end" fill="#9CA3AF" font-size="9">' + yVal + (_bcDashMetric === 'rate' ? '%' : '') + '</text>'
+      svg += '<line x1="' + PAD + '" y1="' + yPos + '" x2="' + (W - PADR) + '" y2="' + yPos + '" stroke="#E5E7EB" stroke-dasharray="3,3"/>'
+    }
+
+    // X labels (broadcast names + dates)
+    for (var j = 0; j < n; j++) {
+      var x = PAD + (n > 1 ? (j / (n - 1)) * chartW : chartW / 2)
+      svg += '<text x="' + x + '" y="' + (H - 18) + '" text-anchor="middle" fill="#6B7280" font-size="8" font-weight="600">' + _esc(names[j]).substring(0, 12) + '</text>'
+      svg += '<text x="' + x + '" y="' + (H - 6) + '" text-anchor="middle" fill="#9CA3AF" font-size="8">' + labels[j] + '</text>'
+    }
+
+    // Axis
     svg += '<line x1="' + PAD + '" y1="' + PADT + '" x2="' + PAD + '" y2="' + (PADT + chartH) + '" stroke="#E5E7EB"/>'
-    svg += '<polyline points="' + line1 + '" fill="none" stroke="#C9A96E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-    svg += '<polyline points="' + line2 + '" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3"/>'
-    values.forEach(function(v, idx) {
-      var cx = PAD + (idx / Math.max(values.length - 1, 1)) * chartW
-      var cy = PADT + chartH - (v / maxVal) * chartH
-      svg += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3" fill="#C9A96E"/>'
+
+    // Line + area fill
+    var yMaxChart = _bcDashMetric === 'rate' ? 100 : maxVal
+    var points = values.map(function(v, idx) {
+      var px = PAD + (n > 1 ? (idx / (n - 1)) * chartW : chartW / 2)
+      var py = PADT + chartH - (v / yMaxChart) * chartH
+      return px.toFixed(1) + ',' + py.toFixed(1)
     })
+
+    // Area fill
+    var firstX = PAD + (n > 1 ? 0 : chartW / 2)
+    var lastX = PAD + (n > 1 ? chartW : chartW / 2)
+    var areaBottom = (PADT + chartH).toFixed(1)
+    svg += '<polygon points="' + firstX.toFixed(1) + ',' + areaBottom + ' ' + points.join(' ') + ' ' + lastX.toFixed(1) + ',' + areaBottom + '" fill="' + activeMetric.color + '" opacity="0.08"/>'
+
+    // Line
+    svg += '<polyline points="' + points.join(' ') + '" fill="none" stroke="' + activeMetric.color + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+
+    // Dots with value labels
+    values.forEach(function(v, idx) {
+      var px = PAD + (n > 1 ? (idx / (n - 1)) * chartW : chartW / 2)
+      var py = PADT + chartH - (v / yMaxChart) * chartH
+      svg += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="4" fill="#fff" stroke="' + activeMetric.color + '" stroke-width="2"/>'
+      svg += '<text x="' + px.toFixed(1) + '" y="' + (py - 8) + '" text-anchor="middle" fill="' + activeMetric.color + '" font-size="9" font-weight="700">' + v + (_bcDashMetric === 'rate' ? '%' : '') + '</text>'
+    })
+
     svg += '</svg>'
 
-    return '<div class="bc-dash-chart">'
-      + '<div class="bc-dash-chart-title">Volume de disparos</div>'
-      + svg
-      + '<div class="bc-dash-legend">'
-      + '<span><span class="bc-dash-legend-dot" style="background:#C9A96E"></span>Disparos</span>'
-      + '<span><span class="bc-dash-legend-dot" style="background:#10B981"></span>Enviados</span>'
-      + '</div></div>'
+    return '<div class="bc-dash-chart">' + metricTabs + svg + '</div>'
   }
 
   function _renderBroadcastDashboard() {
@@ -2681,6 +2699,14 @@
     document.querySelectorAll('.bc-dash-filter').forEach(function(btn) {
       btn.addEventListener('click', function() {
         _bcDashPeriod = btn.dataset.period
+        _render()
+      })
+    })
+
+    // Dashboard metric tabs
+    document.querySelectorAll('.bc-dash-metric-tab').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        _bcDashMetric = btn.dataset.metric
         _render()
       })
     })
