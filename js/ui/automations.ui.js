@@ -1620,12 +1620,28 @@
     // Line
     svg += '<polyline points="' + points.join(' ') + '" fill="none" stroke="' + activeMetric.color + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
 
-    // Dots with value labels
+    // Interactive dots with hover effect
     values.forEach(function(v, idx) {
       var px = PAD + (n > 1 ? (idx / (n - 1)) * chartW : chartW / 2)
       var py = PADT + chartH - (v / yMaxChart) * chartH
-      svg += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="4" fill="#fff" stroke="' + activeMetric.color + '" stroke-width="2"/>'
-      svg += '<text x="' + px.toFixed(1) + '" y="' + (py - 8) + '" text-anchor="middle" fill="' + activeMetric.color + '" font-size="9" font-weight="700">' + v + (_bcDashMetric === 'rate' ? '%' : '') + '</text>'
+      var valLabel = v + (_bcDashMetric === 'rate' ? '%' : '')
+      var nameLabel = _esc(names[idx]).substring(0, 15)
+      // Hover group
+      svg += '<g class="bc-chart-dot">'
+      // Vertical guide line (hidden, shows on hover)
+      svg += '<line x1="' + px.toFixed(1) + '" y1="' + PADT + '" x2="' + px.toFixed(1) + '" y2="' + (PADT + chartH) + '" stroke="' + activeMetric.color + '" stroke-width="1" stroke-dasharray="3,3" class="bc-chart-guide"/>'
+      // Hit area (invisible, larger for easier hover)
+      svg += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="16" fill="transparent" class="bc-chart-hit"/>'
+      // Dot
+      svg += '<circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="4" fill="#fff" stroke="' + activeMetric.color + '" stroke-width="2" class="bc-chart-circle"/>'
+      // Value label (always visible)
+      svg += '<text x="' + px.toFixed(1) + '" y="' + (py - 10) + '" text-anchor="middle" fill="' + activeMetric.color + '" font-size="9" font-weight="700" class="bc-chart-val">' + valLabel + '</text>'
+      // Tooltip background + text (hidden, shows on hover)
+      var tooltipY = py - 32
+      if (tooltipY < 5) tooltipY = py + 20
+      svg += '<rect x="' + (px - 40).toFixed(1) + '" y="' + (tooltipY - 10) + '" width="80" height="22" rx="4" fill="#1a1a1a" opacity="0.9" class="bc-chart-tooltip"/>'
+      svg += '<text x="' + px.toFixed(1) + '" y="' + (tooltipY + 4) + '" text-anchor="middle" fill="#fff" font-size="8" font-weight="600" class="bc-chart-tooltip">' + nameLabel + ' — ' + valLabel + '</text>'
+      svg += '</g>'
     })
 
     svg += '</svg>'

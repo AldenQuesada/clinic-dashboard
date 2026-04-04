@@ -1568,6 +1568,15 @@
 .bc-dash-kpi-lbl { display: block; font-size: 11px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.03em; }
 .bc-dash-chart { background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 20px; }
 .bc-dash-chart svg { width: 100%; height: auto; }
+.bc-chart-dot { cursor: pointer; }
+.bc-chart-guide { opacity: 0; transition: opacity 0.2s; }
+.bc-chart-tooltip { opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.bc-chart-circle { transition: r 0.2s, stroke-width 0.2s; }
+.bc-chart-val { transition: font-size 0.2s, opacity 0.15s; }
+.bc-chart-dot:hover .bc-chart-guide { opacity: 0.3; }
+.bc-chart-dot:hover .bc-chart-tooltip { opacity: 1; }
+.bc-chart-dot:hover .bc-chart-circle { r: 7; stroke-width: 3; }
+.bc-chart-dot:hover .bc-chart-val { opacity: 0; }
 .bc-dash-metric-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
 .bc-dash-metric-tab { padding: 5px 12px; border: 1.5px solid var(--border); background: transparent; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.12s; }
 .bc-dash-metric-tab:hover { border-color: #D1D5DB; color: var(--text-secondary); }
