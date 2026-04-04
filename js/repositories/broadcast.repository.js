@@ -58,6 +58,7 @@
       p_scheduled_at: data.scheduled_at || null,
       p_batch_size: data.batch_size || 10,
       p_batch_interval_min: data.batch_interval_min || 10,
+      p_selected_lead_ids: data.selected_lead_ids && data.selected_lead_ids.length > 0 ? data.selected_lead_ids : null,
     })
   }
 

@@ -1211,6 +1211,96 @@
   margin-top: 4px;
 }
 
+/* ── Lead selection section ───────────────────────────────── */
+.bc-leads-section {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 10px;
+}
+.bc-leads-search-wrap {
+  position: relative;
+  margin-top: 8px;
+}
+.bc-leads-search {
+  padding-right: 32px;
+}
+.bc-leads-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.bc-lead-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.bc-lead-option:hover { background: #F9FAFB; }
+.bc-lead-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  cursor: default;
+  justify-content: center;
+}
+.bc-lead-empty:hover { background: transparent; }
+.bc-lead-opt-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.bc-lead-opt-phone {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Consolas', monospace;
+}
+.bc-leads-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.bc-lead-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 10px;
+  background: rgba(7,94,84,0.08);
+  color: #075E54;
+  border: 1px solid rgba(7,94,84,0.2);
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bc-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: rgba(7,94,84,0.15);
+  color: #075E54;
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s;
+}
+.bc-chip-remove:hover { background: rgba(7,94,84,0.3); }
+
 /* ── Throttle section ─────────────────────────────────────── */
 .bc-throttle-section {
   border-top: 1px solid var(--border);

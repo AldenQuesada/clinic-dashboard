@@ -103,6 +103,7 @@
       filter_source: '',
       batch_size: 10,
       batch_interval_min: 10,
+      selected_leads: [],  // {id, nome, phone}
     }
   }
 
@@ -1590,6 +1591,18 @@
             </div>
           </div>
         </div>
+        <div class="bc-leads-section">
+          <label class="am-label">${_feather('userCheck', 13)} Selecionar leads manualmente</label>
+          <div class="bc-leads-search-wrap">
+            <input class="am-input bc-leads-search" id="bcLeadSearch" placeholder="Buscar por nome..." autocomplete="off">
+            <div class="bc-leads-dropdown" id="bcLeadDropdown"></div>
+          </div>
+          ${f.selected_leads.length > 0 ? '<div class="bc-leads-chips" id="bcLeadChips">' + f.selected_leads.map(function(l) {
+            return '<span class="bc-lead-chip" data-id="' + _esc(l.id) + '">'
+              + _esc(l.nome) + '<button type="button" class="bc-chip-remove" data-id="' + _esc(l.id) + '">&times;</button></span>'
+          }).join('') + '</div>' : ''}
+          <small class="am-hint">${f.selected_leads.length > 0 ? f.selected_leads.length + ' selecionado(s) — ' : ''}Leads selecionados recebem o disparo independente dos filtros</small>
+        </div>
         <div class="bc-throttle-section">
           <label class="am-label">${_feather('shield', 13)} Controle de envio</label>
           <div class="bc-throttle-row">
@@ -1779,6 +1792,68 @@
       })
     })
 
+    // Lead search + select
+    var searchInput = root.querySelector('#bcLeadSearch')
+    var dropdown = root.querySelector('#bcLeadDropdown')
+    var _searchTimeout = null
+
+    if (searchInput && dropdown) {
+      searchInput.addEventListener('input', function() {
+        clearTimeout(_searchTimeout)
+        var q = searchInput.value.trim().toLowerCase()
+        if (q.length < 2) { dropdown.innerHTML = ''; dropdown.style.display = 'none'; return }
+        _searchTimeout = setTimeout(async function() {
+          var allLeads = []
+          if (window.LeadsService) allLeads = await window.LeadsService.loadAll()
+          var selectedIds = _broadcastForm.selected_leads.map(function(l) { return l.id })
+          var matches = allLeads.filter(function(l) {
+            if (!l.nome || selectedIds.indexOf(l.id) !== -1) return false
+            return l.nome.toLowerCase().indexOf(q) !== -1
+          }).slice(0, 8)
+
+          if (matches.length === 0) {
+            dropdown.innerHTML = '<div class="bc-lead-option bc-lead-empty">Nenhum lead encontrado</div>'
+          } else {
+            dropdown.innerHTML = matches.map(function(l) {
+              var phone = l.phone || l.telefone || ''
+              return '<div class="bc-lead-option" data-id="' + _esc(l.id) + '" data-nome="' + _esc(l.nome) + '" data-phone="' + _esc(phone) + '">'
+                + '<span class="bc-lead-opt-name">' + _esc(l.nome) + '</span>'
+                + (phone ? '<span class="bc-lead-opt-phone">' + _esc(phone) + '</span>' : '')
+                + '</div>'
+            }).join('')
+          }
+          dropdown.style.display = 'block'
+        }, 200)
+      })
+
+      searchInput.addEventListener('blur', function() {
+        setTimeout(function() { dropdown.style.display = 'none' }, 200)
+      })
+
+      dropdown.addEventListener('mousedown', function(e) {
+        var opt = e.target.closest('.bc-lead-option')
+        if (!opt || opt.classList.contains('bc-lead-empty')) return
+        e.preventDefault()
+        _broadcastForm.selected_leads.push({
+          id: opt.dataset.id,
+          nome: opt.dataset.nome,
+          phone: opt.dataset.phone
+        })
+        searchInput.value = ''
+        dropdown.style.display = 'none'
+        _render()
+      })
+    }
+
+    // Remove lead chip
+    root.querySelectorAll('.bc-chip-remove').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = btn.dataset.id
+        _broadcastForm.selected_leads = _broadcastForm.selected_leads.filter(function(l) { return l.id !== id })
+        _render()
+      })
+    })
+
     // Cancel form
     var cancelForm = root.querySelector('#bcCancelForm')
     if (cancelForm) {
@@ -1826,6 +1901,7 @@
           target_filter: filter,
           batch_size: batchSize,
           batch_interval_min: batchInterval,
+          selected_lead_ids: _broadcastForm.selected_leads.map(function(l) { return l.id }),
         })
 
         _broadcastSaving = false
