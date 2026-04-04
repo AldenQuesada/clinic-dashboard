@@ -886,7 +886,7 @@
 }
 .bc-layout-form {
   display: grid;
-  grid-template-columns: 260px 1fr 320px;
+  grid-template-columns: 340px 1fr auto;
   height: calc(100vh - 220px);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1260,7 +1260,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 24px 16px;
+  padding: 20px 12px;
   background: #F8F9FA;
   border-left: 1px solid var(--border);
   overflow-y: auto;
@@ -1338,11 +1338,11 @@
 .bc-wa-chat {
   flex: 1;
   background: #ECE5DD url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" opacity="0.04"><path d="M20 20h20v20H20zM60 20h20v20H60zM100 20h20v20h-20zM40 40h20v20H40zM80 40h20v20H80z" fill="%23000"/></svg>');
-  padding: 16px 10px;
+  padding: 12px 10px;
   min-height: 320px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 4px;
 }
 
@@ -1446,7 +1446,7 @@
 }
 
 @media (max-width: 1100px) {
-  .bc-layout-form { grid-template-columns: 220px 1fr 280px; }
+  .bc-layout-form { grid-template-columns: 280px 1fr auto; }
 }
 
 @media (max-width: 768px) {
