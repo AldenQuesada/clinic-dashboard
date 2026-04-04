@@ -84,11 +84,12 @@
   let _initialized = false
 
   // Broadcast state
-  let _broadcasts       = []
-  let _broadcastLoading = false
-  let _broadcastModal   = false
-  let _broadcastSaving  = false
-  let _broadcastForm    = _emptyBroadcastForm()
+  let _broadcasts        = []
+  let _broadcastLoading  = false
+  let _broadcastSaving   = false
+  let _broadcastSelected = null  // id do broadcast selecionado para ver detalhes
+  let _broadcastMode     = 'new' // 'new' | 'detail'
+  let _broadcastForm     = _emptyBroadcastForm()
 
   function _emptyBroadcastForm() {
     return {
@@ -1439,173 +1440,235 @@
     _render()
   }
 
+  function _bcStatusLabel(st) {
+    return { draft: 'Rascunho', sending: 'Enviando', completed: 'Concluido', cancelled: 'Cancelado' }[st] || st
+  }
+  function _bcStatusColor(st) {
+    return { draft: '#6B7280', sending: '#F59E0B', completed: '#10B981', cancelled: '#EF4444' }[st] || '#6B7280'
+  }
+
   function _renderBroadcastTab() {
     if (_broadcastLoading) {
       return '<div class="am-tab-content"><div class="am-loading"><div class="am-spinner"></div><span>Carregando disparos...</span></div></div>'
     }
 
-    var statusLabel = { draft: 'Rascunho', sending: 'Enviando', completed: 'Concluido', cancelled: 'Cancelado' }
-    var statusColor = { draft: '#6B7280', sending: '#F59E0B', completed: '#10B981', cancelled: '#EF4444' }
+    // ── LEFT: Lista de disparos ──────────────────────────────
+    var listHtml = '<div class="bc-sidebar">'
+    listHtml += '<div class="bc-sidebar-header">'
+    listHtml += '<span class="bc-sidebar-title">' + _feather('radio', 14) + ' Disparos</span>'
+    listHtml += '<button class="bc-new-btn" id="bcNewBtn" title="Novo Disparo">' + _feather('plus', 16) + '</button>'
+    listHtml += '</div>'
+    listHtml += '<div class="bc-sidebar-list">'
 
-    var listHtml = ''
     if (_broadcasts.length === 0) {
-      listHtml = '<div class="am-empty"><p>Nenhum disparo criado ainda.</p></div>'
+      listHtml += '<div class="bc-empty-list"><p>Nenhum disparo criado</p><small>Clique no + para criar</small></div>'
     } else {
-      listHtml = '<div class="bc-list">'
       for (var i = 0; i < _broadcasts.length; i++) {
         var b = _broadcasts[i]
         var st = b.status || 'draft'
         var date = b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : '--'
+        var isActive = _broadcastSelected === b.id && _broadcastMode === 'detail'
         var progress = b.total_targets > 0 ? Math.round((b.sent_count / b.total_targets) * 100) : 0
-        var filterTags = []
-        if (b.target_filter) {
-          if (b.target_filter.phase) filterTags.push('Fase: ' + b.target_filter.phase)
-          if (b.target_filter.temperature) filterTags.push('Temp: ' + b.target_filter.temperature)
-          if (b.target_filter.funnel) filterTags.push('Funil: ' + b.target_filter.funnel)
-          if (b.target_filter.source_type) filterTags.push('Origem: ' + b.target_filter.source_type)
+
+        listHtml += '<div class="bc-item' + (isActive ? ' bc-item-active' : '') + '" data-id="' + b.id + '">'
+        listHtml += '<div class="bc-item-top">'
+        listHtml += '<span class="bc-item-name">' + _esc(b.name) + '</span>'
+        listHtml += '<span class="bc-status-dot" style="background:' + _bcStatusColor(st) + '" title="' + _bcStatusLabel(st) + '"></span>'
+        listHtml += '</div>'
+        listHtml += '<div class="bc-item-meta">'
+        listHtml += '<span>' + (b.total_targets || 0) + ' dest.</span>'
+        listHtml += '<span>' + (b.sent_count || 0) + ' env.</span>'
+        listHtml += '<span>' + date + '</span>'
+        listHtml += '</div>'
+        if (st === 'sending') {
+          listHtml += '<div class="bc-mini-progress"><div class="bc-mini-bar" style="width:' + progress + '%"></div></div>'
         }
-
-        listHtml += `
-          <div class="bc-card" data-id="${b.id}">
-            <div class="bc-card-header">
-              <div class="bc-card-title">${_esc(b.name)}</div>
-              <span class="bc-status" style="background:${statusColor[st]}20;color:${statusColor[st]}">${statusLabel[st] || st}</span>
-            </div>
-            <div class="bc-card-content">${_esc((b.content || '').substring(0, 120))}${(b.content || '').length > 120 ? '...' : ''}</div>
-            <div class="bc-card-meta">
-              <span>${_feather('users', 12)} ${b.total_targets || 0} destinatarios</span>
-              <span>${_feather('send', 12)} ${b.sent_count || 0} enviados</span>
-              ${b.failed_count > 0 ? '<span style="color:var(--danger)">' + _feather('alertCircle', 12) + ' ' + b.failed_count + ' falhas</span>' : ''}
-              <span>${_feather('calendar', 12)} ${date}</span>
-            </div>
-            ${filterTags.length > 0 ? '<div class="bc-card-filters">' + filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') + '</div>' : ''}
-            ${st === 'sending' ? '<div class="bc-progress"><div class="bc-progress-bar" style="width:' + progress + '%"></div><span class="bc-progress-text">' + progress + '%</span></div>' : ''}
-            <div class="bc-card-actions">
-              ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('play', 13) + ' Iniciar</button>' : ''}
-              ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '">' + _feather('xCircle', 13) + ' Cancelar</button>' : ''}
-            </div>
-          </div>`
+        listHtml += '</div>'
       }
-      listHtml += '</div>'
     }
+    listHtml += '</div></div>'
 
-    var modalHtml = ''
-    if (_broadcastModal) {
-      modalHtml = `
-        <div class="am-overlay" id="bcOverlay">
-          <div class="am-modal" style="max-width:560px">
-            <div class="am-modal-header">
-              <h2>Novo Disparo</h2>
-              <button class="am-icon-btn" id="bcCloseModal">${_feather('x', 18)}</button>
-            </div>
-            <div class="am-modal-body">
-              <div class="am-field">
-                <label class="am-label">Nome do disparo *</label>
-                <input class="am-input" id="bcName" placeholder="Ex: Promo Lifting 5D Abril" value="${_esc(_broadcastForm.name)}">
-              </div>
-              <div class="am-field">
-                <label class="am-label">Mensagem *</label>
-                <textarea class="am-input" id="bcContent" rows="5" placeholder="Texto da mensagem. Use {nome} para personalizar.">${_esc(_broadcastForm.content)}</textarea>
-                <small class="am-hint">Variaveis: {nome}, {queixa_principal}</small>
-              </div>
-              <div class="am-field">
-                <label class="am-label">URL da midia (opcional)</label>
-                <input class="am-input" id="bcMediaUrl" placeholder="https://... (imagem ou video)" value="${_esc(_broadcastForm.media_url)}">
-              </div>
-              <div class="am-field">
-                <label class="am-label">Legenda da midia (opcional)</label>
-                <input class="am-input" id="bcMediaCaption" placeholder="Legenda da foto/video" value="${_esc(_broadcastForm.media_caption)}">
-              </div>
+    // ── RIGHT: Painel de acao ────────────────────────────────
+    var panelHtml = '<div class="bc-panel">'
 
-              <div class="bc-filters-section">
-                <label class="am-label" style="margin-bottom:8px">Filtro de destinatarios</label>
-                <div class="bc-filters-grid">
-                  <div class="am-field">
-                    <label class="am-label-sm">Fase</label>
-                    <select class="am-input" id="bcFilterPhase">
-                      <option value="">Todas</option>
-                      <option value="lead"${_broadcastForm.filter_phase === 'lead' ? ' selected' : ''}>Lead</option>
-                      <option value="agendado"${_broadcastForm.filter_phase === 'agendado' ? ' selected' : ''}>Agendado</option>
-                      <option value="compareceu"${_broadcastForm.filter_phase === 'compareceu' ? ' selected' : ''}>Compareceu</option>
-                      <option value="orcamento"${_broadcastForm.filter_phase === 'orcamento' ? ' selected' : ''}>Orcamento</option>
-                      <option value="paciente"${_broadcastForm.filter_phase === 'paciente' ? ' selected' : ''}>Paciente</option>
-                      <option value="perdido"${_broadcastForm.filter_phase === 'perdido' ? ' selected' : ''}>Perdido</option>
-                    </select>
-                  </div>
-                  <div class="am-field">
-                    <label class="am-label-sm">Temperatura</label>
-                    <select class="am-input" id="bcFilterTemp">
-                      <option value="">Todas</option>
-                      <option value="hot"${_broadcastForm.filter_temperature === 'hot' ? ' selected' : ''}>Quente</option>
-                      <option value="warm"${_broadcastForm.filter_temperature === 'warm' ? ' selected' : ''}>Morno</option>
-                      <option value="cold"${_broadcastForm.filter_temperature === 'cold' ? ' selected' : ''}>Frio</option>
-                    </select>
-                  </div>
-                  <div class="am-field">
-                    <label class="am-label-sm">Funil</label>
-                    <select class="am-input" id="bcFilterFunnel">
-                      <option value="">Todos</option>
-                      <option value="fullface"${_broadcastForm.filter_funnel === 'fullface' ? ' selected' : ''}>Full Face</option>
-                      <option value="procedimentos"${_broadcastForm.filter_funnel === 'procedimentos' ? ' selected' : ''}>Procedimentos</option>
-                    </select>
-                  </div>
-                  <div class="am-field">
-                    <label class="am-label-sm">Origem</label>
-                    <select class="am-input" id="bcFilterSource">
-                      <option value="">Todas</option>
-                      <option value="quiz"${_broadcastForm.filter_source === 'quiz' ? ' selected' : ''}>Quiz</option>
-                      <option value="manual"${_broadcastForm.filter_source === 'manual' ? ' selected' : ''}>Manual</option>
-                      <option value="import"${_broadcastForm.filter_source === 'import' ? ' selected' : ''}>Importacao</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+    if (_broadcastMode === 'new') {
+      panelHtml += _renderBroadcastForm()
+    } else if (_broadcastMode === 'detail' && _broadcastSelected) {
+      panelHtml += _renderBroadcastDetail()
+    } else {
+      panelHtml += '<div class="bc-panel-empty">'
+      panelHtml += _feather('radio', 40)
+      panelHtml += '<h3>Disparos em massa</h3>'
+      panelHtml += '<p>Selecione um disparo na lista ou crie um novo</p>'
+      panelHtml += '<button class="am-btn-primary" id="bcNewBtn2">' + _feather('plus', 14) + ' Novo Disparo</button>'
+      panelHtml += '</div>'
+    }
+    panelHtml += '</div>'
+
+    return '<div class="am-tab-content"><div class="bc-layout">' + listHtml + panelHtml + '</div></div>'
+  }
+
+  function _renderBroadcastForm() {
+    var f = _broadcastForm
+    return `
+      <div class="bc-panel-header">
+        <h3>${_feather('plus', 16)} Novo Disparo</h3>
+      </div>
+      <div class="bc-panel-body">
+        <div class="am-field">
+          <label class="am-label">Nome *</label>
+          <input class="am-input" id="bcName" placeholder="Ex: Promo Lifting 5D Abril" value="${_esc(f.name)}">
+        </div>
+        <div class="am-field">
+          <label class="am-label">Mensagem *</label>
+          <textarea class="am-input" id="bcContent" rows="5" placeholder="Texto da mensagem. Use {nome} para personalizar.">${_esc(f.content)}</textarea>
+          <small class="am-hint">Variaveis: {nome}, {queixa_principal}</small>
+        </div>
+        <div class="am-field">
+          <label class="am-label">URL da midia (opcional)</label>
+          <input class="am-input" id="bcMediaUrl" placeholder="https://... (imagem ou video)" value="${_esc(f.media_url)}">
+        </div>
+        <div class="am-field">
+          <label class="am-label">Legenda da midia</label>
+          <input class="am-input" id="bcMediaCaption" placeholder="Legenda da foto/video" value="${_esc(f.media_caption)}">
+        </div>
+        <div class="bc-filters-section">
+          <label class="am-label">Segmentacao</label>
+          <div class="bc-filters-grid">
+            <div class="am-field">
+              <label class="am-label-sm">Fase</label>
+              <select class="am-input" id="bcFilterPhase">
+                <option value="">Todas</option>
+                <option value="lead"${f.filter_phase === 'lead' ? ' selected' : ''}>Lead</option>
+                <option value="agendado"${f.filter_phase === 'agendado' ? ' selected' : ''}>Agendado</option>
+                <option value="compareceu"${f.filter_phase === 'compareceu' ? ' selected' : ''}>Compareceu</option>
+                <option value="orcamento"${f.filter_phase === 'orcamento' ? ' selected' : ''}>Orcamento</option>
+                <option value="paciente"${f.filter_phase === 'paciente' ? ' selected' : ''}>Paciente</option>
+                <option value="perdido"${f.filter_phase === 'perdido' ? ' selected' : ''}>Perdido</option>
+              </select>
             </div>
-            <div class="am-modal-footer">
-              <button class="am-btn-secondary" id="bcCancelModal">Cancelar</button>
-              <button class="am-btn-primary" id="bcSaveBtn" ${_broadcastSaving ? 'disabled' : ''}>
-                ${_broadcastSaving ? 'Criando...' : _feather('plus', 14) + ' Criar Disparo'}
-              </button>
+            <div class="am-field">
+              <label class="am-label-sm">Temperatura</label>
+              <select class="am-input" id="bcFilterTemp">
+                <option value="">Todas</option>
+                <option value="hot"${f.filter_temperature === 'hot' ? ' selected' : ''}>Quente</option>
+                <option value="warm"${f.filter_temperature === 'warm' ? ' selected' : ''}>Morno</option>
+                <option value="cold"${f.filter_temperature === 'cold' ? ' selected' : ''}>Frio</option>
+              </select>
+            </div>
+            <div class="am-field">
+              <label class="am-label-sm">Funil</label>
+              <select class="am-input" id="bcFilterFunnel">
+                <option value="">Todos</option>
+                <option value="fullface"${f.filter_funnel === 'fullface' ? ' selected' : ''}>Full Face</option>
+                <option value="procedimentos"${f.filter_funnel === 'procedimentos' ? ' selected' : ''}>Procedimentos</option>
+              </select>
+            </div>
+            <div class="am-field">
+              <label class="am-label-sm">Origem</label>
+              <select class="am-input" id="bcFilterSource">
+                <option value="">Todas</option>
+                <option value="quiz"${f.filter_source === 'quiz' ? ' selected' : ''}>Quiz</option>
+                <option value="manual"${f.filter_source === 'manual' ? ' selected' : ''}>Manual</option>
+                <option value="import"${f.filter_source === 'import' ? ' selected' : ''}>Importacao</option>
+              </select>
             </div>
           </div>
-        </div>`
+        </div>
+      </div>
+      <div class="bc-panel-footer">
+        <button class="am-btn-secondary" id="bcCancelForm">Cancelar</button>
+        <button class="am-btn-primary" id="bcSaveBtn" ${_broadcastSaving ? 'disabled' : ''}>
+          ${_broadcastSaving ? 'Criando...' : _feather('plus', 14) + ' Criar Disparo'}
+        </button>
+      </div>`
+  }
+
+  function _renderBroadcastDetail() {
+    var b = _broadcasts.find(function(x) { return x.id === _broadcastSelected })
+    if (!b) return '<div class="bc-panel-empty"><p>Disparo nao encontrado</p></div>'
+
+    var st = b.status || 'draft'
+    var date = b.created_at ? new Date(b.created_at).toLocaleString('pt-BR') : '--'
+    var startDate = b.started_at ? new Date(b.started_at).toLocaleString('pt-BR') : '--'
+    var endDate = b.completed_at ? new Date(b.completed_at).toLocaleString('pt-BR') : '--'
+    var progress = b.total_targets > 0 ? Math.round((b.sent_count / b.total_targets) * 100) : 0
+
+    var filterTags = []
+    if (b.target_filter) {
+      if (b.target_filter.phase) filterTags.push('Fase: ' + b.target_filter.phase)
+      if (b.target_filter.temperature) filterTags.push('Temp: ' + b.target_filter.temperature)
+      if (b.target_filter.funnel) filterTags.push('Funil: ' + b.target_filter.funnel)
+      if (b.target_filter.source_type) filterTags.push('Origem: ' + b.target_filter.source_type)
     }
 
     return `
-      <div class="am-tab-content">
-        <div class="bc-header">
-          <div class="bc-header-info">
-            <p class="am-subtitle">Envie mensagens em massa para leads segmentados por fase, temperatura, funil ou origem.</p>
-          </div>
-          <button class="am-btn-primary" id="bcNewBtn">${_feather('plus', 15)} Novo Disparo</button>
+      <div class="bc-panel-header">
+        <h3>${_esc(b.name)}</h3>
+        <span class="bc-status" style="background:${_bcStatusColor(st)}20;color:${_bcStatusColor(st)}">${_bcStatusLabel(st)}</span>
+      </div>
+      <div class="bc-panel-body">
+        <div class="bc-detail-section">
+          <label class="am-label">Mensagem</label>
+          <div class="bc-detail-msg">${_esc(b.content)}</div>
         </div>
-        ${listHtml}
-        ${modalHtml}
+        ${b.media_url ? '<div class="bc-detail-section"><label class="am-label">Midia</label><div class="bc-detail-media"><img src="' + _esc(b.media_url) + '" alt="media"></div></div>' : ''}
+        <div class="bc-detail-stats">
+          <div class="bc-stat">
+            <span class="bc-stat-value">${b.total_targets || 0}</span>
+            <span class="bc-stat-label">Destinatarios</span>
+          </div>
+          <div class="bc-stat">
+            <span class="bc-stat-value">${b.sent_count || 0}</span>
+            <span class="bc-stat-label">Enviados</span>
+          </div>
+          <div class="bc-stat">
+            <span class="bc-stat-value" ${b.failed_count > 0 ? 'style="color:var(--danger)"' : ''}>${b.failed_count || 0}</span>
+            <span class="bc-stat-label">Falhas</span>
+          </div>
+        </div>
+        ${st === 'sending' ? '<div class="bc-progress"><div class="bc-progress-bar" style="width:' + progress + '%"></div><span class="bc-progress-text">' + progress + '%</span></div>' : ''}
+        ${filterTags.length > 0 ? '<div class="bc-detail-section"><label class="am-label">Filtros</label><div class="bc-card-filters">' + filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') + '</div></div>' : ''}
+        <div class="bc-detail-dates">
+          <span>${_feather('calendar', 12)} Criado: ${date}</span>
+          ${b.started_at ? '<span>' + _feather('play', 12) + ' Iniciado: ' + startDate + '</span>' : ''}
+          ${b.completed_at ? '<span>' + _feather('checkCircle', 12) + ' Finalizado: ' + endDate + '</span>' : ''}
+        </div>
+      </div>
+      <div class="bc-panel-footer">
+        ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('play', 14) + ' Iniciar Disparo</button>' : ''}
+        ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '">' + _feather('xCircle', 14) + ' Cancelar</button>' : ''}
       </div>`
   }
 
   function _bindBroadcastEvents(root) {
-    // New broadcast button
-    var newBtn = root.querySelector('#bcNewBtn')
-    if (newBtn) {
-      newBtn.addEventListener('click', function() {
+    // New broadcast buttons
+    var newBtns = root.querySelectorAll('#bcNewBtn, #bcNewBtn2')
+    newBtns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
         _broadcastForm = _emptyBroadcastForm()
-        _broadcastModal = true
+        _broadcastMode = 'new'
+        _broadcastSelected = null
         _render()
       })
-    }
+    })
 
-    // Close modal
-    var closeBtn = root.querySelector('#bcCloseModal')
-    if (closeBtn) closeBtn.addEventListener('click', function() { _broadcastModal = false; _render() })
-    var cancelBtn = root.querySelector('#bcCancelModal')
-    if (cancelBtn) cancelBtn.addEventListener('click', function() { _broadcastModal = false; _render() })
+    // Select item from list
+    root.querySelectorAll('.bc-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        _broadcastSelected = item.dataset.id
+        _broadcastMode = 'detail'
+        _render()
+      })
+    })
 
-    // Overlay click
-    var overlay = root.querySelector('#bcOverlay')
-    if (overlay) {
-      overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) { _broadcastModal = false; _render() }
+    // Cancel form
+    var cancelForm = root.querySelector('#bcCancelForm')
+    if (cancelForm) {
+      cancelForm.addEventListener('click', function() {
+        _broadcastMode = 'detail'
+        if (!_broadcastSelected && _broadcasts.length > 0) _broadcastSelected = _broadcasts[0].id
+        _render()
       })
     }
 
@@ -1645,10 +1708,11 @@
         })
 
         _broadcastSaving = false
-        _broadcastModal = false
 
         if (result && result.ok) {
           _showToast('Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios encontrados')
+          _broadcastSelected = result.data?.id || null
+          _broadcastMode = _broadcastSelected ? 'detail' : 'new'
           await _loadBroadcasts()
         } else {
           _showToast(result?.error || 'Erro ao criar disparo', 'error')
@@ -1667,7 +1731,6 @@
           return
         }
         if (!confirm('Iniciar disparo para ' + targets + ' destinatarios?')) return
-
         btn.disabled = true
         btn.textContent = 'Iniciando...'
         var result = await window.BroadcastService.startBroadcast(id)
@@ -1686,7 +1749,6 @@
       btn.addEventListener('click', async function() {
         var id = btn.dataset.id
         if (!confirm('Cancelar este disparo? Mensagens pendentes serao removidas.')) return
-
         btn.disabled = true
         btn.textContent = 'Cancelando...'
         var result = await window.BroadcastService.cancelBroadcast(id)
