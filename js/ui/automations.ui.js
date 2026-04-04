@@ -1434,6 +1434,8 @@
   // ── Broadcast Tab ─────────────────────────────────────────────
 
   var _bcRefreshTimer = null
+  var _bcPanelOpen = false
+  var _bcPanelTab = 'editor' // 'editor' | 'history'
 
   async function _loadBroadcasts() {
     if (!window.BroadcastService) return
@@ -1471,211 +1473,194 @@
       return '<div class="am-tab-content"><div class="am-loading"><div class="am-spinner"></div><span>Carregando disparos...</span></div></div>'
     }
 
-    var isFormMode = _broadcastMode === 'new'
+    // ── LEFT: Stats sidebar ──────────────────────────────────
+    var statsHtml = _renderBroadcastStats()
 
-    // ── LEFT: Lista de disparos ──────────────────────────────
-    var listHtml = '<div class="bc-sidebar">'
-    listHtml += '<div class="bc-sidebar-header">'
-    listHtml += '<span class="bc-sidebar-title">' + _feather('radio', 14) + ' Disparos</span>'
-    listHtml += '<button class="bc-new-btn" id="bcNewBtn" title="Novo Disparo">' + _feather('plus', 16) + '</button>'
-    listHtml += '</div>'
-    listHtml += '<div class="bc-sidebar-list">'
-
-    if (_broadcasts.length === 0) {
-      listHtml += '<div class="bc-empty-list"><p>Nenhum disparo criado</p><small>Clique no + para criar</small></div>'
-    } else {
-      for (var i = 0; i < _broadcasts.length; i++) {
-        var b = _broadcasts[i]
-        var st = b.status || 'draft'
-        var date = b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : '--'
-        var isActive = _broadcastSelected === b.id && _broadcastMode === 'detail'
-        var progress = b.total_targets > 0 ? Math.round((b.sent_count / b.total_targets) * 100) : 0
-
-        listHtml += '<div class="bc-item' + (isActive ? ' bc-item-active' : '') + '" data-id="' + b.id + '">'
-        listHtml += '<div class="bc-item-top">'
-        listHtml += '<span class="bc-item-name">' + _esc(b.name) + '</span>'
-        listHtml += '<span class="bc-status-dot" style="background:' + _bcStatusColor(st) + '" title="' + _bcStatusLabel(st) + '"></span>'
-        listHtml += '</div>'
-        listHtml += '<div class="bc-item-meta">'
-        listHtml += '<span>' + (b.total_targets || 0) + ' dest.</span>'
-        listHtml += '<span>' + (b.sent_count || 0) + ' env.</span>'
-        listHtml += '<span>' + date + '</span>'
-        listHtml += '</div>'
-        if (st === 'sending') {
-          listHtml += '<div class="bc-mini-progress"><div class="bc-mini-bar" style="width:' + progress + '%"></div></div>'
-        }
-        listHtml += '</div>'
-      }
-    }
-    listHtml += '</div></div>'
-
-    // ── CENTER: Painel de acao ────────────────────────────────
-    var panelHtml = '<div class="bc-panel">'
-
-    if (isFormMode) {
-      panelHtml += _renderBroadcastForm()
+    // ── CENTER: Main area ────────────────────────────────────
+    var centerHtml = '<div class="bc-center">'
+    if (_bcPanelOpen && _bcPanelTab === 'editor') {
+      // Show phone preview centered when creating
+      centerHtml += _renderPhonePreviewInline(_broadcastForm.content)
     } else if (_broadcastMode === 'detail' && _broadcastSelected) {
-      panelHtml += _renderBroadcastDetail()
+      centerHtml += '<div class="bc-center-detail">' + _renderBroadcastDetail() + '</div>'
     } else {
-      panelHtml += '<div class="bc-panel-empty">'
-      panelHtml += _feather('radio', 40)
-      panelHtml += '<h3>Disparos em massa</h3>'
-      panelHtml += '<p>Selecione um disparo na lista ou crie um novo</p>'
-      panelHtml += '<button class="am-btn-primary" id="bcNewBtn2">' + _feather('plus', 14) + ' Novo Disparo</button>'
-      panelHtml += '</div>'
+      // Empty state
+      centerHtml += '<div class="bc-center-empty">'
+      centerHtml += _feather('messageCircle', 40)
+      centerHtml += '<h3>Disparos em massa</h3>'
+      centerHtml += '<p>Selecione um disparo no historico ou crie um novo</p>'
+      centerHtml += '<button class="am-btn-primary" id="bcNewBtn2">' + _feather('plus', 14) + ' Novo Disparo</button>'
+      centerHtml += '</div>'
     }
-    panelHtml += '</div>'
+    centerHtml += '</div>'
 
-    // ── RIGHT: Phone preview (only in form mode) ─────────────
-    var phoneHtml = ''
-    if (isFormMode) {
-      phoneHtml = _renderPhonePreview(_broadcastForm.content)
-    }
+    // ── RIGHT: Slide panel ───────────────────────────────────
+    var panelHtml = _renderBroadcastSlidePanel()
 
-    var layoutClass = isFormMode ? 'bc-layout-form' : 'bc-layout'
-    var docsHtml = _renderBroadcastDocs()
-    return '<div class="am-tab-content"><div class="' + layoutClass + '">' + listHtml + panelHtml + phoneHtml + '</div>' + docsHtml + '</div>'
+    return '<div class="am-tab-content"><div class="bc-v2">' + statsHtml + centerHtml + '</div>' + panelHtml + '</div>'
   }
 
-  function _renderBroadcastDocs() {
-    var sections = [
-      {
-        title: 'Segmentacao e Filtros',
-        icon: 'tag',
-        color: '#2563EB',
-        description: 'Como os filtros selecionam destinatarios do disparo',
-        rules: [
-          { name: 'Fase do lead', desc: 'Filtra por fase do funil: lead, agendado, compareceu, orcamento, paciente, perdido', status: 'active', type: 'flow' },
-          { name: 'Temperatura', desc: 'Filtra por temperatura: quente (hot), morno (warm), frio (cold)', status: 'active', type: 'flow' },
-          { name: 'Funil', desc: 'Filtra por funil: Full Face ou Procedimentos', status: 'active', type: 'flow' },
-          { name: 'Origem', desc: 'Filtra por fonte: Quiz, Manual ou Importacao', status: 'active', type: 'flow' },
-          { name: 'Filtros combinados (AND)', desc: 'Multiplos filtros aplicam restricao cumulativa — lead deve bater em TODOS', status: 'active', type: 'rule' },
-          { name: 'Requisito base: wa_opt_in', desc: 'So envia para leads com opt-in ativo e nao deletados', status: 'active', type: 'shield' },
-        ]
-      },
-      {
-        title: 'Selecao Manual de Leads',
-        icon: 'userCheck',
-        color: '#059669',
-        description: 'Selecionar leads especificos por nome para o disparo',
-        rules: [
-          { name: 'Busca por nome', desc: 'Campo de busca com autocomplete — digita 2+ letras e mostra ate 8 resultados', status: 'active', type: 'flow' },
-          { name: 'Chips removiveis', desc: 'Leads selecionados aparecem como chips com botao X para remover', status: 'active', type: 'flow' },
-          { name: 'UNION com filtros', desc: 'Leads manuais + filtrados combinados sem duplicatas (UNION SQL)', status: 'active', type: 'flow' },
-          { name: 'So manuais (sem filtro)', desc: 'Se nao selecionar filtros, envia apenas para os leads escolhidos', status: 'active', type: 'flow' },
-          { name: 'Validacao obrigatoria', desc: 'Obrigatorio ter pelo menos 1 filtro OU 1 lead selecionado', status: 'active', type: 'shield' },
-        ]
-      },
-      {
-        title: 'Controle de Envio (Throttle)',
-        icon: 'shield',
-        color: '#DC2626',
-        description: 'Protecao contra bloqueio do WhatsApp com envio escalonado',
-        rules: [
-          { name: 'Lote configuravel', desc: 'Selecionar quantos envios por lote: 5, 10, 15 ou 20 pessoas', status: 'active', type: 'flow' },
-          { name: 'Intervalo configuravel', desc: 'Tempo entre lotes: 5, 10, 15, 20, 30 min ou 1 hora', status: 'active', type: 'flow' },
-          { name: 'scheduled_at escalonado', desc: 'SQL usa row_number() para distribuir scheduled_at por batch no outbox', status: 'active', type: 'shield' },
-          { name: 'Outbox processor respeita horario', desc: 'n8n busca pending WHERE scheduled_at <= now() — sem mudanca no workflow', status: 'active', type: 'shield' },
-          { name: 'Estimativa de tempo', desc: 'Toast mostra tempo estimado total ao iniciar disparo', status: 'active', type: 'flow' },
-        ]
-      },
-      {
-        title: 'Personalizacao da Mensagem',
-        icon: 'messageCircle',
-        color: '#7C3AED',
-        description: 'Variaveis e preview em tempo real',
-        rules: [
-          { name: 'Tag [nome]', desc: 'Substituida pelo nome do lead no envio', status: 'active', type: 'flow' },
-          { name: 'Tag [queixa]', desc: 'Substituida pela queixa principal do lead', status: 'active', type: 'flow' },
-          { name: 'Botoes de insercao', desc: 'Clique para inserir tags na posicao do cursor', status: 'active', type: 'flow' },
-          { name: 'Preview WhatsApp real-time', desc: 'Telefone mockup na direita mostra preview conforme digita', status: 'active', type: 'flow' },
-          { name: 'Quebras de linha preservadas', desc: 'white-space: pre-wrap no bubble — Enter = nova linha no WhatsApp', status: 'active', type: 'flow' },
-          { name: 'Midia opcional', desc: 'URL de imagem/video com legenda — enviado como content_type=image', status: 'active', type: 'flow' },
-        ]
-      },
-      {
-        title: 'Ciclo de Vida do Disparo',
-        icon: 'refreshCw',
-        color: '#D97706',
-        description: 'Status e operacoes do broadcast',
-        rules: [
-          { name: 'Draft → Sending', desc: 'Ao clicar Iniciar Disparo, enfileira mensagens no outbox com throttle', status: 'active', type: 'flow' },
-          { name: 'Sending → Completed', desc: 'n8n processa outbox a cada 2min — ao zerar pendentes, marca completed', status: 'active', type: 'flow' },
-          { name: 'Cancelamento', desc: 'Remove mensagens pending/processing do outbox, marca cancelled', status: 'active', type: 'flow' },
-          { name: 'Contagem de falhas', desc: 'failed_count rastreia envios que falharam apos max_attempts', status: 'active', type: 'shield' },
-          { name: 'Progresso visual', desc: 'Barra de progresso na sidebar mostra sent_count / total_targets', status: 'active', type: 'flow' },
-        ]
-      },
-      {
-        title: 'Arquitetura Tecnica',
-        icon: 'settings',
-        color: '#6B7280',
-        description: 'Stack e componentes do sistema de broadcasting',
-        rules: [
-          { name: 'Tabela wa_broadcasts', desc: 'Armazena campanha: nome, conteudo, filtros, selected_lead_ids, batch config, status, contadores', status: 'active', type: 'flow' },
-          { name: 'Tabela wa_outbox', desc: 'Fila de envio: cada msg individual com scheduled_at, broadcast_id, priority=7', status: 'active', type: 'flow' },
-          { name: '4 RPCs Supabase', desc: 'wa_broadcast_create, wa_broadcast_start, wa_broadcast_list, wa_broadcast_cancel', status: 'active', type: 'flow' },
-          { name: 'n8n Outbox Processor', desc: 'Workflow cron 2min: fetch_pending → split → Evolution API → mark_sent', status: 'active', type: 'flow' },
-          { name: 'RLS por clinica', desc: 'Row Level Security isola dados por clinic_id', status: 'active', type: 'shield' },
-          { name: 'Repository + Service pattern', desc: 'broadcast.repository.js (RPC puro) → broadcast.service.js (validacao)', status: 'active', type: 'flow' },
-        ]
-      },
-    ]
+  function _renderBroadcastStats() {
+    var totalSent = 0, totalFailed = 0, totalTargets = 0
+    var countCompleted = 0, countSending = 0, countFailed = 0, countDraft = 0
+    var todayCount = 0, weekCount = 0, monthCount = 0
+    var now = new Date()
+    var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+    var weekStart = todayStart - (now.getDay() * 86400000)
+    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
 
-    var statusIcon = function(s) {
-      if (s === 'active') return '<span class="am-status am-status-active" title="Ativo">&#10003;</span>'
-      return '<span class="am-status am-status-pending" title="Pendente">&#9675;</span>'
-    }
-    var typeIcon = function(t) {
-      var map = { shield: 'shield', flow: 'refreshCw', rule: 'lock', tag: 'zap' }
-      return _feather(map[t] || 'zap', 12)
+    for (var i = 0; i < _broadcasts.length; i++) {
+      var b = _broadcasts[i]
+      var st = b.status || 'draft'
+      if (st === 'completed') { totalSent += (b.sent_count || 0); countCompleted++ }
+      if (st === 'sending') countSending++
+      if (st === 'cancelled') countFailed++
+      if (st === 'draft') countDraft++
+      totalFailed += (b.failed_count || 0)
+      totalTargets += (b.total_targets || 0)
+
+      var ts = b.created_at ? new Date(b.created_at).getTime() : 0
+      if (ts >= todayStart) todayCount++
+      if (ts >= weekStart) weekCount++
+      if (ts >= monthStart) monthCount++
     }
 
-    var html = '<div class="am-wa-sections" style="margin-top:20px">'
-    for (var i = 0; i < sections.length; i++) {
-      var section = sections[i]
-      var activeCount = section.rules.filter(function(r) { return r.status === 'active' }).length
-      var totalCount = section.rules.length
+    var successRate = (totalSent + totalFailed) > 0 ? Math.round((totalSent / (totalSent + totalFailed)) * 100) : 0
 
-      html += '<div class="am-wa-section">'
-      html += '<div class="am-wa-section-header">'
-      html += '<div class="am-wa-section-icon" style="background:' + section.color + '15;color:' + section.color + '">' + _feather(section.icon, 18) + '</div>'
-      html += '<div class="am-wa-section-info">'
-      html += '<div class="am-wa-section-title">' + section.title + '</div>'
-      html += '<div class="am-wa-section-desc">' + section.description + '</div>'
-      html += '</div>'
-      html += '<div class="am-wa-section-count"><span class="am-wa-count-badge" style="background:' + (activeCount === totalCount ? '#05966915' : '#D9770615') + ';color:' + (activeCount === totalCount ? '#059669' : '#D97706') + '">' + activeCount + '/' + totalCount + '</span></div>'
-      html += '</div>'
-      html += '<div class="am-wa-rules">'
-      for (var j = 0; j < section.rules.length; j++) {
-        var r = section.rules[j]
-        html += '<div class="am-wa-rule ' + (r.status === 'active' ? 'am-wa-rule-active' : 'am-wa-rule-pending') + '">'
-        html += '<div class="am-wa-rule-status">' + statusIcon(r.status) + '</div>'
-        html += '<div class="am-wa-rule-type">' + typeIcon(r.type) + '</div>'
-        html += '<div class="am-wa-rule-info">'
-        html += '<div class="am-wa-rule-name">' + r.name + '</div>'
-        html += '<div class="am-wa-rule-desc">' + r.desc + '</div>'
-        html += '</div></div>'
-      }
-      html += '</div></div>'
+    var html = '<div class="bc-stats">'
+    html += '<button class="bc-new-dispatch" id="bcNewBtn">' + _feather('plus', 14) + ' Novo Disparo</button>'
+
+    html += '<div class="bc-stats-title">Resumo</div>'
+    html += '<div class="bc-stat-card"><div class="bc-stat-big">' + totalSent + '</div><div class="bc-stat-sub">Total enviados</div></div>'
+    html += '<div class="bc-stat-card"><div class="bc-stat-big">' + successRate + '%</div><div class="bc-stat-sub">Taxa de sucesso</div></div>'
+
+    html += '<div class="bc-stat-divider"></div>'
+    html += '<div class="bc-stats-title">Disparos</div>'
+    html += '<div class="bc-stat-row"><span class="bc-stat-label">Hoje</span><span class="bc-stat-num">' + todayCount + '</span></div>'
+    html += '<div class="bc-stat-row"><span class="bc-stat-label">Semana</span><span class="bc-stat-num">' + weekCount + '</span></div>'
+    html += '<div class="bc-stat-row"><span class="bc-stat-label">Mes</span><span class="bc-stat-num">' + monthCount + '</span></div>'
+
+    html += '<div class="bc-stat-divider"></div>'
+    html += '<div class="bc-stats-title">Por status</div>'
+    html += '<div class="bc-stat-row"><span class="bc-stat-label"><span class="bc-stat-dot" style="background:#10B981"></span>Concluidos</span><span class="bc-stat-num">' + countCompleted + '</span></div>'
+    html += '<div class="bc-stat-row"><span class="bc-stat-label"><span class="bc-stat-dot" style="background:#F59E0B"></span>Enviando</span><span class="bc-stat-num">' + countSending + '</span></div>'
+    html += '<div class="bc-stat-row"><span class="bc-stat-label"><span class="bc-stat-dot" style="background:#EF4444"></span>Cancelados</span><span class="bc-stat-num">' + countFailed + '</span></div>'
+    html += '<div class="bc-stat-row"><span class="bc-stat-label"><span class="bc-stat-dot" style="background:#6B7280"></span>Rascunhos</span><span class="bc-stat-num">' + countDraft + '</span></div>'
+
+    html += '<div class="bc-stat-divider"></div>'
+    html += '<div class="bc-stats-title">Alcance</div>'
+    html += '<div class="bc-stat-card"><div class="bc-stat-big">' + totalTargets + '</div><div class="bc-stat-sub">Leads alcancados</div></div>'
+
+    html += '</div>'
+    return html
+  }
+
+  function _renderPhonePreviewInline(content) {
+    var now = new Date()
+    var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+
+    var bubbleContent = ''
+    if (content && content.trim()) {
+      var escaped = _esc(content)
+      escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
+      bubbleContent = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
+        + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
+    } else {
+      bubbleContent = '<div class="bc-wa-empty">Digite a mensagem no painel ao lado</div>'
+    }
+
+    return '<div class="bc-phone">'
+      + '<div class="bc-phone-notch"><span class="bc-phone-notch-time">' + timeStr + '</span></div>'
+      + '<div class="bc-wa-header">'
+      + '<div class="bc-wa-avatar"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>'
+      + '<div><div class="bc-wa-name">Clinica</div><div class="bc-wa-status">online</div></div>'
+      + '</div>'
+      + '<div class="bc-wa-chat" id="bcPhoneChat">' + bubbleContent + '</div>'
+      + '<div class="bc-wa-bottom">'
+      + '<div class="bc-wa-input-mock">Mensagem</div>'
+      + '<div class="bc-wa-send-mock"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>'
+      + '</div>'
+      + '<div class="bc-phone-home"></div>'
+      + '</div>'
+  }
+
+  function _renderBroadcastSlidePanel() {
+    var openClass = _bcPanelOpen ? ' open' : ''
+    var html = '<div class="bc-slide-overlay' + openClass + '" id="bcSlideOverlay"></div>'
+    html += '<div class="bc-slide-panel' + openClass + '" id="bcSlidePanel">'
+
+    // Header
+    html += '<div class="bc-slide-header">'
+    html += '<span class="bc-slide-title">' + _feather('messageCircle', 16) + ' Disparos</span>'
+    html += '<button class="bc-slide-close" id="bcSlideClose">' + _feather('x', 16) + '</button>'
+    html += '</div>'
+
+    // Tabs
+    html += '<div class="bc-slide-tabs">'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'editor' ? ' active' : '') + '" data-panel-tab="editor">Editor</button>'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
+    html += '</div>'
+
+    // Body
+    html += '<div class="bc-slide-body">'
+    if (_bcPanelTab === 'editor') {
+      html += _renderBroadcastFormBody()
+    } else {
+      html += _renderBroadcastHistoryTab()
     }
     html += '</div>'
 
-    var legend = '<div class="am-wa-legend">'
-    legend += '<span class="am-wa-legend-item"><span class="am-status am-status-active">&#10003;</span> Implementado e ativo</span>'
-    legend += '<span class="am-wa-legend-item"><span class="am-status am-status-pending">&#9675;</span> Planejado</span>'
-    legend += '</div>'
+    // Footer (only in editor tab)
+    if (_bcPanelTab === 'editor') {
+      html += '<div class="bc-slide-footer">'
+      html += '<button class="am-btn-secondary" id="bcCancelForm">Cancelar</button>'
+      html += '<button class="am-btn-primary" id="bcSaveBtn"' + (_broadcastSaving ? ' disabled' : '') + '>'
+      html += (_broadcastSaving ? 'Criando...' : _feather('plus', 14) + ' Criar Disparo')
+      html += '</button>'
+      html += '</div>'
+    }
 
-    return legend + html
+    html += '</div>'
+    return html
   }
 
-  function _renderBroadcastForm() {
+  function _renderBroadcastHistoryTab() {
+    if (_broadcasts.length === 0) {
+      return '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px">Nenhum disparo ainda</div>'
+    }
+
+    var html = ''
+    for (var i = 0; i < _broadcasts.length; i++) {
+      var b = _broadcasts[i]
+      var st = b.status || 'draft'
+      var date = b.created_at ? new Date(b.created_at).toLocaleString('pt-BR') : '--'
+
+      var filterTags = []
+      if (b.target_filter) {
+        if (b.target_filter.phase) filterTags.push(b.target_filter.phase)
+        if (b.target_filter.temperature) filterTags.push(b.target_filter.temperature)
+        if (b.target_filter.funnel) filterTags.push(b.target_filter.funnel)
+        if (b.target_filter.source_type) filterTags.push(b.target_filter.source_type)
+      }
+
+      html += '<div class="bc-hist-item" data-id="' + b.id + '">'
+      html += '<span class="bc-hist-dot" style="background:' + _bcStatusColor(st) + '"></span>'
+      html += '<div class="bc-hist-info">'
+      html += '<div class="bc-hist-name">' + _esc(b.name) + '</div>'
+      html += '<div class="bc-hist-meta">' + _bcStatusLabel(st) + ' &middot; ' + date + ' &middot; ' + (b.sent_count || 0) + '/' + (b.total_targets || 0) + ' env.</div>'
+      if (filterTags.length > 0) {
+        html += '<div class="bc-hist-filters">' + filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') + '</div>'
+      }
+      html += '</div></div>'
+    }
+    return html
+  }
+
+
+
+  function _renderBroadcastFormBody() {
     var f = _broadcastForm
     return `
-      <div class="bc-panel-header">
-        <h3>${_feather('plus', 16)} Novo Disparo</h3>
-      </div>
-      <div class="bc-panel-body">
         <div class="am-field">
           <label class="am-label">Nome do disparo *</label>
           <input class="am-input" id="bcName" placeholder="Ex: Promo Lifting 5D Abril" value="${_esc(f.name)}">
@@ -1778,46 +1763,7 @@
             </div>
           </div>
           <small class="am-hint">${_feather('shield', 11)} Protecao contra bloqueio do WhatsApp</small>
-        </div>
-      </div>
-      <div class="bc-panel-footer">
-        <button class="am-btn-secondary" id="bcCancelForm">Cancelar</button>
-        <button class="am-btn-primary" id="bcSaveBtn" ${_broadcastSaving ? 'disabled' : ''}>
-          ${_broadcastSaving ? 'Criando...' : _feather('plus', 14) + ' Criar Disparo'}
-        </button>
-      </div>`
-  }
-
-  function _renderPhonePreview(content) {
-    var now = new Date()
-    var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
-
-    var bubbleContent = ''
-    if (content && content.trim()) {
-      var escaped = _esc(content)
-      // Highlight [tags]
-      escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
-      bubbleContent = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
-        + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
-    } else {
-      bubbleContent = '<div class="bc-wa-empty">Digite a mensagem ao lado para ver o preview</div>'
-    }
-
-    return '<div class="bc-phone-col">'
-      + '<div class="bc-phone">'
-      + '<div class="bc-phone-notch"><span class="bc-phone-notch-time">' + timeStr + '</span></div>'
-      + '<div class="bc-wa-header">'
-      + '<div class="bc-wa-avatar"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>'
-      + '<div><div class="bc-wa-name">Clinica</div><div class="bc-wa-status">online</div></div>'
-      + '</div>'
-      + '<div class="bc-wa-chat" id="bcPhoneChat">' + bubbleContent + '</div>'
-      + '<div class="bc-wa-bottom">'
-      + '<div class="bc-wa-input-mock">Mensagem</div>'
-      + '<div class="bc-wa-send-mock"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>'
-      + '</div>'
-      + '<div class="bc-phone-home"></div>'
-      + '</div>'
-      + '</div>'
+        </div>`
   }
 
   function _updatePhonePreview(content) {
@@ -1895,22 +1841,62 @@
   }
 
   function _bindBroadcastEvents(root) {
-    // New broadcast buttons
+    // New broadcast buttons (stats sidebar + center empty state)
     var newBtns = root.querySelectorAll('#bcNewBtn, #bcNewBtn2')
     newBtns.forEach(function(btn) {
       btn.addEventListener('click', function() {
         _broadcastForm = _emptyBroadcastForm()
         _broadcastMode = 'new'
         _broadcastSelected = null
+        _bcPanelOpen = true
+        _bcPanelTab = 'editor'
         _render()
       })
     })
 
-    // Select item from list
-    root.querySelectorAll('.bc-item').forEach(function(item) {
+    // Slide panel close button
+    var closeBtn = document.getElementById('bcSlideClose')
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function() {
+        _bcPanelOpen = false
+        if (_broadcastMode === 'new') {
+          _broadcastMode = 'detail'
+          if (!_broadcastSelected && _broadcasts.length > 0) _broadcastSelected = _broadcasts[0].id
+        }
+        _render()
+      })
+    }
+
+    // Slide panel overlay click to close
+    var overlay = document.getElementById('bcSlideOverlay')
+    if (overlay) {
+      overlay.addEventListener('click', function() {
+        _bcPanelOpen = false
+        if (_broadcastMode === 'new') {
+          _broadcastMode = 'detail'
+          if (!_broadcastSelected && _broadcasts.length > 0) _broadcastSelected = _broadcasts[0].id
+        }
+        _render()
+      })
+    }
+
+    // Panel tab switching
+    root.querySelectorAll('.bc-slide-tab').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var tab = btn.dataset.panelTab
+        if (tab && tab !== _bcPanelTab) {
+          _bcPanelTab = tab
+          _render()
+        }
+      })
+    })
+
+    // History tab item click
+    root.querySelectorAll('.bc-hist-item').forEach(function(item) {
       item.addEventListener('click', function() {
         _broadcastSelected = item.dataset.id
         _broadcastMode = 'detail'
+        _bcPanelOpen = false
         _render()
       })
     })
@@ -1927,7 +1913,7 @@
     // Tag insert buttons
     root.querySelectorAll('.bc-tag-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        var textarea = root.querySelector('#bcContent')
+        var textarea = document.getElementById('bcContent')
         if (!textarea) return
         var tag = btn.dataset.tag
         var start = textarea.selectionStart
@@ -1942,8 +1928,8 @@
     })
 
     // Lead search + select
-    var searchInput = root.querySelector('#bcLeadSearch')
-    var dropdown = root.querySelector('#bcLeadDropdown')
+    var searchInput = document.getElementById('bcLeadSearch')
+    var dropdown = document.getElementById('bcLeadDropdown')
     var _searchTimeout = null
 
     if (searchInput && dropdown) {
@@ -2006,9 +1992,10 @@
     })
 
     // Cancel form
-    var cancelForm = root.querySelector('#bcCancelForm')
+    var cancelForm = document.getElementById('bcCancelForm')
     if (cancelForm) {
       cancelForm.addEventListener('click', function() {
+        _bcPanelOpen = false
         _broadcastMode = 'detail'
         if (!_broadcastSelected && _broadcasts.length > 0) _broadcastSelected = _broadcasts[0].id
         _render()
@@ -2016,19 +2003,19 @@
     }
 
     // Save
-    var saveBtn = root.querySelector('#bcSaveBtn')
+    var saveBtn = document.getElementById('bcSaveBtn')
     if (saveBtn) {
       saveBtn.addEventListener('click', async function() {
-        var name = (root.querySelector('#bcName') || {}).value || ''
-        var content = (root.querySelector('#bcContent') || {}).value || ''
-        var mediaUrl = (root.querySelector('#bcMediaUrl') || {}).value || ''
-        var mediaCaption = (root.querySelector('#bcMediaCaption') || {}).value || ''
-        var filterPhase = (root.querySelector('#bcFilterPhase') || {}).value || ''
-        var filterTemp = (root.querySelector('#bcFilterTemp') || {}).value || ''
-        var filterFunnel = (root.querySelector('#bcFilterFunnel') || {}).value || ''
-        var filterSource = (root.querySelector('#bcFilterSource') || {}).value || ''
-        var batchSize = parseInt((root.querySelector('#bcBatchSize') || {}).value) || 10
-        var batchInterval = parseInt((root.querySelector('#bcBatchInterval') || {}).value) || 10
+        var name = (document.getElementById('bcName') || {}).value || ''
+        var content = (document.getElementById('bcContent') || {}).value || ''
+        var mediaUrl = (document.getElementById('bcMediaUrl') || {}).value || ''
+        var mediaCaption = (document.getElementById('bcMediaCaption') || {}).value || ''
+        var filterPhase = (document.getElementById('bcFilterPhase') || {}).value || ''
+        var filterTemp = (document.getElementById('bcFilterTemp') || {}).value || ''
+        var filterFunnel = (document.getElementById('bcFilterFunnel') || {}).value || ''
+        var filterSource = (document.getElementById('bcFilterSource') || {}).value || ''
+        var batchSize = parseInt((document.getElementById('bcBatchSize') || {}).value) || 10
+        var batchInterval = parseInt((document.getElementById('bcBatchInterval') || {}).value) || 10
 
         if (!name.trim() || !content.trim()) {
           _showToast('Nome e mensagem sao obrigatorios', 'error')
@@ -2061,6 +2048,7 @@
           _showToast('Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios encontrados')
           _broadcastSelected = result.data?.id || null
           _broadcastMode = _broadcastSelected ? 'detail' : 'new'
+          _bcPanelOpen = false
           await _loadBroadcasts()
         } else {
           _showToast(result?.error || 'Erro ao criar disparo', 'error')
