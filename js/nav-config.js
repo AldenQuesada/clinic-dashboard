@@ -212,6 +212,18 @@
       ],
     },
 
+    // ── Disparos ─────────────────────────────────────────────────
+    {
+      section: 'broadcasting',
+      icon:    'send',
+      label:   'Disparos',
+      roles:   [ROLES.OWNER, ROLES.ADMIN, ROLES.RECEPTIONIST],
+      plans:   [],
+      pages: [
+        { page: 'settings-automation', label: 'Disparos', breadcrumb: 'Disparos > Painel' },
+      ],
+    },
+
     // ── Orçamentos ───────────────────────────────────────────────
     {
       section: 'orcamentos',
