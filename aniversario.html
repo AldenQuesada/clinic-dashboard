@@ -92,6 +92,7 @@ a { color: inherit; text-decoration: none; }
 
 /* Bonus list */
 .live-bonus { display: flex; flex-direction: column; gap: 6px; }
+.bonus-title { font-size: 14px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; padding: 4px 0; }
 .bonus { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--bg3); border: 1px solid #2a2a2a; border-radius: 12px; transform: translateX(-16px); opacity: 0; transition: all .35s cubic-bezier(.34,1.56,.64,1); }
 .bonus.show { transform: translateX(0); opacity: 1; }
 .bonus.free { border-color: var(--gold); background: linear-gradient(135deg, #1a1710, var(--bg3)); }
@@ -188,9 +189,9 @@ a { color: inherit; text-decoration: none; }
   <!-- ML selector -->
   <div class="ml-section">
     <div class="ml-tabs" id="mlTabs">
-      <div class="ml-tab active" data-ml="1"><span class="ml-tab-ml">1ml</span><span class="ml-tab-label">L&aacute;bios</span></div>
+      <div class="ml-tab active" data-ml="1"><span class="ml-tab-ml">1ml</span><span class="ml-tab-label">L&aacute;bios ou olheiras</span></div>
       <div class="ml-tab" data-ml="2"><span class="ml-tab-ml">2ml</span><span class="ml-tab-label">L&aacute;bios + olheiras</span></div>
-      <div class="ml-tab" data-ml="3"><span class="ml-tab-ml">3ml</span><span class="ml-tab-label">Full face</span></div>
+      <div class="ml-tab" data-ml="3"><span class="ml-tab-ml">3ml</span><span class="ml-tab-label">L&aacute;bios + olheiras + lifting</span></div>
     </div>
   </div>
 
@@ -237,37 +238,38 @@ a { color: inherit; text-decoration: none; }
     1: {
       original: 1500, price: 1200, parcelas: 6, parcelaVal: 200,
       areas: [
-        { emoji: '💋', name: 'Labios', desc: 'Preenchimento labial com \u00e1cido hialur\u00f4nico premium', new: false }
+        { emoji: '💋', name: 'Hidrata\u00e7\u00e3o de L\u00e1bios', desc: 'Preenchimento e hidrata\u00e7\u00e3o labial com \u00e1cido hialur\u00f4nico premium', new: false },
+        { emoji: '👁️', name: 'ou Corre\u00e7\u00e3o de Olheiras', desc: 'Tratamento de olheiras com preenchimento estrat\u00e9gico', new: false },
       ],
       bonus: [
-        { icon: '⚡', text: 'Ponteira Fotona Regenera\u00e7\u00e3o', detail: 'Regenera\u00e7\u00e3o profunda da pele com laser', free: true },
-        { icon: '🔬', text: 'Avalia\u00e7\u00e3o Anovator A5', detail: 'Scanner corporal avan\u00e7ado com mais de 50 relat\u00f3rios', free: true },
+        { icon: '\u26a1', text: 'Ponteira Fotona Regenera\u00e7\u00e3o', detail: 'Regenera\u00e7\u00e3o profunda da pele com laser', free: true },
+        { icon: '\ud83d\udd2c', text: 'Avalia\u00e7\u00e3o Anovator A5', detail: 'Scanner corporal avan\u00e7ado com mais de 50 relat\u00f3rios', free: true },
       ]
     },
     2: {
       original: 3000, price: 2100, parcelas: 10, parcelaVal: 210,
       areas: [
-        { emoji: '💋', name: 'Labios', desc: 'Preenchimento labial com \u00e1cido hialur\u00f4nico premium', new: false },
-        { emoji: '👁️', name: 'Olheiras + Lifting', desc: 'Corre\u00e7\u00e3o de olheiras e sustenta\u00e7\u00e3o facial', new: true },
+        { emoji: '💋', name: 'Hidrata\u00e7\u00e3o de L\u00e1bios', desc: 'Preenchimento e hidrata\u00e7\u00e3o labial com \u00e1cido hialur\u00f4nico premium', new: false },
+        { emoji: '👁️', name: 'Corre\u00e7\u00e3o de Olheiras', desc: 'Tratamento de olheiras com preenchimento estrat\u00e9gico', new: true },
       ],
       bonus: [
-        { icon: '⚡', text: 'Ponteira Fotona Regenera\u00e7\u00e3o', detail: 'Regenera\u00e7\u00e3o profunda da pele com laser', free: true },
-        { icon: '✨', text: 'Ponteira Est\u00edmulo de Col\u00e1geno', detail: 'Estimula firmeza e elasticidade da pele', free: true },
-        { icon: '🔬', text: 'Avalia\u00e7\u00e3o Anovator A5', detail: 'Scanner corporal avan\u00e7ado com mais de 50 relat\u00f3rios', free: true },
+        { icon: '\u26a1', text: 'Ponteira Fotona Regenera\u00e7\u00e3o', detail: 'Regenera\u00e7\u00e3o profunda da pele com laser', free: true },
+        { icon: '\u2728', text: 'Ponteira Est\u00edmulo de Col\u00e1geno', detail: 'Estimula firmeza e elasticidade da pele', free: true },
+        { icon: '\ud83d\udd2c', text: 'Avalia\u00e7\u00e3o Anovator A5', detail: 'Scanner corporal avan\u00e7ado com mais de 50 relat\u00f3rios', free: true },
       ]
     },
     3: {
       original: 4500, price: 3000, parcelas: 12, parcelaVal: 250,
       areas: [
-        { emoji: '💋', name: 'Labios', desc: 'Preenchimento labial com \u00e1cido hialur\u00f4nico premium', new: false },
-        { emoji: '👁️', name: 'Olheiras + Lifting', desc: 'Corre\u00e7\u00e3o de olheiras e sustenta\u00e7\u00e3o facial', new: false },
-        { emoji: '🌟', name: 'Smooth Eyes + Full Face', desc: 'Rejuvenescimento completo de p\u00e1lpebras e face', new: true },
+        { emoji: '💋', name: 'Hidrata\u00e7\u00e3o de L\u00e1bios', desc: 'Preenchimento e hidrata\u00e7\u00e3o labial com \u00e1cido hialur\u00f4nico premium', new: false },
+        { emoji: '👁️', name: 'Corre\u00e7\u00e3o de Olheiras', desc: 'Tratamento de olheiras com preenchimento estrat\u00e9gico', new: false },
+        { emoji: '🌟', name: 'Efeito Lifting', desc: 'Sustenta\u00e7\u00e3o facial + rejuvenescimento completo', new: true },
       ],
       bonus: [
-        { icon: '⚡', text: 'Ponteira Fotona Regenera\u00e7\u00e3o', detail: 'Regenera\u00e7\u00e3o profunda da pele com laser', free: true },
-        { icon: '✨', text: 'Ponteira Est\u00edmulo de Col\u00e1geno', detail: 'Estimula firmeza e elasticidade da pele', free: true },
+        { icon: '\u26a1', text: 'Ponteira Fotona Regenera\u00e7\u00e3o', detail: 'Regenera\u00e7\u00e3o profunda da pele com laser', free: true },
+        { icon: '\u2728', text: 'Ponteira Est\u00edmulo de Col\u00e1geno', detail: 'Estimula firmeza e elasticidade da pele', free: true },
         { icon: '👁️', text: 'Ponteira Smooth Eyes', detail: 'Rejuvenescimento laser de p\u00e1lpebras', free: true },
-        { icon: '🔬', text: 'Avalia\u00e7\u00e3o Anovator A5', detail: 'Scanner corporal avan\u00e7ado com mais de 50 relat\u00f3rios', free: true },
+        { icon: '\ud83d\udd2c', text: 'Avalia\u00e7\u00e3o Anovator A5', detail: 'Scanner corporal avan\u00e7ado com mais de 50 relat\u00f3rios', free: true },
       ]
     }
   }
@@ -387,12 +389,18 @@ a { color: inherit; text-decoration: none; }
     var bonusEl = document.getElementById('liveBonus')
     bonusEl.innerHTML = ''
     if (ben.procedimentos || ben.todos) {
+      // Title "Voc\u00ea Ganha"
+      var titleDiv = document.createElement('div')
+      titleDiv.className = 'bonus-title'
+      titleDiv.textContent = 'Voc\u00ea Ganha'
+      bonusEl.appendChild(titleDiv)
+
       plan.bonus.forEach(function(b, i) {
         var div = document.createElement('div')
         div.className = 'bonus' + (b.free ? ' free' : '')
         div.innerHTML = '<div class="bonus-i">' + b.icon + '</div>'
           + '<div><div class="bonus-t">' + b.text + '</div><div class="bonus-d">' + b.detail + '</div></div>'
-          + (b.free ? '<span class="bonus-badge">GRATIS</span>' : '')
+          + (b.free ? '<span class="bonus-badge">PRESENTE</span>' : '')
         bonusEl.appendChild(div)
         setTimeout(function() { div.classList.add('show') }, 60 + i * 100)
       })
