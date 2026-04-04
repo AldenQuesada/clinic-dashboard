@@ -1709,6 +1709,15 @@
             <button type="button" class="bc-fmt-btn" data-wrap="_" title="Italico"><i>I</i></button>
             <button type="button" class="bc-fmt-btn" data-wrap="~" title="Riscado"><s>R</s></button>
             <button type="button" class="bc-fmt-btn bc-fmt-mono" data-wrap="\`\`\`" title="Monoespaco">{ }</button>
+            <span class="bc-fmt-sep"></span>
+            <div class="bc-emoji-wrap">
+              <button type="button" class="bc-fmt-btn bc-emoji-toggle" id="bcEmojiToggle" title="Emojis">&#128578;</button>
+              <div class="bc-emoji-picker" id="bcEmojiPicker">
+                ${['😊','😍','🔥','✨','💜','🌟','❤️','👏','🎉','💪','👋','🙏','💋','😉','🥰','💎','🌸','⭐','📍','📅','⏰','📞','💰','🎁','✅','❌','⚡','🏆','💡','🤝','👨‍⚕️','💆','🪞','💄','🌺','💫'].map(function(e) {
+                  return '<button type="button" class="bc-emoji-btn" data-emoji="' + e + '">' + e + '</button>'
+                }).join('')}
+              </div>
+            </div>
           </div>
         </div>
         <div class="am-field">
@@ -1848,7 +1857,12 @@
           <label class="am-label">Mensagem</label>
           <div class="bc-detail-msg">${_esc(b.content)}</div>
         </div>
-        ${b.media_url ? '<div class="bc-detail-section"><label class="am-label">Midia</label><div class="bc-detail-media"><img src="' + _esc(b.media_url) + '" alt="media"></div></div>' : ''}
+        ${b.media_url ? (function() {
+          var u = b.media_url.toLowerCase()
+          var isImg = u.indexOf('.jpg') >= 0 || u.indexOf('.jpeg') >= 0 || u.indexOf('.png') >= 0 || u.indexOf('.gif') >= 0 || u.indexOf('.webp') >= 0 || u.indexOf('supabase.co/storage') >= 0
+          if (isImg) return '<div class="bc-detail-section"><label class="am-label">Imagem</label><div class="bc-detail-media"><img src="' + _esc(b.media_url) + '" alt="media"></div></div>'
+          return '<div class="bc-detail-section"><label class="am-label">Link</label><div class="bc-detail-link"><a href="' + _esc(b.media_url) + '" target="_blank" rel="noopener">' + _feather('link', 13) + ' ' + _esc(b.media_caption || b.media_url) + '</a></div></div>'
+        })() : ''}
         <div class="bc-detail-stats">
           <div class="bc-stat">
             <span class="bc-stat-value">${b.total_targets || 0}</span>
@@ -1995,6 +2009,33 @@
         textarea.focus()
         _broadcastForm.content = textarea.value
         _updatePhonePreview(textarea.value)
+      })
+    })
+
+    // Emoji picker toggle + insert
+    var emojiToggle = document.getElementById('bcEmojiToggle')
+    var emojiPicker = document.getElementById('bcEmojiPicker')
+    if (emojiToggle && emojiPicker) {
+      emojiToggle.addEventListener('click', function(e) {
+        e.stopPropagation()
+        emojiPicker.classList.toggle('open')
+      })
+      document.addEventListener('click', function() { emojiPicker.classList.remove('open') }, { once: true })
+    }
+    document.querySelectorAll('.bc-emoji-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        var textarea = document.getElementById('bcContent')
+        if (!textarea) return
+        var emoji = btn.dataset.emoji
+        var start = textarea.selectionStart
+        var text = textarea.value
+        textarea.value = text.substring(0, start) + emoji + text.substring(start)
+        textarea.selectionStart = textarea.selectionEnd = start + emoji.length
+        textarea.focus()
+        _broadcastForm.content = textarea.value
+        _updatePhonePreview(textarea.value)
+        if (emojiPicker) emojiPicker.classList.remove('open')
       })
     })
 
