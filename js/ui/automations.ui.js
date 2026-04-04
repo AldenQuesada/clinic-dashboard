@@ -1434,8 +1434,8 @@
   // ── Broadcast Tab ─────────────────────────────────────────────
 
   var _bcRefreshTimer = null
-  var _bcPanelOpen = false
-  var _bcPanelTab = 'editor' // 'editor' | 'history'
+  var _bcPanelOpen = true
+  var _bcPanelTab = 'history' // 'editor' | 'history'
 
   async function _loadBroadcasts() {
     if (!window.BroadcastService) return
@@ -1528,8 +1528,6 @@
     var successRate = (totalSent + totalFailed) > 0 ? Math.round((totalSent / (totalSent + totalFailed)) * 100) : 0
 
     var html = '<div class="bc-stats">'
-    html += '<button class="bc-new-dispatch" id="bcNewBtn">' + _feather('plus', 14) + ' Novo Disparo</button>'
-
     html += '<div class="bc-stats-title">Resumo</div>'
     html += '<div class="bc-stat-card"><div class="bc-stat-big">' + totalSent + '</div><div class="bc-stat-sub">Total enviados</div></div>'
     html += '<div class="bc-stat-card"><div class="bc-stat-big">' + successRate + '%</div><div class="bc-stat-sub">Taxa de sucesso</div></div>'
@@ -1585,14 +1583,16 @@
   }
 
   function _renderBroadcastSlidePanel() {
-    var openClass = _bcPanelOpen ? ' open' : ''
-    var html = '<div class="bc-slide-overlay' + openClass + '" id="bcSlideOverlay"></div>'
-    html += '<div class="bc-slide-panel' + openClass + '" id="bcSlidePanel">'
+    var openClass = ' open'
+    var html = '<div class="bc-slide-panel' + openClass + '" id="bcSlidePanel">'
 
     // Header
     html += '<div class="bc-slide-header">'
     html += '<span class="bc-slide-title">' + _feather('messageCircle', 16) + ' Disparos</span>'
+    html += '<div style="display:flex;align-items:center;gap:6px">'
+    html += '<button class="bc-new-dispatch-sm" id="bcNewBtn">' + _feather('plus', 14) + ' Novo</button>'
     html += '<button class="bc-slide-close" id="bcSlideClose">' + _feather('x', 16) + '</button>'
+    html += '</div>'
     html += '</div>'
 
     // Tabs
@@ -1854,12 +1854,12 @@
       })
     })
 
-    // Slide panel close button
+    // Slide panel close button — goes back to history (never fully closes)
     var closeBtn = document.getElementById('bcSlideClose')
     if (closeBtn) {
       closeBtn.addEventListener('click', function() {
-        _bcPanelOpen = false
-        if (_broadcastMode === 'new') {
+        if (_bcPanelTab === 'editor') {
+          _bcPanelTab = 'history'
           _broadcastMode = 'detail'
           if (!_broadcastSelected && _broadcasts.length > 0) _broadcastSelected = _broadcasts[0].id
         }
@@ -1867,16 +1867,11 @@
       })
     }
 
-    // Slide panel overlay click to close
+    // Slide panel overlay — no action (panel stays open)
     var overlay = document.getElementById('bcSlideOverlay')
     if (overlay) {
       overlay.addEventListener('click', function() {
-        _bcPanelOpen = false
-        if (_broadcastMode === 'new') {
-          _broadcastMode = 'detail'
-          if (!_broadcastSelected && _broadcasts.length > 0) _broadcastSelected = _broadcasts[0].id
-        }
-        _render()
+        // panel stays open — do nothing
       })
     }
 
@@ -1891,12 +1886,12 @@
       })
     })
 
-    // History tab item click
+    // History tab item click — show detail in center, panel stays open
     root.querySelectorAll('.bc-hist-item').forEach(function(item) {
       item.addEventListener('click', function() {
         _broadcastSelected = item.dataset.id
         _broadcastMode = 'detail'
-        _bcPanelOpen = false
+        _bcPanelTab = 'history'
         _render()
       })
     })
@@ -1995,7 +1990,7 @@
     var cancelForm = document.getElementById('bcCancelForm')
     if (cancelForm) {
       cancelForm.addEventListener('click', function() {
-        _bcPanelOpen = false
+        _bcPanelTab = 'history'
         _broadcastMode = 'detail'
         if (!_broadcastSelected && _broadcasts.length > 0) _broadcastSelected = _broadcasts[0].id
         _render()
@@ -2048,7 +2043,7 @@
           _showToast('Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios encontrados')
           _broadcastSelected = result.data?.id || null
           _broadcastMode = _broadcastSelected ? 'detail' : 'new'
-          _bcPanelOpen = false
+          _bcPanelTab = 'history'
           await _loadBroadcasts()
         } else {
           _showToast(result?.error || 'Erro ao criar disparo', 'error')
