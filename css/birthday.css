@@ -1,116 +1,200 @@
 /* ============================================================
-   Birthday Campaigns Module
+   Birthday Campaigns Module — Complete UI
    ============================================================ */
 
 .bday-module { padding: 20px; max-width: 1100px; }
 
-/* Header */
+/* ── Header ─────────────────────────────────────────────────── */
 .bday-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .bday-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: var(--text-primary); }
 .bday-tabs { display: flex; gap: 4px; background: var(--bg-secondary); border-radius: 8px; padding: 3px; }
-.bday-tab { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border: none; background: none; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.bday-tab { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border: none; background: none; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
 .bday-tab:hover { color: var(--text-primary); }
-.bday-tab.active { background: var(--bg-primary); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.bday-scan-btn { margin-left: auto; display: flex; align-items: center; gap: 5px; padding: 7px 14px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all 0.15s; }
+.bday-tab.active { background: var(--bg-primary); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.bday-scan-btn { margin-left: auto; display: flex; align-items: center; gap: 5px; padding: 7px 14px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all .15s; }
 .bday-scan-btn:hover { border-color: var(--accent); color: var(--accent); }
-.bday-loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+.bday-loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-/* KPIs */
-.bday-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.bday-kpi { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px; text-align: center; }
+/* ── KPIs ──────────────────────────────────────────────────── */
+.bday-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.bday-kpi { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 14px 12px; text-align: center; transition: border-color .15s; }
+.bday-kpi:hover { border-color: var(--accent); }
+.bday-kpi-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto 6px; }
 .bday-kpi-val { display: block; font-size: 22px; font-weight: 800; line-height: 1.1; }
-.bday-kpi-lbl { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; margin-top: 4px; }
+.bday-kpi-lbl { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; margin-top: 4px; }
 
-/* Segments */
+/* ── Segments ─────────────────────────────────────────────── */
 .bday-segments { display: flex; gap: 10px; margin-bottom: 20px; }
-.bday-seg-card { flex: 1; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
-.bday-seg-val { display: block; font-size: 20px; font-weight: 800; color: var(--text-primary); }
+.bday-seg-card { flex: 1; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; }
+.bday-seg-val { display: block; font-size: 22px; font-weight: 800; color: var(--text-primary); }
 .bday-seg-lbl { display: block; font-size: 10px; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
 
-/* Section titles */
+/* ── Section titles ───────────────────────────────────────── */
 .bday-section-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-primary); margin: 20px 0 10px; }
-.bday-section-title button { margin-left: auto; }
 
-/* Upcoming list */
+/* ── Upcoming cards ───────────────────────────────────────── */
 .bday-upcoming-list { display: flex; flex-direction: column; gap: 4px; }
-.bday-upcoming-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; transition: border-color 0.15s; }
-.bday-upcoming-item:hover { border-color: var(--accent); }
-.bday-upcoming-item.bday-urgent { border-left: 3px solid #EF4444; }
-.bday-upcoming-item.bday-soon { border-left: 3px solid #F59E0B; }
-.bday-up-left { display: flex; flex-direction: column; gap: 2px; }
-.bday-up-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.bday-up-meta { font-size: 11px; color: var(--text-muted); }
-.bday-up-right { display: flex; align-items: center; gap: 10px; }
-.bday-up-days { font-size: 12px; font-weight: 700; color: var(--text-secondary); background: var(--bg-secondary); padding: 2px 8px; border-radius: 10px; }
-.bday-budget-alert { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: #EF4444; background: #FEF2F2; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
-.bday-camp-badge { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: #D1FAE5; color: #10B981; }
-.bday-camp-badge.bday-camp-none { background: var(--bg-secondary); color: var(--text-muted); }
+.bday-up-card { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; transition: all .15s; }
+.bday-up-card:hover { border-color: var(--accent); transform: translateX(2px); }
+.bday-up-card.bday-critical { border-left: 3px solid #EF4444; }
+.bday-up-card.bday-urgent { border-left: 3px solid #F59E0B; }
+.bday-up-card.bday-soon { border-left: 3px solid #2563EB; }
+.bday-up-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+.bday-up-info { flex: 1; min-width: 0; }
+.bday-up-name { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bday-up-detail { display: block; font-size: 11px; color: var(--text-muted); }
+.bday-up-tags { display: flex; gap: 4px; flex-shrink: 0; }
+.bday-up-countdown { text-align: center; min-width: 36px; flex-shrink: 0; }
+.bday-up-days-num { display: block; font-size: 16px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.bday-up-days-label { display: block; font-size: 9px; color: var(--text-muted); font-weight: 600; }
+.bday-up-status { flex-shrink: 0; }
 
-/* Template cards */
-.bday-tmpl-list { display: flex; flex-direction: column; gap: 8px; }
-.bday-tmpl-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-.bday-tmpl-card.bday-tmpl-inactive { opacity: 0.5; }
-.bday-tmpl-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.bday-tmpl-badge { font-size: 11px; font-weight: 800; color: #fff; background: var(--accent); padding: 2px 8px; border-radius: 6px; }
-.bday-tmpl-label { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-.bday-tmpl-hour { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
-.bday-tmpl-toggle { margin-left: auto; }
-.bday-tmpl-edit, .bday-tmpl-del { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; }
-.bday-tmpl-edit:hover { color: var(--accent); }
-.bday-tmpl-del:hover { color: #EF4444; }
-.bday-tmpl-preview { font-size: 12px; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap; }
+/* ── Tags & Badges ────────────────────────────────────────── */
+.bday-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.bday-tag-budget { color: #EF4444; background: #FEF2F2; }
+.bday-badge { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.bday-badge-ok { background: #D1FAE5; color: #10B981; }
+.bday-badge-wait { background: var(--bg-secondary); color: var(--text-muted); }
 
-/* Switch toggle */
-.bday-switch { position: relative; display: inline-block; width: 32px; height: 18px; }
-.bday-switch input { opacity: 0; width: 0; height: 0; }
-.bday-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 18px; transition: 0.2s; }
-.bday-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; bottom: 2px; background: #fff; border-radius: 50%; transition: 0.2s; }
-.bday-switch input:checked + .bday-slider { background: var(--accent); }
-.bday-switch input:checked + .bday-slider::before { transform: translateX(14px); }
+/* ── Timeline ─────────────────────────────────────────────── */
+.bday-tl-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.bday-timeline { position: relative; padding-left: 40px; }
+.bday-timeline::before { content: ''; position: absolute; left: 18px; top: 0; bottom: 0; width: 2px; background: var(--border); }
 
-/* Template form */
-.bday-tmpl-form { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+/* Timeline birthday marker */
+.bday-tl-marker { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; position: relative; }
+.bday-tl-dot-bday { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 3px solid var(--bg-primary); box-shadow: 0 0 0 2px var(--accent); position: absolute; left: -29px; }
+.bday-tl-label { font-size: 12px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 5px; }
+
+/* Timeline node */
+.bday-tl-node { position: relative; margin-bottom: 16px; }
+.bday-tl-node.bday-tl-inactive { opacity: .45; }
+.bday-tl-connector { position: absolute; left: -22px; top: 20px; width: 22px; height: 2px; background: var(--border); }
+.bday-tl-dot { width: 10px; height: 10px; border-radius: 50%; background: #10B981; border: 2px solid var(--bg-primary); box-shadow: 0 0 0 2px #10B981; position: absolute; left: -27px; top: 16px; }
+.bday-tl-node.bday-tl-inactive .bday-tl-dot { background: var(--text-muted); box-shadow: 0 0 0 2px var(--text-muted); }
+.bday-tl-node.bday-tl-editing .bday-tl-dot { background: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.bday-tl-day { position: absolute; left: -65px; top: 12px; font-size: 11px; font-weight: 800; color: var(--text-muted); background: var(--bg-secondary); padding: 2px 6px; border-radius: 4px; }
+
+/* Timeline card */
+.bday-tl-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: border-color .15s; }
+.bday-tl-card:hover { border-color: var(--accent); }
+.bday-tl-node.bday-tl-editing .bday-tl-card { border-color: var(--accent); box-shadow: 0 2px 12px rgba(201,169,110,.15); }
+.bday-tl-card-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.bday-tl-card-label { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.bday-tl-card-hour { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+.bday-tl-card-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.bday-tl-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; transition: color .15s; }
+.bday-tl-btn:hover { color: var(--accent); }
+.bday-tl-btn-del:hover { color: #EF4444; }
+
+/* Timeline card body (split: text + phone) */
+.bday-tl-card-body { display: flex; gap: 14px; padding: 12px 14px; }
+.bday-tl-text-preview { flex: 1; font-size: 12px; color: var(--text-secondary); line-height: 1.5; white-space: pre-wrap; }
+
+/* Mini phone preview */
+.bday-phone-mini { width: 180px; flex-shrink: 0; background: #ECE5DD; border-radius: 8px; padding: 6px; font-size: 10px; }
+.bday-phone-mini-header { background: #075E54; color: #fff; font-size: 9px; font-weight: 700; padding: 4px 8px; border-radius: 4px 4px 0 0; margin: -6px -6px 6px; }
+.bday-phone-mini-bubble { background: #DCF8C6; padding: 6px 8px; border-radius: 6px; line-height: 1.4; word-break: break-word; color: #303030; }
+
+/* ── Edit form (inside timeline) ──────────────────────────── */
+.bday-tl-edit { padding: 14px; }
+.bday-edit-split { display: flex; gap: 16px; margin: 10px 0; }
+.bday-edit-left { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.bday-edit-right { width: 260px; flex-shrink: 0; }
+
+/* Phone preview (full) */
+.bday-phone-preview { background: #0B141A; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.2); }
+.bday-phone-notch { height: 20px; background: #0B141A; display: flex; align-items: center; justify-content: center; }
+.bday-phone-notch::after { content: ''; width: 60px; height: 4px; background: #1a2730; border-radius: 2px; }
+.bday-phone-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #1F2C33; }
+.bday-phone-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.bday-phone-name { font-size: 12px; font-weight: 600; color: #E9EDEF; }
+.bday-phone-chat { padding: 12px; background: #0B141A url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='60' fill='%230B141A'/%3E%3Cpath d='M0 0h10v10H0z' fill='%230d1a21' opacity='.3'/%3E%3C/svg%3E") repeat; min-height: 180px; max-height: 280px; overflow-y: auto; }
+.bday-phone-bubble { background: #005C4B; color: #E9EDEF; padding: 8px 10px; border-radius: 0 8px 8px 8px; font-size: 12px; line-height: 1.5; word-break: break-word; max-width: 220px; }
+.bday-phone-bubble b { font-weight: 700; }
+.bday-phone-bubble i { font-style: italic; }
+.bday-phone-time { font-size: 9px; color: #8696A0; text-align: right; margin-top: 4px; }
+
+/* ── Form elements ────────────────────────────────────────── */
 .bday-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .bday-form-field { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 .bday-form-field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-.bday-form-sm { max-width: 100px; flex: 0 0 100px; }
-.bday-input { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-secondary); color: var(--text-primary); }
-.bday-textarea { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-secondary); color: var(--text-primary); resize: vertical; font-family: inherit; line-height: 1.5; }
-.bday-form-actions { display: flex; gap: 8px; }
-.bday-btn { padding: 7px 16px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.bday-form-sm { max-width: 90px; flex: 0 0 90px; }
+.bday-input { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-secondary); color: var(--text-primary); transition: border-color .15s; }
+.bday-input:focus { border-color: var(--accent); outline: none; }
+.bday-textarea { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-secondary); color: var(--text-primary); resize: vertical; font-family: inherit; line-height: 1.5; transition: border-color .15s; }
+.bday-textarea:focus { border-color: var(--accent); outline: none; }
+.bday-form-actions { display: flex; gap: 8px; padding-top: 6px; }
+.bday-btn { display: flex; align-items: center; gap: 5px; padding: 7px 16px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
 .bday-btn-save { background: var(--accent); color: #fff; }
-.bday-btn-save:hover { opacity: 0.9; }
+.bday-btn-save:hover { opacity: .9; }
 .bday-btn-cancel { background: var(--bg-secondary); color: var(--text-muted); }
 .bday-btn-cancel:hover { color: var(--text-primary); }
 
-/* Variables hint */
+/* ── Variables hint ────────────────────────────────────────── */
 .bday-tmpl-vars { margin-top: 14px; padding: 10px 14px; background: var(--bg-secondary); border-radius: 8px; font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .bday-var-title { font-weight: 700; }
-.bday-tmpl-vars code { background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--accent); }
+.bday-tmpl-vars code { background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--accent); margin-right: 2px; }
 
-/* Add template button */
-.bday-add-tmpl { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border: 1px dashed var(--border); background: none; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+/* ── Add template button ──────────────────────────────────── */
+.bday-add-tmpl { display: flex; align-items: center; gap: 4px; padding: 6px 12px; border: 1px dashed var(--border); background: none; border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
 .bday-add-tmpl:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Campaign filters */
-.bday-camp-filters { display: flex; gap: 4px; margin-bottom: 12px; }
-.bday-seg-filter { padding: 5px 12px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
-.bday-seg-filter.active { border-color: var(--accent); color: var(--accent); background: rgba(201, 169, 110, 0.08); }
+/* ── Switch toggle ────────────────────────────────────────── */
+.bday-switch { position: relative; display: inline-block; width: 32px; height: 18px; }
+.bday-switch-sm { width: 28px; height: 16px; }
+.bday-switch input { opacity: 0; width: 0; height: 0; }
+.bday-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 18px; transition: .2s; }
+.bday-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 2px; bottom: 2px; background: #fff; border-radius: 50%; transition: .2s; }
+.bday-switch-sm .bday-slider::before { width: 12px; height: 12px; }
+.bday-switch input:checked + .bday-slider { background: var(--accent); }
+.bday-switch input:checked + .bday-slider::before { transform: translateX(14px); }
+.bday-switch-sm input:checked + .bday-slider::before { transform: translateX(12px); }
 
-/* Campaign list */
+/* ── Campaign filters ─────────────────────────────────────── */
+.bday-camp-filters { display: flex; gap: 4px; margin-bottom: 12px; }
+.bday-seg-filter { padding: 5px 12px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
+.bday-seg-filter.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,.08); }
+
+/* ── Campaign cards ───────────────────────────────────────── */
 .bday-camp-list { display: flex; flex-direction: column; gap: 4px; }
-.bday-camp-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; gap: 12px; }
-.bday-camp-left { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.bday-camp-card { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; transition: all .15s; }
+.bday-camp-card:hover { border-color: var(--accent); }
+.bday-camp-avatar { width: 34px; height: 34px; border-radius: 50%; background: #8B5CF6; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+.bday-camp-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .bday-camp-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 .bday-camp-meta { font-size: 11px; color: var(--text-muted); }
-.bday-camp-queixas { font-size: 10px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
-.bday-camp-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.bday-camp-msgs { font-size: 11px; font-weight: 600; color: var(--text-muted); }
-.bday-camp-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+.bday-camp-queixas { font-size: 10px; color: var(--text-secondary); display: flex; align-items: center; gap: 3px; }
+.bday-camp-progress { width: 80px; flex-shrink: 0; }
+.bday-progress-bar { height: 4px; background: var(--bg-secondary); border-radius: 2px; overflow: hidden; }
+.bday-progress-fill { height: 100%; background: #10B981; border-radius: 2px; transition: width .3s; }
+.bday-progress-label { font-size: 10px; color: var(--text-muted); text-align: center; display: block; margin-top: 2px; }
+.bday-camp-end { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.bday-camp-status { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: .3px; }
 .bday-st-pending { background: #F3F4F6; color: #6B7280; }
 .bday-st-sending { background: #FEF3C7; color: #D97706; }
 .bday-st-completed { background: #D1FAE5; color: #059669; }
 .bday-st-responded { background: #EDE9FE; color: #7C3AED; }
 .bday-st-cancelled { background: #FEE2E2; color: #DC2626; }
 
+/* ── Empty state ──────────────────────────────────────────── */
 .bday-empty { text-align: center; padding: 30px; color: var(--text-muted); font-size: 12px; }
+
+/* ── Toast notification ───────────────────────────────────── */
+.bday-toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 600; color: #fff; z-index: 9999; transform: translateY(10px); opacity: 0; transition: all .2s; }
+.bday-toast-show { transform: translateY(0); opacity: 1; }
+.bday-toast-success { background: #059669; }
+.bday-toast-error { background: #DC2626; }
+.bday-toast-info { background: #2563EB; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .bday-kpis { grid-template-columns: repeat(3, 1fr); }
+  .bday-segments { flex-direction: column; }
+  .bday-edit-split { flex-direction: column; }
+  .bday-edit-right { width: 100%; }
+  .bday-tl-card-body { flex-direction: column; }
+  .bday-phone-mini { width: 100%; }
+  .bday-timeline { padding-left: 30px; }
+  .bday-tl-day { left: -55px; font-size: 10px; }
+}
