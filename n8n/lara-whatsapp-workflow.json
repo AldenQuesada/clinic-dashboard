@@ -254,11 +254,11 @@
           "parameters": [
             {
               "name": "p_phone",
-              "value": "={{ $json.phone }}"
+              "value": "={{ $(\"Process AI Response\").first().json.phone }}"
             },
             {
               "name": "p_name",
-              "value": "={{ $json.detectedName || '' }}"
+              "value": "={{ $(\"Process AI Response\").first().json.detectedName || \"\" }}"
             },
             {
               "name": "p_source",
