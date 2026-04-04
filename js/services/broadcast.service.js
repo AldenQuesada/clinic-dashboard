@@ -10,7 +10,9 @@
  * API publica (window.BroadcastService):
  *   loadBroadcasts()        -> {ok, data:[]}
  *   createBroadcast(data)   -> {ok, data:{id, total_targets}}
- *   startBroadcast(id)      -> {ok, data:{enqueued}}
+ *     data: {name, content, media_url?, media_caption?, target_filter?,
+ *            batch_size?, batch_interval_min?, selected_lead_ids?}
+ *   startBroadcast(id)      -> {ok, data:{enqueued, estimated_minutes}}
  *   cancelBroadcast(id)     -> {ok, data:{removed_from_outbox}}
  */
 ;(function () {
@@ -39,6 +41,11 @@
     if (!_repo()) return _unavailable()
     if (!data || !data.name || !data.content) {
       return { ok: false, error: 'name e content sao obrigatorios' }
+    }
+    var hasFilters = data.target_filter && Object.keys(data.target_filter).length > 0
+    var hasManual = data.selected_lead_ids && data.selected_lead_ids.length > 0
+    if (!hasFilters && !hasManual) {
+      return { ok: false, error: 'Selecione pelo menos um filtro ou um lead manualmente' }
     }
     return _repo().create(data)
   }

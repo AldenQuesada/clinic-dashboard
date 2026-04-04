@@ -6,7 +6,7 @@
  *
  * RPCs consumidas:
  *   wa_broadcast_list()
- *   wa_broadcast_create(p_name, p_content, p_media_url, p_media_caption, p_target_filter, p_scheduled_at)
+ *   wa_broadcast_create(p_name, p_content, p_media_url, p_media_caption, p_target_filter, p_scheduled_at, p_batch_size, p_batch_interval_min, p_selected_lead_ids)
  *   wa_broadcast_start(p_broadcast_id)
  *   wa_broadcast_cancel(p_broadcast_id)
  *
