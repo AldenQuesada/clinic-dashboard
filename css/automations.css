@@ -1503,8 +1503,8 @@
 .bc-detail-topbar-right .am-btn-danger { padding: 5px 12px; font-size: 11px; }
 
 /* Info strip: dates left + metric bars right */
-.bc-info-strip { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 12px 14px; background: rgba(0,0,0,0.015); border-radius: 10px; margin-bottom: 16px; }
-.bc-info-dates { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.bc-info-strip { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 12px 14px; background: rgba(0,0,0,0.015); border-radius: 10px; margin-bottom: 16px; }
+.bc-info-dates { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; justify-content: center; }
 .bc-info-dates span { display: inline-flex; align-items: center; gap: 4px; }
 .bc-info-bars { flex: 1; max-width: 240px; display: flex; flex-direction: column; gap: 6px; }
 
