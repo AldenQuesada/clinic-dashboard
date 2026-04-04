@@ -1710,7 +1710,6 @@
           <div class="bc-tags-bar">
             <span class="bc-tag-hint">Inserir:</span>
             <button type="button" class="bc-tag-btn" data-tag="[nome]">[nome]</button>
-            <button type="button" class="bc-tag-btn" data-tag="[queixa]">[queixa]</button>
             <span class="bc-fmt-sep"></span>
             <button type="button" class="bc-fmt-btn" data-wrap="*" title="Negrito"><b>N</b></button>
             <button type="button" class="bc-fmt-btn" data-wrap="_" title="Italico"><i>I</i></button>
