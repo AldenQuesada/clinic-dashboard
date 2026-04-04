@@ -521,16 +521,24 @@
     document.querySelectorAll('.bc-seg-item[data-seg]').forEach(function(item) {
       item.addEventListener('click', async function() {
         var seg = item.dataset.seg
+        var center = document.querySelector('.bc-center')
+        var scrollPos = center ? center.scrollTop : 0
         window.BroadcastUI.setState('bcSegment', seg)
         window.BroadcastUI.setState('bcSegmentLeads', [])
         _render()
+        var center2 = document.querySelector('.bc-center')
+        if (center2) center2.scrollTop = scrollPos
         var curState = window.BroadcastUI.getState()
         if (window.BroadcastService && window.BroadcastService.getBroadcastLeads && curState.selected) {
           var result = await window.BroadcastService.getBroadcastLeads(curState.selected, seg)
           if (result && result.ok && Array.isArray(result.data)) {
             window.BroadcastUI.setState('bcSegmentLeads', result.data)
           }
+          var center3 = document.querySelector('.bc-center')
+          var scrollPos2 = center3 ? center3.scrollTop : scrollPos
           _render()
+          var center4 = document.querySelector('.bc-center')
+          if (center4) center4.scrollTop = scrollPos2
         }
       })
     })
