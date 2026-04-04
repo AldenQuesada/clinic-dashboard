@@ -1624,6 +1624,8 @@
     return html
   }
 
+  var _bcDeleteConfirm = null // id do broadcast em confirmacao de delete
+
   function _renderBroadcastHistoryTab() {
     if (_broadcasts.length === 0) {
       return '<div style="text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px">Nenhum disparo ainda</div>'
@@ -1633,7 +1635,9 @@
     for (var i = 0; i < _broadcasts.length; i++) {
       var b = _broadcasts[i]
       var st = b.status || 'draft'
-      var date = b.created_at ? new Date(b.created_at).toLocaleString('pt-BR') : '--'
+      var d = b.created_at ? new Date(b.created_at) : null
+      var date = d ? d.toLocaleDateString('pt-BR') : '--'
+      var time = d ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''
 
       var filterTags = []
       if (b.target_filter) {
@@ -1643,15 +1647,32 @@
         if (b.target_filter.source_type) filterTags.push(b.target_filter.source_type)
       }
 
-      html += '<div class="bc-hist-item" data-id="' + b.id + '">'
+      var isDeleting = _bcDeleteConfirm === b.id
+
+      html += '<div class="bc-hist-item' + (_broadcastSelected === b.id ? ' bc-hist-active' : '') + '" data-id="' + b.id + '">'
       html += '<span class="bc-hist-dot" style="background:' + _bcStatusColor(st) + '"></span>'
       html += '<div class="bc-hist-info">'
-      html += '<div class="bc-hist-name">' + _esc(b.name) + '</div>'
-      html += '<div class="bc-hist-meta">' + _bcStatusLabel(st) + ' &middot; ' + date + ' &middot; ' + (b.sent_count || 0) + '/' + (b.total_targets || 0) + ' env.</div>'
+      html += '<div class="bc-hist-top">'
+      html += '<span class="bc-hist-name">' + _esc(b.name) + '</span>'
       if (filterTags.length > 0) {
-        html += '<div class="bc-hist-filters">' + filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') + '</div>'
+        html += filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('')
       }
-      html += '</div></div>'
+      html += '</div>'
+      html += '<div class="bc-hist-meta">' + date + ' ' + time + ' &middot; ' + (b.sent_count || 0) + '/' + (b.total_targets || 0) + ' env.</div>'
+
+      if (isDeleting) {
+        html += '<div class="bc-hist-delete-confirm">'
+        html += '<span>Deletar?</span>'
+        html += '<button class="bc-hist-del-yes" data-id="' + b.id + '">Sim</button>'
+        html += '<button class="bc-hist-del-no" data-id="' + b.id + '">Nao</button>'
+        html += '</div>'
+      }
+
+      html += '</div>'
+      if (!isDeleting) {
+        html += '<button class="bc-hist-del-btn" data-id="' + b.id + '" title="Deletar">' + _feather('trash2', 13) + '</button>'
+      }
+      html += '</div>'
     }
     return html
   }
@@ -1874,6 +1895,42 @@
         // panel stays open — do nothing
       })
     }
+
+    // Delete broadcast — step 1: show confirm
+    root.querySelectorAll('.bc-hist-del-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        _bcDeleteConfirm = btn.dataset.id
+        _render()
+      })
+    })
+
+    // Delete broadcast — step 2: confirm yes
+    root.querySelectorAll('.bc-hist-del-yes').forEach(function(btn) {
+      btn.addEventListener('click', async function(e) {
+        e.stopPropagation()
+        var id = btn.dataset.id
+        _bcDeleteConfirm = null
+        var result = await window.BroadcastService.deleteBroadcast(id)
+        if (result && result.ok) {
+          _showToast('Disparo removido')
+          if (_broadcastSelected === id) { _broadcastSelected = null; _broadcastMode = 'detail' }
+          await _loadBroadcasts()
+        } else {
+          _showToast(result?.error || 'Erro ao remover', 'error')
+          _render()
+        }
+      })
+    })
+
+    // Delete broadcast — step 2: confirm no
+    root.querySelectorAll('.bc-hist-del-no').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        _bcDeleteConfirm = null
+        _render()
+      })
+    })
 
     // Panel tab switching
     root.querySelectorAll('.bc-slide-tab').forEach(function(btn) {

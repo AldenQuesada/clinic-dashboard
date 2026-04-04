@@ -929,14 +929,21 @@
 .bc-slide-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
 
 /* Historico list in panel */
-.bc-hist-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.bc-hist-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 8px; border-bottom: 1px solid var(--border); cursor: pointer; border-radius: 6px; margin: 0 -8px; transition: background 0.1s; }
 .bc-hist-item:last-child { border-bottom: none; }
-.bc-hist-item:hover { background: rgba(0,0,0,0.01); }
-.bc-hist-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.bc-hist-item:hover { background: rgba(0,0,0,0.02); }
+.bc-hist-active { background: rgba(201,169,110,0.06); }
+.bc-hist-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
 .bc-hist-info { flex: 1; min-width: 0; }
-.bc-hist-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.bc-hist-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bc-hist-name { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; }
 .bc-hist-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-.bc-hist-filters { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.bc-hist-del-btn { width: 26px; height: 26px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0; transition: opacity 0.15s, background 0.1s; margin-top: 1px; }
+.bc-hist-item:hover .bc-hist-del-btn { opacity: 1; }
+.bc-hist-del-btn:hover { background: #FEF2F2; color: var(--danger); }
+.bc-hist-delete-confirm { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--danger); font-weight: 600; }
+.bc-hist-del-yes { padding: 2px 10px; background: var(--danger); color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; }
+.bc-hist-del-no { padding: 2px 10px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 4px; font-size: 11px; cursor: pointer; }
 
 /* Detail panel (rendered in center) */
 .bc-panel-header {

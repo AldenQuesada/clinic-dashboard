@@ -70,6 +70,10 @@
     return _rpc('wa_broadcast_cancel', { p_broadcast_id: id })
   }
 
+  async function remove(id) {
+    return _rpc('wa_broadcast_delete', { p_broadcast_id: id })
+  }
+
   // ── Expose ────────────────────────────────────────────────────
 
   window.BroadcastRepository = Object.freeze({
@@ -77,5 +81,6 @@
     create,
     start,
     cancel,
+    remove,
   })
 })()
