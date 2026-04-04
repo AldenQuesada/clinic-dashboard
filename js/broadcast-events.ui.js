@@ -115,6 +115,10 @@
         var curState = window.BroadcastUI.getState()
         if (tab && tab !== curState.panelTab) {
           window.BroadcastUI.setState('bcPanelTab', tab)
+          if (tab === 'history' || tab === 'scheduled') {
+            window.BroadcastUI.setState('broadcastSelected', null)
+            window.BroadcastUI.setState('broadcastMode', 'dashboard')
+          }
           _render()
         }
       })
