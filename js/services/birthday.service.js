@@ -93,6 +93,18 @@
     return _stats && _stats.is_paused === true
   }
 
+  async function toggleLead(campaignId, active) {
+    var r = await window.BirthdayRepository.toggleLead(campaignId, active)
+    if (r.ok) await loadAll()
+    return r
+  }
+
+  async function autoExclude() {
+    var r = await window.BirthdayRepository.autoExclude()
+    if (r.ok) await loadAll()
+    return r
+  }
+
   // ── Filtered views ─────────────────────────────────────────
 
   function getCampaignsBySegment(segment) {
@@ -133,7 +145,7 @@
   window.BirthdayService = Object.freeze({
     loadAll, getStats, getUpcoming, getTemplates, getCampaigns,
     isLoaded, saveTemplate, deleteTemplate, toggleTemplate, runScan,
-    pauseAll, resumeAll, isPaused,
+    pauseAll, resumeAll, isPaused, toggleLead, autoExclude,
     getCampaignsBySegment, getUpcomingWithBudget, getTemplatesSorted,
     resolveVariables
   })

@@ -173,13 +173,24 @@
       : window.BirthdayService.getCampaigns()
     var html = ''
 
-    // Filters
+    // Filters + actions
+    html += '<div class="bday-camp-topbar">'
     html += '<div class="bday-camp-filters">'
     html += _filterBtn('', 'Todos')
     html += _filterBtn('paciente', 'Paciente')
     html += _filterBtn('paciente_orcamento', 'Paciente + Orc.')
     html += _filterBtn('orcamento', 'Orcamento')
     html += '</div>'
+    html += '<button class="bday-rules-btn" id="bdayAutoExclude">' + _ico('shield', 13) + ' Aplicar regras</button>'
+    html += '</div>'
+
+    // Stats bar
+    var s = window.BirthdayService.getStats()
+    if (s.excluded > 0) {
+      html += '<div class="bday-excluded-bar">' + _ico('alert-triangle', 13) + ' '
+        + s.excluded + ' lead' + (s.excluded > 1 ? 's' : '') + ' exclu\u00eddo' + (s.excluded > 1 ? 's' : '')
+        + ' (' + (s.excluded_auto || 0) + ' auto, ' + (s.excluded_manual || 0) + ' manual)</div>'
+    }
 
     html += '<div class="bday-camp-list">'
     if (!campaigns.length) {
@@ -205,9 +216,23 @@
     var dayLabel = bd ? (bd.getDate().toString().padStart(2, '0') + '/' + (bd.getMonth() + 1).toString().padStart(2, '0')) : '-'
     var progress = c.total_messages > 0 ? Math.round((c.sent_messages / c.total_messages) * 100) : 0
 
-    var html = '<div class="bday-camp-card">'
+    var isExcluded = c.is_excluded === true
+    var reasonMap = {
+      open_budget: 'Or\u00e7amento em aberto',
+      recent_procedure: 'Procedimento recente',
+      upcoming_appointment: 'Agendamento pr\u00f3ximo',
+      human_channel: 'Atendimento humano',
+      no_opt_in: 'WhatsApp desativado',
+      no_phone: 'Sem telefone',
+      manual: 'Desativado manualmente'
+    }
 
-    // Left: avatar + info
+    var html = '<div class="bday-camp-card' + (isExcluded ? ' bday-camp-excluded' : '') + '">'
+
+    // Toggle switch
+    html += '<label class="bday-switch"><input type="checkbox" ' + (!isExcluded ? 'checked' : '') + ' data-toggle-lead="' + c.id + '"><span class="bday-slider"></span></label>'
+
+    // Avatar + info
     html += '<div class="bday-camp-avatar">' + _esc((c.lead_name || '?')[0].toUpperCase()) + '</div>'
     html += '<div class="bday-camp-info">'
     html += '<span class="bday-camp-name">' + _esc(c.lead_name) + '</span>'
@@ -215,9 +240,13 @@
     if (c.queixas && c.queixas !== 'aquelas coisinhas') {
       html += '<span class="bday-camp-queixas">' + _ico('clipboard', 10) + ' ' + _esc(c.queixas).substring(0, 50) + '</span>'
     }
+    if (isExcluded && c.exclude_reason) {
+      html += '<span class="bday-camp-reason">' + _ico('alert-triangle', 10) + ' ' + (reasonMap[c.exclude_reason] || c.exclude_reason)
+        + (c.excluded_by === 'auto' ? ' (auto)' : '') + '</span>'
+    }
     html += '</div>'
 
-    // Center: progress
+    // Progress
     html += '<div class="bday-camp-progress">'
     html += '<div class="bday-progress-bar"><div class="bday-progress-fill" style="width:' + progress + '%"></div></div>'
     html += '<span class="bday-progress-label">' + (c.sent_messages || 0) + '/' + (c.total_messages || 0) + '</span>'

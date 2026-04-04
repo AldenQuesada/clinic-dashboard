@@ -97,10 +97,18 @@
     return _rpc('wa_birthday_resume_all')
   }
 
+  async function toggleLead(campaignId, active) {
+    return _rpc('wa_birthday_toggle_lead', { p_campaign_id: campaignId, p_active: active })
+  }
+
+  async function autoExclude() {
+    return _rpc('wa_birthday_auto_exclude')
+  }
+
   // ── Expose ─────────────────────────────────────────────────
 
   window.BirthdayRepository = Object.freeze({
     stats, upcoming, templatesList, templateSave, templateDelete,
-    list, scan, enqueue, pauseAll, resumeAll
+    list, scan, enqueue, pauseAll, resumeAll, toggleLead, autoExclude
   })
 })()

@@ -18,6 +18,8 @@
     _attachPauseResume()
     _attachScan()
     _attachSegFilters()
+    _attachLeadToggles()
+    _attachAutoExclude()
     _attachTemplateActions()
     _attachTemplateForm()
     _attachFormattingToolbar()
@@ -89,6 +91,35 @@
         window.BirthdayUI.setState('segFilter', btn.dataset.seg || null)
         window.BirthdayUI.render()
       })
+    })
+  }
+
+  // ── Lead toggles (per-campaign activate/deactivate) ─────────
+  function _attachLeadToggles() {
+    document.querySelectorAll('[data-toggle-lead]').forEach(function (cb) {
+      cb.addEventListener('change', async function () {
+        var r = await window.BirthdayService.toggleLead(cb.dataset.toggleLead, cb.checked)
+        if (r.ok) {
+          window.BirthdayUI.render()
+          _toast(cb.checked ? 'Lead ativado' : 'Lead desativado', 'success')
+        } else {
+          cb.checked = !cb.checked
+          _toast(r.data?.error || 'Erro ao alterar', 'error')
+        }
+      })
+    })
+  }
+
+  // ── Auto-exclude button ────────────────────────────────────
+  function _attachAutoExclude() {
+    var btn = document.getElementById('bdayAutoExclude')
+    if (!btn) return
+    btn.addEventListener('click', async function () {
+      btn.disabled = true
+      btn.textContent = 'Aplicando...'
+      var r = await window.BirthdayService.autoExclude()
+      window.BirthdayUI.render()
+      _toast((r.data?.excluded || 0) + ' leads exclu\u00eddos pelas regras', 'success')
     })
   }
 

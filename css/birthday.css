@@ -141,8 +141,14 @@
 .bday-switch input:checked + .bday-slider::before { transform: translateX(14px); }
 .bday-switch-sm input:checked + .bday-slider::before { transform: translateX(12px); }
 
+/* ── Campaign topbar ──────────────────────────────────────── */
+.bday-camp-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+.bday-rules-btn { display: flex; align-items: center; gap: 5px; padding: 6px 12px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
+.bday-rules-btn:hover { border-color: var(--accent); color: var(--accent); }
+.bday-excluded-bar { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: #FEF3C7; border-radius: 8px; font-size: 12px; font-weight: 600; color: #92400E; margin-bottom: 10px; }
+
 /* ── Campaign filters ─────────────────────────────────────── */
-.bday-camp-filters { display: flex; gap: 4px; margin-bottom: 12px; }
+.bday-camp-filters { display: flex; gap: 4px; }
 .bday-seg-filter { padding: 5px 12px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 6px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
 .bday-seg-filter.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,.08); }
 
@@ -150,6 +156,9 @@
 .bday-camp-list { display: flex; flex-direction: column; gap: 4px; }
 .bday-camp-card { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; transition: all .15s; }
 .bday-camp-card:hover { border-color: var(--accent); }
+.bday-camp-card.bday-camp-excluded { opacity: .55; border-left: 3px solid #F59E0B; }
+.bday-camp-card.bday-camp-excluded:hover { opacity: .75; }
+.bday-camp-reason { font-size: 10px; color: #D97706; display: flex; align-items: center; gap: 3px; font-weight: 600; }
 .bday-camp-avatar { width: 34px; height: 34px; border-radius: 50%; background: #8B5CF6; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
 .bday-camp-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .bday-camp-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
