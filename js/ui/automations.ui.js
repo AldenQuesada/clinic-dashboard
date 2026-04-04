@@ -1862,8 +1862,14 @@
 
     return `
       <div class="bc-panel-header">
-        <h3>${_esc(b.name)}</h3>
-        <span class="bc-status" style="background:${_bcStatusColor(st)}20;color:${_bcStatusColor(st)}">${_bcStatusLabel(st)}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <h3>${_esc(b.name)}</h3>
+          <span class="bc-status" style="background:${_bcStatusColor(st)}20;color:${_bcStatusColor(st)}">${_bcStatusLabel(st)}</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '" style="padding:6px 14px;font-size:12px">' + _feather('play', 13) + ' Iniciar</button>' : ''}
+          ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '" style="padding:5px 12px;font-size:11px">' + _feather('xCircle', 13) + ' Cancelar</button>' : ''}
+        </div>
       </div>
       <div class="bc-panel-body">
         <div class="bc-detail-section">
@@ -1915,10 +1921,7 @@
           ${b.completed_at ? '<span>' + _feather('checkCircle', 12) + ' Finalizado: ' + endDate + '</span>' : ''}
         </div>
       </div>
-      <div class="bc-panel-footer">
-        ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('play', 14) + ' Iniciar Disparo</button>' : ''}
-        ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '">' + _feather('xCircle', 14) + ' Cancelar</button>' : ''}
-      </div>`
+      `
   }
 
   function _renderBroadcastRulesTab() {
