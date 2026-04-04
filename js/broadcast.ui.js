@@ -130,7 +130,7 @@
     var centerHtml = '<div class="bc-center">'
     if (_bcPanelOpen && _bcPanelTab === 'editor') {
       // Show phone preview centered when creating
-      centerHtml += _renderPhonePreviewInline(_broadcastForm.content)
+      centerHtml += '<div style="display:flex;justify-content:center;width:100%">' + _renderPhonePreviewInline(_broadcastForm.content, _broadcastForm.media_url, _broadcastForm.media_position) + '</div>'
     } else if (_broadcastMode === 'detail' && _broadcastSelected) {
       centerHtml += '<div class="bc-center-detail">' + _renderBroadcastDetail() + '</div>'
     } else {
@@ -198,26 +198,45 @@
     return html
   }
 
-  function _renderPhonePreviewInline(content) {
+  function _renderPhonePreviewInline(content, mediaUrl, mediaPosition) {
     var now = new Date()
     var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+    var checkSvg = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg>'
 
-    var bubbleContent = ''
+    // Image bubble
+    var imgBubble = ''
+    if (mediaUrl) {
+      var isImg = mediaUrl.toLowerCase().indexOf('.jpg') >= 0 || mediaUrl.toLowerCase().indexOf('.jpeg') >= 0 || mediaUrl.toLowerCase().indexOf('.png') >= 0 || mediaUrl.toLowerCase().indexOf('.gif') >= 0 || mediaUrl.toLowerCase().indexOf('.webp') >= 0 || mediaUrl.toLowerCase().indexOf('supabase.co/storage') >= 0
+      if (isImg) {
+        imgBubble = '<div class="bc-wa-bubble bc-wa-img-bubble"><img src="' + _esc(mediaUrl) + '" class="bc-wa-preview-img"><div class="bc-wa-bubble-time">' + timeStr + ' ' + checkSvg + '</div></div>'
+      }
+    }
+
+    // Text bubble
+    var textBubble = ''
     if (content && content.trim()) {
       var escaped = _esc(content)
       escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
       escaped = _waFormat(escaped)
-      bubbleContent = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
-        + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
-    } else {
+      textBubble = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
+        + '<div class="bc-wa-bubble-time">' + timeStr + ' ' + checkSvg + '</div></div>'
+    }
+
+    // Order by position
+    var bubbleContent = ''
+    if (!textBubble && !imgBubble) {
       bubbleContent = '<div class="bc-wa-empty">Digite a mensagem no painel ao lado</div>'
+    } else if (mediaPosition === 'below') {
+      bubbleContent = textBubble + imgBubble
+    } else {
+      bubbleContent = imgBubble + textBubble
     }
 
     return '<div class="bc-phone">'
       + '<div class="bc-phone-notch"><span class="bc-phone-notch-time">' + timeStr + '</span></div>'
       + '<div class="bc-wa-header">'
       + '<div class="bc-wa-avatar"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>'
-      + '<div><div class="bc-wa-name">Clinica</div><div class="bc-wa-status">online</div></div>'
+      + '<div><div class="bc-wa-name">Clinica Mirian de Paula</div><div class="bc-wa-status">online</div></div>'
       + '</div>'
       + '<div class="bc-wa-chat" id="bcPhoneChat">' + bubbleContent + '</div>'
       + '<div class="bc-wa-bottom">'

@@ -1426,6 +1426,11 @@
 }
 .bc-wa-bubble-time svg { color: #53BDEB; }
 
+/* Image in bubble */
+.bc-wa-img-bubble { padding: 3px 3px 4px; }
+.bc-wa-preview-img { width: 100%; border-radius: 6px; display: block; max-height: 140px; object-fit: cover; }
+.bc-wa-img-bubble .bc-wa-bubble-time { padding: 0 4px; }
+
 /* Tag highlight inside bubble */
 .bc-wa-tag {
   display: inline;
