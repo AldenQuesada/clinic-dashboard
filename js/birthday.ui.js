@@ -52,6 +52,12 @@
     html += _tabBtn('timeline', 'git-branch', 'Timeline')
     html += _tabBtn('campaigns', 'users', 'Campanhas')
     html += '</div>'
+    var paused = window.BirthdayService.isPaused()
+    if (paused) {
+      html += '<button class="bday-pause-btn bday-pause-active" id="bdayResumeBtn">' + _ico('play', 14) + ' Retomar todas</button>'
+    } else {
+      html += '<button class="bday-pause-btn" id="bdayPauseBtn">' + _ico('pause', 14) + ' Pausar todas</button>'
+    }
     html += '<button class="bday-scan-btn" id="bdayScanBtn">' + _ico('refresh-cw', 14) + ' Escanear</button>'
     html += '</div>'
 
@@ -193,7 +199,7 @@
   }
 
   function _renderCampaignCard(c) {
-    var statusMap = { pending: 'Pendente', sending: 'Enviando', completed: 'Concluida', responded: 'Respondeu', cancelled: 'Cancelada' }
+    var statusMap = { pending: 'Pendente', sending: 'Enviando', paused: 'Pausada', completed: 'Concluida', responded: 'Respondeu', cancelled: 'Cancelada' }
     var segMap = { paciente: 'Paciente', orcamento: 'Orcamento', paciente_orcamento: 'Pac + Orc' }
     var bd = c.birth_date ? new Date(c.birth_date + 'T12:00:00') : null
     var dayLabel = bd ? (bd.getDate().toString().padStart(2, '0') + '/' + (bd.getMonth() + 1).toString().padStart(2, '0')) : '-'

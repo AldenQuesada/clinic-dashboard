@@ -11,7 +11,11 @@
 .bday-tab { display: flex; align-items: center; gap: 5px; padding: 6px 14px; border: none; background: none; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
 .bday-tab:hover { color: var(--text-primary); }
 .bday-tab.active { background: var(--bg-primary); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-.bday-scan-btn { margin-left: auto; display: flex; align-items: center; gap: 5px; padding: 7px 14px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all .15s; }
+.bday-pause-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all .15s; margin-left: auto; }
+.bday-pause-btn:hover { border-color: #F59E0B; color: #F59E0B; }
+.bday-pause-btn.bday-pause-active { border-color: #10B981; color: #10B981; background: #D1FAE510; }
+.bday-pause-btn.bday-pause-active:hover { background: #D1FAE530; }
+.bday-scan-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
 .bday-scan-btn:hover { border-color: var(--accent); color: var(--accent); }
 .bday-loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
@@ -161,6 +165,7 @@
 .bday-st-sending { background: #FEF3C7; color: #D97706; }
 .bday-st-completed { background: #D1FAE5; color: #059669; }
 .bday-st-responded { background: #EDE9FE; color: #7C3AED; }
+.bday-st-paused { background: #FEF3C7; color: #D97706; }
 .bday-st-cancelled { background: #FEE2E2; color: #DC2626; }
 
 /* ── Empty state ──────────────────────────────────────────── */

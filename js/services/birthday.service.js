@@ -77,6 +77,22 @@
     }
   }
 
+  async function pauseAll() {
+    var r = await window.BirthdayRepository.pauseAll()
+    if (r.ok) await loadAll()
+    return r
+  }
+
+  async function resumeAll() {
+    var r = await window.BirthdayRepository.resumeAll()
+    if (r.ok) await loadAll()
+    return r
+  }
+
+  function isPaused() {
+    return _stats && _stats.is_paused === true
+  }
+
   // ── Filtered views ─────────────────────────────────────────
 
   function getCampaignsBySegment(segment) {
@@ -117,6 +133,7 @@
   window.BirthdayService = Object.freeze({
     loadAll, getStats, getUpcoming, getTemplates, getCampaigns,
     isLoaded, saveTemplate, deleteTemplate, toggleTemplate, runScan,
+    pauseAll, resumeAll, isPaused,
     getCampaignsBySegment, getUpcomingWithBudget, getTemplatesSorted,
     resolveVariables
   })

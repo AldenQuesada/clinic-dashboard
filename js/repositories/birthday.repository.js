@@ -89,10 +89,18 @@
     return _rpc('wa_birthday_enqueue')
   }
 
+  async function pauseAll() {
+    return _rpc('wa_birthday_pause_all')
+  }
+
+  async function resumeAll() {
+    return _rpc('wa_birthday_resume_all')
+  }
+
   // ── Expose ─────────────────────────────────────────────────
 
   window.BirthdayRepository = Object.freeze({
     stats, upcoming, templatesList, templateSave, templateDelete,
-    list, scan, enqueue
+    list, scan, enqueue, pauseAll, resumeAll
   })
 })()

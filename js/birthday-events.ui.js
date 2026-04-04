@@ -15,6 +15,7 @@
 
   function attach() {
     _attachTabs()
+    _attachPauseResume()
     _attachScan()
     _attachSegFilters()
     _attachTemplateActions()
@@ -32,6 +33,33 @@
         window.BirthdayUI.render()
       })
     })
+  }
+
+  // ── Pause / Resume ──────────────────────────────────────────
+  function _attachPauseResume() {
+    var pauseBtn = document.getElementById('bdayPauseBtn')
+    var resumeBtn = document.getElementById('bdayResumeBtn')
+
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', async function () {
+        if (!confirm('Pausar todas as campanhas de aniversario? Nenhuma mensagem sera enviada ate retomar.')) return
+        pauseBtn.disabled = true
+        pauseBtn.textContent = 'Pausando...'
+        var r = await window.BirthdayService.pauseAll()
+        window.BirthdayUI.render()
+        _toast((r.data?.paused || 0) + ' campanhas pausadas', 'success')
+      })
+    }
+
+    if (resumeBtn) {
+      resumeBtn.addEventListener('click', async function () {
+        resumeBtn.disabled = true
+        resumeBtn.textContent = 'Retomando...'
+        var r = await window.BirthdayService.resumeAll()
+        window.BirthdayUI.render()
+        _toast((r.data?.resumed || 0) + ' campanhas retomadas', 'success')
+      })
+    }
   }
 
   // ── Scan button ────────────────────────────────────────────
