@@ -515,8 +515,13 @@
         var result = await window.BroadcastService.startBroadcast(id)
         if (result && result.ok) {
           var est = result.data?.estimated_minutes || 0
+          var schedFor = result.data?.scheduled_for
           var msg = 'Disparo iniciado! ' + (result.data?.enqueued || 0) + ' msgs'
-          if (est > 0) msg += ' (~' + est + 'min para concluir)'
+          if (schedFor && new Date(schedFor) > new Date(Date.now() + 60000)) {
+            msg += ' — agendado para ' + new Date(schedFor).toLocaleString('pt-BR')
+          } else if (est > 0) {
+            msg += ' (~' + est + 'min para concluir)'
+          }
           _showToast(msg)
           await window.BroadcastUI.loadBroadcasts()
         } else {
