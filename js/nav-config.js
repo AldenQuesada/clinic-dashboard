@@ -212,6 +212,7 @@
         { page: 'analytics-wa',         label: 'AI Analytics WhatsApp',  breadcrumb: 'WhatsApp > AI Analytics' },
         { page: 'inbox',                label: 'Central de WhatsApp',    breadcrumb: 'WhatsApp > Central',           highlight: true },
         { page: 'settings-automation',  label: 'Disparos',              breadcrumb: 'WhatsApp > Disparos' },
+        { page: 'birthday-campaigns',  label: 'Aniversarios',          breadcrumb: 'WhatsApp > Aniversarios',       highlight: true },
       ],
     },
 
