@@ -336,7 +336,7 @@
 
     var searchHtml =
       '<div class="ibx-search">' +
-        '<input class="ibx-search-input" id="ibxSearch" type="text" placeholder="Buscar por nome ou telefone..." value="' + _esc(_search) + '">' +
+        '<input class="ibx-search-input" id="ibxSearch" type="text" placeholder="Buscar por nome ou telefone..." value="' + _esc(_search) + '" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">' +
       '</div>'
 
     var convHtml = ''
