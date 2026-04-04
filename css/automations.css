@@ -897,7 +897,7 @@
 .bc-new-dispatch-sm:hover { opacity: 0.85; }
 
 /* Center area — offset left to avoid slide panel overlap */
-.bc-center { flex: 1; display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 24px 24px; padding-right: 420px; background: var(--card); }
+.bc-center { flex: 1; display: flex; align-items: flex-start; justify-content: flex-start; overflow-y: auto; padding: 24px; margin-right: 400px; background: var(--card); }
 .bc-center-detail { width: 100%; max-width: 600px; padding-top: 8px; }
 
 /* Empty state in center */
@@ -1555,7 +1555,7 @@
 .bc-rules-list li svg { flex-shrink: 0; color: #10B981; margin-top: 2px; }
 
 /* ── Broadcast Dashboard ───────────────────────────────────── */
-.bc-dashboard { padding: 20px; overflow-y: auto; height: 100%; width: 100%; max-width: 100%; }
+.bc-dashboard { padding: 0; overflow-y: auto; height: 100%; width: 100%; }
 .bc-dash-top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
 .bc-dash-filters { display: flex; gap: 4px; }
 .bc-dash-filter { padding: 6px 14px; border: 1px solid var(--border); background: transparent; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.12s; }
