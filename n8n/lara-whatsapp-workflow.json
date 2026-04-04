@@ -12,7 +12,10 @@
       "name": "Webhook - Receive Message",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [250, 300],
+      "position": [
+        250,
+        300
+      ],
       "webhookId": "lara-webhook"
     },
     {
@@ -23,7 +26,10 @@
       "name": "Parse Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [470, 300]
+      "position": [
+        470,
+        300
+      ]
     },
     {
       "parameters": {
@@ -52,7 +58,10 @@
       "name": "Should Skip?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [690, 300]
+      "position": [
+        690,
+        300
+      ]
     },
     {
       "parameters": {
@@ -64,7 +73,10 @@
       "name": "Respond Skip",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [910, 200]
+      "position": [
+        910,
+        200
+      ]
     },
     {
       "parameters": {
@@ -74,15 +86,27 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "p_phone", "value": "={{ $json.phone }}" }
+            {
+              "name": "p_phone",
+              "value": "={{ $json.phone }}"
+            }
           ]
         },
         "options": {}
@@ -91,7 +115,10 @@
       "name": "Get Lead Context",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [910, 400]
+      "position": [
+        910,
+        400
+      ]
     },
     {
       "parameters": {
@@ -101,17 +128,23 @@
       "name": "Download Media",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1020, 400]
+      "position": [
+        1020,
+        400
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Check for pre-defined responses (zero tokens)\nconst _msg = $('Parse Message').first().json;\nconst _ctx = $input.first().json;\nconst _msgCount = _ctx.message_count || 0;\nconst _leadName = _ctx.lead?.name || _msg.pushName || '';\nconst _firstName = _leadName ? _leadName.split(' ')[0] : '';\nconst _funnel = _ctx.lead?.funnel || null;\nconst _isNew = _msgCount <= 1;\n\n// MSG 1: First contact — fixed response (zero tokens)\nif (_msgCount === 0) {\n  var greeting = 'Que bom ter voce aqui! Sou a Lara, assessora da Dra. Mirian de Paula.\\n\\nFico muito feliz que tenha tomado essa decisao. Vai ser um prazer te acompanhar nesse primeiro contato com a clinica.\\n\\nPra comecarmos, me conta seu nome?';\n  return [{ json: { phone: _msg.phone, leadId: _ctx.lead?.id || null, conversationId: _ctx.conversation_id || null, systemPrompt: '', messages: [], persona: 'onboarder', messageText: _msg.text, instance: _msg.instance, fixedResponse: greeting } }];\n}\n\n// MSG 2: After name — fixed response with photo (zero tokens)\nif (_msgCount === 1 && _firstName) {\n  var welcome = 'Prazer, ' + _firstName + '!\\n\\nOlha o tipo de resultado que a Dra. Mirian entrega:\\n\\n[FOTO:geral]\\n\\nMe conta: o que mais te incomoda hoje? O que voce gostaria de melhorar?';\n  return [{ json: { phone: _msg.phone, leadId: _ctx.lead?.id || null, conversationId: _ctx.conversation_id || null, systemPrompt: '', messages: [], persona: 'onboarder', messageText: _msg.text, instance: _msg.instance, fixedResponse: welcome } }];\n}\n\n// Build Claude prompt with lead context\nconst msg = $('Parse Message').first().json;\nconst ctx = $input.first().json;\n\nconst lead = ctx.lead || {};\nconst history = ctx.history || [];\nconst persona = lead.ai_persona || 'onboarder';\nconst funnel = lead.funnel || ctx.funnel || null;\nconst isReturning = ctx.is_returning || false;\nconst msgCount = ctx.message_count || 0;\nconst convCount = ctx.conversation_count || 0;\nconst lastAiMsg = ctx.last_ai_message || null;\nconst mediaBase64 = ctx.mediaBase64 || null;\nconst mediaContentType = ctx.mediaContentType || null;\nconst contentType = ctx.contentType || msg.contentType || 'text';\n\n// Build conversation history for Claude\nconst messages = history.map(h => ({\n  role: h.direction === 'inbound' ? 'user' : 'assistant',\n  content: h.content\n}));\n\n// Add current message (with image if available)\nif (contentType === 'image' && mediaBase64) {\n  // Send image + caption to Claude Vision\n  const content = [\n    {\n      type: 'image',\n      source: {\n        type: 'base64',\n        media_type: mediaContentType || 'image/jpeg',\n        data: mediaBase64\n      }\n    },\n    {\n      type: 'text',\n      text: (msg.caption ? msg.caption + '\\n\\n' : '') + 'O paciente enviou esta foto. OBRIGATÓRIO: Descreva especificamente o que você vê na imagem (região do rosto, tipo de queixa visível, características). NÃO ignore a imagem. Baseie sua resposta no que observa na foto. Lembre-se: você NÃO dá diagnóstico, mas pode descrever o que vê e dizer que a Dra. Mirian vai avaliar pessoalmente.'\n    }\n  ];\n  messages.push({ role: 'user', content: content });\n} else if (contentType === 'audio') {\n  // Audio: check if transcription is available from Download Media\n  var audioTranscript = ctx.audioTranscript || null;\n  if (audioTranscript) {\n    messages.push({ role: 'user', content: '[O paciente enviou um audio. Transcricao: ' + audioTranscript + ']' });\n  } else {\n    messages.push({ role: 'user', content: '[O paciente enviou um audio que nao foi possivel transcrever. Responda educadamente pedindo que envie como texto, explicando que voce funciona melhor com mensagens escritas.]' });\n  }\n} else {\n  messages.push({ role: 'user', content: msg.text });\n}\n\n// Lara system prompt completo\nconst laraPrompt = `# Lara — Assistente Virtual da Clinica\n\n## Identidade\nVoce e a Lara, assistente virtual da equipe da Dra. Mirian de Paula. Voce e real, calorosa e profissional. Nunca diga que e uma IA. Voce faz parte da equipe.\n\n## Tom de Voz\n- Acolhedora mas profissional\n- Usa portugues brasileiro natural, sem ser formal demais\n- Usa emojis com moderacao (1-2 por mensagem no maximo)\n- Frases curtas e diretas — e WhatsApp, nao email\n- Chama pelo primeiro nome sempre\n\n## IMPORTANTE — Saudacoes\n- NAO comece TODA mensagem com \"Oi\" ou \"Oi [nome]\". Isso e repetitivo e robotico.\n- Na PRIMEIRA mensagem do dia ou apos longo intervalo (horas): pode cumprimentar\n- Em mensagens SEGUIDAS na mesma conversa: va direto ao ponto\n- Exemplos de inicios variados: \"Perfeito!\", \"Show!\", \"Entendi,\", \"Claro!\", \"Que bom!\", \"Olha so,\"\n- NUNCA use \"Oi\" em mais de 2 mensagens seguidas na mesma conversa\n\n## Regras Inegociaveis\n1. NUNCA invente informacoes medicas — se nao sabe, diga \"vou confirmar com a Dra. Mirian e te retorno\"\n2. NUNCA de diagnostico — voce orienta, nao diagnostica\n3. NUNCA fale precos exatos — use faixas, e so apos entender as queixas\n4. NUNCA seja insistente — se o lead disse \"nao agora\", respeite\n5. SEMPRE encaminhe para humano se: reclamacao, urgencia medica, pedido explicito de falar com alguem, ou tema fora do seu escopo\n6. LGPD — nunca compartilhe dados de outros pacientes\n\n## ESCOPO ATUAL — EXCLUSIVO\nVoce atende APENAS dois funis:\n1. FULL FACE — Protocolo Lifting 5D\n2. OLHEIRAS — Protocolo Smooth Eyes + AH\n\nSe o lead perguntar sobre QUALQUER outro procedimento (botox isolado, preenchimento labial, bioestimuladores, corporal, capilar, etc.):\n- Responda: \"Que bom que voce se interessa! A Dra. Mirian trabalha com varios procedimentos sim. Vou anotar seu interesse e alguem da equipe te retorna com todas as informacoes, ta?\"\n- NAO tente vender, explicar ou dar detalhes sobre procedimentos fora do escopo\n\n## Personas por Fase\n\n### ONBOARDER (lead novo)\n- Boas-vindas, qualificar, entender queixas\n- Tom: Entusiasmada, acolhedora\n\n### SDR (follow-up)\n- Nutrir interesse, agendar avaliacao\n- Tom: Consultiva, interessada\n\n### CONFIRMADOR (agendado)\n- Confirmar consulta, preparar paciente\n- Tom: Organizada, prestativa\n\n### CLOSER (pos-consulta / orcamento)\n- Fechar tratamento, negociar condicoes\n- Tom: Confiante, resolutiva\n\n### RECUPERADOR (lead frio)\n- Re-engajar com valor, sem pressao\n- Tom: Leve\n\n### AGENDADOR (quer agendar)\n- Encontrar melhor horario e confirmar\n- Tom: Eficiente, rapida\n\n## Dados para Pagamento PIX\nChave PIX (CNPJ): 55.167.164/0001-08\nM CLINIC ESTHETIC EXPERT LTDA - ME\nSempre pedir comprovante depois.\n\n## FUNIL 1: FULL FACE (Protocolo Lifting 5D)\n\nProtocolo Lifting 5D = duas frentes:\n1. Injetaveis: Acido Hialuronico (volume), Bio remodelador de colageno (sustentacao), Bioestimuladores (firmeza), Toxina botulinica (expressao natural)\n2. Fotona 4D: melhor laser de regeneracao facial, 3 sessoes incluidas, 5 modos em 4 camadas da pele\n\nDiferencial CASHBACK (usar sempre):\n- Investimento em injetaveis volta como cashback para Fotona 4D\n- NUNCA fale valores especificos\n- \"Seu investimento volta integralmente como cashback para o Fotona 4D\"\n\nAbordagem SPIN:\n- SITUATION: Acolher, foto antes/depois, perguntar queixa principal\n- PROBLEM: Aprofundar dores (firmeza, sulcos, textura, olheiras, papada)\n- IMPLICATION: Perda de colageno 1-2% ao ano apos 30\n- NEED-PAYOFF: Protocolo + cashback Fotona → consulta\n\nMensagens-chave:\n- \"Reconciliar quem voce e por dentro com o que ve no espelho\"\n- \"O resultado nao e um rosto transformado, e o seu rosto de volta\"\n- \"Programa integrativo, nao procedimentos soltos\"\n\nBeneficios permanentes Full Face:\n- 40% beneficio em Fotona 4D todos os anos\n- Condicoes especiais permanentes para retoques\n\nConsulta (Empilhamento de Valor):\n- Consulta PAGA (descontada se fechar)\n- Inclui avaliacao com Anovator A5 (scanner de COMPOSICAO CORPORAL, nao facial — mede massa magra, gordura, metabolismo, 50+ relatorios)\n- BONUS: creme com exossomos e peptideos (valor 159)\n- NUNCA dizer \"vamos agendar?\" — conduzir: \"isso e prioridade pra voce? Consigo um horario pra voce?\"\n\n## PROCEDIMENTOS QUE NAO EXISTEM NA CLINICA\n- Microagulhamento — NAO temos. Se lead perguntar: \"A Dra. Mirian trabalha com tecnologias mais avancadas. Posso te explicar?\"\n- Qualquer procedimento corporal invasivo\n- Se nao sabe se existe, diga: \"vou confirmar com a equipe e te retorno\"\n\n## AGENDAMENTO — REGRAS CRITICAS\n- Voce NAO tem acesso a agenda da clinica\n- NUNCA proponha horarios especificos (ex: \"segunda as 14h\")\n- NUNCA diga \"temos horario disponivel na terca\"\n- Quando o lead quiser agendar, diga: \"Consigo um horario pra voce! Vou verificar com a equipe e te retorno com as opcoes, ta?\"\n- Depois marque como precisa_humano para a secretaria assumir o agendamento\n- Alternativa: \"Qual periodo fica melhor pra voce — manha ou tarde?\" e repasse pra equipe\n\nDores para explorar:\n- Perda de firmeza, sulcos, pele opaca, olheiras, papada, rugas\n\n## FUNIL 2: OLHEIRAS + SMOOTH EYES\n\nProtocolo em 2 etapas (mesma sessao):\n1. Smooth Eyes (Fotona Dynamis Nx): fortalece palpebra, estimula colageno\n2. Acido Hialuronico: corrige profundidade, suaviza sulcos\n\nMETAFORA DO BALDE FURADO (usar sempre):\n- \"De que adianta preencher se a palpebra esta flacida?\"\n- \"E como colocar agua num balde furado — o produto MIGRA\"\n- \"Sem fortalecer antes, unico que resolve e CIRURGIA\"\n- \"Aqui: estrutura primeiro, correcao depois\"\n\nDiferencial Smooth Eyes:\n- Incluido no protocolo (outras clinicas cobram separado)\n- Previne blefaroplastia, sem bisturi\n\nAbordagem SPIN Olheiras:\n- SITUATION: Acolher, foto antes/depois, perguntar o que incomoda\n- PROBLEM: Metafora balde furado, flacidez na palpebra\n- IMPLICATION: Pele mais fina do rosto, perde colageno rapido apos 35\n- NEED-PAYOFF: 2 etapas + Smooth Eyes incluido + evitar cirurgia\n\nDores emocionais (persona 45+):\n- \"Voce esta cansada?\" — frase que persegue\n- Pavor de cirurgia, maquiagem que nao resolve, evita fotos\n\nObjecoes olheiras:\n- \"Nao funciona\" → Protocolo personalizado, causa raiz\n- \"Ja tentei tudo\" → Solucoes superficiais para problema profundo\n- \"Medo artificial\" → Versao mais jovem de VOCE\n- \"Medo cirurgia\" → Smooth Eyes existe pra NAO precisar\n\nPilares comunicacao:\n- Ela quer ser COMPREENDIDA, nao convencida\n- DOR antes da solucao, TRANSFORMACAO nao procedimento\n- Remova medo da cirurgia ANTES de apresentar solucao\n- Urgencia etica + sempre termine com ESPERANCA\n\n## OBJECAO DE PRECO\n1. Isolar: \"Se o investimento nao fosse impeditivo, teria algo mais?\"\n2. ROI: protocolo integral com cashback vs solucao isolada\n3. Bifurcacao: acessivel vs definitiva\n4. Corte: \"Posso ajustar, mas teria que remover parte\"\nNUNCA desconto sem contrapartida. Redirecionar para RESULTADO.\n\n## OBJECAO \"JA FIZ E NAO DEU CERTO\"\n1. Validar experiencia ruim\n2. \"Todas as clinicas sao iguais? Ou so nao encontrou diagnostico real?\"\n\n## RECUPERACAO (lead sumiu)\nNUNCA: \"so retornando\", \"so passando pra saber\"\nUsar: \"O que falta?\", \"Desistiu ou correria te engoliu?\", \"Vou pausar meu contato.\"\n\n## FOTOS ANTES/DEPOIS — OBRIGATORIO\nQuando quiser mostrar resultados, SEMPRE inclua a tag [FOTO:queixa] na sua resposta.\nTags disponiveis: [FOTO:geral], [FOTO:olheiras], [FOTO:sulcos], [FOTO:flacidez], [FOTO:contorno], [FOTO:papada], [FOTO:textura], [FOTO:rugas], [FOTO:rejuvenescimento]\nO sistema envia 2 fotos automaticamente quando detecta a tag.\nNUNCA descreva fotos em texto sem usar a tag — use a tag e o sistema envia as fotos reais.\nNUNCA diga \"vou te mostrar\" sem incluir [FOTO:queixa] na mesma mensagem.\nQuando incluir [FOTO:queixa], NAO coloque pergunta no final (o sistema envia pergunta automatica apos as fotos).\n\n## Quando receber IMAGEM\n- Descreva o que observa de forma empatica\n- NAO de diagnostico\n- Relacione com Lifting 5D ou Olheiras conforme queixa\n- Sugira avaliacao presencial\n\n## Formato\n- Max 3 paragrafos curtos\n- SEMPRE finalize com PERGUNTA que abre novo loop\n- Menos tecnico, mais emocao e resultado`;\n\n// Prompt reduzido para conversas avancadas (economia de tokens)\nconst laraPromptCompact = `# Lara — Assistente da Dra. Mirian de Paula\n\nVoce e a Lara, assessora da Dra. Mirian. Calorosa, profissional, WhatsApp.\n\nRegras: nunca invente info medica, nunca de diagnostico, nunca fale preco exato (so faixas apos qualificar), nunca seja insistente, encaminhe para humano se reclamacao/urgencia.\n\nESCOPO EXCLUSIVO: Apenas Lifting 5D (Full Face) e Olheiras (Smooth Eyes + AH). Qualquer outro procedimento: \"Vou anotar seu interesse e alguem da equipe te retorna!\"\n\nConsulta paga (descontada se fechar). Inclui Anovator A5 (scanner COMPOSICAO CORPORAL, nao facial) + creme exossomos gratis.\nCashback: investimento em injetaveis volta como Fotona 4D.\nSmooth Eyes: fortalece palpebra antes de preencher (balde furado).\nPIX CNPJ: 55.167.164/0001-08 — M CLINIC ESTHETIC EXPERT LTDA\nNAO temos microagulhamento.\n\nNunca dizer \"vamos agendar?\" — conduzir: \"isso e prioridade pra voce? Consigo um horario pra voce?\"\nNUNCA propor horarios especificos — voce NAO tem acesso a agenda. Diga: \"Vou verificar com a equipe e te retorno com as opcoes.\"\nSempre finalizar com pergunta que abre novo loop.\nNao repetir saudacoes. Maximo 3 paragrafos curtos.\nTag [FOTO:queixa] para enviar fotos.`;\n\n// Escolher prompt baseado na fase da conversa\nconst useCompact = msgCount > 6;\nconst selectedPrompt = useCompact ? laraPromptCompact : laraPrompt;\n\n// Build system prompt with lead context\nconst systemPrompt = `${selectedPrompt}\n\n## Contexto atual do lead:\n- Nome: ${lead.name || msg.pushName || 'Lead'}\n- Telefone: ${msg.phone}\n- Queixas: ${(lead.queixas_faciais || []).join(', ') || 'não informadas'}\n- Idade: ${lead.idade || 'não informada'}\n- Fase: ${lead.phase || 'lead'}\n- Temperatura: ${lead.temperature || 'warm'}\n- Dia no funil: ${lead.day_bucket || 0}\n- Score quiz: ${lead.lead_score || 0}\n- Persona ativa: ${persona}\n- Funil: ${funnel === 'fullface' ? 'FULL FACE (protocolo completo)' : funnel === 'procedimentos' ? 'PROCEDIMENTOS ISOLADOS' : 'nao definido'}\n- Última resposta: ${lead.last_response_at || 'primeira mensagem'}\n- É retorno: ${isReturning ? 'SIM (já conversou antes, ' + msgCount + ' mensagens trocadas)' : 'NÃO (primeira mensagem)'}\n- Total de conversas: ${convCount}\n\n## Regras desta conversa:\n- Persona: ${persona.toUpperCase()}\n- Responda como a Lara, assistente da Dra. Mirian\n- Máximo 3 parágrafos curtos\n- Termine com pergunta ou call-to-action\n- Se não souber responder, marque como precisa_humano\n${isReturning ? '- IMPORTANTE: Este lead JÁ CONVERSOU antes. NÃO repita boas-vindas nem se apresente novamente. Retome a conversa naturalmente de onde parou.' : '- Este é o PRIMEIRO contato. Apresente-se como Lara da equipe da Dra. Mirian.'}\n${lead.phase === 'unknown' ? '- Este número NÃO está cadastrado. Pode ser paciente existente ou número novo. Pergunte gentilmente o nome e como pode ajudar.' : ''}\n${lastAiMsg ? '- Sua última mensagem enviada foi: \"' + lastAiMsg.substring(0, 100) + '...\"' : ''}`;\n\nreturn [{\n  json: {\n    phone: msg.phone,\n    leadId: lead.id || null,\n    conversationId: ctx.conversation_id || null,\n    systemPrompt: systemPrompt,\n    messages: messages,\n    persona: persona,\n    messageText: msg.text,\n    instance: msg.instance\n  }\n}];"
+        "jsCode": "// Check for pre-defined responses (zero tokens)\nconst _msg = $('Parse Message').first().json;\nconst _ctx = $input.first().json;\nconst _msgCount = _ctx.message_count || 0;\nconst _leadName = _ctx.lead?.name || _msg.pushName || '';\nconst _firstName = _leadName ? _leadName.split(' ')[0] : '';\nconst _funnel = _ctx.lead?.funnel || null;\nconst _isNew = _msgCount <= 1;\n\n// MSG 1: First contact — fixed response (zero tokens)\nif (_msgCount === 0) {\n  var greeting = 'Que bom ter voce aqui! Sou a Lara, assessora da Dra. Mirian de Paula.\\n\\nFico muito feliz que tenha tomado essa decisao. Vai ser um prazer te acompanhar nesse primeiro contato com a clinica.\\n\\nPra comecarmos, me conta seu nome?';\n  return [{ json: { phone: _msg.phone, leadId: _ctx.lead?.id || null, conversationId: _ctx.conversation_id || null, systemPrompt: '', messages: [], persona: 'onboarder', messageText: _msg.text, instance: _msg.instance, fixedResponse: greeting } }];\n}\n\n// MSG 2: After name — fixed response with photo (zero tokens)\nif (_msgCount === 1 && _firstName) {\n  var welcome = 'Prazer, ' + _firstName + '!\\n\\nOlha o tipo de resultado que a Dra. Mirian entrega:\\n\\n[FOTO:geral]\\n\\nMe conta: o que mais te incomoda hoje? O que voce gostaria de melhorar?';\n  return [{ json: { phone: _msg.phone, leadId: _ctx.lead?.id || null, conversationId: _ctx.conversation_id || null, systemPrompt: '', messages: [], persona: 'onboarder', messageText: _msg.text, instance: _msg.instance, fixedResponse: welcome } }];\n}\n\n// Build Claude prompt with lead context\nconst msg = $('Parse Message').first().json;\nconst ctx = $input.first().json;\n\nconst lead = ctx.lead || {};\nconst history = ctx.history || [];\nconst persona = lead.ai_persona || 'onboarder';\nconst funnel = lead.funnel || ctx.funnel || null;\nconst isReturning = ctx.is_returning || false;\nconst msgCount = ctx.message_count || 0;\nconst convCount = ctx.conversation_count || 0;\nconst lastAiMsg = ctx.last_ai_message || null;\nconst mediaBase64 = ctx.mediaBase64 || null;\nconst mediaContentType = ctx.mediaContentType || null;\nconst contentType = ctx.contentType || msg.contentType || 'text';\n\n// Build conversation history for Claude\nconst messages = history.map(h => ({\n  role: h.direction === 'inbound' ? 'user' : 'assistant',\n  content: h.content\n}));\n\n// Add current message (with image if available)\nif (contentType === 'image' && mediaBase64) {\n  // Send image + caption to Claude Vision\n  const content = [\n    {\n      type: 'image',\n      source: {\n        type: 'base64',\n        media_type: mediaContentType || 'image/jpeg',\n        data: mediaBase64\n      }\n    },\n    {\n      type: 'text',\n      text: (msg.caption ? msg.caption + '\\n\\n' : '') + 'O paciente enviou esta foto. OBRIGATÓRIO: Descreva especificamente o que você vê na imagem (região do rosto, tipo de queixa visível, características). NÃO ignore a imagem. Baseie sua resposta no que observa na foto. Lembre-se: você NÃO dá diagnóstico, mas pode descrever o que vê e dizer que a Dra. Mirian vai avaliar pessoalmente.'\n    }\n  ];\n  messages.push({ role: 'user', content: content });\n} else if (contentType === 'audio') {\n  // Audio: check if transcription is available from Download Media\n  var audioTranscript = ctx.audioTranscript || null;\n  if (audioTranscript) {\n    messages.push({ role: 'user', content: '[O paciente enviou um audio. Transcricao: ' + audioTranscript + ']' });\n  } else {\n    messages.push({ role: 'user', content: '[O paciente enviou um audio que nao foi possivel transcrever. Responda educadamente pedindo que envie como texto, explicando que voce funciona melhor com mensagens escritas.]' });\n  }\n} else {\n  messages.push({ role: 'user', content: msg.text });\n}\n\n// Lara system prompt completo\nconst laraPrompt = `# Lara — Assistente Virtual da Clinica\n\n## Identidade\nVoce e a Lara, assistente virtual da equipe da Dra. Mirian de Paula. Voce e real, calorosa e profissional. Nunca diga que e uma IA. Voce faz parte da equipe.\n\n## Tom de Voz\n- Acolhedora mas profissional\n- Usa portugues brasileiro natural, sem ser formal demais\n- Usa emojis com moderacao (1-2 por mensagem no maximo)\n- Frases curtas e diretas — e WhatsApp, nao email\n- Chama pelo primeiro nome sempre\n\n## IMPORTANTE — Saudacoes\n- NAO comece TODA mensagem com \"Oi\" ou \"Oi [nome]\". Isso e repetitivo e robotico.\n- Na PRIMEIRA mensagem do dia ou apos longo intervalo (horas): pode cumprimentar\n- Em mensagens SEGUIDAS na mesma conversa: va direto ao ponto\n- Exemplos de inicios variados: \"Perfeito!\", \"Show!\", \"Entendi,\", \"Claro!\", \"Que bom!\", \"Olha so,\"\n- NUNCA use \"Oi\" em mais de 2 mensagens seguidas na mesma conversa\n\n## Regras Inegociaveis\n1. NUNCA invente informacoes medicas — se nao sabe, diga \"vou confirmar com a Dra. Mirian e te retorno\"\n2. NUNCA de diagnostico — voce orienta, nao diagnostica\n3. NUNCA fale precos exatos — use faixas, e so apos entender as queixas\n4. NUNCA seja insistente — se o lead disse \"nao agora\", respeite\n5. SEMPRE encaminhe para humano se: reclamacao, urgencia medica, pedido explicito de falar com alguem, ou tema fora do seu escopo\n6. LGPD — nunca compartilhe dados de outros pacientes\n\n## ESCOPO ATUAL — EXCLUSIVO\nVoce atende APENAS dois funis:\n1. FULL FACE — Protocolo Lifting 5D\n2. OLHEIRAS — Protocolo Smooth Eyes + AH\n\nSe o lead perguntar sobre QUALQUER outro procedimento (botox isolado, preenchimento labial, bioestimuladores, corporal, capilar, etc.):\n- Responda: \"Que bom que voce se interessa! A Dra. Mirian trabalha com varios procedimentos sim. Vou anotar seu interesse e alguem da equipe te retorna com todas as informacoes, ta?\"\n- NAO tente vender, explicar ou dar detalhes sobre procedimentos fora do escopo\n\n## Personas por Fase\n\n### ONBOARDER (lead novo)\n- Boas-vindas, qualificar, entender queixas\n- Tom: Entusiasmada, acolhedora\n\n### SDR (follow-up)\n- Nutrir interesse, agendar avaliacao\n- Tom: Consultiva, interessada\n\n### CONFIRMADOR (agendado)\n- Confirmar consulta, preparar paciente\n- Tom: Organizada, prestativa\n\n### CLOSER (pos-consulta / orcamento)\n- Fechar tratamento, negociar condicoes\n- Tom: Confiante, resolutiva\n\n### RECUPERADOR (lead frio)\n- Re-engajar com valor, sem pressao\n- Tom: Leve\n\n### AGENDADOR (quer agendar)\n- Encontrar melhor horario e confirmar\n- Tom: Eficiente, rapida\n\n## Dados para Pagamento PIX\nChave PIX (CNPJ): 55.167.164/0001-08\nM CLINIC ESTHETIC EXPERT LTDA - ME\nSempre pedir comprovante depois.\n\n## FUNIL 1: FULL FACE (Protocolo Lifting 5D)\n\nO Protocolo Lifting 5D foi desenvolvido para mulheres que nao querem apenas melhorar o rosto, mas reconciliar quem sao por dentro com o que veem no espelho.\n\nDuas frentes que se complementam e se potencializam:\n\n1. INJETAVEIS DE ALTA PERFORMANCE:\n- Acido Hialuronico: reposicao estrategica de volume\n- Bio remodelador de colageno: estimula qualidade e sustentacao da pele\n- Bioestimuladores: firmeza progressiva e espessura dermica\n- Toxina botulinica: suaviza marcas de expressao sem congelar a identidade\n\n2. TECNOLOGIA AVANCADA — FOTONA 4D:\n- Melhor laser de regeneracao facial do mundo\n- 3 sessoes incluidas no Full Face (1 por mes)\n- 5 modos de laser em 4 camadas da pele\n- Atua das estruturas profundas ate a superficie\n- Ativa regeneracao real, estimula colageno, devolve firmeza e juventude natural\n\nCASHBACK (diferencial PRINCIPAL — usar sempre):\n- Quando a paciente fecha o Full Face, TODO o investimento volta como cashback\n- O cashback cobre as 3 sessoes de Fotona 4D incluidas\n- Em outras clinicas cada sessao de Fotona custa separado. Aqui e por conta do cashback\n- NUNCA fale valores especificos de preco\n- Diga: \"seu investimento volta integralmente como cashback para realizar o Fotona 4D\"\n\nBENEFICIOS DO FOTONA 4D (usar nas conversas):\n- Lifting e firmeza nao invasivo, trata flacidez profunda, define contorno facial (inclui regiao intraoral)\n- Rejuvenescimento global: 5 modos de laser nas 4 camadas da pele\n- Producao intensa de colageno e elastina a longo prazo\n- Melhora textura e tom: reduz poros, suaviza cicatrizes, pele mais lisa e uniforme\n- Reduz rugas e linhas finas (bigode chines, marionete)\n- Trata olheiras, cicatrizes, estrias\n- Resultados naturais com glow, firmeza e recuperacao rapida\n\nPOR QUE SOMOS DIFERENTES:\n- Programa integrativo de reestruturacao e rejuvenescimento (NAO procedimentos soltos)\n- Respeita tempo biologico da pele, naturalidade do rosto e identidade da mulher\n- O resultado NAO e um rosto transformado — e o seu rosto de volta com firmeza e expressao viva\n- Rejuvenescimento de verdade nao e mudar quem voce e — e fazer o espelho voltar a te reconhecer\n\nQUEM INVESTE NO FULL FACE:\n- Nao trata procedimentos soltos\n- Nao corre atras de solucoes emergenciais\n- Nao recomeca do zero todos os anos\n- Mantem rosto e imagem sempre acompanhados com prioridade e previsibilidade\n\nBENEFICIOS PERMANENTES para paciente Full Face:\n- 40% de beneficio exclusivo em Fotona 4D TODOS os anos\n- Condicoes especiais permanentes para retoques (botox, labios, olheiras)\n- Condicoes especiais para QUALQUER Fotona (flacidez corporal, estrias, lipedema, intimo, capilar)\n- Porque ja fez Full Face e esta dentro do protocolo de cuidado global\n\nMENSAGEM FINAL: \"Aqui nao cuidamos apenas do agora, cuidamos do futuro do seu rosto e da sua imagem.\"\n\nAbordagem SPIN:\n- SITUATION: Acolher, foto antes/depois, perguntar queixa principal\n- PROBLEM: Aprofundar dores (firmeza, sulcos, textura, olheiras, papada)\n- IMPLICATION: Perda de colageno 1-2% ao ano apos 30, quanto antes melhor resultado\n- NEED-PAYOFF: Protocolo integrado + cashback Fotona → consulta\n\nConsulta (Empilhamento de Valor):\n- Consulta PAGA (descontada se fechar)\n- Inclui avaliacao com Anovator A5 (scanner de COMPOSICAO CORPORAL — massa magra, gordura, metabolismo, 50+ relatorios)\n- BONUS: creme com exossomos e peptideos regeneradores (valor 159 na clinica)\n- NUNCA dizer \"vamos agendar?\" — conduzir: \"isso e prioridade pra voce? Consigo um horario pra voce?\"\n\nDores para explorar:\n- Perda de firmeza no contorno do rosto\n- Sulcos marcados (bigode chines, marionete)\n- Pele opaca ou textura irregular\n- Olheiras ou palpebras caidas\n- Papada ou perda de definicao do queixo\n- Rugas e linhas finas\n\n## FUNIL 2: OLHEIRAS + SMOOTH EYES\n\nProtocolo em 2 etapas (mesma sessao):\n1. Smooth Eyes (Fotona Dynamis Nx): fortalece palpebra, estimula colageno\n2. Acido Hialuronico: corrige profundidade, suaviza sulcos\n\nMETAFORA DO BALDE FURADO (usar sempre):\n- \"De que adianta preencher se a palpebra esta flacida?\"\n- \"E como colocar agua num balde furado — o produto MIGRA\"\n- \"Sem fortalecer antes, unico que resolve e CIRURGIA\"\n- \"Aqui: estrutura primeiro, correcao depois\"\n\nDiferencial Smooth Eyes:\n- Incluido no protocolo (outras clinicas cobram separado)\n- Previne blefaroplastia, sem bisturi\n\nAbordagem SPIN Olheiras:\n- SITUATION: Acolher, foto antes/depois, perguntar o que incomoda\n- PROBLEM: Metafora balde furado, flacidez na palpebra\n- IMPLICATION: Pele mais fina do rosto, perde colageno rapido apos 35\n- NEED-PAYOFF: 2 etapas + Smooth Eyes incluido + evitar cirurgia\n\nDores emocionais (persona 45+):\n- \"Voce esta cansada?\" — frase que persegue\n- Pavor de cirurgia, maquiagem que nao resolve, evita fotos\n\nObjecoes olheiras:\n- \"Nao funciona\" → Protocolo personalizado, causa raiz\n- \"Ja tentei tudo\" → Solucoes superficiais para problema profundo\n- \"Medo artificial\" → Versao mais jovem de VOCE\n- \"Medo cirurgia\" → Smooth Eyes existe pra NAO precisar\n\nPilares comunicacao:\n- Ela quer ser COMPREENDIDA, nao convencida\n- DOR antes da solucao, TRANSFORMACAO nao procedimento\n- Remova medo da cirurgia ANTES de apresentar solucao\n- Urgencia etica + sempre termine com ESPERANCA\n\n## OBJECAO DE PRECO\n1. Isolar: \"Se o investimento nao fosse impeditivo, teria algo mais?\"\n2. ROI: protocolo integral com cashback vs solucao isolada\n3. Bifurcacao: acessivel vs definitiva\n4. Corte: \"Posso ajustar, mas teria que remover parte\"\nNUNCA desconto sem contrapartida. Redirecionar para RESULTADO.\n\n## OBJECAO \"JA FIZ E NAO DEU CERTO\"\n1. Validar experiencia ruim\n2. \"Todas as clinicas sao iguais? Ou so nao encontrou diagnostico real?\"\n\n## RECUPERACAO (lead sumiu)\nNUNCA: \"so retornando\", \"so passando pra saber\"\nUsar: \"O que falta?\", \"Desistiu ou correria te engoliu?\", \"Vou pausar meu contato.\"\n\n## FOTOS ANTES/DEPOIS — REGRA CRITICA INVIOLAVEL\nVOCE NAO CONSEGUE ENVIAR FOTOS POR TEXTO. O unico jeito de enviar fotos e usando a tag [FOTO:queixa].\nSe voce escrever sobre fotos sem a tag, o paciente NAO recebe nenhuma foto.\n\nREGRAS:\n1. Quando quiser mostrar resultados, SEMPRE inclua [FOTO:queixa] na sua resposta\n2. NUNCA escreva \"vou te mostrar\" ou \"olha esse resultado\" sem incluir [FOTO:queixa]\n3. Se o paciente pedir fotos, sua resposta DEVE conter [FOTO:queixa]\n4. Tags: [FOTO:geral] [FOTO:olheiras] [FOTO:sulcos] [FOTO:flacidez] [FOTO:contorno] [FOTO:papada] [FOTO:textura] [FOTO:rugas] [FOTO:rejuvenescimento]\n5. O sistema envia 2 fotos automaticamente quando detecta a tag\n6. Quando incluir [FOTO:queixa], NAO coloque pergunta no final (o sistema envia pergunta automatica)\n7. NUNCA descreva o conteudo de uma foto que voce nao pode ver — deixe a foto falar por si\n\nExemplo CORRETO: \"Olha so esse resultado incrivel da Dra. Mirian!\n\n[FOTO:sulcos]\"\nExemplo ERRADO: \"Vou te mostrar um caso de bigode chines que ficou natural...\" (sem tag = sem foto)\n\n## Quando receber IMAGEM\n- Descreva o que observa de forma empatica\n- NAO de diagnostico\n- Relacione com Lifting 5D ou Olheiras conforme queixa\n- Sugira avaliacao presencial\n\n## Formato\n- Max 3 paragrafos curtos\n- SEMPRE finalize com PERGUNTA que abre novo loop\n- Menos tecnico, mais emocao e resultado`;\n\n// Prompt reduzido para conversas avancadas (economia de tokens)\nconst laraPromptCompact = `# Lara — Assistente da Dra. Mirian de Paula\n\nVoce e a Lara, assessora da Dra. Mirian. Calorosa, profissional, WhatsApp.\n\nRegras: nunca invente info medica, nunca de diagnostico, nunca fale preco exato (so faixas apos qualificar), nunca seja insistente, encaminhe para humano se reclamacao/urgencia.\n\nESCOPO EXCLUSIVO: Apenas Lifting 5D (Full Face) e Olheiras (Smooth Eyes + AH). Qualquer outro procedimento: \"Vou anotar seu interesse e alguem da equipe te retorna!\"\n\nConsulta paga (descontada se fechar). Inclui Anovator A5 (scanner COMPOSICAO CORPORAL, nao facial) + creme exossomos gratis.\nCashback: investimento em injetaveis volta como Fotona 4D.\nSmooth Eyes: fortalece palpebra antes de preencher (balde furado).\nPIX CNPJ: 55.167.164/0001-08 — M CLINIC ESTHETIC EXPERT LTDA\nNAO temos microagulhamento.\n\nNunca dizer \"vamos agendar?\" — conduzir: \"isso e prioridade pra voce? Consigo um horario pra voce?\"\nNUNCA propor horarios especificos — voce NAO tem acesso a agenda. Diga: \"Vou verificar com a equipe e te retorno com as opcoes.\"\nSempre finalizar com pergunta que abre novo loop.\nNao repetir saudacoes. Maximo 3 paragrafos curtos.\nTag [FOTO:queixa] para enviar fotos.`;\n\n// Escolher prompt baseado na fase da conversa\nconst useCompact = msgCount > 6;\nconst selectedPrompt = useCompact ? laraPromptCompact : laraPrompt;\n\n// Build system prompt with lead context\nconst systemPrompt = `${selectedPrompt}\n\n## Contexto atual do lead:\n- Nome: ${lead.name || msg.pushName || 'Lead'}\n- Telefone: ${msg.phone}\n- Queixas: ${(lead.queixas_faciais || []).join(', ') || 'não informadas'}\n- Idade: ${lead.idade || 'não informada'}\n- Fase: ${lead.phase || 'lead'}\n- Temperatura: ${lead.temperature || 'warm'}\n- Dia no funil: ${lead.day_bucket || 0}\n- Score quiz: ${lead.lead_score || 0}\n- Persona ativa: ${persona}\n- Funil: ${funnel === 'fullface' ? 'FULL FACE (protocolo completo)' : funnel === 'procedimentos' ? 'PROCEDIMENTOS ISOLADOS' : 'nao definido'}\n- Última resposta: ${lead.last_response_at || 'primeira mensagem'}\n- É retorno: ${isReturning ? 'SIM (já conversou antes, ' + msgCount + ' mensagens trocadas)' : 'NÃO (primeira mensagem)'}\n- Total de conversas: ${convCount}\n\n## Regras desta conversa:\n- Persona: ${persona.toUpperCase()}\n- Responda como a Lara, assistente da Dra. Mirian\n- Máximo 3 parágrafos curtos\n- Termine com pergunta ou call-to-action\n- Se não souber responder, marque como precisa_humano\n${isReturning ? '- IMPORTANTE: Este lead JÁ CONVERSOU antes. NÃO repita boas-vindas nem se apresente novamente. Retome a conversa naturalmente de onde parou.' : '- Este é o PRIMEIRO contato. Apresente-se como Lara da equipe da Dra. Mirian.'}\n${lead.phase === 'unknown' ? '- Este número NÃO está cadastrado. Pode ser paciente existente ou número novo. Pergunte gentilmente o nome e como pode ajudar.' : ''}\n${lastAiMsg ? '- Sua última mensagem enviada foi: \"' + lastAiMsg.substring(0, 100) + '...\"' : ''}`;\n\nreturn [{\n  json: {\n    phone: msg.phone,\n    leadId: lead.id || null,\n    conversationId: ctx.conversation_id || null,\n    systemPrompt: systemPrompt,\n    messages: messages,\n    persona: persona,\n    messageText: msg.text,\n    instance: msg.instance\n  }\n}];"
       },
       "id": "build-prompt",
       "name": "Build Claude Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1130, 400]
+      "position": [
+        1130,
+        400
+      ]
     },
     {
       "parameters": {
@@ -120,9 +153,18 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "x-api-key", "value": "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" },
-            { "name": "anthropic-version", "value": "2023-06-01" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "x-api-key",
+              "value": "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"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -136,17 +178,23 @@
       "name": "Claude API - Lara",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1350, 400]
+      "position": [
+        1350,
+        400
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Check for fixed response (skip Claude)\nconst prevData = $('Build Claude Prompt').first().json;\nif (prevData.fixedResponse) {\n  const parseData = $('Parse Message').first().json;\n  let fixedPhoto = null;\n  let fixedClean = prevData.fixedResponse;\n  const fixedMatch = prevData.fixedResponse.match(/\\[FOTO:([^\\]]+)\\]/);\n  if (fixedMatch) {\n    fixedPhoto = fixedMatch[1].trim();\n    fixedClean = prevData.fixedResponse.replace(/\\[FOTO:[^\\]]+\\]/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n  }\n  return [{ json: { phone: prevData.phone, leadId: prevData.leadId, conversationId: prevData.conversationId, aiResponse: fixedClean, tokensUsed: 0, tags: [], persona: prevData.persona, instance: prevData.instance, userMessage: prevData.messageText, detectedName: parseData.pushName || null, photoQueixa: fixedPhoto } }];\n}\n\n// Extract Claude response and detect tags\nconst claudeRes = $input.first().json;\nconst parseData = $('Parse Message').first().json;\n\nconst aiResponse = claudeRes.content?.[0]?.text || 'Desculpe, tive um problema. Pode repetir?';\nconst tokensUsed = (claudeRes.usage?.input_tokens || 0) + (claudeRes.usage?.output_tokens || 0);\n\n// Detect conversation tags from AI response\nconst tags = [];\nconst lower = aiResponse.toLowerCase();\nif (lower.includes('horário') || lower.includes('agendar') || lower.includes('marcar')) tags.push('pronto_agendar');\nif (lower.includes('vou confirmar com a dra')) tags.push('precisa_humano');\n\n// Detect from user message\nconst userMsg = prevData.messageText.toLowerCase();\nif (userMsg.includes('preço') || userMsg.includes('valor') || userMsg.includes('quanto custa')) tags.push('perguntou_preco');\nif (userMsg.includes('caro') || userMsg.includes('não tenho')) tags.push('objecao_preco');\nif (userMsg.includes('reclamaç') || userMsg.includes('insatisf') || userMsg.includes('problema')) tags.push('precisa_humano');\n\n// Detect patient name from user message\n// Common patterns: \"meu nome é X\", \"sou o/a X\", \"me chamo X\", \"é a/o X\"\nlet detectedName = null;\nconst namePatterns = [\n  /(?:meu nome [eé]|me chamo|sou (?:o|a|eu)?\\s*)\\s+([A-ZÀ-Ú][a-zà-ú]+(?:\\s+[A-ZÀ-Ú][a-zà-ú]+)*)/i,\n  /^(?:(?:oi|ol[aá]|bom dia|boa (?:tarde|noite)),?\\s*)?(?:(?:sou|aqui [eé])\\s+(?:o|a)?\\s*)([A-ZÀ-Ú][a-zà-ú]+)/i\n];\nfor (const pattern of namePatterns) {\n  const match = prevData.messageText.match(pattern);\n  if (match && match[1]) {\n    detectedName = match[1].trim();\n    break;\n  }\n}\n\n// Use pushName as fallback if no lead name exists\nconst leadName = detectedName || (prevData.leadId ? null : parseData.pushName) || null;\n\n// Detect [FOTO:queixa] tag in AI response\nlet photoQueixa = null;\nlet cleanResponse = aiResponse;\nconst fotoMatch = aiResponse.match(/\\[FOTO:([^\\]]+)\\]/);\nif (fotoMatch) {\n  photoQueixa = fotoMatch[1].trim();\n  cleanResponse = aiResponse.replace(/\\[FOTO:[^\\]]+\\]/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n}\n\nreturn [{\n  json: {\n    phone: prevData.phone,\n    leadId: prevData.leadId,\n    conversationId: prevData.conversationId,\n    aiResponse: cleanResponse,\n    tokensUsed: tokensUsed,\n    tags: tags,\n    persona: prevData.persona,\n    instance: prevData.instance,\n    userMessage: prevData.messageText,\n    detectedName: leadName,\n    photoQueixa: photoQueixa\n  }\n}];"
+        "jsCode": "// Check for fixed response (skip Claude)\nconst prevData = $('Build Claude Prompt').first().json;\nif (prevData.fixedResponse) {\n  const parseData = $('Parse Message').first().json;\n  let fixedPhoto = null;\n  let fixedClean = prevData.fixedResponse;\n  const fixedMatch = prevData.fixedResponse.match(/\\[FOTO:([^\\]]+)\\]/);\n  if (fixedMatch) {\n    fixedPhoto = fixedMatch[1].trim();\n    fixedClean = prevData.fixedResponse.replace(/\\[FOTO:[^\\]]+\\]/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n  }\n  \nreturn [{ json: { phone: prevData.phone, leadId: prevData.leadId, conversationId: prevData.conversationId, aiResponse: fixedClean, tokensUsed: 0, tags: [], persona: prevData.persona, instance: prevData.instance, userMessage: prevData.messageText, detectedName: parseData.pushName || null, photoQueixa: fixedPhoto } }];\n}\n\n// Extract Claude response and detect tags\nconst claudeRes = $input.first().json;\nconst parseData = $('Parse Message').first().json;\n\nconst aiResponse = claudeRes.content?.[0]?.text || 'Desculpe, tive um problema. Pode repetir?';\nconst tokensUsed = (claudeRes.usage?.input_tokens || 0) + (claudeRes.usage?.output_tokens || 0);\n\n// Detect conversation tags from AI response\nconst tags = [];\nconst lower = aiResponse.toLowerCase();\nif (lower.includes('horário') || lower.includes('agendar') || lower.includes('marcar')) tags.push('pronto_agendar');\nif (lower.includes('vou confirmar com a dra')) tags.push('precisa_humano');\n\n// Detect from user message\nconst userMsg = prevData.messageText.toLowerCase();\nif (userMsg.includes('preço') || userMsg.includes('valor') || userMsg.includes('quanto custa')) tags.push('perguntou_preco');\nif (userMsg.includes('caro') || userMsg.includes('não tenho')) tags.push('objecao_preco');\nif (userMsg.includes('reclamaç') || userMsg.includes('insatisf') || userMsg.includes('problema')) tags.push('precisa_humano');\n\n// Detect patient name from user message\n// Common patterns: \"meu nome é X\", \"sou o/a X\", \"me chamo X\", \"é a/o X\"\nlet detectedName = null;\nconst namePatterns = [\n  /(?:meu nome [eé]|me chamo|sou (?:o|a|eu)?\\s*)\\s+([A-ZÀ-Ú][a-zà-ú]+(?:\\s+[A-ZÀ-Ú][a-zà-ú]+)*)/i,\n  /^(?:(?:oi|ol[aá]|bom dia|boa (?:tarde|noite)),?\\s*)?(?:(?:sou|aqui [eé])\\s+(?:o|a)?\\s*)([A-ZÀ-Ú][a-zà-ú]+)/i\n];\nfor (const pattern of namePatterns) {\n  const match = prevData.messageText.match(pattern);\n  if (match && match[1]) {\n    detectedName = match[1].trim();\n    break;\n  }\n}\n\n// Use pushName as fallback if no lead name exists\nconst leadName = detectedName || (prevData.leadId ? null : parseData.pushName) || null;\n\n// Detect [FOTO:queixa] tag in AI response\nlet photoQueixa = null;\nlet cleanResponse = aiResponse;\nconst fotoMatch = aiResponse.match(/\\[FOTO:([^\\]]+)\\]/);\nif (fotoMatch) {\n  photoQueixa = fotoMatch[1].trim();\n  cleanResponse = aiResponse.replace(/\\[FOTO:[^\\]]+\\]/g, '').replace(/\\n{3,}/g, '\\n\\n').trim();\n}\n\n\n// Auto-detect photos from keywords (no [FOTO:] tag needed)\nif (!photoQueixa) {\n  var lwr = cleanResponse.toLowerCase();\n  var pws = [\"mostrar\",\"resultado\",\"antes e depois\",\"foto\",\"enviar foto\",\"olha esse\",\"olha so\",\"transformacao\"];\n  var pi = false;\n  for (var ii=0;ii<pws.length;ii++){if(lwr.indexOf(pws[ii])>=0){pi=true;break;}}\n  var umsg = prevData.messageText.toLowerCase();\n  var uws = [\"foto\",\"imagem\",\"resultado\",\"mostrar\",\"enviar\",\"ver mais\",\"mais caso\",\"mais foto\"];\n  var upp = false;\n  for (var jj=0;jj<uws.length;jj++){if(umsg.indexOf(uws[jj])>=0){upp=true;break;}}\n  if (pi || upp) { photoQueixa = \"geral\"; }\n}\n\nreturn [{\n  json: {\n    phone: prevData.phone,\n    leadId: prevData.leadId,\n    conversationId: prevData.conversationId,\n    aiResponse: cleanResponse,\n    tokensUsed: tokensUsed,\n    tags: tags,\n    persona: prevData.persona,\n    instance: prevData.instance,\n    userMessage: prevData.messageText,\n    detectedName: leadName,\n    photoQueixa: photoQueixa\n  }\n}];"
       },
       "id": "process-response",
       "name": "Process AI Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1570, 400]
+      "position": [
+        1570,
+        400
+      ]
     },
     {
       "parameters": {
@@ -155,8 +203,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "429683C4C977415CAAFCCE10F7D57E11" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "429683C4C977415CAAFCCE10F7D57E11"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -168,42 +222,10 @@
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1790, 400]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_log_message",
-        "authentication": "none",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            { "name": "p_phone", "value": "={{ $json.phone }}" },
-            { "name": "p_lead_id", "value": "={{ $json.leadId }}" },
-            { "name": "p_user_message", "value": "={{ $json.userMessage }}" },
-            { "name": "p_ai_response", "value": "={{ $json.aiResponse }}" },
-            { "name": "p_tokens_used", "value": "={{ $json.tokensUsed }}" },
-            { "name": "p_tags", "value": "={{ JSON.stringify($json.tags) }}" },
-            { "name": "p_persona", "value": "={{ $json.persona }}" },
-            { "name": "p_push_name", "value": "={{ $('Parse Message').first().json.pushName || '' }}" },
-            { "name": "p_remote_jid", "value": "={{ $('Parse Message').first().json.remoteJid || '' }}" }
-          ]
-        },
-        "options": {}
-      },
-      "id": "log-to-supabase",
-      "name": "Log to Supabase",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [2010, 400]
+      "position": [
+        1790,
+        400
+      ]
     },
     {
       "parameters": {
@@ -213,38 +235,66 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "p_phone", "value": "={{ $json.phone }}" },
-            { "name": "p_name", "value": "={{ $json.detectedName || '' }}" },
-            { "name": "p_source", "value": "whatsapp" }
+            {
+              "name": "p_phone",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "p_name",
+              "value": "={{ $json.detectedName || '' }}"
+            },
+            {
+              "name": "p_source",
+              "value": "whatsapp"
+            }
           ]
         },
         "options": {
-          "batching": { "batch": { "batchSize": 1 } }
+          "batching": {
+            "batch": {
+              "batchSize": 1
+            }
+          }
         }
       },
       "id": "save-lead",
       "name": "Save Lead",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1790, 550]
+      "position": [
+        2300,
+        400
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Send photo if [FOTO:queixa] was detected\nconst data = $('Process AI Response').first().json;\nconst photoQueixa = data.photoQueixa;\n\nif (!photoQueixa) {\n  return [{ json: { photoSent: false } }];\n}\n\ntry {\n  // Fetch ALL photos from bank\n  const allMedia = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_get_media',\n    headers: {\n      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n      'Content-Type': 'application/json'\n    },\n    body: {},\n    json: true\n  });\n\n  if (!allMedia || allMedia.length === 0) {\n    return [{ json: { photoSent: false, queixa: photoQueixa } }];\n  }\n\n  // Get previously sent photos in this conversation\n  let sentUrls = [];\n  if (data.conversationId) {\n    try {\n      const convData = await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_inbox_conversation',\n        headers: {\n          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n          'Content-Type': 'application/json'\n        },\n        body: { p_conversation_id: data.conversationId },\n        json: true\n      });\n      const msgs = convData?.messages || [];\n      sentUrls = msgs.filter(m => m.content && m.content.includes('Resultado real')).map(m => m.content);\n    } catch(e) {}\n  }\n\n  // Filter: only JPG (no webp), exclude already sent\n  const jpgOnly = allMedia.filter(m => m.filename && m.filename.endsWith('.jpg'));\n  let candidates = jpgOnly.filter(m => m.queixas && m.queixas.includes(photoQueixa) && !sentUrls.some(s => s.includes(m.filename)));\n  if (candidates.length < 2) {\n    candidates = jpgOnly.filter(m => !sentUrls.some(s => s.includes(m.filename)));\n  }\n  if (candidates.length < 2) {\n    candidates = jpgOnly;\n  }\n\n  // Group by person name (extract from filename: ba-XX-NAME-N.jpg)\n  function getPersonName(fn) {\n    const m = fn.match(/ba-\\d+-([a-z]+)/);\n    return m ? m[1] : fn.replace(/\\.jpg$/, '');\n  }\n\n  // Pick 2 photos from DIFFERENT people\n  const shuffled = candidates.sort(() => Math.random() - 0.5);\n  const toSend = [];\n  const usedPersons = new Set();\n  for (const photo of shuffled) {\n    const person = getPersonName(photo.filename);\n    if (!usedPersons.has(person)) {\n      toSend.push(photo);\n      usedPersons.add(person);\n      if (toSend.length === 2) break;\n    }\n  }\n  // If we couldn't find 2 different people, just take first 2\n  if (toSend.length < 2) {\n    for (const photo of shuffled) {\n      if (!toSend.includes(photo)) { toSend.push(photo); if (toSend.length === 2) break; }\n    }\n  }\n  const sentPhotos = [];\n\n  for (const photo of toSend) {\n    try {\n      await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'http://n8n_evolution-api:8080/message/sendMedia/Mih',\n        headers: {\n          'apikey': '429683C4C977415CAAFCCE10F7D57E11',\n          'Content-Type': 'application/json'\n        },\n        body: {\n          number: data.phone,\n          mediatype: 'image',\n          media: photo.url,\n          caption: photo.caption || 'Resultado real - Dra. Mirian de Paula'\n        },\n        json: true\n      });\n      sentPhotos.push(photo.url);\n    } catch(e) {}\n  }\n\n  // Wait for Log to Supabase to finish logging the main text first\n  await new Promise(r => setTimeout(r, 3000));\n\n  // Get current time + offset to ensure photos sort AFTER main text\n  const baseTime = new Date();\n\n  // Log photos to Supabase so they appear in inbox\n  const sbHeaders = {\n    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n    'Content-Type': 'application/json',\n    'Prefer': 'return=minimal'\n  };\n  for (let pi = 0; pi < sentPhotos.length; pi++) {\n    try {\n      const photoTime = new Date(baseTime.getTime() + (pi + 1) * 1000).toISOString();\n      await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/wa_messages',\n        headers: sbHeaders,\n        body: {\n          conversation_id: data.conversationId,\n          clinic_id: '00000000-0000-0000-0000-000000000001',\n          direction: 'outbound',\n          content: 'Resultado real - Dra. Mirian de Paula',\n          content_type: 'image',\n          media_url: sentPhotos[pi],\n          sender: 'ai',\n          ai_generated: true,\n          status: 'sent',\n          sent_at: photoTime\n        },\n        json: true\n      });\n    } catch(e) {}\n  }\n\n  // Send follow-up question AFTER the photos\n  let followUpText = null;\n  if (sentPhotos.length > 0) {\n    const questions = [\n      'Voce se imagina com esse tipo de resultado?',\n      'Lindo ne? E o que voce esta procurando?',\n      'O que acha desse tipo de transformacao?',\n      'Um resultado assim e o que voce busca?'\n    ];\n    followUpText = questions[Math.floor(Math.random() * questions.length)];\n    try {\n      await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'http://n8n_evolution-api:8080/message/sendText/Mih',\n        headers: {\n          'apikey': '429683C4C977415CAAFCCE10F7D57E11',\n          'Content-Type': 'application/json'\n        },\n        body: { number: data.phone, text: followUpText },\n        json: true\n      });\n      // Log follow-up to Supabase with timestamp AFTER photos\n      const followTime = new Date(baseTime.getTime() + (sentPhotos.length + 1) * 1000).toISOString();\n      await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/wa_messages',\n        headers: sbHeaders,\n        body: {\n          conversation_id: data.conversationId,\n          clinic_id: '00000000-0000-0000-0000-000000000001',\n          direction: 'outbound',\n          content: followUpText,\n          content_type: 'text',\n          sender: 'ai',\n          ai_generated: true,\n          status: 'sent',\n          sent_at: followTime\n        },\n        json: true\n      });\n    } catch(e) {}\n  }\n\n  return [{ json: { photoSent: true, photoCount: sentPhotos.length, queixa: photoQueixa, followUp: followUpText } }];\n} catch(e) {\n  return [{ json: { photoSent: false, queixa: photoQueixa, error: e.message } }];\n}"
+        "jsCode": "// Send photos if [FOTO:queixa] was detected - SEQUENTIAL (no sleep)\nconst data = $('Process AI Response').first().json;\nconst photoQueixa = data.photoQueixa;\n\nif (!photoQueixa) {\n  return [{ json: { ...data, photoUrls: [], photoCaptions: [] } }];\n}\n\nconst SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0';\nconst sbHeaders = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };\n\ntry {\n  // Fetch ALL photos from bank\n  const allMedia = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_get_media',\n    headers: sbHeaders, body: {}, json: true\n  });\n\n  if (!allMedia || allMedia.length === 0) {\n    return [{ json: { ...data, photoUrls: [], photoCaptions: [] } }];\n  }\n\n  // Get previously sent photos in this conversation\n  let sentUrls = [];\n  if (data.conversationId) {\n    try {\n      const convData = await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_inbox_conversation',\n        headers: sbHeaders,\n        body: { p_conversation_id: data.conversationId },\n        json: true\n      });\n      const msgs = convData?.messages || [];\n      sentUrls = msgs.filter(m => m.content && m.content.includes('Resultado real')).map(m => m.content);\n    } catch(e) {}\n  }\n\n  // Filter: only JPG, exclude already sent\n  const jpgOnly = allMedia.filter(m => m.filename && m.filename.endsWith('.jpg'));\n  let candidates = jpgOnly.filter(m => m.queixas && m.queixas.includes(photoQueixa) && !sentUrls.some(s => s.includes(m.filename)));\n  if (candidates.length < 2) candidates = jpgOnly.filter(m => !sentUrls.some(s => s.includes(m.filename)));\n  if (candidates.length < 2) candidates = jpgOnly;\n\n  // Group by person name\n  function getPersonName(fn) {\n    const m = fn.match(/ba-\\d+-([a-z]+)/);\n    return m ? m[1] : fn.replace(/\\.jpg$/, '');\n  }\n\n  // Pick 2 photos from DIFFERENT people\n  const shuffled = candidates.sort(() => Math.random() - 0.5);\n  const toSend = [];\n  const usedPersons = new Set();\n  for (const photo of shuffled) {\n    const person = getPersonName(photo.filename);\n    if (!usedPersons.has(person)) {\n      toSend.push(photo);\n      usedPersons.add(person);\n      if (toSend.length === 2) break;\n    }\n  }\n  if (toSend.length < 2) {\n    for (const photo of shuffled) {\n      if (!toSend.includes(photo)) { toSend.push(photo); if (toSend.length === 2) break; }\n    }\n  }\n\n  const photoUrls = [];\n  const photoCaptions = [];\n\n  // Send each photo SEQUENTIALLY via Evolution API\n  for (const photo of toSend) {\n    try {\n      await this.helpers.httpRequest({\n        method: 'POST',\n        url: 'http://n8n_evolution-api:8080/message/sendMedia/Mih',\n        headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },\n        body: { number: data.phone, mediatype: 'image', media: photo.url, caption: photo.caption || 'Resultado real - Dra. Mirian de Paula' },\n        json: true\n      });\n      photoUrls.push(photo.url);\n      photoCaptions.push(photo.caption || 'Resultado real - Dra. Mirian de Paula');\n    } catch(e) { /* skip failed photo */ }\n  }\n\n  return [{ json: { ...data, photoUrls, photoCaptions } }];\n} catch(e) {\n  return [{ json: { ...data, photoUrls: [], photoCaptions: [] } }];\n}\n"
       },
       "id": "send-photo",
       "name": "Send Photo",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2010, 300]
+      "position": [
+        1960,
+        400
+      ]
     },
     {
       "parameters": {
@@ -256,7 +306,10 @@
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [2230, 400]
+      "position": [
+        2470,
+        400
+      ]
     },
     {
       "parameters": {
@@ -266,17 +319,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "p_phone", "value": "={{ $json.phone }}" },
-            { "name": "p_message", "value": "={{ $json.text }}" },
-            { "name": "p_remote_jid", "value": "={{ $json.remoteJid }}" }
+            {
+              "name": "p_phone",
+              "value": "={{ $json.phone }}"
+            },
+            {
+              "name": "p_message",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "p_remote_jid",
+              "value": "={{ $json.remoteJid }}"
+            }
           ]
         },
         "options": {}
@@ -285,7 +356,10 @@
       "name": "Log Secretary Reply",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [910, 550]
+      "position": [
+        910,
+        550
+      ]
     },
     {
       "parameters": {
@@ -297,7 +371,10 @@
       "name": "Respond Secretary",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1130, 550]
+      "position": [
+        1130,
+        550
+      ]
     },
     {
       "parameters": {
@@ -307,17 +384,35 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "p_phone", "value": "={{ $('Parse Message').first().json.phone }}" },
-            { "name": "p_message", "value": "={{ $('Parse Message').first().json.text }}" },
-            { "name": "p_remote_jid", "value": "={{ $('Parse Message').first().json.remoteJid || '' }}" }
+            {
+              "name": "p_phone",
+              "value": "={{ $('Parse Message').first().json.phone }}"
+            },
+            {
+              "name": "p_message",
+              "value": "={{ $('Parse Message').first().json.text }}"
+            },
+            {
+              "name": "p_remote_jid",
+              "value": "={{ $('Parse Message').first().json.remoteJid || '' }}"
+            }
           ]
         },
         "options": {}
@@ -326,7 +421,10 @@
       "name": "Guard Check",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1050, 400]
+      "position": [
+        1050,
+        400
+      ]
     },
     {
       "parameters": {
@@ -336,7 +434,10 @@
       "name": "Merge Guard",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1070, 400]
+      "position": [
+        1070,
+        400
+      ]
     },
     {
       "parameters": {
@@ -344,8 +445,21 @@
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
-                "conditions": [{ "leftValue": "={{ $json.guard_action }}", "rightValue": "allow", "operator": { "type": "string", "operation": "equals" } }],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.guard_action }}",
+                    "rightValue": "allow",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -353,8 +467,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
-                "conditions": [{ "leftValue": "={{ $json.guard_action }}", "rightValue": "emergency", "operator": { "type": "string", "operation": "equals" } }],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.guard_action }}",
+                    "rightValue": "emergency",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -362,8 +489,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
-                "conditions": [{ "leftValue": "={{ $json.guard_action }}", "rightValue": "human_handoff", "operator": { "type": "string", "operation": "equals" } }],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.guard_action }}",
+                    "rightValue": "human_handoff",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -379,7 +519,10 @@
       "name": "Guard Route",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [1100, 400]
+      "position": [
+        1100,
+        400
+      ]
     },
     {
       "parameters": {
@@ -389,18 +532,39 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            { "name": "p_phone", "value": "={{ $('Parse Message').first().json.phone }}" },
-            { "name": "p_user_message", "value": "={{ $('Parse Message').first().json.text }}" },
-            { "name": "p_push_name", "value": "={{ $('Parse Message').first().json.pushName || '' }}" },
-            { "name": "p_remote_jid", "value": "={{ $('Parse Message').first().json.remoteJid || '' }}" }
+            {
+              "name": "p_phone",
+              "value": "={{ $('Parse Message').first().json.phone }}"
+            },
+            {
+              "name": "p_user_message",
+              "value": "={{ $('Parse Message').first().json.text }}"
+            },
+            {
+              "name": "p_push_name",
+              "value": "={{ $('Parse Message').first().json.pushName || '' }}"
+            },
+            {
+              "name": "p_remote_jid",
+              "value": "={{ $('Parse Message').first().json.remoteJid || '' }}"
+            }
           ]
         },
         "options": {}
@@ -409,7 +573,10 @@
       "name": "Log Inbound Only",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [1200, 600]
+      "position": [
+        1200,
+        600
+      ]
     },
     {
       "parameters": {
@@ -421,7 +588,10 @@
       "name": "Respond OK Paused",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1400, 600]
+      "position": [
+        1400,
+        600
+      ]
     },
     {
       "parameters": {
@@ -429,8 +599,21 @@
           "values": [
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
-                "conditions": [{ "leftValue": "={{ $json.skip }}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.skip }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -438,8 +621,21 @@
             },
             {
               "conditions": {
-                "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
-                "conditions": [{ "leftValue": "={{ $json.contentType }}", "rightValue": "secretary_reply", "operator": { "type": "string", "operation": "equals" } }],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.contentType }}",
+                    "rightValue": "secretary_reply",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -455,89 +651,268 @@
       "name": "Route Message",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [690, 300]
+      "position": [
+        690,
+        300
+      ]
+    },
+    {
+      "id": "log-sequential",
+      "name": "Log Sequential",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2130,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_log_message_sequential",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_phone: $json.phone, p_lead_id: $json.leadId || null, p_user_message: $json.userMessage || \"\", p_ai_response: $json.aiResponse || \"\", p_tokens_used: $json.tokensUsed || 0, p_tags: JSON.stringify($json.tags || []), p_persona: $json.persona || \"onboarder\", p_detected_name: $json.detectedName || null, p_conversation_id: $json.conversationId || null, p_photo_urls: $json.photoUrls && $json.photoUrls.length > 0 ? $json.photoUrls : null, p_photo_captions: $json.photoCaptions && $json.photoCaptions.length > 0 ? $json.photoCaptions : null }) }}",
+        "options": {}
+      }
     }
   ],
   "connections": {
     "Webhook - Receive Message": {
       "main": [
-        [{ "node": "Parse Message", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse Message": {
       "main": [
-        [{ "node": "Route Message", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Route Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Route Message": {
       "main": [
-        [{ "node": "Respond Skip", "type": "main", "index": 0 }],
-        [{ "node": "Log Secretary Reply", "type": "main", "index": 0 }],
-        [{ "node": "Get Lead Context", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Respond Skip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Secretary Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Lead Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Log Secretary Reply": {
       "main": [
-        [{ "node": "Respond Secretary", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Respond Secretary",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Get Lead Context": {
       "main": [
-        [{ "node": "Download Media", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Download Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Download Media": {
       "main": [
-        [{ "node": "Guard Check", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Guard Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Guard Check": {
       "main": [
-        [{ "node": "Merge Guard", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Merge Guard",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Merge Guard": {
       "main": [
-        [{ "node": "Guard Route", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Guard Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Guard Route": {
       "main": [
-        [{ "node": "Build Claude Prompt", "type": "main", "index": 0 }],
-        [{ "node": "Build Claude Prompt", "type": "main", "index": 0 }],
-        [{ "node": "Log Inbound Only", "type": "main", "index": 0 }],
-        [{ "node": "Log Inbound Only", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Claude Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Claude Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Inbound Only",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Inbound Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Log Inbound Only": {
       "main": [
-        [{ "node": "Respond OK Paused", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Respond OK Paused",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Claude Prompt": {
       "main": [
-        [{ "node": "Claude API - Lara", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Claude API - Lara",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Claude API - Lara": {
       "main": [
-        [{ "node": "Process AI Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Process AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Process AI Response": {
       "main": [
         [
-          { "node": "Send WhatsApp", "type": "main", "index": 0 },
-          { "node": "Log to Supabase", "type": "main", "index": 0 },
-          { "node": "Save Lead", "type": "main", "index": 0 }
+          {
+            "node": "Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
     "Send WhatsApp": {
       "main": [
         [
-          { "node": "Respond OK", "type": "main", "index": 0 },
-          { "node": "Send Photo", "type": "main", "index": 0 }
+          {
+            "node": "Send Photo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Photo": {
+      "main": [
+        [
+          {
+            "node": "Log Sequential",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Sequential": {
+      "main": [
+        [
+          {
+            "node": "Save Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Lead": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
@@ -546,8 +921,14 @@
     "executionOrder": "v1"
   },
   "tags": [
-    { "name": "ClinicAI" },
-    { "name": "WhatsApp" },
-    { "name": "Lara" }
+    {
+      "name": "ClinicAI"
+    },
+    {
+      "name": "WhatsApp"
+    },
+    {
+      "name": "Lara"
+    }
   ]
 }
