@@ -1452,6 +1452,8 @@
       return '<div class="am-tab-content"><div class="am-loading"><div class="am-spinner"></div><span>Carregando disparos...</span></div></div>'
     }
 
+    var isFormMode = _broadcastMode === 'new'
+
     // ── LEFT: Lista de disparos ──────────────────────────────
     var listHtml = '<div class="bc-sidebar">'
     listHtml += '<div class="bc-sidebar-header">'
@@ -1488,10 +1490,10 @@
     }
     listHtml += '</div></div>'
 
-    // ── RIGHT: Painel de acao ────────────────────────────────
+    // ── CENTER: Painel de acao ────────────────────────────────
     var panelHtml = '<div class="bc-panel">'
 
-    if (_broadcastMode === 'new') {
+    if (isFormMode) {
       panelHtml += _renderBroadcastForm()
     } else if (_broadcastMode === 'detail' && _broadcastSelected) {
       panelHtml += _renderBroadcastDetail()
@@ -1505,7 +1507,14 @@
     }
     panelHtml += '</div>'
 
-    return '<div class="am-tab-content"><div class="bc-layout">' + listHtml + panelHtml + '</div></div>'
+    // ── RIGHT: Phone preview (only in form mode) ─────────────
+    var phoneHtml = ''
+    if (isFormMode) {
+      phoneHtml = _renderPhonePreview(_broadcastForm.content)
+    }
+
+    var layoutClass = isFormMode ? 'bc-layout-form' : 'bc-layout'
+    return '<div class="am-tab-content"><div class="' + layoutClass + '">' + listHtml + panelHtml + phoneHtml + '</div></div>'
   }
 
   function _renderBroadcastForm() {
@@ -1516,13 +1525,17 @@
       </div>
       <div class="bc-panel-body">
         <div class="am-field">
-          <label class="am-label">Nome *</label>
+          <label class="am-label">Nome do disparo *</label>
           <input class="am-input" id="bcName" placeholder="Ex: Promo Lifting 5D Abril" value="${_esc(f.name)}">
         </div>
         <div class="am-field">
           <label class="am-label">Mensagem *</label>
-          <textarea class="am-input" id="bcContent" rows="5" placeholder="Texto da mensagem. Use {nome} para personalizar.">${_esc(f.content)}</textarea>
-          <small class="am-hint">Variaveis: {nome}, {queixa_principal}</small>
+          <textarea class="am-input" id="bcContent" rows="8" placeholder="Digite a mensagem aqui...&#10;&#10;Use [nome] para personalizar.&#10;Quebras de linha serao mantidas.">${_esc(f.content)}</textarea>
+          <div class="bc-tags-bar">
+            <span class="bc-tag-hint">Inserir:</span>
+            <button type="button" class="bc-tag-btn" data-tag="[nome]">[nome]</button>
+            <button type="button" class="bc-tag-btn" data-tag="[queixa]">[queixa]</button>
+          </div>
         </div>
         <div class="am-field">
           <label class="am-label">URL da midia (opcional)</label>
@@ -1582,6 +1595,55 @@
           ${_broadcastSaving ? 'Criando...' : _feather('plus', 14) + ' Criar Disparo'}
         </button>
       </div>`
+  }
+
+  function _renderPhonePreview(content) {
+    var now = new Date()
+    var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+
+    var bubbleContent = ''
+    if (content && content.trim()) {
+      var escaped = _esc(content)
+      // Highlight [tags]
+      escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
+      bubbleContent = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
+        + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
+    } else {
+      bubbleContent = '<div class="bc-wa-empty">Digite a mensagem ao lado para ver o preview</div>'
+    }
+
+    return '<div class="bc-phone-col">'
+      + '<div class="bc-phone">'
+      + '<div class="bc-phone-notch"><span class="bc-phone-notch-time">' + timeStr + '</span></div>'
+      + '<div class="bc-wa-header">'
+      + '<div class="bc-wa-avatar"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>'
+      + '<div><div class="bc-wa-name">Clinica</div><div class="bc-wa-status">online</div></div>'
+      + '</div>'
+      + '<div class="bc-wa-chat" id="bcPhoneChat">' + bubbleContent + '</div>'
+      + '<div class="bc-wa-bottom">'
+      + '<div class="bc-wa-input-mock">Mensagem</div>'
+      + '<div class="bc-wa-send-mock"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>'
+      + '</div>'
+      + '<div class="bc-phone-home"></div>'
+      + '</div>'
+      + '</div>'
+  }
+
+  function _updatePhonePreview(content) {
+    var chatEl = document.getElementById('bcPhoneChat')
+    if (!chatEl) return
+    var now = new Date()
+    var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+
+    if (!content || !content.trim()) {
+      chatEl.innerHTML = '<div class="bc-wa-empty">Digite a mensagem ao lado para ver o preview</div>'
+      return
+    }
+
+    var escaped = _esc(content)
+    escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
+    chatEl.innerHTML = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
+      + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
   }
 
   function _renderBroadcastDetail() {
@@ -1659,6 +1721,32 @@
         _broadcastSelected = item.dataset.id
         _broadcastMode = 'detail'
         _render()
+      })
+    })
+
+    // Real-time phone preview binding
+    var contentEl = root.querySelector('#bcContent')
+    if (contentEl) {
+      contentEl.addEventListener('input', function() {
+        _broadcastForm.content = contentEl.value
+        _updatePhonePreview(contentEl.value)
+      })
+    }
+
+    // Tag insert buttons
+    root.querySelectorAll('.bc-tag-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var textarea = root.querySelector('#bcContent')
+        if (!textarea) return
+        var tag = btn.dataset.tag
+        var start = textarea.selectionStart
+        var end = textarea.selectionEnd
+        var text = textarea.value
+        textarea.value = text.substring(0, start) + tag + text.substring(end)
+        textarea.selectionStart = textarea.selectionEnd = start + tag.length
+        textarea.focus()
+        _broadcastForm.content = textarea.value
+        _updatePhonePreview(textarea.value)
       })
     })
 

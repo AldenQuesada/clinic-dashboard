@@ -877,7 +877,16 @@
 
 .bc-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 260px 1fr;
+  height: calc(100vh - 220px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+.bc-layout-form {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
   height: calc(100vh - 220px);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -1202,9 +1211,249 @@
   margin-top: 4px;
 }
 
+/* ── Secondary button ──────────────────────────────────��──── */
+.am-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+.am-btn-secondary:hover { background: #F3F4F6; border-color: #D1D5DB; }
+
+/* ── Tag insert bar ─────────��────────────────────────────── */
+.bc-tags-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.bc-tag-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.bc-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: rgba(7,94,84,0.08);
+  color: #075E54;
+  border: 1px solid rgba(7,94,84,0.2);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.bc-tag-btn:hover { background: rgba(7,94,84,0.16); }
+
+/* ── Phone Mockup WhatsApp Preview ───────────���────────────── */
+.bc-phone-col {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 16px;
+  background: #F8F9FA;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.bc-phone {
+  width: 280px;
+  min-height: 500px;
+  background: #fff;
+  border-radius: 32px;
+  box-shadow: 0 0 0 2px #1a1a1a, 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+}
+
+/* Notch */
+.bc-phone-notch {
+  height: 28px;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.bc-phone-notch::after {
+  content: '';
+  width: 60px;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+}
+.bc-phone-notch-time {
+  position: absolute;
+  left: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* WhatsApp header */
+.bc-wa-header {
+  background: #075E54;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bc-wa-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.bc-wa-avatar svg { color: #fff; }
+.bc-wa-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+}
+.bc-wa-status {
+  font-size: 10px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 400;
+}
+
+/* Chat area */
+.bc-wa-chat {
+  flex: 1;
+  background: #ECE5DD url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" opacity="0.04"><path d="M20 20h20v20H20zM60 20h20v20H60zM100 20h20v20h-20zM40 40h20v20H40zM80 40h20v20H80z" fill="%23000"/></svg>');
+  padding: 16px 10px;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* Message bubble */
+.bc-wa-bubble {
+  max-width: 88%;
+  background: #DCF8C6;
+  padding: 7px 10px 4px;
+  border-radius: 8px 8px 0 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #111;
+  word-break: break-word;
+  white-space: pre-wrap;
+  align-self: flex-end;
+  position: relative;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.06);
+}
+.bc-wa-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -6px;
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-left-color: #DCF8C6;
+  border-bottom-color: #DCF8C6;
+}
+.bc-wa-bubble-time {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  margin-top: 3px;
+  font-size: 10px;
+  color: rgba(0,0,0,0.4);
+}
+.bc-wa-bubble-time svg { color: #53BDEB; }
+
+/* Tag highlight inside bubble */
+.bc-wa-tag {
+  display: inline;
+  background: rgba(7,94,84,0.12);
+  color: #075E54;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* Empty preview */
+.bc-wa-empty {
+  text-align: center;
+  color: rgba(0,0,0,0.3);
+  font-size: 12px;
+  font-style: italic;
+  padding: 40px 16px;
+}
+
+/* Bottom input mockup */
+.bc-wa-bottom {
+  background: #F0F0F0;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bc-wa-input-mock {
+  flex: 1;
+  background: #fff;
+  border-radius: 18px;
+  padding: 7px 12px;
+  font-size: 11px;
+  color: #999;
+}
+.bc-wa-send-mock {
+  width: 30px;
+  height: 30px;
+  background: #075E54;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bc-wa-send-mock svg { color: #fff; }
+
+/* Phone home bar */
+.bc-phone-home {
+  height: 18px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bc-phone-home::after {
+  content: '';
+  width: 100px;
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 2px;
+}
+
+@media (max-width: 1100px) {
+  .bc-layout-form { grid-template-columns: 220px 1fr 280px; }
+}
+
 @media (max-width: 768px) {
   .bc-layout { grid-template-columns: 1fr; height: auto; }
+  .bc-layout-form { grid-template-columns: 1fr; height: auto; }
   .bc-sidebar { max-height: 250px; border-right: none; border-bottom: 1px solid var(--border); }
   .bc-filters-grid { grid-template-columns: 1fr; }
   .bc-detail-stats { flex-direction: column; }
+  .bc-phone-col { border-left: none; border-top: 1px solid var(--border); }
 }
