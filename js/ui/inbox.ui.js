@@ -126,7 +126,26 @@
   async function init() {
     _loading = true
     _render()
+
+    // Retry up to 5 times if InboxService not ready (deploy/cache race condition)
+    var retries = 0
+    while (retries < 5) {
+      if (window.InboxService) break
+      retries++
+      await new Promise(function(r) { setTimeout(r, 1000) })
+    }
+
     await _loadConversations()
+
+    // If conversations empty, retry 2 more times (Supabase may be slow)
+    if (_conversations.length === 0) {
+      for (var r = 0; r < 2; r++) {
+        await new Promise(function(resolve) { setTimeout(resolve, 2000) })
+        await _loadConversations()
+        if (_conversations.length > 0) break
+      }
+    }
+
     _loading = false
     _render()
     _startAutoRefresh()
@@ -158,10 +177,19 @@
   // ── Data ────────────────────────────────────────────────────
 
   async function _loadConversations() {
-    if (!window.InboxService) return
-    var result = await window.InboxService.loadInbox()
-    if (result.ok) {
-      _conversations = result.data || []
+    if (!window.InboxService) {
+      console.warn('[Inbox] InboxService nao disponivel, tentando novamente...')
+      return
+    }
+    try {
+      var result = await window.InboxService.loadInbox()
+      if (result && result.ok) {
+        _conversations = result.data || []
+      } else {
+        console.warn('[Inbox] loadInbox falhou:', result?.error)
+      }
+    } catch(e) {
+      console.warn('[Inbox] Erro ao carregar conversas:', e.message)
     }
   }
 
