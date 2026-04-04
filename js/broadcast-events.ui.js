@@ -36,6 +36,7 @@
         window.BroadcastUI.setState('broadcastSelected', null)
         window.BroadcastUI.setState('bcPanelOpen', true)
         window.BroadcastUI.setState('bcPanelTab', 'editor')
+        window.BroadcastUI.setState('_editingBroadcastId', null)
         _render()
       })
     })
@@ -453,7 +454,8 @@
         window.BroadcastUI.setState('broadcastSaving', true)
         _render()
 
-        var result = await window.BroadcastService.createBroadcast({
+        var editId = window.BroadcastUI.getState().editingId
+        var saveData = {
           name: name.trim(),
           content: content.trim(),
           media_url: mediaUrl.trim() || null,
@@ -464,19 +466,26 @@
           batch_interval_min: batchInterval,
           selected_lead_ids: curForm.selected_leads.map(function(l) { return l.id }),
           scheduled_at: curForm.scheduled_at ? new Date(curForm.scheduled_at).toISOString() : null,
-        })
+        }
+
+        var result
+        if (editId) {
+          result = await window.BroadcastService.updateBroadcast(editId, saveData)
+        } else {
+          result = await window.BroadcastService.createBroadcast(saveData)
+        }
 
         window.BroadcastUI.setState('broadcastSaving', false)
 
         if (result && result.ok) {
-          _showToast('Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios encontrados')
-          window.BroadcastUI.setState('broadcastSelected', result.data?.id || null)
-          var newSelected = window.BroadcastUI.getState().selected
-          window.BroadcastUI.setState('broadcastMode', newSelected ? 'detail' : 'new')
+          _showToast(editId ? 'Disparo atualizado!' : 'Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios encontrados')
+          window.BroadcastUI.setState('broadcastSelected', editId || result.data?.id || null)
+          window.BroadcastUI.setState('broadcastMode', 'detail')
           window.BroadcastUI.setState('bcPanelTab', 'history')
+          window.BroadcastUI.setState('_editingBroadcastId', null)
           await window.BroadcastUI.loadBroadcasts()
         } else {
-          _showToast(result?.error || 'Erro ao criar disparo', 'error')
+          _showToast(result?.error || 'Erro ao salvar disparo', 'error')
           _render()
         }
       })
@@ -497,6 +506,39 @@
           }
           _render()
         }
+      })
+    })
+
+    // Edit button — load broadcast data into form
+    document.querySelectorAll('.bc-edit-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = btn.dataset.id
+        var broadcasts = window.BroadcastUI.getState().broadcasts
+        var b = broadcasts.find(function(x) { return x.id === id })
+        if (!b) return
+
+        // Populate form with broadcast data
+        var form = {
+          name: b.name || '',
+          content: b.content || '',
+          media_url: b.media_url || '',
+          media_caption: b.media_caption || '',
+          media_position: b.media_position || 'above',
+          filter_phase: (b.target_filter && b.target_filter.phase) || '',
+          filter_temperature: (b.target_filter && b.target_filter.temperature) || '',
+          filter_funnel: (b.target_filter && b.target_filter.funnel) || '',
+          filter_source: (b.target_filter && b.target_filter.source_type) || '',
+          batch_size: b.batch_size || 10,
+          batch_interval_min: b.batch_interval_min || 10,
+          selected_leads: [],
+          scheduled_at: b.scheduled_at ? new Date(new Date(b.scheduled_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().substring(0, 16) : '',
+        }
+
+        window.BroadcastUI.setState('broadcastForm', form)
+        window.BroadcastUI.setState('broadcastMode', 'new')
+        window.BroadcastUI.setState('bcPanelTab', 'editor')
+        window.BroadcastUI.setState('_editingBroadcastId', id)
+        _render()
       })
     })
 

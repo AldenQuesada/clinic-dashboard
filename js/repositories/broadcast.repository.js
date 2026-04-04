@@ -83,11 +83,28 @@
     return _rpc('wa_broadcast_leads', { p_broadcast_id: id, p_segment: segment || 'all' })
   }
 
+  async function update(id, data) {
+    return _rpc('wa_broadcast_update', {
+      p_broadcast_id: id,
+      p_name: data.name || null,
+      p_content: data.content || null,
+      p_media_url: data.media_url !== undefined ? data.media_url : null,
+      p_media_caption: data.media_caption || null,
+      p_target_filter: data.target_filter || null,
+      p_scheduled_at: data.scheduled_at || null,
+      p_batch_size: data.batch_size || null,
+      p_batch_interval_min: data.batch_interval_min || null,
+      p_selected_lead_ids: data.selected_lead_ids && data.selected_lead_ids.length > 0 ? data.selected_lead_ids : null,
+      p_media_position: data.media_position || null,
+    })
+  }
+
   // ── Expose ────────────────────────────────────────────────────
 
   window.BroadcastRepository = Object.freeze({
     list,
     create,
+    update,
     start,
     cancel,
     remove,

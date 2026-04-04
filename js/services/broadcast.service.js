@@ -74,6 +74,12 @@
     return _repo().remove(id)
   }
 
+  async function updateBroadcast(id, data) {
+    if (!_repo()) return _unavailable()
+    if (!id) return { ok: false, error: 'broadcast id obrigatorio' }
+    return _repo().update(id, data)
+  }
+
   async function getBroadcastStats(id) {
     if (!_repo()) return _unavailable()
     if (!id) return { ok: false, error: 'broadcast id obrigatorio' }
@@ -91,6 +97,7 @@
     startBroadcast,
     cancelBroadcast,
     deleteBroadcast,
+    updateBroadcast,
     getBroadcastStats,
     getBroadcastLeads,
   })

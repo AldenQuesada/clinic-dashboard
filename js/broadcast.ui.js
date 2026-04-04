@@ -31,6 +31,7 @@
   var _bcSegmentLeads = []
   var _bcUploading = false
   var _bcDeleteConfirm = null // id do broadcast em confirmacao de delete
+  var _editingBroadcastId = null // id quando editando broadcast existente
 
   function _emptyBroadcastForm() {
     return {
@@ -301,7 +302,7 @@
       html += '<div class="bc-slide-footer">'
       html += '<button class="am-btn-secondary" id="bcCancelForm">Cancelar</button>'
       html += '<button class="am-btn-primary" id="bcSaveBtn"' + (_broadcastSaving ? ' disabled' : '') + '>'
-      html += (_broadcastSaving ? 'Criando...' : _feather('plus', 14) + ' Criar Disparo')
+      html += (_broadcastSaving ? 'Salvando...' : _editingBroadcastId ? _feather('check', 14) + ' Salvar' : _feather('plus', 14) + ' Criar Disparo')
       html += '</button>'
       html += '</div>'
     }
@@ -527,6 +528,7 @@
           ${filterTags.length > 0 ? filterTags.map(function(t) { return '<span class="bc-filter-tag">' + _esc(t) + '</span>' }).join('') : ''}
         </div>
         <div class="bc-detail-topbar-right">
+          ${st === 'draft' ? '<button class="am-btn-ghost bc-edit-btn" data-id="' + b.id + '">' + _feather('edit2', 13) + ' Editar</button>' : ''}
           ${st === 'draft' ? '<button class="am-btn-primary bc-start-btn" data-id="' + b.id + '" data-targets="' + (b.total_targets || 0) + '">' + _feather('play', 13) + ' Iniciar</button>' : ''}
           ${st === 'draft' || st === 'sending' ? '<button class="am-btn-danger bc-cancel-btn" data-id="' + b.id + '">' + _feather('xCircle', 13) + ' Cancelar</button>' : ''}
         </div>
@@ -682,6 +684,7 @@
         saving: _broadcastSaving,
         uploading: _bcUploading,
         deleteConfirm: _bcDeleteConfirm,
+        editingId: _editingBroadcastId,
       }
     },
     setState: function(key, val) {
@@ -697,6 +700,7 @@
       if (key === 'broadcastLoading') _broadcastLoading = val
       if (key === 'bcUploading') _bcUploading = val
       if (key === 'bcDeleteConfirm') _bcDeleteConfirm = val
+      if (key === '_editingBroadcastId') _editingBroadcastId = val
       if (key === 'broadcasts') _broadcasts = val
     },
     emptyForm: _emptyBroadcastForm,
