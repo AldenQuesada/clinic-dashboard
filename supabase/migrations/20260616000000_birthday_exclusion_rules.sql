@@ -87,32 +87,32 @@ BEGIN
         AND b.status NOT IN ('approved', 'lost', 'cancelled')
     ) THEN v_reason := 'open_budget'; END IF;
 
-    -- Rule 2: Recent procedure (30 days) — uses appointments if exists
+    -- Rule 2: Recent procedure (30 days)
     BEGIN
       IF v_reason IS NULL AND EXISTS (
         SELECT 1 FROM appointments a
-        WHERE a.lead_id = v_campaign.lead_id
-          AND a.date > now() - interval '30 days'
+        WHERE a.patient_id = v_campaign.lead_id
+          AND a.scheduled_date > now() - interval '30 days'
           AND a.status = 'completed'
       ) THEN v_reason := 'recent_procedure'; END IF;
-    EXCEPTION WHEN undefined_table THEN NULL;
+    EXCEPTION WHEN undefined_table THEN NULL; WHEN undefined_column THEN NULL;
     END;
 
     -- Rule 3: Upcoming appointment (7 days)
     BEGIN
       IF v_reason IS NULL AND EXISTS (
         SELECT 1 FROM appointments a
-        WHERE a.lead_id = v_campaign.lead_id
-          AND a.date BETWEEN now() AND now() + interval '7 days'
-          AND a.status NOT IN ('cancelled', 'no_show')
+        WHERE a.patient_id = v_campaign.lead_id
+          AND a.scheduled_date BETWEEN now() AND now() + interval '7 days'
+          AND a.status NOT IN ('cancelado', 'no_show')
       ) THEN v_reason := 'upcoming_appointment'; END IF;
-    EXCEPTION WHEN undefined_table THEN NULL;
+    EXCEPTION WHEN undefined_table THEN NULL; WHEN undefined_column THEN NULL;
     END;
 
     -- Rule 4: Human channel active
     IF v_reason IS NULL AND EXISTS (
       SELECT 1 FROM leads l
-      WHERE l.id = v_campaign.lead_id AND l.channel_mode = 'human'
+      WHERE l.id = v_campaign.lead_id AND l.channel_mode IS NOT NULL AND l.channel_mode != 'whatsapp'
     ) THEN v_reason := 'human_channel'; END IF;
 
     -- Apply exclusion
