@@ -897,8 +897,8 @@
 .bc-new-dispatch-sm:hover { opacity: 0.85; }
 
 /* Center area — offset left to avoid slide panel overlap */
-.bc-center { flex: 1; display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 40px 32px; padding-right: 420px; background: var(--card); }
-.bc-center-detail { width: 100%; max-width: 600px; }
+.bc-center { flex: 1; display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 32px 32px; padding-right: 430px; background: var(--card); }
+.bc-center-detail { width: 100%; max-width: 560px; padding-top: 8px; }
 
 /* Empty state in center */
 .bc-center-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; color: var(--text-muted); }
@@ -1495,9 +1495,9 @@
 
 /* ── Broadcast analytics in detail view ──────────────────── */
 .bc-analytics { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
-.bc-analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
-.bc-metric { background: rgba(0,0,0,0.02); border-radius: 10px; padding: 14px; }
-.bc-metric-value { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.bc-analytics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.bc-metric { background: rgba(0,0,0,0.02); border-radius: 8px; padding: 10px; }
+.bc-metric-value { font-size: 17px; font-weight: 800; color: var(--text-primary); }
 .bc-metric-value small { font-size: 12px; font-weight: 500; color: var(--text-muted); }
 .bc-metric-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 .bc-metric-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
