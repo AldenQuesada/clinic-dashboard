@@ -492,7 +492,7 @@
           <div class="bc-schedule-row">
             <label class="bc-pos-label"><input type="radio" name="bcScheduleMode" value="now" ${!f.scheduled_at ? 'checked' : ''}> Enviar agora</label>
             <label class="bc-pos-label"><input type="radio" name="bcScheduleMode" value="scheduled" ${f.scheduled_at ? 'checked' : ''}> Agendar para</label>
-            <input type="datetime-local" class="am-input bc-schedule-input" id="bcScheduleAt" value="${_esc(f.scheduled_at)}" ${!f.scheduled_at ? 'disabled' : ''}>
+            <input type="datetime-local" class="am-input bc-schedule-input" id="bcScheduleAt" value="${f.scheduled_at || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().substring(0, 16)}" ${!f.scheduled_at ? 'disabled' : ''}>
           </div>
         </div>`
   }
