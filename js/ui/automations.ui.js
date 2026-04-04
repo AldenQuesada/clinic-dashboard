@@ -1884,12 +1884,19 @@
         if (isImg) return '<div class="bc-detail-media" style="margin:12px 0"><img src="' + _esc(b.media_url) + '" alt="media"></div>'
         return '<div class="bc-detail-link" style="margin:12px 0"><a href="' + _esc(b.media_url) + '" target="_blank" rel="noopener">' + _feather('link', 13) + ' ' + _esc(b.media_caption || b.media_url) + '</a></div>'
       })() : ''}
-      ${s ? '<div class="bc-metrics-col" style="margin-bottom:14px">'
-        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.send_rate || 0) + '%;background:#10B981"></div></div><span class="bc-metric-pct">' + (s.send_rate || 0) + '%</span><span class="bc-metric-lbl">Envio</span></div>'
-        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.response_rate || 0) + '%;background:#2563EB"></div></div><span class="bc-metric-pct">' + (s.response_rate || 0) + '%</span><span class="bc-metric-lbl">Resposta</span></div>'
-        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.delivery_rate || 0) + '%;background:#8B5CF6"></div></div><span class="bc-metric-pct">' + (s.delivery_rate || 0) + '%</span><span class="bc-metric-lbl">Entrega</span></div>'
-        + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.read_rate || 0) + '%;background:#F59E0B"></div></div><span class="bc-metric-pct">' + (s.read_rate || 0) + '%</span><span class="bc-metric-lbl">Leitura</span></div>'
-        + '</div>' : ''}
+      <div class="bc-info-strip">
+        <div class="bc-info-dates">
+          <span>${_feather('calendar', 11)} Criado: ${date}</span>
+          ${b.started_at ? '<span>' + _feather('play', 11) + ' Iniciado: ' + startDate + '</span>' : ''}
+          ${b.completed_at ? '<span>' + _feather('checkCircle', 11) + ' Finalizado: ' + endDate + '</span>' : ''}
+        </div>
+        ${s ? '<div class="bc-info-bars">'
+          + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.send_rate || 0) + '%;background:#10B981"></div></div><span class="bc-metric-pct">' + (s.send_rate || 0) + '%</span><span class="bc-metric-lbl">Envio</span></div>'
+          + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.response_rate || 0) + '%;background:#2563EB"></div></div><span class="bc-metric-pct">' + (s.response_rate || 0) + '%</span><span class="bc-metric-lbl">Resposta</span></div>'
+          + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.delivery_rate || 0) + '%;background:#8B5CF6"></div></div><span class="bc-metric-pct">' + (s.delivery_rate || 0) + '%</span><span class="bc-metric-lbl">Entrega</span></div>'
+          + '<div class="bc-metric-row"><div class="bc-metric-bar-h"><div style="width:' + (s.read_rate || 0) + '%;background:#F59E0B"></div></div><span class="bc-metric-pct">' + (s.read_rate || 0) + '%</span><span class="bc-metric-lbl">Leitura</span></div>'
+          + '</div>' : ''}
+      </div>
       <div class="bc-detail-split">
         <div class="bc-detail-left">
           <div class="bc-leads-seg">
@@ -1898,11 +1905,6 @@
             ${s ? '<div class="bc-seg-item' + (_bcSegment === 'responded' ? ' bc-seg-active' : '') + '" data-seg="responded"><span class="bc-seg-icon" style="background:#2563EB20;color:#2563EB">' + _feather('messageCircle', 13) + '</span><span class="bc-seg-num">' + (s.responded || 0) + '</span><span class="bc-seg-lbl">Responderam</span></div>' : ''}
             ${s ? '<div class="bc-seg-item' + (_bcSegment === 'no_response' ? ' bc-seg-active' : '') + '" data-seg="no_response"><span class="bc-seg-icon" style="background:#F59E0B20;color:#F59E0B">' + _feather('clock', 13) + '</span><span class="bc-seg-num">' + noResponse + '</span><span class="bc-seg-lbl">Sem resposta</span></div>' : ''}
             <div class="bc-seg-item${_bcSegment === 'failed' ? ' bc-seg-active' : ''}" data-seg="failed"><span class="bc-seg-icon" style="background:#EF444420;color:#EF4444">${_feather('alertCircle', 13)}</span><span class="bc-seg-num">${b.failed_count || 0}</span><span class="bc-seg-lbl">Falhas</span></div>
-          </div>
-          <div class="bc-detail-dates">
-            <span>${_feather('calendar', 12)} ${date}</span>
-            ${b.started_at ? '<span>' + _feather('play', 12) + ' ' + startDate + '</span>' : ''}
-            ${b.completed_at ? '<span>' + _feather('checkCircle', 12) + ' ' + endDate + '</span>' : ''}
           </div>
         </div>
         <div class="bc-detail-right">
