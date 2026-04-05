@@ -600,9 +600,10 @@
       var stepMeta = {}
       if (stepQ && stepQ.id) stepMeta.question_id = stepQ.id
       // Salvar queixas selecionadas no metadata quando avanca do step de queixas
-      var prevQ = _currentStep >= 0 ? _questions[_currentStep] : null
+      var prevStep = nextStep - 1
+      var prevQ = prevStep >= 0 ? _questions[prevStep] : null
       if (prevQ && prevQ.type === 'contact_queixas') {
-        var queixasSel = _getAns(_currentStep)
+        var queixasSel = _getAns(prevStep)
         if (Array.isArray(queixasSel) && queixasSel.length > 0) {
           stepMeta.queixas = queixasSel
         }
