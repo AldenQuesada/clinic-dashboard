@@ -1332,6 +1332,7 @@ function saveAppt() {
   const apptData = {
     pacienteId:          document.getElementById('appt_paciente_id')?.value || '',
     pacienteNome:        nome,
+    pacientePhone:       document.getElementById('appt_paciente_phone')?.value || '',
     profissionalIdx:     profIdx,
     profissionalNome:    profs[profIdx]?.nome || '',
     salaIdx:             isNaN(salaIdx) ? null : salaIdx,
@@ -1461,13 +1462,18 @@ function _setLeadStatus(leadId, newStatus, skipIf = []) {
 
 // ── Mensagem automática ao criar agendamento ──────────────────
 function _enviarMsgAgendamento(appt) {
-  // Busca telefone do paciente no cadastro de leads
-  let telefone = ''
-  try {
-    const leads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-    const lead  = leads.find(l => l.id === appt.pacienteId || (l.nome||l.name||'') === appt.pacienteNome)
-    telefone = lead?.whatsapp || lead?.phone || lead?.telefone || ''
-  } catch { /* silencioso */ }
+  // Busca telefone: 1) do appt, 2) do lead no localStorage
+  let telefone = appt.pacientePhone || ''
+  if (!telefone) {
+    try {
+      const leads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+      const lead = leads.find(function(l) {
+        return l.id === appt.pacienteId
+          || (l.nome || l.name || '').toLowerCase() === (appt.pacienteNome || '').toLowerCase()
+      })
+      if (lead) telefone = lead.phone || lead.whatsapp || lead.telefone || ''
+    } catch(e) { console.warn('[Agenda] busca lead falhou:', e) }
+  }
 
   const clinica   = _getClinicaNome()
   const nomeEnx   = _nomeEnxuto(appt.pacienteNome || 'Paciente')
@@ -1498,7 +1504,10 @@ function _enviarMsgAgendamento(appt) {
       else _showToast('WhatsApp enviado', 'Confirmacao para ' + nomeEnx, 'info')
     }).catch(function(e) { console.error('[Agenda] wa_outbox_enqueue exception:', e) })
   } else if (!telefone) {
+    console.error('[Agenda] SEM TELEFONE para', nomeEnx, '| pacienteId:', appt.pacienteId)
     _showToast('Sem telefone', nomeEnx + ' nao tem WhatsApp cadastrado', 'warning')
+  } else if (!window._sbShared) {
+    console.error('[Agenda] Supabase nao disponivel para envio WhatsApp')
   }
 }
 
