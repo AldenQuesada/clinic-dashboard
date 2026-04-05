@@ -58,7 +58,14 @@
 
     var range = dateRange(period.type, period.from, period.to)
 
+    var excludePhases = opts.excludePhases || null
+    var includePhases = opts.includePhases || null
+
     var filtered = leads.filter(function(l) {
+      // Phase filter
+      var phase = l.phase || 'lead'
+      if (excludePhases && excludePhases.indexOf(phase) !== -1) return false
+      if (includePhases && includePhases.indexOf(phase) === -1) return false
       // Data
       var created  = new Date(l.created_at || l.createdAt)
       var validDt  = !isNaN(created.getTime())

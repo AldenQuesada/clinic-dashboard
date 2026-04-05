@@ -135,7 +135,7 @@ async function loadLeads() {
 
   // Filtrar e ordenar via modulo compartilhado
   var result = LF
-    ? LF.filter(all, { period: _leadsPeriod, search: search, tempVal: tempVal, tagLeadIds: tagLeadIds })
+    ? LF.filter(all, { period: _leadsPeriod, search: search, tempVal: tempVal, tagLeadIds: tagLeadIds, excludePhases: ['agendado', 'reagendado', 'compareceu', 'perdido'] })
     : { filtered: all, stats: { total: all.length, hot: 0, warm: 0, cold: 0 } }
 
   var filtered = result.filtered

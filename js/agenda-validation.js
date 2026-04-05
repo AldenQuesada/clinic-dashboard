@@ -487,6 +487,11 @@ function confirmCancelWithReason(apptId, statusAlvo) {
 
   if (window.saveAppointments) saveAppointments(appts)
 
+  // Sync Supabase (dispara trigger de phase change)
+  if (window.AppointmentsService) {
+    AppointmentsService.syncOne(appts[idx])
+  }
+
   // Fechar modal
   const m = document.getElementById('cancelReasonModal')
   if (m) m.style.display = 'none'
