@@ -80,8 +80,16 @@
 
   // ── Prepara agendamento para Supabase (adiciona _professionalId) ─
   function _enrichForSupabase(appt) {
+    const enriched = { ...appt }
     const profId = _resolveProfessionalId(appt.profissionalIdx)
-    return profId ? { ...appt, _professionalId: profId } : appt
+    if (profId) enriched._professionalId = profId
+    // Resolver phone do paciente se nao veio no appt
+    if (!enriched.pacientePhone && enriched.pacienteId && window.LeadsService) {
+      var leads = LeadsService.getLocal()
+      var lead = leads.find(function(l) { return l.id === enriched.pacienteId })
+      if (lead) enriched.pacientePhone = lead.phone || lead.whatsapp || ''
+    }
+    return enriched
   }
 
   // ── localStorage helpers ──────────────────────────────────────
