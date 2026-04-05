@@ -1487,9 +1487,19 @@ function _enviarMsgAgendamento(appt) {
     telefone
   })
 
-  // Salva na fila + mostra painel de preview
-  _simularEnvioWpp(appt, 'agendamento_boas_vindas', mensagem, 0)
-  _mostrarPreviewWpp(nomeEnx, telefone, mensagem, appt.id)
+  // Enviar via wa_outbox (real, nao simulado)
+  if (telefone && window._sbShared) {
+    window._sbShared.rpc('wa_outbox_enqueue_appt', {
+      p_phone: telefone,
+      p_content: mensagem,
+      p_lead_name: nomeEnx
+    }).then(function(res) {
+      if (res.error) console.error('[Agenda] wa_outbox_enqueue falhou:', res.error.message)
+      else _showToast('WhatsApp enviado', 'Confirmacao para ' + nomeEnx, 'info')
+    }).catch(function(e) { console.error('[Agenda] wa_outbox_enqueue exception:', e) })
+  } else if (!telefone) {
+    _showToast('Sem telefone', nomeEnx + ' nao tem WhatsApp cadastrado', 'warning')
+  }
 }
 
 function _tplMsgAgendamento({ nome, clinica, data, hora, procedimento, profissional, link_anamnese }) {
