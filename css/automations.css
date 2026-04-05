@@ -876,7 +876,7 @@
 /* ── Broadcast Tab v2 — Stats + Center + Slide Panel ─────── */
 
 /* Main layout */
-.bc-v2 { display: flex; min-height: 400px; max-height: calc(100vh - 140px); gap: 0; }
+.bc-v2 { display: flex; gap: 0; }
 
 /* Stats sidebar */
 .bc-stats { width: 220px; border-right: 1px solid var(--border); padding: 20px 16px; overflow-y: auto; flex-shrink: 0; background: var(--card); position: relative; z-index: 2; }
