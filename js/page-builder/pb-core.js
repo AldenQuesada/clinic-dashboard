@@ -27,7 +27,7 @@
 
   // ── Block definitions ──────────────────────────────────────
   var BLOCK_TYPES = [
-    { type: 'hero', label: 'Hero', icon: 'layout', defaults: { title: '', subtitle: '', theme: 'dark', bg_color: '' } },
+    { type: 'hero', label: 'Hero', icon: 'layout', defaults: { title: '', subtitle: '', theme: 'dark', bg_color: '', image_url: '', label: '', tagline: '', description: '' } },
     { type: 'title', label: 'T\u00edtulo', icon: 'type', defaults: { text: '', subtitle: '', align: 'left' } },
     { type: 'text', label: 'Texto', icon: 'align-left', defaults: { content: '', align: 'left' } },
     { type: 'image', label: 'Imagem', icon: 'image', defaults: { url: '', alt: '', height: '' } },
