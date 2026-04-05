@@ -183,10 +183,8 @@
     // Anexa todos os event listeners ao novo DOM
     _attachNavEvents()
 
-    // Abre a seção padrão (dashboard)
-    _openDefaultSection()
-
     // Tenta restaurar a página que estava ativa antes do rebuild / reload
+    // Se tem previousPage, NAO abre dashboard primeiro (evita flash)
     if (previousPage) {
       const restoredItem = nav.querySelector(`.nav-subitem[data-page="${previousPage}"]`)
       if (restoredItem) {
@@ -203,8 +201,13 @@
         navigateTo(previousPage)
       } else {
         // Página não está mais visível após troca de papel → volta para dashboard
+        _openDefaultSection()
         navigateTo('dashboard-overview')
       }
+    } else {
+      // Sem página anterior → abre dashboard
+      _openDefaultSection()
+      navigateTo('dashboard-overview')
     }
   }
 
