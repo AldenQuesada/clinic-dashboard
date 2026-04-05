@@ -246,7 +246,7 @@
     .screen-inner {
       width: 100%;
       padding: 0 20px;
-      padding-bottom: 0;
+      padding-bottom: 100px;
       box-sizing: border-box;
     }
 
@@ -1193,9 +1193,15 @@
 
     /* ── Nav footer ─────────────────────────────────── */
     #nav-footer {
-      flex-shrink: 0;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-width: 420px;
+      margin: 0 auto;
       padding: 12px 20px env(safe-area-inset-bottom, 24px);
       background: linear-gradient(180deg, rgba(255,255,255,0), #FFFFFF 30%);
+      z-index: 20;
     }
 
     .nav-two-btns {
