@@ -122,6 +122,7 @@
         window.BroadcastUI.setState('bcPageMode', 'disparos')
         window.BroadcastUI.setState('broadcastMode', 'dashboard')
         window.BroadcastUI.setState('bcPanelTab', 'history')
+        window.BroadcastUI.loadBroadcasts()
       }
     } else if (_pageMode === 'rules') {
       _activeTab = 'rules'
