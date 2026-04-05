@@ -307,7 +307,7 @@
       html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
       html += '<button class="bc-slide-tab' + (_bcPanelTab === 'scheduled' ? ' active' : '') + '" data-panel-tab="scheduled" style="position:relative">Programados' + (scheduledCount > 0 ? '<span class="bc-tab-badge-top">' + scheduledCount + '</span>' : '') + '</button>'
     }
-    if (_bcPageMode !== 'disparos') {
+    if (_bcPageMode === 'rules') {
       html += '<button class="bc-slide-tab' + (_bcPanelTab === 'rules' ? ' active' : '') + '" data-panel-tab="rules">Regras</button>'
     }
     html += '</div>'
