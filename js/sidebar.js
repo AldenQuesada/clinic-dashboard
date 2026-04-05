@@ -487,6 +487,12 @@
       if (pageId === 'leads-protocolos') window.LeadsContext.init('protocolos')
     }
 
+    // ── Agenda: tabelas de leads por phase ───────────────────────
+    if (window.AgendaLeads) {
+      if (pageId === 'agenda-agendados')  window.AgendaLeads.renderAgendados()
+      if (pageId === 'agenda-cancelados') window.AgendaLeads.renderCancelados()
+    }
+
     // ── Captação — Kanbans segmentados ──────────────────────────
     if (window.CaptacaoKanbans) {
       if (pageId === 'kanban-fullface')   window.CaptacaoKanbans.initFullFace()
