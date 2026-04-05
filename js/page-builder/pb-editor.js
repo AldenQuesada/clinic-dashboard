@@ -564,15 +564,7 @@
     render()
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    var check = setInterval(function () {
-      var page = document.getElementById('page-page-builder')
-      if (page && page.style.display !== 'none' && page.offsetParent !== null) {
-        clearInterval(check); mount()
-      }
-    }, 500)
-    setTimeout(function () { clearInterval(check) }, 30000)
-  })
+  // Mount triggered by sidebar.js navigateTo hook — no polling needed
 
   window.PBEditor = Object.freeze({ render: render, mount: mount })
 })()

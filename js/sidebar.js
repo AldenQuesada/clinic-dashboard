@@ -490,6 +490,11 @@
       if (pageId === 'kanban-protocolos') window.CaptacaoKanbans.initProtocolos()
     }
 
+    // ── Page Builder ──────────────────────────────────────────────
+    if (pageId === 'page-builder' && window.PBEditor) {
+      window.PBEditor.mount()
+    }
+
     // ── Captação — Quiz contextualizado por funil ────────────────
     if (window.QuizAdmin) {
       if (pageId === 'quiz-fullface')    window.QuizAdmin.init('kanban-fullface')
