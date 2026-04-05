@@ -114,6 +114,7 @@
   async function init(rootId, defaultTab) {
     if (rootId) _rootId = rootId
     if (defaultTab && window.BroadcastUI) {
+      window.BroadcastUI.setState('bcPageMode', defaultTab === 'rules' ? 'rules' : 'disparos')
       window.BroadcastUI.setState('bcPanelTab', defaultTab === 'rules' ? 'rules' : 'editor')
     }
     if (_loading) return
