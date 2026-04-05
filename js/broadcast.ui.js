@@ -132,8 +132,7 @@
     var statsHtml = _renderBroadcastStats()
 
     // ── CENTER: Main area ────────────────────────────────────
-    var isDashboard = !(_bcPanelOpen && _bcPanelTab === 'editor') && !(_broadcastMode === 'detail' && _broadcastSelected)
-    var centerHtml = '<div class="bc-center' + (isDashboard ? ' bc-center-full' : '') + '">'
+    var centerHtml = '<div class="bc-center">'
     if (_bcPanelOpen && _bcPanelTab === 'editor') {
       // Show phone preview centered when creating
       centerHtml += '<div style="display:flex;justify-content:center;width:100%">' + _renderPhonePreviewInline(_broadcastForm.content, _broadcastForm.media_url, _broadcastForm.media_position) + '</div>'
