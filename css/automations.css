@@ -879,7 +879,7 @@
 .bc-v2 { display: flex; height: calc(100vh - 220px); gap: 0; }
 
 /* Stats sidebar */
-.bc-stats { width: 220px; border-right: 1px solid var(--border); padding: 20px 16px; overflow-y: auto; flex-shrink: 0; background: var(--card); }
+.bc-stats { width: 220px; border-right: 1px solid var(--border); padding: 20px 16px; overflow-y: auto; flex-shrink: 0; background: var(--card); position: relative; z-index: 2; }
 .bc-stats-title { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
 .bc-stat-card { margin-bottom: 16px; }
 .bc-stat-big { font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1; }
