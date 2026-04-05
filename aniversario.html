@@ -473,6 +473,17 @@ a { color: inherit; text-decoration: none; }
     document.querySelectorAll('.reveal').forEach(function(el){obs.observe(el)})
   }
 
+  // ── Track page land (birthday campaign) ────────────────────
+  function trackPageLand() {
+    var SB_URL = 'https://oqboitkpcvuaudouwvkl.supabase.co'
+    var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0'
+    fetch(SB_URL + '/rest/v1/rpc/wa_birthday_track_page_land', {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    }).catch(function() {})
+  }
+
   // ── Init ───────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function() {
     initParticles()
@@ -482,6 +493,7 @@ a { color: inherit; text-decoration: none; }
     initConfetti()
     syncToggles()
     update()
+    trackPageLand()
   })
 })()
 </script>

@@ -125,8 +125,8 @@
   // ── Helpers ────────────────────────────────────────────────
 
   function resolveVariables(content, lead) {
-    var firstName = (lead.name || lead.lead_name || '').split(' ')[0] || 'voce'
-    var queixas = lead.queixas || 'aquelas coisinhas'
+    var firstName = (lead.name || lead.lead_name || '').split(' ')[0] || 'você'
+    var queixas = (lead.queixas || '').trim()
     var age = lead.age_turning || ''
     var budget = lead.has_open_budget && lead.budget_title
       ? lead.budget_title + ' (R$ ' + (lead.budget_total || 0) + ')'
@@ -134,7 +134,19 @@
     var txt = content
     txt = txt.split('[nome]').join(firstName)
     txt = txt.split('[Nome]').join(firstName)
-    txt = txt.split('[queixas]').join(queixas)
+
+    // [queixas] inteligente: se vazio, remove a frase inteira que contem o placeholder
+    if (queixas) {
+      txt = txt.split('[queixas]').join(queixas)
+    } else {
+      // Remove linhas que contem [queixas] — a msg funciona sem elas
+      txt = txt.split('\n').filter(function (line) {
+        return line.indexOf('[queixas]') === -1
+      }).join('\n')
+      // Limpar linhas duplas vazias
+      txt = txt.replace(/\n{3,}/g, '\n\n')
+    }
+
     txt = txt.split('[idade]').join(age.toString())
     txt = txt.split('[orcamento]').join(budget)
     return txt

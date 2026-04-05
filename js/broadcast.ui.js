@@ -256,17 +256,33 @@
     if (!chatEl) return
     var now = new Date()
     var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+    var checkSvg = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg>'
+    var state = window.BroadcastUI.getState()
+    var mediaUrl = state.form?.media_url || ''
+    var mediaPosition = state.form?.media_position || 'above'
 
-    if (!content || !content.trim()) {
+    // Image bubble
+    var imgBubble = ''
+    if (mediaUrl) {
+      imgBubble = '<div class="bc-wa-bubble bc-wa-img-bubble"><img src="' + _esc(mediaUrl) + '" class="bc-wa-preview-img"><div class="bc-wa-bubble-time">' + timeStr + ' ' + checkSvg + '</div></div>'
+    }
+
+    // Text bubble
+    var textBubble = ''
+    if (content && content.trim()) {
+      var escaped = _esc(content)
+      escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
+      escaped = _waFormat(escaped)
+      textBubble = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
+        + '<div class="bc-wa-bubble-time">' + timeStr + ' ' + checkSvg + '</div></div>'
+    }
+
+    if (!textBubble && !imgBubble) {
       chatEl.innerHTML = '<div class="bc-wa-empty">Digite a mensagem ao lado para ver o preview</div>'
       return
     }
 
-    var escaped = _esc(content)
-    escaped = escaped.replace(/\[(nome|queixa|queixa_principal)\]/gi, '<span class="bc-wa-tag">[$1]</span>')
-    escaped = _waFormat(escaped)
-    chatEl.innerHTML = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + escaped + '</div>'
-      + '<div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="1 12 5 16 12 6"/><polyline points="7 12 11 16 18 6"/></svg></div></div>'
+    chatEl.innerHTML = (mediaPosition === 'below') ? textBubble + imgBubble : imgBubble + textBubble
   }
 
   function _renderBroadcastSlidePanel() {

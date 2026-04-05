@@ -106,11 +106,16 @@
 
   // ── Root ─────────────────────────────────────────────────────
 
-  function _root() { return document.getElementById('automations-root') }
+  var _rootId = 'automations-root'
+  function _root() { return document.getElementById(_rootId) }
 
   // ── Init (chamado pelo sidebar ao navegar para a página) ─────
 
-  async function init() {
+  async function init(rootId, defaultTab) {
+    if (rootId) _rootId = rootId
+    if (defaultTab && window.BroadcastUI) {
+      window.BroadcastUI.setState('bcPanelTab', defaultTab === 'rules' ? 'rules' : 'editor')
+    }
     if (_loading) return
     _loading = true
     _render()

@@ -211,7 +211,8 @@
       pages: [
         { page: 'analytics-wa',         label: 'AI Analytics WhatsApp',  breadcrumb: 'WhatsApp > AI Analytics' },
         { page: 'inbox',                label: 'Central de WhatsApp',    breadcrumb: 'WhatsApp > Central',           highlight: true },
-        { page: 'settings-automation',  label: 'Disparos',              breadcrumb: 'WhatsApp > Disparos' },
+        { page: 'wa-disparos',          label: 'Disparos',              breadcrumb: 'WhatsApp > Disparos' },
+        { page: 'settings-automation',  label: 'Fluxos e Regras',       breadcrumb: 'WhatsApp > Fluxos e Regras' },
         { page: 'birthday-campaigns',  label: 'Aniversarios',          breadcrumb: 'WhatsApp > Aniversarios',       highlight: true },
         { page: 'growth-wa-links',     label: 'Links WhatsApp',        breadcrumb: 'WhatsApp > Links WhatsApp' },
         { page: 'short-links',         label: 'Encurtador de Links',   breadcrumb: 'WhatsApp > Encurtador de Links' },

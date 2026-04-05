@@ -59,7 +59,7 @@
     return _rpc('wa_birthday_template_save', {
       p_id: data.id || null,
       p_day_offset: data.day_offset || 30,
-      p_send_hour: data.send_hour || 10,
+      p_send_hour: data.send_hour || 13,
       p_label: data.label || 'Nova mensagem',
       p_content: data.content || '',
       p_media_url: data.media_url || null,

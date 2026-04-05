@@ -167,9 +167,10 @@
       return
     }
 
-    // Salva a página atual antes de destruir os elementos do DOM.
-    // Fallback: localStorage (sobrevive a F5/reload).
-    const previousPage = document.querySelector('.nav-subitem.active')?.dataset.page
+    // Prioridade: ?page= na URL > subitem ativo > localStorage > null
+    const urlPage = new URLSearchParams(window.location.search).get('page')
+    const previousPage = urlPage
+      || document.querySelector('.nav-subitem.active')?.dataset.page
       || (() => { try { return localStorage.getItem('clinicai_last_page') } catch { return null } })()
       || null
 
@@ -458,8 +459,11 @@
     if (pageId === 'settings-anamnese' && typeof window.initAnamneseAdmin === 'function') {
       window.initAnamneseAdmin()
     }
+    if (pageId === 'wa-disparos' && typeof window.AutomationsUI?.init === 'function') {
+      window.AutomationsUI.init('disparos-root', 'editor')
+    }
     if (pageId === 'settings-automation' && typeof window.AutomationsUI?.init === 'function') {
-      window.AutomationsUI.init()
+      window.AutomationsUI.init('automations-root', 'rules')
     }
     if (pageId === 'settings-templates' && typeof window.TemplatesEditorUI?.init === 'function') {
       window.TemplatesEditorUI.init()

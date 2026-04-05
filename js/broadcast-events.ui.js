@@ -210,9 +210,15 @@
     // Media position radios
     document.querySelectorAll('input[name="bcMediaPos"]').forEach(function(radio) {
       radio.addEventListener('change', function() {
+        window.BroadcastUI.saveFormFields()
         var curForm = window.BroadcastUI.getState().form
         curForm.media_position = radio.value
         window.BroadcastUI.setState('broadcastForm', curForm)
+        var scrollPanel = document.querySelector('.bc-slide-body') || document.querySelector('.bc-center')
+        var scrollPos = scrollPanel ? scrollPanel.scrollTop : 0
+        _render()
+        var restored = document.querySelector('.bc-slide-body') || document.querySelector('.bc-center')
+        if (restored) restored.scrollTop = scrollPos
       })
     })
 
@@ -360,6 +366,7 @@
           var matches = allLeads.filter(function(l) {
             var lName = l.name || l.nome || ''
             if (!lName || selectedIds.indexOf(l.id) !== -1) return false
+            if (l.deleted_at || (l.phone && l.phone.indexOf('_MERGED') !== -1)) return false
             return lName.toLowerCase().indexOf(q) !== -1
           }).slice(0, 8)
 
@@ -397,7 +404,13 @@
         window.BroadcastUI.setState('broadcastForm', curForm)
         searchInput.value = ''
         dropdown.style.display = 'none'
+        var scrollPanel = document.querySelector('.bc-slide-body') || document.querySelector('.bc-center')
+        var scrollPos = scrollPanel ? scrollPanel.scrollTop : 0
         _render()
+        if (scrollPanel) {
+          var restored = document.querySelector('.bc-slide-body') || document.querySelector('.bc-center')
+          if (restored) restored.scrollTop = scrollPos
+        }
       })
     }
 
@@ -409,7 +422,11 @@
         var curForm = window.BroadcastUI.getState().form
         curForm.selected_leads = curForm.selected_leads.filter(function(l) { return l.id !== id })
         window.BroadcastUI.setState('broadcastForm', curForm)
+        var scrollPanel = document.querySelector('.bc-slide-body') || document.querySelector('.bc-center')
+        var scrollPos = scrollPanel ? scrollPanel.scrollTop : 0
         _render()
+        var restored = document.querySelector('.bc-slide-body') || document.querySelector('.bc-center')
+        if (restored) restored.scrollTop = scrollPos
       })
     })
 
@@ -503,12 +520,13 @@
             _showToast(editId ? 'Disparo atualizado!' : 'Disparo criado! ' + (result.data?.total_targets || 0) + ' destinatarios')
           }
 
-          // Return to dashboard (not detail)
-          window.BroadcastUI.setState('broadcastSelected', null)
-          window.BroadcastUI.setState('broadcastMode', 'dashboard')
-          window.BroadcastUI.setState('bcPanelTab', hasSchedule ? 'scheduled' : 'history')
+          // Show confirmation screen to review before sending
+          var sentId = editId || result.data?.id || null
+          window.BroadcastUI.setState('broadcastSelected', sentId)
+          window.BroadcastUI.setState('broadcastMode', 'detail')
+          window.BroadcastUI.setState('bcPanelTab', 'editor')
           window.BroadcastUI.setState('_editingBroadcastId', null)
-          window.BroadcastUI.setState('bcConfirmSend', false)
+          window.BroadcastUI.setState('bcConfirmSend', true)
           await window.BroadcastUI.loadBroadcasts()
         } else {
           _showToast(result?.error || 'Erro ao salvar disparo', 'error')
@@ -677,8 +695,9 @@
             msg += ' (~' + est + 'min para concluir)'
           }
           _showToast(msg)
-          window.BroadcastUI.setState('broadcastSelected', null)
-          window.BroadcastUI.setState('broadcastMode', 'dashboard')
+          window.BroadcastUI.setState('broadcastSelected', id)
+          window.BroadcastUI.setState('broadcastMode', 'detail')
+          window.BroadcastUI.setState('bcPanelTab', 'editor')
           window.BroadcastUI.setState('bcConfirmSend', false)
           await window.BroadcastUI.loadBroadcasts()
         } else {

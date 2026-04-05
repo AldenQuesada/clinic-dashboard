@@ -31,7 +31,7 @@ body{background:#0A0A0A;color:#F5F5F5;font-family:-apple-system,'SF Pro Display'
 
   if (!code) { showError(); return; }
 
-  fetch(SB_URL + '/rest/v1/rpc/short_link_resolve', {
+  fetch(SB_URL + '/rest/v1/rpc/wa_birthday_track_link_open', {
     method: 'POST',
     headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
     body: JSON.stringify({ p_code: code })
