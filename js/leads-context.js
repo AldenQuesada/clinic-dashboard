@@ -848,9 +848,21 @@
 
       // Atualizar Supabase (batch via RPC)
       if (sb) {
+        console.log('[LeadsContext] bulk phase change:', ids.length, '→', newPhase)
         sb.rpc('leads_bulk_change_phase', { p_ids: ids, p_phase: newPhase }).then(function(res) {
-          if (res.error) console.error('[LeadsContext] bulk phase change falhou:', res.error.message)
-        }).catch(function(e) { console.error('[LeadsContext] bulk phase:', e) })
+          if (res.error) {
+            console.error('[LeadsContext] bulk FALHOU:', res.error.message)
+            alert('Erro ao salvar no servidor: ' + res.error.message + '\nOs leads foram movidos localmente mas nao no servidor.')
+          } else {
+            console.log('[LeadsContext] bulk OK:', res.data)
+          }
+        }).catch(function(e) {
+          console.error('[LeadsContext] bulk exception:', e)
+          alert('Erro de conexao ao salvar. Tente novamente.')
+        })
+      } else {
+        console.error('[LeadsContext] Supabase nao disponivel!')
+        alert('Supabase nao conectado. Os leads foram movidos apenas localmente.')
       }
 
       _selectedIds = new Set()
