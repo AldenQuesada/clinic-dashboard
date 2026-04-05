@@ -1,3 +1,4 @@
+/* v20260405e */
 /**
  * ClinicAI — Navigation Configuration
  *
