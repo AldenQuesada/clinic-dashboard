@@ -163,8 +163,19 @@
     if (!repo || !appt?.id) return
 
     const enriched = _enrichForSupabase(appt)
-    repo.upsert(enriched).catch(err => {
-      console.warn('[AppointmentsService] syncOne falhou silenciosamente:', err)
+    repo.upsert(enriched).then(function(result) {
+      if (result && !result.ok) {
+        console.error('[AppointmentsService] syncOne ERRO:', result.error, '| appt:', appt.id)
+        // Retry uma vez apos 3s
+        setTimeout(function() {
+          repo.upsert(enriched).then(function(r2) {
+            if (r2 && !r2.ok) console.error('[AppointmentsService] syncOne retry FALHOU:', r2.error)
+            else console.log('[AppointmentsService] syncOne retry OK:', appt.id)
+          }).catch(function(e) { console.error('[AppointmentsService] syncOne retry exception:', e) })
+        }, 3000)
+      }
+    }).catch(function(err) {
+      console.error('[AppointmentsService] syncOne exception:', err.message || err, '| appt:', appt.id)
     })
   }
 
