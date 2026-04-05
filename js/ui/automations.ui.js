@@ -120,7 +120,8 @@
       _activeTab = 'broadcasts'
       if (window.BroadcastUI) {
         window.BroadcastUI.setState('bcPageMode', 'disparos')
-        window.BroadcastUI.setState('bcPanelTab', 'editor')
+        window.BroadcastUI.setState('broadcastMode', 'dashboard')
+        window.BroadcastUI.setState('bcPanelTab', 'history')
       }
     } else if (_pageMode === 'rules') {
       _activeTab = 'rules'
