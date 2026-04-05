@@ -1,0 +1,53 @@
+/* ============================================================
+   Short Links — Encurtador de Links
+   ============================================================ */
+.sl-module { padding: 20px; max-width: 800px; }
+.sl-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.sl-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.sl-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+.sl-add-btn { display: flex; align-items: center; gap: 5px; padding: 8px 16px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all .15s; }
+.sl-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Form */
+.sl-form { padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; }
+.sl-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.sl-form-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.sl-form-field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+.sl-form-code { max-width: 200px; }
+.sl-code-input { display: flex; align-items: center; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.sl-code-prefix { font-size: 11px; color: var(--text-muted); padding: 0 2px 0 8px; white-space: nowrap; }
+.sl-code-input .sl-input { border: none; padding-left: 2px; }
+.sl-input { padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: var(--bg-primary); color: var(--text-primary); }
+.sl-input:focus { border-color: var(--accent); outline: none; }
+.sl-form-actions { display: flex; gap: 8px; margin-top: 10px; }
+.sl-btn-save { display: flex; align-items: center; gap: 5px; padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.sl-btn-save:hover { opacity: .9; }
+.sl-btn-cancel { padding: 8px 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+
+/* Stats */
+.sl-stats { display: flex; gap: 12px; margin-bottom: 16px; }
+.sl-stat { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; text-align: center; min-width: 100px; }
+.sl-stat-val { display: block; font-size: 22px; font-weight: 800; color: var(--accent); }
+.sl-stat-lbl { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
+
+/* List */
+.sl-list { display: flex; flex-direction: column; gap: 6px; }
+.sl-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; gap: 16px; transition: border-color .15s; }
+.sl-item:hover { border-color: var(--accent); }
+.sl-item-left { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.sl-item-short { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--accent); cursor: pointer; }
+.sl-item-short:hover span { text-decoration: underline; }
+.sl-item-dest { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sl-item-title { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+.sl-item-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.sl-item-clicks { display: flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.sl-item-clicks span { min-width: 20px; }
+.sl-item-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; transition: all .15s; }
+.sl-copy-btn:hover { color: var(--accent); background: rgba(201,169,110,.08); }
+.sl-del-btn:hover { color: #EF4444; background: #FEF2F2; }
+.sl-empty { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
+
+@media (max-width: 640px) {
+  .sl-form-row { flex-direction: column; }
+  .sl-form-code { max-width: 100%; }
+}
