@@ -233,6 +233,24 @@
 .bday-rules-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--accent); transition: all .15s; }
 .bday-rules-link:hover { border-color: var(--accent); }
 
+/* ── Short links panel ─────────────────────────────────────── */
+.bday-links-panel { margin-top: 24px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.bday-links-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.bday-links-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.bday-link-form { padding: 12px; background: var(--bg-secondary); border-radius: 8px; margin-bottom: 12px; }
+.bday-links-list { display: flex; flex-direction: column; gap: 4px; }
+.bday-link-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-secondary); border-radius: 8px; gap: 12px; }
+.bday-link-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.bday-link-short { font-size: 12px; font-weight: 600; color: var(--accent); cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bday-link-short:hover { text-decoration: underline; }
+.bday-link-dest { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bday-link-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.bday-link-title-tag { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--bg-primary); padding: 2px 8px; border-radius: 4px; }
+.bday-link-clicks { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; font-weight: 600; }
+.bday-link-copy, .bday-link-del { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; transition: color .15s; }
+.bday-link-copy:hover { color: var(--accent); }
+.bday-link-del:hover { color: #EF4444; }
+
 /* ── Empty state ──────────────────────────────────────────── */
 .bday-empty { text-align: center; padding: 30px; color: var(--text-muted); font-size: 12px; }
 

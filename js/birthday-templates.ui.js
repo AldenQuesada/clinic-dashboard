@@ -91,14 +91,83 @@
 
     // Variables hint
     html += '<div class="bday-tmpl-vars">'
-    html += '<span class="bday-var-title">Variaveis:</span>'
+    html += '<span class="bday-var-title">Vari\u00e1veis:</span>'
     html += '<code>[nome]</code> Primeiro nome '
     html += '<code>[queixas]</code> Queixas do lead '
     html += '<code>[idade]</code> Idade que faz '
-    html += '<code>[orcamento]</code> Orcamento aberto'
+    html += '<code>[orcamento]</code> Or\u00e7amento aberto'
     html += '</div>'
 
+    // Short links panel
+    html += _renderShortLinks()
+
     return html
+  }
+
+  // ── Short links panel ──────────────────────────────────────
+  var _shortLinks = []
+  var _shortLoaded = false
+
+  function _renderShortLinks() {
+    var baseUrl = window.location.origin + '/r.html?c='
+    var html = '<div class="bday-links-panel">'
+    html += '<div class="bday-links-header">'
+    html += '<span class="bday-links-title">' + _ico('link', 16) + ' Links encurtados</span>'
+    html += '<button class="bday-add-tmpl" id="bdayAddLink">' + _ico('plus-circle', 14) + ' Novo link</button>'
+    html += '</div>'
+
+    // New link form
+    html += '<div class="bday-link-form" id="bdayLinkForm" style="display:none">'
+    html += '<div class="bday-form-row">'
+    html += '<div class="bday-form-field" style="flex:1"><label>C\u00f3digo</label><input class="am-input" id="bdayLinkCode" placeholder="ex: niver, promo, oferta"></div>'
+    html += '<div class="bday-form-field" style="flex:2"><label>URL de destino</label><input class="am-input" id="bdayLinkUrl" placeholder="https://..."></div>'
+    html += '<div class="bday-form-field" style="flex:1"><label>T\u00edtulo</label><input class="am-input" id="bdayLinkTitle" placeholder="Descri\u00e7\u00e3o"></div>'
+    html += '</div>'
+    html += '<div style="display:flex;gap:6px;margin-top:8px">'
+    html += '<button class="am-btn-primary" id="bdayLinkSave" style="font-size:12px;padding:6px 14px">Criar</button>'
+    html += '<button class="am-btn-secondary" id="bdayLinkCancel" style="font-size:12px;padding:6px 14px">Cancelar</button>'
+    html += '</div></div>'
+
+    // Links list
+    html += '<div class="bday-links-list" id="bdayLinksList">'
+    if (!_shortLoaded) {
+      html += '<div class="bday-empty" style="padding:12px">Carregando...</div>'
+    } else if (_shortLinks.length === 0) {
+      html += '<div class="bday-empty" style="padding:12px">Nenhum link criado</div>'
+    } else {
+      _shortLinks.forEach(function (l) {
+        var shortUrl = baseUrl + l.code
+        html += '<div class="bday-link-item">'
+        html += '<div class="bday-link-info">'
+        html += '<span class="bday-link-short" title="Clique para copiar" data-copy="' + _esc(shortUrl) + '">' + _ico('link', 12) + ' ' + _esc(shortUrl) + '</span>'
+        html += '<span class="bday-link-dest">' + _ico('arrow-right', 10) + ' ' + _esc(l.url).substring(0, 60) + (l.url.length > 60 ? '...' : '') + '</span>'
+        html += '</div>'
+        html += '<div class="bday-link-meta">'
+        if (l.title) html += '<span class="bday-link-title-tag">' + _esc(l.title) + '</span>'
+        html += '<span class="bday-link-clicks">' + _ico('bar-chart-2', 11) + ' ' + (l.clicks || 0) + ' clicks</span>'
+        html += '<button class="bday-link-copy" data-copy="' + _esc(shortUrl) + '" title="Copiar">' + _ico('copy', 12) + '</button>'
+        html += '<button class="bday-link-del" data-del-code="' + _esc(l.code) + '" title="Excluir">' + _ico('trash-2', 12) + '</button>'
+        html += '</div>'
+        html += '</div>'
+      })
+    }
+    html += '</div></div>'
+    return html
+  }
+
+  async function loadShortLinks() {
+    var url = (window.ClinicEnv?.SUPABASE_URL || '') + '/rest/v1/rpc/short_link_list'
+    var key = window.ClinicEnv?.SUPABASE_KEY || ''
+    try {
+      var r = await fetch(url, {
+        method: 'POST',
+        headers: { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: '{}'
+      })
+      var data = await r.json()
+      _shortLinks = Array.isArray(data) ? data : []
+    } catch (e) { _shortLinks = [] }
+    _shortLoaded = true
   }
 
   // ── Timeline node ──────────────────────────────────────────
@@ -239,5 +308,6 @@
     getEditId: getEditId,
     setEditId: setEditId,
     waFormat: _waFormat,
+    loadShortLinks: loadShortLinks,
   })
 })()

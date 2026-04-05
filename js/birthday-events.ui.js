@@ -24,6 +24,7 @@
     _attachTemplateForm()
     _attachFormattingToolbar()
     _attachLivePreview()
+    _attachShortLinks()
   }
 
   // ── Tab navigation ─────────────────────────────────────────
@@ -311,6 +312,81 @@
     textarea.selectionStart = textarea.selectionEnd = start + text.length
     textarea.focus()
     textarea.dispatchEvent(new Event('input'))
+  }
+
+  // ── Short links ────────────────────────────────────────────
+  function _attachShortLinks() {
+    var addBtn = document.getElementById('bdayAddLink')
+    var form = document.getElementById('bdayLinkForm')
+    if (addBtn && form) {
+      addBtn.addEventListener('click', function () {
+        form.style.display = form.style.display === 'none' ? 'block' : 'none'
+      })
+    }
+
+    var cancelBtn = document.getElementById('bdayLinkCancel')
+    if (cancelBtn && form) {
+      cancelBtn.addEventListener('click', function () { form.style.display = 'none' })
+    }
+
+    var saveBtn = document.getElementById('bdayLinkSave')
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async function () {
+        var code = (document.getElementById('bdayLinkCode')?.value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
+        var url = (document.getElementById('bdayLinkUrl')?.value || '').trim()
+        var title = (document.getElementById('bdayLinkTitle')?.value || '').trim()
+        if (!code || !url) { _toast('Preencha c\u00f3digo e URL', 'error'); return }
+        if (!url.startsWith('http')) { _toast('URL deve come\u00e7ar com http', 'error'); return }
+
+        saveBtn.disabled = true
+        saveBtn.textContent = 'Criando...'
+        var sbUrl = (window.ClinicEnv?.SUPABASE_URL || '') + '/rest/v1/rpc/short_link_create'
+        var key = window.ClinicEnv?.SUPABASE_KEY || ''
+        await fetch(sbUrl, {
+          method: 'POST',
+          headers: { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_code: code, p_url: url, p_title: title || null })
+        })
+        await window.BirthdayTemplatesUI.loadShortLinks()
+        window.BirthdayUI.render()
+        _toast('Link criado: /r.html?c=' + code, 'success')
+      })
+    }
+
+    // Copy buttons
+    document.querySelectorAll('[data-copy]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        navigator.clipboard.writeText(btn.dataset.copy).then(function () {
+          _toast('Link copiado!', 'success')
+        }).catch(function () {
+          // Fallback
+          var input = document.createElement('input')
+          input.value = btn.dataset.copy
+          document.body.appendChild(input)
+          input.select()
+          document.execCommand('copy')
+          document.body.removeChild(input)
+          _toast('Link copiado!', 'success')
+        })
+      })
+    })
+
+    // Delete buttons
+    document.querySelectorAll('[data-del-code]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        if (!confirm('Excluir este link?')) return
+        var sbUrl = (window.ClinicEnv?.SUPABASE_URL || '') + '/rest/v1/rpc/short_link_delete'
+        var key = window.ClinicEnv?.SUPABASE_KEY || ''
+        await fetch(sbUrl, {
+          method: 'POST',
+          headers: { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_code: btn.dataset.delCode })
+        })
+        await window.BirthdayTemplatesUI.loadShortLinks()
+        window.BirthdayUI.render()
+        _toast('Link exclu\u00eddo', 'success')
+      })
+    })
   }
 
   // ── Toast helper ───────────────────────────────────────────

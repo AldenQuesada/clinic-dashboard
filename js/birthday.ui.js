@@ -373,6 +373,9 @@
     _loading = true
     render()
     await window.BirthdayService.loadAll()
+    if (window.BirthdayTemplatesUI && window.BirthdayTemplatesUI.loadShortLinks) {
+      await window.BirthdayTemplatesUI.loadShortLinks()
+    }
     _loading = false
     render()
   }
