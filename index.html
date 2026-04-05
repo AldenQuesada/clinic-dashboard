@@ -4298,135 +4298,135 @@
 
   <!-- Shared Utilities — deve ser o PRIMEIRO script JS do projeto.
        setText · formatCurrency · formatDate vivem aqui. Nunca redefina em outros arquivos. -->
-  <script src="js/utils.js" defer></script>
+  <script src="js/utils.js?v=20260405e" defer></script>
 
   <!-- Supabase Sync -->
-  <script src="js/config/env.js" defer></script>
-  <script src="js/supabase.js" defer></script>
-  <script src="js/tags-data.js" defer></script>
-  <script src="js/tags-engine.js" defer></script>
+  <script src="js/config/env.js?v=20260405e" defer></script>
+  <script src="js/supabase.js?v=20260405e" defer></script>
+  <script src="js/tags-data.js?v=20260405e" defer></script>
+  <script src="js/tags-engine.js?v=20260405e" defer></script>
 
   <!-- Nav Config → Sidebar (devem carregar antes de app.js e auth.js)
        nav-config.js  — fonte única da verdade para o menu (seções, ícones, roles, plans)
        sidebar.js     — renderiza o nav, gerencia navegação e permissões por papel/plano -->
-  <script src="js/nav-config.js" defer></script>
-  <script src="js/sidebar.js" defer></script>
-  <script src="js/multi-tab-launcher.js" defer></script>
+  <script src="js/nav-config.js?v=20260405e" defer></script>
+  <script src="js/sidebar.js?v=20260405e" defer></script>
+  <script src="js/multi-tab-launcher.js?v=20260405e" defer></script>
 
   <!-- Auth deve carregar antes de app.js (app.js chama requireAuth) -->
-  <script src="js/auth.js" defer></script>
+  <script src="js/auth.js?v=20260405e" defer></script>
 
   <!-- Services — lógica de negócio separada da UI (carregam após auth) -->
-  <script src="js/services/permissions.service.js" defer></script>
+  <script src="js/services/permissions.service.js?v=20260405e" defer></script>
 
   <!-- Repositories — acesso a dados (carregam antes dos services que os usam) -->
-  <script src="js/repositories/agenda-visibility.repository.js" defer></script>
+  <script src="js/repositories/agenda-visibility.repository.js?v=20260405e" defer></script>
 
   <!-- Services: Agenda Access (depende do repository acima) -->
-  <script src="js/services/agenda-access.service.js" defer></script>
+  <script src="js/services/agenda-access.service.js?v=20260405e" defer></script>
 
   <!-- Repositories: Notifications -->
-  <script src="js/repositories/notifications.repository.js" defer></script>
+  <script src="js/repositories/notifications.repository.js?v=20260405e" defer></script>
 
   <!-- Services: Notifications (depende do repository acima) -->
-  <script src="js/services/notifications.service.js" defer></script>
+  <script src="js/services/notifications.service.js?v=20260405e" defer></script>
 
   <!-- UI Components (depende dos services acima) -->
-  <script src="js/ui/agenda-pro-filter.ui.js" defer></script>
-  <script src="js/ui/agenda-visibility-manager.ui.js" defer></script>
-  <script src="js/ui/notifications-panel.ui.js" defer></script>
+  <script src="js/ui/agenda-pro-filter.ui.js?v=20260405e" defer></script>
+  <script src="js/ui/agenda-visibility-manager.ui.js?v=20260405e" defer></script>
+  <script src="js/ui/notifications-panel.ui.js?v=20260405e" defer></script>
 
   <!-- Export (lazy CDN: jsPDF + SheetJS — só carrega quando o usuário clica) -->
-  <script src="js/services/export.service.js" defer></script>
-  <script src="js/ui/export-button.ui.js" defer></script>
+  <script src="js/services/export.service.js?v=20260405e" defer></script>
+  <script src="js/ui/export-button.ui.js?v=20260405e" defer></script>
 
   <!-- Clinic Settings (repository + service — lê/salva da tabela clinics) -->
-  <script src="js/repositories/clinic-settings.repository.js" defer></script>
-  <script src="js/services/clinic-settings.service.js" defer></script>
-  <script src="js/services/clinic-context.service.js" defer></script>
+  <script src="js/repositories/clinic-settings.repository.js?v=20260405e" defer></script>
+  <script src="js/services/clinic-settings.service.js?v=20260405e" defer></script>
+  <script src="js/services/clinic-context.service.js?v=20260405e" defer></script>
 
   <!-- Financeiro (repository + service — migra localStorage → Supabase) -->
-  <script src="js/repositories/financeiro.repository.js" defer></script>
-  <script src="js/services/financeiro.service.js" defer></script>
+  <script src="js/repositories/financeiro.repository.js?v=20260405e" defer></script>
+  <script src="js/services/financeiro.service.js?v=20260405e" defer></script>
 
   <!-- Dashboard Analytics — Supabase KPIs (Sprint 6-C) -->
-  <script src="js/repositories/dashboard.repository.js" defer></script>
-  <script src="js/services/dashboard.service.js" defer></script>
+  <script src="js/repositories/dashboard.repository.js?v=20260405e" defer></script>
+  <script src="js/services/dashboard.service.js?v=20260405e" defer></script>
 
   <!-- Leads — Supabase sync (Sprint 6-B) -->
-  <script src="js/repositories/leads.repository.js" defer></script>
-  <script src="js/services/leads.service.js" defer></script>
+  <script src="js/repositories/leads.repository.js?v=20260405e" defer></script>
+  <script src="js/services/leads.service.js?v=20260405e" defer></script>
 
   <!-- Agendamentos — Supabase sync (Sprint 6-A) -->
-  <script src="js/repositories/appointments.repository.js" defer></script>
-  <script src="js/services/appointments.service.js" defer></script>
+  <script src="js/repositories/appointments.repository.js?v=20260405e" defer></script>
+  <script src="js/services/appointments.service.js?v=20260405e" defer></script>
 
   <!-- Prontuário Eletrônico (Sprint 5) -->
-  <script src="js/repositories/medical-records.repository.js" defer></script>
-  <script src="js/services/medical-records.service.js" defer></script>
-  <script src="js/ui/medical-record-editor.ui.js" defer></script>
+  <script src="js/repositories/medical-records.repository.js?v=20260405e" defer></script>
+  <script src="js/services/medical-records.service.js?v=20260405e" defer></script>
+  <script src="js/ui/medical-record-editor.ui.js?v=20260405e" defer></script>
 
   <!-- Anamnese → Prontuário (Sprint 6-D) -->
-  <script src="js/repositories/anamnesis-prontuario.repository.js" defer></script>
-  <script src="js/services/anamnesis-prontuario.service.js" defer></script>
+  <script src="js/repositories/anamnesis-prontuario.repository.js?v=20260405e" defer></script>
+  <script src="js/services/anamnesis-prontuario.service.js?v=20260405e" defer></script>
 
   <!-- Patients Core — Supabase sync (Sprint 7) -->
-  <script src="js/repositories/patients.repository.js" defer></script>
-  <script src="js/services/patients.service.js" defer></script>
+  <script src="js/repositories/patients.repository.js?v=20260405e" defer></script>
+  <script src="js/services/patients.service.js?v=20260405e" defer></script>
 
   <!-- SDR Module — Sprint 8 -->
-  <script src="js/repositories/sdr.repository.js" defer></script>
-  <script src="js/services/sdr.service.js" defer></script>
+  <script src="js/repositories/sdr.repository.js?v=20260405e" defer></script>
+  <script src="js/services/sdr.service.js?v=20260405e" defer></script>
 
   <!-- Rules Engine — Sprint 9 -->
-  <script src="js/repositories/rules.repository.js" defer></script>
-  <script src="js/services/rules.service.js" defer></script>
-  <script src="js/ui/automations.ui.js" defer></script>
-  <script src="js/repositories/birthday.repository.js" defer></script>
-  <script src="js/services/birthday.service.js" defer></script>
-  <script src="js/birthday.ui.js" defer></script>
-  <script src="js/birthday-templates.ui.js" defer></script>
-  <script src="js/birthday-events.ui.js" defer></script>
-  <script src="js/short-links.ui.js" defer></script>
-  <script src="js/page-builder/pb-core.js" defer></script>
-  <script src="js/page-builder/pb-editor.js" defer></script>
-  <script src="js/broadcast.ui.js" defer></script>
-  <script src="js/broadcast-dashboard.ui.js" defer></script>
-  <script src="js/broadcast-events.ui.js" defer></script>
-  <script src="js/repositories/templates.repository.js" defer></script>
-  <script src="js/ui/templates-editor.ui.js" defer></script>
-  <script src="js/repositories/inbox.repository.js" defer></script>
-  <script src="js/services/inbox.service.js" defer></script>
-  <script src="js/repositories/broadcast.repository.js" defer></script>
-  <script src="js/services/broadcast.service.js" defer></script>
-  <script src="js/ui/inbox.ui.js" defer></script>
-  <script src="js/ui/analytics.ui.js" defer></script>
+  <script src="js/repositories/rules.repository.js?v=20260405e" defer></script>
+  <script src="js/services/rules.service.js?v=20260405e" defer></script>
+  <script src="js/ui/automations.ui.js?v=20260405e" defer></script>
+  <script src="js/repositories/birthday.repository.js?v=20260405e" defer></script>
+  <script src="js/services/birthday.service.js?v=20260405e" defer></script>
+  <script src="js/birthday.ui.js?v=20260405e" defer></script>
+  <script src="js/birthday-templates.ui.js?v=20260405e" defer></script>
+  <script src="js/birthday-events.ui.js?v=20260405e" defer></script>
+  <script src="js/short-links.ui.js?v=20260405e" defer></script>
+  <script src="js/page-builder/pb-core.js?v=20260405e" defer></script>
+  <script src="js/page-builder/pb-editor.js?v=20260405e" defer></script>
+  <script src="js/broadcast.ui.js?v=20260405e" defer></script>
+  <script src="js/broadcast-dashboard.ui.js?v=20260405e" defer></script>
+  <script src="js/broadcast-events.ui.js?v=20260405e" defer></script>
+  <script src="js/repositories/templates.repository.js?v=20260405e" defer></script>
+  <script src="js/ui/templates-editor.ui.js?v=20260405e" defer></script>
+  <script src="js/repositories/inbox.repository.js?v=20260405e" defer></script>
+  <script src="js/services/inbox.service.js?v=20260405e" defer></script>
+  <script src="js/repositories/broadcast.repository.js?v=20260405e" defer></script>
+  <script src="js/services/broadcast.service.js?v=20260405e" defer></script>
+  <script src="js/ui/inbox.ui.js?v=20260405e" defer></script>
+  <script src="js/ui/analytics.ui.js?v=20260405e" defer></script>
 
   <!-- Budgets — Sprint 11 -->
-  <script src="js/repositories/budgets.repository.js" defer></script>
+  <script src="js/repositories/budgets.repository.js?v=20260405e" defer></script>
 
   <!-- Repositórios adicionais — Sprint 12 (refactor camada de dados) -->
-  <script src="js/repositories/tags.repository.js" defer></script>
-  <script src="js/repositories/anamnesis.repository.js" defer></script>
-  <script src="js/repositories/tasks.repository.js" defer></script>
-  <script src="js/repositories/users.repository.js" defer></script>
+  <script src="js/repositories/tags.repository.js?v=20260405e" defer></script>
+  <script src="js/repositories/anamnesis.repository.js?v=20260405e" defer></script>
+  <script src="js/repositories/tasks.repository.js?v=20260405e" defer></script>
+  <script src="js/repositories/users.repository.js?v=20260405e" defer></script>
   <script>document.write('<script src="js/repositories/quiz.repository.js?v='+((window.ClinicEnv||{}).ASSET_VERSION||'0')+'" defer><\/script>')</script>
 
   <!-- Mestres de dados clínicos — Supabase (rooms, technologies, professionals, injetaveis, procedimentos) -->
-  <script src="js/repositories/rooms.repository.js" defer></script>
-  <script src="js/repositories/technologies.repository.js" defer></script>
-  <script src="js/repositories/professionals.repository.js" defer></script>
-  <script src="js/repositories/injetaveis.repository.js" defer></script>
-  <script src="js/repositories/procedimentos.repository.js" defer></script>
-  <script src="js/services/local-migration.service.js" defer></script>
-  <script src="js/services/sheets-import.service.js" defer></script>
+  <script src="js/repositories/rooms.repository.js?v=20260405e" defer></script>
+  <script src="js/repositories/technologies.repository.js?v=20260405e" defer></script>
+  <script src="js/repositories/professionals.repository.js?v=20260405e" defer></script>
+  <script src="js/repositories/injetaveis.repository.js?v=20260405e" defer></script>
+  <script src="js/repositories/procedimentos.repository.js?v=20260405e" defer></script>
+  <script src="js/services/local-migration.service.js?v=20260405e" defer></script>
+  <script src="js/services/sheets-import.service.js?v=20260405e" defer></script>
 
-  <script src="js/services/budgets.service.js" defer></script>
+  <script src="js/services/budgets.service.js?v=20260405e" defer></script>
   <script src="js/components/lead-card.js?v=20260405e" defer></script>
-  <script src="js/components/tag-popover.js" defer></script>
-  <script src="js/components/interaction-panel.js" defer></script>
-  <script src="js/components/kanban-board.js" defer></script>
-  <script src="js/captacao-kanbans.js" defer></script>
+  <script src="js/components/tag-popover.js?v=20260405e" defer></script>
+  <script src="js/components/interaction-panel.js?v=20260405e" defer></script>
+  <script src="js/components/kanban-board.js?v=20260405e" defer></script>
+  <script src="js/captacao-kanbans.js?v=20260405e" defer></script>
   <script src="js/leads-context.js?v=20260405e" defer></script>
   <script>
   // Quiz assets — cache-busting via ASSET_VERSION
@@ -4486,45 +4486,45 @@
   </script>
 
   <!-- Main JS -->
-  <script src="js/app.js" defer></script>
+  <script src="js/app.js?v=20260405e" defer></script>
   <!-- API Integration — domain modules load before residual api.js -->
-  <script src="js/dashboard.js" defer></script>
-  <script src="js/utils/leads-filter.js" defer></script>
+  <script src="js/dashboard.js?v=20260405e" defer></script>
+  <script src="js/utils/leads-filter.js?v=20260405e" defer></script>
   <script src="js/leads.js?v=20260405e" defer></script>
   <script src="js/components/lead-modal.js?v=20260405e" defer></script>
   <script src="js/components/leads-table.js?v=20260405e" defer></script>
-  <script src="js/components/temperature-popover.js" defer></script>
-  <script src="js/components/schedule-modal.js" defer></script>
-  <script src="js/patients.js" defer></script>
-  <script src="js/prontuario.js" defer></script>
-  <script src="js/team.js" defer></script>
-  <script src="js/clinic-settings.js" defer></script>
-  <script src="js/users-admin.js" defer></script>
-  <script src="js/professionals.js" defer></script>
+  <script src="js/components/temperature-popover.js?v=20260405e" defer></script>
+  <script src="js/components/schedule-modal.js?v=20260405e" defer></script>
+  <script src="js/patients.js?v=20260405e" defer></script>
+  <script src="js/prontuario.js?v=20260405e" defer></script>
+  <script src="js/team.js?v=20260405e" defer></script>
+  <script src="js/clinic-settings.js?v=20260405e" defer></script>
+  <script src="js/users-admin.js?v=20260405e" defer></script>
+  <script src="js/professionals.js?v=20260405e" defer></script>
   <!-- Módulos extraídos de api.js — devem carregar ANTES de api.js -->
-  <script src="js/rooms.js" defer></script>
-  <script src="js/technologies.js" defer></script>
-  <script src="js/inj-catalog.js" defer></script>
+  <script src="js/rooms.js?v=20260405e" defer></script>
+  <script src="js/technologies.js?v=20260405e" defer></script>
+  <script src="js/inj-catalog.js?v=20260405e" defer></script>
   <script src="js/api.js?v=20260405e" defer></script>
   <!-- Módulos extraídos de api.js — carregam DEPOIS de api.js, sobrescrevem globals -->
-  <script src="js/agenda-notifications.js" defer></script>
+  <script src="js/agenda-notifications.js?v=20260405e" defer></script>
   <script src="js/agenda-modal.js?v=20260405e" defer></script>
-  <script src="js/agenda-finalize.js" defer></script>
-  <script src="js/injetaveis.js" defer></script>
-  <script src="js/procedimentos.js" defer></script>
-  <script src="js/tasks.js" defer></script>
-  <script src="js/wa-links.js" defer></script>
-  <script src="js/financeiro.js" defer></script>
-  <script src="js/financeiro-reports.js" defer></script>
-  <script src="js/agenda-mensagens.js" defer></script>
-  <script src="js/agenda-validation.js" defer></script>
-  <script src="js/agenda-module.js" defer></script>
+  <script src="js/agenda-finalize.js?v=20260405e" defer></script>
+  <script src="js/injetaveis.js?v=20260405e" defer></script>
+  <script src="js/procedimentos.js?v=20260405e" defer></script>
+  <script src="js/tasks.js?v=20260405e" defer></script>
+  <script src="js/wa-links.js?v=20260405e" defer></script>
+  <script src="js/financeiro.js?v=20260405e" defer></script>
+  <script src="js/financeiro-reports.js?v=20260405e" defer></script>
+  <script src="js/agenda-mensagens.js?v=20260405e" defer></script>
+  <script src="js/agenda-validation.js?v=20260405e" defer></script>
+  <script src="js/agenda-module.js?v=20260405e" defer></script>
   <script src="js/agenda-smart.js?v=20260405e" defer></script>
   <script src="js/agenda-leads.js?v=20260405e" defer></script>
   <!-- Módulos extraídos de api.js — dependem de agenda-smart.js -->
-  <script src="js/agenda-overview.js" defer></script>
-  <script src="js/sdr.js" defer></script>
-  <script src="js/tags.js" defer></script>
+  <script src="js/agenda-overview.js?v=20260405e" defer></script>
+  <script src="js/sdr.js?v=20260405e" defer></script>
+  <script src="js/tags.js?v=20260405e" defer></script>
 
   <!-- Patient / Procedure Flyout -->
   <div id="aoFlyout" class="ao-flyout" style="display:none" onmouseleave="_aoHideFlyout&&_aoHideFlyout()">
@@ -5160,8 +5160,8 @@
   </script>
 
   <!-- ── Módulo: Anamnese Digital ── -->
-  <script src="js/lib/qrcode-local.js"></script>
-  <script type="module" src="js/anamnese.js"></script>
+  <script src="js/lib/qrcode-local.js?v=20260405e"></script>
+  <script type="module" src="js/anamnese.js?v=20260405e"></script>
 
 </body>
 </html>
