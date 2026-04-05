@@ -599,6 +599,14 @@
         : (nextStep === contactStep ? 'Contato' : 'LGPD')
       var stepMeta = {}
       if (stepQ && stepQ.id) stepMeta.question_id = stepQ.id
+      // Salvar queixas selecionadas no metadata quando avanca do step de queixas
+      var prevQ = _currentStep >= 0 ? _questions[_currentStep] : null
+      if (prevQ && prevQ.type === 'contact_queixas') {
+        var queixasSel = _getAns(_currentStep)
+        if (Array.isArray(queixasSel) && queixasSel.length > 0) {
+          stepMeta.queixas = queixasSel
+        }
+      }
       _trackEvent('step_view', { step_index: nextStep, step_label: stepLabel, metadata: stepMeta })
     }
 
