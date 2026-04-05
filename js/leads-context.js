@@ -776,10 +776,27 @@
         '<span style="font-size:12px;font-weight:600;color:#4338CA">' + count + ' selecionado' + (count > 1 ? 's' : '') + '</span>' +
         '<button id="' + P + 'BulkTemp" style="font-size:11px;padding:4px 10px;border:1px solid #C7D2FE;border-radius:6px;background:#fff;color:#374151;cursor:pointer">Temperatura</button>' +
         '<button id="' + P + 'BulkTag" style="font-size:11px;padding:4px 10px;border:1px solid #C7D2FE;border-radius:6px;background:#fff;color:#374151;cursor:pointer">Tag</button>' +
+        '<button id="' + P + 'BulkMovePaciente" style="font-size:11px;padding:4px 10px;border:1px solid #10B981;border-radius:6px;background:#ECFDF5;color:#059669;cursor:pointer;font-weight:600">Paciente</button>' +
+        '<button id="' + P + 'BulkMoveOrcamento" style="font-size:11px;padding:4px 10px;border:1px solid #F59E0B;border-radius:6px;background:#FFFBEB;color:#D97706;cursor:pointer;font-weight:600">Orcamento</button>' +
+        '<div style="width:1px;height:18px;background:#C7D2FE"></div>' +
         '<button id="' + P + 'BulkDel" style="font-size:11px;padding:4px 10px;border:1px solid #FCA5A5;border-radius:6px;background:#fff;color:#EF4444;cursor:pointer">Desativar</button>' +
         '<button id="' + P + 'BulkClear" style="font-size:11px;padding:4px 10px;border:none;background:none;color:#6B7280;cursor:pointer;text-decoration:underline">Limpar</button>'
 
       _$('BulkClear').onclick = function() { _selectedIds = new Set(); _updateCheckboxes(); _updateBulkBar(); var sa = _$('SelectAll'); if (sa) sa.checked = false }
+
+      // Mover pra Pacientes
+      _$('BulkMovePaciente').onclick = function() {
+        if (!confirm('Mover ' + count + ' leads para Pacientes?')) return
+        var ids = Array.from(_selectedIds)
+        _bulkChangePhase(ids, 'paciente')
+      }
+
+      // Mover pra Orcamentos
+      _$('BulkMoveOrcamento').onclick = function() {
+        if (!confirm('Mover ' + count + ' leads para Orcamentos?')) return
+        var ids = Array.from(_selectedIds)
+        _bulkChangePhase(ids, 'orcamento')
+      }
 
       _$('BulkTemp').onclick = function() {
         var temp = prompt('Temperatura para ' + count + ' leads (hot/warm/cold):')
@@ -812,6 +829,33 @@
         })
         _selectedIds = new Set(); _load()
       }
+    }
+
+    // ── Mover leads em massa (phase change) ─────────────────────
+
+    function _bulkChangePhase(ids, newPhase) {
+      var sb = window._sbShared
+      var leads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+      var moved = 0
+
+      // Atualizar localStorage
+      ids.forEach(function(id) {
+        var idx = leads.findIndex(function(l) { return l.id === id })
+        if (idx >= 0) { leads[idx].phase = newPhase; moved++ }
+      })
+      localStorage.setItem('clinicai_leads', JSON.stringify(leads))
+
+      // Atualizar Supabase (batch via RPC)
+      if (sb) {
+        sb.rpc('leads_bulk_change_phase', { p_ids: ids, p_phase: newPhase }).then(function(res) {
+          if (res.error) console.error('[LeadsContext] bulk phase change falhou:', res.error.message)
+        }).catch(function(e) { console.error('[LeadsContext] bulk phase:', e) })
+      }
+
+      _selectedIds = new Set()
+      _load()
+      var labels = { paciente: 'Pacientes', orcamento: 'Orcamentos', lead: 'Leads' }
+      if (window._showToast) _showToast(moved + ' leads movidos', 'Movidos para ' + (labels[newPhase] || newPhase), 'info')
     }
 
     // ── Export leads (CSV / PDF) ────────────────────────────────
