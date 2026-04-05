@@ -111,11 +111,22 @@
 
   // ── Init (chamado pelo sidebar ao navegar para a página) ─────
 
-  async function init(rootId, defaultTab) {
+  var _pageMode = null // null = all tabs | 'disparos' = broadcasts only | 'rules' = rules only
+
+  async function init(rootId, pageMode) {
     if (rootId) _rootId = rootId
-    if (defaultTab && window.BroadcastUI) {
-      window.BroadcastUI.setState('bcPageMode', defaultTab === 'rules' ? 'rules' : 'disparos')
-      window.BroadcastUI.setState('bcPanelTab', defaultTab === 'rules' ? 'rules' : 'editor')
+    _pageMode = pageMode || null
+    if (_pageMode === 'disparos') {
+      _activeTab = 'broadcasts'
+      if (window.BroadcastUI) {
+        window.BroadcastUI.setState('bcPageMode', 'disparos')
+        window.BroadcastUI.setState('bcPanelTab', 'editor')
+      }
+    } else if (_pageMode === 'rules') {
+      _activeTab = 'rules'
+      if (window.BroadcastUI) {
+        window.BroadcastUI.setState('bcPageMode', 'rules')
+      }
     }
     if (_loading) return
     _loading = true
@@ -742,13 +753,24 @@
       return
     }
 
+    // Disparos mode: render broadcast directly without tabs/header
+    if (_pageMode === 'disparos') {
+      root.innerHTML = `<div class="am-page">${window.BroadcastUI ? window.BroadcastUI.renderTab() : ''}</div>`
+      if (window.BroadcastEvents) window.BroadcastEvents.bind(root)
+      return
+    }
+
+    // Title based on mode
+    var pageTitle = _pageMode === 'rules' ? 'Fluxos e Regras' : 'Automacoes'
+    var pageSubtitle = _pageMode === 'rules' ? 'Regras, fluxos e configuracoes do WhatsApp e Lara' : 'Regras, fluxos e blindagens do sistema'
+
     root.innerHTML = `
       <div class="am-page">
 
         <div class="am-header">
           <div class="am-header-left">
-            <h1 class="am-title">Automacoes</h1>
-            <p class="am-subtitle">Regras, fluxos e blindagens do sistema</p>
+            <h1 class="am-title">${pageTitle}</h1>
+            <p class="am-subtitle">${pageSubtitle}</p>
           </div>
         </div>
 
@@ -765,9 +787,7 @@
           <button class="am-tab${_activeTab === 'flows' ? ' am-tab-active' : ''}" data-tab="flows">
             ${_feather('refreshCw', 14)} Fluxos
           </button>
-          <button class="am-tab${_activeTab === 'broadcasts' ? ' am-tab-active' : ''}" data-tab="broadcasts">
-            ${_feather('radio', 14)} Disparos
-          </button>
+          ${_pageMode !== 'rules' ? '<button class="am-tab' + (_activeTab === 'broadcasts' ? ' am-tab-active' : '') + '" data-tab="broadcasts">' + _feather('radio', 14) + ' Disparos</button>' : ''}
         </div>
 
         ${_activeTab === 'rules' ? _renderRulesTab() : _activeTab === 'whatsapp' ? _renderWhatsAppTab() : _activeTab === 'inbox' ? _renderInboxTab() : _activeTab === 'broadcasts' ? (window.BroadcastUI ? window.BroadcastUI.renderTab() : '') : _renderFlowsTab()}

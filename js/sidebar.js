@@ -460,7 +460,7 @@
       window.initAnamneseAdmin()
     }
     if (pageId === 'wa-disparos' && typeof window.AutomationsUI?.init === 'function') {
-      window.AutomationsUI.init('disparos-root', 'editor')
+      window.AutomationsUI.init('disparos-root', 'disparos')
     }
     if (pageId === 'settings-automation' && typeof window.AutomationsUI?.init === 'function') {
       window.AutomationsUI.init('automations-root', 'rules')
