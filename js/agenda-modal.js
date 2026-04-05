@@ -184,20 +184,27 @@
     warn.style.display = 'none'
     drop.innerHTML = matches.map(l => {
       const nome = l.nome || l.name || 'Paciente'
-      return `<div onclick="selectApptPatient('${l.id || ''}','${nome.replace(/'/g, "\\'")}')"
+      const phone = l.phone || l.whatsapp || ''
+      return `<div data-lead-id="${l.id || ''}" data-lead-name="${nome.replace(/"/g, '&quot;')}" data-lead-phone="${phone}"
         style="padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #F3F4F6"
         onmouseover="this.style.background='#F9FAFB'" onmouseout="this.style.background=''">
-        <div style="font-weight:600;color:#111">${nome}</div>
-        ${l.phone || l.whatsapp ? `<div style="font-size:11px;color:#9CA3AF">${l.phone || l.whatsapp || ''}</div>` : ''}
+        <div style="font-weight:600;color:#111">${nome.replace(/</g, '&lt;')}</div>
+        ${phone ? `<div style="font-size:11px;color:#9CA3AF">${phone.replace(/</g, '&lt;')}</div>` : ''}
       </div>`
     }).join('')
+    drop.addEventListener('click', function(e) {
+      var el = e.target.closest('[data-lead-id]')
+      if (el) selectApptPatient(el.dataset.leadId, el.dataset.leadName, el.dataset.leadPhone)
+    })
     drop.style.display = 'block'
   }
 
   // ── selectApptPatient ─────────────────────────────────────────
-  function selectApptPatient(id, nome) {
+  function selectApptPatient(id, nome, phone) {
     document.getElementById('appt_paciente_q').value = nome
     document.getElementById('appt_paciente_id').value = id
+    var phoneEl = document.getElementById('appt_paciente_phone')
+    if (phoneEl) phoneEl.value = phone || ''
     document.getElementById('apptPatientDrop').style.display = 'none'
     document.getElementById('appt_paciente_warn').style.display = 'none'
   }
@@ -220,6 +227,7 @@
     const apptData = {
       pacienteId:          (document.getElementById('appt_paciente_id') && document.getElementById('appt_paciente_id').value) || '',
       pacienteNome:        nome,
+      pacientePhone:       (document.getElementById('appt_paciente_phone') && document.getElementById('appt_paciente_phone').value) || '',
       profissionalIdx:     profIdx,
       profissionalNome:    profs[profIdx] && profs[profIdx].nome || '',
       salaIdx:             isNaN(salaIdx) ? null : salaIdx,
