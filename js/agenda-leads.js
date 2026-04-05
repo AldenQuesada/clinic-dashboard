@@ -62,55 +62,44 @@
     root.innerHTML =
       '<div style="display:flex;flex-direction:column;height:100%;padding:20px">' +
 
-      // Header (titulo + badge + exportar na mesma linha)
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">' +
-        '<div>' +
-          '<h1 style="font-size:20px;font-weight:700;color:#111;margin:0">Agendados</h1>' +
-          '<p style="font-size:13px;color:#6B7280;margin:4px 0 0">Leads com consulta agendada ou reagendada</p>' +
-        '</div>' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<div id="' + p + 'CountBadge" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">' +
-            '<span id="' + p + 'Stat_total" style="font-size:18px;font-weight:800;color:#111;line-height:1">0</span>' +
-            '<span style="font-size:11px;font-weight:500;color:#9ca3af;text-transform:uppercase;letter-spacing:0.04em">agendados</span>' +
-          '</div>' +
-          '<button id="' + p + 'ExportBtn" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:#374151;cursor:pointer">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-            'Exportar' +
-          '</button>' +
-        '</div>' +
+      // Header (titulo + subtitulo)
+      '<div style="margin-bottom:16px">' +
+        '<h1 style="font-size:20px;font-weight:700;color:#111;margin:0">Agendados</h1>' +
+        '<p style="font-size:13px;color:#6B7280;margin:4px 0 0">Leads com consulta agendada ou reagendada</p>' +
       '</div>' +
 
-      // Filtros
-      '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">' +
-        // Linha 1: Periodo + Busca
-        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">' +
-          '<div class="ao-period-bar" id="' + p + 'PeriodBar">' +
-            '<button class="ao-period-btn active" data-period="all">Todos</button>' +
-            '<button class="ao-period-btn" data-period="today">Hoje</button>' +
-            '<button class="ao-period-btn" data-period="week">Semana</button>' +
-            '<button class="ao-period-btn" data-period="month">Mes</button>' +
-            '<button class="ao-period-btn" data-period="custom">Periodo</button>' +
-          '</div>' +
-          '<div id="' + p + 'DateRange" class="ao-date-range" style="display:none">' +
-            '<input id="' + p + 'DateFrom" type="date" class="ao-date-input">' +
-            '<span style="font-size:12px;color:#9ca3af">ate</span>' +
-            '<input id="' + p + 'DateTo" type="date" class="ao-date-input">' +
-            '<button class="ao-date-apply" id="' + p + 'DateApply">Aplicar</button>' +
-          '</div>' +
-          '<input id="' + p + 'SearchInput" type="text" autocomplete="off" placeholder="Buscar por nome ou telefone..." style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;flex:1;min-width:180px">' +
+      // Linha 1: Periodo + Busca
+      '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">' +
+        '<div class="ao-period-bar" id="' + p + 'PeriodBar">' +
+          '<button class="ao-period-btn active" data-period="all">Todos</button>' +
+          '<button class="ao-period-btn" data-period="today">Hoje</button>' +
+          '<button class="ao-period-btn" data-period="week">Semana</button>' +
+          '<button class="ao-period-btn" data-period="month">Mes</button>' +
+          '<button class="ao-period-btn" data-period="custom">Periodo</button>' +
         '</div>' +
+        '<div id="' + p + 'DateRange" class="ao-date-range" style="display:none">' +
+          '<input id="' + p + 'DateFrom" type="date" class="ao-date-input">' +
+          '<span style="font-size:12px;color:#9ca3af">ate</span>' +
+          '<input id="' + p + 'DateTo" type="date" class="ao-date-input">' +
+          '<button class="ao-date-apply" id="' + p + 'DateApply">Aplicar</button>' +
+        '</div>' +
+        '<input id="' + p + 'SearchInput" type="text" autocomplete="off" placeholder="Buscar por nome ou telefone..." style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:230px">' +
+      '</div>' +
 
-        // Linha 2: Tags (mais largo)
-        '<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#faf5ff;border:1px solid #ede9fe;border-radius:10px;flex-wrap:wrap">' +
-          '<div style="display:flex;align-items:center;gap:5px;margin-right:4px">' +
-            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>' +
-            '<span style="font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:0.04em;white-space:nowrap">FILTROS</span>' +
-          '</div>' +
-          '<div style="width:1px;height:18px;background:#ddd6fe;flex-shrink:0"></div>' +
-          '<select id="' + p + 'TagFilter" style="padding:5px 10px;border:1.5px solid #ddd6fe;border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;color:#374151">' +
-            '<option value="">Todas as tags</option>' +
-          '</select>' +
+      // Linha 2: Badge Agendados + Tags + Exportar
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
+        '<div id="' + p + 'CountBadge" style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:5px 12px">' +
+          '<span id="' + p + 'Stat_total" style="font-size:15px;font-weight:800;color:#111">0</span>' +
+          '<span style="font-size:11px;font-weight:500;color:#9ca3af;text-transform:uppercase">agendados</span>' +
         '</div>' +
+        '<select id="' + p + 'TagFilter" style="padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;color:#374151">' +
+          '<option value="">Todas as tags</option>' +
+        '</select>' +
+        '<div style="flex:1"></div>' +
+        '<button id="' + p + 'ExportBtn" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:#374151;cursor:pointer">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+          'Exportar' +
+        '</button>' +
       '</div>' +
 
       // Tabela
