@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinica Mirian de Paula — Links</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --champagne: #C8A97E;
+    --champagne-light: #DFC5A0;
+    --champagne-dark: #A8895E;
+    --ivory: #F5F0E8;
+    --graphite: #2C2C2C;
+    --graphite-light: #4A4A4A;
+    --sage: #8A9E88;
+    --rosa: #C4937A;
+    --bege: #E8DDD0;
+    --white: #FEFCF8;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body: 'Montserrat', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    font-weight: 300;
+    color: var(--graphite);
+    background: var(--graphite);
+    font-size: 15px;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+
+  /* ── WRAPPER ── */
+  .page-wrapper {
+    max-width: 480px;
+    margin: 0 auto;
+    background: var(--white);
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── HERO PROFILE (V2 ��� Full-bleed photo) ── */
+  .hero-profile {
+    position: relative;
+    overflow: hidden;
+    min-height: 520px;
+  }
+
+  .hero-photo-full {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .hero-photo-full img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+
+  .hero-gradient {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(to bottom,
+        rgba(44,44,44,0.0) 0%,
+        rgba(44,44,44,0.0) 30%,
+        rgba(44,44,44,0.25) 50%,
+        rgba(44,44,44,0.7) 70%,
+        rgba(44,44,44,0.92) 85%,
+        rgba(44,44,44,1) 100%
+      );
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 0 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 520px;
+    text-align: center;
+  }
+
+  .profile-clinic-label {
+    font-family: var(--font-body);
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--champagne);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-name {
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 300;
+    color: var(--ivory);
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+
+  .profile-tagline {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--champagne);
+    opacity: 0.85;
+    margin-bottom: 1rem;
+  }
+
+  .profile-desc {
+    font-size: 12px;
+    color: rgba(245,240,232,0.55);
+    max-width: 340px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-family: var(--font-body);
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--champagne);
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--graphite);
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title--light {
+    color: var(--ivory);
+  }
+
+  /* ── LINKS GRID ── */
+  .links-section {
+    padding: 2rem 1.5rem;
+    background: var(--white);
+  }
+
+  .link-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding: 1rem 1.5rem;
+    margin-bottom: 2px;
+    background: var(--ivory);
+    border: 1px solid var(--bege);
+    text-decoration: none;
+    color: var(--graphite);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .link-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--champagne);
+    transform: scaleY(0);
+    transition: transform 0.3s;
+  }
+
+  .link-btn:hover::before { transform: scaleY(1); }
+  .link-btn:hover { background: rgba(200,169,126,0.08); }
+
+  .link-btn-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--champagne);
+  }
+
+  .link-btn-text {
+    flex: 1;
+  }
+
+  .link-btn-title {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    display: block;
+  }
+
+  .link-btn-sub {
+    font-size: 10px;
+    color: var(--graphite-light);
+    letter-spacing: 0.02em;
+  }
+
+  .link-btn-arrow {
+    width: 14px;
+    height: 14px;
+    color: var(--champagne);
+    opacity: 0.5;
+    flex-shrink: 0;
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--bege);
+    margin: 0 1.5rem;
+    position: relative;
+  }
+
+  .divider--dark {
+    background: rgba(200,169,126,0.15);
+    margin: 0;
+  }
+
+  .divider-diamond {
+    width: 6px;
+    height: 6px;
+    background: var(--champagne);
+    transform: rotate(45deg);
+    position: absolute;
+    top: -2.5px;
+    left: 50%;
+    margin-left: -3px;
+  }
+
+  /* ── ANTES E DEPOIS CAROUSEL ── */
+  .ba-section {
+    padding: 2.5rem 0 2rem;
+    background: var(--graphite);
+    overflow: hidden;
+  }
+
+  .ba-carousel-wrapper {
+    position: relative;
+    padding: 0 1.5rem;
+  }
+
+  .ba-carousel {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 1rem;
+  }
+
+  .ba-carousel::-webkit-scrollbar { display: none; }
+
+  .ba-slide {
+    min-width: calc(100% - 2rem);
+    scroll-snap-align: center;
+    flex-shrink: 0;
+  }
+
+  .ba-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: rgba(245,240,232,0.04);
+    border: 1px solid rgba(200,169,126,0.15);
+  }
+
+  .ba-img-container {
+    aspect-ratio: 3/4;
+    position: relative;
+    overflow: hidden;
+    background: rgba(200,169,126,0.06);
+  }
+
+  .ba-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .ba-img-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.5rem;
+    background: linear-gradient(to top, rgba(44,44,44,0.85), transparent);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--champagne);
+    font-weight: 500;
+    text-align: center;
+  }
+
+  .ba-info {
+    grid-column: 1 / -1;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid rgba(200,169,126,0.1);
+  }
+
+  .ba-procedure {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--ivory);
+    margin-bottom: 0.25rem;
+  }
+
+  .ba-detail {
+    font-size: 11px;
+    color: rgba(245,240,232,0.45);
+    line-height: 1.5;
+  }
+
+  /* Carousel Indicators */
+  .carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding-top: 1rem;
+  }
+
+  .carousel-dot {
+    width: 6px;
+    height: 6px;
+    background: rgba(200,169,126,0.25);
+    transition: all 0.3s;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    transform: rotate(45deg);
+  }
+
+  .carousel-dot.active {
+    background: var(--champagne);
+    width: 8px;
+    height: 8px;
+  }
+
+  /* Carousel Nav Arrows */
+  .carousel-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: rgba(44,44,44,0.7);
+    border: 1px solid rgba(200,169,126,0.3);
+    color: var(--champagne);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.3s;
+    padding: 0;
+  }
+
+  .carousel-nav:hover {
+    background: rgba(44,44,44,0.9);
+    border-color: var(--champagne);
+  }
+
+  .carousel-nav--prev { left: 0.5rem; }
+  .carousel-nav--next { right: 0.5rem; }
+
+  .carousel-nav svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* ── DEPOIMENTOS CAROUSEL ── */
+  .testimonials-section {
+    padding: 2.5rem 0 2rem;
+    background: var(--ivory);
+    overflow: hidden;
+  }
+
+  .testimonials-carousel-wrapper {
+    position: relative;
+    padding: 0 1.5rem;
+  }
+
+  .testimonials-carousel {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 1rem;
+  }
+
+  .testimonials-carousel::-webkit-scrollbar { display: none; }
+
+  .testimonial-card {
+    min-width: calc(100% - 2rem);
+    scroll-snap-align: center;
+    flex-shrink: 0;
+    background: var(--white);
+    border: 1px solid var(--bege);
+    padding: 2rem 1.75rem;
+    position: relative;
+  }
+
+  .testimonial-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--champagne);
+  }
+
+  .testimonial-quote-icon {
+    color: var(--champagne);
+    opacity: 0.3;
+    margin-bottom: 1rem;
+  }
+
+  .testimonial-text {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--graphite);
+    margin-bottom: 1.25rem;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .testimonial-avatar {
+    width: 36px;
+    height: 36px;
+    background: var(--champagne);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--white);
+  }
+
+  .testimonial-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--graphite);
+    display: block;
+    letter-spacing: 0.03em;
+  }
+
+  .testimonial-meta {
+    font-size: 10px;
+    color: var(--graphite-light);
+  }
+
+  .testimonial-stars {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 1rem;
+  }
+
+  .testimonial-stars svg {
+    width: 12px;
+    height: 12px;
+    color: var(--champagne);
+    fill: var(--champagne);
+  }
+
+  /* ── CTA SECTION ── */
+  .cta-section {
+    padding: 2.5rem 1.5rem;
+    background: var(--graphite);
+    text-align: center;
+    position: relative;
+  }
+
+  .cta-section .hero-texture,
+  .cta-section .hero-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .cta-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-headline {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--ivory);
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+    max-width: 340px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta-sub {
+    font-size: 12px;
+    color: rgba(245,240,232,0.45);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .cta-button {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--white);
+    background: var(--champagne);
+    padding: 1rem 2.5rem;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+  }
+
+  .cta-button:hover { background: var(--champagne-dark); }
+
+  .cta-button--whatsapp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cta-button--whatsapp svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding: 2rem 1.5rem;
+    background: var(--graphite);
+    text-align: center;
+    border-top: 1px solid rgba(200,169,126,0.1);
+  }
+
+  .footer-logo {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--ivory);
+    margin-bottom: 0.25rem;
+  }
+
+  .footer-logo span {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 8px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--champagne);
+    margin-bottom: 2px;
+  }
+
+  .footer-tagline {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-style: italic;
+    color: rgba(200,169,126,0.5);
+    margin-bottom: 1rem;
+  }
+
+  .footer-social {
+    display: flex;
+    justify-content: center;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .footer-social a {
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(200,169,126,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--champagne);
+    text-decoration: none;
+    transition: all 0.3s;
+  }
+
+  .footer-social a:hover {
+    background: rgba(200,169,126,0.1);
+    border-color: var(--champagne);
+  }
+
+  .footer-social svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .footer-copy {
+    font-size: 9px;
+    color: rgba(245,240,232,0.25);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── PLACEHOLDER IMAGES ── */
+  .placeholder-img {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: rgba(200,169,126,0.4);
+    text-transform: uppercase;
+    font-family: var(--font-body);
+    font-weight: 500;
+  }
+
+  .ba-img-container .placeholder-img {
+    background: linear-gradient(135deg, rgba(200,169,126,0.08) 0%, rgba(200,169,126,0.15) 100%);
+  }
+
+  /* ── SCROLL HINT ── */
+  .scroll-hint {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-align: center;
+    padding-top: 0.25rem;
+    opacity: 0.4;
+  }
+
+  .scroll-hint--light { color: var(--ivory); }
+  .scroll-hint--dark { color: var(--graphite-light); }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- ═══ HERO PROFILE (V2 — Full-bleed) ═══ -->
+  <section class="hero-profile">
+    <div class="hero-photo-full">
+      <img src="https://drive.google.com/thumbnail?id=1leGw-SZlwbLFB57LyqJig6804Mp7tqSU&sz=w800" alt="Dra. Mirian de Paula" />
+    </div>
+    <div class="hero-gradient"></div>
+    <div class="hero-content">
+      <p class="profile-clinic-label">Clinica</p>
+      <h1 class="profile-name">Mirian de Paula</h1>
+      <p class="profile-tagline">Harmonia que revela. Precisao que dura.</p>
+      <p class="profile-desc">Protocolos integrados de harmonia facial com tecnologia Fotona Dynamis NX para mulheres que ja chegaram.</p>
+    </div>
+  </section>
+
+  <!-- ═══ LINKS PRINCIPAIS ═══ -->
+  <section class="links-section">
+    <div class="section-label">Acesso rapido</div>
+    <div class="section-title">Links</div>
+
+    <!-- WhatsApp -->
+    <a href="#" class="link-btn">
+      <svg class="link-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+      <div class="link-btn-text">
+        <span class="link-btn-title">Agende sua Avaliacao</span>
+        <span class="link-btn-sub">Avaliacao de Harmonia Facial personalizada</span>
+      </div>
+      <svg class="link-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+
+    <!-- Instagram -->
+    <a href="#" class="link-btn">
+      <svg class="link-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+      </svg>
+      <div class="link-btn-text">
+        <span class="link-btn-title">Instagram</span>
+        <span class="link-btn-sub">@clinicamiriandepaula</span>
+      </div>
+      <svg class="link-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+
+    <!-- Site -->
+    <a href="#" class="link-btn">
+      <svg class="link-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+      <div class="link-btn-text">
+        <span class="link-btn-title">Nosso Site</span>
+        <span class="link-btn-sub">Conheca nossos protocolos e diferenciais</span>
+      </div>
+      <svg class="link-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+
+    <!-- Localizacao -->
+    <a href="#" class="link-btn">
+      <svg class="link-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+      <div class="link-btn-text">
+        <span class="link-btn-title">Localizacao</span>
+        <span class="link-btn-sub">Como chegar na clinica</span>
+      </div>
+      <svg class="link-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+
+    <!-- Protocolo -->
+    <a href="#" class="link-btn">
+      <svg class="link-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      <div class="link-btn-text">
+        <span class="link-btn-title">Protocolo Integrado</span>
+        <span class="link-btn-sub">Entenda como Fotona + injetaveis funcionam juntos</span>
+      </div>
+      <svg class="link-btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+    </a>
+  </section>
+
+  <div class="divider"><div class="divider-diamond"></div></div>
+
+  <!-- ═══ ANTES E DEPOIS — CAROUSEL ═══ -->
+  <section class="ba-section">
+    <div class="section-label" style="color:var(--champagne); padding: 0 1.5rem;">Resultados reais</div>
+    <div class="section-title section-title--light" style="padding: 0 1.5rem;">Antes & Depois</div>
+
+    <div class="ba-carousel-wrapper">
+      <button class="carousel-nav carousel-nav--prev" onclick="scrollCarousel('ba', -1)" aria-label="Anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="carousel-nav carousel-nav--next" onclick="scrollCarousel('ba', 1)" aria-label="Proximo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
+      <div class="ba-carousel" id="ba-carousel">
+        <!-- Slide 1 -->
+        <div class="ba-slide">
+          <div class="ba-card">
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto antes</div>
+              <div class="ba-img-label">Antes</div>
+            </div>
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto depois</div>
+              <div class="ba-img-label">Depois</div>
+            </div>
+            <div class="ba-info">
+              <p class="ba-procedure">Protocolo Harmonia Facial Completa</p>
+              <p class="ba-detail">Fotona Dynamis NX + preenchimento com acido hialuronico. Resultado apos 30 dias.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="ba-slide">
+          <div class="ba-card">
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto antes</div>
+              <div class="ba-img-label">Antes</div>
+            </div>
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto depois</div>
+              <div class="ba-img-label">Depois</div>
+            </div>
+            <div class="ba-info">
+              <p class="ba-procedure">Lifting 5D + Smooth Eyes</p>
+              <p class="ba-detail">Restauracao de firmeza e tratamento de olheiras. Resultado apos 45 dias.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="ba-slide">
+          <div class="ba-card">
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto antes</div>
+              <div class="ba-img-label">Antes</div>
+            </div>
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto depois</div>
+              <div class="ba-img-label">Depois</div>
+            </div>
+            <div class="ba-info">
+              <p class="ba-procedure">Protocolo Sulco Nasogeniano</p>
+              <p class="ba-detail">Fotona 4D + preenchimento de precisao. Resultado apos 21 dias.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="ba-slide">
+          <div class="ba-card">
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto antes</div>
+              <div class="ba-img-label">Antes</div>
+            </div>
+            <div class="ba-img-container">
+              <div class="placeholder-img">Foto depois</div>
+              <div class="ba-img-label">Depois</div>
+            </div>
+            <div class="ba-info">
+              <p class="ba-procedure">Restauracao de Volume Labial</p>
+              <p class="ba-detail">Preenchimento natural com acido hialuronico. Resultado imediato.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="carousel-indicators" id="ba-indicators">
+        <button class="carousel-dot active" onclick="goToSlide('ba', 0)"></button>
+        <button class="carousel-dot" onclick="goToSlide('ba', 1)"></button>
+        <button class="carousel-dot" onclick="goToSlide('ba', 2)"></button>
+        <button class="carousel-dot" onclick="goToSlide('ba', 3)"></button>
+      </div>
+      <p class="scroll-hint scroll-hint--light">Deslize para ver mais</p>
+    </div>
+  </section>
+
+  <!-- ═══ DEPOIMENTOS — CAROUSEL ═══ -->
+  <section class="testimonials-section">
+    <div class="section-label" style="padding: 0 1.5rem;">Quem ja viveu a experiencia</div>
+    <div class="section-title" style="padding: 0 1.5rem;">Depoimentos</div>
+
+    <div class="testimonials-carousel-wrapper">
+      <button class="carousel-nav carousel-nav--prev" onclick="scrollCarousel('testimonials', -1)" style="background:rgba(245,240,232,0.9);border-color:var(--bege);color:var(--champagne);" aria-label="Anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button class="carousel-nav carousel-nav--next" onclick="scrollCarousel('testimonials', 1)" style="background:rgba(245,240,232,0.9);border-color:var(--bege);color:var(--champagne);" aria-label="Proximo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
+      <div class="testimonials-carousel" id="testimonials-carousel">
+        <!-- Depoimento 1 -->
+        <div class="testimonial-card">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <svg class="testimonial-quote-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7V4H4v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1zm9 0V4h-7v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1z"/></svg>
+          <p class="testimonial-text">"As pessoas me perguntam se eu descansei, se viajei. Ninguem percebeu que fiz algo. E exatamente isso que eu queria."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">R</div>
+            <div>
+              <span class="testimonial-name">Renata M.</span>
+              <span class="testimonial-meta">Empresaria, 52 anos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Depoimento 2 -->
+        <div class="testimonial-card">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <svg class="testimonial-quote-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7V4H4v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1zm9 0V4h-7v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1z"/></svg>
+          <p class="testimonial-text">"Pela primeira vez em anos, olhei no espelho e vi a mulher que eu sinto que sou. Nao mais jovem — mais eu."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">C</div>
+            <div>
+              <span class="testimonial-name">Claudia S.</span>
+              <span class="testimonial-meta">Executiva, 48 anos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Depoimento 3 -->
+        <div class="testimonial-card">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <svg class="testimonial-quote-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7V4H4v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1zm9 0V4h-7v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1z"/></svg>
+          <p class="testimonial-text">"A Dra. Mirian me ouviu durante uma hora antes de tocar no meu rosto. Nenhum medico tinha feito isso. Ela entendeu o que eu precisava antes de eu conseguir explicar."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">P</div>
+            <div>
+              <span class="testimonial-name">Patricia L.</span>
+              <span class="testimonial-meta">Advogada, 56 anos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Depoimento 4 -->
+        <div class="testimonial-card">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <svg class="testimonial-quote-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7V4H4v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1zm9 0V4h-7v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1z"/></svg>
+          <p class="testimonial-text">"Minha filha me disse: mae, voce esta com uma luz diferente. Isso vale mais do que qualquer espelho."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">M</div>
+            <div>
+              <span class="testimonial-name">Marcia T.</span>
+              <span class="testimonial-meta">Empresaria, 61 anos</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Depoimento 5 -->
+        <div class="testimonial-card">
+          <div class="testimonial-stars">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <svg class="testimonial-quote-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7V4H4v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1zm9 0V4h-7v7h3c0 1.1-.9 2-2 2v3c2.8 0 5-2.2 5-5h1V7h-1z"/></svg>
+          <p class="testimonial-text">"O que mais me impressionou foi a transparencia. Ela me explicou cada etapa, o que esperar, sem promessas exageradas. O resultado superou tudo."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">A</div>
+            <div>
+              <span class="testimonial-name">Ana B.</span>
+              <span class="testimonial-meta">Medica, 45 anos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="carousel-indicators" id="testimonials-indicators">
+        <button class="carousel-dot active" onclick="goToSlide('testimonials', 0)"></button>
+        <button class="carousel-dot" onclick="goToSlide('testimonials', 1)"></button>
+        <button class="carousel-dot" onclick="goToSlide('testimonials', 2)"></button>
+        <button class="carousel-dot" onclick="goToSlide('testimonials', 3)"></button>
+        <button class="carousel-dot" onclick="goToSlide('testimonials', 4)"></button>
+      </div>
+      <p class="scroll-hint scroll-hint--dark">Deslize para ver mais</p>
+    </div>
+  </section>
+
+  <!-- ═══ CTA FINAL ═══ -->
+  <section class="cta-section">
+    <div class="hero-texture"></div>
+    <div class="hero-lines"></div>
+    <div class="cta-content">
+      <div class="section-label" style="margin-bottom: 1rem;">O proximo passo</div>
+      <p class="cta-headline">"Seu rosto deveria mostrar quem voce e — nao quanto tempo passou."</p>
+      <p class="cta-sub">Avaliacao de Harmonia Facial personalizada. Sem compromisso.</p>
+      <a href="#" class="cta-button cta-button--whatsapp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+        Agende sua Avaliacao
+      </a>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="footer-logo">
+      <span>Clinica</span>Mirian de Paula
+    </div>
+    <p class="footer-tagline">Harmonia que revela. Precisao que dura.</p>
+    <div class="footer-social">
+      <a href="#" aria-label="Instagram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+        </svg>
+      </a>
+      <a href="#" aria-label="WhatsApp">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+      </a>
+      <a href="#" aria-label="YouTube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.43z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>
+        </svg>
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Clinica Mirian de Paula</p>
+  </footer>
+
+</div>
+
+<!-- ═══ JAVASCRIPT — CAROUSEL ENGINE ═══ -->
+<script>
+  function scrollCarousel(id, direction) {
+    const carousel = document.getElementById(id + '-carousel');
+    const slides = carousel.children;
+    const slideWidth = slides[0].offsetWidth + 12;
+    carousel.scrollBy({ left: direction * slideWidth, behavior: 'smooth' });
+  }
+
+  function goToSlide(id, index) {
+    const carousel = document.getElementById(id + '-carousel');
+    const slides = carousel.children;
+    const slideWidth = slides[0].offsetWidth + 12;
+    carousel.scrollTo({ left: index * slideWidth, behavior: 'smooth' });
+  }
+
+  function updateIndicators(id) {
+    const carousel = document.getElementById(id + '-carousel');
+    const indicators = document.getElementById(id + '-indicators');
+    if (!carousel || !indicators) return;
+
+    const dots = indicators.querySelectorAll('.carousel-dot');
+    const slideWidth = carousel.children[0]?.offsetWidth + 12 || 1;
+    const activeIndex = Math.round(carousel.scrollLeft / slideWidth);
+
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === activeIndex);
+    });
+  }
+
+  ['ba', 'testimonials'].forEach(id => {
+    const carousel = document.getElementById(id + '-carousel');
+    if (carousel) {
+      carousel.addEventListener('scroll', () => updateIndicators(id));
+    }
+  });
+</script>
+
+</body>
+</html>
