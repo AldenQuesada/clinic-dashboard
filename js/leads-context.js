@@ -855,6 +855,10 @@
             alert('Erro ao salvar no servidor: ' + res.error.message + '\nOs leads foram movidos localmente mas nao no servidor.')
           } else {
             console.log('[LeadsContext] bulk OK:', res.data)
+            var movedCount = res.data && res.data.moved !== undefined ? res.data.moved : '?'
+            if (movedCount === 0) {
+              alert('ATENCAO: 0 leads movidos no servidor. Os IDs podem nao existir no banco. Verifique se os leads foram sincronizados.')
+            }
           }
         }).catch(function(e) {
           console.error('[LeadsContext] bulk exception:', e)
