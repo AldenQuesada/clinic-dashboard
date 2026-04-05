@@ -870,7 +870,14 @@
       }
 
       _selectedIds = new Set()
-      _load()
+
+      // Recarregar leads do Supabase pra garantir sync
+      if (window.LeadsService && LeadsService.loadAll) {
+        LeadsService.loadAll().then(function() { _load() }).catch(function() { _load() })
+      } else {
+        _load()
+      }
+
       var labels = { paciente: 'Pacientes', orcamento: 'Orcamentos', lead: 'Leads' }
       if (window._showToast) _showToast(moved + ' leads movidos', 'Movidos para ' + (labels[newPhase] || newPhase), 'info')
     }
