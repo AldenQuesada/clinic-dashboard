@@ -36,10 +36,10 @@ function _syncLeadToCache(updatedLead) {
       const leadId = updatedLead.id
       const phase  = updatedLead.phase || 'lead'
       if (window.SdrService) {
-        window.SdrService.initLeadPipelines(leadId).catch(function() {})
+        window.SdrService.initLeadPipelines(leadId).catch(function(e) { console.warn("[leads]", e.message || e) })
       }
       if (window.RulesService) {
-        window.RulesService.evaluateRules(leadId, 'phase_changed', { to_phase: phase }).catch(function() {})
+        window.RulesService.evaluateRules(leadId, 'phase_changed', { to_phase: phase }).catch(function(e) { console.warn("[leads]", e.message || e) })
       }
     }
   } catch { /* silencioso */ }

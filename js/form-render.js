@@ -405,7 +405,7 @@
         p_request_id: requestId,
         p_ip_address: null,
         p_user_agent: navigator.userAgent || null,
-      }).catch(function() {})
+      }).catch(function(e) { console.warn("[form-render]", e.message || e) })
     }
 
     await bootWithTemplate(TMPL_ID, patientData, pt.settings_json || null, req.template_snapshot_json || null)

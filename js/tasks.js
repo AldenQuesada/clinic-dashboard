@@ -53,7 +53,7 @@ const tasksPanel = (() => {
     // Polling leve — recarrega a cada 60s
     if (_sbPollTimer) clearInterval(_sbPollTimer);
     _sbPollTimer = setInterval(function() {
-      _loadFromSupabase().catch(function() {});
+      _loadFromSupabase().catch(function(e) { console.warn("[tasks]", e.message || e) });
     }, SB_POLL_MS);
   }
 

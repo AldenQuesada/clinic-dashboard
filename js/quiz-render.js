@@ -414,6 +414,13 @@
     }
 
     try {
+      // Rate limit server-side
+      var rlCheck = await _apiRpc('quiz_check_rate_limit', { p_phone: phone, p_quiz_id: _quiz.id })
+      if (rlCheck === false) {
+        _showToast('Limite de envios atingido. Tente novamente em 1 hora.')
+        if (btn) { btn.disabled = false; btn.textContent = 'Enviar' }
+        return
+      }
       await _apiRpc('submit_quiz_response', payload)
       _submitted = true
       _trackEvent('quiz_complete', {

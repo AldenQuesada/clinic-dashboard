@@ -72,7 +72,7 @@
 
     // Polling não-bloqueante para confirmar criação do vínculo
     if (responseId) {
-      _pollForLink(responseId, 3, 2000).catch(() => {})
+      _pollForLink(responseId, 3, 2000).catch(e => console.warn("[anamnesis-prontuario.service]", e.message || e))
     }
   }
 

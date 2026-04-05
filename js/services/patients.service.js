@@ -96,7 +96,7 @@
       totalRevenue:    patient.totalRevenue    || 0,
     }).then(result => {
       if (!result.ok) console.warn('[PatientsService] syncOne falhou:', result.error)
-    }).catch(() => {})
+    }).catch(e => console.warn("[patients.service]", e.message || e))
   }
 
   // ── syncBatch ─────────────────────────────────────────────────
@@ -137,7 +137,7 @@
 
   // ── Auto-init após autenticação ───────────────────────────────
   document.addEventListener('clinicai:auth-success', () => {
-    loadAll().catch(() => {})
+    loadAll().catch(e => console.warn("[patients.service]", e.message || e))
   })
 
   // ── Exposição global ──────────────────────────────────────────

@@ -247,7 +247,7 @@ async function anamnDeleteSession(sessionId) {
         await _patch('/anamnesis_field_options',
           { 'field_id': 'eq.' + f.id },
           { is_active: false }
-        ).catch(() => {})
+        ).catch(e => console.warn("[anamnese-builder]", e.message || e))
       }
       await _patch('/anamnesis_fields',
         { 'session_id': 'eq.' + sessionId },
@@ -923,7 +923,7 @@ window._anmTestGdSetCep = function(val) {
       })
       _testCheckNext()
     })
-    .catch(() => {})
+    .catch(e => console.warn("[anamnese-builder]", e.message || e))
 }
 
 window._anmTestGdSexo = function(val) {
@@ -1907,7 +1907,7 @@ async function anamnSaveField() {
             await _patch('/anamnesis_field_options',
               { 'field_id': 'eq.' + g.id },
               { is_active: false }
-            ).catch(() => {})
+            ).catch(e => console.warn("[anamnese-builder]", e.message || e))
           }
           await _doInsert()
         } else {
@@ -1977,7 +1977,7 @@ async function anamnDeleteField(fieldId) {
     await _patch('/anamnesis_field_options',
       { 'field_id': 'eq.' + fieldId },
       { is_active: false }
-    ).catch(() => {})
+    ).catch(e => console.warn("[anamnese-builder]", e.message || e))
     _state.fields = _state.fields.filter(f => f.id !== fieldId)
     _renderBuilderFieldsList()
     _showToast('Campo removido')
@@ -2644,7 +2644,7 @@ async function _deleteFieldDirect(fieldId) {
     await _patch('/anamnesis_field_options',
       { 'field_id': 'eq.' + fieldId },
       { is_active: false }
-    ).catch(() => {})
+    ).catch(e => console.warn("[anamnese-builder]", e.message || e))
     _state.fields = _state.fields.filter(f => f.id !== fieldId)
     _renderBuilderFieldsList()
     _showToast('Campo excluído')

@@ -233,7 +233,7 @@
 
   // Dispara automaticamente após autenticação
   document.addEventListener('clinicai:auth-success', function() {
-    advanceDayBucketsIfNeeded().catch(function() {})
+    advanceDayBucketsIfNeeded().catch(function(e) { console.warn("[sdr.service]", e.message || e) })
   })
 
   // ── Helper: atualizar phase do lead no localStorage ──────────
@@ -270,11 +270,11 @@
     _updateLeadPhaseLocal(leadId, 'agendado')
 
     // 2. Registrar interacao no historico do lead
-    repo.addInteraction(leadId, 'system', desc, 'scheduled', 'outbound').catch(function() {})
+    repo.addInteraction(leadId, 'system', desc, 'scheduled', 'outbound').catch(function(e) { console.warn("[sdr.service]", e.message || e) })
 
     // 3. Disparar rules engine para phase_changed → agendado
     if (window.RulesService) {
-      RulesService.evaluateRules(leadId, 'phase_changed', { to_phase: 'agendado' }).catch(function() {})
+      RulesService.evaluateRules(leadId, 'phase_changed', { to_phase: 'agendado' }).catch(function(e) { console.warn("[sdr.service]", e.message || e) })
     }
   }
 
@@ -286,11 +286,11 @@
     _updateLeadPhaseLocal(leadId, 'compareceu')
 
     // Registrar interacao
-    _repo().addInteraction(leadId, 'system', 'Paciente compareceu a consulta', 'attended', null).catch(function() {})
+    _repo().addInteraction(leadId, 'system', 'Paciente compareceu a consulta', 'attended', null).catch(function(e) { console.warn("[sdr.service]", e.message || e) })
 
     // Disparar regras
     if (window.RulesService) {
-      RulesService.evaluateRules(leadId, 'phase_changed', { to_phase: 'compareceu' }).catch(function() {})
+      RulesService.evaluateRules(leadId, 'phase_changed', { to_phase: 'compareceu' }).catch(function(e) { console.warn("[sdr.service]", e.message || e) })
     }
   }
 

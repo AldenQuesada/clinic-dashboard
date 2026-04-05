@@ -138,9 +138,9 @@ const finGoals = (() => {
     const svc = window.FinanceiroService;
     if (svc) {
       const now = new Date();
-      svc.saveMonthGoal(now.getFullYear(), now.getMonth() + 1, meta).catch(() => {});
-      svc.saveConfig(gastos, procs, demo).catch(() => {});
-      svc.saveAnnualPlan(now.getFullYear(), planejamento).catch(() => {});
+      svc.saveMonthGoal(now.getFullYear(), now.getMonth() + 1, meta).catch(e => console.warn("[financeiro]", e.message || e));
+      svc.saveConfig(gastos, procs, demo).catch(e => console.warn("[financeiro]", e.message || e));
+      svc.saveAnnualPlan(now.getFullYear(), planejamento).catch(e => console.warn("[financeiro]", e.message || e));
     }
   }
 

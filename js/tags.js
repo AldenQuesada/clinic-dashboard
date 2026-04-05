@@ -1442,7 +1442,7 @@ function orcUpdateStatus(budgetId, newStatus) {
     const _slug  = tagMap[newStatus]
     const _eType = b.entity_type || 'lead'
     if (_eType === 'lead' && window.SdrService) {
-      window.SdrService.assignTag(_slug, _eType, b.entity_id, 'secretaria').catch(function() {})
+      window.SdrService.assignTag(_slug, _eType, b.entity_id, 'secretaria').catch(function(e) { console.warn("[tags]", e.message || e) })
     } else {
       TagEngine.applyTag(b.entity_id, _eType, _slug, 'secretaria', { nome: b.entity_name||b.entity_id })
     }

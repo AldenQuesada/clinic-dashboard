@@ -372,7 +372,7 @@
     const now   = new Date()
     const from  = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
     const to    = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
-    loadForPeriod(from, to).catch(() => {})
+    loadForPeriod(from, to).catch(e => console.warn("[appointments.service]", e.message || e))
   })
 
   // ── Exposição global ──────────────────────────────────────────

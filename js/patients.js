@@ -706,7 +706,7 @@ async function saveNewPatient() {
     // Auto-atribui tag "Lead Novo" — aguarda antes de abrir o modal
     // (evita race condition: getTags no viewLead rodaria antes do assign gravar)
     if (window.SdrService) {
-      await window.SdrService.assignTag('lead_novo', 'lead', newLead.id).catch(function() {})
+      await window.SdrService.assignTag('lead_novo', 'lead', newLead.id).catch(function(e) { console.warn("[patients]", e.message || e) })
     }
 
     document.getElementById('newPatientModal')?.remove()

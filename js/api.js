@@ -1439,7 +1439,7 @@ function _setLeadStatus(leadId, newStatus, skipIf = []) {
   // Sync with SDR phase system
   var phase = _STATUS_TO_PHASE[newStatus]
   if (phase && window.SdrService) {
-    SdrService.changePhase(leadId, phase, 'status-sync').catch(function() {})
+    SdrService.changePhase(leadId, phase, 'status-sync').catch(function(e) { console.warn("[api]", e.message || e) })
   }
 }
 

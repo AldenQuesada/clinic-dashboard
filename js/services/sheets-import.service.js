@@ -74,7 +74,7 @@
 
       // Atribui tag "Lead Novo" (fire-and-forget)
       if (window.SdrService) {
-        window.SdrService.assignTag('lead_novo', 'lead', lead.id).catch(function(){})
+        window.SdrService.assignTag('lead_novo', 'lead', lead.id).catch(function(e) { console.warn("[sheets-import.service]", e.message || e) })
       }
 
       existingPhones.add(phone)

@@ -18,7 +18,7 @@ function _rpcFire(name, params) {
     var result = params !== undefined
       ? window._sbShared.rpc(name, params)
       : window._sbShared.rpc(name)
-    if (result && typeof result.catch === 'function') result.catch(function() {})
+    if (result && typeof result.catch === 'function') result.catch(function(e) { console.warn("[tags-engine]", e.message || e) })
   } catch(e) {}
 }
 

@@ -223,9 +223,9 @@
   // ── Auto-init: carrega ao autenticar ──────────────────────────
   document.addEventListener('clinicai:auth-success', () => {
     // Carrega leads do Supabase em background para popular localStorage
-    loadAll().catch(() => {})
+    loadAll().catch(e => console.warn("[leads.service]", e.message || e))
     // Processa fila de retry (leads que falharam sync anterior)
-    _processSyncQueue().catch(() => {})
+    _processSyncQueue().catch(e => console.warn("[leads.service]", e.message || e))
   })
 
   // ── Exposição global ──────────────────────────────────────────
