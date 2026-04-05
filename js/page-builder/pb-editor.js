@@ -175,9 +175,13 @@
 
     switch (block.type) {
       case 'hero':
+        html += _field('Imagem (URL)', 'text', 'image_url', block.image_url, idx)
+        html += _field('Label (ex: Cl\u00ednica)', 'text', 'label', block.label, idx)
         html += _field('T\u00edtulo', 'text', 'title', block.title, idx)
         html += '<p class="pb-hint">Use {accent}texto{/accent} para destacar em dourado</p>'
+        html += _field('Tagline', 'text', 'tagline', block.tagline, idx)
         html += _field('Subt\u00edtulo', 'text', 'subtitle', block.subtitle, idx)
+        html += _textarea('Descri\u00e7\u00e3o', 'description', block.description, idx)
         html += _select('Tema', 'theme', block.theme, [['dark', 'Escuro'], ['light', 'Claro']], idx)
         break
       case 'title':
@@ -236,6 +240,54 @@
         html += _arrayEditor('Op\u00e7\u00f5es', block.items || [], idx, 'toggles', function (item, i) {
           return _subField('Label', 'label', item.label, idx, 'toggles', i)
             + '<label class="pb-sub-check"><input type="checkbox" ' + (item.default_on ? 'checked' : '') + ' data-sub-bool="default_on" data-idx="' + idx + '" data-arr="toggles" data-i="' + i + '"> Marcado por padr\u00e3o</label>'
+        })
+        break
+      case 'links':
+        html += _field('Label (ex: Acesso r\u00e1pido)', 'text', 'label', block.label, idx)
+        html += _field('T\u00edtulo', 'text', 'title', block.title, idx)
+        html += _arrayEditor('Links', block.items || [], idx, 'links', function (item, i) {
+          return _subField('T\u00edtulo', 'title', item.title, idx, 'links', i)
+            + _subField('Subt\u00edtulo', 'subtitle', item.subtitle, idx, 'links', i)
+            + _subField('URL', 'url', item.url, idx, 'links', i)
+            + _subField('SVG \u00edcone', 'icon_svg', item.icon_svg, idx, 'links', i)
+        })
+        break
+      case 'testimonials':
+        html += _field('Label', 'text', 'label', block.label, idx)
+        html += _field('T\u00edtulo', 'text', 'title', block.title, idx)
+        html += _arrayEditor('Depoimentos', block.items || [], idx, 'testimonials', function (item, i) {
+          return _subField('Texto', 'body', item.body, idx, 'testimonials', i)
+            + _subField('Autor', 'author', item.author, idx, 'testimonials', i)
+            + _subField('Meta (ex: Empres\u00e1ria, 52a)', 'meta', item.meta, idx, 'testimonials', i)
+            + _subField('Estrelas (1-5)', 'stars', item.stars, idx, 'testimonials', i)
+        })
+        break
+      case 'before_after':
+        html += _field('Label', 'text', 'label', block.label, idx)
+        html += _field('T\u00edtulo', 'text', 'title', block.title, idx)
+        html += _arrayEditor('Slides', block.slides || [], idx, 'before_after', function (item, i) {
+          return _subField('Foto antes (URL)', 'before_url', item.before_url, idx, 'before_after', i)
+            + _subField('Foto depois (URL)', 'after_url', item.after_url, idx, 'before_after', i)
+            + _subField('Procedimento', 'procedure', item.procedure, idx, 'before_after', i)
+            + _subField('Detalhe', 'detail', item.detail, idx, 'before_after', i)
+        })
+        break
+      case 'cta_section':
+        html += _field('Label', 'text', 'label', block.label, idx)
+        html += _field('Headline', 'text', 'headline', block.headline, idx)
+        html += _field('Subt\u00edtulo', 'text', 'subtitle', block.subtitle, idx)
+        html += _field('Texto do bot\u00e3o', 'text', 'button_label', block.button_label, idx)
+        html += _field('URL do bot\u00e3o', 'text', 'button_url', block.button_url, idx)
+        html += _select('Estilo do bot\u00e3o', 'button_style', block.button_style, [['whatsapp', 'WhatsApp'], ['champagne', 'Champagne'], ['outline', 'Outline'], ['graphite', 'Graphite']], idx)
+        break
+      case 'footer':
+        html += _field('Label cl\u00ednica (ex: Cl\u00ednica)', 'text', 'clinic_label', block.clinic_label, idx)
+        html += _field('Nome', 'text', 'clinic_name', block.clinic_name, idx)
+        html += _field('Tagline', 'text', 'tagline', block.tagline, idx)
+        html += _arrayEditor('Redes sociais', block.social || [], idx, 'social', function (item, i) {
+          return _subField('Label', 'label', item.label, idx, 'social', i)
+            + _subField('URL', 'url', item.url, idx, 'social', i)
+            + _subField('SVG \u00edcone', 'icon_svg', item.icon_svg, idx, 'social', i)
         })
         break
     }
@@ -462,6 +514,10 @@
         else if (arr === 'buttons') { if (!block.items) block.items = []; block.items.push({ label: '', url: '', style: 'champagne' }); }
         else if (arr === 'carousel') { if (!block.slides) block.slides = []; block.slides.push({ url: '' }); }
         else if (arr === 'toggles') { if (!block.items) block.items = []; block.items.push({ label: '', default_on: false }); }
+        else if (arr === 'links') { if (!block.items) block.items = []; block.items.push({ title: '', subtitle: '', url: '', icon_svg: '' }); }
+        else if (arr === 'testimonials') { if (!block.items) block.items = []; block.items.push({ body: '', author: '', meta: '', stars: 5 }); }
+        else if (arr === 'before_after') { if (!block.slides) block.slides = []; block.slides.push({ before_url: '', after_url: '', procedure: '', detail: '' }); }
+        else if (arr === 'social') { if (!block.social) block.social = []; block.social.push({ label: '', url: '', icon_svg: '' }); }
         render()
       })
     })
@@ -470,7 +526,7 @@
         var idx = parseInt(btn.dataset.idx), arr = btn.dataset.arrDel, i = parseInt(btn.dataset.i)
         var block = PB.getBlock(idx)
         if (!block) return
-        var target = arr === 'carousel' ? block.slides : block.items
+        var target = (arr === 'carousel' || arr === 'before_after') ? block.slides : (arr === 'social' ? block.social : block.items)
         if (target) target.splice(i, 1)
         render()
       })
