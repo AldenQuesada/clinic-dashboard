@@ -41,6 +41,11 @@
     { type: 'divider', label: 'Divisor', icon: 'minus', defaults: {} },
     { type: 'spacer', label: 'Espa\u00e7o', icon: 'maximize-2', defaults: { height: 60 } },
     { type: 'toggles', label: 'Toggles', icon: 'toggle-left', defaults: { items: [{ label: '', default_on: false }] } },
+    { type: 'links', label: 'Links', icon: 'link-2', defaults: { label: '', title: '', items: [{ title: '', subtitle: '', url: '', icon_svg: '' }] } },
+    { type: 'testimonials', label: 'Depoimentos', icon: 'message-square', defaults: { label: '', title: '', items: [{ body: '', author: '', meta: '', stars: 5 }] } },
+    { type: 'before_after', label: 'Antes/Depois', icon: 'columns', defaults: { label: '', title: '', slides: [{ before_url: '', after_url: '', procedure: '', detail: '' }] } },
+    { type: 'cta_section', label: 'CTA Se\u00e7\u00e3o', icon: 'target', defaults: { label: '', headline: '', subtitle: '', button_label: '', button_url: '', button_style: 'champagne' } },
+    { type: 'footer', label: 'Rodap\u00e9', icon: 'align-center', defaults: { clinic_label: 'Cl\u00ednica', clinic_name: 'Mirian de Paula', tagline: 'Harmonia que revela. Precis\u00e3o que dura.', social: [] } },
   ]
 
   // ── State ──────────────────────────────────────────────────
