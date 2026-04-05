@@ -24,11 +24,14 @@
   }
 
   // ── Normaliza resultado ─────────────────────────────────────────────────
+  function _ok(data)  { return { ok: true,  data, error: null } }
+  function _err(e)    { return { ok: false, data: null, error: typeof e === 'string' ? e : (e && e.message ? e.message : 'Erro desconhecido') } }
   function _wrap(data, error) {
-    if (error) return { ok: false, error: error.message || String(error) }
-    if (data && data.ok === false) return { ok: false, error: data.error || 'unknown_error' }
+    if (error) return _err(error)
+    if (data && data.ok === false) return _err(data.error || 'unknown_error')
     return {
       ok:     true,
+      error:  null,
       data:   data?.data    ?? [],
       total:  data?.total   ?? 0,
       unread: data?.unread  ?? 0,

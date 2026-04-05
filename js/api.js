@@ -1280,8 +1280,6 @@ function apptSearchPatient(q) {
   const warn = document.getElementById('appt_paciente_warn')
   if (!q.trim()) { drop.style.display = 'none'; warn.style.display = 'none'; return }
 
-  // TODO: migrate to async and use LeadsService.loadAll() for Supabase data consistency
-  // (new fields like queixas_faciais, idade, temperature won't appear from stale localStorage)
   const leads = window.LeadsService
     ? LeadsService.getLocal()
     : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')

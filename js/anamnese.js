@@ -305,8 +305,6 @@ function anamneseCloseNewRequest() {
 }
 
 function _loadPatientSuggestList() {
-  // TODO: migrate to async and use LeadsService.loadAll() for Supabase data consistency
-  // (new fields like queixas_faciais, idade, temperature won't appear from stale localStorage)
   const allLeads = window.LeadsService
     ? LeadsService.getLocal()
     : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')

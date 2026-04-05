@@ -665,7 +665,6 @@ function _aBtn(c) {
 function _fmtBRL(v) { return 'R$ '+Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.') }
 function _getPhone(appt) {
   try {
-    // TODO: migrate to async and use LeadsService.loadAll() for Supabase data consistency
     const leads = window.LeadsService
       ? LeadsService.getLocal()
       : JSON.parse(localStorage.getItem('clinicai_leads')||'[]')

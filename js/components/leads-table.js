@@ -216,7 +216,6 @@ function leadsToggleActive(leadId, leadName, isActive, checkbox, e) {
   modal.querySelector('.lt-modal-btn-confirm').onclick = async function() {
     modal.remove()
     if (!window._sbShared) return
-    // TODO: route through LeadsService.updateField() once method exists
     await window._sbShared.from('leads').update({ is_active: isActive }).eq('id', leadId)
     _leadsUpdateCache(leadId, { is_active: isActive })
   }

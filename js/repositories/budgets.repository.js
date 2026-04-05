@@ -20,8 +20,8 @@
   // ── Helpers ─────────────────────────────────────────────────
 
   function _sb() { return window._sbShared }
-  function _ok(data)  { return { ok: true,  data }  }
-  function _err(msg)  { return { ok: false, error: msg } }
+  function _ok(data)  { return { ok: true,  data, error: null }  }
+  function _err(msg)  { return { ok: false, data: null, error: msg } }
 
   function _unavailable() {
     return _err('Supabase nao disponivel')
