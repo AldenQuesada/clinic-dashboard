@@ -471,10 +471,12 @@ function buildMesGrid() {
             onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(124,58,237,.35)'">${count}</div>`
         : ''
 
-      return `<td onclick="setAgendaView('hoje');_agendaDate=new Date('${iso}T12:00');renderAgenda()"
-        ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)"
-        ondrop="agendaDrop(event,'${iso}','08:00',0)"
-        style="padding:10px 8px;vertical-align:top;border:1px solid #F3F4F6;min-height:${cellH};cursor:pointer;background:${isToday?'#F5F3FF':inMonth?'#fff':'#FAFAFA'};transition:background .1s">
+      const isPastDay = iso < todayIso
+      const canClickDay = !isPastDay || count > 0
+      return `<td ${canClickDay?'onclick="setAgendaView(\'hoje\');_agendaDate=new Date(\''+iso+'T12:00\');renderAgenda()"':''}
+        ${canClickDay?'ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\'08:00\',0)"':''}
+        style="padding:10px 8px;vertical-align:top;border:1px solid #F3F4F6;min-height:${cellH};cursor:${canClickDay?'pointer':'default'};background:${isToday?'#F5F3FF':inMonth?'#fff':'#FAFAFA'};transition:background .1s;${isPastDay&&!count?'opacity:0.4;':''}"
+        >
         ${dayNum}
         ${countBubble}
       </td>`
@@ -640,10 +642,12 @@ function buildSemanaGrid() {
       const key = `${iso}_${slot}`
       const isToday = iso === todayIso
       const cards = (cellMap[key] || []).map(a => apptCardSmall(a)).join('')
-      return `<td ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)"
-        ondrop="agendaDrop(event,'${iso}','${slot}',0)"
-        onclick="if(!event.target.closest('[data-apptid]'))openApptModal(null,'${iso}','${slot}',0)"
-        style="width:${colW};padding:2px 3px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};min-height:34px;vertical-align:top;cursor:pointer;background:${isToday?'#FEFCE8':''}"
+      const isPast = iso < todayIso
+      const hasCards = cards.length > 0
+      const clickable = !isPast || hasCards
+      return `<td ${clickable?'ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\',0)"':''}
+        ${clickable?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\',0)"':''}
+        style="width:${colW};padding:2px 3px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};min-height:34px;vertical-align:top;cursor:${clickable?'pointer':'default'};background:${isToday?'#FEFCE8':isPast&&!hasCards?'#F9FAFB':''};${isPast&&!hasCards?'opacity:0.5;':''}"
         >${cards}</td>`
     }).join('')
     return `<tr style="background:${isHour?'#FAFAFA':'#fff'}">
@@ -692,10 +696,12 @@ function buildHojeGrid() {
     const tds = cols.map((_,pi) => {
       const key = `${slot}_${pi}`
       const cards = (cellMap[key] || []).map(a => apptCard(a, pi)).join('')
-      return `<td ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)"
-        ondrop="agendaDrop(event,'${iso}','${slot}',${pi})"
-        onclick="if(!event.target.closest('[data-apptid]'))openApptModal(null,'${iso}','${slot}',${pi})"
-        style="width:${profColW};padding:3px 4px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};min-height:38px;vertical-align:top;cursor:pointer;transition:background .1s"
+      const isPastDay = iso < todayIso
+      const hasAppts = cards.length > 0
+      const canClick = !isPastDay || hasAppts
+      return `<td ${canClick?'ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\','+pi+')"':''}
+        ${canClick?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\','+pi+')"':''}
+        style="width:${profColW};padding:3px 4px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};min-height:38px;vertical-align:top;cursor:${canClick?'pointer':'default'};transition:background .1s;${isPastDay&&!hasAppts?'opacity:0.5;':''}"
         >${cards}</td>`
     }).join('')
     return `<tr style="background:${isHour?'#FAFAFA':'#fff'}">
