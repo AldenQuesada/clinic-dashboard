@@ -83,7 +83,7 @@
           '<input id="' + p + 'DateTo" type="date" class="ao-date-input">' +
           '<button class="ao-date-apply" id="' + p + 'DateApply">Aplicar</button>' +
         '</div>' +
-        '<input id="' + p + 'SearchInput" type="text" autocomplete="off" placeholder="Buscar por nome ou telefone..." style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:230px">' +
+        '<input id="' + p + 'SearchInput" type="search" autocomplete="nope" name="q_ag" placeholder="Buscar por nome ou telefone..." style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:230px">' +
       '</div>' +
 
       // Linha 2: Badge Agendados + Tags + Exportar
@@ -377,7 +377,7 @@
     html += '<span style="font-size:11px;font-weight:500;color:#EF4444;text-transform:uppercase">registros</span></div></div>'
 
     html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">'
-    html += '<input id="' + p + 'Search" type="text" autocomplete="off" placeholder="Buscar por nome..." value="' + _esc(_caSearch) + '" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:280px">'
+    html += '<input id="' + p + 'Search" type="search" autocomplete="nope" name="q_ca" placeholder="Buscar por nome..." value="' + _esc(_caSearch) + '" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:230px">'
     html += '</div>'
 
     html += '<div style="flex:1;min-height:0;overflow-y:auto"><div style="background:#fff;border-radius:12px;border:1px solid #F3F4F6;overflow:hidden">'
