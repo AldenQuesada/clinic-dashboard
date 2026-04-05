@@ -23,7 +23,7 @@
     SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',
     // Cache-buster: incrementar a cada deploy para forçar recarga dos scripts
     // Em pipeline de CI/CD, substituir por hash do commit ou timestamp do build
-    ASSET_VERSION: '20260404b',
+    ASSET_VERSION: '20260405a',
   })
 
 })()
