@@ -493,6 +493,11 @@
       if (pageId === 'agenda-cancelados') window.AgendaLeads.renderCancelados()
     }
 
+    // ── Pacientes: recarregar ao navegar ─────────────────────────
+    if (pageId === 'patients' && window.loadPatients) {
+      window.loadPatients()
+    }
+
     // ── Captação — Kanbans segmentados ──────────────────────────
     if (window.CaptacaoKanbans) {
       if (pageId === 'kanban-fullface')   window.CaptacaoKanbans.initFullFace()
