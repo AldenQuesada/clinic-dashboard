@@ -54,8 +54,9 @@ function loadPatients() {
     return
   }
 
-  // ── Fallback: lê leads com phase=paciente (clinicai_leads + appointments) ─
-  const allLeads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+  // ── Fallback: lê leads com phase=paciente ─
+  // Tenta LeadsService primeiro (dados frescos do Supabase), fallback localStorage
+  const allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
   const leads = allLeads.filter(function(l) { return l.phase === 'paciente' })
   const appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]')
 
