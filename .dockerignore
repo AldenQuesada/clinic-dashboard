@@ -4,6 +4,8 @@ node_modules
 n8n
 supabase
 .claude
+scripts
 *.md
 Dockerfile
 .dockerignore
+js/_deprecated_*

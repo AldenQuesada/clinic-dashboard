@@ -122,13 +122,27 @@ async function loadProceduresList() {
                 <div style="font-size:14px;font-weight:700;color:#10B981">${formatCurrency(p.price)}</div>
                 ${p.promoPrice ? `<div style="font-size:11px;font-weight:600;color:#F59E0B">Promo: ${formatCurrency(p.promoPrice)}</div>` : ''}
               </div>
-              <button onclick="editProcedure('${p.id}','${p.name.replace(/'/g,"\\'")}','${p.category||''}',${p.price},${p.durationMinutes||60},'${(p.description||'').replace(/'/g,"\\'")}',${p.promoPrice||0})" style="display:flex;align-items:center;gap:5px;background:#F3F4F6;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;color:#374151;cursor:pointer"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Ver</button>
-              <button onclick="deleteProcedure('${p.id}')" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:14px;padding:4px">✕</button>
+              <button data-edit-proc="${p.id}" style="display:flex;align-items:center;gap:5px;background:#F3F4F6;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;color:#374151;cursor:pointer"><svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Ver</button>
+              <button data-delete-proc="${p.id}" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:14px;padding:4px">✕</button>
             </div>
           </div>`).join('')}
       </div>`).join('')
+
+    // Event delegation para edit/delete
+    list.addEventListener('click', function(e) {
+      var editBtn = e.target.closest('[data-edit-proc]')
+      if (editBtn) {
+        var proc = procs.find(function(p) { return p.id === editBtn.dataset.editProc })
+        if (proc) editProcedure(proc.id, proc.name, proc.category || '', proc.price, proc.durationMinutes || 60, proc.description || '', proc.promoPrice || 0)
+        return
+      }
+      var delBtn = e.target.closest('[data-delete-proc]')
+      if (delBtn) {
+        deleteProcedure(delBtn.dataset.deleteProc)
+      }
+    })
   } catch (e) {
-    list.innerHTML = `<div style="color:#EF4444;padding:16px">${e.message}</div>`
+    list.innerHTML = `<div style="color:#EF4444;padding:16px">Erro ao carregar procedimentos</div>`
   }
 }
 
@@ -1282,13 +1296,17 @@ function apptSearchPatient(q) {
   warn.style.display = 'none'
   drop.innerHTML = matches.map(l => {
     const nome = l.nome || l.name || 'Paciente'
-    return `<div onclick="selectApptPatient('${l.id||''}','${nome.replace(/'/g,"\\'")}')"
+    return `<div data-select-lead="${l.id||''}" data-select-name="${nome.replace(/"/g,'&quot;')}"
       style="padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #F3F4F6"
       onmouseover="this.style.background='#F9FAFB'" onmouseout="this.style.background=''">
-      <div style="font-weight:600;color:#111">${nome}</div>
-      ${l.phone||l.whatsapp?`<div style="font-size:11px;color:#9CA3AF">${l.phone||l.whatsapp||''}</div>`:''}
+      <div style="font-weight:600;color:#111">${nome.replace(/</g,'&lt;')}</div>
+      ${l.phone||l.whatsapp?`<div style="font-size:11px;color:#9CA3AF">${(l.phone||l.whatsapp||'').replace(/</g,'&lt;')}</div>`:''}
     </div>`
   }).join('')
+  drop.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-select-lead]')
+    if (el) selectApptPatient(el.dataset.selectLead, el.dataset.selectName)
+  })
   drop.style.display = 'block'
 }
 
