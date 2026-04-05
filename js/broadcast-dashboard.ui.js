@@ -212,7 +212,7 @@
       html += '<button class="bc-dash-filter' + (_bcDashPeriod === p.key ? ' active' : '') + '" data-period="' + p.key + '">' + p.label + '</button>'
     })
     html += '</div>'
-    html += '<button class="am-btn-primary bc-dash-new-btn" id="bcNewBtn2">' + _feather('plus', 14) + ' Novo Disparo</button>'
+    // Botao Novo Disparo removido do dashboard — ja existe no panel lateral
     html += '</div>'
 
     // KPI cards
