@@ -302,14 +302,10 @@
     // Tabs — filtradas por _bcPageMode
     var scheduledCount = _broadcasts.filter(function(b) { return b.scheduled_at && new Date(b.scheduled_at) > new Date() && (b.status === 'draft' || b.status === 'sending') }).length
     html += '<div class="bc-slide-tabs">'
-    if (_bcPageMode !== 'rules') {
-      html += '<button class="bc-slide-tab' + (_bcPanelTab === 'editor' ? ' active' : '') + '" data-panel-tab="editor">Editor</button>'
-      html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
-      html += '<button class="bc-slide-tab' + (_bcPanelTab === 'scheduled' ? ' active' : '') + '" data-panel-tab="scheduled" style="position:relative">Programados' + (scheduledCount > 0 ? '<span class="bc-tab-badge-top">' + scheduledCount + '</span>' : '') + '</button>'
-    }
-    if (_bcPageMode === 'rules') {
-      html += '<button class="bc-slide-tab' + (_bcPanelTab === 'rules' ? ' active' : '') + '" data-panel-tab="rules">Regras</button>'
-    }
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'editor' ? ' active' : '') + '" data-panel-tab="editor">Editor</button>'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'history' ? ' active' : '') + '" data-panel-tab="history">Historico</button>'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'scheduled' ? ' active' : '') + '" data-panel-tab="scheduled" style="position:relative">Programados' + (scheduledCount > 0 ? '<span class="bc-tab-badge-top">' + scheduledCount + '</span>' : '') + '</button>'
+    html += '<button class="bc-slide-tab' + (_bcPanelTab === 'rules' ? ' active' : '') + '" data-panel-tab="rules">Regras</button>'
     html += '</div>'
 
     // Body
