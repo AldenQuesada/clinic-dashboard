@@ -5,6 +5,15 @@
 // Lê direto do localStorage (clinicai_leads + clinicai_appointments).
 // Não depende de backend. Dados sincronizados via Supabase.
 function loadPatients() {
+  // Forcar reload do Supabase pra pegar phases atualizadas
+  if (window.LeadsService && LeadsService.loadAll) {
+    LeadsService.loadAll().then(function() { _loadPatientsInternal() }).catch(function() { _loadPatientsInternal() })
+    return
+  }
+  _loadPatientsInternal()
+}
+
+function _loadPatientsInternal() {
   const nome     = document.getElementById('patientsFilterNome')?.value.trim().toLowerCase() || ''
   const proc     = document.getElementById('patientsFilterProc')?.value.trim().toLowerCase()  || ''
   const period   = document.getElementById('patientsFilterPeriod')?.value                     || ''
