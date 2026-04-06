@@ -155,55 +155,62 @@ function renderPatientsTable(patients) {
   const tbody = document.getElementById('patientsTableBody')
   if (!tbody) return
 
+  // Atualizar badge
+  var countEl = document.getElementById('patientsCountNum')
+  if (countEl) countEl.textContent = patients.length
+
+  // Period bar active state
+  var periodBar = document.getElementById('patientsPeriodBar')
+  if (periodBar) {
+    var currentPeriod = document.getElementById('patientsFilterPeriod')?.value || ''
+    periodBar.querySelectorAll('.ao-period-btn').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.period === currentPeriod)
+    })
+  }
+
   if (!patients.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado para os filtros aplicados.</td></tr>`
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado</td></tr>'
     return
   }
 
-  const statusLabel = {
+  var statusLabel = {
     active: 'Ativo', inactive: 'Inativo', treatment: 'Em Tratamento',
-    post_consult: 'Pós-consulta', post_proc: 'Pós-procedimento',
-    maintenance: 'Manutenção', reactivation: 'Reativação',
+    post_consult: 'Pos-consulta', post_proc: 'Pos-procedimento',
+    maintenance: 'Manutencao', reactivation: 'Reativacao',
   }
-  const statusColor = {
+  var statusColor = {
     active: '#10B981', inactive: '#9CA3AF', treatment: '#7C3AED',
     post_consult: '#3B82F6', post_proc: '#F59E0B',
     maintenance: '#06B6D4', reactivation: '#EF4444',
   }
 
-  tbody.innerHTML = patients.map(p => {
-    const procs = Array.isArray(p.proceduresDone) ? p.proceduresDone.join(', ') : (p.procedures || '—')
-    const lastProc = p.lastProcedureAt
-      ? new Date(p.lastProcedureAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
-      : '—'
-    const revenue = typeof p.totalRevenue === 'number'
-      ? p.totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-      : '—'
-    const status = p.status || 'active'
-    const color = statusColor[status] || '#6B7280'
-    const label = statusLabel[status] || status
+  function _esc(s) { return (s || '').replace(/</g, '&lt;').replace(/"/g, '&quot;') }
+  function _fmtPhone(p) {
+    if (!p) return ''
+    var d = p.replace(/\D/g, '')
+    if (d.length === 13) return '(' + d.slice(2,4) + ') ' + d.slice(4,9) + '-' + d.slice(9)
+    if (d.length === 12) return '(' + d.slice(2,4) + ') ' + d.slice(4,8) + '-' + d.slice(8)
+    return p
+  }
 
-    const escapedId   = (p.id   || '').replace(/'/g, "\\'")
-    const escapedName = (p.name || '—').replace(/'/g, "\\'").replace(/"/g, '&quot;')
-    return `<tr style="border-bottom:1px solid #F3F4F6">
-      <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#111">${p.name || '—'}</td>
-      <td style="padding:12px 16px;font-size:13px;color:#374151">${p.phone || '—'}</td>
-      <td style="padding:12px 16px;font-size:12px;color:#6B7280;max-width:200px">${procs || '—'}</td>
-      <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#111">${revenue}</td>
-      <td style="padding:12px 16px;font-size:13px;color:#6B7280">${lastProc}</td>
-      <td style="padding:12px 16px">
-        <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${color}1A;color:${color}">${label}</span>
-      </td>
-      <td style="padding:12px 16px">
-        <button onclick="typeof openProntuario==='function'&&openProntuario('${escapedId}','${escapedName}')"
-          title="Ver Prontuário"
-          style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:7px;background:transparent;color:#6B7280;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s"
-          onmouseover="this.style.borderColor='#7C3AED';this.style.color='#7C3AED'" onmouseout="this.style.borderColor='#E5E7EB';this.style.color='#6B7280'">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
-          Prontuário
-        </button>
-      </td>
-    </tr>`
+  tbody.innerHTML = patients.map(function(p) {
+    var procs = Array.isArray(p.proceduresDone) ? p.proceduresDone.join(', ') : (p.procedures || '')
+    var revenue = typeof p.totalRevenue === 'number' && p.totalRevenue > 0
+      ? p.totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : ''
+    var status = p.status || 'active'
+    var color = statusColor[status] || '#6B7280'
+    var label = statusLabel[status] || status
+
+    return '<tr style="border-bottom:1px solid #F9FAFB;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'#FAFAFA\'" onmouseout="this.style.background=\'\'">' +
+      '<td style="padding:12px 8px 12px 16px"><input type="checkbox" style="width:14px;height:14px;accent-color:#7C3AED;cursor:pointer" onclick="event.stopPropagation()"></td>' +
+      '<td style="padding:12px 16px"><div style="font-size:13px;font-weight:600;color:#111827">' + _esc(p.name || '') + '</div><div style="font-size:12px;color:#6B7280">' + _fmtPhone(p.phone || '') + '</div></td>' +
+      '<td style="padding:12px 16px;font-size:12px;color:#6B7280">' + _fmtPhone(p.phone || '') + '</td>' +
+      '<td style="padding:12px 16px;font-size:12px;color:#6B7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(procs || '—') + '</td>' +
+      '<td style="padding:12px 16px;font-size:13px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
+      '<td style="padding:12px 16px"><span style="display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:' + color + ';background:' + color + '1A;border-radius:6px;padding:3px 10px">' + label + '</span></td>' +
+      '<td style="padding:12px 16px;text-align:center"><button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _esc(p.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;color:#374151">Ver</button></td>' +
+    '</tr>'
   }).join('')
 }
 
