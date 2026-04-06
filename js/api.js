@@ -1036,14 +1036,20 @@ function _simularEnvioWpp(appt, tipo, mensagem, delay) {
 
 function apptCardSmall(a) {
   const s        = APPT_STATUS_CFG[a.status] || APPT_STATUS_CFG.agendado
-  const profs    = getProfessionals()
-  const profNome = a.profissionalNome || profs[a.profissionalIdx]?.nome || ''
-  const canDrag  = window.AgendaValidator ? AgendaValidator.canDrag(a) : !['finalizado','em_consulta','na_clinica'].includes(a.status)
-  const cardOpacity = ['cancelado','no_show'].includes(a.status) ? 'opacity:0.6;' : ''
+  const isCancelado = ['cancelado','no_show','finalizado'].includes(a.status)
+  const isLocked = ['finalizado','em_consulta','na_clinica'].includes(a.status)
+  const canDrag  = window.AgendaValidator ? AgendaValidator.canDrag(a) : !isCancelado
+  const cardOpacity = ['cancelado','no_show'].includes(a.status) ? 'opacity:0.55;' : ''
 
-  // Altura proporcional (cada slot semana = 34px)
   const slots = _apptDurationSlots(a)
   const cardHeight = (slots * 34) - 4
+
+  const allowed = window.STATE_MACHINE ? (window.STATE_MACHINE[a.status] || []) : []
+  const statusLabels = window.STATUS_LABELS || {}
+  const statusColors = window.STATUS_COLORS || {}
+  const optionsHtml = allowed.map(function(ns) {
+    return `<option value="${ns}">${statusLabels[ns]||ns}</option>`
+  }).join('')
 
   return `<div data-apptid="${a.id}" draggable="${canDrag}"
     ondragstart="${canDrag ? `agendaDragStart(event,'${a.id}')` : `agendaDragStartBlocked(event,'${a.id}')`}"
@@ -1051,8 +1057,11 @@ function apptCardSmall(a) {
     onmouseenter="_apptTip(event,'${a.id}')" onmouseleave="_apptTipHide()"
     style="background:${s.bg};border-left:3px solid ${s.color}${['cancelado','no_show'].includes(a.status)?';border-left-style:dashed':''};border-radius:6px;padding:4px 6px;cursor:${canDrag?'grab':'default'};${cardOpacity}position:absolute;top:0;left:2px;right:2px;height:${cardHeight}px;z-index:2;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
     <div style="font-size:10px;font-weight:700;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome||'Paciente'}</div>
-    <div style="font-size:9px;color:#4B5563;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio||''}${a.horaFim?' – '+a.horaFim:''}</div>
-    <span style="display:inline-block;font-size:8px;font-weight:700;color:${s.color};background:rgba(255,255,255,.65);padding:1px 5px;border-radius:10px;margin-top:1px">${s.label||a.status}</span>
+    <div style="font-size:9px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio||''}${a.horaFim?' – '+a.horaFim:''}</div>
+    ${!isCancelado && allowed.length ? `<select onclick="event.stopPropagation()" onchange="event.stopPropagation();_apptCardStatusChange('${a.id}',this.value);this.value=''" style="width:100%;margin-top:2px;padding:2px 4px;font-size:9px;font-weight:700;color:${s.color};background:${s.bg};border:1px solid ${s.color};border-radius:4px;cursor:pointer;outline:none;appearance:auto">
+      <option value="">${s.label}</option>
+      ${optionsHtml}
+    </select>` : `<div style="margin-top:2px;font-size:9px;font-weight:700;color:${s.color};text-align:center">${isLocked?'<svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="'+s.color+'" stroke-width="2.5" style="vertical-align:-1px;margin-right:2px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>':''}${s.label}</div>`}
   </div>`
 }
 
