@@ -2288,108 +2288,159 @@
 
   // ── Simulation Generator ────────────────────────────────────
 
+  // Zone descriptions for GPT prompt
+  var ZONE_PROMPT_DESC = {
+    'zigoma-lateral': 'Slightly increase lateral zygomatic projection, restoring youthful cheek volume',
+    'zigoma-anterior': 'Add gentle anterior zygomatic volume to fill the shadow beneath the cheekbone',
+    'temporal': 'Restore temporal fossa volume, creating a subtle upward lifting vector',
+    'olheira': 'Reduce periorbital shadow by 50%, brighten the tear trough area naturally',
+    'nariz-dorso': 'Slightly refine the nasal dorsum projection for better profile balance',
+    'nariz-base': 'Subtly refine the nasal base for improved proportion',
+    'sulco': 'Soften the nasolabial fold by 40-50%, maintaining some natural expression lines',
+    'marionete': 'Soften marionette lines, creating a more relaxed expression',
+    'pre-jowl': 'Fill the pre-jowl sulcus for a smooth jaw-to-chin transition',
+    'mandibula': 'Define the jawline contour, creating a continuous line from ear to chin',
+    'mento': 'Project the chin forward slightly, improving profile balance',
+    'labio': 'Add subtle lip volume while maintaining natural shape',
+    'cod-barras': 'Smooth perioral lines (barcode lines) above the upper lip',
+    'pescoco': 'Smooth cervical lines for a more youthful neck',
+    'glabela': 'Relax glabellar lines between the eyebrows',
+    'frontal': 'Smooth forehead lines for a more relaxed look',
+    'periorbital': 'Soften crow\'s feet around the eyes',
+    'gingival': 'Reduce gummy smile appearance',
+    'dao': 'Elevate the corners of the mouth for a more positive expression',
+    'platisma': 'Soften platysmal bands in the neck',
+  }
+
   function _generateSimulation(callback) {
-    // Uses the 45° (or main) ANTES photo + annotations to generate
-    // a simulated "after" by applying zone-specific canvas effects
+    var srcAngle = _photoUrls['45'] ? '45' : (_photoUrls['front'] ? 'front' : 'lateral')
+    if (!_photoUrls[srcAngle]) return
+
+    var apiKey = null
+    try { apiKey = localStorage.getItem('clinicai_openai_key') } catch (e) {}
+    if (!apiKey && window.ClinicEnv) apiKey = window.ClinicEnv.OPENAI_KEY
+
+    if (!apiKey) {
+      console.warn('[FaceMapping] No OpenAI key, using canvas fallback')
+      _generateSimulationCanvas(callback)
+      return
+    }
+
+    // Build treatment list from annotations
+    var anns = _annotations.filter(function (a) { return a.angle === srcAngle })
+    var treatments = anns.map(function (a) {
+      var desc = ZONE_PROMPT_DESC[a.zone] || 'Subtle improvement in ' + a.zone
+      return '- ' + (a.zone || '').replace(/-/g, ' ') + ': ' + desc
+    }).join('\n')
+
+    var prompt = 'Subtly edit this patient\'s facial photo to simulate the result of aesthetic treatments.\n\n' +
+      'CRITICAL RULES:\n' +
+      '- MAINTAIN the person\'s identity, expression, skin texture, and lighting exactly\n' +
+      '- Changes must be VERY SUBTLE and NATURAL — this is medical aesthetics, not a beauty filter\n' +
+      '- Keep the exact same angle, background, hair, and clothing\n' +
+      '- Never add makeup, change skin color, or alter bone structure dramatically\n' +
+      '- The result should look like the same person, just refreshed and rejuvenated\n' +
+      '- Err on the side of LESS change rather than more\n\n' +
+      'TREATMENTS TO SIMULATE:\n' + treatments + '\n\n' +
+      'OVERALL EFFECT: The face should look naturally rejuvenated — as if the person looks 5-8 years younger. ' +
+      'Subtle volume restoration, shadow reduction, and contour refinement. ' +
+      'A medical professional should look at this and say "that\'s a realistic, conservative result."'
+
+    // Convert photo to base64
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+
+      c.toBlob(function (blob) {
+        // Show loading state
+        var btn = document.querySelector('.fm-btn-primary')
+        if (btn) { btn.textContent = 'Gerando simulacao IA...' }
+
+        // Call OpenAI Images API
+        var formData = new FormData()
+        formData.append('model', 'gpt-image-1')
+        formData.append('image', blob, 'photo.png')
+        formData.append('prompt', prompt)
+        formData.append('size', '1024x1024')
+        formData.append('n', '1')
+
+        fetch('https://api.openai.com/v1/images/edits', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + apiKey },
+          body: formData,
+        })
+        .then(function (res) { return res.json() })
+        .then(function (data) {
+          if (data.data && data.data[0]) {
+            var imgData = data.data[0]
+            if (imgData.b64_json) {
+              // Convert base64 to blob URL
+              var binary = atob(imgData.b64_json)
+              var arr = new Uint8Array(binary.length)
+              for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+              var simBlob = new Blob([arr], { type: 'image/png' })
+              if (_simPhotoUrl) URL.revokeObjectURL(_simPhotoUrl)
+              _simPhotoUrl = URL.createObjectURL(simBlob)
+              console.log('[FaceMapping] GPT simulation generated successfully')
+              if (callback) callback()
+            } else if (imgData.url) {
+              // Use URL directly
+              _simPhotoUrl = imgData.url
+              if (callback) callback()
+            }
+          } else {
+            console.error('[FaceMapping] GPT image error:', data)
+            // Fallback to canvas
+            _generateSimulationCanvas(callback)
+          }
+        })
+        .catch(function (err) {
+          console.error('[FaceMapping] GPT request failed:', err)
+          _generateSimulationCanvas(callback)
+        })
+      }, 'image/png')
+    }
+    img.src = _photoUrls[srcAngle]
+  }
+
+  // Canvas-based fallback simulation (original code)
+  function _generateSimulationCanvas(callback) {
     var srcAngle = _photoUrls['45'] ? '45' : (_photoUrls['front'] ? 'front' : 'lateral')
     if (!_photoUrls[srcAngle]) return
 
     var img = new Image()
     img.onload = function () {
       var w = img.width, h = img.height
-      // Main canvas
       var c = document.createElement('canvas')
       c.width = w; c.height = h
       var ctx = c.getContext('2d')
       ctx.drawImage(img, 0, 0, w, h)
 
-      // Temp canvas for blur operations
-      var tmp = document.createElement('canvas')
-      tmp.width = w; tmp.height = h
-      var tCtx = tmp.getContext('2d')
-
-      // Calculate scale from editor canvas to this canvas
-      var scale = _canvas ? (w / _canvas.width) : 1
-
-      // Get annotations for this angle
       var anns = _annotations.filter(function (a) { return a.angle === srcAngle })
-
-      // Pass 1: Apply zone-specific effects
       anns.forEach(function (ann) {
         var z = ZONES.find(function (x) { return x.id === ann.zone })
         if (!z) return
-        var s = {
-          x: ann.shape.x * scale, y: ann.shape.y * scale,
-          rx: ann.shape.rx * scale, ry: ann.shape.ry * scale
-        }
-
+        var scale = _canvas ? (w / _imgW) : 1
+        var s = { x: ann.shape.x * scale, y: ann.shape.y * scale, rx: ann.shape.rx * scale, ry: ann.shape.ry * scale }
         ctx.save()
-        // Clip to ellipse region
         ctx.beginPath()
         ctx.ellipse(s.x, s.y, s.rx * 1.2, s.ry * 1.2, 0, 0, Math.PI * 2)
         ctx.clip()
-
-        if (z.cat === 'tox') {
-          // Rugas: smooth/blur the area (simulate wrinkle reduction)
-          // Apply a soft blur by drawing scaled down then up
-          tCtx.clearRect(0, 0, w, h)
-          tCtx.drawImage(c, 0, 0)
-          var bx = Math.max(0, s.x - s.rx * 1.3)
-          var by = Math.max(0, s.y - s.ry * 1.3)
-          var bw = s.rx * 2.6
-          var bh = s.ry * 2.6
-          // Scale down then up = blur effect
-          var smallW = Math.max(1, bw / 4)
-          var smallH = Math.max(1, bh / 4)
-          ctx.drawImage(c, bx, by, bw, bh, bx, by, smallW, smallH)
-          ctx.imageSmoothingEnabled = true
-          ctx.imageSmoothingQuality = 'high'
-          ctx.drawImage(c, bx, by, smallW, smallH, bx, by, bw, bh)
-
-          // Slight brighten
-          ctx.fillStyle = 'rgba(255,255,255,0.08)'
-          ctx.fillRect(bx, by, bw, bh)
-        } else {
-          // Preenchimento: lighten shadows, add warmth (simulate volume)
-          if (z.id === 'olheira') {
-            // Olheira: significant lightening
-            ctx.fillStyle = 'rgba(255,240,230,0.3)'
-            ctx.beginPath()
-            ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
-            ctx.fill()
-          } else if (z.id === 'sulco' || z.id === 'marionete' || z.id === 'pre-jowl') {
-            // Deep lines: lighten to simulate filled
-            ctx.fillStyle = 'rgba(255,245,235,0.2)'
-            ctx.beginPath()
-            ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
-            ctx.fill()
-          } else {
-            // Volume zones: subtle warm highlight
-            ctx.fillStyle = 'rgba(255,235,220,0.15)'
-            ctx.beginPath()
-            ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
-            ctx.fill()
-          }
-        }
+        ctx.fillStyle = z.id === 'olheira' ? 'rgba(255,240,230,0.3)' : 'rgba(255,235,220,0.15)'
+        ctx.beginPath()
+        ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
+        ctx.fill()
         ctx.restore()
       })
 
-      // Pass 2: Global enhancement
-      // Slight overall brightness + warmth
       ctx.save()
       ctx.globalCompositeOperation = 'screen'
       ctx.fillStyle = 'rgba(255,248,240,0.06)'
       ctx.fillRect(0, 0, w, h)
       ctx.restore()
 
-      // Soft overall smoothing via slight blur
-      ctx.save()
-      ctx.globalAlpha = 0.3
-      ctx.filter = 'blur(1px)'
-      ctx.drawImage(c, 0, 0)
-      ctx.restore()
-
-      // Convert to blob and set as simulated photo
       c.toBlob(function (blob) {
         if (_simPhotoUrl) URL.revokeObjectURL(_simPhotoUrl)
         _simPhotoUrl = URL.createObjectURL(blob)

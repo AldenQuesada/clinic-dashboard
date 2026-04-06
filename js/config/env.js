@@ -21,9 +21,11 @@
   window.ClinicEnv = Object.freeze({
     SUPABASE_URL: 'https://oqboitkpcvuaudouwvkl.supabase.co',
     SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',
+    // OpenAI API key: loaded from localStorage (set via Settings > Integracoes)
+    // Never committed to git. Set via: localStorage.setItem('clinicai_openai_key', 'sk-...')
+    OPENAI_KEY: null,
     // Cache-buster: incrementar a cada deploy para forçar recarga dos scripts
-    // Em pipeline de CI/CD, substituir por hash do commit ou timestamp do build
-    ASSET_VERSION: '20260405c',
+    ASSET_VERSION: '20260406a',
   })
 
 })()
