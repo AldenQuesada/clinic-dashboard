@@ -444,7 +444,7 @@ function _updateAgendaKpis() {
   kpiRow.innerHTML =
 
     // Card 1: Agendados | Confirmados
-    '<div style="flex:1;background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+    '<div style="flex:1;background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:8px 18px;display:flex;align-items:center;gap:8px">' +
       '<div style="width:22px;height:22px;border-radius:6px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
       '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">Agendados</span>' +
       '<span style="font-size:18px;font-weight:800;color:#3B82F6">' + total + '</span>' +
@@ -453,14 +453,14 @@ function _updateAgendaKpis() {
     '</div>' +
 
     // Card 2: Sem Confirmacao
-    '<div style="flex:1;background:#fff;border:1px solid ' + (semConfirm > 0 ? '#FDE68A' : '#F3F4F6') + ';border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+    '<div style="flex:1;background:#fff;border:1px solid ' + (semConfirm > 0 ? '#FDE68A' : '#F3F4F6') + ';border-radius:10px;padding:8px 18px;display:flex;align-items:center;gap:8px">' +
       '<div style="width:22px;height:22px;border-radius:6px;background:#FFFBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
       '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">Sem Confirm.</span>' +
       '<span style="font-size:18px;font-weight:800;color:#D97706">' + semConfirm + '</span>' +
     '</div>' +
 
     // Card 3: No-show | %
-    '<div style="flex:1;background:#fff;border:1px solid ' + (noshow > 0 ? '#FECACA' : '#F3F4F6') + ';border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+    '<div style="flex:1;background:#fff;border:1px solid ' + (noshow > 0 ? '#FECACA' : '#F3F4F6') + ';border-radius:10px;padding:8px 18px;display:flex;align-items:center;gap:8px">' +
       '<div style="width:22px;height:22px;border-radius:6px;background:#FEF2F2;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>' +
       '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">No-show</span>' +
       '<span style="font-size:18px;font-weight:800;color:#EF4444">' + noshow + '</span>' +
@@ -469,7 +469,7 @@ function _updateAgendaKpis() {
     '</div>' +
 
     // Card 4: Previsao | Faturamento
-    '<div style="flex:1;background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+    '<div style="flex:1;background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:8px 18px;display:flex;align-items:center;gap:8px">' +
       '<div style="width:22px;height:22px;border-radius:6px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
       '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">Prev. | Fat.</span>' +
       '<span style="font-size:13px;font-weight:700;color:#6B7280;white-space:nowrap">' + fmtR(previsao) + '</span>' +
