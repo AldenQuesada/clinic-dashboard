@@ -963,15 +963,24 @@
             <select id="patientsFilterPeriod" style="display:none"><option value=""></option></select>
             <input type="text" style="display:none" autocomplete="username">
             <input id="patientsFilterNome" type="text" autocomplete="new-password" role="presentation" placeholder="Buscar por nome ou telefone..." oninput="loadPatients()" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:230px">
-            <input id="patientsFilterProc" type="text" style="display:none">
           </div>
 
-          <!-- Linha 2: Badge + Tags + Exportar -->
+          <!-- Linha 2: Badge + Procedimento + Periodo + Exportar -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
             <div id="patientsCountBadge" style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:5px 12px">
               <span id="patientsCountNum" style="font-size:15px;font-weight:800;color:#111">0</span>
               <span style="font-size:11px;font-weight:500;color:#9ca3af;text-transform:uppercase">pacientes</span>
             </div>
+            <input id="patientsFilterProc" type="text" autocomplete="new-password" role="presentation" placeholder="Filtrar por procedimento..." oninput="loadPatients()" style="padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none;width:200px;background:#fff;color:#374151">
+            <select id="patientsFilterPeriodSelect" onchange="document.getElementById('patientsFilterPeriod').value=this.value;var btns=document.querySelectorAll('#patientsPeriodBar .ao-period-btn');btns.forEach(function(b){b.classList.toggle('active',b.dataset.period===this.value)}.bind(this));if(this.value==='custom'){document.getElementById('patientsDateRange').style.display='flex'}else{document.getElementById('patientsDateRange').style.display='none'};loadPatients()" style="padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;color:#374151">
+              <option value="">Todos os periodos</option>
+              <option value="7">Ultimos 7 dias</option>
+              <option value="30">Ultimos 30 dias</option>
+              <option value="90">Ultimos 90 dias</option>
+              <option value="180">Ultimos 6 meses</option>
+              <option value="365">Ultimo ano</option>
+              <option value="custom">Periodo especifico</option>
+            </select>
             <div style="flex:1"></div>
             <button id="patientsExportBtn" onclick="typeof exportPatientsCsv==='function'&&exportPatientsCsv()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:#374151;cursor:pointer">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
