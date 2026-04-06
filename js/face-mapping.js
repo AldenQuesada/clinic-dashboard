@@ -1752,16 +1752,10 @@
       outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height)
       outCtx.drawImage(_cropCanvas, 0, 0)
 
-      // Show loading on button
-      var confirmBtn = document.getElementById('fmCropConfirm')
-      if (confirmBtn) confirmBtn.textContent = 'Removendo fundo...'
-
       outCanvas.toBlob(function (blob) {
-        // Try to remove background via n8n
-        _removeBackground(blob, function (processedBlob) {
           if (_photoUrls[_pendingCropAngle]) URL.revokeObjectURL(_photoUrls[_pendingCropAngle])
-          _photoUrls[_pendingCropAngle] = URL.createObjectURL(processedBlob)
-          _photos[_pendingCropAngle] = processedBlob
+          _photoUrls[_pendingCropAngle] = URL.createObjectURL(blob)
+          _photos[_pendingCropAngle] = blob
 
           if (!_activeAngle) _activeAngle = _pendingCropAngle
 
@@ -1769,102 +1763,11 @@
           _render()
           _autoSave()
           if (_activeAngle === _pendingCropAngle) setTimeout(_initCanvas, 50)
-        })
       }, 'image/png')
     })
   }
 
-  // ── Background Removal ────────────────────────────────────
-
-  // Simple hash for dedup (fast, not cryptographic)
-  function _quickHash(b64) {
-    var hash = 0
-    for (var i = 0; i < b64.length; i += 100) {
-      hash = ((hash << 5) - hash) + b64.charCodeAt(i)
-      hash |= 0
-    }
-    return 'fh_' + Math.abs(hash).toString(36) + '_' + b64.length
-  }
-
-  function _removeBackground(blob, callback) {
-    // Client-side background removal using canvas color detection
-    // Works well for portrait photos with uniform backgrounds (clinic setting)
-    var img = new Image()
-    img.onload = function () {
-      var w = img.width, h = img.height
-      var c = document.createElement('canvas')
-      c.width = w; c.height = h
-      var ctx = c.getContext('2d')
-      ctx.drawImage(img, 0, 0)
-
-      var pixels = ctx.getImageData(0, 0, w, h)
-      var data = pixels.data
-
-      // Sample background color from corners and edges
-      var bgSamples = []
-      var sampleSize = Math.floor(Math.min(w, h) * 0.05)
-      for (var sy = 0; sy < sampleSize; sy++) {
-        for (var sx = 0; sx < sampleSize; sx++) {
-          // Top-left corner
-          var i = (sy * w + sx) * 4
-          bgSamples.push([data[i], data[i+1], data[i+2]])
-          // Top-right corner
-          i = (sy * w + (w - 1 - sx)) * 4
-          bgSamples.push([data[i], data[i+1], data[i+2]])
-        }
-      }
-
-      // Average background color
-      var avgR = 0, avgG = 0, avgB = 0
-      bgSamples.forEach(function (s) { avgR += s[0]; avgG += s[1]; avgB += s[2] })
-      avgR = Math.round(avgR / bgSamples.length)
-      avgG = Math.round(avgG / bgSamples.length)
-      avgB = Math.round(avgB / bgSamples.length)
-
-      // Tolerance for background detection (higher = more aggressive)
-      var tolerance = 55
-
-      // Replace background pixels with black
-      for (var pi = 0; pi < data.length; pi += 4) {
-        var dr = Math.abs(data[pi] - avgR)
-        var dg = Math.abs(data[pi+1] - avgG)
-        var db = Math.abs(data[pi+2] - avgB)
-        var dist = Math.sqrt(dr * dr + dg * dg + db * db)
-
-        if (dist < tolerance) {
-          // Background pixel — make black
-          data[pi] = 0; data[pi+1] = 0; data[pi+2] = 0
-        }
-      }
-
-      // Apply edge smoothing: second pass with softer threshold near person edges
-      var softTolerance = tolerance * 1.3
-      for (var pi = 0; pi < data.length; pi += 4) {
-        if (data[pi] === 0 && data[pi+1] === 0 && data[pi+2] === 0) continue // already black
-        var dr = Math.abs(data[pi] - avgR)
-        var dg = Math.abs(data[pi+1] - avgG)
-        var db = Math.abs(data[pi+2] - avgB)
-        var dist = Math.sqrt(dr * dr + dg * dg + db * db)
-
-        if (dist < softTolerance) {
-          // Near-background pixel — blend toward black
-          var blend = (softTolerance - dist) / (softTolerance - tolerance)
-          blend = Math.max(0, Math.min(1, blend))
-          data[pi] = Math.round(data[pi] * (1 - blend))
-          data[pi+1] = Math.round(data[pi+1] * (1 - blend))
-          data[pi+2] = Math.round(data[pi+2] * (1 - blend))
-        }
-      }
-
-      ctx.putImageData(pixels, 0, 0)
-
-      c.toBlob(function (resultBlob) {
-        console.log('[FaceMapping] Background removed (canvas method)')
-        callback(resultBlob)
-      }, 'image/png')
-    }
-    img.src = URL.createObjectURL(blob)
-  }
+  // Background removal removed — use dark background in clinic for best results
 
   function _cropMouseMove(e) {
     if (!_cropDragging) return
