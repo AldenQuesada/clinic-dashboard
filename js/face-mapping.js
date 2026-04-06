@@ -146,7 +146,6 @@
   var _cropDragging = false
   var _cropDragStart = null
   var _pendingCropAngle = null
-  var _canvasZoom = 1
 
   // ── Feather icon helper ───────────────────────────────────
 
@@ -410,16 +409,11 @@
     }
 
     return '<div class="fm-canvas-area" id="fmCanvasArea">' +
-      '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap" style="transform-origin:top center;transform:scale(' + _canvasZoom + ')">' +
+      '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap">' +
         '<canvas id="fmCanvas"></canvas>' +
       '</div>' +
       '<div class="fm-canvas-controls">' +
-        '<button onclick="FaceMapping._zoomCanvas(-0.1)" title="Diminuir" class="fm-canvas-ctrl-btn">-</button>' +
-        '<input type="range" id="fmCanvasZoom" min="0.5" max="2.5" step="0.05" value="' + _canvasZoom + '" ' +
-          'oninput="FaceMapping._setCanvasZoom(parseFloat(this.value))" style="width:100px">' +
-        '<button onclick="FaceMapping._zoomCanvas(0.1)" title="Aumentar" class="fm-canvas-ctrl-btn">+</button>' +
-        '<span style="font-size:10px;color:var(--text-muted);min-width:36px;text-align:center">' + Math.round(_canvasZoom * 100) + '%</span>' +
-        '<button onclick="FaceMapping._toggleFullscreen()" title="Tela cheia" class="fm-canvas-ctrl-btn" style="margin-left:8px">' + _icon('maximize-2', 14) + '</button>' +
+        '<button onclick="FaceMapping._toggleFullscreen()" title="Tela cheia" class="fm-canvas-ctrl-btn">' + _icon('maximize-2', 14) + '</button>' +
       '</div>' +
     '</div>'
   }
@@ -543,11 +537,14 @@
     _ctx = _canvas.getContext('2d')
     _img = new Image()
     _img.onload = function () {
-      var maxW = _canvas.parentElement.clientWidth - LABEL_MARGIN
-      var maxH = window.innerHeight - 180
-      var scale = Math.min(maxW / _img.width, maxH / _img.height, 1)
-      _imgW = _img.width * scale
-      _imgH = _img.height * scale
+      var area = document.getElementById('fmCanvasArea')
+      var areaW = area ? area.clientWidth : _canvas.parentElement.clientWidth
+      var areaH = area ? (area.clientHeight - 44) : (window.innerHeight - 180) // 44 = controls bar
+      var maxW = areaW - LABEL_MARGIN - 10
+      var maxH = areaH
+      var scale = Math.min(maxW / _img.width, maxH / _img.height)
+      _imgW = Math.round(_img.width * scale)
+      _imgH = Math.round(_img.height * scale)
       _canvas.width = _imgW + LABEL_MARGIN
       _canvas.height = _imgH
       _redraw()
@@ -1161,20 +1158,8 @@
     }
   }
 
-  function _setCanvasZoom(val) {
-    _canvasZoom = Math.max(0.5, Math.min(2.5, val))
-    var wrap = document.getElementById('fmCanvasWrap')
-    if (wrap) wrap.style.transform = 'scale(' + _canvasZoom + ')'
-    var slider = document.getElementById('fmCanvasZoom')
-    if (slider) slider.value = _canvasZoom
-    // Update label
-    var area = document.querySelector('.fm-canvas-controls span')
-    if (area) area.textContent = Math.round(_canvasZoom * 100) + '%'
-  }
-
-  function _zoomCanvas(delta) {
-    _setCanvasZoom(_canvasZoom + delta)
-  }
+  function _setCanvasZoom() { /* no-op, kept for API compat */ }
+  function _zoomCanvas() { /* no-op */ }
 
   function _toggleFullscreen() {
     var area = document.getElementById('fmCanvasArea')
@@ -1182,9 +1167,13 @@
     if (area.classList.contains('fm-fullscreen')) {
       area.classList.remove('fm-fullscreen')
       document.body.style.overflow = ''
+      // Re-init at normal size
+      setTimeout(_initCanvas, 50)
     } else {
       area.classList.add('fm-fullscreen')
       document.body.style.overflow = 'hidden'
+      // Re-init at fullscreen size
+      setTimeout(_initCanvas, 50)
     }
   }
 
