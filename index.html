@@ -945,10 +945,6 @@
               <p style="font-size:13px;color:#6B7280;margin:4px 0 0">Pacientes confirmados da clinica</p>
             </div>
             <div style="display:flex;align-items:center;gap:10px">
-              <button onclick="typeof showNewPatientModal==='function'&&showNewPatientModal()" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.3)">
-                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                Novo Paciente
-              </button>
             </div>
           </div>
 
@@ -968,8 +964,8 @@
           <!-- Linha 2: Badge + Procedimento + Periodo + Exportar -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
             <div id="patientsCountBadge" style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:5px 12px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               <span id="patientsCountNum" style="font-size:15px;font-weight:800;color:#111">0</span>
-              <span style="font-size:11px;font-weight:500;color:#9ca3af;text-transform:uppercase">pacientes</span>
             </div>
             <input id="patientsFilterProc" type="text" autocomplete="new-password" role="presentation" placeholder="Filtrar por procedimento..." oninput="loadPatients()" style="padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none;width:200px;background:#fff;color:#374151">
             <select id="patientsFilterPeriodSelect" onchange="document.getElementById('patientsFilterPeriod').value=this.value;var btns=document.querySelectorAll('#patientsPeriodBar .ao-period-btn');btns.forEach(function(b){b.classList.toggle('active',b.dataset.period===this.value)}.bind(this));if(this.value==='custom'){document.getElementById('patientsDateRange').style.display='flex'}else{document.getElementById('patientsDateRange').style.display='none'};loadPatients()" style="padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;color:#374151">
@@ -1005,7 +1001,7 @@
                 </colgroup>
                 <thead>
                   <tr style="background:#F9FAFB;border-bottom:1px solid #F3F4F6">
-                    <th style="padding:12px 8px 12px 16px;width:32px"><input type="checkbox" id="patientsSelectAll" style="width:14px;height:14px;accent-color:#7C3AED;cursor:pointer"></th>
+                    <th style="padding:12px 8px 12px 16px;width:32px"></th>
                     <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Nome</th>
                     <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Telefone</th>
                     <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Procedimentos</th>

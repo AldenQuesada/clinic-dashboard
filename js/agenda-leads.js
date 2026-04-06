@@ -90,8 +90,8 @@
       // Linha 2: Badge Agendados + Tags + Exportar
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">' +
         '<div id="' + p + 'CountBadge" style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:5px 12px">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
           '<span id="' + p + 'Stat_total" style="font-size:15px;font-weight:800;color:#111">0</span>' +
-          '<span style="font-size:11px;font-weight:500;color:#9ca3af;text-transform:uppercase">agendados</span>' +
         '</div>' +
         '<select id="' + p + 'TagFilter" style="padding:5px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;color:#374151">' +
           '<option value="">Todas as tags</option>' +
