@@ -268,6 +268,7 @@ function _client() {
       ? { global: { headers } }
       : {}
     _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, opts)
+    window._sbShared = _sb
     return _sb
   }
   console.warn('ClinicAI: Supabase SDK não carregado.')
@@ -278,6 +279,7 @@ function _client() {
 // para que as credenciais de tenant sejam reaplicadas nos headers.
 function _resetClient() {
   _sb = null
+  window._sbShared = null
 }
 
 // ── Auditoria de segurança (executa uma vez na inicialização) ─
@@ -843,7 +845,7 @@ window.sbClient = function() {
 //   3. sbStartRealtime() é reiniciado com o filtro de clinic_id correto.
 //
 document.addEventListener('clinicai:auth-success', () => {
-  _resetClient()   // descarta singleton → recria com headers de tenant
+  // NAO resetar client — reusar o singleton pra evitar GoTrueClient duplicado
   sbLoadAll().then(() => {
     _reRenderAll()
     try { sbStartRealtime() } catch (err) {
