@@ -2427,9 +2427,13 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoginModal()
   } else {
     _migrateLeadStatuses()  // corrige status de leads existentes no boot
-    // NAO disparar auth-success aqui — auth.js ja dispara apos requireAuth
-    // Disparar duplicado causa GoTrueClient lock conflict
-    // document.dispatchEvent(new CustomEvent('clinicai:auth-success'))
+    // Fallback: se auth.js nao disparou auth-success em 2s, dispara aqui
+    setTimeout(function() {
+      if (!window._authSuccessFired) {
+        console.warn('[api.js] auth-success fallback dispatch')
+        document.dispatchEvent(new CustomEvent('clinicai:auth-success'))
+      }
+    }, 2000)
     // Exibir alertas pendentes de finalização no sino
     setTimeout(() => {
       _renderNotificationBell()

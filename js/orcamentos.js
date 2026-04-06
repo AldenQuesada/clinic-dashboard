@@ -33,32 +33,26 @@
     var page = document.getElementById('page-orcamentos')
     if (!page) return
 
-    // Tentar com dados locais primeiro
+    // Renderizar com dados locais imediatamente (evita tela vazia)
     var local = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-
     if (local.length) {
       _cacheData = local
       _cacheTs = Date.now()
       _render()
-      return
     }
 
-    // Dados vazios — polling ate ter dados (LeadsService pode estar carregando)
-    var attempts = 0
-    var maxAttempts = 10
-    var pollInterval = setInterval(function() {
-      attempts++
-      var data = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-      if (data.length) {
-        clearInterval(pollInterval)
-        _cacheData = data
-        _cacheTs = Date.now()
-        _render()
-      } else if (attempts >= maxAttempts) {
-        clearInterval(pollInterval)
-        console.warn('[Orcamentos] Dados nao carregaram apos ' + maxAttempts + ' tentativas')
-      }
-    }, 1000)
+    // Sempre buscar dados frescos do Supabase para garantir sync
+    if (window.LeadsService && LeadsService.loadAll) {
+      LeadsService.loadAll().then(function(fresh) {
+        if (fresh && fresh.length) {
+          _cacheData = fresh
+          _cacheTs = Date.now()
+          _render()
+        }
+      }).catch(function(e) {
+        console.warn('[Orcamentos] loadAll falhou, usando cache local:', e)
+      })
+    }
   }
 
   function _render() {
