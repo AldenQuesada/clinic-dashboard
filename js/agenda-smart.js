@@ -282,7 +282,11 @@ function apptTransition(id, newStatus, by) {
   }
 
   // Ações contextuais
-  if (newStatus === 'na_clinica')  setTimeout(() => _showChecklist(appt, 'na_clinica'), 200)
+  if (newStatus === 'na_clinica') {
+    setTimeout(() => _showChecklist(appt, 'na_clinica'), 200)
+    // Enviar consentimento de imagem automaticamente via WhatsApp
+    _enviarConsentimento(appt, 'imagem')
+  }
   if (newStatus === 'em_consulta') setTimeout(() => _showChecklist(appt, 'em_consulta'), 200)
   if (newStatus === 'cancelado')   setTimeout(() => _openRecovery(appt), 400)
   if (newStatus === 'no_show')     setTimeout(() => _openRecovery(appt), 400)
@@ -385,6 +389,37 @@ function _ckTryClose() {
 }
 window._ckUpdate = _ckUpdate
 window._ckTryClose = _ckTryClose
+
+// ── Envio automatico de consentimentos via WhatsApp ─────────
+function _enviarConsentimento(appt, tipo) {
+  var phone = (_getPhone(appt) || '').replace(/\D/g, '')
+  if (!phone || !window._sbShared) return
+
+  var nome = appt.pacienteNome || 'Paciente'
+  var clinica = window._getClinicaNome ? _getClinicaNome() : 'Clinica'
+
+  var msgs = {
+    imagem: 'Ola, *' + nome + '*!\n\nPara darmos continuidade ao seu atendimento, precisamos do seu consentimento para uso de imagem.\n\nPor favor, leia e confirme respondendo *ACEITO*:\n\nAutorizo o uso de imagens do meu rosto para fins de acompanhamento clinico e documentacao do tratamento.\n\n*' + clinica + '*',
+    procedimento: 'Ola, *' + nome + '*!\n\nSegue o termo de consentimento do procedimento realizado hoje.\n\nPor favor, leia e confirme respondendo *ACEITO*:\n\nDeclaro que fui informada sobre o procedimento, seus beneficios, riscos e cuidados pos.\n\n*' + clinica + '*',
+    pagamento: 'Ola, *' + nome + '*!\n\nSegue o termo de consentimento referente a forma de pagamento acordada (boleto/parcelamento).\n\nPor favor, confirme respondendo *ACEITO*:\n\nDeclaro que estou ciente das condicoes de pagamento acordadas.\n\n*' + clinica + '*',
+  }
+
+  var msg = msgs[tipo]
+  if (!msg) return
+
+  window._sbShared.rpc('wa_outbox_enqueue_appt', {
+    p_phone: phone,
+    p_content: msg,
+    p_lead_name: nome
+  }).then(function(res) {
+    if (!res.error && window._showToast) {
+      var labels = { imagem: 'Consent. Imagem', procedimento: 'Consent. Procedimento', pagamento: 'Consent. Pagamento' }
+      _showToast('Consentimento enviado', (labels[tipo] || tipo) + ' para ' + nome, 'success')
+    }
+  }).catch(function() { /* silencioso */ })
+
+  _logAuto(appt.id, 'wa_consentimento_' + tipo, 'enviado')
+}
 
 // ── Documentos Legais — badge readonly (atualiza automaticamente) ──
 function _docRow(label, isDone, doneText, pendingText) {
@@ -1174,6 +1209,14 @@ function confirmFinalize(id) {
         TagEngine.applyTag(apptFinal.pacienteId, 'orcamento', 'orc_em_aberto', 'finalizacao', vars3)
       } catch(e) {}
     }
+  }
+
+  // Enviar consentimento de procedimento automaticamente
+  _enviarConsentimento(apptFinal, 'procedimento')
+
+  // Enviar consentimento de pagamento se boleto/parcelado/entrada_saldo
+  if (['boleto','parcelado','entrada_saldo'].includes(forma)) {
+    _enviarConsentimento(apptFinal, 'pagamento')
   }
 
   closeFinalizeModal()
