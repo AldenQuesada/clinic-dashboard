@@ -525,6 +525,9 @@
     if (pageId === 'patients-prontuario' && typeof window._initProntuarioPage === 'function') {
       window._initProntuarioPage()
     }
+    if (pageId === 'facial-analysis' && window.FaceMapping) {
+      window.FaceMapping._restorePage()
+    }
 
     // ── Leads contextualizados por funil ────────────────────────
     if (window.LeadsContext) {

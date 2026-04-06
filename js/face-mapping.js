@@ -121,6 +121,31 @@
     setTimeout(function () { _render() }, 100)
   }
 
+  function _restorePage() {
+    // Called by sidebar hook on page navigate/reload
+    // If we have a lead loaded, just re-render
+    if (_lead) {
+      _render()
+      if (_activeAngle) setTimeout(_initCanvas, 50)
+      return
+    }
+    // No lead — show empty picker state
+    var root = document.getElementById('facialAnalysisRoot')
+    if (!root) return
+    root.innerHTML = '<div class="fm-page">' +
+      '<div class="fm-header"><div class="fm-header-left">' +
+        '<span class="fm-header-title">Analise Facial</span>' +
+      '</div></div>' +
+      '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
+        '<div style="text-align:center;color:var(--text-muted)">' +
+          _icon('image', 48) +
+          '<p style="margin-top:12px;font-size:14px">Abra a ficha de um paciente e<br>clique em <strong>Analise Facial</strong> para comecar.</p>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+    if (window.feather) window.feather.replace()
+  }
+
   function openFromModal(lead) {
     _lead = lead
     _photos = {}
@@ -1264,6 +1289,7 @@
     init: init,
     openFromModal: openFromModal,
 
+    _restorePage: _restorePage,
     _selectAngle: _selectAngle,
     _selectZone: _selectZone,
     _onTreatmentChange: _onTreatmentChange,
