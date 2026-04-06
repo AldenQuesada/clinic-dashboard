@@ -43,9 +43,16 @@
         _cacheData = leads
         _cacheTs = Date.now()
         _render()
-      }).catch(function() { _render() })
+      }).catch(function() {
+        // Fallback: usar getLocal mesmo sem loadAll
+        _cacheData = LeadsService.getLocal()
+        _cacheTs = Date.now()
+        _render()
+      })
       return
     }
+    // Sem LeadsService — tentar localStorage direto
+    _cacheData = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
     _render()
   }
 
@@ -257,11 +264,14 @@
   window.exportOrcamentosCsv = exportCsv
 
   // Auto-load quando pagina orcamentos esta ativa no boot
+  // Delay 500ms pra garantir que LeadsService.loadAll ja completou
   document.addEventListener('clinicai:auth-success', function() {
-    try {
-      var lastPage = localStorage.getItem('clinicai_last_page')
-      if (lastPage === 'orcamentos') load()
-    } catch(e) {}
+    setTimeout(function() {
+      try {
+        var lastPage = localStorage.getItem('clinicai_last_page')
+        if (lastPage === 'orcamentos') load(true)
+      } catch(e) {}
+    }, 500)
   })
 
 })()
