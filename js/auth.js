@@ -212,7 +212,6 @@ async function requireAuth() {
   _updateSidebarUser(profile)
 
   // Notifica módulos que dependem do perfil (ex: sidebar.js filtra por role)
-  window._authSuccessFired = true
   document.dispatchEvent(new CustomEvent('clinicai:auth-success', { detail: profile }))
 
   // Carrega configurações da clínica no contexto global (silencioso, não bloqueia boot)
