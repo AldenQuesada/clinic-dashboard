@@ -125,6 +125,41 @@
     var kpiTaxaSub = document.getElementById('kpiOrcTaxaSub')
     if (kpiTaxaSub) kpiTaxaSub.textContent = aprovados + ' de ' + leads.length
 
+    // Valores financeiros
+    var valorTotal = 0, valorRecuperado = 0, valorAberto = 0
+    leads.forEach(function(l) {
+      var orcs = (l.customFields || {}).orcamentos || []
+      orcs.forEach(function(o) {
+        var v = parseFloat(o.valor) || 0
+        valorTotal += v
+        if (o.status === 'aprovado') valorRecuperado += v
+        else valorAberto += v
+      })
+    })
+
+    var fmtR = function(v) { return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0 }) }
+
+    var elValTotal = document.getElementById('kpiOrcValorTotal')
+    if (elValTotal) elValTotal.textContent = fmtR(valorTotal)
+    var elValTotalSub = document.getElementById('kpiOrcValorTotalSub')
+    if (elValTotalSub) elValTotalSub.textContent = 'soma de ' + leads.length + ' orcamentos'
+
+    var elValRec = document.getElementById('kpiOrcValorRec')
+    if (elValRec) elValRec.textContent = fmtR(valorRecuperado)
+    var elValRecSub = document.getElementById('kpiOrcValorRecSub')
+    if (elValRecSub) elValRecSub.textContent = aprovados + ' aprovados'
+
+    var elValAb = document.getElementById('kpiOrcValorAb')
+    if (elValAb) elValAb.textContent = fmtR(valorAberto)
+    var elValAbSub = document.getElementById('kpiOrcValorAbSub')
+    if (elValAbSub) elValAbSub.textContent = abertos + ' aguardando'
+
+    // Trends financeiros
+    var pctRec = valorTotal ? Math.round((valorRecuperado / valorTotal) * 100) : 0
+    _setTrend('kpiOrcValorTotalTrend', 'kpiOrcValorTotalTrendVal', 1, fmtR(valorTotal))
+    _setTrend('kpiOrcValorRecTrend', 'kpiOrcValorRecTrendVal', valorRecuperado, pctRec + '% do total')
+    _setTrend('kpiOrcValorAbTrend', 'kpiOrcValorAbTrendVal', -valorAberto, (100 - pctRec) + '% pendente')
+
     // Sparklines e trends
     _renderOrcSparklines(leads)
     _renderOrcTrends(leads, abertos, aprovados, taxa)

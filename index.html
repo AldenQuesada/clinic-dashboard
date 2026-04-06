@@ -1839,6 +1839,56 @@
             </div>
           </div>
 
+          <!-- KPI Row 2: Valores financeiros -->
+          <div class="kpi-grid" style="margin-bottom:16px" id="orcKpiRow2">
+
+            <div class="kpi-card">
+              <div class="kpi-card-top">
+                <div class="kpi-icon kpi-icon-blue">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="kpi-trend kpi-trend-up" id="kpiOrcValorTotalTrend" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                  <span id="kpiOrcValorTotalTrendVal"></span>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiOrcValorTotal" style="font-size:22px">R$ 0</div>
+              <div class="kpi-label">Valor Total</div>
+              <div class="kpi-sub" id="kpiOrcValorTotalSub">soma de todos os orcamentos</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-card-top">
+                <div class="kpi-icon kpi-icon-emerald">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="kpi-trend kpi-trend-up" id="kpiOrcValorRecTrend" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                  <span id="kpiOrcValorRecTrendVal"></span>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiOrcValorRec" style="font-size:22px">R$ 0</div>
+              <div class="kpi-label">Valor Recuperado</div>
+              <div class="kpi-sub" id="kpiOrcValorRecSub">orcamentos aprovados</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-card-top">
+                <div class="kpi-icon kpi-icon-gold">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="kpi-trend kpi-trend-neutral" id="kpiOrcValorAbTrend" style="display:none">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span id="kpiOrcValorAbTrendVal"></span>
+                </div>
+              </div>
+              <div class="kpi-value" id="kpiOrcValorAb" style="font-size:22px">R$ 0</div>
+              <div class="kpi-label">Valor em Aberto</div>
+              <div class="kpi-sub" id="kpiOrcValorAbSub">aguardando conversao</div>
+            </div>
+
+          </div>
+
           <!-- Filtros + Novo Orcamento -->
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
             <div class="ao-period-bar" id="orcPeriodBar">
