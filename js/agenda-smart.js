@@ -386,21 +386,21 @@ function _ckTryClose() {
 window._ckUpdate = _ckUpdate
 window._ckTryClose = _ckTryClose
 
-// ── Documentos Legais — toggle de checks no detail panel ────
-function _docLegalToggle(apptId, field, value) {
-  if (!window.getAppointments) return
-  var appts = getAppointments()
-  var idx = appts.findIndex(function(a) { return a.id === apptId })
-  if (idx < 0) return
-  appts[idx][field] = value
-  saveAppointments(appts)
-  if (window.AppointmentsService && AppointmentsService.syncOne) {
-    AppointmentsService.syncOne(appts[idx])
-  }
-  // Re-render o painel pra atualizar cores
-  setTimeout(function() { _buildPanel(apptId) }, 100)
+// ── Documentos Legais — badge readonly (atualiza automaticamente) ──
+function _docRow(label, isDone, doneText, pendingText) {
+  var dot = isDone
+    ? '<span style="width:8px;height:8px;border-radius:50%;background:#10B981;flex-shrink:0"></span>'
+    : '<span style="width:8px;height:8px;border-radius:50%;background:#F59E0B;flex-shrink:0;animation:pulse 1.5s infinite"></span>'
+  var statusText = isDone ? doneText : pendingText
+  var statusColor = isDone ? '#10B981' : '#F59E0B'
+  var borderColor = isDone ? '#BBF7D0' : '#FDE68A'
+  var bgColor = isDone ? '#F0FDF4' : '#FFFBEB'
+  return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:' + bgColor + ';border-radius:6px;border:1px solid ' + borderColor + '">' +
+    dot +
+    '<div style="flex:1"><div style="font-size:11px;font-weight:600;color:#374151">' + label + '</div></div>' +
+    '<span style="font-size:10px;font-weight:700;color:' + statusColor + '">' + statusText + '</span>' +
+  '</div>'
 }
-window._docLegalToggle = _docLegalToggle
 
 // ── Recovery Flow ─────────────────────────────────────────────────
 function _openRecovery(appt) {
@@ -648,41 +648,16 @@ function _tabResumo(a) {
     ${_row('Paciente',  tipoPMap[a.tipoP]||'')}
     ${a.obs?`<div style="margin-top:10px;padding:9px;background:#F9FAFB;border-radius:7px;font-size:11px;color:#6B7280;line-height:1.5">${a.obs}</div>`:''}
 
-    <div style="margin-top:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px">
+    <div style="margin-top:14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <span style="font-size:10px;font-weight:800;color:#DC2626;text-transform:uppercase;letter-spacing:.06em">Documentos Legais</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span style="font-size:10px;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:.06em">Documentos Legais</span>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;background:#fff;border-radius:6px;border:1px solid ${a.anamneseRespondida?'#BBF7D0':'#FDE68A'}">
-          <input type="checkbox" ${a.anamneseRespondida?'checked':''} onchange="_docLegalToggle('${a.id}','anamneseRespondida',this.checked)" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer"/>
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:#374151">Ficha de Anamnese</div>
-            <div style="font-size:10px;color:${a.anamneseRespondida?'#10B981':'#F59E0B'};font-weight:600">${a.anamneseRespondida?'Preenchida':'Pendente'}</div>
-          </div>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;background:#fff;border-radius:6px;border:1px solid ${(a.consentimentoImagem==='assinado'||a.consentimentoImagem===true)?'#BBF7D0':'#FDE68A'}">
-          <input type="checkbox" ${(a.consentimentoImagem==='assinado'||a.consentimentoImagem===true)?'checked':''} onchange="_docLegalToggle('${a.id}','consentimentoImagem',this.checked?'assinado':'pendente')" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer"/>
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:#374151">Consentimento de Imagem</div>
-            <div style="font-size:10px;color:${(a.consentimentoImagem==='assinado'||a.consentimentoImagem===true)?'#10B981':'#F59E0B'};font-weight:600">${(a.consentimentoImagem==='assinado'||a.consentimentoImagem===true)?'Assinado':'Pendente'}</div>
-          </div>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;background:#fff;border-radius:6px;border:1px solid ${a.consentimentoProcedimento==='assinado'?'#BBF7D0':'#FDE68A'}">
-          <input type="checkbox" ${a.consentimentoProcedimento==='assinado'?'checked':''} onchange="_docLegalToggle('${a.id}','consentimentoProcedimento',this.checked?'assinado':'pendente')" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer"/>
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:#374151">Consentimento de Procedimento</div>
-            <div style="font-size:10px;color:${a.consentimentoProcedimento==='assinado'?'#10B981':'#F59E0B'};font-weight:600">${a.consentimentoProcedimento==='assinado'?'Assinado':'Pendente'}</div>
-          </div>
-        </label>
-        ${(a.formaPagamento==='boleto'||a.formaPagamento==='parcelado'||a.formaPagamento==='entrada_saldo')?`
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;background:#fff;border-radius:6px;border:1px solid ${a.consentimentoPagamento==='assinado'?'#BBF7D0':'#FDE68A'}">
-          <input type="checkbox" ${a.consentimentoPagamento==='assinado'?'checked':''} onchange="_docLegalToggle('${a.id}','consentimentoPagamento',this.checked?'assinado':'pendente')" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer"/>
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:#374151">Consentimento de Pagamento</div>
-            <div style="font-size:10px;color:${a.consentimentoPagamento==='assinado'?'#10B981':'#F59E0B'};font-weight:600">${a.consentimentoPagamento==='assinado'?'Assinado':'Pendente'}</div>
-          </div>
-        </label>`:''}
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${_docRow('Ficha de Anamnese', a.anamneseRespondida, 'Preenchida', 'Pendente')}
+        ${_docRow('Consentimento de Imagem', a.consentimentoImagem === 'assinado' || a.consentimentoImagem === true, 'Assinado', 'Pendente')}
+        ${_docRow('Consentimento de Procedimento', a.consentimentoProcedimento === 'assinado', 'Assinado', 'Pendente')}
+        ${(a.formaPagamento==='boleto'||a.formaPagamento==='parcelado'||a.formaPagamento==='entrada_saldo') ? _docRow('Consentimento de Pagamento', a.consentimentoPagamento === 'assinado', 'Assinado', 'Pendente') : ''}
       </div>
     </div>
 
