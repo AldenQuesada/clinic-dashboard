@@ -37,24 +37,40 @@
     var local = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
 
     if (local.length) {
-      // Dados disponiveis — renderizar imediatamente
       _cacheData = local
       _cacheTs = Date.now()
       _render()
-    } else {
-      // Dados vazios — esperar loadAll completar
-      if (window.LeadsService && LeadsService.loadAll) {
-        LeadsService.loadAll().then(function(leads) {
-          _cacheData = leads || []
-          _cacheTs = Date.now()
-          _render()
-        }).catch(function() {
-          // Ultimo fallback: tentar getLocal de novo (pode ter sido populado por outro listener)
-          _cacheData = LeadsService.getLocal()
-          _render()
-        })
-      }
+      return
     }
+
+    // Dados vazios — buscar direto do Supabase com timeout
+    var sb = window._sbShared
+    if (!sb) return
+
+    var done = false
+    var timer = setTimeout(function() {
+      if (done) return; done = true
+      // Timeout: tentar getLocal uma ultima vez
+      var retry = window.LeadsService ? LeadsService.getLocal() : []
+      if (retry.length) { _cacheData = retry; _render() }
+    }, 8000)
+
+    sb.rpc('leads_list', { p_search: null, p_status: null, p_limit: 2000, p_offset: 0 }).then(function(res) {
+      if (done) return; done = true; clearTimeout(timer)
+      if (res.error) { console.error('[Orcamentos] leads_list erro:', res.error.message); return }
+      var leads = (res.data || []).map(function(r) {
+        if (r && r.data && typeof r.data === 'object' && !r.id) return Object.assign({}, r.data, { _sb_updated_at: r.updated_at })
+        return r
+      })
+      _cacheData = leads
+      _cacheTs = Date.now()
+      // Salvar no localStorage pra futuro
+      try { localStorage.setItem('clinicai_leads', JSON.stringify(leads)) } catch(e) {}
+      _render()
+    }).catch(function(e) {
+      if (done) return; done = true; clearTimeout(timer)
+      console.error('[Orcamentos] fetch erro:', e)
+    })
   }
 
   function _render() {
@@ -265,20 +281,12 @@
   window.exportOrcamentosCsv = exportCsv
 
   // Auto-load quando pagina orcamentos esta ativa no boot
-  // Escuta o evento de leads carregados pra renderizar quando dados estiverem prontos
-  var _autoLoaded = false
   document.addEventListener('clinicai:auth-success', function() {
     var lastPage = null
     try { lastPage = localStorage.getItem('clinicai_last_page') } catch(e) {}
-    if (lastPage !== 'orcamentos') return
-
-    // Esperar LeadsService completar loadAll
-    if (window.LeadsService && LeadsService.loadAll) {
-      LeadsService.loadAll().then(function() {
-        if (!_autoLoaded) { _autoLoaded = true; load() }
-      }).catch(function() {
-        if (!_autoLoaded) { _autoLoaded = true; load() }
-      })
+    if (lastPage === 'orcamentos') {
+      // Delay pra dar chance ao LeadsService popular o localStorage
+      setTimeout(load, 1500)
     }
   })
 
