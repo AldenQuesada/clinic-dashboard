@@ -948,10 +948,18 @@
     _cropCanvas = document.getElementById('fmCropCanvas')
     _cropCtx = _cropCanvas.getContext('2d')
 
+    // HiDPI: render at 2x for sharp output
+    var dpr = Math.max(window.devicePixelRatio || 1, 2)
+
     _cropImg = new Image()
     _cropImg.onload = function () {
-      _cropCanvas.width = boxW
-      _cropCanvas.height = boxH
+      // Canvas pixels = display size * dpr
+      _cropCanvas.width = boxW * dpr
+      _cropCanvas.height = boxH * dpr
+      // CSS keeps it at display size
+      _cropCanvas.style.width = boxW + 'px'
+      _cropCanvas.style.height = boxH + 'px'
+      _cropCtx.scale(dpr, dpr)
 
       // Fit cover: fill entire box, no black borders
       var scaleW = boxW / _cropImg.width
@@ -1025,8 +1033,8 @@
       _cropZoom = parseFloat(this.value)
       label.textContent = Math.round(_cropZoom * 100) + '%'
 
-      // Adjust pan to keep center
-      var cx = _cropCanvas.width / 2, cy = _cropCanvas.height / 2
+      // Adjust pan to keep center (use display coords, not pixel coords)
+      var cx = boxW / 2, cy = boxH / 2
       _cropPanX = cx - (cx - _cropPanX) * (_cropZoom / oldZoom)
       _cropPanY = cy - (cy - _cropPanY) * (_cropZoom / oldZoom)
       _cropRedraw()
@@ -1034,7 +1042,7 @@
 
     // Confirm crop
     confirm.addEventListener('click', function () {
-      // Extract the visible area as a new image
+      // Extract at full resolution from the HiDPI canvas
       var outCanvas = document.createElement('canvas')
       outCanvas.width = _cropCanvas.width
       outCanvas.height = _cropCanvas.height
@@ -1051,7 +1059,7 @@
         document.getElementById('fmCropOverlay').remove()
         _render()
         if (_activeAngle === _pendingCropAngle) setTimeout(_initCanvas, 50)
-      }, 'image/jpeg', 0.92)
+      }, 'image/jpeg', 0.95)
     })
   }
 
@@ -1752,7 +1760,7 @@
         if (_simPhotoUrl) URL.revokeObjectURL(_simPhotoUrl)
         _simPhotoUrl = URL.createObjectURL(blob)
         if (callback) callback()
-      }, 'image/jpeg', 0.92)
+      }, 'image/jpeg', 0.95)
     }
     img.src = _photoUrls[srcAngle]
   }
