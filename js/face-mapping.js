@@ -178,9 +178,14 @@
           'onclick="FaceMapping._selectAngle(\'' + a.id + '\')">' +
           '<img src="' + _photoUrls[a.id] + '" alt="' + a.label + '">' +
           '<span class="fm-photo-thumb-label">ANTES \u2022 ' + a.label + '</span>' +
-          '<button class="fm-photo-recrop" onclick="event.stopPropagation();FaceMapping._recrop(\'' + a.id + '\')" title="Recortar">' +
-            _icon('crop', 12) +
-          '</button>' +
+          '<div class="fm-photo-actions">' +
+            '<button class="fm-photo-action-btn" onclick="event.stopPropagation();FaceMapping._recrop(\'' + a.id + '\')" title="Recortar">' +
+              _icon('crop', 11) +
+            '</button>' +
+            '<button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deletePhoto(\'' + a.id + '\')" title="Excluir foto">' +
+              _icon('trash-2', 11) +
+            '</button>' +
+          '</div>' +
         '</div>'
       } else {
         html += '<div class="fm-photo-upload" onclick="FaceMapping._triggerUpload(\'' + a.id + '\')">' +
@@ -649,8 +654,8 @@
             '<span id="fmCropZoomLabel" style="font-size:11px;color:#9CA3AF;min-width:36px">100%</span>' +
           '</div>' +
           '<div style="display:flex;gap:8px;width:100%">' +
-            '<button class="fm-btn" onclick="document.getElementById(\'fmCropOverlay\').remove()" style="flex:1;justify-content:center">Cancelar</button>' +
-            '<button class="fm-btn fm-btn-primary" id="fmCropConfirm" style="flex:2;justify-content:center;padding:10px 16px">' + _icon('check', 16) + ' Salvar Recorte</button>' +
+            '<button onclick="document.getElementById(\'fmCropOverlay\').remove()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 16px;border:1px solid #E8EAF0;border-radius:10px;background:#fff;color:#374151;font-size:13px;font-weight:500;cursor:pointer">Cancelar</button>' +
+            '<button id="fmCropConfirm" style="flex:2;display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 16px;border:none;border-radius:10px;background:#C8A97E;color:#fff;font-size:14px;font-weight:600;cursor:pointer">' + _icon('check', 16) + ' Salvar Recorte</button>' +
           '</div>' +
         '</div>' +
       '</div>'
@@ -665,12 +670,12 @@
       _cropCanvas.width = boxW
       _cropCanvas.height = boxH
 
-      // Fit entire image inside the box (contain)
+      // Fit cover: fill entire box, no black borders
       var scaleW = boxW / _cropImg.width
       var scaleH = boxH / _cropImg.height
-      _cropZoom = Math.min(scaleW, scaleH)
+      _cropZoom = Math.max(scaleW, scaleH)
 
-      // Center the image
+      // Center the image (some parts overflow = crop)
       var drawW = _cropImg.width * _cropZoom
       var drawH = _cropImg.height * _cropZoom
       _cropPanX = (boxW - drawW) / 2
@@ -772,6 +777,22 @@
     _cropPanX = e.clientX - _cropDragStart.x
     _cropPanY = e.clientY - _cropDragStart.y
     _cropRedraw()
+  }
+
+  function _deletePhoto(angle) {
+    if (_photoUrls[angle]) URL.revokeObjectURL(_photoUrls[angle])
+    delete _photos[angle]
+    delete _photoUrls[angle]
+    delete _originalFiles[angle]
+    // Remove annotations for this angle
+    _annotations = _annotations.filter(function (a) { return a.angle !== angle })
+    // Switch to another angle if this was active
+    if (_activeAngle === angle) {
+      _activeAngle = _photoUrls['front'] ? 'front' : (_photoUrls['45'] ? '45' : (_photoUrls['lateral'] ? 'lateral' : null))
+    }
+    _selAnn = null
+    _render()
+    if (_activeAngle) setTimeout(_initCanvas, 50)
   }
 
   function _recrop(angle) {
@@ -1254,6 +1275,7 @@
     _closeExport: _closeExport,
     _saveToSupabase: _saveToSupabase,
     _recrop: _recrop,
+    _deletePhoto: _deletePhoto,
 
     get _selectedMl() { return _selectedMl },
     set _selectedMl(v) { _selectedMl = v },
