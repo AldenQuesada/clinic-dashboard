@@ -765,23 +765,31 @@
   cursor: crosshair;
 }
 
-/* ── Zone color dot ─────────────────────────────────────────── */
+/* ── Zone color dot + icon ──────────────────────────────────── */
 .fm-zone-dot {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  margin-right: 4px;
+  margin-right: 2px;
   vertical-align: middle;
   flex-shrink: 0;
+}
+
+.fm-zone-icon {
+  flex-shrink: 0;
+  margin-right: 1px;
 }
 
 .fm-zone-btn {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 4px;
+  gap: 3px;
   text-align: left;
+  font-size: 10.5px;
+  padding: 6px 5px;
+  line-height: 1.2;
 }
 
 /* ── Photo action buttons (crop + delete) ──────────────────── */

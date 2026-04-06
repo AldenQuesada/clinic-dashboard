@@ -19,24 +19,74 @@
 
   // ── Config ────────────────────────────────────────────────
 
-  // Cores por ZONA (cada regiao tem cor unica)
-  // angles: em quais vistas esta zona pode ser marcada
-  var ZONES = [
-    { id: 'glabela',         label: 'Glabela',           desc: 'Linhas de expressao', color: '#7BA3CF', angles: ['front'] },
-    { id: 'frontal',         label: 'Frontal',           desc: 'Linhas frontais',     color: '#8ECFC4', angles: ['front'] },
-    { id: 'olheira',         label: 'Olheira',           desc: 'Sombra periorbital',  color: '#7ECF7E', angles: ['front', '45'] },
-    { id: 'nariz-dorso',     label: 'Nariz Dorso',       desc: 'Projecao dorsal',     color: '#A8B4C8', angles: ['45', 'lateral'] },
-    { id: 'nariz-base',      label: 'Nariz Base',        desc: 'Base / asa nasal',    color: '#B8C4D8', angles: ['45', 'lateral'] },
-    { id: 'labio',           label: 'Labios',            desc: 'Volume / contorno',   color: '#E07B7B', angles: ['front', '45'] },
-    { id: 'sulco',           label: 'Sulco Nasogeniano', desc: 'Suavizacao',          color: '#E8A86B', angles: ['front', '45'] },
-    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',            color: '#5B7FC7', angles: ['45'] },
-    { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',     color: '#6BBF8A', angles: ['45'] },
-    { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',       color: '#9B6FC7', angles: ['45', 'lateral'] },
-    { id: 'marionete',       label: 'Marionete',         desc: 'Refinamento',         color: '#D98BA3', angles: ['45'] },
-    { id: 'pre-jowl',        label: 'Pre-jowl',         desc: 'Transicao',           color: '#E8B8C8', angles: ['45', 'lateral'] },
-    { id: 'mandibula',       label: 'Mandibula',         desc: 'Contorno',            color: '#C9A96E', angles: ['45', 'lateral'] },
-    { id: 'mento',           label: 'Mento',             desc: 'Projecao',            color: '#D4A857', angles: ['45', 'lateral'] },
+  // ── Zone categories ────────────────────────────────────────
+  // cat: 'fill' (preenchimento, mL) or 'tox' (rugas/toxina, U)
+  // min/max: default ranges (editable, saved to localStorage)
+
+  var ZONES_DEFAULT = [
+    // Preenchimento (mL)
+    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',            color: '#5B7FC7', angles: ['45'],              cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
+    { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',     color: '#6BBF8A', angles: ['45'],              cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah' },
+    { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',       color: '#9B6FC7', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
+    { id: 'olheira',         label: 'Olheira',           desc: 'Sombra periorbital',  color: '#7ECF7E', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah' },
+    { id: 'nariz-dorso',     label: 'Nariz Dorso',       desc: 'Projecao dorsal',     color: '#A8B4C8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.3, max: 1.0, defaultTx: 'ah' },
+    { id: 'nariz-base',      label: 'Nariz Base',        desc: 'Base / asa nasal',    color: '#B8C4D8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah' },
+    { id: 'sulco',           label: 'Sulco Nasogeniano', desc: 'Suavizacao',          color: '#E8A86B', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
+    { id: 'marionete',       label: 'Marionete',         desc: 'Refinamento',         color: '#D98BA3', angles: ['45'],              cat: 'fill', unit: 'mL', min: 0.3, max: 1.0, defaultTx: 'ah' },
+    { id: 'pre-jowl',        label: 'Pre-jowl',         desc: 'Transicao',           color: '#E8B8C8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah' },
+    { id: 'mandibula',       label: 'Mandibula',         desc: 'Contorno',            color: '#C9A96E', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 1.0, max: 3.0, defaultTx: 'ah' },
+    { id: 'mento',           label: 'Mento',             desc: 'Projecao',            color: '#D4A857', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
+    { id: 'labio',           label: 'Labios',            desc: 'Volume / contorno',   color: '#E07B7B', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah' },
+    // Rugas / Toxina (U = unidades)
+    { id: 'glabela',         label: 'Glabela',           desc: 'Linhas de expressao', color: '#7BA3CF', angles: ['front'],           cat: 'tox', unit: 'U', min: 10, max: 25, defaultTx: 'botox' },
+    { id: 'frontal',         label: 'Frontal',           desc: 'Linhas frontais',     color: '#8ECFC4', angles: ['front'],           cat: 'tox', unit: 'U', min: 10, max: 20, defaultTx: 'botox' },
+    { id: 'periorbital',     label: 'Periorbital',       desc: 'Pes de galinha',      color: '#6BAED6', angles: ['front', '45'],     cat: 'tox', unit: 'U', min: 8,  max: 16, defaultTx: 'botox' },
+    { id: 'gingival',        label: 'Gingival',          desc: 'Sorriso gengival',    color: '#E8879B', angles: ['front'],           cat: 'tox', unit: 'U', min: 2,  max: 4,  defaultTx: 'botox' },
+    { id: 'dao',             label: 'DAO',               desc: 'Depressao do labio',  color: '#C88EA8', angles: ['front', '45'],     cat: 'tox', unit: 'U', min: 4,  max: 8,  defaultTx: 'botox' },
+    { id: 'platisma',        label: 'Platisma',          desc: 'Bandas do pescoco',   color: '#A89EC8', angles: ['lateral'],          cat: 'tox', unit: 'U', min: 10, max: 30, defaultTx: 'botox' },
   ]
+
+  // Load custom ranges from localStorage (override min/max)
+  var ZONES = _loadZoneRanges()
+
+  function _loadZoneRanges() {
+    var custom = {}
+    try { custom = JSON.parse(localStorage.getItem('fm_zone_ranges') || '{}') } catch (e) {}
+    return ZONES_DEFAULT.map(function (z) {
+      var c = custom[z.id]
+      return c ? Object.assign({}, z, { min: c.min != null ? c.min : z.min, max: c.max != null ? c.max : z.max }) : Object.assign({}, z)
+    })
+  }
+
+  function _saveZoneRange(zoneId, min, max) {
+    var custom = {}
+    try { custom = JSON.parse(localStorage.getItem('fm_zone_ranges') || '{}') } catch (e) {}
+    custom[zoneId] = { min: min, max: max }
+    localStorage.setItem('fm_zone_ranges', JSON.stringify(custom))
+    ZONES = _loadZoneRanges()
+  }
+
+  // SVG mini-icons for zone buttons (contour lines)
+  var ZONE_ICONS = {
+    'zigoma-lateral':  '<path d="M3 6C5 3 9 2 11 5" stroke-width="1.5" fill="none"/>',
+    'zigoma-anterior': '<path d="M4 7C6 4 10 4 11 7" stroke-width="1.5" fill="none"/>',
+    'temporal':        '<path d="M3 3C5 2 8 2 9 5L8 9" stroke-width="1.5" fill="none"/>',
+    'olheira':         '<ellipse cx="6" cy="7" rx="4" ry="2" stroke-width="1.5" fill="none"/>',
+    'nariz-dorso':     '<path d="M6 2L6 10" stroke-width="1.5" fill="none"/><path d="M4 10L8 10" stroke-width="1" fill="none"/>',
+    'nariz-base':      '<path d="M3 8C4 10 8 10 9 8" stroke-width="1.5" fill="none"/>',
+    'sulco':           '<path d="M3 4C4 7 5 9 4 11" stroke-width="1.5" fill="none"/>',
+    'marionete':       '<path d="M4 6C3 9 3 11 4 12" stroke-width="1.5" fill="none"/>',
+    'pre-jowl':        '<path d="M3 8C4 10 7 11 9 10" stroke-width="1.5" fill="none"/>',
+    'mandibula':       '<path d="M2 4C3 8 6 10 10 9" stroke-width="1.5" fill="none"/>',
+    'mento':           '<path d="M4 4C3 7 5 9 8 8" stroke-width="1.5" fill="none"/>',
+    'labio':           '<path d="M3 6C5 4 7 4 9 6C7 8 5 8 3 6Z" stroke-width="1.5" fill="none"/>',
+    'glabela':         '<path d="M3 4L5 6L7 4L9 6" stroke-width="1.5" fill="none"/>',
+    'frontal':         '<path d="M2 5L10 5M2 7L10 7M3 9L9 9" stroke-width="1" fill="none"/>',
+    'periorbital':     '<path d="M2 6L4 4L6 6L8 4L10 6" stroke-width="1.5" fill="none"/>',
+    'gingival':        '<path d="M4 5C5 8 7 8 8 5" stroke-width="1.5" fill="none"/><path d="M4 8L8 8" stroke-width="1" fill="none"/>',
+    'dao':             '<path d="M5 4C4 7 3 9 2 10" stroke-width="1.5" fill="none"/><path d="M7 4C8 7 9 9 10 10" stroke-width="1.5" fill="none"/>',
+    'platisma':        '<path d="M3 3L3 10M6 2L6 11M9 3L9 10" stroke-width="1.5" fill="none"/>',
+  }
 
   var TREATMENTS = [
     { id: 'ah',       label: 'Acido Hialuronico',  color: '#3B82F6' },
@@ -209,6 +259,7 @@
         '<span class="fm-patient-badge">' + _icon('user', 14) + ' ' + _esc(name) + '</span>' +
       '</div>' +
       '<div class="fm-header-actions">' +
+        '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges">' + _icon('sliders', 14) + ' Ranges</button>' +
         '<button class="fm-btn" onclick="FaceMapping._clearAll()" title="Limpar tudo">' + _icon('trash-2', 14) + ' Limpar</button>' +
         '<button class="fm-btn" onclick="FaceMapping._exportReport()">' + _icon('download', 14) + ' Exportar Report</button>' +
         '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()">' + _icon('save', 14) + ' Salvar</button>' +
@@ -301,29 +352,31 @@
   function _renderToolbar() {
     var html = '<div class="fm-toolbar">'
 
-    // Zone selector — filtered by active angle
+    // Zone selector — 2 categories, filtered by active angle
     var allowedZones = _zonesForAngle(_activeAngle)
     var allowedIds = allowedZones.map(function (z) { return z.id })
+    var selZone = _selectedZone ? ZONES.find(function (z) { return z.id === _selectedZone }) : null
+    var curUnit = selZone ? selZone.unit : 'mL'
+    var curStep = curUnit === 'U' ? '1' : '0.1'
 
-    html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Zona Anatomica' +
-        (_activeAngle ? ' <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-secondary)">(' +
-          (ANGLES.find(function (a) { return a.id === _activeAngle }) || {}).label + ')</span>' : '') +
-      '</div>' +
+    // --- Preenchimento section ---
+    var fillZones = ZONES.filter(function (z) { return z.cat === 'fill' })
+    html += '<div class="fm-tool-section" style="padding-bottom:10px">' +
+      '<div class="fm-tool-section-title">Preenchimento <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(mL)</span></div>' +
       '<div class="fm-zone-grid">'
-
-    ZONES.forEach(function (z) {
-      var allowed = allowedIds.indexOf(z.id) !== -1
-      html += '<button class="fm-zone-btn' + (_selectedZone === z.id ? ' active' : '') +
-        (!allowed ? ' disabled' : '') + '" ' +
-        (allowed ? 'onclick="FaceMapping._selectZone(\'' + z.id + '\')" ' : '') +
-        'title="' + z.desc + (allowed ? '' : ' (nao se aplica a esta vista)') + '" ' +
-        'data-zone="' + z.id + '"' +
-        (!allowed ? ' disabled' : '') + '>' +
-        '<span class="fm-zone-dot" style="background:' + (allowed ? z.color : '#D1D5DB') + '"></span>' +
-        z.label + '</button>'
+    fillZones.forEach(function (z) {
+      html += _renderZoneBtn(z, allowedIds)
     })
+    html += '</div></div>'
 
+    // --- Rugas / Toxina section ---
+    var toxZones = ZONES.filter(function (z) { return z.cat === 'tox' })
+    html += '<div class="fm-tool-section" style="padding-bottom:10px">' +
+      '<div class="fm-tool-section-title">Rugas / Toxina <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(U)</span></div>' +
+      '<div class="fm-zone-grid">'
+    toxZones.forEach(function (z) {
+      html += _renderZoneBtn(z, allowedIds)
+    })
     html += '</div></div>'
 
     // Treatment selector
@@ -337,15 +390,20 @@
 
     html += '</select></div>'
 
-    // mL + Side + Product
+    // Quantity + Side + Product — with range hint
+    var rangeHint = selZone ? (selZone.min + ' — ' + selZone.max + ' ' + selZone.unit) : ''
     html += '<div class="fm-tool-section">' +
       '<div class="fm-tool-section-title">Detalhes</div>' +
       '<div class="fm-input-row" style="margin-bottom:8px">' +
-        '<label>mL</label>' +
-        '<input class="fm-input" id="fmMl" type="number" step="0.1" min="0" max="20" value="' + _selectedMl + '" ' +
-          'onchange="FaceMapping._selectedMl=this.value" style="width:70px">' +
+        '<label>' + curUnit + '</label>' +
+        '<input class="fm-input" id="fmMl" type="number" step="' + curStep + '" min="0" max="999" value="' + _selectedMl + '" ' +
+          'onchange="FaceMapping._selectedMl=this.value" style="width:70px"' +
+          (rangeHint ? ' placeholder="' + rangeHint + '"' : '') + '>' +
+        (rangeHint ? '<span style="font-size:10px;color:var(--text-muted)">' + rangeHint + '</span>' : '') +
+      '</div>' +
+      '<div class="fm-input-row" style="margin-bottom:8px">' +
         '<label>Lado</label>' +
-        '<select class="fm-select" id="fmSide" onchange="FaceMapping._selectedSide=this.value" style="width:auto">' +
+        '<select class="fm-select" id="fmSide" onchange="FaceMapping._selectedSide=this.value" style="width:auto;flex:1">' +
           '<option value="bilateral"' + (_selectedSide === 'bilateral' ? ' selected' : '') + '>Bilateral</option>' +
           '<option value="esquerdo"' + (_selectedSide === 'esquerdo' ? ' selected' : '') + '>Esquerdo</option>' +
           '<option value="direito"' + (_selectedSide === 'direito' ? ' selected' : '') + '>Direito</option>' +
@@ -372,7 +430,7 @@
           '<span class="fm-annotation-dot" style="background:' + zColor + '"></span>' +
           '<div class="fm-annotation-info">' +
             '<div class="fm-annotation-zone">' + (z ? z.label : ann.zone) + '</div>' +
-            '<div class="fm-annotation-detail">' + t.label + ' \u2022 ' + ann.ml + 'mL' + (ann.product ? ' \u2022 ' + ann.product : '') + '</div>' +
+            '<div class="fm-annotation-detail">' + t.label + ' \u2022 ' + ann.ml + (z ? z.unit : 'mL') + (ann.product ? ' \u2022 ' + ann.product : '') + '</div>' +
           '</div>' +
           '<button class="fm-annotation-remove" onclick="FaceMapping._removeAnnotation(' + ann.id + ')" title="Remover">&times;</button>' +
         '</div>'
@@ -546,7 +604,8 @@
 
     // Label
     var label = (z ? z.label : ann.zone)
-    var detail = t.label + ' \u2022 ' + ann.ml + 'mL'
+    var zUnit = z ? z.unit : 'mL'
+    var detail = t.label + ' \u2022 ' + ann.ml + zUnit
     _ctx.font = '600 11px Inter, Montserrat, sans-serif'
     _ctx.textAlign = 'center'
 
@@ -693,12 +752,21 @@
       var productInput = document.getElementById('fmProduct')
       var sideSelect = document.getElementById('fmSide')
 
+      var zDef = ZONES.find(function (x) { return x.id === _selectedZone })
+      var qty = parseFloat(mlInput ? mlInput.value : _selectedMl) || (zDef ? zDef.min : 0.5)
+
+      // Validate min
+      if (zDef && qty < zDef.min) {
+        qty = zDef.min
+        if (mlInput) { mlInput.value = qty; mlInput.style.borderColor = '#EF4444'; setTimeout(function () { mlInput.style.borderColor = '' }, 1500) }
+      }
+
       var newAnn = {
         id: _nextId++,
         angle: _activeAngle,
         zone: _selectedZone,
         treatment: _selectedTreatment,
-        ml: parseFloat(mlInput ? mlInput.value : _selectedMl) || 0.5,
+        ml: qty,
         product: productInput ? productInput.value : _selectedProduct,
         side: sideSelect ? sideSelect.value : _selectedSide,
         shape: { x: cx, y: cy, rx: rx, ry: ry },
@@ -944,12 +1012,35 @@
     setTimeout(_initCanvas, 50)
   }
 
+  function _renderZoneBtn(z, allowedIds) {
+    var allowed = allowedIds.indexOf(z.id) !== -1
+    var iconSvg = ZONE_ICONS[z.id] || ''
+    var svgEl = iconSvg
+      ? '<svg class="fm-zone-icon" viewBox="0 0 12 12" width="14" height="14" stroke="' + (allowed ? z.color : '#D1D5DB') + '">' + iconSvg + '</svg>'
+      : '<span class="fm-zone-dot" style="background:' + (allowed ? z.color : '#D1D5DB') + '"></span>'
+
+    return '<button class="fm-zone-btn' + (_selectedZone === z.id ? ' active' : '') +
+      (!allowed ? ' disabled' : '') + '" ' +
+      (allowed ? 'onclick="FaceMapping._selectZone(\'' + z.id + '\')" ' : '') +
+      'title="' + z.desc + ' (' + z.min + '-' + z.max + z.unit + ')' + (allowed ? '' : ' — nao se aplica') + '" ' +
+      'data-zone="' + z.id + '"' +
+      (!allowed ? ' disabled' : '') + '>' +
+      svgEl + z.label + '</button>'
+  }
+
   function _selectZone(zoneId) {
     _selectedZone = (_selectedZone === zoneId) ? null : zoneId
-    var btns = document.querySelectorAll('.fm-zone-btn')
-    btns.forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-zone') === _selectedZone)
-    })
+
+    // Auto-fill quantity + treatment from zone defaults
+    if (_selectedZone) {
+      var z = ZONES.find(function (x) { return x.id === _selectedZone })
+      if (z) {
+        _selectedMl = String(z.min)
+        _selectedTreatment = z.defaultTx || (z.cat === 'tox' ? 'botox' : 'ah')
+      }
+    }
+
+    _refreshToolbar()
   }
 
   function _onTreatmentChange(val) {
@@ -1138,6 +1229,10 @@
       'labio':           { title: 'Labios naturais', desc: 'Volume harmonico' },
       'glabela':         { title: 'Glabela relaxada', desc: 'Sem linhas de expressao' },
       'frontal':         { title: 'Face mais leve', desc: 'Triangulo invertido restaurado' },
+      'periorbital':     { title: 'Olhar rejuvenescido', desc: 'Pes de galinha suavizados' },
+      'gingival':        { title: 'Sorriso harmonioso', desc: 'Exposicao gengival corrigida' },
+      'dao':             { title: 'Canto labial elevado', desc: 'Expressao mais positiva' },
+      'platisma':        { title: 'Pescoco definido', desc: 'Bandas platismais suavizadas' },
     }
 
     var html = ''
@@ -1229,7 +1324,8 @@
     ctx.stroke()
 
     var label = (z ? z.label : ann.zone)
-    var detail = t.label + ' \u2022 ' + ann.ml + 'mL'
+    var zUnit = z ? z.unit : 'mL'
+    var detail = t.label + ' \u2022 ' + ann.ml + zUnit
     ctx.font = '600 11px Inter, Montserrat, sans-serif'
     ctx.textAlign = 'center'
 
@@ -1289,6 +1385,69 @@
         link.click()
       }
     }
+  }
+
+  function _editRanges() {
+    var overlay = document.createElement('div')
+    overlay.className = 'fm-export-overlay'
+    overlay.id = 'fmRangesOverlay'
+
+    var html = '<div style="background:#fff;border-radius:14px;width:520px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.3)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #E8EAF0;flex-shrink:0">' +
+        '<span style="font-size:15px;font-weight:600;color:#1A1B2E">Editar Ranges por Zona</span>' +
+        '<button onclick="document.getElementById(\'fmRangesOverlay\').remove()" style="width:28px;height:28px;border-radius:50%;background:#F3F4F6;border:none;cursor:pointer;color:#6B7280;display:flex;align-items:center;justify-content:center">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div style="padding:16px 20px;overflow-y:auto;flex:1">' +
+        '<div style="font-size:11px;color:#9CA3AF;margin-bottom:12px">Quantidade minima (obrigatoria) e maxima (sugestao) por zona. Alteracoes salvas localmente.</div>'
+
+    // Fill
+    html += '<div style="font-size:11px;font-weight:600;color:#C9A96E;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">Preenchimento (mL)</div>'
+    ZONES.filter(function (z) { return z.cat === 'fill' }).forEach(function (z) {
+      html += _rangeRow(z)
+    })
+
+    // Tox
+    html += '<div style="font-size:11px;font-weight:600;color:#8B5CF6;text-transform:uppercase;letter-spacing:0.1em;margin:16px 0 8px">Rugas / Toxina (U)</div>'
+    ZONES.filter(function (z) { return z.cat === 'tox' }).forEach(function (z) {
+      html += _rangeRow(z)
+    })
+
+    html += '</div>' +
+      '<div style="padding:12px 20px;border-top:1px solid #E8EAF0;flex-shrink:0">' +
+        '<button id="fmRangesSave" style="width:100%;padding:10px;border:none;border-radius:10px;background:#C8A97E;color:#fff;font-size:14px;font-weight:600;cursor:pointer">Salvar Ranges</button>' +
+      '</div>' +
+    '</div>'
+
+    overlay.innerHTML = html
+    document.body.appendChild(overlay)
+
+    document.getElementById('fmRangesSave').addEventListener('click', function () {
+      ZONES.forEach(function (z) {
+        var minEl = document.getElementById('fmRange_min_' + z.id)
+        var maxEl = document.getElementById('fmRange_max_' + z.id)
+        if (minEl && maxEl) {
+          _saveZoneRange(z.id, parseFloat(minEl.value) || z.min, parseFloat(maxEl.value) || z.max)
+        }
+      })
+      document.getElementById('fmRangesOverlay').remove()
+      _refreshToolbar()
+    })
+  }
+
+  function _rangeRow(z) {
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+      '<span style="width:10px;height:10px;border-radius:50%;background:' + z.color + ';flex-shrink:0"></span>' +
+      '<span style="font-size:12px;color:#1A1B2E;width:130px;flex-shrink:0">' + z.label + '</span>' +
+      '<span style="font-size:10px;color:#9CA3AF;width:24px">Min</span>' +
+      '<input id="fmRange_min_' + z.id + '" type="number" step="' + (z.unit === 'U' ? '1' : '0.1') + '" value="' + z.min + '" ' +
+        'style="width:60px;padding:4px 6px;border:1px solid #E8EAF0;border-radius:6px;font-size:12px;text-align:center">' +
+      '<span style="font-size:10px;color:#9CA3AF;width:28px">Max</span>' +
+      '<input id="fmRange_max_' + z.id + '" type="number" step="' + (z.unit === 'U' ? '1' : '0.1') + '" value="' + z.max + '" ' +
+        'style="width:60px;padding:4px 6px;border:1px solid #E8EAF0;border-radius:6px;font-size:12px;text-align:center">' +
+      '<span style="font-size:10px;color:#9CA3AF">' + z.unit + '</span>' +
+    '</div>'
   }
 
   function _closeExport() {
@@ -1385,6 +1544,7 @@
     _saveToSupabase: _saveToSupabase,
     _recrop: _recrop,
     _deletePhoto: _deletePhoto,
+    _editRanges: _editRanges,
 
     get _selectedMl() { return _selectedMl },
     set _selectedMl(v) { _selectedMl = v },
