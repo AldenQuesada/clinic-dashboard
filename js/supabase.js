@@ -110,7 +110,7 @@ const SUPABASE_KEY = _env.SUPABASE_KEY || ''
 //
 // ⚠ Para ativar: substitua null pela string do seu secret e aplique o SQL do cabeçalho.
 //   Exemplo: const CLINIC_SECRET = 'minha-clinica-secret-2026'
-const CLINIC_SECRET = null
+const CLINIC_SECRET = '0b6e63c7c320a5211d9bea3145416b33b0cc070de170ebe05c07d0b8914ab5fa'
 
 // Chaves do localStorage que devem ser sincronizadas
 // ⚠ NÃO incluir: tokens de auth, senhas, dados de sessão, perfis dinâmicos

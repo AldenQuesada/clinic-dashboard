@@ -1172,7 +1172,7 @@ function openApptModal(id, date, time, profIdx) {
   if (profSel) {
     const profs = getProfessionals()
     profSel.innerHTML = '<option value="">Selecione...</option>' +
-      profs.map((p,i) => `<option value="${i}">${p.nome}${p.especialidade?' – '+p.especialidade:''}</option>`).join('')
+      profs.map((p,i) => `<option value="${i}">${escHtml(p.nome)}${p.especialidade?' – '+escHtml(p.especialidade):''}</option>`).join('')
   }
 
   // Preenche salas
@@ -1180,7 +1180,7 @@ function openApptModal(id, date, time, profIdx) {
   if (salaSel) {
     const salas = getRooms()
     salaSel.innerHTML = '<option value="">Selecione...</option>' +
-      salas.map((s,i) => { const resp = Array.isArray(s.responsaveis) ? s.responsaveis : (s.responsavel ? [s.responsavel] : []); return `<option value="${i}">${s.nome}${resp.length?' – '+resp.join(', '):''}` + '</option>' }).join('')
+      salas.map((s,i) => { const resp = Array.isArray(s.responsaveis) ? s.responsaveis : (s.responsavel ? [s.responsavel] : []); return `<option value="${i}">${escHtml(s.nome)}${resp.length?' – '+escHtml(resp.join(', ')):''}` + '</option>' }).join('')
   }
 
   // Preenche procedimentos (datalist)

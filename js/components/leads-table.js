@@ -240,7 +240,7 @@ function leadsActionDelete(leadId, leadName, e) {
       '<div class="lt-modal-title lt-modal-danger">Deletar lead</div>' +
       '<div class="lt-modal-body">Esta acao e <strong>permanente e irreversivel</strong>.<br><br>' +
         'Para confirmar, digite o nome do lead abaixo:<br>' +
-        '<span class="lt-modal-confirm-name">' + leadName + '</span>' +
+        '<span class="lt-modal-confirm-name">' + esc(leadName) + '</span>' +
       '</div>' +
       '<input id="ltDeleteInput" class="lt-modal-input lt-modal-input-danger" type="text" placeholder="Digite o nome exato...">' +
       '<div class="lt-modal-btns">' +

@@ -873,7 +873,7 @@ function _buildFinModal(id, appt) {
 function _renderFinProcs() {
   if (!_finalProcs.length) return '<div style="font-size:11px;color:#9CA3AF;padding:4px 0">Nenhum procedimento adicionado</div>'
   return _finalProcs.map((p,i)=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #F3F4F6">
-    <span style="flex:1;font-size:12px;color:#374151">${p.nome}</span>
+    <span style="flex:1;font-size:12px;color:#374151">${(window.escHtml||String)(p.nome)}</span>
     <span style="font-size:11px;color:#9CA3AF">×${p.qtd}</span>
     <button onclick="removeFinProc(${i})" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px;line-height:1;padding:0 2px">×</button>
   </div>`).join('')

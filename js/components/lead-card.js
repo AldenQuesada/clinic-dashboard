@@ -103,9 +103,9 @@
     const visible = tags.slice(0, 3)
     const extra   = tags.length - 3
     let html = visible.map(t =>
-      `<span class="lc-tag" style="color:${t.color};border-color:${t.color}20;background:${t.color}12" title="${t.label}">${t.label}</span>`
+      `<span class="lc-tag" style="color:${t.color};border-color:${t.color}20;background:${t.color}12" title="${_e(t.label)}">${_e(t.label)}</span>`
     ).join('')
-    if (extra > 0) html += `<span class="lc-tag lc-tag-more" title="${tags.slice(3).map(t => t.label).join(', ')}">+${extra}</span>`
+    if (extra > 0) html += `<span class="lc-tag lc-tag-more" title="${tags.slice(3).map(t => _e(t.label)).join(', ')}">+${extra}</span>`
     return html
   }
 
