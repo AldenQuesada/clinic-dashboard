@@ -118,8 +118,8 @@
         { page: 'auto-flows-fullface',         label: 'Fluxos de Mensagens',     breadcrumb: 'Full Face > Fluxos de Mensagens' },
         { page: 'leads-tags-fullface',         label: 'Tags',                    breadcrumb: 'Full Face > Tags' },
         { page: 'captacao-alertas-fullface',   label: 'Alertas e Oportunidades', breadcrumb: 'Full Face > Alertas e Oportunidades' },
-        { page: 'facial-analysis',             label: 'Análise Facial IA',       breadcrumb: 'Full Face > Análise Facial IA',       plans: [PLANS.PREMIUM] },
-        { page: 'facial-simulations',          label: 'Simulações',              breadcrumb: 'Full Face > Simulações',              plans: [PLANS.PREMIUM] },
+        { page: 'facial-analysis',             label: 'Análise Facial IA',       breadcrumb: 'Full Face > Análise Facial IA' },
+        { page: 'facial-simulations',          label: 'Simulações',              breadcrumb: 'Full Face > Simulações' },
       ],
     },
 
@@ -261,6 +261,19 @@
       pages: [
         { page: 'fin-goals',    label: 'Metas Financeiras',      breadcrumb: 'Financeiro > Metas Financeiras' },
         { page: 'fin-reports',  label: 'Relatórios Financeiros', breadcrumb: 'Financeiro > Relatórios Financeiros' },
+      ],
+    },
+
+    // ── Ferramentas ─────────────────────────────────────────────
+    {
+      section: 'ferramentas',
+      icon:    'tool',
+      label:   'Ferramentas',
+      roles:   [ROLES.OWNER, ROLES.ADMIN],
+      plans:   [],
+      pages: [
+        { page: 'facial-analysis',    label: 'Análise Facial',  breadcrumb: 'Ferramentas > Análise Facial',  highlight: true },
+        { page: 'facial-simulations', label: 'Simulações',      breadcrumb: 'Ferramentas > Simulações' },
       ],
     },
 

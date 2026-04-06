@@ -211,17 +211,38 @@
       if (_activeAngle) setTimeout(_initCanvas, 50)
       return
     }
-    // No lead — show empty picker state
+    // No lead — show patient picker
     var root = document.getElementById('facialAnalysisRoot')
     if (!root) return
+
+    // Load leads for picker
+    var leads = []
+    try { leads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]') } catch (e) {}
+    var recentLeads = leads.slice(0, 20)
+
+    var leadOptions = recentLeads.map(function (l) {
+      var name = l.nome || l.name || 'Sem nome'
+      return '<button onclick="FaceMapping.init(\'' + l.id + '\')" ' +
+        'style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:1px solid #E8EAF0;border-radius:10px;background:#fff;cursor:pointer;text-align:left;transition:border-color .2s" ' +
+        'onmouseover="this.style.borderColor=\'#C8A97E\'" onmouseout="this.style.borderColor=\'#E8EAF0\'">' +
+        '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#C9A96E);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">' + name.charAt(0).toUpperCase() + '</div>' +
+        '<div><div style="font-size:13px;font-weight:600;color:#1A1B2E">' + _esc(name) + '</div>' +
+        '<div style="font-size:11px;color:#9CA3AF">' + (l.phone || l.whatsapp || l.telefone || '') + '</div></div>' +
+      '</button>'
+    }).join('')
+
     root.innerHTML = '<div class="fm-page">' +
       '<div class="fm-header"><div class="fm-header-left">' +
         '<span class="fm-header-title">Analise Facial</span>' +
       '</div></div>' +
-      '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
-        '<div style="text-align:center;color:var(--text-muted)">' +
-          _icon('image', 48) +
-          '<p style="margin-top:12px;font-size:14px">Abra a ficha de um paciente e<br>clique em <strong>Analise Facial</strong> para comecar.</p>' +
+      '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">' +
+        '<div style="max-width:400px;width:100%;text-align:center">' +
+          _icon('image', 40) +
+          '<h3 style="font-size:18px;font-weight:600;color:#1A1B2E;margin:12px 0 4px">Selecione o Paciente</h3>' +
+          '<p style="font-size:13px;color:#9CA3AF;margin-bottom:16px">Escolha um paciente para iniciar a analise facial</p>' +
+          '<div style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;text-align:left">' +
+            (leadOptions || '<p style="font-size:13px;color:#9CA3AF;text-align:center">Nenhum paciente encontrado</p>') +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</div>'
