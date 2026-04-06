@@ -193,6 +193,8 @@ function renderPatientsTable(patients) {
       va = (a.name || '').toLowerCase(); vb = (b.name || '').toLowerCase()
     } else if (_patientsSortField === 'revenue') {
       va = a.totalRevenue || 0; vb = b.totalRevenue || 0
+    } else if (_patientsSortField === 'lastContact') {
+      va = a.last_contacted_at || a.lastProcedureAt || a._createdAt || ''; vb = b.last_contacted_at || b.lastProcedureAt || b._createdAt || ''
     } else {
       va = a._createdAt || a.createdAt || ''; vb = b._createdAt || b.createdAt || ''
     }
@@ -210,8 +212,36 @@ function renderPatientsTable(patients) {
   // Sort arrows
   var nameH = document.getElementById('pSortName')
   var revH = document.getElementById('pSortRevenue')
+  var contH = document.getElementById('pSortContact')
   if (nameH) nameH.innerHTML = 'Nome' + _pSortArrow('name')
   if (revH) revH.innerHTML = 'Receita' + _pSortArrow('revenue')
+  if (contH) contH.innerHTML = 'Contato' + _pSortArrow('lastContact')
+
+  // KPIs
+  var totalRevenue = 0
+  var withRevenue = 0
+  var churnCount = 0
+  var sixMonthsAgo = new Date()
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+  patients.forEach(function(p) {
+    if (p.totalRevenue > 0) { totalRevenue += p.totalRevenue; withRevenue++ }
+    var lastDate = p.last_contacted_at || p.lastProcedureAt || p._createdAt || p.createdAt
+    if (lastDate && new Date(lastDate) < sixMonthsAgo) churnCount++
+    else if (!lastDate) churnCount++
+  })
+
+  var kpiTotal = document.getElementById('kpiPatientsTotal')
+  var kpiRev = document.getElementById('kpiPatientsRevenue')
+  var kpiTicket = document.getElementById('kpiPatientsTicket')
+  var kpiChurn = document.getElementById('kpiPatientsChurn')
+  var kpiChurnPct = document.getElementById('kpiPatientsChurnPct')
+
+  if (kpiTotal) kpiTotal.textContent = patients.length
+  if (kpiRev) kpiRev.textContent = totalRevenue > 0 ? totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
+  if (kpiTicket) kpiTicket.textContent = withRevenue > 0 ? (totalRevenue / withRevenue).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
+  if (kpiChurn) kpiChurn.textContent = churnCount
+  if (kpiChurnPct) kpiChurnPct.textContent = patients.length > 0 ? '(' + Math.round(churnCount / patients.length * 100) + '%)' : ''
 
   if (!patients.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado</td></tr>'
@@ -250,6 +280,27 @@ function _pRenderRows(rows) {
       ? qfData.slice(0, 2).map(function(q) { return '<span style="font-size:10px;background:#FEF3C7;border-radius:4px;padding:2px 6px;color:#92400E;white-space:nowrap">' + _pEsc(q) + '</span>' }).join(' ')
       : '<span style="color:#D1D5DB">—</span>'
 
+    // Ultimo contato / churn
+    var lastContact = p.last_contacted_at || p.lastProcedureAt || p._createdAt || p.createdAt || ''
+    var lastContactStr = ''
+    var churnIndicator = ''
+    if (lastContact) {
+      try {
+        var lcd = new Date(lastContact)
+        lastContactStr = lcd.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+        var diffMs = Date.now() - lcd.getTime()
+        var diffDays = Math.floor(diffMs / 86400000)
+        if (diffDays > 180) {
+          churnIndicator = '<div style="font-size:9px;font-weight:700;color:#EF4444;margin-top:2px" title="Sem contato ha ' + diffDays + ' dias">RISCO</div>'
+        } else if (diffDays > 90) {
+          churnIndicator = '<div style="font-size:9px;font-weight:700;color:#F59E0B;margin-top:2px" title="Sem contato ha ' + diffDays + ' dias">ATENCAO</div>'
+        }
+      } catch(e) {}
+    } else {
+      lastContactStr = '—'
+      churnIndicator = '<div style="font-size:9px;font-weight:700;color:#EF4444;margin-top:2px">RISCO</div>'
+    }
+
     var tr = document.createElement('tr')
     tr.dataset.pid = p.id
     tr.style.cssText = 'border-bottom:1px solid #F9FAFB;cursor:pointer;transition:background .1s'
@@ -263,17 +314,18 @@ function _pRenderRows(rows) {
     var checked = _pSelectedIds.has(p.id) ? ' checked' : ''
 
     tr.innerHTML =
-      '<td style="padding:12px 8px 12px 16px"><input type="checkbox" class="p-row-cb" data-id="' + _pEsc(p.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
-      '<td style="padding:12px 16px"><div style="font-size:13px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:12px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
-      '<td style="padding:12px 16px;font-size:12px">' + tagsHtml + '</td>' +
-      '<td style="padding:12px 16px;font-size:12px">' + queixasHtml + '</td>' +
-      '<td style="padding:12px 16px;font-size:13px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
-      '<td style="padding:12px 16px"><span style="display:inline-flex;align-items:center;font-size:11px;font-weight:600;color:' + color + ';background:' + color + '1A;border-radius:6px;padding:3px 8px">' + label + '</span></td>' +
-      '<td style="padding:12px 16px;text-align:center">' +
-        '<a href="' + waLink + '" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;padding:5px 8px;border:1px solid #E5E7EB;border-radius:6px;text-decoration:none;margin-right:4px" title="WhatsApp">' +
+      '<td style="padding:10px 8px 10px 14px"><input type="checkbox" class="p-row-cb" data-id="' + _pEsc(p.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
+      '<td style="padding:10px 12px"><div style="font-size:13px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:11px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
+      '<td style="padding:10px 12px;font-size:11px">' + tagsHtml + '</td>' +
+      '<td style="padding:10px 12px;font-size:11px">' + queixasHtml + '</td>' +
+      '<td style="padding:10px 12px;font-size:13px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
+      '<td style="padding:10px 12px"><div style="font-size:12px;color:#374151">' + lastContactStr + '</div>' + churnIndicator + '</td>' +
+      '<td style="padding:10px 12px"><span style="display:inline-flex;align-items:center;font-size:10px;font-weight:600;color:' + color + ';background:' + color + '1A;border-radius:6px;padding:2px 7px">' + label + '</span></td>' +
+      '<td style="padding:10px 12px;text-align:center">' +
+        '<a href="' + waLink + '" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;padding:4px 7px;border:1px solid #E5E7EB;border-radius:6px;text-decoration:none;margin-right:3px" title="WhatsApp">' +
           '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
         '</a>' +
-        '<button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _pEsc(p.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:5px 8px;font-size:11px;cursor:pointer;color:#374151">Ver</button>' +
+        '<button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _pEsc(p.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 7px;font-size:11px;cursor:pointer;color:#374151">Ver</button>' +
       '</td>'
 
     tbody.appendChild(tr)

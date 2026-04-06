@@ -947,6 +947,29 @@
             </div>
           </div>
 
+          <!-- KPI Cards -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px" id="patientsKpiRow">
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px">
+              <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Total Pacientes</div>
+              <div style="font-size:24px;font-weight:800;color:#111" id="kpiPatientsTotal">0</div>
+            </div>
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px">
+              <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Receita Total</div>
+              <div style="font-size:24px;font-weight:800;color:#10B981" id="kpiPatientsRevenue">R$ 0</div>
+            </div>
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px">
+              <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Ticket Medio</div>
+              <div style="font-size:24px;font-weight:800;color:#7C3AED" id="kpiPatientsTicket">R$ 0</div>
+            </div>
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px">
+              <div style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Risco de Churn</div>
+              <div style="display:flex;align-items:baseline;gap:6px">
+                <span style="font-size:24px;font-weight:800;color:#EF4444" id="kpiPatientsChurn">0</span>
+                <span style="font-size:12px;color:#6B7280" id="kpiPatientsChurnPct"></span>
+              </div>
+            </div>
+          </div>
+
           <!-- Linha unica: Badge + Periodo + Busca + Procedimento + Exportar -->
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
             <div id="patientsCountBadge" style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:5px 12px">
@@ -987,22 +1010,23 @@
             <div style="background:#fff;border-radius:12px;border:1px solid #F3F4F6;overflow:hidden">
               <table style="width:100%;border-collapse:collapse;table-layout:fixed">
                 <colgroup>
-                  <col style="width:40px"><col style="width:200px"><col style="width:140px">
-                  <col style="width:140px"><col style="width:100px"><col style="width:90px"><col style="width:90px">
+                  <col style="width:36px"><col style="width:180px"><col style="width:120px">
+                  <col style="width:120px"><col style="width:90px"><col style="width:95px"><col style="width:80px"><col style="width:80px">
                 </colgroup>
                 <thead>
                   <tr style="background:#F9FAFB;border-bottom:1px solid #F3F4F6">
-                    <th style="padding:12px 8px 12px 16px;width:32px"><input type="checkbox" id="patientsSelectAll" onclick="patientsToggleAll(this)" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer"></th>
-                    <th id="pSortName" onclick="patientsSortBy('name')" style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none">Nome</th>
-                    <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Tags</th>
-                    <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Queixas</th>
-                    <th id="pSortRevenue" onclick="patientsSortBy('revenue')" style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none">Receita</th>
-                    <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Status</th>
-                    <th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Acoes</th>
+                    <th style="padding:12px 8px 12px 14px;width:32px"><input type="checkbox" id="patientsSelectAll" onclick="patientsToggleAll(this)" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer"></th>
+                    <th id="pSortName" onclick="patientsSortBy('name')" style="padding:12px 12px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none">Nome</th>
+                    <th style="padding:12px 12px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Tags</th>
+                    <th style="padding:12px 12px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Queixas</th>
+                    <th id="pSortRevenue" onclick="patientsSortBy('revenue')" style="padding:12px 12px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none">Receita</th>
+                    <th id="pSortContact" onclick="patientsSortBy('lastContact')" style="padding:12px 12px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none">Contato</th>
+                    <th style="padding:12px 12px;text-align:left;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Status</th>
+                    <th style="padding:12px 12px;text-align:center;font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Acoes</th>
                   </tr>
                 </thead>
                 <tbody id="patientsTableBody">
-                  <tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Carregando pacientes...</td></tr>
+                  <tr><td colspan="8" style="text-align:center;padding:40px;color:#9CA3AF">Carregando pacientes...</td></tr>
                 </tbody>
               </table>
             </div>
