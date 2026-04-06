@@ -108,8 +108,8 @@
   var _lead = null
   var _photos = {}        // { front: File|Blob, '45': ..., lateral: ... }
   var _photoUrls = {}     // objectURLs (cropped)
-  var _afterPhotoUrl = null   // DEPOIS (resultado atual) — single photo
-  var _simPhotoUrl = null     // DEPOIS SIMULADO — single photo
+  var _afterPhotoUrl = null   // DEPOIS (resultado atual) — upload manual
+  var _simPhotoUrl = null     // DEPOIS SIMULADO — gerado automaticamente
   var _activeAngle = null
   var _annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
   var _canvas = null
@@ -349,16 +349,18 @@
         _icon('camera', 16) + '<span style="font-size:8px">DEPOIS</span></div>'
     }
 
-    // SIMULADO
+    // SIMULADO (auto-gerado)
     if (_simPhotoUrl) {
-      html += '<div class="fm-photo-thumb" style="border-color:#C9A96E" onclick="FaceMapping._triggerUploadExtra(\'sim\')">' +
+      html += '<div class="fm-photo-thumb" style="border-color:#C9A96E">' +
         '<img src="' + _simPhotoUrl + '" alt="Simulado">' +
         '<span class="fm-photo-thumb-label" style="background:rgba(201,169,110,0.9)">SIMULADO</span>' +
-        '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteExtraPhoto(\'sim\')" title="Excluir">' + _icon('trash-2', 11) + '</button></div>' +
       '</div>'
     } else {
-      html += '<div class="fm-photo-upload" onclick="FaceMapping._triggerUploadExtra(\'sim\')" style="border-color:#C9A96E40">' +
-        _icon('camera', 16) + '<span style="font-size:8px">SIMULADO</span></div>'
+      var hasAnns = _annotations.length > 0
+      html += '<div class="fm-photo-upload" ' +
+        (hasAnns ? 'onclick="FaceMapping._regenSim()"' : '') +
+        ' style="border-color:#C9A96E40;' + (hasAnns ? '' : 'opacity:0.4;cursor:default') + '">' +
+        _icon('zap', 16) + '<span style="font-size:7px">AUTO</span><span style="font-size:8px">SIMULADO</span></div>'
     }
 
     html += '</div>'
@@ -810,6 +812,7 @@
       }
       _annotations.push(newAnn)
       _selAnn = newAnn  // auto-select after drawing
+      _simPhotoUrl = null // invalidate simulation
 
       _drawStart = null
       _redraw()
@@ -1120,6 +1123,7 @@
 
   function _removeAnnotation(id) {
     _annotations = _annotations.filter(function (a) { return a.id !== id })
+    _simPhotoUrl = null // invalidate simulation
     _redraw()
     _refreshToolbar()
   }
@@ -1166,6 +1170,12 @@
         return v.label + (!v.hasPhoto ? ' (sem foto)' : ' (sem marcacoes)')
       }).join(', ')
       alert('Complete todas as 3 vistas antes de exportar.\nFalta: ' + names)
+      return
+    }
+
+    // Auto-generate simulation if not yet generated
+    if (!_simPhotoUrl) {
+      _generateSimulation(function () { _exportReport() })
       return
     }
 
@@ -1528,6 +1538,119 @@
     '</div>'
   }
 
+  // ── Simulation Generator ────────────────────────────────────
+
+  function _generateSimulation(callback) {
+    // Uses the 45° (or main) ANTES photo + annotations to generate
+    // a simulated "after" by applying zone-specific canvas effects
+    var srcAngle = _photoUrls['45'] ? '45' : (_photoUrls['front'] ? 'front' : 'lateral')
+    if (!_photoUrls[srcAngle]) return
+
+    var img = new Image()
+    img.onload = function () {
+      var w = img.width, h = img.height
+      // Main canvas
+      var c = document.createElement('canvas')
+      c.width = w; c.height = h
+      var ctx = c.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+
+      // Temp canvas for blur operations
+      var tmp = document.createElement('canvas')
+      tmp.width = w; tmp.height = h
+      var tCtx = tmp.getContext('2d')
+
+      // Calculate scale from editor canvas to this canvas
+      var scale = _canvas ? (w / _canvas.width) : 1
+
+      // Get annotations for this angle
+      var anns = _annotations.filter(function (a) { return a.angle === srcAngle })
+
+      // Pass 1: Apply zone-specific effects
+      anns.forEach(function (ann) {
+        var z = ZONES.find(function (x) { return x.id === ann.zone })
+        if (!z) return
+        var s = {
+          x: ann.shape.x * scale, y: ann.shape.y * scale,
+          rx: ann.shape.rx * scale, ry: ann.shape.ry * scale
+        }
+
+        ctx.save()
+        // Clip to ellipse region
+        ctx.beginPath()
+        ctx.ellipse(s.x, s.y, s.rx * 1.2, s.ry * 1.2, 0, 0, Math.PI * 2)
+        ctx.clip()
+
+        if (z.cat === 'tox') {
+          // Rugas: smooth/blur the area (simulate wrinkle reduction)
+          // Apply a soft blur by drawing scaled down then up
+          tCtx.clearRect(0, 0, w, h)
+          tCtx.drawImage(c, 0, 0)
+          var bx = Math.max(0, s.x - s.rx * 1.3)
+          var by = Math.max(0, s.y - s.ry * 1.3)
+          var bw = s.rx * 2.6
+          var bh = s.ry * 2.6
+          // Scale down then up = blur effect
+          var smallW = Math.max(1, bw / 4)
+          var smallH = Math.max(1, bh / 4)
+          ctx.drawImage(c, bx, by, bw, bh, bx, by, smallW, smallH)
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = 'high'
+          ctx.drawImage(c, bx, by, smallW, smallH, bx, by, bw, bh)
+
+          // Slight brighten
+          ctx.fillStyle = 'rgba(255,255,255,0.08)'
+          ctx.fillRect(bx, by, bw, bh)
+        } else {
+          // Preenchimento: lighten shadows, add warmth (simulate volume)
+          if (z.id === 'olheira') {
+            // Olheira: significant lightening
+            ctx.fillStyle = 'rgba(255,240,230,0.3)'
+            ctx.beginPath()
+            ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
+            ctx.fill()
+          } else if (z.id === 'sulco' || z.id === 'marionete' || z.id === 'pre-jowl') {
+            // Deep lines: lighten to simulate filled
+            ctx.fillStyle = 'rgba(255,245,235,0.2)'
+            ctx.beginPath()
+            ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
+            ctx.fill()
+          } else {
+            // Volume zones: subtle warm highlight
+            ctx.fillStyle = 'rgba(255,235,220,0.15)'
+            ctx.beginPath()
+            ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
+            ctx.fill()
+          }
+        }
+        ctx.restore()
+      })
+
+      // Pass 2: Global enhancement
+      // Slight overall brightness + warmth
+      ctx.save()
+      ctx.globalCompositeOperation = 'screen'
+      ctx.fillStyle = 'rgba(255,248,240,0.06)'
+      ctx.fillRect(0, 0, w, h)
+      ctx.restore()
+
+      // Soft overall smoothing via slight blur
+      ctx.save()
+      ctx.globalAlpha = 0.3
+      ctx.filter = 'blur(1px)'
+      ctx.drawImage(c, 0, 0)
+      ctx.restore()
+
+      // Convert to blob and set as simulated photo
+      c.toBlob(function (blob) {
+        if (_simPhotoUrl) URL.revokeObjectURL(_simPhotoUrl)
+        _simPhotoUrl = URL.createObjectURL(blob)
+        if (callback) callback()
+      }, 'image/jpeg', 0.92)
+    }
+    img.src = _photoUrls[srcAngle]
+  }
+
   function _closeExport() {
     var overlay = document.getElementById('fmExportOverlay')
     if (overlay) overlay.remove()
@@ -1625,6 +1748,10 @@
     _editRanges: _editRanges,
     _triggerUploadExtra: _triggerUploadExtra,
     _deleteExtraPhoto: _deleteExtraPhoto,
+    _regenSim: function () {
+      _simPhotoUrl = null
+      _generateSimulation(function () { _render(); if (_activeAngle) setTimeout(_initCanvas, 50) })
+    },
 
     get _selectedMl() { return _selectedMl },
     set _selectedMl(v) { _selectedMl = v },
