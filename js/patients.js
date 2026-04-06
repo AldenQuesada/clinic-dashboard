@@ -220,16 +220,42 @@ function exportPatientsCsv() {
   var patients = allLeads.filter(function(l) { return l.phase === 'paciente' })
   if (!patients.length) { alert('Nenhum paciente para exportar'); return }
 
-  var rows = [['Nome', 'Telefone', 'Status', 'Data Cadastro']]
+  var sep = ';'
+  var rows = [['Nome', 'Telefone', 'Email', 'Status', 'Temperatura', 'Queixas', 'Data Nascimento', 'CPF', 'Sexo', 'Data Cadastro'].join(sep)]
   patients.forEach(function(p) {
+    var queixas = ''
+    if (Array.isArray(p.queixas_faciais) && p.queixas_faciais.length) {
+      queixas = p.queixas_faciais.join(', ')
+    }
+    var phone = p.phone || ''
+    if (phone.length === 13 && phone.startsWith('55')) {
+      phone = '(' + phone.slice(2,4) + ') ' + phone.slice(4,9) + '-' + phone.slice(9)
+    }
+    var dataNasc = p.dataNascimento || p.birth_date || ''
+    if (dataNasc && dataNasc.includes('-')) {
+      var parts = dataNasc.split('T')[0].split('-')
+      dataNasc = parts[2] + '/' + parts[1] + '/' + parts[0]
+    }
+    var dataCad = p.created_at || p.createdAt || ''
+    if (dataCad) {
+      try { dataCad = new Date(dataCad).toLocaleDateString('pt-BR') } catch(e) {}
+    }
+    var tempLabels = { hot: 'Quente', warm: 'Morno', cold: 'Frio' }
+
     rows.push([
-      p.name || p.nome || '',
-      p.phone || '',
+      (p.name || p.nome || '').replace(/;/g, ','),
+      phone,
+      (p.email || '').replace(/;/g, ','),
       p.status || 'active',
-      p.created_at || p.createdAt || ''
-    ])
+      tempLabels[p.temperature] || p.temperature || '',
+      queixas.replace(/;/g, ','),
+      dataNasc,
+      p.cpf || '',
+      p.sexo || '',
+      dataCad
+    ].map(function(c) { return '"' + String(c || '').replace(/"/g, '""') + '"' }).join(sep))
   })
-  var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"' }).join(',') }).join('\n')
+  var csv = rows.join('\n')
   var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
   var a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
