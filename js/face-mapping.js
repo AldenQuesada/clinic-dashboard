@@ -62,6 +62,10 @@
   var _img = null         // current loaded Image
   var _drawing = false
   var _drawStart = null
+  var _mode = 'idle'       // idle | draw | move | resize
+  var _selAnn = null       // selected annotation for move/resize
+  var _moveStart = null    // {x,y} offset when dragging
+  var _resizeHandle = null // 'n'|'s'|'e'|'w' edge being dragged
   var _selectedZone = null
   var _selectedTreatment = 'ah'
   var _selectedMl = '0.5'
@@ -346,12 +350,39 @@
     var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
     anns.forEach(function (ann) { _drawEllipse(ann) })
 
+    // Selection handles
+    if (_selAnn) {
+      var s = _selAnn.shape
+      var color = _zoneColor(_selAnn.zone)
+      _ctx.save()
+      _ctx.strokeStyle = '#fff'
+      _ctx.lineWidth = 1.5
+      _ctx.setLineDash([5, 3])
+      _ctx.beginPath()
+      _ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
+      _ctx.stroke()
+      _ctx.setLineDash([])
+
+      // 4 handles: N, S, E, W
+      var handles = _getHandles(s)
+      handles.forEach(function (h) {
+        _ctx.fillStyle = '#fff'
+        _ctx.strokeStyle = color
+        _ctx.lineWidth = 2
+        _ctx.beginPath()
+        _ctx.arc(h.x, h.y, 5, 0, Math.PI * 2)
+        _ctx.fill()
+        _ctx.stroke()
+      })
+      _ctx.restore()
+    }
+
     // Draw current shape being drawn
-    if (_drawing && _drawStart) {
-      var color = _zoneColor(_selectedZone)
+    if (_mode === 'draw' && _drawStart) {
+      var drawColor = _zoneColor(_selectedZone)
       _ctx.save()
       _ctx.beginPath()
-      _ctx.strokeStyle = color
+      _ctx.strokeStyle = drawColor
       _ctx.lineWidth = 2
       _ctx.setLineDash([6, 4])
       var cx = (_drawStart.x + _drawStart.ex) / 2
@@ -364,6 +395,37 @@
       }
       _ctx.restore()
     }
+  }
+
+  function _getHandles(s) {
+    return [
+      { id: 'n', x: s.x,        y: s.y - s.ry },
+      { id: 's', x: s.x,        y: s.y + s.ry },
+      { id: 'e', x: s.x + s.rx, y: s.y },
+      { id: 'w', x: s.x - s.rx, y: s.y },
+    ]
+  }
+
+  function _hitHandle(x, y) {
+    if (!_selAnn) return null
+    var handles = _getHandles(_selAnn.shape)
+    for (var i = 0; i < handles.length; i++) {
+      var dx = x - handles[i].x, dy = y - handles[i].y
+      if (dx * dx + dy * dy <= 64) return handles[i].id // radius 8px
+    }
+    return null
+  }
+
+  function _hitEllipse(x, y) {
+    var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
+    // Check in reverse order (topmost first)
+    for (var i = anns.length - 1; i >= 0; i--) {
+      var s = anns[i].shape
+      var dx = (x - s.x) / s.rx
+      var dy = (y - s.y) / s.ry
+      if (dx * dx + dy * dy <= 1) return anns[i]
+    }
+    return null
   }
 
   function _drawEllipse(ann) {
@@ -429,51 +491,130 @@
   // ── Mouse handlers ────────────────────────────────────────
 
   function _onMouseDown(e) {
-    if (!_selectedZone) return
-    _drawing = true
-    _drawStart = { x: e.offsetX, y: e.offsetY, ex: e.offsetX, ey: e.offsetY }
-  }
+    var mx = e.offsetX, my = e.offsetY
 
-  function _onMouseMove(e) {
-    if (!_drawing || !_drawStart) return
-    _drawStart.ex = e.offsetX
-    _drawStart.ey = e.offsetY
-    _redraw()
-  }
+    // 1. Check resize handles on selected annotation
+    if (_selAnn) {
+      var handle = _hitHandle(mx, my)
+      if (handle) {
+        _mode = 'resize'
+        _resizeHandle = handle
+        return
+      }
+    }
 
-  function _onMouseUp() {
-    if (!_drawing || !_drawStart) return
-    _drawing = false
-
-    var cx = (_drawStart.x + _drawStart.ex) / 2
-    var cy = (_drawStart.y + _drawStart.ey) / 2
-    var rx = Math.abs(_drawStart.ex - _drawStart.x) / 2
-    var ry = Math.abs(_drawStart.ey - _drawStart.y) / 2
-
-    if (rx < 8 || ry < 8) {
-      _drawStart = null
+    // 2. Check hit on existing annotation → move
+    var hit = _hitEllipse(mx, my)
+    if (hit) {
+      _selAnn = hit
+      _mode = 'move'
+      _moveStart = { x: mx - hit.shape.x, y: my - hit.shape.y }
+      _canvas.style.cursor = 'grabbing'
       _redraw()
       return
     }
 
-    var mlInput = document.getElementById('fmMl')
-    var productInput = document.getElementById('fmProduct')
-    var sideSelect = document.getElementById('fmSide')
+    // 3. Click on empty → deselect
+    if (_selAnn && !_selectedZone) {
+      _selAnn = null
+      _mode = 'idle'
+      _redraw()
+      return
+    }
 
-    _annotations.push({
-      id: _nextId++,
-      angle: _activeAngle,
-      zone: _selectedZone,
-      treatment: _selectedTreatment,
-      ml: parseFloat(mlInput ? mlInput.value : _selectedMl) || 0.5,
-      product: productInput ? productInput.value : _selectedProduct,
-      side: sideSelect ? sideSelect.value : _selectedSide,
-      shape: { x: cx, y: cy, rx: rx, ry: ry },
-    })
+    // 4. Draw new ellipse (zone must be selected)
+    if (_selectedZone) {
+      _selAnn = null
+      _mode = 'draw'
+      _drawing = true
+      _drawStart = { x: mx, y: my, ex: mx, ey: my }
+    }
+  }
 
-    _drawStart = null
-    _redraw()
-    _refreshToolbar()
+  function _onMouseMove(e) {
+    var mx = e.offsetX, my = e.offsetY
+
+    if (_mode === 'move' && _selAnn) {
+      _selAnn.shape.x = mx - _moveStart.x
+      _selAnn.shape.y = my - _moveStart.y
+      _redraw()
+      return
+    }
+
+    if (_mode === 'resize' && _selAnn && _resizeHandle) {
+      var s = _selAnn.shape
+      switch (_resizeHandle) {
+        case 'n': s.ry = Math.max(8, s.y - my); break
+        case 's': s.ry = Math.max(8, my - s.y); break
+        case 'e': s.rx = Math.max(8, mx - s.x); break
+        case 'w': s.rx = Math.max(8, s.x - mx); break
+      }
+      _redraw()
+      return
+    }
+
+    if (_mode === 'draw' && _drawStart) {
+      _drawStart.ex = mx
+      _drawStart.ey = my
+      _redraw()
+      return
+    }
+
+    // Cursor hint
+    if (_selAnn && _hitHandle(mx, my)) {
+      var h = _hitHandle(mx, my)
+      _canvas.style.cursor = (h === 'n' || h === 's') ? 'ns-resize' : 'ew-resize'
+    } else if (_hitEllipse(mx, my)) {
+      _canvas.style.cursor = 'grab'
+    } else {
+      _canvas.style.cursor = _selectedZone ? 'crosshair' : 'default'
+    }
+  }
+
+  function _onMouseUp() {
+    if (_mode === 'move' || _mode === 'resize') {
+      _mode = 'idle'
+      _canvas.style.cursor = _selectedZone ? 'crosshair' : 'default'
+      _redraw()
+      return
+    }
+
+    if (_mode === 'draw' && _drawStart) {
+      _drawing = false
+      _mode = 'idle'
+
+      var cx = (_drawStart.x + _drawStart.ex) / 2
+      var cy = (_drawStart.y + _drawStart.ey) / 2
+      var rx = Math.abs(_drawStart.ex - _drawStart.x) / 2
+      var ry = Math.abs(_drawStart.ey - _drawStart.y) / 2
+
+      if (rx < 8 || ry < 8) {
+        _drawStart = null
+        _redraw()
+        return
+      }
+
+      var mlInput = document.getElementById('fmMl')
+      var productInput = document.getElementById('fmProduct')
+      var sideSelect = document.getElementById('fmSide')
+
+      var newAnn = {
+        id: _nextId++,
+        angle: _activeAngle,
+        zone: _selectedZone,
+        treatment: _selectedTreatment,
+        ml: parseFloat(mlInput ? mlInput.value : _selectedMl) || 0.5,
+        product: productInput ? productInput.value : _selectedProduct,
+        side: sideSelect ? sideSelect.value : _selectedSide,
+        shape: { x: cx, y: cy, rx: rx, ry: ry },
+      }
+      _annotations.push(newAnn)
+      _selAnn = newAnn  // auto-select after drawing
+
+      _drawStart = null
+      _redraw()
+      _refreshToolbar()
+    }
   }
 
   // ── Crop Modal ────────────────────────────────────────────

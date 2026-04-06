@@ -676,12 +676,12 @@
 }
 
 /* ── Canvas cursor states ──────────────────────────────────── */
-.fm-canvas-wrap.drawing canvas {
-  cursor: crosshair;
+.fm-canvas-wrap canvas {
+  cursor: default;
 }
 
-.fm-canvas-wrap.moving canvas {
-  cursor: grab;
+.fm-canvas-wrap.drawing canvas {
+  cursor: crosshair;
 }
 
 /* ── Zone color dot ─────────────────────────────────────────── */
