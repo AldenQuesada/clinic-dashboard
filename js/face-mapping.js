@@ -820,8 +820,10 @@
       // ZONE MODE: draw ellipses + labels
       var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
       var sorted = anns.slice().sort(function (a, b) { return a.shape.y - b.shape.y })
-      var labelY = 20
-      var LABEL_H = 38
+      // Auto-compress labels when many zones
+      var availH = _imgH - 20
+      var LABEL_H = sorted.length > 0 ? Math.min(38, Math.max(22, availH / sorted.length)) : 38
+      var labelY = 10
 
       sorted.forEach(function (ann) {
         _drawEllipseClean(ann)
@@ -974,15 +976,19 @@
     _ctx.fill()
 
     // Label text — brandbook: ivory on graphite
+    // Font size adapts to available space
+    var compact = labelH < 30
     var lx = lineEndX + 8
-    _ctx.font = '600 11px Inter, Montserrat, sans-serif'
+    _ctx.font = (compact ? '600 10px' : '600 11px') + ' Inter, Montserrat, sans-serif'
     _ctx.textAlign = 'left'
     _ctx.fillStyle = '#F5F0E8'  // ivory
-    _ctx.fillText(z ? z.label : ann.zone, lx, targetY + 6)
+    _ctx.fillText(z ? z.label : ann.zone, lx, targetY + (compact ? 5 : 6))
 
-    _ctx.font = '400 9px Inter, Montserrat, sans-serif'
-    _ctx.fillStyle = '#C8A97E'  // champagne
-    _ctx.fillText(ann.ml + zUnit + ' \u2022 ' + (z ? z.desc : ''), lx, targetY + 18)
+    if (!compact) {
+      _ctx.font = '400 9px Inter, Montserrat, sans-serif'
+      _ctx.fillStyle = '#C8A97E'  // champagne
+      _ctx.fillText(ann.ml + zUnit + ' \u2022 ' + (z ? z.desc : ''), lx, targetY + 18)
+    }
 
     _ctx.restore()
 
@@ -2159,6 +2165,14 @@
 
   function _renderDonePanel() {
     var html = ''
+
+    // GPT analysis overall assessment (if available)
+    if (_lastAnalysis && _lastAnalysis.overall_assessment) {
+      html += '<div style="font-size:11px;color:rgba(245,240,232,0.7);line-height:1.6;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(200,169,126,0.15)">' +
+        _esc(_lastAnalysis.overall_assessment) + '</div>'
+    }
+
+    // Zone list with quantities
     var uniqueZones = []
     _annotations.forEach(function (a) {
       if (uniqueZones.indexOf(a.zone) === -1) uniqueZones.push(a.zone)
@@ -2166,20 +2180,32 @@
     uniqueZones.forEach(function (zId) {
       var z = ZONES.find(function (x) { return x.id === zId })
       var anns = _annotations.filter(function (a) { return a.zone === zId })
-      var desc = anns.map(function (a) {
-        var t = TREATMENTS.find(function (x) { return x.id === a.treatment })
-        return (t ? t.label : '') + ' ' + a.ml + 'mL'
-      }).join(', ')
+      var totalQty = anns.reduce(function (s, a) { return s + a.ml }, 0)
+      var unit = z ? z.unit : 'mL'
       var color = z ? z.color : '#C8A97E'
 
       html += '<div class="fm-report-check">' +
         '<span class="fm-report-check-icon" style="background:' + color + '">' + _svgCheck() + '</span>' +
         '<div class="fm-report-check-text">' +
           '<strong>' + (z ? z.label : zId) + '</strong>' +
-          '<span>' + (z ? z.desc : '') + '</span>' +
+          '<span>' + totalQty + unit + ' \u2022 ' + (z ? z.desc : '') + '</span>' +
         '</div>' +
       '</div>'
     })
+
+    // Tercos proportions (if measured)
+    var t = _tercoLines
+    var totalH = t.chin - t.hairline
+    if (totalH > 0.1) {
+      var pSup = Math.round((t.brow - t.hairline) / totalH * 100)
+      var pMed = Math.round((t.noseBase - t.brow) / totalH * 100)
+      var pInf = Math.round((t.chin - t.noseBase) / totalH * 100)
+      html += '<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(200,169,126,0.15)">' +
+        '<div style="font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E;margin-bottom:6px">Proporcoes Faciais</div>' +
+        '<div style="font-size:10px;color:rgba(245,240,232,0.6)">Superior ' + pSup + '% | Medio ' + pMed + '% | Inferior ' + pInf + '%</div>' +
+        '<div style="font-size:10px;color:rgba(245,240,232,0.4);margin-top:2px">Ideal: 33% cada terco</div>' +
+      '</div>'
+    }
 
     return html || '<div style="font-size:12px;color:rgba(245,240,232,0.4)">Nenhuma zona marcada</div>'
   }
@@ -2209,20 +2235,35 @@
     }
 
     var html = ''
-    var seen = []
-    _annotations.forEach(function (a) {
-      if (seen.indexOf(a.zone) !== -1) return
-      seen.push(a.zone)
-      var r = results[a.zone] || { title: a.zone, desc: '' }
-      var z = ZONES.find(function (x) { return x.id === a.zone })
-      html += '<div class="fm-report-check">' +
-        '<span class="fm-report-check-icon" style="background:' + (z ? z.color : '#8A9E88') + '">' + _svgCheck() + '</span>' +
-        '<div class="fm-report-check-text">' +
-          '<strong>' + r.title + '</strong>' +
-          '<span>' + r.desc + '</span>' +
-        '</div>' +
-      '</div>'
-    })
+
+    // GPT treatment plan (if available)
+    if (_lastAnalysis && _lastAnalysis.treatment_plan && _lastAnalysis.treatment_plan.length > 0) {
+      _lastAnalysis.treatment_plan.forEach(function (tp) {
+        html += '<div class="fm-report-check">' +
+          '<span class="fm-report-check-icon" style="background:#8A9E88">' + _svgCheck() + '</span>' +
+          '<div class="fm-report-check-text">' +
+            '<strong>' + _esc(tp.zone || '') + '</strong>' +
+            '<span>' + _esc((tp.treatment || '') + ' ' + (tp.quantity || '') + (tp.unit || '')) + '</span>' +
+          '</div>' +
+        '</div>'
+      })
+    } else {
+      // Fallback: use zone-based expected results
+      var seen = []
+      _annotations.forEach(function (a) {
+        if (seen.indexOf(a.zone) !== -1) return
+        seen.push(a.zone)
+        var r = results[a.zone] || { title: a.zone, desc: '' }
+        var z = ZONES.find(function (x) { return x.id === a.zone })
+        html += '<div class="fm-report-check">' +
+          '<span class="fm-report-check-icon" style="background:' + (z ? z.color : '#8A9E88') + '">' + _svgCheck() + '</span>' +
+          '<div class="fm-report-check-text">' +
+            '<strong>' + r.title + '</strong>' +
+            '<span>' + r.desc + '</span>' +
+          '</div>' +
+        '</div>'
+      })
+    }
 
     return html || '<div style="font-size:12px;color:rgba(245,240,232,0.4)">Adicione marcacoes</div>'
   }
