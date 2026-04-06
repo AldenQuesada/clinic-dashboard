@@ -805,20 +805,87 @@ function _apptTip(e, id) {
   if (!tip) {
     tip = document.createElement('div')
     tip.id = '_apptHoverTip'
-    tip.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;background:#1F2937;color:#fff;border-radius:10px;padding:10px 13px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,0.25);min-width:180px;max-width:260px;transition:opacity .1s'
+    tip.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;background:#1F2937;color:#fff;border-radius:12px;padding:0;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,0.3);min-width:240px;max-width:290px;transition:opacity .15s;overflow:hidden'
     document.body.appendChild(tip)
   }
   var s = (window.APPT_STATUS_CFG || {})[a.status] || { label: a.status, color: '#9CA3AF' }
+  var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+  var rooms = typeof getRooms === 'function' ? getRooms() : []
+  var profNome = a.profissionalNome || (profs[a.profissionalIdx] && profs[a.profissionalIdx].nome) || ''
+  var salaNome = (a.salaIdx !== null && a.salaIdx !== undefined && rooms[a.salaIdx]) ? rooms[a.salaIdx].nome : ''
+  var phone = a.pacientePhone || ''
+  if (!phone) {
+    var leads = window.LeadsService ? LeadsService.getLocal() : []
+    var lead = a.pacienteId ? leads.find(function(l) { return l.id === a.pacienteId }) : null
+    if (lead) phone = lead.phone || lead.whatsapp || ''
+  }
+  var fmtPhone = phone ? phone.replace(/\D/g,'') : ''
+  if (fmtPhone.length === 13) fmtPhone = '(' + fmtPhone.slice(2,4) + ') ' + fmtPhone.slice(4,9) + '-' + fmtPhone.slice(9)
+  else if (fmtPhone.length === 12) fmtPhone = '(' + fmtPhone.slice(2,4) + ') ' + fmtPhone.slice(4,8) + '-' + fmtPhone.slice(8)
+
+  var tipoLabel = a.tipoPaciente === 'retorno' ? 'Retorno' : 'Novo'
+  var tipoConsLabel = a.tipoConsulta === 'avaliacao' ? 'Avaliacao' : a.tipoConsulta === 'procedimento' ? 'Procedimento' : a.tipoConsulta || ''
+  var origemLabel = { whatsapp:'WhatsApp', instagram:'Instagram', indicacao:'Indicacao', site:'Site', direto:'Direto' }[a.origem] || a.origem || ''
+  var valor = a.valor ? 'R$ ' + parseFloat(a.valor).toLocaleString('pt-BR', { minimumFractionDigits: 0 }) : ''
+
+  // Pre-consulta checks
+  var ckAnamnese = a.anamneseRespondida ? 'ok' : 'pendente'
+  var ckConsImg = (a.consentimentoImagem === 'assinado' || a.consentimentoImagem === true) ? 'ok' : 'pendente'
+  var ckConfirmacao = a.confirmacaoEnviada ? 'ok' : 'pendente'
+  var ckConsentProc = (a.consentimentoProcedimento === 'assinado') ? 'ok' : 'pendente'
+
+  function _ckDot(st) {
+    return st === 'ok'
+      ? '<span style="width:7px;height:7px;border-radius:50%;background:#10B981;display:inline-block;margin-right:4px"></span>'
+      : '<span style="width:7px;height:7px;border-radius:50%;background:#F59E0B;display:inline-block;margin-right:4px;animation:pulse 1.5s infinite"></span>'
+  }
+  function _ckLabel(st) { return st === 'ok' ? 'color:#6EE7B7' : 'color:#FCD34D' }
+
   tip.innerHTML =
-    '<div style="font-size:13px;font-weight:700;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (a.pacienteNome || 'Paciente') + '</div>' +
-    (a.procedimento ? '<div style="color:#D1D5DB;margin-bottom:3px">' + a.procedimento + '</div>' : '') +
-    '<div style="color:#9CA3AF;font-size:11px">' + (a.horaInicio || '') + (a.horaFim ? ' – ' + a.horaFim : '') + '</div>' +
-    '<div style="margin-top:5px;display:inline-block;font-size:10px;font-weight:700;color:' + s.color + ';background:rgba(255,255,255,.1);padding:2px 7px;border-radius:20px">' + (s.label || a.status) + '</div>'
+    // Secao 1: Paciente
+    '<div style="padding:10px 13px;border-bottom:1px solid #374151">' +
+      '<div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (a.pacienteNome || 'Paciente') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">' +
+        (fmtPhone ? '<span style="font-size:10px;color:#9CA3AF">' + fmtPhone + '</span>' : '<span></span>') +
+        '<span style="font-size:9px;font-weight:700;color:#A78BFA;background:rgba(167,139,250,.15);padding:1px 7px;border-radius:10px">' + tipoLabel + '</span>' +
+      '</div>' +
+    '</div>' +
+    // Secao 2: Consulta
+    '<div style="padding:8px 13px;border-bottom:1px solid #374151">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="font-size:11px;font-weight:600;color:#E5E7EB">' + (a.procedimento || tipoConsLabel || '—') + '</span>' +
+        (tipoConsLabel ? '<span style="font-size:9px;color:#9CA3AF">' + tipoConsLabel + '</span>' : '') +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">' +
+        '<span style="font-size:10px;color:#9CA3AF">' + (a.horaInicio || '') + (a.horaFim ? ' – ' + a.horaFim : '') + '</span>' +
+        (salaNome ? '<span style="font-size:9px;color:#6B7280">' + salaNome + '</span>' : '') +
+      '</div>' +
+      (profNome ? '<div style="font-size:10px;color:#9CA3AF;margin-top:2px">' + profNome + (origemLabel ? ' · ' + origemLabel : '') + '</div>' : '') +
+    '</div>' +
+    // Secao 3: Pre-consulta checks
+    '<div style="padding:8px 13px;border-bottom:1px solid #374151">' +
+      '<div style="font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Pre-consulta</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">' +
+        '<div style="font-size:10px;' + _ckLabel(ckAnamnese) + '">' + _ckDot(ckAnamnese) + 'Anamnese</div>' +
+        '<div style="font-size:10px;' + _ckLabel(ckConsImg) + '">' + _ckDot(ckConsImg) + 'Consent. Imagem</div>' +
+        '<div style="font-size:10px;' + _ckLabel(ckConfirmacao) + '">' + _ckDot(ckConfirmacao) + 'Confirmacao</div>' +
+        '<div style="font-size:10px;' + _ckLabel(ckConsentProc) + '">' + _ckDot(ckConsentProc) + 'Consent. Proced.</div>' +
+      '</div>' +
+    '</div>' +
+    // Secao 4: Status + Valor
+    '<div style="padding:8px 13px;display:flex;justify-content:space-between;align-items:center">' +
+      (valor ? '<span style="font-size:12px;font-weight:700;color:#10B981">' + valor + '</span>' : '<span></span>') +
+      '<span style="font-size:10px;font-weight:700;color:' + s.color + ';background:rgba(255,255,255,.1);padding:2px 8px;border-radius:20px">' + (s.label || a.status) + '</span>' +
+    '</div>'
+
   var rect = e.currentTarget.getBoundingClientRect()
   var left = rect.right + 8
-  if (left + 270 > window.innerWidth) left = rect.left - 270
+  if (left + 300 > window.innerWidth) left = rect.left - 300
+  if (left < 8) left = 8
+  var top = rect.top
+  if (top + 220 > window.innerHeight) top = window.innerHeight - 230
   tip.style.left    = left + 'px'
-  tip.style.top     = (rect.top + window.scrollY) + 'px'
+  tip.style.top     = top + 'px'
   tip.style.opacity = '1'
   tip.style.display = 'block'
 }
