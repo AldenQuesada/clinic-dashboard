@@ -125,6 +125,10 @@
     var kpiTaxaSub = document.getElementById('kpiOrcTaxaSub')
     if (kpiTaxaSub) kpiTaxaSub.textContent = aprovados + ' de ' + leads.length
 
+    // Sparklines e trends
+    _renderOrcSparklines(leads)
+    _renderOrcTrends(leads, abertos, aprovados, taxa)
+
     // Sort arrows
     var headers = { orcSortName: 'name', orcSortDate: 'date', orcSortContact: 'lastContact' }
     var labels = { name: 'Nome', date: 'Data', lastContact: 'Contato' }
@@ -281,6 +285,96 @@
     a.href = URL.createObjectURL(blob)
     a.download = 'orcamentos_' + new Date().toISOString().slice(0, 10) + '.csv'
     a.click()
+  }
+
+  // ── Sparklines (mini graficos nos KPI cards) ────────────────
+  var _sparkRendered = false
+
+  function _orcSparkline(canvasId, data, color) {
+    var canvas = document.getElementById(canvasId)
+    if (!canvas || typeof Chart === 'undefined') return
+    var ctx = canvas.getContext('2d')
+    var gradient = ctx.createLinearGradient(0, 0, 0, 36)
+    gradient.addColorStop(0, color.replace(')', ', 0.25)').replace('rgb', 'rgba'))
+    gradient.addColorStop(1, color.replace(')', ', 0)').replace('rgb', 'rgba'))
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(function(_, i) { return i }),
+        datasets: [{ data: data, borderColor: color, borderWidth: 1.8, fill: true, backgroundColor: gradient, tension: 0.4, pointRadius: 0, pointHoverRadius: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } },
+        animation: { duration: 600 }
+      }
+    })
+  }
+
+  function _renderOrcSparklines(leads) {
+    if (_sparkRendered) return
+    _sparkRendered = true
+
+    // Distribuicao por semana (ultimos 8 semanas)
+    var weeks = [0,0,0,0,0,0,0,0]
+    var now = Date.now()
+    leads.forEach(function(l) {
+      var d = l.created_at || l.createdAt
+      if (!d) return
+      var age = Math.floor((now - new Date(d).getTime()) / (7 * 86400000))
+      if (age >= 0 && age < 8) weeks[7 - age]++
+    })
+
+    // Aprovados por semana
+    var approvedWeeks = [0,0,0,0,0,0,0,0]
+    leads.forEach(function(l) {
+      var orcs = (l.customFields || {}).orcamentos || []
+      if (!orcs.some(function(o) { return o.status === 'aprovado' })) return
+      var d = l.created_at || l.createdAt
+      if (!d) return
+      var age = Math.floor((now - new Date(d).getTime()) / (7 * 86400000))
+      if (age >= 0 && age < 8) approvedWeeks[7 - age]++
+    })
+
+    // Taxa por semana
+    var taxaWeeks = weeks.map(function(t, i) { return t ? Math.round((approvedWeeks[i] / t) * 100) : 0 })
+
+    _orcSparkline('orcSparkTotal', weeks, 'rgb(59, 130, 246)')
+    _orcSparkline('orcSparkAbertos', weeks.map(function(t, i) { return t - approvedWeeks[i] }), 'rgb(245, 158, 11)')
+    _orcSparkline('orcSparkAprovados', approvedWeeks, 'rgb(16, 185, 129)')
+    _orcSparkline('orcSparkTaxa', taxaWeeks, 'rgb(124, 58, 237)')
+  }
+
+  function _renderOrcTrends(leads, abertos, aprovados, taxa) {
+    // Comparar ultimos 30 dias vs 30 dias anteriores
+    var now = Date.now()
+    var d30 = 30 * 86400000
+    var recentes = 0, anteriores = 0
+    leads.forEach(function(l) {
+      var d = l.created_at || l.createdAt
+      if (!d) return
+      var age = now - new Date(d).getTime()
+      if (age <= d30) recentes++
+      else if (age <= d30 * 2) anteriores++
+    })
+
+    var diff = recentes - anteriores
+    var pct = anteriores ? Math.round((diff / anteriores) * 100) : 0
+
+    _setTrend('kpiOrcTotalTrend', 'kpiOrcTotalTrendVal', diff, (diff >= 0 ? '+' : '') + diff)
+    _setTrend('kpiOrcAbertosTrend', 'kpiOrcAbertosTrendVal', -abertos, abertos + ' pendentes')
+    _setTrend('kpiOrcAprovadosTrend', 'kpiOrcAprovadosTrendVal', aprovados, aprovados + ' fechados')
+    _setTrend('kpiOrcTaxaTrend', 'kpiOrcTaxaTrendVal', taxa - 50, taxa + '%')
+  }
+
+  function _setTrend(containerId, valId, direction, text) {
+    var el = document.getElementById(containerId)
+    var valEl = document.getElementById(valId)
+    if (!el || !valEl) return
+    el.style.display = ''
+    valEl.textContent = text
+    el.className = 'kpi-trend ' + (direction > 0 ? 'kpi-trend-up' : direction < 0 ? 'kpi-trend-down' : 'kpi-trend-neutral')
   }
 
   // ── Exports ─────────────────────────────────────────────────
