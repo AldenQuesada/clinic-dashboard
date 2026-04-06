@@ -25,9 +25,9 @@
 
   var ZONES_DEFAULT = [
     // Preenchimento (mL)
-    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',            color: '#5B7FC7', angles: ['45'],              cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
-    { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',     color: '#6BBF8A', angles: ['45'],              cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah' },
-    { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',       color: '#9B6FC7', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
+    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',            color: '#5B7FC7', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
+    { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',     color: '#6BBF8A', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah' },
+    { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',       color: '#9B6FC7', angles: ['front', '45', 'lateral'], cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
     { id: 'olheira',         label: 'Olheira',           desc: 'Sombra periorbital',  color: '#7ECF7E', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah' },
     { id: 'nariz-dorso',     label: 'Nariz Dorso',       desc: 'Projecao dorsal',     color: '#A8B4C8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.3, max: 1.0, defaultTx: 'ah' },
     { id: 'nariz-base',      label: 'Nariz Base',        desc: 'Base / asa nasal',    color: '#B8C4D8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah' },
@@ -37,13 +37,15 @@
     { id: 'mandibula',       label: 'Mandibula',         desc: 'Contorno',            color: '#C9A96E', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 1.0, max: 3.0, defaultTx: 'ah' },
     { id: 'mento',           label: 'Mento',             desc: 'Projecao',            color: '#D4A857', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah' },
     { id: 'labio',           label: 'Labios',            desc: 'Volume / contorno',   color: '#E07B7B', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah' },
+    { id: 'cod-barras',     label: 'Codigo de Barras',  desc: 'Labio superior',      color: '#D4788A', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah' },
+    { id: 'pescoco',        label: 'Pescoco',           desc: 'Linhas cervicais',    color: '#B8A8D8', angles: ['front', 'lateral'], cat: 'fill', unit: 'mL', min: 1.0, max: 3.0, defaultTx: 'bio' },
     // Rugas / Toxina (U = unidades)
     { id: 'glabela',         label: 'Glabela',           desc: 'Linhas de expressao', color: '#7BA3CF', angles: ['front'],           cat: 'tox', unit: 'U', min: 10, max: 25, defaultTx: 'botox' },
     { id: 'frontal',         label: 'Frontal',           desc: 'Linhas frontais',     color: '#8ECFC4', angles: ['front'],           cat: 'tox', unit: 'U', min: 10, max: 20, defaultTx: 'botox' },
     { id: 'periorbital',     label: 'Periorbital',       desc: 'Pes de galinha',      color: '#6BAED6', angles: ['front', '45'],     cat: 'tox', unit: 'U', min: 8,  max: 16, defaultTx: 'botox' },
     { id: 'gingival',        label: 'Gingival',          desc: 'Sorriso gengival',    color: '#E8879B', angles: ['front'],           cat: 'tox', unit: 'U', min: 2,  max: 4,  defaultTx: 'botox' },
     { id: 'dao',             label: 'DAO',               desc: 'Depressao do labio',  color: '#C88EA8', angles: ['front', '45'],     cat: 'tox', unit: 'U', min: 4,  max: 8,  defaultTx: 'botox' },
-    { id: 'platisma',        label: 'Platisma',          desc: 'Bandas do pescoco',   color: '#A89EC8', angles: ['lateral'],          cat: 'tox', unit: 'U', min: 10, max: 30, defaultTx: 'botox' },
+    { id: 'platisma',        label: 'Platisma',          desc: 'Bandas do pescoco',   color: '#A89EC8', angles: ['front', 'lateral'], cat: 'tox', unit: 'U', min: 10, max: 30, defaultTx: 'botox' },
   ]
 
   // Load custom ranges from localStorage (override min/max)
@@ -86,6 +88,8 @@
     'gingival':        '<path d="M4 5C5 8 7 8 8 5" stroke-width="1.5" fill="none"/><path d="M4 8L8 8" stroke-width="1" fill="none"/>',
     'dao':             '<path d="M5 4C4 7 3 9 2 10" stroke-width="1.5" fill="none"/><path d="M7 4C8 7 9 9 10 10" stroke-width="1.5" fill="none"/>',
     'platisma':        '<path d="M3 3L3 10M6 2L6 11M9 3L9 10" stroke-width="1.5" fill="none"/>',
+    'cod-barras':      '<path d="M3 5L3 9M5 4L5 10M7 5L7 9M9 4L9 10" stroke-width="1" fill="none"/>',
+    'pescoco':         '<path d="M2 4C4 6 8 6 10 4M2 7C4 9 8 9 10 7" stroke-width="1.5" fill="none"/>',
   }
 
   var TREATMENTS = [
@@ -140,6 +144,7 @@
   var _cropDragging = false
   var _cropDragStart = null
   var _pendingCropAngle = null
+  var _canvasZoom = 1
 
   // ── Feather icon helper ───────────────────────────────────
 
@@ -381,9 +386,17 @@
       '</div>'
     }
 
-    return '<div class="fm-canvas-area">' +
-      '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap">' +
+    return '<div class="fm-canvas-area" id="fmCanvasArea">' +
+      '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap" style="transform-origin:top center;transform:scale(' + _canvasZoom + ')">' +
         '<canvas id="fmCanvas"></canvas>' +
+      '</div>' +
+      '<div class="fm-canvas-controls">' +
+        '<button onclick="FaceMapping._zoomCanvas(-0.1)" title="Diminuir" class="fm-canvas-ctrl-btn">-</button>' +
+        '<input type="range" id="fmCanvasZoom" min="0.5" max="2.5" step="0.05" value="' + _canvasZoom + '" ' +
+          'oninput="FaceMapping._setCanvasZoom(parseFloat(this.value))" style="width:100px">' +
+        '<button onclick="FaceMapping._zoomCanvas(0.1)" title="Aumentar" class="fm-canvas-ctrl-btn">+</button>' +
+        '<span style="font-size:10px;color:var(--text-muted);min-width:36px;text-align:center">' + Math.round(_canvasZoom * 100) + '%</span>' +
+        '<button onclick="FaceMapping._toggleFullscreen()" title="Tela cheia" class="fm-canvas-ctrl-btn" style="margin-left:8px">' + _icon('maximize-2', 14) + '</button>' +
       '</div>' +
     '</div>'
   }
@@ -1073,6 +1086,33 @@
     }
   }
 
+  function _setCanvasZoom(val) {
+    _canvasZoom = Math.max(0.5, Math.min(2.5, val))
+    var wrap = document.getElementById('fmCanvasWrap')
+    if (wrap) wrap.style.transform = 'scale(' + _canvasZoom + ')'
+    var slider = document.getElementById('fmCanvasZoom')
+    if (slider) slider.value = _canvasZoom
+    // Update label
+    var area = document.querySelector('.fm-canvas-controls span')
+    if (area) area.textContent = Math.round(_canvasZoom * 100) + '%'
+  }
+
+  function _zoomCanvas(delta) {
+    _setCanvasZoom(_canvasZoom + delta)
+  }
+
+  function _toggleFullscreen() {
+    var area = document.getElementById('fmCanvasArea')
+    if (!area) return
+    if (area.classList.contains('fm-fullscreen')) {
+      area.classList.remove('fm-fullscreen')
+      document.body.style.overflow = ''
+    } else {
+      area.classList.add('fm-fullscreen')
+      document.body.style.overflow = 'hidden'
+    }
+  }
+
   function _selectAngle(angle) {
     _activeAngle = angle
     // Deselect zone if not allowed on new angle
@@ -1326,6 +1366,8 @@
       'gingival':        { title: 'Sorriso harmonioso', desc: 'Exposicao gengival corrigida' },
       'dao':             { title: 'Canto labial elevado', desc: 'Expressao mais positiva' },
       'platisma':        { title: 'Pescoco definido', desc: 'Bandas platismais suavizadas' },
+      'cod-barras':      { title: 'Labio superior liso', desc: 'Codigo de barras suavizado' },
+      'pescoco':         { title: 'Pescoco rejuvenescido', desc: 'Linhas cervicais tratadas' },
     }
 
     var html = ''
@@ -1746,6 +1788,9 @@
     _recrop: _recrop,
     _deletePhoto: _deletePhoto,
     _editRanges: _editRanges,
+    _setCanvasZoom: _setCanvasZoom,
+    _zoomCanvas: _zoomCanvas,
+    _toggleFullscreen: _toggleFullscreen,
     _triggerUploadExtra: _triggerUploadExtra,
     _deleteExtraPhoto: _deleteExtraPhoto,
     _regenSim: function () {
