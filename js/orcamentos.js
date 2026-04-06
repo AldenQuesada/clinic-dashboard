@@ -29,21 +29,30 @@
   }
 
   // ── Load ────────────────────────────────────────────────────
-  function load(forceRefresh) {
-    var now = Date.now()
-    var cacheValid = _cacheData && (now - _cacheTs) < _CACHE_TTL && !forceRefresh
+  function load() {
+    var page = document.getElementById('page-orcamentos')
+    if (!page) return
 
-    if (cacheValid) { _render(); return }
-
-    if (window.LeadsService && LeadsService.loadAll) {
-      LeadsService.loadAll().then(function(leads) {
-        _cacheData = leads
-        _cacheTs = Date.now()
-        _render()
-      }).catch(function() { _render() })
-      return
+    // Renderizar com dados locais imediatamente
+    var local = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+    if (local.length) {
+      _cacheData = local
+      _cacheTs = Date.now()
+      _render()
     }
-    _render()
+
+    // Buscar dados frescos do Supabase para garantir sync
+    if (window.LeadsService && LeadsService.loadAll) {
+      LeadsService.loadAll().then(function(fresh) {
+        if (fresh && fresh.length) {
+          _cacheData = fresh
+          _cacheTs = Date.now()
+          _render()
+        }
+      }).catch(function(e) {
+        console.warn('[Orcamentos] loadAll falhou, usando cache local:', e)
+      })
+    }
   }
 
   function _render() {

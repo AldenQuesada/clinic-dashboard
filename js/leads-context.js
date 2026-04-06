@@ -838,47 +838,61 @@
       var leads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
       var moved = 0
 
-      // Atualizar localStorage
+      // Atualizar localStorage imediatamente
       ids.forEach(function(id) {
         var idx = leads.findIndex(function(l) { return l.id === id })
         if (idx >= 0) { leads[idx].phase = newPhase; moved++ }
       })
       localStorage.setItem('clinicai_leads', JSON.stringify(leads))
 
-      // Atualizar Supabase (batch via RPC)
-      if (sb) {
-        console.log('[LeadsContext] bulk phase change:', ids.length, '→', newPhase)
-        sb.rpc('leads_bulk_change_phase', { p_ids: ids, p_phase: newPhase }).then(function(res) {
-          if (res.error) {
-            console.error('[LeadsContext] bulk FALHOU:', res.error.message)
-            alert('Erro ao salvar no servidor: ' + res.error.message + '\nOs leads foram movidos localmente mas nao no servidor.')
-          } else {
-            console.log('[LeadsContext] bulk OK:', res.data)
-            var movedCount = res.data && res.data.moved !== undefined ? res.data.moved : '?'
-            if (movedCount === 0) {
-              alert('ATENCAO: 0 leads movidos no servidor. Os IDs podem nao existir no banco. Verifique se os leads foram sincronizados.')
-            }
-          }
-        }).catch(function(e) {
-          console.error('[LeadsContext] bulk exception:', e)
-          alert('Erro de conexao ao salvar. Tente novamente.')
-        })
-      } else {
-        console.error('[LeadsContext] Supabase nao disponivel!')
-        alert('Supabase nao conectado. Os leads foram movidos apenas localmente.')
-      }
-
       _selectedIds = new Set()
-
-      // Recarregar leads do Supabase pra garantir sync
-      if (window.LeadsService && LeadsService.loadAll) {
-        LeadsService.loadAll().then(function() { _load() }).catch(function() { _load() })
-      } else {
-        _load()
-      }
+      _load()
 
       var labels = { paciente: 'Pacientes', orcamento: 'Orcamentos', lead: 'Leads' }
       if (window._showToast) _showToast(moved + ' leads movidos', 'Movidos para ' + (labels[newPhase] || newPhase), 'info')
+
+      // Persistir no Supabase e DEPOIS re-sync
+      var sbPromise
+      if (sb) {
+        console.log('[LeadsContext] bulk phase change:', ids.length, '→', newPhase)
+        sbPromise = sb.rpc('leads_bulk_change_phase', { p_ids: ids, p_phase: newPhase }).then(function(res) {
+          if (res.error) {
+            console.warn('[LeadsContext] bulk RPC indisponivel, usando fallback:', res.error.message)
+            return _bulkChangePhaseFallback(ids, newPhase)
+          }
+          console.log('[LeadsContext] bulk OK:', res.data)
+        }).catch(function(e) {
+          console.warn('[LeadsContext] bulk exception, usando fallback:', e)
+          return _bulkChangePhaseFallback(ids, newPhase)
+        })
+      } else {
+        sbPromise = _bulkChangePhaseFallback(ids, newPhase)
+      }
+
+      // Aguardar Supabase update ANTES de re-sync
+      if (sbPromise && sbPromise.then) {
+        sbPromise.then(function() {
+          if (window.LeadsService && LeadsService.loadAll) {
+            LeadsService.loadAll().then(function() { _load() }).catch(function() {})
+          }
+        })
+      }
+    }
+
+    // Fallback: usa sdr_change_phase individual para cada lead
+    function _bulkChangePhaseFallback(ids, newPhase) {
+      var promises = ids.map(function(id) {
+        if (window.SdrService) {
+          return SdrService.changePhase(id, newPhase, 'bulk_move')
+        }
+        return Promise.resolve()
+      })
+      return Promise.all(promises).then(function(results) {
+        var ok = results.filter(function(r) { return r && (r.ok !== false) }).length
+        console.log('[LeadsContext] fallback concluido:', ok + '/' + ids.length + ' atualizados')
+      }).catch(function(e) {
+        console.error('[LeadsContext] fallback falhou:', e)
+      })
     }
 
     // ── Export leads (CSV / PDF) ────────────────────────────────
