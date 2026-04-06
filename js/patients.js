@@ -1,13 +1,34 @@
 // ── ClinicAI — Patients Module ──
 // setText · formatCurrency · formatDate → definidos em utils.js (carrega antes deste arquivo)
 
+// ─── Cache TTL — evita bater no Supabase a cada clique ──────
+var _pCacheTimestamp = 0
+var _pCacheTTL = 30000 // 30 segundos
+var _pCacheData = null
+var _pForceRefresh = false
+
 // ─── Pacientes ───────────────────────────────────────────────
-// Lê direto do localStorage (clinicai_leads + clinicai_appointments).
-// Não depende de backend. Dados sincronizados via Supabase.
-function loadPatients() {
-  // Forcar reload do Supabase pra pegar phases atualizadas
+function loadPatients(forceRefresh) {
+  if (forceRefresh) _pForceRefresh = true
+
+  var now = Date.now()
+  var cacheValid = _pCacheData && (now - _pCacheTimestamp) < _pCacheTTL && !_pForceRefresh
+
+  if (cacheValid) {
+    _loadPatientsInternal()
+    return
+  }
+
+  // Cache expirado ou forcado — buscar do Supabase
   if (window.LeadsService && LeadsService.loadAll) {
-    LeadsService.loadAll().then(function() { _loadPatientsInternal() }).catch(function() { _loadPatientsInternal() })
+    LeadsService.loadAll().then(function(leads) {
+      _pCacheData = leads
+      _pCacheTimestamp = Date.now()
+      _pForceRefresh = false
+      _loadPatientsInternal()
+    }).catch(function() {
+      _loadPatientsInternal()
+    })
     return
   }
   _loadPatientsInternal()
@@ -63,9 +84,8 @@ function _loadPatientsInternal() {
     return
   }
 
-  // ── Fallback: lê leads com phase=paciente ─
-  // Tenta LeadsService primeiro (dados frescos do Supabase), fallback localStorage
-  const allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+  // ── Leads com phase=paciente (cache ou localStorage) ─
+  const allLeads = _pCacheData || (window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]'))
   const leads = allLeads.filter(function(l) { return l.phase === 'paciente' })
   const appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]')
 
@@ -469,7 +489,12 @@ function patientsLoadMore() {
 function patientsSortBy(field) {
   if (_patientsSortField === field) _patientsSortDir = _patientsSortDir === 'asc' ? 'desc' : 'asc'
   else { _patientsSortField = field; _patientsSortDir = 'asc' }
-  loadPatients()
+  // Re-renderiza com dados cacheados (sem bater no Supabase)
+  if (_patientsAll.length) {
+    renderPatientsTable(_patientsAll)
+  } else {
+    loadPatients()
+  }
 }
 
 function patientsToggleAll(masterCb) {
@@ -1075,7 +1100,7 @@ async function saveNewPatient() {
 
     viewLead(newLead.id)
     loadLeads()
-    if (document.getElementById('patientsTableBody')) loadPatients()
+    if (document.getElementById('patientsTableBody')) loadPatients(true)
 
   } catch (err) {
     btn.textContent = '✓ Cadastrar Paciente'
