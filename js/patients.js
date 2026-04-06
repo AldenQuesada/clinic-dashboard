@@ -297,24 +297,34 @@ function renderPatientsTable(patients) {
     else if (!lastDate) churnCount++
   })
 
+  // KPI: Total
   var kpiTotal = document.getElementById('kpiPatientsTotal')
-  var kpiRev = document.getElementById('kpiPatientsRevenue')
-  var kpiTicket = document.getElementById('kpiPatientsTicket')
-  var kpiChurn = document.getElementById('kpiPatientsChurn')
-  var kpiChurnPct = document.getElementById('kpiPatientsChurnPct')
-
   if (kpiTotal) kpiTotal.textContent = patients.length
-  if (kpiRev) kpiRev.textContent = totalRevenue > 0 ? totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
-  if (kpiTicket) kpiTicket.textContent = withRevenue > 0 ? (totalRevenue / withRevenue).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
-  if (kpiChurn) kpiChurn.textContent = churnCount
-  if (kpiChurnPct) kpiChurnPct.textContent = patients.length > 0 ? '(' + Math.round(churnCount / patients.length * 100) + '%)' : ''
+  var kpiTotalSub = document.getElementById('kpiPTotalSub')
+  var activeCount = patients.filter(function(p) { return p.status === 'active' }).length
+  if (kpiTotalSub) kpiTotalSub.textContent = activeCount + ' ativos de ' + patients.length
 
-  // Recompra atrasada
-  var recompraCount = patients.filter(function(p) { return p.recompraAlert === 'atrasado' || p.recompraAlert === 'vencido' }).length
-  var kpiRecompra = document.getElementById('kpiPatientsRecompra')
-  var kpiRecompraPct = document.getElementById('kpiPatientsRecompraPct')
-  if (kpiRecompra) kpiRecompra.textContent = recompraCount
-  if (kpiRecompraPct) kpiRecompraPct.textContent = patients.length > 0 ? '(' + Math.round(recompraCount / patients.length * 100) + '%)' : ''
+  // KPI: Receita
+  var kpiRev = document.getElementById('kpiPatientsRevenue')
+  if (kpiRev) kpiRev.textContent = totalRevenue > 0 ? totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
+  var kpiRevSub = document.getElementById('kpiPRevSub')
+  if (kpiRevSub) kpiRevSub.textContent = withRevenue + ' pacientes com receita'
+
+  // KPI: Ticket
+  var ticketMedio = withRevenue > 0 ? totalRevenue / withRevenue : 0
+  var kpiTicket = document.getElementById('kpiPatientsTicket')
+  if (kpiTicket) kpiTicket.textContent = ticketMedio > 0 ? ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
+  var kpiTicketSub = document.getElementById('kpiPTicketSub')
+  if (kpiTicketSub) kpiTicketSub.textContent = 'Media por paciente'
+
+  // KPI: Churn
+  var kpiChurn = document.getElementById('kpiPatientsChurn')
+  if (kpiChurn) kpiChurn.textContent = churnCount
+  var kpiChurnSub = document.getElementById('kpiPChurnSub')
+  if (kpiChurnSub) {
+    var churnPct = patients.length > 0 ? Math.round(churnCount / patients.length * 100) : 0
+    kpiChurnSub.textContent = churnPct + '% sem contato 6+ meses'
+  }
 
   if (!patients.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado</td></tr>'
