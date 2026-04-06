@@ -256,4 +256,12 @@
   window.orcToggleAll = toggleAll
   window.exportOrcamentosCsv = exportCsv
 
+  // Auto-load quando pagina orcamentos esta ativa no boot
+  document.addEventListener('clinicai:auth-success', function() {
+    try {
+      var lastPage = localStorage.getItem('clinicai_last_page')
+      if (lastPage === 'orcamentos') load()
+    } catch(e) {}
+  })
+
 })()
