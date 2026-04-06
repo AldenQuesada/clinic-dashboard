@@ -126,9 +126,9 @@
     var kpiTaxa = document.getElementById('kpiOrcTaxa')
     if (kpiTaxa) kpiTaxa.textContent = taxa + '%'
     var kpiTaxaSub = document.getElementById('kpiOrcTaxaSub')
-    if (kpiTaxaSub) kpiTaxaSub.textContent = aprovados + '/' + leads.length
+    if (kpiTaxaSub) kpiTaxaSub.textContent = 'ticket medio'
 
-    // Valores financeiros
+    // Valores financeiros (inline nos cards)
     var valorTotal = 0, valorRecuperado = 0, valorAberto = 0
     leads.forEach(function(l) {
       var orcs = (l.customFields || {}).orcamentos || []
@@ -141,30 +141,19 @@
     })
 
     var fmtR = function(v) { return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 0 }) }
+    var ticketMedio = leads.length ? Math.round(valorTotal / leads.length) : 0
 
     var elValTotal = document.getElementById('kpiOrcValorTotal')
     if (elValTotal) elValTotal.textContent = fmtR(valorTotal)
-    var elValTotalSub = document.getElementById('kpiOrcValorTotalSub')
-    if (elValTotalSub) elValTotalSub.textContent = periodoSub
-
-    var elValRec = document.getElementById('kpiOrcValorRec')
-    if (elValRec) elValRec.textContent = fmtR(valorRecuperado)
-    var elValRecSub = document.getElementById('kpiOrcValorRecSub')
-    if (elValRecSub) elValRecSub.textContent = aprovados + ' aprovados'
 
     var elValAb = document.getElementById('kpiOrcValorAb')
     if (elValAb) elValAb.textContent = fmtR(valorAberto)
-    var elValAbSub = document.getElementById('kpiOrcValorAbSub')
-    if (elValAbSub) elValAbSub.textContent = abertos + ' aguardando'
 
-    // Trends financeiros
-    var pctRec = valorTotal ? Math.round((valorRecuperado / valorTotal) * 100) : 0
-    _setTrend('kpiOrcValorTotalTrend', 'kpiOrcValorTotalTrendVal', 1, fmtR(valorTotal))
-    _setTrend('kpiOrcValorRecTrend', 'kpiOrcValorRecTrendVal', valorRecuperado, pctRec + '% do total')
-    _setTrend('kpiOrcValorAbTrend', 'kpiOrcValorAbTrendVal', -valorAberto, (100 - pctRec) + '% pendente')
+    var elValRec = document.getElementById('kpiOrcValorRec')
+    if (elValRec) elValRec.textContent = fmtR(valorRecuperado)
 
-    // Trends
-    _renderOrcTrends(leads, abertos, aprovados, taxa)
+    var elTicket = document.getElementById('kpiOrcTicket')
+    if (elTicket) elTicket.textContent = fmtR(ticketMedio)
 
     // Sort arrows
     var headers = { orcSortName: 'name', orcSortDate: 'date', orcSortContact: 'lastContact' }
