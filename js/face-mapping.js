@@ -584,15 +584,9 @@
     // Draw image only in left area
     _ctx.drawImage(_img, 0, 0, _imgW, _imgH)
 
-    // Label area background (right side)
-    _ctx.fillStyle = '#F7F8FC'
+    // Label area background (right side) — brandbook graphite
+    _ctx.fillStyle = '#2C2C2C'
     _ctx.fillRect(_imgW, 0, LABEL_MARGIN, _canvas.height)
-    _ctx.strokeStyle = '#E8EAF0'
-    _ctx.lineWidth = 1
-    _ctx.beginPath()
-    _ctx.moveTo(_imgW, 0)
-    _ctx.lineTo(_imgW, _canvas.height)
-    _ctx.stroke()
 
     // Draw ellipses on image + labels on right margin
     var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
@@ -728,17 +722,17 @@
     _ctx.save()
 
     // Leader line: center dot → right edge → label area
-    var lineEndX = _imgW + 8
+    var lineEndX = _imgW + 10
     _ctx.beginPath()
-    _ctx.strokeStyle = color
+    _ctx.strokeStyle = '#C8A97E'  // champagne
     _ctx.lineWidth = 1
     _ctx.setLineDash([])
     // Horizontal from dot to image edge
     _ctx.moveTo(s.x, s.y)
-    _ctx.lineTo(_imgW - 2, s.y)
+    _ctx.lineTo(_imgW, s.y)
     // Vertical to label Y
     if (Math.abs(s.y - (targetY + 8)) > 2) {
-      _ctx.lineTo(_imgW - 2, targetY + 8)
+      _ctx.lineTo(_imgW, targetY + 8)
     }
     // Short horizontal into label area
     _ctx.lineTo(lineEndX, targetY + 8)
@@ -750,15 +744,15 @@
     _ctx.arc(lineEndX, targetY + 8, 3, 0, Math.PI * 2)
     _ctx.fill()
 
-    // Label text
+    // Label text — brandbook: ivory on graphite
     var lx = lineEndX + 8
     _ctx.font = '600 11px Inter, Montserrat, sans-serif'
     _ctx.textAlign = 'left'
-    _ctx.fillStyle = '#1A1B2E'
+    _ctx.fillStyle = '#F5F0E8'  // ivory
     _ctx.fillText(z ? z.label : ann.zone, lx, targetY + 6)
 
     _ctx.font = '400 9px Inter, Montserrat, sans-serif'
-    _ctx.fillStyle = '#6B7280'
+    _ctx.fillStyle = '#C8A97E'  // champagne
     _ctx.fillText(ann.ml + zUnit + ' \u2022 ' + (z ? z.desc : ''), lx, targetY + 18)
 
     _ctx.restore()

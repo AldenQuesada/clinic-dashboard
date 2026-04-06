@@ -279,33 +279,29 @@
 .fm-canvas-area {
   flex: 1;
   position: relative;
-  background: #F0F1F4;
+  background: var(--fm-graphite, #2C2C2C);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
 
 .fm-canvas-wrap {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex: 1;
 }
 
 .fm-canvas-wrap canvas {
   display: block;
 }
 
-/* Canvas zoom controls */
+/* Canvas controls */
 .fm-canvas-controls {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255,255,255,0.9);
-  border-top: 1px solid var(--border);
+  background: rgba(44,44,44,0.95);
+  border-top: 1px solid rgba(200,169,126,0.15);
   flex-shrink: 0;
   width: 100%;
   justify-content: center;
@@ -314,10 +310,10 @@
 .fm-canvas-ctrl-btn {
   width: 28px;
   height: 28px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(200,169,126,0.3);
   border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--text-primary);
+  background: transparent;
+  color: #F5F0E8;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -329,6 +325,7 @@
 .fm-canvas-ctrl-btn:hover {
   border-color: #C8A97E;
   color: #C8A97E;
+  background: rgba(200,169,126,0.1);
 }
 
 .fm-canvas-controls input[type="range"] {
