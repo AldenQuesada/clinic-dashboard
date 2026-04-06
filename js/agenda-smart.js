@@ -272,9 +272,16 @@ function apptTransition(id, newStatus, by) {
   }
   if (newStatus === 'no_show') _createNoShowTask(appt)
 
-  // Hook SDR unificado: disparar regras + interacao no historico do lead
+  // Hook SDR unificado: disparar regras + mudar fase do lead
   if (appt.pacienteId && window.SdrService) {
-    if (newStatus === 'finalizado') SdrService.onLeadAttended(appt.pacienteId)
+    if (newStatus === 'finalizado') {
+      SdrService.onLeadAttended(appt.pacienteId)
+      // Garantir que fase muda pra paciente (onLeadAttended so vai ate compareceu)
+      if (SdrService.changePhase) SdrService.changePhase(appt.pacienteId, 'paciente', 'finalizacao-auto')
+    }
+    if (newStatus === 'na_clinica' || newStatus === 'em_consulta') {
+      if (SdrService.changePhase) SdrService.changePhase(appt.pacienteId, 'compareceu', 'status-' + newStatus)
+    }
   }
 
   // Ações contextuais
@@ -1106,25 +1113,44 @@ function confirmFinalize(id) {
   }
   if (parceria)   _logAuto(id, 'fluxo_parceria', 'pendente')
 
-  // Bloco 4: Routing de tags — fecha o loop
-  if (route === 'paciente' && apptFinal.pacienteId && window.TagEngine) {
-    const vars = { nome:apptFinal.pacienteNome||'', data:apptFinal.data||'' }
-    try {
-      TagEngine.applyTag(apptFinal.pacienteId, 'paciente', 'consulta_realizada', 'finalizacao', vars)
-      if (procs.length) TagEngine.applyTag(apptFinal.pacienteId, 'paciente', 'procedimento_realizado', 'finalizacao', vars)
-    } catch(e) {}
-  }
-  if (route === 'pac_orcamento' && apptFinal.pacienteId && window.TagEngine) {
-    const vars = { nome:apptFinal.pacienteNome||'' }
-    try {
-      TagEngine.applyTag(apptFinal.pacienteId, 'pac_orcamento', 'orcamento_aberto', 'finalizacao', vars)
-    } catch(e) {}
-  }
-  if (route === 'orcamento' && apptFinal.pacienteId && window.TagEngine) {
-    const vars = { nome:apptFinal.pacienteNome||'' }
-    try {
-      TagEngine.applyTag(apptFinal.pacienteId, 'orcamento', 'orc_em_aberto', 'finalizacao', vars)
-    } catch(e) {}
+  // Bloco 4: Routing — muda fase do lead + aplica tags
+  if (apptFinal.pacienteId) {
+    // Mudar fase do lead conforme routing
+    if (route === 'paciente' || route === 'pac_orcamento') {
+      if (window.SdrService && SdrService.changePhase) {
+        SdrService.changePhase(apptFinal.pacienteId, 'paciente', 'finalizacao')
+      }
+    } else if (route === 'orcamento') {
+      if (window.SdrService && SdrService.changePhase) {
+        SdrService.changePhase(apptFinal.pacienteId, 'orcamento', 'finalizacao')
+      }
+    } else {
+      // route === 'nenhum' — pelo menos marcar como compareceu
+      if (window.SdrService && SdrService.changePhase) {
+        SdrService.changePhase(apptFinal.pacienteId, 'compareceu', 'finalizacao')
+      }
+    }
+
+    // Aplicar tags
+    if (route === 'paciente' && window.TagEngine) {
+      var vars = { nome:apptFinal.pacienteNome||'', data:apptFinal.data||'' }
+      try {
+        TagEngine.applyTag(apptFinal.pacienteId, 'paciente', 'consulta_realizada', 'finalizacao', vars)
+        if (procs.length) TagEngine.applyTag(apptFinal.pacienteId, 'paciente', 'procedimento_realizado', 'finalizacao', vars)
+      } catch(e) {}
+    }
+    if (route === 'pac_orcamento' && window.TagEngine) {
+      var vars2 = { nome:apptFinal.pacienteNome||'' }
+      try {
+        TagEngine.applyTag(apptFinal.pacienteId, 'pac_orcamento', 'orcamento_aberto', 'finalizacao', vars2)
+      } catch(e) {}
+    }
+    if (route === 'orcamento' && window.TagEngine) {
+      var vars3 = { nome:apptFinal.pacienteNome||'' }
+      try {
+        TagEngine.applyTag(apptFinal.pacienteId, 'orcamento', 'orc_em_aberto', 'finalizacao', vars3)
+      } catch(e) {}
+    }
   }
 
   closeFinalizeModal()
