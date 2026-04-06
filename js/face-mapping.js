@@ -1769,39 +1769,83 @@
 
   // ── Background Removal ────────────────────────────────────
 
+  // Simple hash for dedup (fast, not cryptographic)
+  function _quickHash(b64) {
+    var hash = 0
+    for (var i = 0; i < b64.length; i += 100) {
+      hash = ((hash << 5) - hash) + b64.charCodeAt(i)
+      hash |= 0
+    }
+    return 'fh_' + Math.abs(hash).toString(36) + '_' + b64.length
+  }
+
   function _removeBackground(blob, callback) {
-    // Convert blob to base64 and send to n8n for GPT bg removal
     var reader = new FileReader()
     reader.onload = function () {
       var b64 = reader.result.split(',')[1]
+      var hash = _quickHash(b64)
 
-      fetch('https://flows.aldenquesada.site/webhook/lara-webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'remove-bg',
-          photo_base64: b64,
-        }),
-      })
-      .then(function (res) { return res.json() })
-      .then(function (data) {
-        if (data.success && data.image_b64) {
-          // Convert base64 back to blob
-          var binary = atob(data.image_b64)
-          var arr = new Uint8Array(binary.length)
-          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
-          callback(new Blob([arr], { type: 'image/png' }))
-        } else {
-          console.warn('[FaceMapping] BG removal failed, using original')
-          callback(blob)
-        }
-      })
-      .catch(function (err) {
-        console.warn('[FaceMapping] BG removal error:', err)
-        callback(blob)
-      })
+      // 1. Check Supabase cache first
+      var sb = window._sbShared
+      if (sb) {
+        sb.rpc('get_facial_photo', { p_hash: hash }).then(function (res) {
+          if (res.data && res.data.found && res.data.photo_b64) {
+            console.log('[FaceMapping] Cache hit! Using saved photo')
+            var cached = atob(res.data.photo_b64)
+            var arr = new Uint8Array(cached.length)
+            for (var i = 0; i < cached.length; i++) arr[i] = cached.charCodeAt(i)
+            callback(new Blob([arr], { type: 'image/png' }))
+            return
+          }
+          // Cache miss — call AI
+          _callRemoveBgAPI(b64, hash, blob, callback)
+        }).catch(function () {
+          _callRemoveBgAPI(b64, hash, blob, callback)
+        })
+      } else {
+        _callRemoveBgAPI(b64, hash, blob, callback)
+      }
     }
     reader.readAsDataURL(blob)
+  }
+
+  function _callRemoveBgAPI(b64, hash, originalBlob, callback) {
+    fetch('https://flows.aldenquesada.site/webhook/lara-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove-bg', photo_base64: b64 }),
+    })
+    .then(function (res) { return res.json() })
+    .then(function (data) {
+      if (data.success && data.image_b64) {
+        // Save to Supabase cache (fire-and-forget)
+        var sb = window._sbShared
+        if (sb) {
+          var clinicId = null
+          try { clinicId = JSON.parse(localStorage.getItem('clinicai_clinic_id') || 'null') } catch (e) {}
+          var leadId = _lead ? (_lead.id || _lead.lead_id) : null
+          sb.rpc('upsert_facial_photo', {
+            p_clinic_id: clinicId, p_lead_id: leadId,
+            p_angle: _pendingCropAngle || 'unknown',
+            p_hash: hash, p_photo_b64: data.image_b64,
+          }).then(function (r) {
+            console.log('[FaceMapping] Photo cached in Supabase:', r.data?.cached ? 'already existed' : 'new')
+          })
+        }
+
+        var binary = atob(data.image_b64)
+        var arr = new Uint8Array(binary.length)
+        for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+        callback(new Blob([arr], { type: 'image/png' }))
+      } else {
+        console.warn('[FaceMapping] BG removal failed:', data.error || 'unknown')
+        callback(originalBlob)
+      }
+    })
+    .catch(function (err) {
+      console.warn('[FaceMapping] BG removal error:', err)
+      callback(originalBlob)
+    })
   }
 
   function _cropMouseMove(e) {
