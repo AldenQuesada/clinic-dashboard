@@ -212,6 +212,98 @@
     return _viewProgress().every(function (v) { return v.complete })
   }
 
+  // ── Session persistence (localStorage) ─────────────────────
+
+  function _saveSession() {
+    if (!_lead) return
+    var id = _lead.id || _lead.lead_id || 'unknown'
+    try {
+      // Convert photo objectURLs to base64 for persistence
+      var pending = Object.keys(_photoUrls).length
+      if (pending === 0) { _saveSessionData(id); return }
+
+      var photoData = {}
+      var done = 0
+      Object.keys(_photoUrls).forEach(function (angle) {
+        var img = new Image()
+        img.onload = function () {
+          var c = document.createElement('canvas')
+          c.width = img.width; c.height = img.height
+          c.getContext('2d').drawImage(img, 0, 0)
+          photoData[angle] = c.toDataURL('image/jpeg', 0.8)
+          done++
+          if (done >= pending) _saveSessionData(id, photoData)
+        }
+        img.onerror = function () { done++; if (done >= pending) _saveSessionData(id, photoData) }
+        img.src = _photoUrls[angle]
+      })
+    } catch (e) { console.warn('[FaceMapping] Save session failed:', e) }
+  }
+
+  function _saveSessionData(id, photoData) {
+    try {
+      var session = {
+        lead: { id: _lead.id || _lead.lead_id, nome: _lead.nome || _lead.name },
+        activeAngle: _activeAngle,
+        annotations: _annotations,
+        vectors: _vectors,
+        tercoLines: _tercoLines,
+        rickettsPoints: _rickettsPoints,
+        editorMode: _editorMode,
+        nextId: _nextId,
+        nextVecId: _nextVecId,
+        photos: photoData || {},
+        savedAt: new Date().toISOString(),
+      }
+      localStorage.setItem('fm_session_' + id, JSON.stringify(session))
+      localStorage.setItem('fm_last_session', id)
+    } catch (e) { console.warn('[FaceMapping] Storage full or error:', e) }
+  }
+
+  function _restoreSession(leadId) {
+    try {
+      var data = localStorage.getItem('fm_session_' + leadId)
+      if (!data) return false
+      var session = JSON.parse(data)
+
+      _annotations = session.annotations || []
+      _vectors = session.vectors || []
+      _tercoLines = session.tercoLines || _tercoLines
+      _rickettsPoints = session.rickettsPoints || _rickettsPoints
+      _editorMode = session.editorMode || 'zones'
+      _nextId = session.nextId || 1
+      _nextVecId = session.nextVecId || 1
+      _activeAngle = session.activeAngle || null
+
+      // Restore photos from base64
+      var photos = session.photos || {}
+      Object.keys(photos).forEach(function (angle) {
+        if (photos[angle]) {
+          // Convert data URL to blob URL
+          var binary = atob(photos[angle].split(',')[1])
+          var arr = new Uint8Array(binary.length)
+          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+          var blob = new Blob([arr], { type: 'image/jpeg' })
+          _photoUrls[angle] = URL.createObjectURL(blob)
+          _photos[angle] = blob
+        }
+      })
+
+      console.log('[FaceMapping] Session restored for lead:', leadId, '| annotations:', _annotations.length, '| photos:', Object.keys(_photoUrls).length)
+      return true
+    } catch (e) {
+      console.warn('[FaceMapping] Restore failed:', e)
+      return false
+    }
+  }
+
+  // Auto-save debounced (500ms after last change)
+  var _saveTimer = null
+  function _autoSave() {
+    if (_saveTimer) clearTimeout(_saveTimer)
+    _saveTimer = setTimeout(_saveSession, 500)
+  }
+
   // ── Init ──────────────────────────────────────────────────
 
   function init(leadId) {
@@ -228,6 +320,9 @@
     _afterPhotoUrl = null
     _simPhotoUrl = null
 
+    // Try to restore previous session
+    _restoreSession(leadId)
+
     if (window.navigateTo) window.navigateTo('facial-analysis')
     setTimeout(function () { _render() }, 100)
   }
@@ -240,6 +335,14 @@
       if (_activeAngle) setTimeout(_initCanvas, 50)
       return
     }
+    // Try to restore last session
+    try {
+      var lastId = localStorage.getItem('fm_last_session')
+      if (lastId) {
+        init(lastId)
+        return
+      }
+    } catch (e) {}
     // No lead — show patient picker
     var root = document.getElementById('facialAnalysisRoot')
     if (!root) return
@@ -1439,6 +1542,7 @@
     if (_mode === 'move' || _mode === 'resize') {
       _mode = 'idle'
       _canvas.style.cursor = _selectedZone ? 'crosshair' : 'default'
+      _autoSave()
       _redraw()
       return
     }
@@ -1484,6 +1588,7 @@
       _annotations.push(newAnn)
       _selAnn = newAnn  // auto-select after drawing
       _simPhotoUrl = null // invalidate simulation
+      _autoSave()
 
       _drawStart = null
       _redraw()
@@ -1644,6 +1749,7 @@
 
         document.getElementById('fmCropOverlay').remove()
         _render()
+        _autoSave()
         if (_activeAngle === _pendingCropAngle) setTimeout(_initCanvas, 50)
       }, 'image/jpeg', 0.95)
     })
@@ -1870,7 +1976,8 @@
 
   function _removeAnnotation(id) {
     _annotations = _annotations.filter(function (a) { return a.id !== id })
-    _simPhotoUrl = null // invalidate simulation
+    _simPhotoUrl = null
+    _autoSave()
     _redraw()
     _refreshToolbar()
   }
