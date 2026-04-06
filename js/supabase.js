@@ -829,12 +829,7 @@ function _reRenderAll () {
 
 // ── Expõe client Supabase para módulos que precisam de queries relacionais ─
 window.sbClient = function() {
-  if (window.supabase?.createClient) {
-    const headers = {}
-    if (typeof CLINIC_SECRET !== 'undefined' && CLINIC_SECRET) headers['x-clinic-secret'] = CLINIC_SECRET
-    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, Object.keys(headers).length ? { global: { headers } } : {})
-  }
-  return null
+  return window._sbShared || _client()
 }
 
 // ── Auth-success: reinicializa com o tenant correto ──────────
