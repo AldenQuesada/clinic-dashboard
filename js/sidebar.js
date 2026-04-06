@@ -494,7 +494,7 @@
     }
 
     // ── Pacientes: recarregar ao navegar ─────────────────────────
-    if (pageId === 'patients' && window.loadPatients) {
+    if (pageId === 'patients-all' && window.loadPatients) {
       window.loadPatients()
     }
 
