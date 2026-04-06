@@ -119,6 +119,8 @@
   var _canvas = null
   var _ctx = null
   var _img = null         // current loaded Image
+  var _imgW = 0           // rendered image width on canvas
+  var _imgH = 0           // rendered image height on canvas
   var _drawing = false
   var _drawStart = null
   var _mode = 'idle'       // idle | draw | move | resize
@@ -511,6 +513,8 @@
 
   // ── Canvas ────────────────────────────────────────────────
 
+  var LABEL_MARGIN = 180 // px reserved on the right for labels
+
   function _initCanvas() {
     _canvas = document.getElementById('fmCanvas')
     if (!_canvas || !_photoUrls[_activeAngle]) return
@@ -518,11 +522,13 @@
     _ctx = _canvas.getContext('2d')
     _img = new Image()
     _img.onload = function () {
-      var maxW = _canvas.parentElement.clientWidth
+      var maxW = _canvas.parentElement.clientWidth - LABEL_MARGIN
       var maxH = window.innerHeight - 180
       var scale = Math.min(maxW / _img.width, maxH / _img.height, 1)
-      _canvas.width = _img.width * scale
-      _canvas.height = _img.height * scale
+      _imgW = _img.width * scale
+      _imgH = _img.height * scale
+      _canvas.width = _imgW + LABEL_MARGIN
+      _canvas.height = _imgH
       _redraw()
     }
     _img.src = _photoUrls[_activeAngle]
@@ -550,10 +556,31 @@
   function _redraw() {
     if (!_ctx || !_img) return
     _ctx.clearRect(0, 0, _canvas.width, _canvas.height)
-    _ctx.drawImage(_img, 0, 0, _canvas.width, _canvas.height)
 
+    // Draw image only in left area
+    _ctx.drawImage(_img, 0, 0, _imgW, _imgH)
+
+    // Label area background (right side)
+    _ctx.fillStyle = '#F7F8FC'
+    _ctx.fillRect(_imgW, 0, LABEL_MARGIN, _canvas.height)
+    _ctx.strokeStyle = '#E8EAF0'
+    _ctx.lineWidth = 1
+    _ctx.beginPath()
+    _ctx.moveTo(_imgW, 0)
+    _ctx.lineTo(_imgW, _canvas.height)
+    _ctx.stroke()
+
+    // Draw ellipses on image + labels on right margin
     var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
-    anns.forEach(function (ann) { _drawEllipse(ann) })
+    // Sort by Y position for consistent label stacking
+    var sorted = anns.slice().sort(function (a, b) { return a.shape.y - b.shape.y })
+    var labelY = 20 // starting Y for first label
+    var LABEL_H = 38 // height per label slot
+
+    sorted.forEach(function (ann) {
+      _drawEllipseClean(ann)
+      labelY = _drawLabelExternal(ann, labelY, LABEL_H)
+    })
 
     // Selection handles
     if (_selAnn) {
@@ -633,71 +660,98 @@
     return null
   }
 
-  function _drawEllipse(ann) {
+  function _drawEllipseClean(ann) {
     var color = _zoneColor(ann.zone)
-    var z = ZONES.find(function (x) { return x.id === ann.zone })
-    var t = TREATMENTS.find(function (x) { return x.id === ann.treatment }) || TREATMENTS[0]
     var s = ann.shape
 
     _ctx.save()
 
-    // Fill — zone color with transparency
+    // Fill — translucent zone color
     _ctx.beginPath()
-    _ctx.fillStyle = color + '70'
+    _ctx.fillStyle = color + '50'
     _ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
     _ctx.fill()
 
     // Stroke
     _ctx.beginPath()
     _ctx.strokeStyle = color
-    _ctx.lineWidth = 2.5
+    _ctx.lineWidth = 2
     _ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
     _ctx.stroke()
 
-    // Label
-    var label = (z ? z.label : ann.zone)
-    var zUnit = z ? z.unit : 'mL'
-    var detail = t.label + ' \u2022 ' + ann.ml + zUnit
-    _ctx.font = '600 11px Inter, Montserrat, sans-serif'
-    _ctx.textAlign = 'center'
-
-    var tw = Math.max(_ctx.measureText(label).width, _ctx.measureText(detail).width) + 14
-    var tx = s.x
-    var ty = s.y - s.ry - 20
-
-    // Badge background
-    _ctx.fillStyle = 'rgba(0,0,0,0.75)'
+    // White dot at center
     _ctx.beginPath()
-    _ctx.roundRect(tx - tw / 2, ty - 11, tw, 32, 5)
-    _ctx.fill()
-
-    // Color indicator bar
-    _ctx.fillStyle = color
-    _ctx.fillRect(tx - tw / 2, ty - 11, 4, 32)
-
     _ctx.fillStyle = '#fff'
-    _ctx.fillText(label, tx, ty + 3)
-    _ctx.font = '400 10px Inter, Montserrat, sans-serif'
-    _ctx.fillStyle = 'rgba(255,255,255,0.7)'
-    _ctx.fillText(detail, tx, ty + 16)
-
-    // Leader line
-    _ctx.beginPath()
-    _ctx.strokeStyle = color + '80'
-    _ctx.lineWidth = 1.5
-    _ctx.setLineDash([4, 3])
-    _ctx.moveTo(s.x, s.y - s.ry)
-    _ctx.lineTo(s.x, ty + 21)
+    _ctx.arc(s.x, s.y, 3, 0, Math.PI * 2)
+    _ctx.fill()
+    _ctx.strokeStyle = color
+    _ctx.lineWidth = 1
     _ctx.stroke()
-    _ctx.setLineDash([])
 
     _ctx.restore()
   }
+
+  function _drawLabelExternal(ann, labelY, labelH) {
+    var color = _zoneColor(ann.zone)
+    var z = ZONES.find(function (x) { return x.id === ann.zone })
+    var t = TREATMENTS.find(function (x) { return x.id === ann.treatment }) || TREATMENTS[0]
+    var s = ann.shape
+    var zUnit = z ? z.unit : 'mL'
+
+    // Avoid overlap: ensure labelY doesn't go above the previous
+    var targetY = Math.max(labelY, s.y - 10)
+
+    _ctx.save()
+
+    // Leader line: center dot → right edge → label area
+    var lineEndX = _imgW + 8
+    _ctx.beginPath()
+    _ctx.strokeStyle = color
+    _ctx.lineWidth = 1
+    _ctx.setLineDash([])
+    // Horizontal from dot to image edge
+    _ctx.moveTo(s.x, s.y)
+    _ctx.lineTo(_imgW - 2, s.y)
+    // Vertical to label Y
+    if (Math.abs(s.y - (targetY + 8)) > 2) {
+      _ctx.lineTo(_imgW - 2, targetY + 8)
+    }
+    // Short horizontal into label area
+    _ctx.lineTo(lineEndX, targetY + 8)
+    _ctx.stroke()
+
+    // Small dot at line end
+    _ctx.beginPath()
+    _ctx.fillStyle = color
+    _ctx.arc(lineEndX, targetY + 8, 3, 0, Math.PI * 2)
+    _ctx.fill()
+
+    // Label text
+    var lx = lineEndX + 8
+    _ctx.font = '600 11px Inter, Montserrat, sans-serif'
+    _ctx.textAlign = 'left'
+    _ctx.fillStyle = '#1A1B2E'
+    _ctx.fillText(z ? z.label : ann.zone, lx, targetY + 6)
+
+    _ctx.font = '400 9px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = '#6B7280'
+    _ctx.fillText(ann.ml + zUnit + ' \u2022 ' + (z ? z.desc : ''), lx, targetY + 18)
+
+    _ctx.restore()
+
+    return targetY + labelH
+  }
+
+  // Keep old name for report canvases (they draw labels on top)
+  function _drawEllipse(ann) { _drawEllipseClean(ann) }
 
   // ── Mouse handlers ────────────────────────────────────────
 
   function _onMouseDown(e) {
     var mx = e.offsetX, my = e.offsetY
+
+    // Ignore clicks in the label margin area (except handles)
+    var inLabelArea = mx > _imgW
 
     // 1. Check resize handles on selected annotation
     if (_selAnn) {
@@ -728,8 +782,8 @@
       return
     }
 
-    // 4. Draw new ellipse (zone must be selected)
-    if (_selectedZone) {
+    // 4. Draw new ellipse (zone must be selected, not in label area)
+    if (_selectedZone && !inLabelArea) {
       _selAnn = null
       _mode = 'draw'
       _drawing = true
