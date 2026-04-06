@@ -954,12 +954,12 @@
               <span id="patientsCountNum" style="font-size:15px;font-weight:800;color:#111">0</span>
             </div>
             <div class="ao-period-bar" id="patientsPeriodBar">
-              <button class="ao-period-btn active" data-period="" onclick="document.getElementById('patientsFilterPeriod').value='';loadPatients()">Todos</button>
-              <button class="ao-period-btn" data-period="7" onclick="document.getElementById('patientsFilterPeriod').value='7';loadPatients()">7d</button>
-              <button class="ao-period-btn" data-period="30" onclick="document.getElementById('patientsFilterPeriod').value='30';loadPatients()">30d</button>
-              <button class="ao-period-btn" data-period="90" onclick="document.getElementById('patientsFilterPeriod').value='90';loadPatients()">90d</button>
-              <button class="ao-period-btn" data-period="365" onclick="document.getElementById('patientsFilterPeriod').value='365';loadPatients()">1a</button>
-              <button class="ao-period-btn" data-period="custom" onclick="document.getElementById('patientsDateRange').style.display='flex'">Periodo</button>
+              <button class="ao-period-btn active" data-period="" onclick="patientsPeriodClick(this)">Todos</button>
+              <button class="ao-period-btn" data-period="7" onclick="patientsPeriodClick(this)">7d</button>
+              <button class="ao-period-btn" data-period="30" onclick="patientsPeriodClick(this)">30d</button>
+              <button class="ao-period-btn" data-period="90" onclick="patientsPeriodClick(this)">90d</button>
+              <button class="ao-period-btn" data-period="365" onclick="patientsPeriodClick(this)">1a</button>
+              <button class="ao-period-btn" data-period="custom" onclick="patientsPeriodClick(this)">Periodo</button>
             </div>
             <select id="patientsFilterPeriod" style="display:none"><option value=""></option></select>
             <form autocomplete="off" onsubmit="return false" style="display:contents">

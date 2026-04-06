@@ -214,9 +214,51 @@ function renderPatientsTable(patients) {
   }).join('')
 }
 
+// ── Export CSV ──────────────────────────────────────────────
+function exportPatientsCsv() {
+  var allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+  var patients = allLeads.filter(function(l) { return l.phase === 'paciente' })
+  if (!patients.length) { alert('Nenhum paciente para exportar'); return }
+
+  var rows = [['Nome', 'Telefone', 'Status', 'Data Cadastro']]
+  patients.forEach(function(p) {
+    rows.push([
+      p.name || p.nome || '',
+      p.phone || '',
+      p.status || 'active',
+      p.created_at || p.createdAt || ''
+    ])
+  })
+  var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"' }).join(',') }).join('\n')
+  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
+  var a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'pacientes_' + new Date().toISOString().slice(0, 10) + '.csv'
+  a.click()
+}
+
+// ── Periodo: botoes com active state + esconder date range ───
+function patientsPeriodClick(btn) {
+  var period = btn.dataset.period
+  document.getElementById('patientsFilterPeriod').value = period === 'custom' ? '' : period
+
+  // Active state
+  var bar = document.getElementById('patientsPeriodBar')
+  if (bar) bar.querySelectorAll('.ao-period-btn').forEach(function(b) { b.classList.remove('active') })
+  btn.classList.add('active')
+
+  // Date range
+  var dateRange = document.getElementById('patientsDateRange')
+  if (dateRange) dateRange.style.display = period === 'custom' ? 'flex' : 'none'
+
+  if (period !== 'custom') loadPatients()
+}
+
 window.loadPatients           = loadPatients
 window.onPatientsPeriodChange  = onPatientsPeriodChange
 window.clearPatientsFilters   = clearPatientsFilters
+window.exportPatientsCsv      = exportPatientsCsv
+window.patientsPeriodClick    = patientsPeriodClick
 
 // ─── Helper p/ inputs nas configurações (usado pelo index.html inline) ───────
 function settingsInputHtml(id, type, label, placeholder) {
