@@ -88,7 +88,7 @@
       document.getElementById('appt_inicio').value = a.horaInicio || ''
       document.getElementById('appt_status').value = a.status || 'agendado'
       document.getElementById('appt_confirmacao').checked = !!a.confirmacaoEnviada
-      document.getElementById('appt_consentimento').checked = !!a.consentimentoImagem
+      document.getElementById('appt_consentimento').checked = a.consentimentoImagem === 'assinado' || a.consentimentoImagem === true
       document.getElementById('appt_obs').value = a.obs || ''
       if (profSel && a.profissionalIdx !== undefined) profSel.value = a.profissionalIdx
       if (salaSel && a.salaIdx !== undefined) salaSel.value = a.salaIdx
@@ -135,6 +135,7 @@
     document.getElementById('appt_paciente_warn').style.display = 'none'
     modal.style.display = 'block'
     document.body.style.overflow = 'hidden'
+    apptUpdateEndTime()
   }
 
   // ── closeApptModal ────────────────────────────────────────────
@@ -154,8 +155,20 @@
       if (!isNaN(dur) && dur > 0) {
         const el = document.getElementById('appt_duracao')
         if (el) el.value = dur
+        apptUpdateEndTime()
       }
     }
+  }
+
+  // ── apptUpdateEndTime — preview de hora fim em tempo real ─────
+  function apptUpdateEndTime() {
+    var inicio = document.getElementById('appt_inicio') && document.getElementById('appt_inicio').value
+    var duracao = parseInt((document.getElementById('appt_duracao') && document.getElementById('appt_duracao').value) || '60')
+    var preview = document.getElementById('appt_fim_preview')
+    if (!preview) return
+    if (!inicio) { preview.textContent = ''; return }
+    var fim = _addMins(inicio, duracao)
+    preview.textContent = 'Termina as ' + fim
   }
 
   // ── apptTipoChange ────────────────────────────────────────────
@@ -243,7 +256,7 @@
       formaPagamento:      (document.getElementById('appt_forma_pag') && document.getElementById('appt_forma_pag').value) || '',
       statusPagamento:     'pendente',
       confirmacaoEnviada:  (document.getElementById('appt_confirmacao') && document.getElementById('appt_confirmacao').checked) || false,
-      consentimentoImagem: (document.getElementById('appt_consentimento') && document.getElementById('appt_consentimento').checked) || false,
+      consentimentoImagem: (document.getElementById('appt_consentimento') && document.getElementById('appt_consentimento').checked) ? 'assinado' : 'pendente',
       obs:                 (document.getElementById('appt_obs') && document.getElementById('appt_obs').value.trim()) || '',
     }
 
@@ -284,18 +297,31 @@
       if (idx >= 0) {
         const old = Object.assign({}, appts[idx])
         appts[idx] = Object.assign({}, appts[idx], apptData)
-        // Audit log de edição
+        // Audit log de edição — registra todos os campos alterados
         if (!appts[idx].historicoAlteracoes) appts[idx].historicoAlteracoes = []
-        appts[idx].historicoAlteracoes.push({
-          action_type: 'edicao',
-          old_value:   { data: old.data, horaInicio: old.horaInicio, horaFim: old.horaFim, profissionalIdx: old.profissionalIdx, salaIdx: old.salaIdx },
-          new_value:   { data: apptData.data, horaInicio: apptData.horaInicio, horaFim: apptData.horaFim, profissionalIdx: apptData.profissionalIdx, salaIdx: apptData.salaIdx },
-          changed_by:  'secretaria',
-          changed_at:  new Date().toISOString(),
-          reason:      'Edição manual',
+        var _auditFields = ['data','horaInicio','horaFim','profissionalIdx','profissionalNome','salaIdx','procedimento','tipoConsulta','tipoAvaliacao','origem','valor','formaPagamento','status','confirmacaoEnviada','consentimentoImagem','obs']
+        var _oldVals = {}, _newVals = {}, _hasChanges = false
+        _auditFields.forEach(function(f) {
+          if (String(old[f] || '') !== String(apptData[f] || '')) {
+            _oldVals[f] = old[f]; _newVals[f] = apptData[f]; _hasChanges = true
+          }
         })
-        // Recalcular automações se data/hora mudou
+        if (_hasChanges) {
+          appts[idx].historicoAlteracoes.push({
+            action_type: 'edicao',
+            old_value:   _oldVals,
+            new_value:   _newVals,
+            changed_by:  'secretaria',
+            changed_at:  new Date().toISOString(),
+            reason:      'Edicao manual',
+          })
+        }
+        // Recalcular automações se data/hora mudou — cancela antigas primeiro
         if ((old.data !== apptData.data || old.horaInicio !== apptData.horaInicio) && typeof scheduleAutomations === 'function') {
+          if (window._getQueue && window._saveQueue) {
+            var q = _getQueue().map(function(x) { return x.apptId === editId ? Object.assign({}, x, { executed: true }) : x })
+            _saveQueue(q)
+          }
           scheduleAutomations(appts[idx])
         }
       }
@@ -492,5 +518,6 @@
   window.selectApptPatient = selectApptPatient
   window.apptProcAutofill  = apptProcAutofill
   window.apptTipoChange    = apptTipoChange
+  window.apptUpdateEndTime = apptUpdateEndTime
 
 })()
