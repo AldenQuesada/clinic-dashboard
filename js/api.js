@@ -829,53 +829,59 @@ function _apptTipHide() {
 function apptCard(a, profIdx) {
   const s = APPT_STATUS_CFG[a.status] || APPT_STATUS_CFG.agendado
   const isCancelado = ['cancelado','no_show','finalizado'].includes(a.status)
-
-  // Determinar se pode arrastar
   const canDrag  = window.AgendaValidator ? AgendaValidator.canDrag(a) : !isCancelado
   const isLocked = ['finalizado','em_consulta','na_clinica'].includes(a.status)
+  const cardOpacity = ['cancelado','no_show'].includes(a.status) ? 'opacity:0.55;' : ''
 
-  // Ícone de cadeado para estados travados
-  const lockIcon = isLocked
-    ? `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${s.color}" stroke-width="2.5" style="flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`
-    : ''
+  // Tipo de atendimento
+  const tipoLabel = a.tipoConsulta === 'avaliacao' ? 'Avaliacao' : a.tipoConsulta === 'procedimento' ? 'Procedimento' : a.procedimento || '—'
 
-  // Opacidade e estilo para cancelado/no-show
-  const cardOpacity = ['cancelado','no_show'].includes(a.status) ? 'opacity:0.6;' : ''
-
-  // Tag de presença
-  const presenca = a.presenca || 'aguardando'
-  const presencaTag = !isCancelado ? `
-    <div onclick="event.stopPropagation();${presenca === 'aguardando' ? `marcarCompareceu('${a.id}')` : ''}"
-      style="display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;cursor:${presenca==='aguardando'?'pointer':'default'};
-             background:${presenca==='compareceu'?'#D1FAE5':'#FEF3C7'};
-             color:${presenca==='compareceu'?'#065F46':'#92400E'};
-             border:1px solid ${presenca==='compareceu'?'#6EE7B7':'#FCD34D'};
-             transition:all .15s" ${presenca==='aguardando'?`title="Clique para confirmar chegada"`:''}
-      >
-      ${presenca === 'compareceu'
-        ? `<span style="width:6px;height:6px;border-radius:50%;background:#10B981;display:inline-block"></span> Compareceu`
-        : `<span style="width:6px;height:6px;border-radius:50%;background:#F59E0B;display:inline-block;animation:pulse 1.5s infinite"></span> Aguardando`
-      }
-    </div>` : ''
+  // Transicoes permitidas (exceto cancelado/no_show que exigem modal)
+  const allowed = window.STATE_MACHINE ? (window.STATE_MACHINE[a.status] || []) : []
+  const statusLabels = window.STATUS_LABELS || {}
+  const statusColors = window.STATUS_COLORS || {}
+  const optionsHtml = allowed.map(function(ns) {
+    return `<option value="${ns}" style="color:${(statusColors[ns]||{}).color||'#374151'}">${statusLabels[ns]||ns}</option>`
+  }).join('')
 
   return `<div data-apptid="${a.id}" draggable="${canDrag}"
     ondragstart="${canDrag ? `agendaDragStart(event,'${a.id}')` : `agendaDragStartBlocked(event,'${a.id}')`}"
     onclick="event.stopPropagation();openApptDetail('${a.id}')"
     onmouseenter="_apptTip(event,'${a.id}')" onmouseleave="_apptTipHide()"
-    style="background:${s.bg};border-left:3px solid ${s.color};border-radius:6px;padding:5px 7px;margin-bottom:2px;cursor:${canDrag?'grab':'default'};min-width:130px;${cardOpacity}${['cancelado','no_show'].includes(a.status)?'text-decoration-line:none;border-left-style:dashed;':''}">
-    <div style="display:flex;align-items:center;gap:4px">
-      ${lockIcon}
-      <div style="font-size:11px;font-weight:700;color:${s.color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${a.pacienteNome || 'Paciente'}</div>
-    </div>
-    <div style="font-size:10px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.procedimento || '—'}</div>
-    <div style="font-size:9px;color:#9CA3AF;margin-top:1px">${a.horaInicio}–${a.horaFim}</div>
-    ${presencaTag}
-    <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
-      ${a.status === 'finalizado' ? `<button onclick="event.stopPropagation();openApptDetail('${a.id}')" style="font-size:9px;padding:2px 5px;background:${s.color};color:#fff;border:none;border-radius:4px;cursor:pointer">Detalhes</button>` : ''}
-      ${['agendado','confirmado','em_atendimento','na_clinica','em_consulta','aguardando'].includes(a.status) ? `<button onclick="event.stopPropagation();openFinalizeModal('${a.id}')" style="font-size:9px;padding:2px 5px;background:#7C3AED;color:#fff;border:none;border-radius:4px;cursor:pointer">Finalizar</button>` : ''}
-    </div>
+    style="background:${s.bg};border-left:3px solid ${s.color};border-radius:7px;padding:6px 8px;margin-bottom:2px;cursor:${canDrag?'grab':'default'};min-width:140px;${cardOpacity}${['cancelado','no_show'].includes(a.status)?'border-left-style:dashed;':''}">
+
+    <div style="font-size:11px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome || 'Paciente'}</div>
+    <div style="font-size:10px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${tipoLabel}</div>
+    <div style="font-size:9px;color:#9CA3AF;margin-top:2px">${a.horaInicio||''}${a.horaFim?' – '+a.horaFim:''}</div>
+
+    ${!isCancelado && allowed.length ? `<select onclick="event.stopPropagation()" onchange="event.stopPropagation();_apptCardStatusChange('${a.id}',this.value);this.value=''" style="width:100%;margin-top:4px;padding:4px 6px;font-size:10px;font-weight:700;color:${s.color};background:${s.bg};border:1.5px solid ${s.color};border-radius:5px;cursor:pointer;outline:none;appearance:auto">
+      <option value="">${s.label}</option>
+      ${optionsHtml}
+    </select>` : `<div style="margin-top:4px;padding:3px 6px;font-size:10px;font-weight:700;color:${s.color};background:${s.bg};border:1px solid ${s.color}33;border-radius:5px;text-align:center">${isLocked?'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="'+s.color+'" stroke-width="2.5" style="vertical-align:-1px;margin-right:3px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>':''}${s.label}</div>`}
+
   </div>`
 }
+
+// ── Card status change handler ───────────────────────────────
+function _apptCardStatusChange(id, newStatus) {
+  if (!newStatus) return
+  // Cancelar/No-show exigem modal com motivo obrigatorio
+  if (newStatus === 'cancelado' || newStatus === 'no_show') {
+    if (window.openCancelModal) openCancelModal(id, newStatus)
+    return
+  }
+  // Finalizar tem modal proprio
+  if (newStatus === 'finalizado') {
+    if (window.openFinalizeModal) openFinalizeModal(id)
+    return
+  }
+  // Transicoes normais via smartTransition (valida + executa + side effects)
+  if (window.smartTransition) {
+    smartTransition(id, newStatus)
+  }
+  if (window.renderAgenda) renderAgenda()
+}
+window._apptCardStatusChange = _apptCardStatusChange
 
 // ── Marcar Compareceu ─────────────────────────────────────────
 function marcarCompareceu(id) {
