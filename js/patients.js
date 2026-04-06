@@ -294,34 +294,52 @@ function renderPatientsTable(patients) {
     else if (!lastDate) churnCount++
   })
 
-  // KPI: Total
+  var fmtR = function(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR') }
+  var activeCount = patients.filter(function(p) { return p.status === 'active' }).length
+  var ticketMedio = withRevenue > 0 ? totalRevenue / withRevenue : 0
+  var churnPct = patients.length > 0 ? Math.round(churnCount / patients.length * 100) : 0
+
+  // Retorno proximo (< 30 dias)
+  var returnProximo = 0
+  var returnDaysSum = 0
+  var returnDaysCount = 0
+  patients.forEach(function(p) {
+    if (p.nextReturnDays !== null && p.nextReturnDays <= 30) returnProximo++
+    if (p.nextReturnDays !== null && p.nextReturnDays > 0) { returnDaysSum += p.nextReturnDays; returnDaysCount++ }
+  })
+  var returnMediaDias = returnDaysCount > 0 ? Math.round(returnDaysSum / returnDaysCount) : 0
+
+  // Card 1: Pacientes | Receita
   var kpiTotal = document.getElementById('kpiPatientsTotal')
   if (kpiTotal) kpiTotal.textContent = patients.length
-  var kpiTotalSub = document.getElementById('kpiPTotalSub')
-  var activeCount = patients.filter(function(p) { return p.status === 'active' }).length
-  if (kpiTotalSub) kpiTotalSub.textContent = activeCount + ' ativos de ' + patients.length
-
-  // KPI: Receita
   var kpiRev = document.getElementById('kpiPatientsRevenue')
-  if (kpiRev) kpiRev.textContent = totalRevenue > 0 ? totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
-  var kpiRevSub = document.getElementById('kpiPRevSub')
-  if (kpiRevSub) kpiRevSub.textContent = withRevenue + ' pacientes com receita'
+  if (kpiRev) kpiRev.textContent = fmtR(totalRevenue)
+  var kpiTotalSub = document.getElementById('kpiPTotalSub')
+  if (kpiTotalSub) kpiTotalSub.textContent = 'receita total'
 
-  // KPI: Ticket
-  var ticketMedio = withRevenue > 0 ? totalRevenue / withRevenue : 0
+  // Card 2: Ativos | Ticket
+  var kpiActive = document.getElementById('kpiPatientsActive')
+  if (kpiActive) kpiActive.textContent = activeCount
   var kpiTicket = document.getElementById('kpiPatientsTicket')
-  if (kpiTicket) kpiTicket.textContent = ticketMedio > 0 ? ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
-  var kpiTicketSub = document.getElementById('kpiPTicketSub')
-  if (kpiTicketSub) kpiTicketSub.textContent = 'Media por paciente'
+  if (kpiTicket) kpiTicket.textContent = fmtR(ticketMedio)
+  var kpiActiveSub = document.getElementById('kpiPActiveSub')
+  if (kpiActiveSub) kpiActiveSub.textContent = 'ticket medio'
 
-  // KPI: Churn
+  // Card 3: Retorno | Media dias
+  var kpiReturn = document.getElementById('kpiPatientsReturn')
+  if (kpiReturn) kpiReturn.textContent = returnProximo
+  var kpiReturnDays = document.getElementById('kpiPatientsReturnDays')
+  if (kpiReturnDays) kpiReturnDays.textContent = returnMediaDias + ' dias'
+  var kpiReturnSub = document.getElementById('kpiPReturnSub')
+  if (kpiReturnSub) kpiReturnSub.textContent = 'proximos 30 dias'
+
+  // Card 4: Churn | %
   var kpiChurn = document.getElementById('kpiPatientsChurn')
   if (kpiChurn) kpiChurn.textContent = churnCount
+  var kpiChurnPct = document.getElementById('kpiPatientsChurnPct')
+  if (kpiChurnPct) kpiChurnPct.textContent = churnPct + '%'
   var kpiChurnSub = document.getElementById('kpiPChurnSub')
-  if (kpiChurnSub) {
-    var churnPct = patients.length > 0 ? Math.round(churnCount / patients.length * 100) : 0
-    kpiChurnSub.textContent = churnPct + '% sem contato 6+ meses'
-  }
+  if (kpiChurnSub) kpiChurnSub.textContent = 'sem contato 6+ meses'
 
   if (!patients.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado</td></tr>'

@@ -945,59 +945,71 @@
             </div>
             <div class="kpi-grid" style="flex:1;margin-bottom:0" id="patientsKpiRow">
 
-            <div class="kpi-card">
-              <div class="kpi-card-top">
-                <div class="kpi-icon kpi-icon-blue">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <!-- Pacientes | Receita Total -->
+              <div class="kpi-card">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon kpi-icon-blue">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  </div>
                 </div>
-                <div class="kpi-trend kpi-trend-up" id="kpiPTotalTrend" style="display:none">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
-                  <span id="kpiPTotalTrendVal"></span>
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <div class="kpi-value" id="kpiPatientsTotal">0</div>
+                  <div style="width:1px;height:24px;background:#E5E7EB;flex-shrink:0"></div>
+                  <div style="font-size:14px;font-weight:600;color:#6B7280" id="kpiPatientsRevenue">R$ 0</div>
                 </div>
+                <div class="kpi-label">Pacientes</div>
+                <div class="kpi-sub" id="kpiPTotalSub">receita total</div>
               </div>
-              <div class="kpi-value" id="kpiPatientsTotal">0</div>
-              <div class="kpi-label">Pacientes</div>
-              <div class="kpi-sub" id="kpiPTotalSub">Total na base</div>
-            </div>
 
-            <div class="kpi-card">
-              <div class="kpi-card-top">
-                <div class="kpi-icon kpi-icon-emerald">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <!-- Ativos | Ticket Medio -->
+              <div class="kpi-card">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon kpi-icon-emerald">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  </div>
                 </div>
-                <div class="kpi-trend kpi-trend-up" id="kpiPRevTrend" style="display:none">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
-                  <span id="kpiPRevTrendVal"></span>
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <div class="kpi-value" id="kpiPatientsActive">0</div>
+                  <div style="width:1px;height:24px;background:#E5E7EB;flex-shrink:0"></div>
+                  <div style="font-size:14px;font-weight:600;color:#059669" id="kpiPatientsTicket">R$ 0</div>
                 </div>
+                <div class="kpi-label">Ativos</div>
+                <div class="kpi-sub" id="kpiPActiveSub">ticket medio</div>
               </div>
-              <div class="kpi-value" id="kpiPatientsRevenue">R$ 0</div>
-              <div class="kpi-label">Receita Total</div>
-              <div class="kpi-sub" id="kpiPRevSub">Soma de procedimentos</div>
-            </div>
 
-            <div class="kpi-card">
-              <div class="kpi-card-top">
-                <div class="kpi-icon kpi-icon-purple">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <!-- Retorno Proximo | Media dias -->
+              <div class="kpi-card">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon kpi-icon-purple">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                  </div>
                 </div>
-              </div>
-              <div class="kpi-value" id="kpiPatientsTicket">R$ 0</div>
-              <div class="kpi-label">Ticket Medio</div>
-              <div class="kpi-sub" id="kpiPTicketSub">Por paciente com receita</div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-card-top">
-                <div class="kpi-icon" style="background:rgba(239,68,68,0.12);color:#EF4444">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <div class="kpi-value" id="kpiPatientsReturn">0</div>
+                  <div style="width:1px;height:24px;background:#E5E7EB;flex-shrink:0"></div>
+                  <div style="font-size:14px;font-weight:600;color:#7C3AED" id="kpiPatientsReturnDays">0 dias</div>
                 </div>
+                <div class="kpi-label">Retorno Proximo</div>
+                <div class="kpi-sub" id="kpiPReturnSub">media ate retorno</div>
               </div>
-              <div class="kpi-value" id="kpiPatientsChurn" style="color:#EF4444">0</div>
-              <div class="kpi-label">Risco de Churn</div>
-              <div class="kpi-sub" id="kpiPChurnSub">Sem contato 6+ meses</div>
-            </div>
 
-          </div>
+              <!-- Churn | % da base -->
+              <div class="kpi-card">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon" style="background:rgba(239,68,68,0.12);color:#EF4444">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <div class="kpi-value" id="kpiPatientsChurn" style="color:#EF4444">0</div>
+                  <div style="width:1px;height:24px;background:#E5E7EB;flex-shrink:0"></div>
+                  <div style="font-size:14px;font-weight:600;color:#EF4444" id="kpiPatientsChurnPct">0%</div>
+                </div>
+                <div class="kpi-label">Risco de Churn</div>
+                <div class="kpi-sub" id="kpiPChurnSub">sem contato 6+ meses</div>
+              </div>
+
+            </div>
           </div>
 
           <!-- Filtros: Periodo + Busca + Procedimento + Exportar -->
