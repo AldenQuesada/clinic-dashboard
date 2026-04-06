@@ -96,24 +96,34 @@
 
     _all = leads
 
-    // KPIs
+    // KPIs — Total, Abertos, Aprovados, Taxa de Conversao
+    var abertos = 0, aprovados = 0
+    leads.forEach(function(l) {
+      var orcs = (l.customFields || {}).orcamentos || []
+      var temAprovado = orcs.some(function(o) { return o.status === 'aprovado' })
+      if (temAprovado) aprovados++; else abertos++
+    })
+    var taxa = leads.length ? Math.round((aprovados / leads.length) * 100) : 0
+
     var kpiTotal = document.getElementById('kpiOrcTotal')
     if (kpiTotal) kpiTotal.textContent = leads.length
     var kpiTotalSub = document.getElementById('kpiOrcTotalSub')
-    if (kpiTotalSub) kpiTotalSub.textContent = leads.length + ' em aberto'
+    if (kpiTotalSub) kpiTotalSub.textContent = 'todos os orcamentos'
 
-    // Calcular valor total e ticket medio dos orcamentos
-    var somaValor = 0
-    leads.forEach(function(l) {
-      var orcs = (l.customFields || {}).orcamentos || []
-      orcs.forEach(function(o) { somaValor += parseFloat(o.valor) || 0 })
-    })
-    var kpiValor = document.getElementById('kpiOrcValor')
-    if (kpiValor) kpiValor.textContent = 'R$ ' + somaValor.toLocaleString('pt-BR', { minimumFractionDigits: 0 })
-    var kpiValorSub = document.getElementById('kpiOrcValorSub')
-    if (kpiValorSub) kpiValorSub.textContent = leads.length + ' orcamentos'
-    var kpiTicket = document.getElementById('kpiOrcTicket')
-    if (kpiTicket) kpiTicket.textContent = leads.length ? 'R$ ' + Math.round(somaValor / leads.length).toLocaleString('pt-BR') : 'R$ 0'
+    var kpiAbertos = document.getElementById('kpiOrcAbertos')
+    if (kpiAbertos) kpiAbertos.textContent = abertos
+    var kpiAbertosSub = document.getElementById('kpiOrcAbertosSub')
+    if (kpiAbertosSub) kpiAbertosSub.textContent = 'aguardando resposta'
+
+    var kpiAprovados = document.getElementById('kpiOrcAprovados')
+    if (kpiAprovados) kpiAprovados.textContent = aprovados
+    var kpiAprovadosSub = document.getElementById('kpiOrcAprovadosSub')
+    if (kpiAprovadosSub) kpiAprovadosSub.textContent = 'convertidos'
+
+    var kpiTaxa = document.getElementById('kpiOrcTaxa')
+    if (kpiTaxa) kpiTaxa.textContent = taxa + '%'
+    var kpiTaxaSub = document.getElementById('kpiOrcTaxaSub')
+    if (kpiTaxaSub) kpiTaxaSub.textContent = aprovados + ' de ' + leads.length
 
     // Sort arrows
     var headers = { orcSortName: 'name', orcSortDate: 'date', orcSortContact: 'lastContact' }
