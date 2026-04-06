@@ -29,29 +29,31 @@
   }
 
   // ── Load ────────────────────────────────────────────────────
-  function load(forceRefresh) {
+  function load() {
     var page = document.getElementById('page-orcamentos')
     if (!page) return
 
-    // Renderizar IMEDIATO com dados locais (nao esperar Supabase)
+    // Tentar com dados locais primeiro
     var local = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+
     if (local.length) {
+      // Dados disponiveis — renderizar imediatamente
       _cacheData = local
       _cacheTs = Date.now()
       _render()
-    }
-
-    // Refresh em background (nao bloqueia UI)
-    if (forceRefresh && window.LeadsService && LeadsService.loadAll) {
-      var timeout = setTimeout(function() {}, 5000) // safety
-      LeadsService.loadAll().then(function(leads) {
-        clearTimeout(timeout)
-        if (leads && leads.length) {
-          _cacheData = leads
+    } else {
+      // Dados vazios — esperar loadAll completar
+      if (window.LeadsService && LeadsService.loadAll) {
+        LeadsService.loadAll().then(function(leads) {
+          _cacheData = leads || []
           _cacheTs = Date.now()
           _render()
-        }
-      }).catch(function() { clearTimeout(timeout) })
+        }).catch(function() {
+          // Ultimo fallback: tentar getLocal de novo (pode ter sido populado por outro listener)
+          _cacheData = LeadsService.getLocal()
+          _render()
+        })
+      }
     }
   }
 
@@ -263,14 +265,21 @@
   window.exportOrcamentosCsv = exportCsv
 
   // Auto-load quando pagina orcamentos esta ativa no boot
-  // Delay 500ms pra garantir que LeadsService.loadAll ja completou
+  // Escuta o evento de leads carregados pra renderizar quando dados estiverem prontos
+  var _autoLoaded = false
   document.addEventListener('clinicai:auth-success', function() {
-    setTimeout(function() {
-      try {
-        var lastPage = localStorage.getItem('clinicai_last_page')
-        if (lastPage === 'orcamentos') load(true)
-      } catch(e) {}
-    }, 500)
+    var lastPage = null
+    try { lastPage = localStorage.getItem('clinicai_last_page') } catch(e) {}
+    if (lastPage !== 'orcamentos') return
+
+    // Esperar LeadsService completar loadAll
+    if (window.LeadsService && LeadsService.loadAll) {
+      LeadsService.loadAll().then(function() {
+        if (!_autoLoaded) { _autoLoaded = true; load() }
+      }).catch(function() {
+        if (!_autoLoaded) { _autoLoaded = true; load() }
+      })
+    }
   })
 
 })()
