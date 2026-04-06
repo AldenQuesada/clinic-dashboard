@@ -1894,7 +1894,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Exportar
             </button>
-            <button id="orcNewBtn" onclick="typeof openNewOrcamento==='function'&&openNewOrcamento()" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border:none;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,0.3)">
+            <button id="orcNewBtn" onclick="typeof tagsOpenBudgetForm==='function'&&tagsOpenBudgetForm()" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border:none;padding:8px 18px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,0.3)">
               <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
               Novo Orcamento
             </button>
@@ -2681,8 +2681,8 @@
             <h1 class="page-title">Orçamentos</h1>
             <p class="page-subtitle">Gestão de orçamentos, aprovações e conversões em receita</p>
           </div>
-          <button class="btn-primary" onclick="navigateTo('orcamentos-abertos')">
-            <i data-feather="plus"></i> Novo Orçamento
+          <button class="btn-primary" onclick="typeof tagsOpenBudgetForm==='function'&&tagsOpenBudgetForm()">
+            <i data-feather="plus"></i> Novo Orcamento
           </button>
         </div>
         <!-- KPIs -->
