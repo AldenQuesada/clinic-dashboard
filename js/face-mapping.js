@@ -629,23 +629,29 @@
     overlay.className = 'fm-export-overlay'
     overlay.id = 'fmCropOverlay'
 
+    var boxW = 360, boxH = 300
+
     overlay.innerHTML =
-      '<div class="fm-export-modal" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column">' +
-        '<div class="fm-export-header" style="flex-shrink:0">' +
-          '<h3 style="font-size:14px">Recortar — ANTES ' + (ANGLES.find(function (a) { return a.id === angle }) || {}).label + '</h3>' +
-          '<button class="fm-btn" onclick="document.getElementById(\'fmCropOverlay\').remove()" style="padding:6px 10px">' + _icon('x', 14) + '</button>' +
+      '<div style="background:#fff;border-radius:14px;width:420px;box-shadow:0 24px 80px rgba(0,0,0,0.3);overflow:hidden">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #E8EAF0">' +
+          '<span style="font-size:14px;font-weight:600;color:#1A1B2E">Recortar — ANTES ' + (ANGLES.find(function (a) { return a.id === angle }) || {}).label + '</span>' +
+          '<button onclick="document.getElementById(\'fmCropOverlay\').remove()" style="width:28px;height:28px;border-radius:50%;background:#F3F4F6;border:none;cursor:pointer;color:#6B7280;display:flex;align-items:center;justify-content:center">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button>' +
         '</div>' +
-        '<div style="padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;min-height:0">' +
-          '<div style="font-size:11px;color:var(--text-muted)">Arraste para posicionar. Slider para zoom.</div>' +
-          '<div id="fmCropBox" style="width:400px;height:360px;overflow:hidden;border-radius:8px;border:2px solid var(--border);position:relative;cursor:grab;background:#1a1a1a;flex-shrink:0">' +
+        '<div style="padding:12px 16px;display:flex;flex-direction:column;align-items:center;gap:10px">' +
+          '<div id="fmCropBox" style="width:' + boxW + 'px;height:' + boxH + 'px;overflow:hidden;border-radius:8px;border:2px solid #E8EAF0;position:relative;cursor:grab;background:#111">' +
             '<canvas id="fmCropCanvas" style="position:absolute;top:0;left:0"></canvas>' +
           '</div>' +
-          '<div style="display:flex;align-items:center;gap:10px;width:100%;max-width:400px">' +
-            '<span style="font-size:11px;color:var(--text-muted)">Zoom</span>' +
-            '<input type="range" id="fmCropZoom" min="0.5" max="3" step="0.05" value="1" style="flex:1">' +
-            '<span id="fmCropZoomLabel" style="font-size:11px;color:var(--text-muted);min-width:36px">100%</span>' +
+          '<div style="display:flex;align-items:center;gap:10px;width:100%">' +
+            '<span style="font-size:11px;color:#9CA3AF">Zoom</span>' +
+            '<input type="range" id="fmCropZoom" min="0.3" max="3" step="0.02" value="1" style="flex:1">' +
+            '<span id="fmCropZoomLabel" style="font-size:11px;color:#9CA3AF;min-width:36px">100%</span>' +
           '</div>' +
-          '<button class="fm-btn fm-btn-primary" id="fmCropConfirm" style="width:100%;max-width:400px;justify-content:center;padding:10px 16px;font-size:14px">' + _icon('check', 16) + ' Salvar Recorte</button>' +
+          '<div style="display:flex;gap:8px;width:100%">' +
+            '<button class="fm-btn" onclick="document.getElementById(\'fmCropOverlay\').remove()" style="flex:1;justify-content:center">Cancelar</button>' +
+            '<button class="fm-btn fm-btn-primary" id="fmCropConfirm" style="flex:2;justify-content:center;padding:10px 16px">' + _icon('check', 16) + ' Salvar Recorte</button>' +
+          '</div>' +
         '</div>' +
       '</div>'
 
@@ -656,16 +662,24 @@
 
     _cropImg = new Image()
     _cropImg.onload = function () {
-      // Set canvas to match box size
-      _cropCanvas.width = 400
-      _cropCanvas.height = 360
+      _cropCanvas.width = boxW
+      _cropCanvas.height = boxH
 
-      // Initial zoom: fit width
-      _cropZoom = 400 / _cropImg.width
-      _cropPanX = 0
-      _cropPanY = 0
+      // Fit entire image inside the box (contain)
+      var scaleW = boxW / _cropImg.width
+      var scaleH = boxH / _cropImg.height
+      _cropZoom = Math.min(scaleW, scaleH)
 
-      document.getElementById('fmCropZoom').value = _cropZoom
+      // Center the image
+      var drawW = _cropImg.width * _cropZoom
+      var drawH = _cropImg.height * _cropZoom
+      _cropPanX = (boxW - drawW) / 2
+      _cropPanY = (boxH - drawH) / 2
+
+      var slider = document.getElementById('fmCropZoom')
+      slider.min = (_cropZoom * 0.5).toFixed(2)
+      slider.max = (_cropZoom * 5).toFixed(2)
+      slider.value = _cropZoom
       document.getElementById('fmCropZoomLabel').textContent = Math.round(_cropZoom * 100) + '%'
 
       _cropRedraw()
@@ -724,7 +738,7 @@
       label.textContent = Math.round(_cropZoom * 100) + '%'
 
       // Adjust pan to keep center
-      var cx = 200, cy = 180
+      var cx = _cropCanvas.width / 2, cy = _cropCanvas.height / 2
       _cropPanX = cx - (cx - _cropPanX) * (_cropZoom / oldZoom)
       _cropPanY = cy - (cy - _cropPanY) * (_cropZoom / oldZoom)
       _cropRedraw()
@@ -734,8 +748,8 @@
     confirm.addEventListener('click', function () {
       // Extract the visible area as a new image
       var outCanvas = document.createElement('canvas')
-      outCanvas.width = 400
-      outCanvas.height = 360
+      outCanvas.width = _cropCanvas.width
+      outCanvas.height = _cropCanvas.height
       var outCtx = outCanvas.getContext('2d')
       outCtx.drawImage(_cropCanvas, 0, 0)
 
