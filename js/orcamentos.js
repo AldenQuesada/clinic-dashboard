@@ -160,8 +160,7 @@
     _setTrend('kpiOrcValorRecTrend', 'kpiOrcValorRecTrendVal', valorRecuperado, pctRec + '% do total')
     _setTrend('kpiOrcValorAbTrend', 'kpiOrcValorAbTrendVal', -valorAberto, (100 - pctRec) + '% pendente')
 
-    // Sparklines e trends
-    _renderOrcSparklines(leads)
+    // Trends
     _renderOrcTrends(leads, abertos, aprovados, taxa)
 
     // Sort arrows
