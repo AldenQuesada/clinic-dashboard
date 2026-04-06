@@ -1009,6 +1009,22 @@
                 <div class="kpi-sub" id="kpiPChurnSub">sem contato 6+ meses</div>
               </div>
 
+              <!-- Orc. Aberto | Valor -->
+              <div class="kpi-card">
+                <div class="kpi-card-top">
+                  <div class="kpi-icon" style="background:rgba(234,88,12,0.12);color:#EA580C">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <div class="kpi-value" id="kpiPatientsOrcCount" style="color:#EA580C">0</div>
+                  <div style="width:1px;height:24px;background:#E5E7EB;flex-shrink:0"></div>
+                  <div style="font-size:14px;font-weight:600;color:#EA580C" id="kpiPatientsOrcValor">R$ 0</div>
+                </div>
+                <div class="kpi-label">Orc. em Aberto</div>
+                <div class="kpi-sub" id="kpiPOrcSub">valor em aberto</div>
+              </div>
+
             </div>
           </div>
 
@@ -1028,6 +1044,10 @@
             <input id="patientsFilterNome" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Buscar por nome ou telefone..." oninput="clearTimeout(window._pSearchTimer);window._pSearchTimer=setTimeout(loadPatients,200)" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:210px">
             <input id="patientsFilterProc" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Filtrar por procedimento..." oninput="clearTimeout(window._pProcTimer);window._pProcTimer=setTimeout(loadPatients,200)" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:190px">
             </form>
+            <label style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border:1.5px solid #FDBA74;border-radius:8px;background:#FFFBEB;cursor:pointer;font-size:12px;font-weight:600;color:#EA580C;white-space:nowrap;user-select:none" title="Mostrar apenas pacientes com orcamento em aberto">
+              <input type="checkbox" id="patientsFilterOrcAberto" onchange="loadPatients()" style="width:13px;height:13px;accent-color:#EA580C;cursor:pointer">
+              Orc. Aberto (<span id="patientsOrcFilterCount">0</span>)
+            </label>
             <div style="flex:1"></div>
             <button id="patientsExportBtn" onclick="typeof exportPatientsCsv==='function'&&exportPatientsCsv()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:#374151;cursor:pointer">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

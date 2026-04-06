@@ -135,6 +135,11 @@ function _loadPatientsInternal() {
       else if (nextReturnDays < 14) recompraAlert = 'proximo' // proximos 14 dias
     }
 
+    // Orcamentos em aberto (customFields.orcamentos com status != 'aprovado')
+    var orcArr = (lead.customFields && lead.customFields.orcamentos) || []
+    var orcAbertos = orcArr.filter(function(o) { return o && o.status !== 'aprovado' && o.status !== 'recusado' })
+    var orcValorAberto = orcAbertos.reduce(function(sum, o) { return sum + (parseFloat(o.valor) || 0) }, 0)
+
     return {
       id:              lead.id,
       name:            lead.name || lead.nome || '—',
@@ -153,14 +158,22 @@ function _loadPatientsInternal() {
       recompraAlert,
       last_contacted_at: lead.last_contacted_at || null,
       _createdAt:      lead.createdAt || lead.created_at || null,
+      orcAbertos,
+      orcValorAberto,
+      hasOrcAberto:    orcAbertos.length > 0,
     }
   })
+
+  // ── Filtro de orcamento aberto ──────────────────────────────
+  const orcFilter = document.getElementById('patientsFilterOrcAberto')?.checked || false
 
   // ── Aplica filtros ─────────────────────────────────────────
   const filtered = enriched.filter(p => {
     if (nome && !p.name.toLowerCase().includes(nome)) return false
 
     if (proc && !p.proceduresDone.some(pd => pd.toLowerCase().includes(proc))) return false
+
+    if (orcFilter && !p.hasOrcAberto) return false
 
     if (period === 'custom') {
       const ref = p.lastProcedureAt || p._createdAt
@@ -174,6 +187,9 @@ function _loadPatientsInternal() {
 
     return true
   })
+
+  // ── Auto-tag orcamento-aberto (sync silencioso) ─────────────
+  _pSyncOrcAbertoTags(enriched)
 
   renderPatientsTable(filtered)
 }
@@ -207,7 +223,41 @@ function clearPatientsFilters() {
   if (dateRange) dateRange.style.display = 'none'
   const lbl = document.getElementById('patientsDateRangeLabel')
   if (lbl) lbl.textContent = ''
+  const orcCb = document.getElementById('patientsFilterOrcAberto')
+  if (orcCb) orcCb.checked = false
   loadPatients()
+}
+
+// ── Auto-tag orcamento-aberto — adiciona/remove tag silenciosamente ──
+var _pOrcTagSynced = false
+function _pSyncOrcAbertoTags(enriched) {
+  if (_pOrcTagSynced) return
+  _pOrcTagSynced = true
+  setTimeout(function() { _pOrcTagSynced = false }, 60000) // resync a cada 60s
+
+  var TAG = 'orcamento-aberto'
+  var changed = false
+  var allLeads = _pCacheData || (window.LeadsService ? LeadsService.getLocal() : [])
+
+  enriched.forEach(function(p) {
+    var lead = allLeads.find(function(l) { return l.id === p.id })
+    if (!lead) return
+    var tags = Array.isArray(lead.tags) ? lead.tags.slice() : []
+    var hasTag = tags.indexOf(TAG) !== -1
+
+    if (p.hasOrcAberto && !hasTag) {
+      tags.push(TAG)
+      lead.tags = tags
+      changed = true
+    } else if (!p.hasOrcAberto && hasTag) {
+      lead.tags = tags.filter(function(t) { return t !== TAG })
+      changed = true
+    }
+  })
+
+  if (changed && window.LeadsService && LeadsService.saveLocal) {
+    LeadsService.saveLocal(allLeads)
+  }
 }
 
 var _patientsAll = []
@@ -256,6 +306,8 @@ function renderPatientsTable(patients) {
       va = a.loyaltyScore || 0; vb = b.loyaltyScore || 0
     } else if (_patientsSortField === 'nextReturn') {
       va = a.nextReturnDays !== null ? a.nextReturnDays : 9999; vb = b.nextReturnDays !== null ? b.nextReturnDays : 9999
+    } else if (_patientsSortField === 'orcAberto') {
+      va = a.orcValorAberto || 0; vb = b.orcValorAberto || 0
     } else if (_patientsSortField === 'lastContact') {
       va = a.last_contacted_at || a.lastProcedureAt || a._createdAt || ''; vb = b.last_contacted_at || b.lastProcedureAt || b._createdAt || ''
     } else {
@@ -340,6 +392,20 @@ function renderPatientsTable(patients) {
   if (kpiChurnPct) kpiChurnPct.textContent = churnPct + '%'
   var kpiChurnSub = document.getElementById('kpiPChurnSub')
   if (kpiChurnSub) kpiChurnSub.textContent = 'sem contato 6+ meses'
+
+  // Card 5: Orc. Aberto | Valor
+  var orcAbertoCount = patients.filter(function(p) { return p.hasOrcAberto }).length
+  var orcAbertoValor = patients.reduce(function(sum, p) { return sum + (p.orcValorAberto || 0) }, 0)
+  var kpiOrcCount = document.getElementById('kpiPatientsOrcCount')
+  if (kpiOrcCount) kpiOrcCount.textContent = orcAbertoCount
+  var kpiOrcValor = document.getElementById('kpiPatientsOrcValor')
+  if (kpiOrcValor) kpiOrcValor.textContent = fmtR(orcAbertoValor)
+  var kpiOrcSub = document.getElementById('kpiPOrcSub')
+  if (kpiOrcSub) kpiOrcSub.textContent = 'valor em aberto'
+
+  // Atualiza contador no botao do filtro
+  var orcFilterLabel = document.getElementById('patientsOrcFilterCount')
+  if (orcFilterLabel) orcFilterLabel.textContent = orcAbertoCount
 
   if (!patients.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado</td></tr>'
@@ -435,9 +501,21 @@ function _pRenderRows(rows) {
       returnHtml = '<span style="color:#D1D5DB;font-size:10px">—</span>'
     }
 
+    // Badge orcamento aberto
+    var orcBadgeHtml = ''
+    if (p.hasOrcAberto) {
+      var orcValStr = p.orcValorAberto > 0 ? ' R$ ' + Math.round(p.orcValorAberto).toLocaleString('pt-BR') : ''
+      orcBadgeHtml = '<div style="display:inline-flex;align-items:center;gap:3px;margin-top:2px">' +
+        '<span style="font-size:9px;font-weight:700;color:#EA580C;background:#FFF7ED;border:1px solid #FDBA74;border-radius:4px;padding:1px 5px;white-space:nowrap">' +
+        'ORC. ABERTO' + (orcValStr ? ' &middot;' + orcValStr : '') +
+        '</span>' +
+        '<span style="font-size:9px;color:#9CA3AF">' + p.orcAbertos.length + (p.orcAbertos.length === 1 ? ' pendente' : ' pendentes') + '</span>' +
+        '</div>'
+    }
+
     tr.innerHTML =
       '<td style="padding:8px 6px 8px 12px"><input type="checkbox" class="p-row-cb" data-id="' + _pEsc(p.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
-      '<td style="padding:8px 10px"><div style="font-size:12px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:10px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
+      '<td style="padding:8px 10px"><div style="font-size:12px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:10px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div>' + orcBadgeHtml + '</td>' +
       '<td style="padding:8px 10px;font-size:10px;vertical-align:middle">' + tagsHtml + '</td>' +
       '<td style="padding:8px 10px;font-size:10px;vertical-align:middle">' + procsHtml + '</td>' +
       '<td style="padding:8px 10px;font-size:12px;font-weight:600;color:#111;vertical-align:middle">' + (revenue || '—') + '</td>' +

@@ -1,4 +1,4 @@
-/* v20260405e */
+/* v20260406a */
 /**
  * ClinicAI — Navigation Configuration
  *
@@ -184,22 +184,9 @@
       plans:   [],
       pages: [
         { page: 'patients-all',                label: 'Pacientes',                    breadcrumb: 'Pacientes > Pacientes' },
-        { page: 'orcamentos',                   label: 'Orçamento',                    breadcrumb: 'Pacientes > Orçamento' },
-        { page: 'patients-budget',             label: 'Paciente + Orçamento',          breadcrumb: 'Pacientes > Paciente + Orçamento' },
-        { page: 'patients-overview',           label: 'Visão Geral dos Pacientes',     breadcrumb: 'Pacientes > Visão Geral' },
-        { page: 'patients-active',             label: 'Pacientes Ativos',             breadcrumb: 'Pacientes > Pacientes Ativos' },
-        { page: 'patients-treatment',          label: 'Pacientes em Tratamento',       breadcrumb: 'Pacientes > Em Tratamento' },
-        { page: 'patients-post-consult',       label: 'Pós-consulta',                 breadcrumb: 'Pacientes > Pós-consulta' },
-        { page: 'patients-post-proc',          label: 'Pós-procedimento',             breadcrumb: 'Pacientes > Pós-procedimento' },
-        { page: 'patients-returns',            label: 'Retornos',                     breadcrumb: 'Pacientes > Retornos' },
-        { page: 'patients-maintenance',        label: 'Manutenção',                   breadcrumb: 'Pacientes > Manutenção' },
-        { page: 'patients-repurchase',         label: 'Recompra',                     breadcrumb: 'Pacientes > Recompra' },
-        { page: 'patients-referral',           label: 'Indicação',                    breadcrumb: 'Pacientes > Indicação' },
-        { page: 'patients-reviews',            label: 'Avaliações',                   breadcrumb: 'Pacientes > Avaliações' },
-        { page: 'patients-reactivation',       label: 'Reativação de Pacientes',      breadcrumb: 'Pacientes > Reativação' },
-        { page: 'patients-journey',            label: 'Jornada do Paciente',          breadcrumb: 'Pacientes > Jornada do Paciente' },
-        { page: 'patients-procedures-history', label: 'Histórico de Procedimentos',   breadcrumb: 'Pacientes > Histórico de Procedimentos' },
-        { page: 'patients-prontuario',         label: 'Prontuário Comercial',         breadcrumb: 'Pacientes > Prontuário Comercial',       roles: [ROLES.OWNER, ROLES.ADMIN, ROLES.THERAPIST] },
+        { page: 'orcamentos',                  label: 'Orçamentos',                   breadcrumb: 'Pacientes > Orçamentos' },
+        { page: 'patients-procedures-history', label: 'Historico de Procedimentos',   breadcrumb: 'Pacientes > Historico de Procedimentos' },
+        { page: 'patients-prontuario',         label: 'Prontuario Comercial',         breadcrumb: 'Pacientes > Prontuario Comercial',       roles: [ROLES.OWNER, ROLES.ADMIN, ROLES.THERAPIST] },
         { page: 'patients-docs',               label: 'Documentos do Paciente',       breadcrumb: 'Pacientes > Documentos do Paciente' },
       ],
     },
@@ -220,22 +207,6 @@
         { page: 'growth-wa-links',     label: 'Links WhatsApp',        breadcrumb: 'WhatsApp > Links WhatsApp' },
         { page: 'short-links',         label: 'Encurtador de Links',   breadcrumb: 'WhatsApp > Encurtador de Links' },
         { page: 'page-builder',        label: 'Construtor de P\u00e1ginas', breadcrumb: 'WhatsApp > Construtor de P\u00e1ginas', highlight: true },
-      ],
-    },
-
-    // ── Orçamentos ───────────────────────────────────────────────
-    {
-      section: 'orcamentos',
-      icon:    'file-text',
-      label:   'Orçamentos',
-      roles:   [ROLES.OWNER, ROLES.ADMIN, ROLES.THERAPIST, ROLES.RECEPTIONIST, ROLES.VIEWER],
-      plans:   [],
-      pages: [
-        { page: 'orcamentos-overview',  label: 'Visão Geral de Orçamentos', breadcrumb: 'Orçamentos > Visão Geral' },
-        { page: 'orcamentos-abertos',   label: 'Em Aberto',                 breadcrumb: 'Orçamentos > Em Aberto' },
-        { page: 'orcamentos-aprovados', label: 'Aprovados',                 breadcrumb: 'Orçamentos > Aprovados' },
-        { page: 'orcamentos-recusados', label: 'Recusados',                 breadcrumb: 'Orçamentos > Recusados' },
-        { page: 'orcamentos-historico', label: 'Histórico de Orçamentos',   breadcrumb: 'Orçamentos > Histórico' },
       ],
     },
 
