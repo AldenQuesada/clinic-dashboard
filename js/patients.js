@@ -61,30 +61,7 @@ function _loadPatientsInternal() {
     cutoffDate.setDate(cutoffDate.getDate() - parseInt(period, 10))
   }
 
-  // ── Sprint 7: usa cache Supabase se disponível ────────────
-  // PatientsService.getLocal() retorna clinicai_patients (já enriquecido).
-  // Se cache disponível, aplica apenas os filtros e renderiza diretamente.
-  const cachedPatients = window.PatientsService?.getLocal() || []
-  if (cachedPatients.length) {
-    const filtered = cachedPatients.filter(p => {
-      if (nome && !((p.name || '').toLowerCase().includes(nome))) return false
-      if (proc && !((p.proceduresDone || []).some(pd => pd.toLowerCase().includes(proc)))) return false
-      if (period === 'custom') {
-        const ref = p.lastProcedureAt || p._createdAt || p.createdAt
-        if (dateFrom && ref && ref < dateFrom) return false
-        if (dateTo   && ref && ref > dateTo + 'T23:59:59') return false
-      } else if (cutoffDate) {
-        const ref = p.lastProcedureAt || p._createdAt || p.createdAt
-        if (!ref) return false
-        if (new Date(ref) < cutoffDate) return false
-      }
-      return true
-    })
-    renderPatientsTable(filtered)
-    return
-  }
-
-  // ── Leads com phase=paciente (cache ou localStorage) ─
+  // ── Fonte unica: LeadsService (cache ou localStorage) ──────
   const allLeads = _pCacheData || (window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]'))
   const leads = allLeads.filter(function(l) { return l.phase === 'paciente' })
   const appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]')
