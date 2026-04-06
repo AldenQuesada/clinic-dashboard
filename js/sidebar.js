@@ -498,6 +498,11 @@
       window.loadPatients()
     }
 
+    // ── Orcamentos: recarregar ao navegar ────────────────────────
+    if (pageId === 'orcamentos' && window.loadOrcamentos) {
+      window.loadOrcamentos()
+    }
+
     // ── Captação — Kanbans segmentados ──────────────────────────
     if (window.CaptacaoKanbans) {
       if (pageId === 'kanban-fullface')   window.CaptacaoKanbans.initFullFace()
