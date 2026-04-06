@@ -133,11 +133,18 @@
   var _simPhotoUrl = null     // DEPOIS SIMULADO — gerado automaticamente
   var _activeAngle = null
   var _annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
-  var _editorMode = 'zones' // 'zones' | 'vectors'
+  var _editorMode = 'zones' // 'zones' | 'vectors' | 'analysis'
   var _vectors = []       // [{ id, zone, start:{x,y}, end:{x,y}, curve:0.3 }]
   var _nextVecId = 1
   var _selVec = null      // selected vector for dragging
   var _vecDragPart = null // 'end' | 'start' | 'curve'
+
+  // Analysis state
+  // Tercos: 4 horizontal lines (y positions as % of image height)
+  var _tercoLines = { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
+  // Ricketts: 2 points (nariz tip, chin tip) as % of image w/h
+  var _rickettsPoints = { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
+  var _analysisDrag = null // which line/point is being dragged
   var _canvas = null
   var _ctx = null
   var _img = null         // current loaded Image
@@ -317,6 +324,7 @@
         '<div class="fm-mode-toggle">' +
           '<button class="fm-mode-btn' + (_editorMode === 'zones' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'zones\')">' + _icon('layers', 14) + ' Zonas</button>' +
           '<button class="fm-mode-btn' + (_editorMode === 'vectors' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'vectors\')">' + _icon('trending-up', 14) + ' Vetores</button>' +
+          '<button class="fm-mode-btn' + (_editorMode === 'analysis' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'analysis\')">' + _icon('git-commit', 14) + ' Analise</button>' +
         '</div>' +
         '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges">' + _icon('sliders', 14) + ' Ranges</button>' +
         '<button class="fm-btn" onclick="FaceMapping._clearAll()" title="Limpar tudo">' + _icon('trash-2', 14) + ' Limpar</button>' +
@@ -446,6 +454,54 @@
 
   function _renderToolbar() {
     var html = '<div class="fm-toolbar">'
+
+    // ANALYSIS MODE: show analysis-specific toolbar
+    if (_editorMode === 'analysis') {
+      html += '<div class="fm-tool-section">' +
+        '<div class="fm-tool-section-title">Tipo de Analise</div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="fm-zone-btn' + (_activeAngle === 'front' ? ' active' : '') + '" ' +
+            'onclick="FaceMapping._selectAngle(\'front\')" style="flex:1;justify-content:center"' +
+            (_photoUrls['front'] ? '' : ' disabled') + '>Tercos Faciais</button>' +
+          '<button class="fm-zone-btn' + (_activeAngle === 'lateral' ? ' active' : '') + '" ' +
+            'onclick="FaceMapping._selectAngle(\'lateral\')" style="flex:1;justify-content:center"' +
+            (_photoUrls['lateral'] ? '' : ' disabled') + '>Linha de Ricketts</button>' +
+        '</div>' +
+      '</div>'
+
+      if (_activeAngle === 'front') {
+        var t = _tercoLines
+        var totalH = t.chin - t.hairline
+        var pSup = totalH > 0 ? Math.round((t.brow - t.hairline) / totalH * 100) : 33
+        var pMed = totalH > 0 ? Math.round((t.noseBase - t.brow) / totalH * 100) : 33
+        var pInf = totalH > 0 ? Math.round((t.chin - t.noseBase) / totalH * 100) : 33
+        html += '<div class="fm-tool-section">' +
+          '<div class="fm-tool-section-title">Proporcoes</div>' +
+          '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">Ideal: 33% cada terco</div>' +
+          '<div style="display:flex;flex-direction:column;gap:6px">' +
+            _propBar('Superior', pSup) +
+            _propBar('Medio', pMed) +
+            _propBar('Inferior', pInf) +
+          '</div>' +
+        '</div>'
+        html += '<div class="fm-tool-section">' +
+          '<div style="font-size:11px;color:var(--text-muted)">Arraste as linhas horizontais na foto para posicionar nos pontos anatomicos.</div>' +
+        '</div>'
+      } else {
+        html += '<div class="fm-tool-section">' +
+          '<div class="fm-tool-section-title">Linha de Ricketts</div>' +
+          '<div style="font-size:11px;color:var(--text-secondary);line-height:1.6">' +
+            'Linha da beleza do perfil.<br><br>' +
+            'Conecta o ponto mais proeminente do <strong>nariz</strong> ao <strong>mento</strong>.<br><br>' +
+            'Os labios devem tocar ou ficar ligeiramente atras desta linha para um perfil harmonioso.<br><br>' +
+            '<strong>Arraste os pontos N e M</strong> para ajustar ao rosto da paciente.' +
+          '</div>' +
+        '</div>'
+      }
+
+      html += '</div>'
+      return html
+    }
 
     // Zone selector — 2 categories, filtered by active angle
     var allowedZones = _zonesForAngle(_activeAngle)
@@ -640,6 +696,13 @@
         _ctx.fill(); _ctx.stroke()
         _ctx.restore()
       }
+    } else if (_editorMode === 'analysis') {
+      // ANALYSIS MODE
+      if (_activeAngle === 'front') {
+        _drawTercos()
+      } else if (_activeAngle === 'lateral') {
+        _drawRicketts()
+      }
     } else {
       // ZONE MODE: draw ellipses + labels
       var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
@@ -813,6 +876,225 @@
     return targetY + labelH
   }
 
+  // ── Analysis: Tercos + Ricketts ─────────────────────────────
+
+  function _drawTercos() {
+    var t = _tercoLines
+    var y1 = t.hairline * _imgH
+    var y2 = t.brow * _imgH
+    var y3 = t.noseBase * _imgH
+    var y4 = t.chin * _imgH
+
+    var totalH = y4 - y1
+    var sup = y2 - y1
+    var med = y3 - y2
+    var inf = y4 - y3
+    var pSup = totalH > 0 ? Math.round(sup / totalH * 100) : 33
+    var pMed = totalH > 0 ? Math.round(med / totalH * 100) : 33
+    var pInf = totalH > 0 ? Math.round(inf / totalH * 100) : 33
+
+    _ctx.save()
+
+    // Draw 4 horizontal lines across image
+    var lines = [
+      { y: y1, label: 'Linha do cabelo' },
+      { y: y2, label: 'Sobrancelha' },
+      { y: y3, label: 'Base do nariz' },
+      { y: y4, label: 'Mento' },
+    ]
+
+    lines.forEach(function (l) {
+      _ctx.beginPath()
+      _ctx.strokeStyle = 'rgba(200,169,126,0.7)'
+      _ctx.lineWidth = 1.5
+      _ctx.setLineDash([])
+      _ctx.moveTo(0, l.y)
+      _ctx.lineTo(_imgW, l.y)
+      _ctx.stroke()
+
+      // Draggable handle
+      _ctx.beginPath()
+      _ctx.fillStyle = '#C8A97E'
+      _ctx.arc(_imgW - 15, l.y, 6, 0, Math.PI * 2)
+      _ctx.fill()
+      _ctx.strokeStyle = '#fff'
+      _ctx.lineWidth = 2
+      _ctx.stroke()
+    })
+
+    _ctx.setLineDash([])
+
+    // Color bars on right panel showing proportions
+    var barX = _imgW + 15
+    var barW = 20
+    var idealMin = 28, idealMax = 38
+
+    function _propColor(pct) {
+      if (pct >= idealMin && pct <= idealMax) return '#10B981' // green
+      if (pct >= 24 && pct <= 42) return '#F59E0B' // yellow
+      return '#EF4444' // red
+    }
+
+    // Superior
+    var cSup = _propColor(pSup)
+    _ctx.fillStyle = cSup
+    _ctx.fillRect(barX, y1, barW, sup)
+    // Medio
+    var cMed = _propColor(pMed)
+    _ctx.fillStyle = cMed
+    _ctx.fillRect(barX, y2, barW, med)
+    // Inferior
+    var cInf = _propColor(pInf)
+    _ctx.fillStyle = cInf
+    _ctx.fillRect(barX, y3, barW, inf)
+
+    // Labels
+    var lx = barX + barW + 10
+    _ctx.font = '700 13px Inter, Montserrat, sans-serif'
+    _ctx.textAlign = 'left'
+
+    _ctx.fillStyle = '#F5F0E8'
+    _ctx.fillText('Terco Superior', lx, y1 + sup / 2 - 2)
+    _ctx.font = '400 11px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = cSup
+    _ctx.fillText(pSup + '%' + (pSup >= idealMin && pSup <= idealMax ? '' : (pSup < idealMin ? ' <<' : ' >>')), lx, y1 + sup / 2 + 14)
+
+    _ctx.font = '700 13px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = '#F5F0E8'
+    _ctx.fillText('Terco Medio', lx, y2 + med / 2 - 2)
+    _ctx.font = '400 11px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = cMed
+    _ctx.fillText(pMed + '%' + (pMed >= idealMin && pMed <= idealMax ? '' : (pMed < idealMin ? ' <<' : ' >>')), lx, y2 + med / 2 + 14)
+
+    _ctx.font = '700 13px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = '#F5F0E8'
+    _ctx.fillText('Terco Inferior', lx, y3 + inf / 2 - 2)
+    _ctx.font = '400 11px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = cInf
+    _ctx.fillText(pInf + '%' + (pInf >= idealMin && pInf <= idealMax ? '' : (pInf < idealMin ? ' <' : ' >')), lx, y3 + inf / 2 + 14)
+
+    // Ideal note
+    _ctx.font = '400 9px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = 'rgba(200,169,126,0.5)'
+    _ctx.fillText('Ideal: 33% cada terco', lx, _imgH - 10)
+
+    _ctx.restore()
+  }
+
+  function _drawRicketts() {
+    var np = _rickettsPoints.nose
+    var cp = _rickettsPoints.chin
+    var nx = np.x * _imgW, ny = np.y * _imgH
+    var cx = cp.x * _imgW, cy = cp.y * _imgH
+
+    _ctx.save()
+
+    // Ricketts line (nose tip to chin tip)
+    _ctx.beginPath()
+    _ctx.strokeStyle = '#EF4444'
+    _ctx.lineWidth = 2
+    _ctx.setLineDash([])
+    _ctx.moveTo(nx, ny)
+    _ctx.lineTo(cx, cy)
+    _ctx.stroke()
+
+    // Extend line slightly beyond both points
+    var dx = cx - nx, dy = cy - ny
+    var len = Math.sqrt(dx * dx + dy * dy)
+    var ux = dx / len, uy = dy / len
+    _ctx.beginPath()
+    _ctx.strokeStyle = 'rgba(239,68,68,0.3)'
+    _ctx.lineWidth = 1.5
+    _ctx.setLineDash([6, 4])
+    _ctx.moveTo(nx - ux * 30, ny - uy * 30)
+    _ctx.lineTo(cx + ux * 30, cy + uy * 30)
+    _ctx.stroke()
+    _ctx.setLineDash([])
+
+    // Horizontal reference through nose
+    _ctx.beginPath()
+    _ctx.strokeStyle = 'rgba(239,68,68,0.4)'
+    _ctx.lineWidth = 1
+    _ctx.moveTo(0, ny)
+    _ctx.lineTo(_imgW, ny)
+    _ctx.stroke()
+
+    // Vertical reference through nose
+    _ctx.beginPath()
+    _ctx.strokeStyle = 'rgba(239,68,68,0.4)'
+    _ctx.lineWidth = 1
+    _ctx.moveTo(nx, 0)
+    _ctx.lineTo(nx, _imgH)
+    _ctx.stroke()
+
+    // Draggable points
+    // Nose point
+    _ctx.beginPath()
+    _ctx.fillStyle = '#EF4444'
+    _ctx.arc(nx, ny, 7, 0, Math.PI * 2)
+    _ctx.fill()
+    _ctx.strokeStyle = '#fff'
+    _ctx.lineWidth = 2
+    _ctx.stroke()
+    _ctx.font = '600 9px Inter, sans-serif'
+    _ctx.fillStyle = '#fff'
+    _ctx.textAlign = 'center'
+    _ctx.fillText('N', nx, ny + 3)
+
+    // Chin point
+    _ctx.beginPath()
+    _ctx.fillStyle = '#EF4444'
+    _ctx.arc(cx, cy, 7, 0, Math.PI * 2)
+    _ctx.fill()
+    _ctx.strokeStyle = '#fff'
+    _ctx.lineWidth = 2
+    _ctx.stroke()
+    _ctx.fillStyle = '#fff'
+    _ctx.fillText('M', cx, cy + 3)
+
+    // Labels on right panel
+    var lx = _imgW + 15
+    _ctx.textAlign = 'left'
+
+    _ctx.font = '700 14px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = '#F5F0E8'
+    _ctx.fillText('Linha de Ricketts', lx, 30)
+
+    _ctx.font = '400 10px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = '#C8A97E'
+    _ctx.fillText('Linha da beleza do perfil', lx, 48)
+
+    _ctx.font = '400 10px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = 'rgba(245,240,232,0.6)'
+    var lines = [
+      'Do ponto mais proeminente',
+      'do nariz (N) ate o mento (M).',
+      '',
+      'Labios devem tocar ou ficar',
+      'ligeiramente atras desta linha',
+      'para um perfil harmonioso.',
+      '',
+      'Arraste os pontos N e M',
+      'para ajustar ao rosto.',
+    ]
+    lines.forEach(function (line, i) {
+      _ctx.fillText(line, lx, 75 + i * 15)
+    })
+
+    // Angle of the line
+    var angleDeg = Math.round(Math.atan2(dy, dx) * 180 / Math.PI)
+    _ctx.font = '600 12px Inter, sans-serif'
+    _ctx.fillStyle = '#EF4444'
+    _ctx.fillText('Angulo: ' + angleDeg + '\u00B0', lx, 230)
+
+    // Switch button hint
+    _ctx.font = '400 9px Inter, sans-serif'
+    _ctx.fillStyle = 'rgba(200,169,126,0.4)'
+    _ctx.fillText('Frontal = Tercos | Lateral = Ricketts', lx, _imgH - 10)
+
+    _ctx.restore()
+  }
+
   // ── Vector drawing ─────────────────────────────────────────
 
   function _drawVector(vec) {
@@ -961,6 +1243,32 @@
     // Ignore clicks in the label margin area (except handles)
     var inLabelArea = mx > _imgW
 
+    // ANALYSIS MODE: drag lines/points
+    if (_editorMode === 'analysis') {
+      if (_activeAngle === 'front') {
+        // Check which terco line is near the click
+        var keys = ['hairline', 'brow', 'noseBase', 'chin']
+        for (var k = 0; k < keys.length; k++) {
+          var ly = _tercoLines[keys[k]] * _imgH
+          if (Math.abs(my - ly) < 12 && mx < _imgW) {
+            _analysisDrag = keys[k]
+            _mode = 'move'
+            _canvas.style.cursor = 'ns-resize'
+            return
+          }
+        }
+      } else if (_activeAngle === 'lateral') {
+        // Check Ricketts points
+        var nDist = Math.sqrt(Math.pow(mx - _rickettsPoints.nose.x * _imgW, 2) + Math.pow(my - _rickettsPoints.nose.y * _imgH, 2))
+        if (nDist < 15) { _analysisDrag = 'nose'; _mode = 'move'; _canvas.style.cursor = 'grab'; return }
+        var cDist = Math.sqrt(Math.pow(mx - _rickettsPoints.chin.x * _imgW, 2) + Math.pow(my - _rickettsPoints.chin.y * _imgH, 2))
+        if (cDist < 15) { _analysisDrag = 'chin'; _mode = 'move'; _canvas.style.cursor = 'grab'; return }
+      }
+      _analysisDrag = null
+      _redraw()
+      return
+    }
+
     // VECTOR MODE: handle vector dragging
     if (_editorMode === 'vectors') {
       var hit = _hitVector(mx, my)
@@ -1016,6 +1324,43 @@
 
   function _onMouseMove(e) {
     var mx = e.offsetX, my = e.offsetY
+
+    // ANALYSIS MODE: drag lines/points
+    if (_editorMode === 'analysis' && _mode === 'move' && _analysisDrag) {
+      if (_activeAngle === 'front' && _analysisDrag) {
+        _tercoLines[_analysisDrag] = Math.max(0.01, Math.min(0.99, my / _imgH))
+        _redraw()
+        return
+      }
+      if (_activeAngle === 'lateral') {
+        if (_analysisDrag === 'nose') {
+          _rickettsPoints.nose.x = Math.max(0.05, Math.min(0.95, mx / _imgW))
+          _rickettsPoints.nose.y = Math.max(0.05, Math.min(0.95, my / _imgH))
+        } else if (_analysisDrag === 'chin') {
+          _rickettsPoints.chin.x = Math.max(0.05, Math.min(0.95, mx / _imgW))
+          _rickettsPoints.chin.y = Math.max(0.05, Math.min(0.95, my / _imgH))
+        }
+        _redraw()
+        return
+      }
+    }
+
+    if (_editorMode === 'analysis') {
+      // Cursor hints
+      if (_activeAngle === 'front') {
+        var nearLine = false
+        var keys = ['hairline', 'brow', 'noseBase', 'chin']
+        for (var ki = 0; ki < keys.length; ki++) {
+          if (Math.abs(my - _tercoLines[keys[ki]] * _imgH) < 12) { nearLine = true; break }
+        }
+        _canvas.style.cursor = nearLine ? 'ns-resize' : 'default'
+      } else {
+        var nD = Math.sqrt(Math.pow(mx - _rickettsPoints.nose.x * _imgW, 2) + Math.pow(my - _rickettsPoints.nose.y * _imgH, 2))
+        var cD = Math.sqrt(Math.pow(mx - _rickettsPoints.chin.x * _imgW, 2) + Math.pow(my - _rickettsPoints.chin.y * _imgH, 2))
+        _canvas.style.cursor = (nD < 15 || cD < 15) ? 'grab' : 'default'
+      }
+      return
+    }
 
     // VECTOR MODE: drag vector endpoints
     if (_editorMode === 'vectors' && _mode === 'move' && _selVec) {
@@ -1077,6 +1422,13 @@
   }
 
   function _onMouseUp() {
+    if (_editorMode === 'analysis') {
+      _mode = 'idle'
+      _analysisDrag = null
+      _canvas.style.cursor = 'default'
+      _redraw()
+      return
+    }
     if (_editorMode === 'vectors') {
       _mode = 'idle'
       _canvas.style.cursor = 'default'
@@ -1402,7 +1754,6 @@
   function _setEditorMode(mode) {
     _editorMode = mode
     if (mode === 'vectors') {
-      // Force 45° angle for vectors
       if (_photoUrls['45']) {
         _activeAngle = '45'
       } else {
@@ -1410,11 +1761,23 @@
         _editorMode = 'zones'
         return
       }
-      // Auto-generate vectors from existing 45° annotations
       if (_vectors.length === 0) _generateVectorsFromAnnotations()
+    }
+    if (mode === 'analysis') {
+      // Use frontal for tercos, lateral for Ricketts — start with frontal
+      if (_photoUrls['front']) {
+        _activeAngle = 'front'
+      } else if (_photoUrls['lateral']) {
+        _activeAngle = 'lateral'
+      } else {
+        alert('Analise requer foto frontal ou lateral.')
+        _editorMode = 'zones'
+        return
+      }
     }
     _selAnn = null
     _selVec = null
+    _analysisDrag = null
     _render()
     setTimeout(_initCanvas, 50)
   }
@@ -2105,6 +2468,18 @@
 
   function _dateStr() {
     return new Date().toISOString().split('T')[0]
+  }
+
+  function _propBar(label, pct) {
+    var color = (pct >= 28 && pct <= 38) ? '#10B981' : (pct >= 24 && pct <= 42 ? '#F59E0B' : '#EF4444')
+    var ideal = pct >= 28 && pct <= 38
+    return '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span style="font-size:11px;font-weight:600;color:var(--text-primary);width:60px">' + label + '</span>' +
+      '<div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden">' +
+        '<div style="width:' + Math.min(pct, 100) + '%;height:100%;background:' + color + ';border-radius:4px"></div>' +
+      '</div>' +
+      '<span style="font-size:12px;font-weight:700;color:' + color + ';min-width:36px;text-align:right">' + pct + '%</span>' +
+    '</div>'
   }
 
   function _svgCheck() {
