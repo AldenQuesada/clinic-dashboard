@@ -740,9 +740,10 @@ function buildSemanaGrid() {
 
 // ── Vista Hoje (por profissional) ─────────────────────────────
 function buildHojeGrid() {
-  const iso   = dateToISO(_agendaDate)
-  const profs = getProfessionals()
-  const appts = (window.getFilteredAppointments ? getFilteredAppointments() : getAppointments()).filter(a => a.data === iso)
+  const iso      = dateToISO(_agendaDate)
+  const todayIso = dateToISO(new Date())
+  const profs    = getProfessionals()
+  const appts    = (window.getFilteredAppointments ? getFilteredAppointments() : getAppointments()).filter(a => a.data === iso)
 
   const cellMap = {}
   appts.forEach(a => {
