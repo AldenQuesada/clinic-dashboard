@@ -246,7 +246,8 @@ window.navigateTo = function(pageId) {
     if (window.leadsInitTagsFilter) leadsInitTagsFilter()
   }
   if (pageId === 'patients-all')    loadPatients()
-  if (pageId === 'orcamentos')      { if (window.renderOrcamentos)     renderOrcamentos() }
+  // Orcamentos agora e gerenciado por orcamentos.js via sidebar hook
+  // if (pageId === 'orcamentos')      { if (window.renderOrcamentos)     renderOrcamentos() }
   if (pageId === 'patients-budget') { if (window.renderPatientsBudget) renderPatientsBudget() }
   if (pageId === 'settings-tags')   { if (window.renderSettingsTags)   renderSettingsTags() }
   if (pageId === 'settings-clinic') {
