@@ -12,7 +12,8 @@ var _dismissedAlerts = new Set()
 
 // ── Renderizar Alertas do Dia ────────────────────────────────────
 function renderDayAlerts() {
-  var container = document.getElementById('dayAlertsRoot')
+  // Renderizar no toolbar (inline) se disponivel, senao no container original
+  var container = document.getElementById('agendaToolbarAlerts') || document.getElementById('dayAlertsRoot')
   if (!container) return
 
   var today = new Date().toISOString().slice(0, 10)
@@ -29,25 +30,33 @@ function renderDayAlerts() {
     return
   }
 
-  var html = '<div id="dayPanelAlerts" style="margin-bottom:12px;display:flex;flex-direction:column;gap:6px">'
-  visibleAlerts.forEach(function(alert) {
+  var isInline = container.id === 'agendaToolbarAlerts'
+
+  var html = isInline ? '' : '<div id="dayPanelAlerts" style="margin-bottom:8px;display:flex;flex-direction:column;gap:4px">'
+  visibleAlerts.slice(0, isInline ? 2 : 5).forEach(function(alert) {
     var colors = alert.type === 'danger' ? { bg:'#FEF2F2', border:'#FECACA', text:'#DC2626', icon:'#EF4444' }
                : alert.type === 'warning' ? { bg:'#FFFBEB', border:'#FDE68A', text:'#92400E', icon:'#F59E0B' }
                : { bg:'#ECFDF5', border:'#A7F3D0', text:'#065F46', icon:'#10B981' }
 
-    html += '<div data-alert-id="' + alert.id + '" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:' + colors.bg + ';border:1px solid ' + colors.border + ';border-radius:10px;animation:fadeIn .3s ease">'
-    html += '<div style="flex-shrink:0;width:8px;height:8px;border-radius:50%;background:' + colors.icon + ';animation:' + (alert.type === 'danger' ? 'pulse 1.5s infinite' : 'none') + '"></div>'
-    html += '<div style="flex:1;min-width:0">'
-    html += '<div style="font-size:12px;font-weight:700;color:' + colors.text + '">' + _escHtml(alert.title) + '</div>'
-    html += '<div style="font-size:11px;color:' + colors.text + ';opacity:.8;margin-top:1px">' + _escHtml(alert.message) + '</div>'
-    html += '</div>'
-    if (alert.action) {
-      html += '<button onclick="' + alert.action + '" style="flex-shrink:0;padding:5px 10px;background:#fff;border:1px solid ' + colors.border + ';border-radius:6px;font-size:10px;font-weight:700;color:' + colors.text + ';cursor:pointer">' + _escHtml(alert.actionLabel || 'Ver') + '</button>'
+    if (isInline) {
+      // Compact inline pill for toolbar
+      html += '<div data-alert-id="' + alert.id + '" style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:' + colors.bg + ';border:1px solid ' + colors.border + ';border-radius:20px;font-size:11px;font-weight:700;color:' + colors.text + ';white-space:nowrap;cursor:pointer;animation:fadeIn .3s ease" ' + (alert.action ? 'onclick="' + alert.action + '"' : '') + '>'
+      html += '<div style="width:6px;height:6px;border-radius:50%;background:' + colors.icon + ';flex-shrink:0;animation:' + (alert.type === 'danger' ? 'pulse 1.5s infinite' : 'none') + '"></div>'
+      html += _escHtml(alert.title)
+      html += '</div>'
+    } else {
+      // Full alert card
+      html += '<div data-alert-id="' + alert.id + '" style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:' + colors.bg + ';border:1px solid ' + colors.border + ';border-radius:8px;animation:fadeIn .3s ease">'
+      html += '<div style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:' + colors.icon + ';animation:' + (alert.type === 'danger' ? 'pulse 1.5s infinite' : 'none') + '"></div>'
+      html += '<div style="flex:1;min-width:0"><span style="font-size:11px;font-weight:700;color:' + colors.text + '">' + _escHtml(alert.title) + '</span></div>'
+      if (alert.action) {
+        html += '<button onclick="' + alert.action + '" style="flex-shrink:0;padding:3px 8px;background:#fff;border:1px solid ' + colors.border + ';border-radius:5px;font-size:9px;font-weight:700;color:' + colors.text + ';cursor:pointer">' + _escHtml(alert.actionLabel || 'Ver') + '</button>'
+      }
+      html += '<button onclick="dismissDayAlert(\'' + alert.id + '\')" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:' + colors.text + ';opacity:.5;font-size:14px;padding:0 3px">x</button>'
+      html += '</div>'
     }
-    html += '<button onclick="dismissDayAlert(\'' + alert.id + '\')" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:' + colors.text + ';opacity:.5;font-size:16px;padding:0 4px">x</button>'
-    html += '</div>'
   })
-  html += '</div>'
+  if (!isInline) html += '</div>'
 
   container.innerHTML = html
 

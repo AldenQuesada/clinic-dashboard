@@ -381,19 +381,20 @@ function renderAgenda() {
     return `<button onclick="setAgendaView('${v}')" style="padding:6px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${active?'#7C3AED':'#E5E7EB'};background:${active?'#7C3AED':'#fff'};color:${active?'#fff':'#374151'}">${label}</button>`
   }
 
+  const kpiBar = _buildAgendaKpis()
+
   const toolbar = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
       <button onclick="navAgenda(-1)" style="${btnOutline()}">‹</button>
       <div style="font-size:14px;font-weight:700;color:#111;min-width:200px;text-align:center">${navLabel}</div>
       <button onclick="navAgenda(1)"  style="${btnOutline()}">›</button>
-      <div style="flex:1"></div>
+      <div id="agendaToolbarAlerts" style="flex:1;display:flex;gap:6px;justify-content:center;align-items:center;overflow:hidden"></div>
       <div style="display:flex;gap:4px;background:#F3F4F6;padding:4px;border-radius:10px">
         ${viewBtn('mes','Mês')}${viewBtn('semana','Semana')}${viewBtn('hoje','Hoje')}
       </div>
-      <button onclick="openApptModal(null,'${todayIso}',null,0)" style="${btnPrimary()}">+ Nova Consulta</button>
     </div>`
 
-  const legend = `<div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+  const legend = `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
     ${Object.entries(APPT_STATUS_CFG).map(([,s])=>
       `<span style="font-size:11px;font-weight:600;color:${s.color};background:${s.bg};padding:3px 8px;border-radius:20px">${s.dot} ${s.label}</span>`
     ).join('')}
@@ -405,8 +406,7 @@ function renderAgenda() {
   if (_agendaView === 'hoje')   body = buildHojeGrid()
 
   const filterBar = window.renderAgendaFilterBar ? renderAgendaFilterBar() : ''
-  const kpiBar = _buildAgendaKpis()
-  root.innerHTML = toolbar + kpiBar + filterBar + legend + body
+  root.innerHTML = kpiBar + toolbar + filterBar + legend + body
 }
 
 // ── KPIs da Agenda — calculados pelo periodo visivel ─────────
@@ -439,54 +439,40 @@ function _buildAgendaKpis() {
   var previsao = inRange.reduce(function(s, a) { return s + (parseFloat(a.valor) || 0) }, 0)
   var fmtR = function(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR') }
 
-  return '<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">' +
+  return '<div style="display:flex;gap:8px;margin-bottom:8px">' +
 
     // Card 1: Agendados | Confirmados
-    '<div style="flex:1;min-width:160px;background:#fff;border:1px solid #F3F4F6;border-radius:12px;padding:12px 16px">' +
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
-        '<div style="width:24px;height:24px;border-radius:6px;background:#EFF6FF;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
-        '<span style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase">Agendados</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:baseline;gap:8px">' +
-        '<span style="font-size:22px;font-weight:800;color:#3B82F6">' + total + '</span>' +
-        '<span style="width:1px;height:18px;background:#E5E7EB"></span>' +
-        '<span style="font-size:13px;font-weight:600;color:#10B981">' + confirmados + ' conf.</span>' +
-      '</div>' +
+    '<div style="flex:1;background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+      '<div style="width:22px;height:22px;border-radius:6px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>' +
+      '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">Agendados</span>' +
+      '<span style="font-size:18px;font-weight:800;color:#3B82F6">' + total + '</span>' +
+      '<span style="width:1px;height:16px;background:#E5E7EB"></span>' +
+      '<span style="font-size:12px;font-weight:600;color:#10B981;white-space:nowrap">' + confirmados + ' conf.</span>' +
     '</div>' +
 
     // Card 2: Sem Confirmacao
-    '<div style="flex:1;min-width:140px;background:#fff;border:1px solid ' + (semConfirm > 0 ? '#FDE68A' : '#F3F4F6') + ';border-radius:12px;padding:12px 16px">' +
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
-        '<div style="width:24px;height:24px;border-radius:6px;background:#FFFBEB;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
-        '<span style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase">Sem Confirmacao</span>' +
-      '</div>' +
-      '<span style="font-size:22px;font-weight:800;color:#D97706">' + semConfirm + '</span>' +
+    '<div style="flex:1;background:#fff;border:1px solid ' + (semConfirm > 0 ? '#FDE68A' : '#F3F4F6') + ';border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+      '<div style="width:22px;height:22px;border-radius:6px;background:#FFFBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+      '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">Sem Confirm.</span>' +
+      '<span style="font-size:18px;font-weight:800;color:#D97706">' + semConfirm + '</span>' +
     '</div>' +
 
     // Card 3: No-show | %
-    '<div style="flex:1;min-width:140px;background:#fff;border:1px solid ' + (noshow > 0 ? '#FECACA' : '#F3F4F6') + ';border-radius:12px;padding:12px 16px">' +
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
-        '<div style="width:24px;height:24px;border-radius:6px;background:#FEF2F2;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>' +
-        '<span style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase">No-show</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:baseline;gap:8px">' +
-        '<span style="font-size:22px;font-weight:800;color:#EF4444">' + noshow + '</span>' +
-        '<span style="width:1px;height:18px;background:#E5E7EB"></span>' +
-        '<span style="font-size:13px;font-weight:600;color:#EF4444">' + noshowPct + '%</span>' +
-      '</div>' +
+    '<div style="flex:1;background:#fff;border:1px solid ' + (noshow > 0 ? '#FECACA' : '#F3F4F6') + ';border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+      '<div style="width:22px;height:22px;border-radius:6px;background:#FEF2F2;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>' +
+      '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">No-show</span>' +
+      '<span style="font-size:18px;font-weight:800;color:#EF4444">' + noshow + '</span>' +
+      '<span style="width:1px;height:16px;background:#E5E7EB"></span>' +
+      '<span style="font-size:12px;font-weight:600;color:#EF4444">' + noshowPct + '%</span>' +
     '</div>' +
 
     // Card 4: Previsao | Faturamento
-    '<div style="flex:1;min-width:180px;background:#fff;border:1px solid #F3F4F6;border-radius:12px;padding:12px 16px">' +
-      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
-        '<div style="width:24px;height:24px;border-radius:6px;background:#F0FDF4;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
-        '<span style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase">Previsao | Faturamento</span>' +
-      '</div>' +
-      '<div style="display:flex;align-items:baseline;gap:8px">' +
-        '<span style="font-size:14px;font-weight:700;color:#6B7280">' + fmtR(previsao) + '</span>' +
-        '<span style="width:1px;height:18px;background:#E5E7EB"></span>' +
-        '<span style="font-size:14px;font-weight:800;color:#10B981">' + fmtR(faturamento) + '</span>' +
-      '</div>' +
+    '<div style="flex:1;background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
+      '<div style="width:22px;height:22px;border-radius:6px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>' +
+      '<span style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;white-space:nowrap">Prev. | Fat.</span>' +
+      '<span style="font-size:13px;font-weight:700;color:#6B7280;white-space:nowrap">' + fmtR(previsao) + '</span>' +
+      '<span style="width:1px;height:16px;background:#E5E7EB"></span>' +
+      '<span style="font-size:13px;font-weight:800;color:#10B981;white-space:nowrap">' + fmtR(faturamento) + '</span>' +
     '</div>' +
 
   '</div>'
