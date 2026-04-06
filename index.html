@@ -2240,14 +2240,8 @@
             <h1 class="page-title">Agenda</h1>
             <p class="page-subtitle">Drag & drop para reagendar · Mes / Semana / Hoje</p>
           </div>
-          <div style="display:flex;gap:6px">
-            <button id="btnDayPanel" onclick="toggleDayPanel();this.classList.toggle('active')" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1.5px solid #7C3AED;background:#F5F3FF;color:#7C3AED;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer" title="Painel do Dia — pipeline visual com alertas">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              Painel do Dia
-            </button>
-          </div>
         </div>
-        <div id="dayPanelRoot" style="display:none;margin-bottom:16px"></div>
+        <div id="dayAlertsRoot"></div>
         <div id="agendaRoot"></div>
       </div>
 
