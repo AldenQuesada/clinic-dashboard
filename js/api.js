@@ -44,7 +44,7 @@ window.escHtml = escHtml
 
 /** Normaliza campos de lead — garantir valores validos para phase, temperature, source_type */
 var LEAD_DEFAULTS = {
-  VALID_PHASES: ['lead','agendado','reagendado','compareceu','paciente','orcamento','perdido'],
+  VALID_PHASES: ['lead','agendado','reagendado','compareceu','paciente','orcamento','cancelado','perdido'],
   VALID_TEMPS:  ['hot','warm','cold'],
   VALID_SOURCES:['quiz','manual','import','referral','social'],
   DEFAULT_PHASE: 'lead',

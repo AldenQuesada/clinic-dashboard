@@ -506,6 +506,14 @@ function confirmCancelWithReason(apptId, statusAlvo) {
     if (tagId) _applyStatusTag(appts[idx], tagId, 'manual')
   }
 
+  // Mudar fase do lead pra cancelado/perdido
+  if (appts[idx].pacienteId && window.SdrService && SdrService.changePhase) {
+    if (statusAlvo === 'cancelado') {
+      SdrService.changePhase(appts[idx].pacienteId, 'cancelado', 'cancelamento: ' + motivo)
+    }
+    // No-show: manter fase atual (lead pode reagendar), criar task de recuperacao
+  }
+
   // Cancelar automações futuras
   if (window._getQueue) {
     const q = _getQueue().map(x => x.apptId === apptId ? { ...x, executed: true } : x)
