@@ -694,7 +694,7 @@
     try {
       var env = window.ClinicEnv || {}
       if (!env.SUPABASE_URL || !env.SUPABASE_KEY) return
-      var client = window._sbShared || window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
+      var client = window.supabase.createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
       _realtimeChannel = client.channel('wa_messages_changes')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wa_messages' }, function () {
           _loadConversations().then(function () {

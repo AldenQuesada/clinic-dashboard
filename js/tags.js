@@ -1835,7 +1835,7 @@ function tagsFinalizeCheckout(entityId) {
 
   setTimeout(() => {
     alert(`Saída registrada!\n${entityName} movido(a) para: ${destGroup}.`)
-    if (!hasProcsDone && hasBudget && window.loadOrcamentos) loadOrcamentos(true)
+    if (!hasProcsDone && hasBudget && window.renderOrcamentos) renderOrcamentos()
     else if (hasProcsDone && hasBudget && window.renderPatientsBudget) renderPatientsBudget()
   }, 100)
 }
@@ -1864,8 +1864,7 @@ window.tagsSaveFlowForm    = tagsSaveFlowForm
 window.tagsCloseModal          = tagsCloseModal
 window.tagsOpenBudgetForm      = tagsOpenBudgetForm
 window.tagsSaveBudgetForm      = tagsSaveBudgetForm
-// Desativado: orcamentos agora gerenciado por orcamentos.js
-// window.renderOrcamentos        = renderOrcamentos
+window.renderOrcamentos        = renderOrcamentos
 window.orcUpdateStatus         = orcUpdateStatus
 window.tagsOpenCheckoutModal   = tagsOpenCheckoutModal
 window.tagsFinalizeCheckout    = tagsFinalizeCheckout

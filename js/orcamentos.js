@@ -29,36 +29,21 @@
   }
 
   // ── Load ────────────────────────────────────────────────────
-  function load() {
-    var page = document.getElementById('page-orcamentos')
-    if (!page) return
+  function load(forceRefresh) {
+    var now = Date.now()
+    var cacheValid = _cacheData && (now - _cacheTs) < _CACHE_TTL && !forceRefresh
 
-    // Tentar com dados locais primeiro
-    var local = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+    if (cacheValid) { _render(); return }
 
-    if (local.length) {
-      _cacheData = local
-      _cacheTs = Date.now()
-      _render()
-      return
-    }
-
-    // Dados vazios — polling ate ter dados (LeadsService pode estar carregando)
-    var attempts = 0
-    var maxAttempts = 10
-    var pollInterval = setInterval(function() {
-      attempts++
-      var data = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-      if (data.length) {
-        clearInterval(pollInterval)
-        _cacheData = data
+    if (window.LeadsService && LeadsService.loadAll) {
+      LeadsService.loadAll().then(function(leads) {
+        _cacheData = leads
         _cacheTs = Date.now()
         _render()
-      } else if (attempts >= maxAttempts) {
-        clearInterval(pollInterval)
-        console.warn('[Orcamentos] Dados nao carregaram apos ' + maxAttempts + ' tentativas')
-      }
-    }, 1000)
+      }).catch(function() { _render() })
+      return
+    }
+    _render()
   }
 
   function _render() {
@@ -267,15 +252,5 @@
   window.orcPeriodClick = periodClick
   window.orcToggleAll = toggleAll
   window.exportOrcamentosCsv = exportCsv
-
-  // Auto-load quando pagina orcamentos esta ativa no boot
-  document.addEventListener('clinicai:auth-success', function() {
-    var lastPage = null
-    try { lastPage = localStorage.getItem('clinicai_last_page') } catch(e) {}
-    if (lastPage === 'orcamentos') {
-      // Delay pra dar chance ao LeadsService popular o localStorage
-      setTimeout(load, 1500)
-    }
-  })
 
 })()
