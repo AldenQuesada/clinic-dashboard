@@ -330,22 +330,57 @@ function _showChecklist(appt, phase) {
   panel.id = 'agendaChecklistPanel'
   panel.style.cssText = 'position:fixed;top:20px;right:20px;width:300px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:9800;border:2px solid '+(phase==='na_clinica'?'#06B6D4':'#7C3AED')+';animation:slideInRight .2s ease'
   const color = phase === 'na_clinica' ? '#06B6D4' : '#7C3AED'
-  const label = phase === 'na_clinica' ? 'Paciente Na Clínica' : 'Em Consulta'
+  const label = phase === 'na_clinica' ? 'Paciente Na Clinica' : 'Em Consulta'
+  const totalItems = items.length
   panel.innerHTML = `
     <div style="padding:12px 14px;background:${color};border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between">
       <div style="font-size:13px;font-weight:800;color:#fff">${label} — ${appt.pacienteNome||'Paciente'}</div>
-      <button onclick="this.closest('#agendaChecklistPanel').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">×</button>
+      <span id="ckProgress" style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7)">0/${totalItems}</span>
     </div>
     <div style="padding:12px 14px">
-      <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;margin-bottom:8px">Checklist</div>
+      <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;margin-bottom:8px">Checklist de seguranca</div>
       ${items.map((it,i)=>`<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;font-size:12px;color:#374151">
-        <input type="checkbox" id="ck_${phase}_${i}" style="accent-color:${color};width:14px;height:14px"> ${it.label}
+        <input type="checkbox" id="ck_${phase}_${i}" onchange="_ckUpdate()" style="accent-color:${color};width:14px;height:14px"> ${it.label}
       </label>`).join('')}
-      <button onclick="this.closest('#agendaChecklistPanel').remove()" style="margin-top:10px;width:100%;padding:8px;background:${color};color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700">Checklist OK</button>
+      <button id="ckDoneBtn" onclick="_ckTryClose()" disabled style="margin-top:10px;width:100%;padding:8px;background:#D1D5DB;color:#fff;border:none;border-radius:8px;cursor:not-allowed;font-size:12px;font-weight:700">Marque todos os itens</button>
+      <div id="ckBlockMsg" style="display:none;margin-top:6px;font-size:10px;font-weight:700;color:#DC2626;text-align:center">Complete todos os itens antes de fechar</div>
     </div>`
   document.body.appendChild(panel)
   setTimeout(() => { const p = document.getElementById('agendaChecklistPanel'); if(p) p.style.animation = 'none' }, 300)
 }
+
+function _ckUpdate() {
+  const panel = document.getElementById('agendaChecklistPanel')
+  if (!panel) return
+  const cbs = panel.querySelectorAll('input[type=checkbox]')
+  const total = cbs.length
+  const checked = Array.from(cbs).filter(c => c.checked).length
+  const progress = document.getElementById('ckProgress')
+  if (progress) progress.textContent = checked + '/' + total
+  const btn = document.getElementById('ckDoneBtn')
+  const msg = document.getElementById('ckBlockMsg')
+  if (checked === total) {
+    if (btn) { btn.disabled = false; btn.style.background = panel.style.borderColor.replace('2px solid ','') || '#7C3AED'; btn.style.cursor = 'pointer'; btn.textContent = 'Checklist OK' }
+    if (msg) msg.style.display = 'none'
+  } else {
+    if (btn) { btn.disabled = true; btn.style.background = '#D1D5DB'; btn.style.cursor = 'not-allowed'; btn.textContent = 'Marque todos os itens' }
+  }
+}
+
+function _ckTryClose() {
+  const panel = document.getElementById('agendaChecklistPanel')
+  if (!panel) return
+  const cbs = panel.querySelectorAll('input[type=checkbox]')
+  const allChecked = Array.from(cbs).every(c => c.checked)
+  if (allChecked) {
+    panel.remove()
+  } else {
+    var msg = document.getElementById('ckBlockMsg')
+    if (msg) msg.style.display = 'block'
+  }
+}
+window._ckUpdate = _ckUpdate
+window._ckTryClose = _ckTryClose
 
 // ── Recovery Flow ─────────────────────────────────────────────────
 function _openRecovery(appt) {
@@ -719,7 +754,34 @@ function sendWATemplate(apptId, tplKey) {
   const tpl = WA_TPLS[tplKey]; if (!tpl) return
   const text = tpl.fn(_waVars(appt))
   const phone = (_getPhone(appt)||'').replace(/\D/g,'')
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
+
+  if (!phone) {
+    if (window._showToast) _showToast('Sem telefone', (appt.pacienteNome||'Paciente') + ' nao tem WhatsApp', 'warning')
+    return
+  }
+
+  // Enviar via Evolution API (por baixo, via Supabase RPC)
+  if (window._sbShared) {
+    window._sbShared.rpc('wa_outbox_enqueue_appt', {
+      p_phone: phone,
+      p_content: text,
+      p_lead_name: appt.pacienteNome || 'Paciente'
+    }).then(function(res) {
+      if (res.error) {
+        console.error('[WA] Falha:', res.error.message)
+        // Fallback: abre wa.me se RPC falhar
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank')
+      } else {
+        if (window._showToast) _showToast('WhatsApp enviado', (WA_TPLS[tplKey]||{}).label + ' para ' + (appt.pacienteNome||''), 'success')
+      }
+    }).catch(function() {
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank')
+    })
+  } else {
+    // Sem Supabase: fallback wa.me
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(text), '_blank')
+  }
+
   _logAuto(apptId, 'wa_'+tplKey, 'enviado')
 }
 
