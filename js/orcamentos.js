@@ -31,7 +31,7 @@
   // ── Load ────────────────────────────────────────────────────
   function load(forceRefresh) {
     var page = document.getElementById('page-orcamentos')
-    if (!page || page.style.display === 'none') return
+    if (!page) return
 
     var now = Date.now()
     var cacheValid = _cacheData && (now - _cacheTs) < _CACHE_TTL && !forceRefresh
