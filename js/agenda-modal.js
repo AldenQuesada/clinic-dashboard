@@ -360,6 +360,16 @@
     const inicio = document.getElementById('appt_inicio') && document.getElementById('appt_inicio').value
     if (!data || !inicio) { alert('Informe data e horário'); return }
 
+    // Validar horario passado (camada obrigatoria — independe do AgendaValidator)
+    var todayIso = new Date().toISOString().slice(0, 10)
+    var editId0 = document.getElementById('appt_id') && document.getElementById('appt_id').value
+    if (!editId0) {
+      if (data < todayIso) { alert('Nao e possivel agendar em data passada.'); return }
+      if (data === todayIso && new Date(data + 'T' + inicio + ':00') < new Date()) {
+        alert('Nao e possivel agendar em horario que ja passou.'); return
+      }
+    }
+
     const duracao = parseInt((document.getElementById('appt_duracao') && document.getElementById('appt_duracao').value) || '60')
     const fim     = _addMins(inicio, duracao)
     const profIdx = parseInt(((document.getElementById('appt_prof') && document.getElementById('appt_prof').value) || '0')) || 0
