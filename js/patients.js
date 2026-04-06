@@ -358,9 +358,9 @@ function _pRenderRows(rows) {
       : '<span style="color:#D1D5DB">—</span>'
 
     // Queixas
-    var qfData = p.queixas_faciais || p.complaints || []
-    var queixasHtml = Array.isArray(qfData) && qfData.length
-      ? qfData.slice(0, 2).map(function(q) { return '<span style="font-size:10px;background:#FEF3C7;border-radius:4px;padding:2px 6px;color:#92400E;white-space:nowrap">' + _pEsc(q) + '</span>' }).join(' ')
+    var procsArr = Array.isArray(p.proceduresDone) ? p.proceduresDone : []
+    var procsHtml = procsArr.length
+      ? procsArr.slice(0, 2).map(function(pr) { return '<span style="font-size:10px;background:#EEF2FF;border-radius:4px;padding:2px 6px;color:#4338CA;white-space:nowrap">' + _pEsc(pr) + '</span>' }).join(' ') + (procsArr.length > 2 ? ' <span style="font-size:10px;color:#9CA3AF">+' + (procsArr.length - 2) + '</span>' : '')
       : '<span style="color:#D1D5DB">—</span>'
 
     // Ultimo contato / churn
@@ -424,7 +424,7 @@ function _pRenderRows(rows) {
       '<td style="padding:8px 6px 8px 12px"><input type="checkbox" class="p-row-cb" data-id="' + _pEsc(p.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
       '<td style="padding:8px 10px"><div style="font-size:12px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:10px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
       '<td style="padding:8px 10px;font-size:10px">' + tagsHtml + '</td>' +
-      '<td style="padding:8px 10px;font-size:10px">' + queixasHtml + '</td>' +
+      '<td style="padding:8px 10px;font-size:10px">' + procsHtml + '</td>' +
       '<td style="padding:8px 10px;font-size:12px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
       '<td style="padding:8px 10px;text-align:center">' + scoreHtml + '</td>' +
       '<td style="padding:8px 10px">' + returnHtml + '</td>' +
