@@ -2339,16 +2339,13 @@
       })
       .then(function (res) { return res.json() })
       .then(function (data) {
-        console.log('[FaceMapping] GPT analysis received:', data)
-        if (data.success && data.analysis) {
-          // Store analysis for report
-          _lastAnalysis = data.analysis
-          // For now use canvas fallback for the image (Vision analysis done by GPT)
-          _generateSimulationCanvas(callback)
-        } else {
-          console.error('[FaceMapping] GPT error:', data)
-          _generateSimulationCanvas(callback)
+        console.log('[FaceMapping] GPT response:', data)
+        if (data.success) {
+          if (data.analysis) _lastAnalysis = data.analysis
+          console.log('[FaceMapping] Analysis:', _lastAnalysis ? 'OK' : 'null (using canvas)')
         }
+        // Always generate canvas simulation (GPT image gen will come later)
+        _generateSimulationCanvas(callback)
         if (btn) { btn.innerHTML = origBtn }
       })
       .catch(function (err) {
