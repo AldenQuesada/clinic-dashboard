@@ -1000,12 +1000,9 @@
           </div>
           </div>
 
-          <!-- Linha unica: Badge + Periodo + Busca + Procedimento + Exportar -->
-          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-            <div id="patientsCountBadge" style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:5px 12px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span id="patientsCountNum" style="font-size:15px;font-weight:800;color:#111">0</span>
-            </div>
+          <!-- Filtros: Periodo + Busca + Procedimento + Exportar -->
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+            <div id="patientsCountBadge" style="display:none"><span id="patientsCountNum">0</span></div>
             <div class="ao-period-bar" id="patientsPeriodBar">
               <button class="ao-period-btn active" data-period="" onclick="patientsPeriodClick(this)">Todos</button>
               <button class="ao-period-btn" data-period="7" onclick="patientsPeriodClick(this)">7d</button>

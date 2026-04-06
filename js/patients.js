@@ -423,9 +423,9 @@ function _pRenderRows(rows) {
     tr.innerHTML =
       '<td style="padding:8px 6px 8px 12px"><input type="checkbox" class="p-row-cb" data-id="' + _pEsc(p.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
       '<td style="padding:8px 10px"><div style="font-size:12px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:10px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
-      '<td style="padding:8px 10px;font-size:10px">' + tagsHtml + '</td>' +
-      '<td style="padding:8px 10px;font-size:10px">' + procsHtml + '</td>' +
-      '<td style="padding:8px 10px;font-size:12px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
+      '<td style="padding:8px 10px;font-size:10px;vertical-align:middle">' + tagsHtml + '</td>' +
+      '<td style="padding:8px 10px;font-size:10px;vertical-align:middle">' + procsHtml + '</td>' +
+      '<td style="padding:8px 10px;font-size:12px;font-weight:600;color:#111;vertical-align:middle">' + (revenue || '—') + '</td>' +
       '<td style="padding:8px 10px;text-align:center">' + scoreHtml + '</td>' +
       '<td style="padding:8px 10px">' + returnHtml + '</td>' +
       '<td style="padding:8px 10px"><div style="font-size:11px;color:#374151">' + lastContactStr + '</div>' + churnIndicator + '</td>' +
