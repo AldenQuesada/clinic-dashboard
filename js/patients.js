@@ -78,6 +78,28 @@ function _loadPatientsInternal() {
     apptsByPatient[pid].push(a)
   }
 
+  // ── Intervalos de retorno por procedimento (dias) ───────────
+  var RETURN_INTERVALS = {
+    'botox': 120, 'toxina': 120, 'botulina': 120,
+    'preenchimento': 365, 'acido hialuronico': 365, 'ah': 365,
+    'bioestimulador': 365, 'sculptra': 365, 'radiesse': 365,
+    'fios': 365, 'pdo': 365,
+    'peeling': 30, 'microagulhamento': 30,
+    'laser': 60, 'fotona': 90, 'ipl': 60,
+    'limpeza': 30, 'hidratacao': 30,
+    'lifting': 180, 'full face': 180, 'lifting 5d': 180,
+    'avaliacao': 90, 'retorno': 30,
+  }
+
+  function _getReturnDays(procName) {
+    if (!procName) return 180 // default 6 meses
+    var lower = procName.toLowerCase()
+    for (var key in RETURN_INTERVALS) {
+      if (lower.includes(key)) return RETURN_INTERVALS[key]
+    }
+    return 180
+  }
+
   // ── Enriquece leads com dados de agendamentos ──────────────
   const enriched = leads.map(lead => {
     const patientAppts = apptsByPatient[lead.id] || []
@@ -85,15 +107,55 @@ function _loadPatientsInternal() {
     const sorted = patientAppts.slice().sort((a, b) => (b.data || '') > (a.data || '') ? 1 : -1)
     const lastAppt = sorted[0]
     const totalRevenue = patientAppts.reduce((sum, a) => sum + (parseFloat(a.valor) || 0), 0)
+
+    // Score de fidelidade (0-100)
+    var totalProcs = patientAppts.length
+    var procScore = Math.min(totalProcs * 15, 45) // max 45 pts (3+ procedimentos)
+    var revenueScore = Math.min(Math.floor(totalRevenue / 500) * 10, 30) // max 30 pts (R$1500+)
+    var recencyScore = 0
+    var lastDate = lastAppt?.data || lead.created_at || lead.createdAt
+    if (lastDate) {
+      var daysSince = Math.floor((Date.now() - new Date(lastDate).getTime()) / 86400000)
+      if (daysSince < 30) recencyScore = 25
+      else if (daysSince < 90) recencyScore = 20
+      else if (daysSince < 180) recencyScore = 10
+      else recencyScore = 0
+    }
+    var loyaltyScore = procScore + revenueScore + recencyScore
+
+    // Proximo retorno sugerido
+    var nextReturnDate = null
+    var nextReturnDays = null
+    var recompraAlert = null
+    if (lastAppt && lastAppt.data) {
+      var returnInterval = _getReturnDays(lastAppt.procedimento)
+      var lastD = new Date(lastAppt.data)
+      nextReturnDate = new Date(lastD.getTime() + returnInterval * 86400000)
+      nextReturnDays = Math.floor((nextReturnDate.getTime() - Date.now()) / 86400000)
+
+      if (nextReturnDays < -30) recompraAlert = 'atrasado'  // passou 1 mes do retorno
+      else if (nextReturnDays < 0) recompraAlert = 'vencido' // passou a data
+      else if (nextReturnDays < 14) recompraAlert = 'proximo' // proximos 14 dias
+    }
+
     return {
-      id:             lead.id,
-      name:           lead.name || lead.nome || '—',
-      phone:          lead.phone || lead.whatsapp || '—',
-      status:         lead.status || 'active',
-      proceduresDone: procs,
+      id:              lead.id,
+      name:            lead.name || lead.nome || '—',
+      phone:           lead.phone || lead.whatsapp || '—',
+      status:          lead.status || 'active',
+      tags:            lead.tags || [],
+      queixas_faciais: lead.queixas_faciais || [],
+      proceduresDone:  procs,
       lastProcedureAt: lastAppt?.data || null,
+      lastProcedure:   lastAppt?.procedimento || null,
       totalRevenue,
-      _createdAt:     lead.createdAt || lead.created_at || null,
+      totalProcs,
+      loyaltyScore,
+      nextReturnDate,
+      nextReturnDays,
+      recompraAlert,
+      last_contacted_at: lead.last_contacted_at || null,
+      _createdAt:      lead.createdAt || lead.created_at || null,
     }
   })
 
@@ -193,6 +255,10 @@ function renderPatientsTable(patients) {
       va = (a.name || '').toLowerCase(); vb = (b.name || '').toLowerCase()
     } else if (_patientsSortField === 'revenue') {
       va = a.totalRevenue || 0; vb = b.totalRevenue || 0
+    } else if (_patientsSortField === 'loyalty') {
+      va = a.loyaltyScore || 0; vb = b.loyaltyScore || 0
+    } else if (_patientsSortField === 'nextReturn') {
+      va = a.nextReturnDays !== null ? a.nextReturnDays : 9999; vb = b.nextReturnDays !== null ? b.nextReturnDays : 9999
     } else if (_patientsSortField === 'lastContact') {
       va = a.last_contacted_at || a.lastProcedureAt || a._createdAt || ''; vb = b.last_contacted_at || b.lastProcedureAt || b._createdAt || ''
     } else {
@@ -210,12 +276,12 @@ function renderPatientsTable(patients) {
   if (countEl) countEl.textContent = patients.length
 
   // Sort arrows
-  var nameH = document.getElementById('pSortName')
-  var revH = document.getElementById('pSortRevenue')
-  var contH = document.getElementById('pSortContact')
-  if (nameH) nameH.innerHTML = 'Nome' + _pSortArrow('name')
-  if (revH) revH.innerHTML = 'Receita' + _pSortArrow('revenue')
-  if (contH) contH.innerHTML = 'Contato' + _pSortArrow('lastContact')
+  var sortHeaders = { pSortName: 'name', pSortRevenue: 'revenue', pSortLoyalty: 'loyalty', pSortReturn: 'nextReturn', pSortContact: 'lastContact' }
+  var headerLabels = { name: 'Nome', revenue: 'Receita', loyalty: 'Score', nextReturn: 'Retorno', lastContact: 'Contato' }
+  for (var hId in sortHeaders) {
+    var hEl = document.getElementById(hId)
+    if (hEl) hEl.innerHTML = headerLabels[sortHeaders[hId]] + _pSortArrow(sortHeaders[hId])
+  }
 
   // KPIs
   var totalRevenue = 0
@@ -242,6 +308,13 @@ function renderPatientsTable(patients) {
   if (kpiTicket) kpiTicket.textContent = withRevenue > 0 ? (totalRevenue / withRevenue).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0'
   if (kpiChurn) kpiChurn.textContent = churnCount
   if (kpiChurnPct) kpiChurnPct.textContent = patients.length > 0 ? '(' + Math.round(churnCount / patients.length * 100) + '%)' : ''
+
+  // Recompra atrasada
+  var recompraCount = patients.filter(function(p) { return p.recompraAlert === 'atrasado' || p.recompraAlert === 'vencido' }).length
+  var kpiRecompra = document.getElementById('kpiPatientsRecompra')
+  var kpiRecompraPct = document.getElementById('kpiPatientsRecompraPct')
+  if (kpiRecompra) kpiRecompra.textContent = recompraCount
+  if (kpiRecompraPct) kpiRecompraPct.textContent = patients.length > 0 ? '(' + Math.round(recompraCount / patients.length * 100) + '%)' : ''
 
   if (!patients.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado</td></tr>'
@@ -313,19 +386,44 @@ function _pRenderRows(rows) {
 
     var checked = _pSelectedIds.has(p.id) ? ' checked' : ''
 
+    // Score de fidelidade — barra visual
+    var score = p.loyaltyScore || 0
+    var scoreColor = score >= 70 ? '#10B981' : score >= 40 ? '#F59E0B' : '#EF4444'
+    var scoreHtml = '<div style="display:flex;align-items:center;gap:4px" title="' + score + '/100 — ' + (p.totalProcs || 0) + ' procedimentos">' +
+      '<div style="width:32px;height:6px;background:#E5E7EB;border-radius:3px;overflow:hidden"><div style="width:' + score + '%;height:100%;background:' + scoreColor + ';border-radius:3px"></div></div>' +
+      '<span style="font-size:10px;font-weight:700;color:' + scoreColor + '">' + score + '</span></div>'
+
+    // Retorno sugerido
+    var returnHtml = ''
+    if (p.nextReturnDays !== null) {
+      if (p.recompraAlert === 'atrasado') {
+        returnHtml = '<div style="font-size:10px;font-weight:700;color:#EF4444" title="Atrasado ' + Math.abs(p.nextReturnDays) + ' dias">ATRASADO</div>'
+      } else if (p.recompraAlert === 'vencido') {
+        returnHtml = '<div style="font-size:10px;font-weight:700;color:#F59E0B" title="Venceu ha ' + Math.abs(p.nextReturnDays) + ' dias">VENCIDO</div>'
+      } else if (p.recompraAlert === 'proximo') {
+        returnHtml = '<div style="font-size:10px;font-weight:700;color:#3B82F6" title="Em ' + p.nextReturnDays + ' dias">EM ' + p.nextReturnDays + 'd</div>'
+      } else {
+        var retDate = p.nextReturnDate
+        if (retDate) returnHtml = '<div style="font-size:10px;color:#6B7280">' + retDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + '</div>'
+      }
+    } else {
+      returnHtml = '<span style="color:#D1D5DB;font-size:10px">—</span>'
+    }
+
     tr.innerHTML =
-      '<td style="padding:10px 8px 10px 14px"><input type="checkbox" class="p-row-cb" data-id="' + _pEsc(p.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
-      '<td style="padding:10px 12px"><div style="font-size:13px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:11px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
-      '<td style="padding:10px 12px;font-size:11px">' + tagsHtml + '</td>' +
-      '<td style="padding:10px 12px;font-size:11px">' + queixasHtml + '</td>' +
-      '<td style="padding:10px 12px;font-size:13px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
-      '<td style="padding:10px 12px"><div style="font-size:12px;color:#374151">' + lastContactStr + '</div>' + churnIndicator + '</td>' +
-      '<td style="padding:10px 12px"><span style="display:inline-flex;align-items:center;font-size:10px;font-weight:600;color:' + color + ';background:' + color + '1A;border-radius:6px;padding:2px 7px">' + label + '</span></td>' +
-      '<td style="padding:10px 12px;text-align:center">' +
-        '<a href="' + waLink + '" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;padding:4px 7px;border:1px solid #E5E7EB;border-radius:6px;text-decoration:none;margin-right:3px" title="WhatsApp">' +
-          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
+      '<td style="padding:8px 6px 8px 12px"><input type="checkbox" class="p-row-cb" data-id="' + _pEsc(p.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
+      '<td style="padding:8px 10px"><div style="font-size:12px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:10px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
+      '<td style="padding:8px 10px;font-size:10px">' + tagsHtml + '</td>' +
+      '<td style="padding:8px 10px;font-size:10px">' + queixasHtml + '</td>' +
+      '<td style="padding:8px 10px;font-size:12px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
+      '<td style="padding:8px 10px;text-align:center">' + scoreHtml + '</td>' +
+      '<td style="padding:8px 10px">' + returnHtml + '</td>' +
+      '<td style="padding:8px 10px"><div style="font-size:11px;color:#374151">' + lastContactStr + '</div>' + churnIndicator + '</td>' +
+      '<td style="padding:8px 10px;text-align:center">' +
+        '<a href="' + waLink + '" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;padding:4px 6px;border:1px solid #E5E7EB;border-radius:6px;text-decoration:none;margin-right:2px" title="WhatsApp">' +
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
         '</a>' +
-        '<button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _pEsc(p.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 7px;font-size:11px;cursor:pointer;color:#374151">Ver</button>' +
+        '<button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _pEsc(p.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 6px;font-size:10px;cursor:pointer;color:#374151">Ver</button>' +
       '</td>'
 
     tbody.appendChild(tr)
