@@ -854,12 +854,11 @@
                 <button class="ao-date-apply" onclick="leadsApplyCustomPeriod()">Aplicar</button>
               </div>
             </div>
-            <input type="text" style="display:none" autocomplete="username">
             <input
               id="leadsSearchInput"
               type="text"
-              autocomplete="new-password"
-              role="presentation"
+              autocomplete="off"
+              readonly onfocus="this.removeAttribute('readonly')"
               placeholder="Buscar por nome ou telefone..."
               oninput="leadsOnSearch(this.value)"
               style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:200px"
@@ -963,9 +962,10 @@
               <button class="ao-period-btn" data-period="custom" onclick="document.getElementById('patientsDateRange').style.display='flex'">Periodo</button>
             </div>
             <select id="patientsFilterPeriod" style="display:none"><option value=""></option></select>
-            <input type="text" style="display:none" autocomplete="username">
-            <input id="patientsFilterNome" type="text" autocomplete="new-password" role="presentation" placeholder="Buscar por nome ou telefone..." oninput="loadPatients()" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:210px">
-            <input id="patientsFilterProc" type="text" autocomplete="new-password" role="presentation" placeholder="Filtrar por procedimento..." oninput="loadPatients()" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:190px">
+            <form autocomplete="off" onsubmit="return false" style="display:contents">
+            <input id="patientsFilterNome" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Buscar por nome ou telefone..." oninput="loadPatients()" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:210px">
+            <input id="patientsFilterProc" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Filtrar por procedimento..." oninput="loadPatients()" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:190px">
+            </form>
             <div style="flex:1"></div>
             <button id="patientsExportBtn" onclick="typeof exportPatientsCsv==='function'&&exportPatientsCsv()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:#374151;cursor:pointer">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>

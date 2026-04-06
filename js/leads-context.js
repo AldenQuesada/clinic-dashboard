@@ -189,8 +189,7 @@
                 '<button class="ao-date-apply" id="' + p + 'DateApply">Aplicar</button>' +
               '</div>' +
             '</div>' +
-            '<input type="text" style="display:none" autocomplete="username">' +
-            '<input id="' + p + 'SearchInput" type="text" autocomplete="new-password" role="presentation"' +
+            '<input id="' + p + 'SearchInput" type="text" autocomplete="off" readonly onfocus="this.removeAttribute(\'readonly\')"' +
               ' placeholder="Buscar por nome ou telefone..."' +
               ' style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:200px">' +
           '</div>' +
