@@ -538,10 +538,16 @@
     _img = new Image()
     _img.onload = function () {
       var area = document.getElementById('fmCanvasArea')
-      var areaW = area ? area.clientWidth : _canvas.parentElement.clientWidth
-      var areaH = area ? (area.clientHeight - 44) : (window.innerHeight - 180) // 44 = controls bar
+      var isFS = area && area.classList.contains('fm-fullscreen')
+
+      // Fixed heights: header(64) + progress(44) + controls(40) + borders(10)
+      var fixedH = isFS ? 44 : 158
+      var areaW = isFS ? window.innerWidth : (area ? area.clientWidth : 800)
+      var areaH = window.innerHeight - fixedH
+
       var maxW = areaW - LABEL_MARGIN - 10
       var maxH = areaH
+      // Scale to FIT within available space (never exceed)
       var scale = Math.min(maxW / _img.width, maxH / _img.height)
       _imgW = Math.round(_img.width * scale)
       _imgH = Math.round(_img.height * scale)
