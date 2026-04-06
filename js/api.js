@@ -2427,13 +2427,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoginModal()
   } else {
     _migrateLeadStatuses()  // corrige status de leads existentes no boot
-    // Fallback: se auth.js nao disparou auth-success em 2s, dispara aqui
-    setTimeout(function() {
-      if (!window._authSuccessFired) {
-        console.warn('[api.js] auth-success fallback dispatch')
-        document.dispatchEvent(new CustomEvent('clinicai:auth-success'))
-      }
-    }, 2000)
+    document.dispatchEvent(new CustomEvent('clinicai:auth-success'))
     // Exibir alertas pendentes de finalização no sino
     setTimeout(() => {
       _renderNotificationBell()
