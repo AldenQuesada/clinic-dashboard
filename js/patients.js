@@ -510,8 +510,7 @@ function patientsToggleAll(masterCb) {
 
 // ── Export CSV ──────────────────────────────────────────────
 function exportPatientsCsv() {
-  var allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-  var patients = allLeads.filter(function(l) { return l.phase === 'paciente' })
+  var patients = _patientsAll.length ? _patientsAll : []
   if (!patients.length) { alert('Nenhum paciente para exportar'); return }
 
   var sep = ';'
