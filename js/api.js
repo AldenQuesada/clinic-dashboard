@@ -246,8 +246,7 @@ window.navigateTo = function(pageId) {
     if (window.leadsInitTagsFilter) leadsInitTagsFilter()
   }
   if (pageId === 'patients-all')    loadPatients()
-  // Orcamentos agora e gerenciado por orcamentos.js via sidebar hook
-  // if (pageId === 'orcamentos')      { if (window.renderOrcamentos)     renderOrcamentos() }
+  if (pageId === 'orcamentos')      { if (window.renderOrcamentos)     renderOrcamentos() }
   if (pageId === 'patients-budget') { if (window.renderPatientsBudget) renderPatientsBudget() }
   if (pageId === 'settings-tags')   { if (window.renderSettingsTags)   renderSettingsTags() }
   if (pageId === 'settings-clinic') {
@@ -2427,9 +2426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoginModal()
   } else {
     _migrateLeadStatuses()  // corrige status de leads existentes no boot
-    // NAO disparar auth-success aqui — auth.js ja dispara apos requireAuth
-    // Disparar duplicado causa GoTrueClient lock conflict
-    // document.dispatchEvent(new CustomEvent('clinicai:auth-success'))
+    document.dispatchEvent(new CustomEvent('clinicai:auth-success'))
     // Exibir alertas pendentes de finalização no sino
     setTimeout(() => {
       _renderNotificationBell()

@@ -268,7 +268,6 @@ function _client() {
       ? { global: { headers } }
       : {}
     _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, opts)
-    window._sbShared = _sb
     return _sb
   }
   console.warn('ClinicAI: Supabase SDK não carregado.')
@@ -279,7 +278,6 @@ function _client() {
 // para que as credenciais de tenant sejam reaplicadas nos headers.
 function _resetClient() {
   _sb = null
-  window._sbShared = null
 }
 
 // ── Auditoria de segurança (executa uma vez na inicialização) ─
@@ -802,8 +800,7 @@ function _reRenderAll () {
     if (window.renderInjetaveis)        renderInjetaveis()
 
     // Orçamentos / Financeiro
-    // Desativado: orcamentos agora gerenciado por orcamentos.js
-    // if (window.renderOrcamentos)        renderOrcamentos()
+    if (window.renderOrcamentos)        renderOrcamentos()
     if (window.renderPatientsBudget)    renderPatientsBudget()
     if (window.renderFinanceiro)        renderFinanceiro()
 
@@ -831,7 +828,12 @@ function _reRenderAll () {
 
 // ── Expõe client Supabase para módulos que precisam de queries relacionais ─
 window.sbClient = function() {
-  return window._sbShared || _client()
+  if (window.supabase?.createClient) {
+    const headers = {}
+    if (typeof CLINIC_SECRET !== 'undefined' && CLINIC_SECRET) headers['x-clinic-secret'] = CLINIC_SECRET
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, Object.keys(headers).length ? { global: { headers } } : {})
+  }
+  return null
 }
 
 // ── Auth-success: reinicializa com o tenant correto ──────────
@@ -845,7 +847,7 @@ window.sbClient = function() {
 //   3. sbStartRealtime() é reiniciado com o filtro de clinic_id correto.
 //
 document.addEventListener('clinicai:auth-success', () => {
-  // NAO resetar client — reusar o singleton pra evitar GoTrueClient duplicado
+  _resetClient()   // descarta singleton → recria com headers de tenant
   sbLoadAll().then(() => {
     _reRenderAll()
     try { sbStartRealtime() } catch (err) {
