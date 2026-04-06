@@ -43,34 +43,22 @@
       return
     }
 
-    // Dados vazios — buscar direto do Supabase com timeout
-    var sb = window._sbShared
-    if (!sb) return
-
-    var done = false
-    var timer = setTimeout(function() {
-      if (done) return; done = true
-      // Timeout: tentar getLocal uma ultima vez
-      var retry = window.LeadsService ? LeadsService.getLocal() : []
-      if (retry.length) { _cacheData = retry; _render() }
-    }, 8000)
-
-    sb.rpc('leads_list', { p_search: null, p_status: null, p_limit: 2000, p_offset: 0 }).then(function(res) {
-      if (done) return; done = true; clearTimeout(timer)
-      if (res.error) { console.error('[Orcamentos] leads_list erro:', res.error.message); return }
-      var leads = (res.data || []).map(function(r) {
-        if (r && r.data && typeof r.data === 'object' && !r.id) return Object.assign({}, r.data, { _sb_updated_at: r.updated_at })
-        return r
-      })
-      _cacheData = leads
-      _cacheTs = Date.now()
-      // Salvar no localStorage pra futuro
-      try { localStorage.setItem('clinicai_leads', JSON.stringify(leads)) } catch(e) {}
-      _render()
-    }).catch(function(e) {
-      if (done) return; done = true; clearTimeout(timer)
-      console.error('[Orcamentos] fetch erro:', e)
-    })
+    // Dados vazios — polling ate ter dados (LeadsService pode estar carregando)
+    var attempts = 0
+    var maxAttempts = 10
+    var pollInterval = setInterval(function() {
+      attempts++
+      var data = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+      if (data.length) {
+        clearInterval(pollInterval)
+        _cacheData = data
+        _cacheTs = Date.now()
+        _render()
+      } else if (attempts >= maxAttempts) {
+        clearInterval(pollInterval)
+        console.warn('[Orcamentos] Dados nao carregaram apos ' + maxAttempts + ' tentativas')
+      }
+    }, 1000)
   }
 
   function _render() {
