@@ -457,6 +457,9 @@
    * @param {string} pageId — valor do data-page do sub-item
    */
   function navigateTo(pageId) {
+    // Guard: bloquear navegacao se paciente em consulta sem finalizar
+    if (window._checkPendingConsulta && !window._checkPendingConsulta(pageId)) return
+
     // Auto-collapse sidebar ao navegar
     document.body.classList.add('sidebar-collapsed')
     try { localStorage.setItem('sidebar_collapsed', '1') } catch {}

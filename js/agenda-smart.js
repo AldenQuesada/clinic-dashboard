@@ -121,8 +121,12 @@ const WA_TPLS = {
     fn:(v)=>`Olá, *${v.nome}*! 🌸\n\nNotamos que você não pôde comparecer hoje. Tudo bem?\n\nEstamos à disposição para reagendar quando for melhor para você.\n\n📍 ${v.clinica}`
   },
   pos_atendimento: {
-    label:'Pós-Atendimento',
-    fn:(v)=>`Olá, *${v.nome}*! 🤍\n\nFoi um prazer atender você hoje!\n\nSe tiver qualquer dúvida sobre os cuidados, pode nos chamar.\n\n⭐ Sua avaliação significa muito para nós!\n\n*${v.clinica}*`
+    label:'Pos-Atendimento',
+    fn:(v)=>`Ola, *${v.nome}*!\n\nFoi um prazer atender voce hoje!\n\nSe tiver qualquer duvida sobre os cuidados, pode nos chamar.\n\nSua avaliacao significa muito para nos!\n\n*${v.clinica}*`
+  },
+  avaliacao: {
+    label:'Pedir Avaliacao',
+    fn:(v)=>`Ola, *${v.nome}*!\n\nEsperamos que esteja se sentindo bem apos o atendimento!\n\nSua opiniao nos ajuda muito a melhorar. Poderia nos avaliar?\n\nhttps://g.page/r/YOUR_GOOGLE_REVIEW_LINK/review\n\nMuito obrigado!\n\n*${v.clinica}*`
   },
 }
 
@@ -177,8 +181,41 @@ function _execAuto(item) {
   if (!window.getAppointments) return
   const appt = getAppointments().find(a => a.id === item.apptId)
   if (!appt) return
+  // Nao executar se ja cancelado/no_show/finalizado
+  if (['cancelado','no_show','finalizado'].includes(appt.status)) {
+    _logAuto(appt.id, item.type, 'pulado')
+    return
+  }
+
+  if (item.type === 'whatsapp_confirmacao') {
+    // D-1: enviar confirmacao
+    sendWATemplate(appt.id, 'confirmacao')
+    _logAuto(appt.id, item.type, 'enviado')
+    return
+  }
+  if (item.type === 'whatsapp_chegou_o_dia') {
+    // D-0 08h: enviar lembrete do dia
+    sendWATemplate(appt.id, 'chegou_o_dia')
+    _logAuto(appt.id, item.type, 'enviado')
+    return
+  }
   if (item.type === 'status_aguardando' && ['confirmado','agendado','aguardando_confirmacao'].includes(appt.status)) {
-    apptTransition(appt.id, 'aguardando', 'automação')
+    // 30min antes: mudar status + enviar msg 30min
+    apptTransition(appt.id, 'aguardando', 'automacao')
+    sendWATemplate(appt.id, 'antes')
+    _logAuto(appt.id, item.type, 'enviado')
+    return
+  }
+  if (item.type === 'notif_interna') {
+    // 10min antes: alerta interno para secretaria (handled pelo day panel alerts)
+    _logAuto(appt.id, item.type, 'notificado')
+    return
+  }
+  if (item.type === 'whatsapp_avaliacao') {
+    // D+3: pedir avaliacao Google
+    sendWATemplate(appt.id, 'avaliacao')
+    _logAuto(appt.id, item.type, 'enviado')
+    return
   }
   _logAuto(appt.id, item.type, 'pendente')
 }
@@ -987,9 +1024,24 @@ function confirmFinalize(id) {
 
   const apptFinal = appts[idx]
 
-  // Bloco 3: Fluxos pós
+  // Bloco 3: Fluxos pos
   if (waPos)     sendWATemplate(id, 'pos_atendimento')
-  if (avalGoogle) _logAuto(id, 'fluxo_avaliacao_google', 'pendente')
+  if (avalGoogle) {
+    // Agendar pedido de avaliacao para 3 dias depois
+    var avalDate = new Date(); avalDate.setDate(avalDate.getDate() + 3); avalDate.setHours(14, 0, 0, 0)
+    var q = _getQueue()
+    q.push({
+      id:          'aut_aval_' + Date.now(),
+      apptId:      id,
+      trigger:     'd_plus_3',
+      type:        'whatsapp_avaliacao',
+      scheduledAt: avalDate.toISOString(),
+      executed:    false,
+      payload:     { pacienteNome: apptFinal.pacienteNome, pacienteId: apptFinal.pacienteId }
+    })
+    _saveQueue(q)
+    _logAuto(id, 'fluxo_avaliacao_google', 'agendado_d3')
+  }
   if (parceria)   _logAuto(id, 'fluxo_parceria', 'pendente')
 
   // Bloco 4: Routing de tags — fecha o loop
