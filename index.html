@@ -3651,14 +3651,14 @@
   <!-- END MODAL: CONFIRMAR REAGENDAMENTO -->
 
   <!-- ===================== MODAL: NOVA / EDITAR CONSULTA ===================== -->
-  <div id="apptModal" onclick="if(event.target===this)closeApptModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9200;display:flex;align-items:center;justify-content:center;padding:16px">
-    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:920px;max-height:96vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25)">
+  <div id="apptModal" onclick="if(event.target===this)closeApptModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9200;align-items:center;justify-content:center;padding:16px">
+    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:960px;max-height:96vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25);margin:auto">
 
       <!-- Header com icone -->
-      <div style="padding:18px 24px;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <div style="padding:16px 24px;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#7C3AED,#5B21B6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,0.3)">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#7C3AED,#5B21B6);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(124,58,237,0.3)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </div>
           <div>
             <div style="font-size:16px;font-weight:800;color:#111" id="apptModalTitle">Nova Consulta</div>
@@ -3671,219 +3671,190 @@
       <input type="hidden" id="appt_id" value=""/>
 
       <!-- Corpo 2 colunas -->
-      <div style="flex:1;overflow-y:auto;padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-content:start">
+      <div style="flex:1;overflow-y:auto;padding:16px 24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start">
 
         <!-- ═══ COLUNA ESQUERDA ═══ -->
 
         <!-- Paciente (verde suave) -->
-        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#DCFCE7;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:6px;background:#DCFCE7;display:flex;align-items:center;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
             <span style="font-size:11px;font-weight:800;color:#15803D;text-transform:uppercase;letter-spacing:.04em">Paciente *</span>
           </div>
           <div style="position:relative">
-            <input id="appt_paciente_q" type="text" placeholder="Buscar paciente pelo nome..." autocomplete="off" oninput="apptSearchPatient(this.value)" style="width:100%;padding:8px 11px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
+            <input id="appt_paciente_q" type="text" placeholder="Buscar paciente pelo nome..." autocomplete="off" oninput="apptSearchPatient(this.value)" style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
             <input type="hidden" id="appt_paciente_id"/>
             <input type="hidden" id="appt_paciente_phone"/>
             <div id="apptPatientDrop" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:10;max-height:160px;overflow-y:auto"></div>
           </div>
           <div id="appt_paciente_warn" style="display:none;margin-top:4px;font-size:10px;color:#F59E0B;font-weight:600">Paciente nao encontrado. Cadastre primeiro.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+            <div>
+              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">TIPO PACIENTE</label>
+              <select id="appt_tipo_paciente" style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
+                <option value="novo">Novo</option>
+                <option value="retorno">Retorno</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">INDICADO POR</label>
+              <input id="appt_indicado_por" type="text" placeholder="Nome de quem indicou" autocomplete="off" style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
+            </div>
+          </div>
         </div>
 
         <!-- Profissional + Sala (roxo suave) -->
-        <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#EDE9FE;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:6px;background:#EDE9FE;display:flex;align-items:center;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <span style="font-size:11px;font-weight:800;color:#6D28D9;text-transform:uppercase;letter-spacing:.04em">Equipe</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">PROFISSIONAL</label>
-              <select id="appt_prof" style="width:100%;padding:8px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
+              <select id="appt_prof" onchange="apptAutoSala()" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
             </div>
             <div>
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">SALA</label>
-              <select id="appt_sala" style="width:100%;padding:8px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
+              <select id="appt_sala" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
             </div>
           </div>
         </div>
 
-        <!-- Procedimento -->
-        <div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#E0E7FF;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            </div>
-            <span style="font-size:11px;font-weight:800;color:#3730A3;text-transform:uppercase;letter-spacing:.04em">Procedimento</span>
-          </div>
-          <input id="appt_proc" type="text" placeholder="Ex: Limpeza de Pele, Full Face..." list="apptProcList" oninput="apptProcAutofill(this.value)" style="width:100%;padding:8px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
-          <datalist id="apptProcList"></datalist>
-        </div>
-
-        <!-- Status (azul suave) -->
-        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#DBEAFE;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-            <span style="font-size:11px;font-weight:800;color:#1D4ED8;text-transform:uppercase;letter-spacing:.04em">Status</span>
-          </div>
-          <select id="appt_status" style="width:100%;padding:8px 10px;border:1.5px solid #BFDBFE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
-            <option value="agendado">Agendado</option>
-            <option value="aguardando_confirmacao">Aguard. Confirmacao</option>
-            <option value="confirmado">Confirmado</option>
-            <option value="aguardando">Aguardando</option>
-            <option value="na_clinica">Na Clinica</option>
-            <option value="em_consulta">Em Consulta</option>
-            <option value="em_atendimento">Em Atendimento</option>
-            <option value="finalizado">Finalizado</option>
-            <option value="remarcado">Remarcado</option>
-            <option value="cancelado">Cancelado</option>
-            <option value="no_show">No-show</option>
-          </select>
-        </div>
-
-        <!-- Data + Hora + Duracao -->
-        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#FEF3C7;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <!-- Horario (amarelo suave) -->
+        <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:6px;background:#FEF3C7;display:flex;align-items:center;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
             <span style="font-size:11px;font-weight:800;color:#92400E;text-transform:uppercase;letter-spacing:.04em">Horario</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
             <div>
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">DATA *</label>
-              <input id="appt_data" type="date" style="width:100%;padding:8px 10px;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
+              <input id="appt_data" type="date" style="width:100%;padding:7px 10px;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
             </div>
             <div>
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">INICIO *</label>
-              <input id="appt_inicio" type="time" oninput="apptUpdateEndTime()" style="width:100%;padding:8px 10px;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
+              <input id="appt_inicio" type="time" oninput="apptUpdateEndTime()" style="width:100%;padding:7px 10px;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
             </div>
             <div>
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">DURACAO</label>
-              <select id="appt_duracao" onchange="apptUpdateEndTime()" style="width:100%;padding:8px 10px;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
-                <option value="30">30 min</option>
-                <option value="45">45 min</option>
-                <option value="60" selected>1h</option>
-                <option value="90">1h30</option>
-                <option value="120">2h</option>
-                <option value="150">2h30</option>
-                <option value="180">3h</option>
+              <select id="appt_duracao" onchange="apptUpdateEndTime()" style="width:100%;padding:7px 10px;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
+                <option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>1h</option><option value="90">1h30</option><option value="120">2h</option><option value="150">2h30</option><option value="180">3h</option>
               </select>
               <div id="appt_fim_preview" style="font-size:10px;font-weight:700;color:#7C3AED;margin-top:3px"></div>
             </div>
           </div>
         </div>
 
-        <!-- Tipo + Origem -->
-        <div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <!-- Status (azul suave) -->
+        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:6px;background:#DBEAFE;display:flex;align-items:center;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
-            <span style="font-size:11px;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:.04em">Tipo e Origem</span>
+            <span style="font-size:11px;font-weight:800;color:#1D4ED8;text-transform:uppercase;letter-spacing:.04em">Status</span>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">TIPO DE CONSULTA</label>
-              <select id="appt_tipo" onchange="apptTipoChange()" style="width:100%;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
-                <option value="">--</option>
-                <option value="avaliacao">Avaliacao</option>
-                <option value="retorno">Retorno</option>
-                <option value="procedimento">Procedimento</option>
-                <option value="emergencia">Emergencia</option>
-              </select>
+          <select id="appt_status" style="width:100%;padding:7px 10px;border:1.5px solid #BFDBFE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
+            <option value="agendado">Agendado</option><option value="aguardando_confirmacao">Aguard. Confirmacao</option><option value="confirmado">Confirmado</option><option value="aguardando">Aguardando</option><option value="na_clinica">Na Clinica</option><option value="em_consulta">Em Consulta</option><option value="em_atendimento">Em Atendimento</option><option value="finalizado">Finalizado</option><option value="remarcado">Remarcado</option><option value="cancelado">Cancelado</option><option value="no_show">No-show</option>
+          </select>
+        </div>
+
+        <!-- ═══ COLUNA ESQUERDA (continuacao) ═══ -->
+
+        <!-- Tipo: Consulta / Procedimento (indigo suave) -->
+        <div style="background:#EEF2FF;border:1px solid #C7D2FE;border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:6px;background:#E0E7FF;display:flex;align-items:center;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             </div>
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">ORIGEM</label>
-              <select id="appt_origem" style="width:100%;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
-                <option value="">--</option>
-                <option value="whatsapp">WhatsApp</option>
-                <option value="instagram">Instagram</option>
-                <option value="indicacao">Indicacao</option>
-                <option value="site">Site</option>
-                <option value="direto">Direto</option>
-              </select>
+            <span style="font-size:11px;font-weight:800;color:#3730A3;text-transform:uppercase;letter-spacing:.04em">Tipo de Atendimento *</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button type="button" id="appt_tipo_btn_consulta" onclick="apptSetTipo('avaliacao')" style="flex:1;padding:8px;border:1.5px solid #C7D2FE;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#4F46E5;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              Consulta
+            </button>
+            <button type="button" id="appt_tipo_btn_proc" onclick="apptSetTipo('procedimento')" style="flex:1;padding:8px;border:1.5px solid #C7D2FE;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#fff;color:#4F46E5;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              Procedimento
+            </button>
+          </div>
+          <select id="appt_tipo" style="display:none"><option value="">--</option><option value="avaliacao">Avaliacao</option><option value="retorno">Retorno</option><option value="procedimento">Procedimento</option><option value="emergencia">Emergencia</option></select>
+          <!-- Consulta: Cortesia / Paga -->
+          <div id="apptTipoAvalRow" style="display:none">
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <button type="button" id="appt_aval_cortesia" onclick="apptSetAval('cortesia')" style="flex:1;padding:7px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:#16A34A;transition:all .15s">Cortesia</button>
+              <button type="button" id="appt_aval_paga" onclick="apptSetAval('paga')" style="flex:1;padding:7px;border:1.5px solid #FECACA;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:#DC2626;transition:all .15s">Paga</button>
+            </div>
+            <input type="hidden" name="appt_tipo_aval" id="appt_taval_hidden" value=""/>
+            <input type="radio" name="appt_tipo_aval" id="appt_taval_paga" value="paga" style="display:none"/>
+            <input type="radio" name="appt_tipo_aval" id="appt_taval_cortesia" value="cortesia" style="display:none"/>
+          </div>
+          <!-- Consulta Paga: valor + pagamento -->
+          <div id="apptPagaRow" style="display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">VALOR (R$)</label>
+                <input id="appt_valor" type="number" step="0.01" placeholder="0,00" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
+              </div>
+              <div>
+                <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">PAGAMENTO</label>
+                <select id="appt_forma_pag" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
+                  <option value="">--</option><option value="pix">PIX</option><option value="dinheiro">Dinheiro</option><option value="debito">Debito</option><option value="credito">Credito</option><option value="parcelado">Parcelado</option><option value="entrada_saldo">Entrada + Saldo</option><option value="boleto">Boleto</option><option value="link">Link Pagamento</option><option value="cortesia">Cortesia</option><option value="convenio">Convenio</option>
+                </select>
+              </div>
             </div>
           </div>
-          <!-- Tipo Avaliacao (condicional) -->
-          <div id="apptTipoAvalRow" style="display:none;margin-top:8px">
-            <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">TIPO DE AVALIACAO</label>
-            <div style="display:flex;gap:16px">
-              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:#374151">
-                <input type="radio" name="appt_tipo_aval" id="appt_taval_paga" value="paga" style="accent-color:#7C3AED"> Paga
-              </label>
-              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;color:#374151">
-                <input type="radio" name="appt_tipo_aval" id="appt_taval_cortesia" value="cortesia" style="accent-color:#7C3AED"> Cortesia
-              </label>
+          <!-- Procedimento: lista de procedimentos -->
+          <div id="apptProcRow" style="display:none">
+            <div style="display:flex;gap:6px;margin-bottom:6px">
+              <input id="appt_proc" type="text" list="apptProcList" placeholder="Buscar procedimento..." oninput="apptProcAutofill(this.value)" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
+              <datalist id="apptProcList"></datalist>
+              <input id="appt_proc_valor" type="number" step="0.01" placeholder="R$" style="width:80px;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
+              <button type="button" onclick="apptAddProc()" style="padding:7px 12px;background:#4F46E5;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button>
             </div>
+            <div id="apptProcsList" style="display:flex;flex-direction:column;gap:4px"></div>
+            <div id="apptProcsTotal" style="font-size:11px;font-weight:700;color:#4F46E5;margin-top:4px"></div>
           </div>
         </div>
 
-        <!-- ═══ COLUNA DIREITA (continuacao) ═══ -->
-
-        <!-- Valor + Pagamento (vermelho suave) -->
-        <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#FEE2E2;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <!-- Origem + Obs (cinza suave) -->
+        <div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:6px;background:#F3F4F6;display:flex;align-items:center;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </div>
-            <span style="font-size:11px;font-weight:800;color:#DC2626;text-transform:uppercase;letter-spacing:.04em">Financeiro</span>
+            <span style="font-size:11px;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:.04em">Origem e Notas</span>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">VALOR (R$)</label>
-              <input id="appt_valor" type="number" step="0.01" placeholder="0,00" style="width:100%;padding:8px 10px;border:1.5px solid #FECACA;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
-            </div>
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">FORMA PAGAMENTO</label>
-              <select id="appt_forma_pag" style="width:100%;padding:8px 10px;border:1.5px solid #FECACA;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
-                <option value="">--</option>
-                <option value="pix">PIX</option>
-                <option value="dinheiro">Dinheiro</option>
-                <option value="debito">Debito</option>
-                <option value="credito">Credito</option>
-                <option value="parcelado">Parcelado</option>
-                <option value="entrada_saldo">Entrada + Saldo</option>
-                <option value="boleto">Boleto</option>
-                <option value="link">Link Pagamento</option>
-                <option value="cortesia">Cortesia</option>
-                <option value="convenio">Convenio</option>
-              </select>
-            </div>
+          <div style="margin-bottom:8px">
+            <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">ORIGEM</label>
+            <select id="appt_origem" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
+              <option value="">--</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="indicacao">Indicacao</option><option value="site">Site</option><option value="direto">Direto</option>
+            </select>
           </div>
-        </div>
-
-        <!-- Checklist + Obs (cinza suave) -->
-        <div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:12px;padding:14px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
-            <div style="width:26px;height:26px;border-radius:7px;background:#F3F4F6;display:flex;align-items:center;justify-content:center">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </div>
-            <span style="font-size:11px;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:.04em">Pre-consulta e Notas</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
-            <label style="display:flex;align-items:center;gap:7px;cursor:pointer">
-              <input type="checkbox" id="appt_confirmacao" style="width:14px;height:14px;accent-color:#7C3AED;cursor:pointer"/>
-              <span style="font-size:12px;color:#374151">Confirmacao enviada</span>
+          <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="appt_confirmacao" style="width:13px;height:13px;accent-color:#7C3AED;cursor:pointer"/>
+              <span style="font-size:11px;color:#374151">Confirmacao enviada</span>
             </label>
-            <label style="display:flex;align-items:center;gap:7px;cursor:pointer">
-              <input type="checkbox" id="appt_consentimento" style="width:14px;height:14px;accent-color:#7C3AED;cursor:pointer"/>
-              <span style="font-size:12px;color:#374151">Consentimento de imagem</span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="appt_consentimento" style="width:13px;height:13px;accent-color:#7C3AED;cursor:pointer"/>
+              <span style="font-size:11px;color:#374151">Consentimento de imagem</span>
             </label>
           </div>
-          <textarea id="appt_obs" rows="2" placeholder="Notas sobre a consulta..." style="width:100%;padding:8px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;resize:none;box-sizing:border-box;font-family:inherit"></textarea>
+          <textarea id="appt_obs" rows="2" placeholder="Notas sobre a consulta..." style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px;outline:none;resize:none;box-sizing:border-box;font-family:inherit"></textarea>
         </div>
 
       </div>
 
       <!-- Footer -->
-      <div style="padding:14px 24px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <div style="padding:12px 24px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
         <button id="apptDeleteBtn" onclick="deleteAppt()" style="display:none;padding:8px 14px;background:none;color:#EF4444;border:1px solid #FECACA;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Excluir</button>
         <div style="display:flex;gap:8px;margin-left:auto">
           <button onclick="closeApptModal()" style="padding:8px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
