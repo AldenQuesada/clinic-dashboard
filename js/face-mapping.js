@@ -133,6 +133,7 @@
   var _simPhotoUrl = null     // DEPOIS SIMULADO — gerado automaticamente
   var _activeAngle = null
   var _annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
+  var _lastAnalysis = null  // GPT analysis result
   var _editorMode = 'zones' // 'zones' | 'vectors' | 'analysis'
   var _vectors = []       // [{ id, zone, start:{x,y}, end:{x,y}, curve:0.3 }]
   var _nextVecId = 1
@@ -2316,91 +2317,53 @@
     var srcAngle = _photoUrls['45'] ? '45' : (_photoUrls['front'] ? 'front' : 'lateral')
     if (!_photoUrls[srcAngle]) return
 
-    var apiKey = null
-    try { apiKey = localStorage.getItem('clinicai_openai_key') } catch (e) {}
-    if (!apiKey && window.ClinicEnv) apiKey = window.ClinicEnv.OPENAI_KEY
-
-    if (!apiKey) {
-      console.warn('[FaceMapping] No OpenAI key, using canvas fallback')
-      _generateSimulationCanvas(callback)
-      return
-    }
-
-    // Build treatment list from annotations
-    var anns = _annotations.filter(function (a) { return a.angle === srcAngle })
-    var treatments = anns.map(function (a) {
-      var desc = ZONE_PROMPT_DESC[a.zone] || 'Subtle improvement in ' + a.zone
-      return '- ' + (a.zone || '').replace(/-/g, ' ') + ': ' + desc
-    }).join('\n')
-
-    var prompt = 'Subtly edit this patient\'s facial photo to simulate the result of aesthetic treatments.\n\n' +
-      'CRITICAL RULES:\n' +
-      '- MAINTAIN the person\'s identity, expression, skin texture, and lighting exactly\n' +
-      '- Changes must be VERY SUBTLE and NATURAL — this is medical aesthetics, not a beauty filter\n' +
-      '- Keep the exact same angle, background, hair, and clothing\n' +
-      '- Never add makeup, change skin color, or alter bone structure dramatically\n' +
-      '- The result should look like the same person, just refreshed and rejuvenated\n' +
-      '- Err on the side of LESS change rather than more\n\n' +
-      'TREATMENTS TO SIMULATE:\n' + treatments + '\n\n' +
-      'OVERALL EFFECT: The face should look naturally rejuvenated — as if the person looks 5-8 years younger. ' +
-      'Subtle volume restoration, shadow reduction, and contour refinement. ' +
-      'A medical professional should look at this and say "that\'s a realistic, conservative result."'
-
-    // Convert photo to base64
+    // Convert photo to base64 and call n8n webhook (proxy to OpenAI)
     var img = new Image()
     img.onload = function () {
       var c = document.createElement('canvas')
       c.width = img.width; c.height = img.height
       c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
 
-      c.toBlob(function (blob) {
-        // Show loading state
-        var btn = document.querySelector('.fm-btn-primary')
-        if (btn) { btn.textContent = 'Gerando simulacao IA...' }
+      var anns = _annotations.filter(function (a) { return a.angle === srcAngle })
 
-        // Call OpenAI Images API
-        var formData = new FormData()
-        formData.append('model', 'gpt-image-1')
-        formData.append('image', blob, 'photo.png')
-        formData.append('prompt', prompt)
-        formData.append('size', '1024x1024')
-        formData.append('n', '1')
+      // Show loading state
+      var btn = document.querySelector('.fm-btn-primary')
+      if (btn) { var origBtn = btn.innerHTML; btn.textContent = 'Analisando com IA...' }
 
-        fetch('https://api.openai.com/v1/images/edits', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + apiKey },
-          body: formData,
-        })
-        .then(function (res) { return res.json() })
-        .then(function (data) {
-          if (data.data && data.data[0]) {
-            var imgData = data.data[0]
-            if (imgData.b64_json) {
-              // Convert base64 to blob URL
-              var binary = atob(imgData.b64_json)
-              var arr = new Uint8Array(binary.length)
-              for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
-              var simBlob = new Blob([arr], { type: 'image/png' })
-              if (_simPhotoUrl) URL.revokeObjectURL(_simPhotoUrl)
-              _simPhotoUrl = URL.createObjectURL(simBlob)
-              console.log('[FaceMapping] GPT simulation generated successfully')
-              if (callback) callback()
-            } else if (imgData.url) {
-              // Use URL directly
-              _simPhotoUrl = imgData.url
-              if (callback) callback()
-            }
-          } else {
-            console.error('[FaceMapping] GPT image error:', data)
-            // Fallback to canvas
-            _generateSimulationCanvas(callback)
-          }
-        })
-        .catch(function (err) {
-          console.error('[FaceMapping] GPT request failed:', err)
+      console.log('[FaceMapping] Calling GPT via n8n webhook...')
+
+      fetch('https://flows.aldenquesada.site/webhook/lara-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'facial-ai',
+          photo_base64: b64,
+          annotations: anns.map(function (a) { return { zone: a.zone, treatment: a.treatment, ml: a.ml } }),
+          lead_id: _lead ? (_lead.id || _lead.lead_id) : null,
+          lead_name: _lead ? (_lead.nome || _lead.name) : 'Paciente',
+          source: 'dashboard',
+        }),
+      })
+      .then(function (res) { return res.json() })
+      .then(function (data) {
+        console.log('[FaceMapping] GPT analysis received:', data)
+        if (data.success && data.analysis) {
+          // Store analysis for report
+          _lastAnalysis = data.analysis
+          // For now use canvas fallback for the image (Vision analysis done by GPT)
           _generateSimulationCanvas(callback)
-        })
-      }, 'image/png')
+        } else {
+          console.error('[FaceMapping] GPT error:', data)
+          _generateSimulationCanvas(callback)
+        }
+        if (btn) { btn.innerHTML = origBtn }
+      })
+      .catch(function (err) {
+        console.error('[FaceMapping] Webhook failed:', err)
+        _generateSimulationCanvas(callback)
+        if (btn) { btn.innerHTML = origBtn }
+      })
     }
     img.src = _photoUrls[srcAngle]
   }
