@@ -19,20 +19,23 @@
 
   // ── Config ────────────────────────────────────────────────
 
-  // Cores por ZONA (igual referencia: cada regiao tem cor unica)
+  // Cores por ZONA (cada regiao tem cor unica)
+  // angles: em quais vistas esta zona pode ser marcada
   var ZONES = [
-    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',           color: '#5B7FC7' },
-    { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',    color: '#6BBF8A' },
-    { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',      color: '#9B6FC7' },
-    { id: 'olheira',         label: 'Olheira',           desc: 'Sombra periorbital',  color: '#7ECF7E' },
-    { id: 'sulco',           label: 'Sulco Nasogeniano', desc: 'Suavizacao',          color: '#E8A86B' },
-    { id: 'marionete',       label: 'Marionete',         desc: 'Refinamento',         color: '#D98BA3' },
-    { id: 'pre-jowl',        label: 'Pre-jowl',         desc: 'Transicao',           color: '#E8B8C8' },
-    { id: 'mandibula',       label: 'Mandibula',         desc: 'Contorno',            color: '#C9A96E' },
-    { id: 'mento',           label: 'Mento',             desc: 'Projecao',            color: '#D4A857' },
-    { id: 'labio',           label: 'Labios',            desc: 'Volume / contorno',   color: '#E07B7B' },
-    { id: 'glabela',         label: 'Glabela',           desc: 'Linhas de expressao', color: '#7BA3CF' },
-    { id: 'frontal',         label: 'Frontal',           desc: 'Linhas frontais',     color: '#8ECFC4' },
+    { id: 'glabela',         label: 'Glabela',           desc: 'Linhas de expressao', color: '#7BA3CF', angles: ['front'] },
+    { id: 'frontal',         label: 'Frontal',           desc: 'Linhas frontais',     color: '#8ECFC4', angles: ['front'] },
+    { id: 'olheira',         label: 'Olheira',           desc: 'Sombra periorbital',  color: '#7ECF7E', angles: ['front', '45'] },
+    { id: 'nariz-dorso',     label: 'Nariz Dorso',       desc: 'Projecao dorsal',     color: '#A8B4C8', angles: ['front', 'lateral'] },
+    { id: 'nariz-base',      label: 'Nariz Base',        desc: 'Base / asa nasal',    color: '#B8C4D8', angles: ['front', '45'] },
+    { id: 'labio',           label: 'Labios',            desc: 'Volume / contorno',   color: '#E07B7B', angles: ['front', '45'] },
+    { id: 'sulco',           label: 'Sulco Nasogeniano', desc: 'Suavizacao',          color: '#E8A86B', angles: ['front', '45'] },
+    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',            color: '#5B7FC7', angles: ['45'] },
+    { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',     color: '#6BBF8A', angles: ['45'] },
+    { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',       color: '#9B6FC7', angles: ['45', 'lateral'] },
+    { id: 'marionete',       label: 'Marionete',         desc: 'Refinamento',         color: '#D98BA3', angles: ['45'] },
+    { id: 'pre-jowl',        label: 'Pre-jowl',         desc: 'Transicao',           color: '#E8B8C8', angles: ['45', 'lateral'] },
+    { id: 'mandibula',       label: 'Mandibula',         desc: 'Contorno',            color: '#C9A96E', angles: ['45', 'lateral'] },
+    { id: 'mento',           label: 'Mento',             desc: 'Projecao',            color: '#D4A857', angles: ['45', 'lateral'] },
   ]
 
   var TREATMENTS = [
@@ -103,6 +106,24 @@
     return z ? z.color : '#999'
   }
 
+  function _zonesForAngle(angleId) {
+    if (!angleId) return ZONES
+    return ZONES.filter(function (z) { return z.angles.indexOf(angleId) !== -1 })
+  }
+
+  function _viewProgress() {
+    // Returns status for each angle: { hasPhoto, annotationCount, complete }
+    return ANGLES.map(function (a) {
+      var hasPhoto = !!_photoUrls[a.id]
+      var count = _annotations.filter(function (ann) { return ann.angle === a.id }).length
+      return { id: a.id, label: a.label, hasPhoto: hasPhoto, count: count, complete: hasPhoto && count > 0 }
+    })
+  }
+
+  function _allViewsComplete() {
+    return _viewProgress().every(function (v) { return v.complete })
+  }
+
   // ── Init ──────────────────────────────────────────────────
 
   function init(leadId) {
@@ -169,6 +190,7 @@
 
     root.innerHTML = '<div class="fm-page">' +
       _renderHeader(name) +
+      _renderProgressBar() +
       '<div class="fm-body">' +
         _renderPhotoStrip() +
         _renderCanvasArea() +
@@ -192,6 +214,39 @@
         '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()">' + _icon('save', 14) + ' Salvar</button>' +
       '</div>' +
     '</div>'
+  }
+
+  function _renderProgressBar() {
+    var progress = _viewProgress()
+    var doneCount = progress.filter(function (v) { return v.complete }).length
+
+    var html = '<div class="fm-progress-bar">'
+
+    progress.forEach(function (v, i) {
+      var state = v.complete ? 'done' : (v.hasPhoto ? 'photo' : 'empty')
+      var isActive = _activeAngle === v.id
+      var statusIcon = v.complete
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
+        : (v.hasPhoto ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>')
+
+      html += '<div class="fm-progress-step' + (isActive ? ' active' : '') + ' fm-progress-' + state + '" ' +
+        'onclick="FaceMapping._selectAngle(\'' + v.id + '\')">' +
+        '<span class="fm-progress-icon">' + statusIcon + '</span>' +
+        '<span class="fm-progress-label">' + v.label + '</span>' +
+        '<span class="fm-progress-detail">' +
+          (v.hasPhoto ? (v.count > 0 ? v.count + ' marcacao' + (v.count > 1 ? 'es' : '') : 'Sem marcacoes') : 'Sem foto') +
+        '</span>' +
+      '</div>'
+
+      if (i < progress.length - 1) {
+        html += '<div class="fm-progress-line' + (progress[i].complete ? ' done' : '') + '"></div>'
+      }
+    })
+
+    html += '<div class="fm-progress-summary">' + doneCount + '/3</div>'
+    html += '</div>'
+    return html
   }
 
   function _renderPhotoStrip() {
@@ -246,16 +301,26 @@
   function _renderToolbar() {
     var html = '<div class="fm-toolbar">'
 
-    // Zone selector — with color dots
+    // Zone selector — filtered by active angle
+    var allowedZones = _zonesForAngle(_activeAngle)
+    var allowedIds = allowedZones.map(function (z) { return z.id })
+
     html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Zona Anatomica</div>' +
+      '<div class="fm-tool-section-title">Zona Anatomica' +
+        (_activeAngle ? ' <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-secondary)">(' +
+          (ANGLES.find(function (a) { return a.id === _activeAngle }) || {}).label + ')</span>' : '') +
+      '</div>' +
       '<div class="fm-zone-grid">'
 
     ZONES.forEach(function (z) {
-      html += '<button class="fm-zone-btn' + (_selectedZone === z.id ? ' active' : '') + '" ' +
-        'onclick="FaceMapping._selectZone(\'' + z.id + '\')" title="' + z.desc + '" ' +
-        'data-zone="' + z.id + '">' +
-        '<span class="fm-zone-dot" style="background:' + z.color + '"></span>' +
+      var allowed = allowedIds.indexOf(z.id) !== -1
+      html += '<button class="fm-zone-btn' + (_selectedZone === z.id ? ' active' : '') +
+        (!allowed ? ' disabled' : '') + '" ' +
+        (allowed ? 'onclick="FaceMapping._selectZone(\'' + z.id + '\')" ' : '') +
+        'title="' + z.desc + (allowed ? '' : ' (nao se aplica a esta vista)') + '" ' +
+        'data-zone="' + z.id + '"' +
+        (!allowed ? ' disabled' : '') + '>' +
+        '<span class="fm-zone-dot" style="background:' + (allowed ? z.color : '#D1D5DB') + '"></span>' +
         z.label + '</button>'
     })
 
@@ -868,6 +933,13 @@
 
   function _selectAngle(angle) {
     _activeAngle = angle
+    // Deselect zone if not allowed on new angle
+    if (_selectedZone) {
+      var allowed = _zonesForAngle(angle)
+      var ids = allowed.map(function (z) { return z.id })
+      if (ids.indexOf(_selectedZone) === -1) _selectedZone = null
+    }
+    _selAnn = null
     _render()
     setTimeout(_initCanvas, 50)
   }
@@ -923,6 +995,15 @@
   function _exportReport() {
     if (_annotations.length === 0) {
       alert('Adicione marcacoes antes de exportar.')
+      return
+    }
+    var progress = _viewProgress()
+    var missing = progress.filter(function (v) { return !v.complete })
+    if (missing.length > 0) {
+      var names = missing.map(function (v) {
+        return v.label + (!v.hasPhoto ? ' (sem foto)' : ' (sem marcacoes)')
+      }).join(', ')
+      alert('Complete todas as 3 vistas antes de exportar.\nFalta: ' + names)
       return
     }
 
@@ -1047,6 +1128,8 @@
       'zigoma-anterior': { title: 'Olhar iluminado', desc: 'Sombra preenchida' },
       'temporal':        { title: 'Vetor de sustentacao', desc: 'Lifting sem cirurgia' },
       'olheira':         { title: 'Olhar mais descansado', desc: 'Sombra tratada' },
+      'nariz-dorso':     { title: 'Nariz harmonizado', desc: 'Dorso projetado naturalmente' },
+      'nariz-base':      { title: 'Base nasal refinada', desc: 'Proporcao equilibrada' },
       'sulco':           { title: 'Sulco suavizado', desc: 'Sem excesso de volume' },
       'marionete':       { title: 'Expressao mais leve', desc: 'Refinamento da marionete' },
       'pre-jowl':        { title: 'Transicao suave', desc: 'Contorno mandibular continuo' },
