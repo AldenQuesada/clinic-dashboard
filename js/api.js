@@ -1057,7 +1057,8 @@ function apptCardSmall(a) {
     onmouseenter="_apptTip(event,'${a.id}')" onmouseleave="_apptTipHide()"
     style="background:${s.bg};border-left:3px solid ${s.color}${['cancelado','no_show'].includes(a.status)?';border-left-style:dashed':''};border-radius:6px;padding:4px 6px;cursor:${canDrag?'grab':'default'};${cardOpacity}position:absolute;top:0;left:2px;right:2px;height:${cardHeight}px;z-index:2;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
     <div style="font-size:10px;font-weight:700;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome||'Paciente'}</div>
-    <div style="font-size:9px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio||''}${a.horaFim?' – '+a.horaFim:''}</div>
+    <div style="font-size:9px;color:#4B5563;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.procedimento || (a.tipoConsulta==='avaliacao'?'Avaliacao':a.tipoConsulta||'—')}</div>
+    <div style="font-size:8px;color:#9CA3AF;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio||''}${a.horaFim?' – '+a.horaFim:''}</div>
     ${!isCancelado && allowed.length ? `<select onclick="event.stopPropagation()" onchange="event.stopPropagation();_apptCardStatusChange('${a.id}',this.value);this.value=''" style="width:100%;margin-top:2px;padding:2px 4px;font-size:9px;font-weight:700;color:${s.color};background:${s.bg};border:1px solid ${s.color};border-radius:4px;cursor:pointer;outline:none;appearance:auto">
       <option value="">${s.label}</option>
       ${optionsHtml}
