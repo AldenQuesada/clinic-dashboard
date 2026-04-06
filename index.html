@@ -963,8 +963,8 @@
             </div>
             <select id="patientsFilterPeriod" style="display:none"><option value=""></option></select>
             <form autocomplete="off" onsubmit="return false" style="display:contents">
-            <input id="patientsFilterNome" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Buscar por nome ou telefone..." oninput="loadPatients()" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:210px">
-            <input id="patientsFilterProc" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Filtrar por procedimento..." oninput="loadPatients()" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:190px">
+            <input id="patientsFilterNome" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Buscar por nome ou telefone..." oninput="clearTimeout(window._pSearchTimer);window._pSearchTimer=setTimeout(loadPatients,200)" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:210px">
+            <input id="patientsFilterProc" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Filtrar por procedimento..." oninput="clearTimeout(window._pProcTimer);window._pProcTimer=setTimeout(loadPatients,200)" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:190px">
             </form>
             <div style="flex:1"></div>
             <button id="patientsExportBtn" onclick="typeof exportPatientsCsv==='function'&&exportPatientsCsv()" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:13px;font-weight:500;color:#374151;cursor:pointer">
@@ -987,24 +987,26 @@
             <div style="background:#fff;border-radius:12px;border:1px solid #F3F4F6;overflow:hidden">
               <table style="width:100%;border-collapse:collapse;table-layout:fixed">
                 <colgroup>
-                  <col style="width:44px"><col style="width:200px"><col style="width:140px">
-                  <col style="width:160px"><col style="width:120px"><col style="width:100px"><col style="width:80px">
+                  <col style="width:44px"><col style="width:220px">
+                  <col style="width:160px"><col style="width:120px"><col style="width:100px"><col style="width:110px">
                 </colgroup>
                 <thead>
                   <tr style="background:#F9FAFB;border-bottom:1px solid #F3F4F6">
                     <th style="padding:12px 8px 12px 16px;width:32px"><input type="checkbox" id="patientsSelectAll" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer"></th>
-                    <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Nome</th>
-                    <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Telefone</th>
+                    <th onclick="patientsSortBy('name')" style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none">Nome</th>
                     <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Procedimentos</th>
-                    <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Receita Total</th>
+                    <th onclick="patientsSortBy('revenue')" style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;user-select:none">Receita</th>
                     <th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Status</th>
                     <th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Acoes</th>
                   </tr>
                 </thead>
                 <tbody id="patientsTableBody">
-                  <tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Carregando pacientes...</td></tr>
+                  <tr><td colspan="6" style="text-align:center;padding:40px;color:#9CA3AF">Carregando pacientes...</td></tr>
                 </tbody>
               </table>
+            </div>
+            <div style="padding:16px 0;text-align:center">
+              <button id="patientsLoadMore" onclick="patientsLoadMore()" style="display:none;background:#fff;border:1px solid #e5e7eb;padding:8px 20px;border-radius:8px;font-size:13px;color:#6b7280;cursor:pointer;font-weight:500">Carregar mais</button>
             </div>
           </div>
 

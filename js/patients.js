@@ -151,67 +151,135 @@ function clearPatientsFilters() {
   loadPatients()
 }
 
+var _patientsAll = []
+var _patientsPageSize = 50
+var _patientsSortField = 'name'
+var _patientsSortDir = 'asc'
+
+var _pStatusLabel = {
+  active: 'Ativo', inactive: 'Inativo', treatment: 'Em Tratamento',
+  post_consult: 'Pos-consulta', post_proc: 'Pos-procedimento',
+  maintenance: 'Manutencao', reactivation: 'Reativacao',
+}
+var _pStatusColor = {
+  active: '#10B981', inactive: '#9CA3AF', treatment: '#7C3AED',
+  post_consult: '#3B82F6', post_proc: '#F59E0B',
+  maintenance: '#06B6D4', reactivation: '#EF4444',
+}
+
+function _pEsc(s) { return (s || '').replace(/</g, '&lt;').replace(/"/g, '&quot;') }
+function _pFmtPhone(p) {
+  if (!p) return ''
+  var d = p.replace(/\D/g, '')
+  if (d.length === 13) return '(' + d.slice(2,4) + ') ' + d.slice(4,9) + '-' + d.slice(9)
+  if (d.length === 12) return '(' + d.slice(2,4) + ') ' + d.slice(4,8) + '-' + d.slice(8)
+  return p
+}
+
 function renderPatientsTable(patients) {
-  const tbody = document.getElementById('patientsTableBody')
+  var tbody = document.getElementById('patientsTableBody')
   if (!tbody) return
 
-  // Atualizar badge
+  // Sort
+  patients.sort(function(a, b) {
+    var va, vb
+    if (_patientsSortField === 'name') {
+      va = (a.name || '').toLowerCase(); vb = (b.name || '').toLowerCase()
+    } else if (_patientsSortField === 'phone') {
+      va = a.phone || ''; vb = b.phone || ''
+    } else if (_patientsSortField === 'revenue') {
+      va = a.totalRevenue || 0; vb = b.totalRevenue || 0
+    } else {
+      va = a._createdAt || a.createdAt || ''; vb = b._createdAt || b.createdAt || ''
+    }
+    if (va < vb) return _patientsSortDir === 'asc' ? -1 : 1
+    if (va > vb) return _patientsSortDir === 'asc' ? 1 : -1
+    return 0
+  })
+
+  _patientsAll = patients
+
+  // Badge
   var countEl = document.getElementById('patientsCountNum')
   if (countEl) countEl.textContent = patients.length
 
-  // Period bar active state
-  var periodBar = document.getElementById('patientsPeriodBar')
-  if (periodBar) {
-    var currentPeriod = document.getElementById('patientsFilterPeriod')?.value || ''
-    periodBar.querySelectorAll('.ao-period-btn').forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.period === currentPeriod)
-    })
-  }
-
   if (!patients.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Nenhum paciente encontrado</td></tr>'
+    _pUpdateLoadMore()
     return
   }
 
-  var statusLabel = {
-    active: 'Ativo', inactive: 'Inativo', treatment: 'Em Tratamento',
-    post_consult: 'Pos-consulta', post_proc: 'Pos-procedimento',
-    maintenance: 'Manutencao', reactivation: 'Reativacao',
-  }
-  var statusColor = {
-    active: '#10B981', inactive: '#9CA3AF', treatment: '#7C3AED',
-    post_consult: '#3B82F6', post_proc: '#F59E0B',
-    maintenance: '#06B6D4', reactivation: '#EF4444',
-  }
+  // Renderizar primeira pagina
+  tbody.innerHTML = ''
+  _pRenderRows(patients.slice(0, _patientsPageSize))
+  _pUpdateLoadMore()
+}
 
-  function _esc(s) { return (s || '').replace(/</g, '&lt;').replace(/"/g, '&quot;') }
-  function _fmtPhone(p) {
-    if (!p) return ''
-    var d = p.replace(/\D/g, '')
-    if (d.length === 13) return '(' + d.slice(2,4) + ') ' + d.slice(4,9) + '-' + d.slice(9)
-    if (d.length === 12) return '(' + d.slice(2,4) + ') ' + d.slice(4,8) + '-' + d.slice(8)
-    return p
-  }
+function _pRenderRows(rows) {
+  var tbody = document.getElementById('patientsTableBody')
+  if (!tbody) return
 
-  tbody.innerHTML = patients.map(function(p) {
+  rows.forEach(function(p) {
     var procs = Array.isArray(p.proceduresDone) ? p.proceduresDone.join(', ') : (p.procedures || '')
     var revenue = typeof p.totalRevenue === 'number' && p.totalRevenue > 0
       ? p.totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
       : ''
     var status = p.status || 'active'
-    var color = statusColor[status] || '#6B7280'
-    var label = statusLabel[status] || status
+    var color = _pStatusColor[status] || '#6B7280'
+    var label = _pStatusLabel[status] || status
+    var waLink = p.phone ? 'https://wa.me/' + p.phone.replace(/\D/g, '') : '#'
 
-    return '<tr style="border-bottom:1px solid #F9FAFB;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'#FAFAFA\'" onmouseout="this.style.background=\'\'">' +
-      '<td style="padding:12px 8px 12px 16px"><input type="checkbox" style="width:14px;height:14px;accent-color:#7C3AED;cursor:pointer" onclick="event.stopPropagation()"></td>' +
-      '<td style="padding:12px 16px"><div style="font-size:13px;font-weight:600;color:#111827">' + _esc(p.name || '') + '</div><div style="font-size:12px;color:#6B7280">' + _fmtPhone(p.phone || '') + '</div></td>' +
-      '<td style="padding:12px 16px;font-size:12px;color:#6B7280">' + _fmtPhone(p.phone || '') + '</td>' +
-      '<td style="padding:12px 16px;font-size:12px;color:#6B7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _esc(procs || '—') + '</td>' +
+    var tr = document.createElement('tr')
+    tr.dataset.pid = '1'
+    tr.style.cssText = 'border-bottom:1px solid #F9FAFB;cursor:pointer;transition:background .1s'
+    tr.onmouseenter = function() { tr.style.background = '#FAFAFA' }
+    tr.onmouseleave = function() { tr.style.background = '' }
+    tr.onclick = function(e) {
+      if (e.target.closest('button,input,a')) return
+      if (window.viewLead) viewLead(p.id)
+    }
+
+    tr.innerHTML =
+      '<td style="padding:12px 8px 12px 16px"><input type="checkbox" style="width:14px;height:14px;accent-color:#10B981;cursor:pointer" onclick="event.stopPropagation()"></td>' +
+      '<td style="padding:12px 16px"><div style="font-size:13px;font-weight:600;color:#111827">' + _pEsc(p.name || '') + '</div><div style="font-size:12px;color:#6B7280">' + _pFmtPhone(p.phone || '') + '</div></td>' +
+      '<td style="padding:12px 16px;font-size:12px;color:#6B7280;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + _pEsc(procs || '—') + '</td>' +
       '<td style="padding:12px 16px;font-size:13px;font-weight:600;color:#111">' + (revenue || '—') + '</td>' +
       '<td style="padding:12px 16px"><span style="display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:' + color + ';background:' + color + '1A;border-radius:6px;padding:3px 10px">' + label + '</span></td>' +
-      '<td style="padding:12px 16px;text-align:center"><button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _esc(p.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;color:#374151">Ver</button></td>' +
-    '</tr>'
-  }).join('')
+      '<td style="padding:12px 16px;text-align:center">' +
+        '<a href="' + waLink + '" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px;color:#374151;text-decoration:none;margin-right:4px" title="WhatsApp">' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
+        '</a>' +
+        '<button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _pEsc(p.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;color:#374151">Ver</button>' +
+      '</td>'
+
+    tbody.appendChild(tr)
+  })
+}
+
+function _pUpdateLoadMore() {
+  var btn = document.getElementById('patientsLoadMore')
+  if (!btn) return
+  var rendered = document.getElementById('patientsTableBody')?.querySelectorAll('tr[data-pid]').length || 0
+  var remaining = _patientsAll.length - rendered
+  if (remaining > 0) {
+    btn.textContent = 'Carregar mais ' + remaining + (remaining === 1 ? ' paciente' : ' pacientes')
+    btn.style.display = ''
+  } else {
+    btn.style.display = 'none'
+  }
+}
+
+function patientsLoadMore() {
+  var rendered = document.getElementById('patientsTableBody')?.querySelectorAll('tr[data-pid]').length || 0
+  var next = _patientsAll.slice(rendered, rendered + _patientsPageSize)
+  if (next.length) _pRenderRows(next)
+  _pUpdateLoadMore()
+}
+
+function patientsSortBy(field) {
+  if (_patientsSortField === field) _patientsSortDir = _patientsSortDir === 'asc' ? 'desc' : 'asc'
+  else { _patientsSortField = field; _patientsSortDir = 'asc' }
+  loadPatients()
 }
 
 // ── Export CSV ──────────────────────────────────────────────
@@ -285,6 +353,8 @@ window.onPatientsPeriodChange  = onPatientsPeriodChange
 window.clearPatientsFilters   = clearPatientsFilters
 window.exportPatientsCsv      = exportPatientsCsv
 window.patientsPeriodClick    = patientsPeriodClick
+window.patientsLoadMore       = patientsLoadMore
+window.patientsSortBy         = patientsSortBy
 
 // ─── Helper p/ inputs nas configurações (usado pelo index.html inline) ───────
 function settingsInputHtml(id, type, label, placeholder) {
