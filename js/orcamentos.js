@@ -10,6 +10,8 @@
   var _sortField = 'name'
   var _sortDir = 'asc'
   var _period = ''
+  var _customFrom = null
+  var _customTo = null
   var _selectedIds = new Set()
   var _cacheData = null
   var _cacheTs = 0
@@ -70,7 +72,16 @@
     }
 
     // Filtro periodo
-    if (_period && _period !== 'custom') {
+    if (_period === 'custom' && _customFrom) {
+      var from = new Date(_customFrom + 'T00:00:00')
+      var to = _customTo ? new Date(_customTo + 'T23:59:59') : new Date()
+      leads = leads.filter(function(l) {
+        var d = l.created_at || l.createdAt
+        if (!d) return false
+        var dt = new Date(d)
+        return dt >= from && dt <= to
+      })
+    } else if (_period && _period !== 'custom') {
       var cutoff = new Date()
       cutoff.setDate(cutoff.getDate() - parseInt(_period))
       leads = leads.filter(function(l) {
@@ -106,7 +117,9 @@
     var taxa = leads.length ? Math.round((aprovados / leads.length) * 100) : 0
 
     var periodoLabel = { '7': '7 dias', '30': '30 dias', '90': '90 dias', '365': '1 ano' }
-    var periodoSub = _period ? periodoLabel[_period] || _period + 'd' : 'todos'
+    var periodoSub = _period === 'custom' && _customFrom
+      ? _customFrom.split('-').reverse().join('/') + (_customTo ? ' a ' + _customTo.split('-').reverse().join('/') : '')
+      : _period ? periodoLabel[_period] || _period + 'd' : 'todos'
 
     var kpiTotal = document.getElementById('kpiOrcTotal')
     if (kpiTotal) kpiTotal.textContent = leads.length
@@ -273,6 +286,22 @@
     var bar = document.getElementById('orcPeriodBar')
     if (bar) bar.querySelectorAll('.ao-period-btn').forEach(function(b) { b.classList.remove('active') })
     btn.classList.add('active')
+
+    // Mostrar/esconder date pickers
+    var customDates = document.getElementById('orcCustomDates')
+    if (customDates) customDates.style.display = _period === 'custom' ? 'flex' : 'none'
+
+    if (_period !== 'custom') {
+      _customFrom = null
+      _customTo = null
+      _render()
+    }
+  }
+
+  function applyCustomPeriod() {
+    _customFrom = document.getElementById('orcDateFrom')?.value || null
+    _customTo = document.getElementById('orcDateTo')?.value || null
+    if (!_customFrom) { alert('Selecione a data inicial'); return }
     _render()
   }
 
@@ -408,6 +437,7 @@
   window.orcLoadMore = loadMore
   window.orcSortBy = sortBy
   window.orcPeriodClick = periodClick
+  window.orcApplyCustomPeriod = applyCustomPeriod
   window.orcToggleAll = toggleAll
   window.exportOrcamentosCsv = exportCsv
 

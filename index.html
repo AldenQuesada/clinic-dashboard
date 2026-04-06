@@ -1847,6 +1847,13 @@
               <button class="ao-period-btn" data-period="30" onclick="orcPeriodClick(this)">30d</button>
               <button class="ao-period-btn" data-period="90" onclick="orcPeriodClick(this)">90d</button>
               <button class="ao-period-btn" data-period="365" onclick="orcPeriodClick(this)">1a</button>
+              <button class="ao-period-btn" data-period="custom" onclick="orcPeriodClick(this)">Periodo</button>
+            </div>
+            <div id="orcCustomDates" style="display:none;align-items:center;gap:6px">
+              <input id="orcDateFrom" type="date" style="padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none">
+              <span style="font-size:12px;color:#9CA3AF">a</span>
+              <input id="orcDateTo" type="date" style="padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;font-family:inherit;outline:none">
+              <button onclick="orcApplyCustomPeriod()" style="padding:6px 12px;border:none;border-radius:8px;background:#F59E0B;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Aplicar</button>
             </div>
             <input id="orcFilterNome" type="text" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="Buscar por nome ou telefone..." oninput="clearTimeout(window._orcSearchTimer);window._orcSearchTimer=setTimeout(loadOrcamentos,200)" style="padding:7px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;width:230px">
             <div style="flex:1"></div>
