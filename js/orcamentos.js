@@ -105,25 +105,28 @@
     })
     var taxa = leads.length ? Math.round((aprovados / leads.length) * 100) : 0
 
+    var periodoLabel = { '7': '7 dias', '30': '30 dias', '90': '90 dias', '365': '1 ano' }
+    var periodoSub = _period ? periodoLabel[_period] || _period + 'd' : 'todos'
+
     var kpiTotal = document.getElementById('kpiOrcTotal')
     if (kpiTotal) kpiTotal.textContent = leads.length
     var kpiTotalSub = document.getElementById('kpiOrcTotalSub')
-    if (kpiTotalSub) kpiTotalSub.textContent = 'todos os orcamentos'
+    if (kpiTotalSub) kpiTotalSub.textContent = periodoSub
 
     var kpiAbertos = document.getElementById('kpiOrcAbertos')
     if (kpiAbertos) kpiAbertos.textContent = abertos
     var kpiAbertosSub = document.getElementById('kpiOrcAbertosSub')
-    if (kpiAbertosSub) kpiAbertosSub.textContent = 'aguardando resposta'
+    if (kpiAbertosSub) kpiAbertosSub.textContent = 'pendentes'
 
     var kpiAprovados = document.getElementById('kpiOrcAprovados')
     if (kpiAprovados) kpiAprovados.textContent = aprovados
     var kpiAprovadosSub = document.getElementById('kpiOrcAprovadosSub')
-    if (kpiAprovadosSub) kpiAprovadosSub.textContent = 'convertidos'
+    if (kpiAprovadosSub) kpiAprovadosSub.textContent = 'fechados'
 
     var kpiTaxa = document.getElementById('kpiOrcTaxa')
     if (kpiTaxa) kpiTaxa.textContent = taxa + '%'
     var kpiTaxaSub = document.getElementById('kpiOrcTaxaSub')
-    if (kpiTaxaSub) kpiTaxaSub.textContent = aprovados + ' de ' + leads.length
+    if (kpiTaxaSub) kpiTaxaSub.textContent = aprovados + '/' + leads.length
 
     // Valores financeiros
     var valorTotal = 0, valorRecuperado = 0, valorAberto = 0
@@ -142,7 +145,7 @@
     var elValTotal = document.getElementById('kpiOrcValorTotal')
     if (elValTotal) elValTotal.textContent = fmtR(valorTotal)
     var elValTotalSub = document.getElementById('kpiOrcValorTotalSub')
-    if (elValTotalSub) elValTotalSub.textContent = 'soma de ' + leads.length + ' orcamentos'
+    if (elValTotalSub) elValTotalSub.textContent = periodoSub
 
     var elValRec = document.getElementById('kpiOrcValorRec')
     if (elValRec) elValRec.textContent = fmtR(valorRecuperado)
