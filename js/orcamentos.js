@@ -432,6 +432,288 @@
     el.className = 'kpi-trend ' + (direction > 0 ? 'kpi-trend-up' : direction < 0 ? 'kpi-trend-down' : 'kpi-trend-neutral')
   }
 
+  // ── Popup Premium: Novo Orcamento ───────────────────────────
+  function openNewOrcamentoModal() {
+    var existing = document.getElementById('novoOrcModal')
+    if (existing) existing.remove()
+
+    // Carregar procedimentos para datalist
+    var techs = typeof getTechnologies === 'function' ? getTechnologies() : []
+    var procOpts = techs.map(function(t) { return '<option value="' + _esc(t.nome) + '"/>' }).join('')
+
+    // Carregar leads para busca
+    var allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+
+    var m = document.createElement('div')
+    m.id = 'novoOrcModal'
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px'
+    m.addEventListener('click', function(e) { if (e.target === m) m.remove() })
+
+    m.innerHTML =
+      '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:580px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.25)">' +
+
+        // ── Header com icone ──────────────────────────────────
+        '<div style="padding:22px 28px 18px;border-bottom:1px solid #F3F4F6">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+            '<div style="display:flex;align-items:center;gap:12px">' +
+              '<div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(245,158,11,0.3)">' +
+                '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' +
+              '</div>' +
+              '<div>' +
+                '<h2 style="margin:0;font-size:18px;font-weight:800;color:#111">Novo Orcamento</h2>' +
+                '<p style="margin:2px 0 0;font-size:12px;color:#9CA3AF">Registre o orcamento do paciente</p>' +
+              '</div>' +
+            '</div>' +
+            '<button onclick="document.getElementById(\'novoOrcModal\').remove()" style="width:32px;height:32px;border-radius:50%;background:#F3F4F6;border:none;cursor:pointer;font-size:16px;color:#6B7280;display:flex;align-items:center;justify-content:center">x</button>' +
+          '</div>' +
+        '</div>' +
+
+        // ── Corpo ─────────────────────────────────────────────
+        '<div style="flex:1;overflow-y:auto;padding:20px 28px">' +
+
+          // Secao: Paciente (verde suave)
+          '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:16px;margin-bottom:16px">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+              '<div style="width:28px;height:28px;border-radius:8px;background:#DCFCE7;display:flex;align-items:center;justify-content:center">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+              '</div>' +
+              '<span style="font-size:12px;font-weight:800;color:#15803D;text-transform:uppercase;letter-spacing:.04em">Paciente</span>' +
+            '</div>' +
+            '<div style="position:relative">' +
+              '<input id="norcPaciente" type="text" placeholder="Buscar paciente por nome..." autocomplete="off" oninput="norcSearchPatient(this.value)" style="width:100%;padding:10px 14px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff"/>' +
+              '<input id="norcPacienteId" type="hidden" value=""/>' +
+              '<input id="norcPacientePhone" type="hidden" value=""/>' +
+              '<div id="norcPatientDrop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #E5E7EB;border-radius:8px;max-height:200px;overflow-y:auto;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.1)"></div>' +
+            '</div>' +
+            '<div id="norcPatientSelected" style="display:none;margin-top:8px;padding:8px 12px;background:#fff;border-radius:8px;border:1px solid #BBF7D0;display:none">' +
+              '<div style="font-size:12px;font-weight:600;color:#15803D" id="norcPatientName"></div>' +
+              '<div style="font-size:11px;color:#6B7280" id="norcPatientPhone"></div>' +
+            '</div>' +
+          '</div>' +
+
+          // Secao: Procedimento + Valor (branco)
+          '<div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:12px;padding:16px;margin-bottom:16px">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+              '<div style="width:28px;height:28px;border-radius:8px;background:#EDE9FE;display:flex;align-items:center;justify-content:center">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' +
+              '</div>' +
+              '<span style="font-size:12px;font-weight:800;color:#6D28D9;text-transform:uppercase;letter-spacing:.04em">Procedimento</span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+              '<div style="grid-column:1/span 2">' +
+                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">PROCEDIMENTO *</label>' +
+                '<input id="norcProc" type="text" list="norcProcList" placeholder="Ex: Full Face 5D, Botox..." style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>' +
+                '<datalist id="norcProcList">' + procOpts + '</datalist>' +
+              '</div>' +
+              '<div>' +
+                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">VALOR (R$) *</label>' +
+                '<input id="norcValor" type="number" placeholder="0,00" min="0" step="0.01" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>' +
+              '</div>' +
+              '<div>' +
+                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">QUANTIDADE</label>' +
+                '<input id="norcQtd" type="number" value="1" min="1" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Secao: Financeiro (vermelho suave)
+          '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:16px;margin-bottom:16px">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+              '<div style="width:28px;height:28px;border-radius:8px;background:#FEE2E2;display:flex;align-items:center;justify-content:center">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' +
+              '</div>' +
+              '<span style="font-size:12px;font-weight:800;color:#DC2626;text-transform:uppercase;letter-spacing:.04em">Condicoes</span>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+              '<div>' +
+                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">VALIDADE</label>' +
+                '<input id="norcValidade" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #FECACA;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff"/>' +
+              '</div>' +
+              '<div>' +
+                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">FORMA DE PAGAMENTO</label>' +
+                '<select id="norcFormaPag" style="width:100%;padding:9px 12px;border:1.5px solid #FECACA;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">' +
+                  '<option value="">Selecione...</option>' +
+                  '<option value="pix">PIX</option>' +
+                  '<option value="dinheiro">Dinheiro</option>' +
+                  '<option value="debito">Debito</option>' +
+                  '<option value="credito">Credito</option>' +
+                  '<option value="parcelado">Parcelado</option>' +
+                  '<option value="boleto">Boleto</option>' +
+                  '<option value="cortesia">Cortesia</option>' +
+                '</select>' +
+              '</div>' +
+              '<div style="grid-column:1/span 2">' +
+                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">DESCONTO / CASHBACK</label>' +
+                '<input id="norcDesconto" type="text" placeholder="Ex: 10% cashback em procedimentos" style="width:100%;padding:9px 12px;border:1.5px solid #FECACA;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff"/>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Secao: Observacoes (azul suave)
+          '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:16px">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+              '<div style="width:28px;height:28px;border-radius:8px;background:#DBEAFE;display:flex;align-items:center;justify-content:center">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+              '</div>' +
+              '<span style="font-size:12px;font-weight:800;color:#1D4ED8;text-transform:uppercase;letter-spacing:.04em">Observacoes</span>' +
+            '</div>' +
+            '<textarea id="norcObs" rows="2" placeholder="Notas sobre o orcamento, objecoes do paciente..." style="width:100%;padding:9px 12px;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;resize:vertical;font-family:inherit;background:#fff"></textarea>' +
+          '</div>' +
+
+        '</div>' +
+
+        // ── Footer ────────────────────────────────────────────
+        '<div style="padding:16px 28px 22px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center">' +
+          '<button onclick="document.getElementById(\'novoOrcModal\').remove()" style="padding:10px 20px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Cancelar</button>' +
+          '<button onclick="norcSave()" style="padding:10px 24px;background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,0.3);display:flex;align-items:center;gap:8px">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+            'Criar Orcamento' +
+          '</button>' +
+        '</div>' +
+
+      '</div>'
+
+    document.body.appendChild(m)
+
+    // Default validade: 30 dias
+    var d30 = new Date(); d30.setDate(d30.getDate() + 30)
+    var valEl = document.getElementById('norcValidade')
+    if (valEl) valEl.value = d30.toISOString().slice(0, 10)
+  }
+
+  // ── Busca paciente no popup ────────────────────────────────
+  function norcSearchPatient(q) {
+    var drop = document.getElementById('norcPatientDrop')
+    if (!drop) return
+    if (!q.trim()) { drop.style.display = 'none'; return }
+
+    var leads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+    var matches = leads.filter(function(l) {
+      return (l.nome || l.name || '').toLowerCase().includes(q.toLowerCase())
+    }).slice(0, 8)
+
+    if (!matches.length) { drop.style.display = 'none'; return }
+
+    drop.innerHTML = matches.map(function(l) {
+      var nome = l.nome || l.name || 'Paciente'
+      var phone = l.phone || l.whatsapp || ''
+      var phase = l.phase || 'lead'
+      var phaseColors = { lead:'#3B82F6', agendado:'#8B5CF6', compareceu:'#10B981', paciente:'#059669', orcamento:'#F59E0B' }
+      var phaseLabels = { lead:'Lead', agendado:'Agendado', compareceu:'Compareceu', paciente:'Paciente', orcamento:'Orcamento' }
+      return '<div data-id="' + (l.id || '') + '" data-nome="' + _esc(nome) + '" data-phone="' + _esc(phone) + '" ' +
+        'style="padding:10px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between" ' +
+        'onmouseover="this.style.background=\'#F0FDF4\'" onmouseout="this.style.background=\'\'">' +
+          '<div>' +
+            '<div style="font-weight:600;color:#111">' + _esc(nome) + '</div>' +
+            (phone ? '<div style="font-size:11px;color:#9CA3AF">' + _fmtPhone(phone) + '</div>' : '') +
+          '</div>' +
+          '<span style="font-size:9px;font-weight:700;color:' + (phaseColors[phase] || '#6B7280') + ';background:' + (phaseColors[phase] || '#6B7280') + '15;padding:2px 8px;border-radius:20px">' + (phaseLabels[phase] || phase) + '</span>' +
+        '</div>'
+    }).join('')
+
+    drop.onclick = function(e) {
+      var el = e.target.closest('[data-id]')
+      if (!el) return
+      document.getElementById('norcPaciente').value = el.dataset.nome
+      document.getElementById('norcPacienteId').value = el.dataset.id
+      document.getElementById('norcPacientePhone').value = el.dataset.phone || ''
+      drop.style.display = 'none'
+      // Mostrar card selecionado
+      var sel = document.getElementById('norcPatientSelected')
+      if (sel) {
+        sel.style.display = 'block'
+        document.getElementById('norcPatientName').textContent = el.dataset.nome
+        document.getElementById('norcPatientPhone').textContent = _fmtPhone(el.dataset.phone || '')
+      }
+    }
+    drop.style.display = 'block'
+  }
+
+  // ── Salvar orcamento ───────────────────────────────────────
+  function norcSave() {
+    var pacienteId = document.getElementById('norcPacienteId').value
+    var pacienteNome = document.getElementById('norcPaciente').value.trim()
+    var proc = document.getElementById('norcProc').value.trim()
+    var valor = parseFloat(document.getElementById('norcValor').value || '0')
+    var qtd = parseInt(document.getElementById('norcQtd').value || '1') || 1
+
+    if (!pacienteNome) { _highlightField('norcPaciente', 'Selecione o paciente'); return }
+    if (!proc) { _highlightField('norcProc', 'Informe o procedimento'); return }
+    if (!valor || valor <= 0) { _highlightField('norcValor', 'Informe o valor'); return }
+
+    var validade = document.getElementById('norcValidade').value || ''
+    var formaPag = document.getElementById('norcFormaPag').value || ''
+    var desconto = document.getElementById('norcDesconto').value.trim() || ''
+    var obs = document.getElementById('norcObs').value.trim() || ''
+
+    // Buscar lead e adicionar orcamento em customFields
+    var allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+    var lead = pacienteId ? allLeads.find(function(l) { return l.id === pacienteId }) : null
+
+    if (lead) {
+      if (!lead.customFields) lead.customFields = {}
+      if (!Array.isArray(lead.customFields.orcamentos)) lead.customFields.orcamentos = []
+
+      lead.customFields.orcamentos.push({
+        id: 'orc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+        procedimento: proc,
+        valor: valor,
+        quantidade: qtd,
+        status: 'pendente',
+        formaPagamento: formaPag,
+        desconto: desconto,
+        validade: validade,
+        observacoes: obs,
+        created_at: new Date().toISOString(),
+      })
+
+      // Se lead nao e paciente, mudar phase pra orcamento
+      if (lead.phase !== 'paciente') {
+        lead.phase = 'orcamento'
+      }
+      // Se lead e paciente, manter phase=paciente (auto-tag cuida da segmentacao)
+
+      if (window.LeadsService && LeadsService.saveLocal) {
+        LeadsService.saveLocal(allLeads)
+      }
+
+      // Sync Supabase
+      if (window.LeadsService && LeadsService.syncOne) {
+        LeadsService.syncOne(lead)
+      }
+
+      // Tambem salvar via BudgetsService se disponivel
+      if (window.BudgetsService) {
+        BudgetsService.upsert({
+          lead_id: pacienteId,
+          title: proc,
+          status: 'draft',
+          valid_until: validade || null,
+          items: [{ description: proc, quantity: qtd, unit_price: valor }],
+        })
+      }
+    }
+
+    document.getElementById('novoOrcModal').remove()
+
+    // Toast de sucesso
+    if (window._showToast) {
+      _showToast('Orcamento criado', proc + ' — R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }), 'success')
+    }
+
+    // Reload tabela
+    if (typeof load === 'function') load(true)
+  }
+
+  function _highlightField(id, msg) {
+    var el = document.getElementById(id)
+    if (!el) return
+    el.style.borderColor = '#EF4444'
+    el.focus()
+    el.placeholder = msg
+    setTimeout(function() { el.style.borderColor = '#E5E7EB' }, 2500)
+  }
+
   // ── Exports ─────────────────────────────────────────────────
   window.loadOrcamentos = load
   window.orcLoadMore = loadMore
@@ -440,5 +722,8 @@
   window.orcApplyCustomPeriod = applyCustomPeriod
   window.orcToggleAll = toggleAll
   window.exportOrcamentosCsv = exportCsv
+  window.openNewOrcamentoModal = openNewOrcamentoModal
+  window.norcSearchPatient = norcSearchPatient
+  window.norcSave = norcSave
 
 })()
