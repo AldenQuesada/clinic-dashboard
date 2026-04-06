@@ -765,9 +765,11 @@
 
   function _redraw() {
     if (!_ctx || !_img) return
-    _ctx.clearRect(0, 0, _canvas.width, _canvas.height)
+    // Black background everywhere (matches removed bg)
+    _ctx.fillStyle = '#000000'
+    _ctx.fillRect(0, 0, _canvas.width, _canvas.height)
 
-    // Draw image only in left area
+    // Draw image
     _ctx.drawImage(_img, 0, 0, _imgW, _imgH)
 
     // Label area background (right side) — brandbook graphite
@@ -1733,26 +1735,73 @@
 
     // Confirm crop
     confirm.addEventListener('click', function () {
-      // Extract at full resolution from the HiDPI canvas
+      // Extract at full resolution with black background
       var outCanvas = document.createElement('canvas')
       outCanvas.width = _cropCanvas.width
       outCanvas.height = _cropCanvas.height
       var outCtx = outCanvas.getContext('2d')
+      // Black background first
+      outCtx.fillStyle = '#000000'
+      outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height)
       outCtx.drawImage(_cropCanvas, 0, 0)
 
+      // Show loading on button
+      var confirmBtn = document.getElementById('fmCropConfirm')
+      if (confirmBtn) confirmBtn.textContent = 'Removendo fundo...'
+
       outCanvas.toBlob(function (blob) {
-        if (_photoUrls[_pendingCropAngle]) URL.revokeObjectURL(_photoUrls[_pendingCropAngle])
-        _photoUrls[_pendingCropAngle] = URL.createObjectURL(blob)
-        _photos[_pendingCropAngle] = blob
+        // Try to remove background via n8n
+        _removeBackground(blob, function (processedBlob) {
+          if (_photoUrls[_pendingCropAngle]) URL.revokeObjectURL(_photoUrls[_pendingCropAngle])
+          _photoUrls[_pendingCropAngle] = URL.createObjectURL(processedBlob)
+          _photos[_pendingCropAngle] = processedBlob
 
-        if (!_activeAngle) _activeAngle = _pendingCropAngle
+          if (!_activeAngle) _activeAngle = _pendingCropAngle
 
-        document.getElementById('fmCropOverlay').remove()
-        _render()
-        _autoSave()
-        if (_activeAngle === _pendingCropAngle) setTimeout(_initCanvas, 50)
-      }, 'image/jpeg', 0.95)
+          document.getElementById('fmCropOverlay').remove()
+          _render()
+          _autoSave()
+          if (_activeAngle === _pendingCropAngle) setTimeout(_initCanvas, 50)
+        })
+      }, 'image/png')
     })
+  }
+
+  // ── Background Removal ────────────────────────────────────
+
+  function _removeBackground(blob, callback) {
+    // Convert blob to base64 and send to n8n for GPT bg removal
+    var reader = new FileReader()
+    reader.onload = function () {
+      var b64 = reader.result.split(',')[1]
+
+      fetch('https://flows.aldenquesada.site/webhook/lara-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'remove-bg',
+          photo_base64: b64,
+        }),
+      })
+      .then(function (res) { return res.json() })
+      .then(function (data) {
+        if (data.success && data.image_b64) {
+          // Convert base64 back to blob
+          var binary = atob(data.image_b64)
+          var arr = new Uint8Array(binary.length)
+          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+          callback(new Blob([arr], { type: 'image/png' }))
+        } else {
+          console.warn('[FaceMapping] BG removal failed, using original')
+          callback(blob)
+        }
+      })
+      .catch(function (err) {
+        console.warn('[FaceMapping] BG removal error:', err)
+        callback(blob)
+      })
+    }
+    reader.readAsDataURL(blob)
   }
 
   function _cropMouseMove(e) {
