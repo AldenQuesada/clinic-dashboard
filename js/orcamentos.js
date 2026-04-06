@@ -102,6 +102,19 @@
     var kpiTotalSub = document.getElementById('kpiOrcTotalSub')
     if (kpiTotalSub) kpiTotalSub.textContent = leads.length + ' em aberto'
 
+    // Calcular valor total e ticket medio dos orcamentos
+    var somaValor = 0
+    leads.forEach(function(l) {
+      var orcs = (l.customFields || {}).orcamentos || []
+      orcs.forEach(function(o) { somaValor += parseFloat(o.valor) || 0 })
+    })
+    var kpiValor = document.getElementById('kpiOrcValor')
+    if (kpiValor) kpiValor.textContent = 'R$ ' + somaValor.toLocaleString('pt-BR', { minimumFractionDigits: 0 })
+    var kpiValorSub = document.getElementById('kpiOrcValorSub')
+    if (kpiValorSub) kpiValorSub.textContent = leads.length + ' orcamentos'
+    var kpiTicket = document.getElementById('kpiOrcTicket')
+    if (kpiTicket) kpiTicket.textContent = leads.length ? 'R$ ' + Math.round(somaValor / leads.length).toLocaleString('pt-BR') : 'R$ 0'
+
     // Sort arrows
     var headers = { orcSortName: 'name', orcSortDate: 'date', orcSortContact: 'lastContact' }
     var labels = { name: 'Nome', date: 'Data', lastContact: 'Contato' }
@@ -134,10 +147,16 @@
       var nome = l.name || l.nome || ''
       var phone = l.phone || ''
       var waLink = phone ? 'https://wa.me/' + phone.replace(/\D/g, '') : '#'
-      var status = l.status || 'active'
-      var tagsArr = Array.isArray(l.tags) ? l.tags : []
-      var tagsHtml = tagsArr.length
-        ? tagsArr.slice(0, 3).map(function(t) { return '<span style="font-size:10px;background:#f3f4f6;border-radius:4px;padding:2px 6px;color:#374151;white-space:nowrap">' + _esc(t) + '</span>' }).join(' ')
+      // Procedimentos e valor do orcamento
+      var cf = l.customFields || {}
+      var orcamentos = cf.orcamentos || []
+      var procs = orcamentos.map(function(o) { return o.procedimento || '' }).filter(Boolean)
+      var procsHtml = procs.length
+        ? procs.slice(0, 2).map(function(p) { return '<span style="font-size:10px;background:#FEF3C7;border-radius:4px;padding:2px 6px;color:#92400E;white-space:nowrap">' + _esc(p) + '</span>' }).join(' ') + (procs.length > 2 ? ' <span style="font-size:10px;color:#9CA3AF">+' + (procs.length - 2) + '</span>' : '')
+        : '<span style="color:#D1D5DB">—</span>'
+      var valorTotal = orcamentos.reduce(function(sum, o) { return sum + (parseFloat(o.valor) || 0) }, 0)
+      var valorHtml = valorTotal > 0
+        ? '<span style="font-size:12px;font-weight:600;color:#059669">R$ ' + valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 0 }) + '</span>'
         : '<span style="color:#D1D5DB">—</span>'
 
       var dateStr = l.created_at ? new Date(l.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '—'
@@ -167,8 +186,8 @@
       tr.innerHTML =
         '<td style="padding:10px 6px 10px 14px"><input type="checkbox" class="orc-row-cb" data-id="' + _esc(l.id) + '"' + checked + ' style="width:14px;height:14px;accent-color:#F59E0B;cursor:pointer" onclick="event.stopPropagation()"></td>' +
         '<td style="padding:10px 12px"><div style="font-size:13px;font-weight:600;color:#111827">' + _esc(nome) + '</div><div style="margin-top:2px">' + phoneHtml + '</div></td>' +
-        '<td style="padding:10px 12px;font-size:11px;vertical-align:middle">' + tagsHtml + '</td>' +
-        '<td style="padding:10px 12px;vertical-align:middle"><span style="display:inline-flex;align-items:center;font-size:11px;font-weight:600;color:#F59E0B;background:#FFFBEB;border-radius:6px;padding:2px 8px">Orcamento</span></td>' +
+        '<td style="padding:10px 12px;font-size:11px;vertical-align:middle">' + procsHtml + '</td>' +
+        '<td style="padding:10px 12px;vertical-align:middle">' + valorHtml + '</td>' +
         '<td style="padding:10px 12px;font-size:12px;color:#374151;vertical-align:middle">' + dateStr + '</td>' +
         '<td style="padding:10px 12px;font-size:12px;color:#374151;vertical-align:middle">' + contactStr + '</td>' +
         '<td style="padding:10px 8px;text-align:center;vertical-align:middle"><button onclick="event.stopPropagation();typeof viewLead===\'function\'&&viewLead(\'' + _esc(l.id) + '\')" style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;color:#374151">Ver</button></td>'
