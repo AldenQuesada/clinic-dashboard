@@ -92,6 +92,23 @@
     'pescoco':         '<path d="M2 4C4 6 8 6 10 4M2 7C4 9 8 9 10 7" stroke-width="1.5" fill="none"/>',
   }
 
+  // Vector presets: default start→end direction per zone (relative to image center)
+  // dx/dy are percentage offsets from zone center. curve = bezier curvature (0=straight, 1=very curved)
+  var VECTOR_PRESETS = {
+    'zigoma-lateral':  { dx: 0.12, dy: -0.08, curve: 0.25, desc: 'Projecao lateral' },
+    'zigoma-anterior': { dx: 0.08, dy: -0.10, curve: 0.20, desc: 'Elevacao + projecao' },
+    'temporal':        { dx: 0.06, dy: -0.14, curve: 0.30, desc: 'Vetor lifting' },
+    'mento':           { dx: 0.10, dy: 0.02,  curve: 0.15, desc: 'Projecao anterior' },
+    'mandibula':       { dx: 0.08, dy: -0.03, curve: 0.20, desc: 'Definicao contorno' },
+    'nariz-dorso':     { dx: 0.08, dy: -0.04, curve: 0.10, desc: 'Projecao dorsal' },
+    'nariz-base':      { dx: 0.06, dy: 0.02,  curve: 0.10, desc: 'Refinamento base' },
+    'pre-jowl':        { dx: 0.06, dy: -0.04, curve: 0.20, desc: 'Transicao' },
+    'labio':           { dx: 0.04, dy: 0.00,  curve: 0.10, desc: 'Volume anterior' },
+    'olheira':         { dx: 0.03, dy: -0.03, curve: 0.15, desc: 'Elevacao' },
+    'sulco':           { dx: 0.05, dy: -0.04, curve: 0.20, desc: 'Suavizacao' },
+    'marionete':       { dx: 0.04, dy: -0.05, curve: 0.20, desc: 'Elevacao' },
+  }
+
   var TREATMENTS = [
     { id: 'ah',       label: 'Acido Hialuronico',  color: '#3B82F6' },
     { id: 'bio',      label: 'Bioestimulador',     color: '#10B981' },
@@ -116,6 +133,11 @@
   var _simPhotoUrl = null     // DEPOIS SIMULADO — gerado automaticamente
   var _activeAngle = null
   var _annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
+  var _editorMode = 'zones' // 'zones' | 'vectors'
+  var _vectors = []       // [{ id, zone, start:{x,y}, end:{x,y}, curve:0.3 }]
+  var _nextVecId = 1
+  var _selVec = null      // selected vector for dragging
+  var _vecDragPart = null // 'end' | 'start' | 'curve'
   var _canvas = null
   var _ctx = null
   var _img = null         // current loaded Image
@@ -292,6 +314,10 @@
         '<span class="fm-patient-badge">' + _icon('user', 14) + ' ' + _esc(name) + '</span>' +
       '</div>' +
       '<div class="fm-header-actions">' +
+        '<div class="fm-mode-toggle">' +
+          '<button class="fm-mode-btn' + (_editorMode === 'zones' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'zones\')">' + _icon('layers', 14) + ' Zonas</button>' +
+          '<button class="fm-mode-btn' + (_editorMode === 'vectors' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'vectors\')">' + _icon('trending-up', 14) + ' Vetores</button>' +
+        '</div>' +
         '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges">' + _icon('sliders', 14) + ' Ranges</button>' +
         '<button class="fm-btn" onclick="FaceMapping._clearAll()" title="Limpar tudo">' + _icon('trash-2', 14) + ' Limpar</button>' +
         '<button class="fm-btn" onclick="FaceMapping._exportReport()">' + _icon('download', 14) + ' Exportar Report</button>' +
@@ -588,17 +614,44 @@
     _ctx.fillStyle = '#2C2C2C'
     _ctx.fillRect(_imgW, 0, LABEL_MARGIN, _canvas.height)
 
-    // Draw ellipses on image + labels on right margin
-    var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
-    // Sort by Y position for consistent label stacking
-    var sorted = anns.slice().sort(function (a, b) { return a.shape.y - b.shape.y })
-    var labelY = 20 // starting Y for first label
-    var LABEL_H = 38 // height per label slot
+    if (_editorMode === 'vectors') {
+      // VECTOR MODE: draw vectors with labels
+      var vecLabelY = 20
+      var VEC_LABEL_H = 38
+      var sortedVecs = _vectors.slice().sort(function (a, b) { return a.start.y - b.start.y })
+      sortedVecs.forEach(function (vec) {
+        _drawVector(vec)
+        vecLabelY = _drawVectorLabel(vec, vecLabelY, VEC_LABEL_H)
+      })
 
-    sorted.forEach(function (ann) {
-      _drawEllipseClean(ann)
-      labelY = _drawLabelExternal(ann, labelY, LABEL_H)
-    })
+      // Draw selected vector handles
+      if (_selVec) {
+        _ctx.save()
+        // Start handle
+        _ctx.fillStyle = '#fff'
+        _ctx.strokeStyle = '#C8A97E'
+        _ctx.lineWidth = 2
+        _ctx.beginPath()
+        _ctx.arc(_selVec.start.x, _selVec.start.y, 6, 0, Math.PI * 2)
+        _ctx.fill(); _ctx.stroke()
+        // End handle
+        _ctx.beginPath()
+        _ctx.arc(_selVec.end.x, _selVec.end.y, 6, 0, Math.PI * 2)
+        _ctx.fill(); _ctx.stroke()
+        _ctx.restore()
+      }
+    } else {
+      // ZONE MODE: draw ellipses + labels
+      var anns = _annotations.filter(function (a) { return a.angle === _activeAngle })
+      var sorted = anns.slice().sort(function (a, b) { return a.shape.y - b.shape.y })
+      var labelY = 20
+      var LABEL_H = 38
+
+      sorted.forEach(function (ann) {
+        _drawEllipseClean(ann)
+        labelY = _drawLabelExternal(ann, labelY, LABEL_H)
+      })
+    }
 
     // Selection handles
     if (_selAnn) {
@@ -760,6 +813,143 @@
     return targetY + labelH
   }
 
+  // ── Vector drawing ─────────────────────────────────────────
+
+  function _drawVector(vec) {
+    var color = _zoneColor(vec.zone)
+    var sx = vec.start.x, sy = vec.start.y
+    var ex = vec.end.x, ey = vec.end.y
+
+    // Calculate control point for bezier curve
+    var mx = (sx + ex) / 2
+    var my = (sy + ey) / 2
+    var dx = ex - sx, dy = ey - sy
+    var len = Math.sqrt(dx * dx + dy * dy)
+    // Perpendicular offset for curve
+    var nx = -dy / len * vec.curve * len
+    var ny = dx / len * vec.curve * len
+    var cpx = mx + nx, cpy = my + ny
+
+    _ctx.save()
+
+    // Glow effect
+    _ctx.shadowColor = color
+    _ctx.shadowBlur = 8
+
+    // Main bezier curve — gradient stroke
+    var grad = _ctx.createLinearGradient(sx, sy, ex, ey)
+    grad.addColorStop(0, color + '40')
+    grad.addColorStop(0.3, color + 'CC')
+    grad.addColorStop(1, color)
+
+    _ctx.beginPath()
+    _ctx.moveTo(sx, sy)
+    _ctx.quadraticCurveTo(cpx, cpy, ex, ey)
+    _ctx.strokeStyle = grad
+    _ctx.lineWidth = 3.5
+    _ctx.lineCap = 'round'
+    _ctx.stroke()
+
+    _ctx.shadowBlur = 0
+
+    // Thinner inner line for refinement
+    _ctx.beginPath()
+    _ctx.moveTo(sx, sy)
+    _ctx.quadraticCurveTo(cpx, cpy, ex, ey)
+    _ctx.strokeStyle = '#fff'
+    _ctx.lineWidth = 1
+    _ctx.globalAlpha = 0.3
+    _ctx.stroke()
+    _ctx.globalAlpha = 1
+
+    // Arrowhead at end
+    var angle = Math.atan2(ey - cpy, ex - cpx)
+    var aLen = 12
+    var aWidth = 5
+    _ctx.beginPath()
+    _ctx.moveTo(ex, ey)
+    _ctx.lineTo(ex - aLen * Math.cos(angle - Math.PI / aWidth), ey - aLen * Math.sin(angle - Math.PI / aWidth))
+    _ctx.lineTo(ex - aLen * 0.6 * Math.cos(angle), ey - aLen * 0.6 * Math.sin(angle))
+    _ctx.lineTo(ex - aLen * Math.cos(angle + Math.PI / aWidth), ey - aLen * Math.sin(angle + Math.PI / aWidth))
+    _ctx.closePath()
+    _ctx.fillStyle = color
+    _ctx.fill()
+
+    // Origin dot
+    _ctx.beginPath()
+    _ctx.arc(sx, sy, 4, 0, Math.PI * 2)
+    _ctx.fillStyle = color + '80'
+    _ctx.fill()
+    _ctx.strokeStyle = '#fff'
+    _ctx.lineWidth = 1.5
+    _ctx.stroke()
+
+    _ctx.restore()
+  }
+
+  function _drawVectorLabel(vec, labelY, labelH) {
+    var z = ZONES.find(function (x) { return x.id === vec.zone })
+    var color = z ? z.color : '#C8A97E'
+    var preset = VECTOR_PRESETS[vec.zone]
+    var desc = preset ? preset.desc : (z ? z.desc : '')
+
+    var targetY = Math.max(labelY, vec.start.y - 10)
+    var lineEndX = _imgW + 10
+
+    _ctx.save()
+
+    // Leader line from vector start to label
+    _ctx.beginPath()
+    _ctx.strokeStyle = '#C8A97E'
+    _ctx.lineWidth = 1
+    _ctx.moveTo(vec.start.x, vec.start.y)
+    _ctx.lineTo(_imgW, vec.start.y)
+    if (Math.abs(vec.start.y - (targetY + 8)) > 2) {
+      _ctx.lineTo(_imgW, targetY + 8)
+    }
+    _ctx.lineTo(lineEndX, targetY + 8)
+    _ctx.stroke()
+
+    // Dot
+    _ctx.beginPath()
+    _ctx.fillStyle = color
+    _ctx.arc(lineEndX, targetY + 8, 3, 0, Math.PI * 2)
+    _ctx.fill()
+
+    // Label text
+    var lx = lineEndX + 8
+    _ctx.font = '600 11px Inter, Montserrat, sans-serif'
+    _ctx.textAlign = 'left'
+    _ctx.fillStyle = '#F5F0E8'
+    _ctx.fillText(z ? z.label : vec.zone, lx, targetY + 6)
+
+    _ctx.font = '400 9px Inter, Montserrat, sans-serif'
+    _ctx.fillStyle = '#C8A97E'
+    _ctx.fillText('(' + desc + ')', lx, targetY + 18)
+
+    _ctx.restore()
+    return targetY + labelH
+  }
+
+  // Hit test for vectors
+  function _hitVector(x, y) {
+    for (var i = _vectors.length - 1; i >= 0; i--) {
+      var v = _vectors[i]
+      // Check near start
+      var ds = Math.sqrt(Math.pow(x - v.start.x, 2) + Math.pow(y - v.start.y, 2))
+      if (ds < 10) return { vec: v, part: 'start' }
+      // Check near end
+      var de = Math.sqrt(Math.pow(x - v.end.x, 2) + Math.pow(y - v.end.y, 2))
+      if (de < 10) return { vec: v, part: 'end' }
+      // Check near curve body (simplified: check midpoint area)
+      var mx = (v.start.x + v.end.x) / 2
+      var my = (v.start.y + v.end.y) / 2
+      var dm = Math.sqrt(Math.pow(x - mx, 2) + Math.pow(y - my, 2))
+      if (dm < 20) return { vec: v, part: 'start' }  // select for move
+    }
+    return null
+  }
+
   // Keep old name for report canvases (they draw labels on top)
   function _drawEllipse(ann) { _drawEllipseClean(ann) }
 
@@ -770,6 +960,21 @@
 
     // Ignore clicks in the label margin area (except handles)
     var inLabelArea = mx > _imgW
+
+    // VECTOR MODE: handle vector dragging
+    if (_editorMode === 'vectors') {
+      var hit = _hitVector(mx, my)
+      if (hit) {
+        _selVec = hit.vec
+        _vecDragPart = hit.part
+        _mode = 'move'
+        _canvas.style.cursor = 'grabbing'
+      } else {
+        _selVec = null
+      }
+      _redraw()
+      return
+    }
 
     // 1. Check resize handles on selected annotation
     if (_selAnn) {
@@ -812,6 +1017,28 @@
   function _onMouseMove(e) {
     var mx = e.offsetX, my = e.offsetY
 
+    // VECTOR MODE: drag vector endpoints
+    if (_editorMode === 'vectors' && _mode === 'move' && _selVec) {
+      if (_vecDragPart === 'end') {
+        _selVec.end.x = mx
+        _selVec.end.y = my
+      } else {
+        // Move entire vector
+        var dx = mx - _selVec.start.x
+        var dy = my - _selVec.start.y
+        _selVec.start.x += dx; _selVec.start.y += dy
+        _selVec.end.x += dx; _selVec.end.y += dy
+      }
+      _redraw()
+      return
+    }
+
+    if (_editorMode === 'vectors') {
+      var h = _hitVector(mx, my)
+      _canvas.style.cursor = h ? (h.part === 'end' ? 'crosshair' : 'grab') : 'default'
+      return
+    }
+
     if (_mode === 'move' && _selAnn) {
       _selAnn.shape.x = mx - _moveStart.x
       _selAnn.shape.y = my - _moveStart.y
@@ -850,6 +1077,12 @@
   }
 
   function _onMouseUp() {
+    if (_editorMode === 'vectors') {
+      _mode = 'idle'
+      _canvas.style.cursor = 'default'
+      _redraw()
+      return
+    }
     if (_mode === 'move' || _mode === 'resize') {
       _mode = 'idle'
       _canvas.style.cursor = _selectedZone ? 'crosshair' : 'default'
@@ -1164,6 +1397,44 @@
     if (_activeAngle && _photoUrls[_activeAngle]) {
       setTimeout(_initCanvas, 50)
     }
+  }
+
+  function _setEditorMode(mode) {
+    _editorMode = mode
+    if (mode === 'vectors') {
+      // Force 45° angle for vectors
+      if (_photoUrls['45']) {
+        _activeAngle = '45'
+      } else {
+        alert('Vetores faciais requer foto de 45\u00B0. Faca o upload primeiro.')
+        _editorMode = 'zones'
+        return
+      }
+      // Auto-generate vectors from existing 45° annotations
+      if (_vectors.length === 0) _generateVectorsFromAnnotations()
+    }
+    _selAnn = null
+    _selVec = null
+    _render()
+    setTimeout(_initCanvas, 50)
+  }
+
+  function _generateVectorsFromAnnotations() {
+    var anns45 = _annotations.filter(function (a) { return a.angle === '45' })
+    _vectors = []
+    _nextVecId = 1
+    anns45.forEach(function (ann) {
+      var preset = VECTOR_PRESETS[ann.zone]
+      if (!preset) return
+      var s = ann.shape
+      _vectors.push({
+        id: _nextVecId++,
+        zone: ann.zone,
+        start: { x: s.x, y: s.y },
+        end: { x: s.x + preset.dx * _imgW, y: s.y + preset.dy * _imgH },
+        curve: preset.curve,
+      })
+    })
   }
 
   function _setCanvasZoom() { /* no-op, kept for API compat */ }
@@ -1860,6 +2131,7 @@
     _recrop: _recrop,
     _deletePhoto: _deletePhoto,
     _editRanges: _editRanges,
+    _setEditorMode: _setEditorMode,
     _setCanvasZoom: _setCanvasZoom,
     _zoomCanvas: _zoomCanvas,
     _toggleFullscreen: _toggleFullscreen,

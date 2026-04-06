@@ -71,6 +71,46 @@
 .fm-header-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
+}
+
+/* Mode toggle */
+.fm-mode-toggle {
+  display: flex;
+  background: var(--border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  margin-right: 4px;
+}
+
+.fm-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.fm-mode-btn.active {
+  background: var(--card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.fm-mode-btn:hover:not(.active) {
+  color: var(--text-secondary);
+}
+
+.fm-mode-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 .fm-btn {
