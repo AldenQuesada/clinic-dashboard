@@ -1780,72 +1780,83 @@
   }
 
   function _removeBackground(blob, callback) {
-    var reader = new FileReader()
-    reader.onload = function () {
-      var b64 = reader.result.split(',')[1]
-      var hash = _quickHash(b64)
+    // Client-side background removal using canvas color detection
+    // Works well for portrait photos with uniform backgrounds (clinic setting)
+    var img = new Image()
+    img.onload = function () {
+      var w = img.width, h = img.height
+      var c = document.createElement('canvas')
+      c.width = w; c.height = h
+      var ctx = c.getContext('2d')
+      ctx.drawImage(img, 0, 0)
 
-      // 1. Check Supabase cache first
-      var sb = window._sbShared
-      if (sb) {
-        sb.rpc('get_facial_photo', { p_hash: hash }).then(function (res) {
-          if (res.data && res.data.found && res.data.photo_b64) {
-            console.log('[FaceMapping] Cache hit! Using saved photo')
-            var cached = atob(res.data.photo_b64)
-            var arr = new Uint8Array(cached.length)
-            for (var i = 0; i < cached.length; i++) arr[i] = cached.charCodeAt(i)
-            callback(new Blob([arr], { type: 'image/png' }))
-            return
-          }
-          // Cache miss — call AI
-          _callRemoveBgAPI(b64, hash, blob, callback)
-        }).catch(function () {
-          _callRemoveBgAPI(b64, hash, blob, callback)
-        })
-      } else {
-        _callRemoveBgAPI(b64, hash, blob, callback)
-      }
-    }
-    reader.readAsDataURL(blob)
-  }
+      var pixels = ctx.getImageData(0, 0, w, h)
+      var data = pixels.data
 
-  function _callRemoveBgAPI(b64, hash, originalBlob, callback) {
-    fetch('https://flows.aldenquesada.site/webhook/lara-webhook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'remove-bg', photo_base64: b64 }),
-    })
-    .then(function (res) { return res.json() })
-    .then(function (data) {
-      if (data.success && data.image_b64) {
-        // Save to Supabase cache (fire-and-forget)
-        var sb = window._sbShared
-        if (sb) {
-          var clinicId = null
-          try { clinicId = JSON.parse(localStorage.getItem('clinicai_clinic_id') || 'null') } catch (e) {}
-          var leadId = _lead ? (_lead.id || _lead.lead_id) : null
-          sb.rpc('upsert_facial_photo', {
-            p_clinic_id: clinicId, p_lead_id: leadId,
-            p_angle: _pendingCropAngle || 'unknown',
-            p_hash: hash, p_photo_b64: data.image_b64,
-          }).then(function (r) {
-            console.log('[FaceMapping] Photo cached in Supabase:', r.data?.cached ? 'already existed' : 'new')
-          })
+      // Sample background color from corners and edges
+      var bgSamples = []
+      var sampleSize = Math.floor(Math.min(w, h) * 0.05)
+      for (var sy = 0; sy < sampleSize; sy++) {
+        for (var sx = 0; sx < sampleSize; sx++) {
+          // Top-left corner
+          var i = (sy * w + sx) * 4
+          bgSamples.push([data[i], data[i+1], data[i+2]])
+          // Top-right corner
+          i = (sy * w + (w - 1 - sx)) * 4
+          bgSamples.push([data[i], data[i+1], data[i+2]])
         }
-
-        var binary = atob(data.image_b64)
-        var arr = new Uint8Array(binary.length)
-        for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
-        callback(new Blob([arr], { type: 'image/png' }))
-      } else {
-        console.warn('[FaceMapping] BG removal failed:', data.error || 'unknown')
-        callback(originalBlob)
       }
-    })
-    .catch(function (err) {
-      console.warn('[FaceMapping] BG removal error:', err)
-      callback(originalBlob)
-    })
+
+      // Average background color
+      var avgR = 0, avgG = 0, avgB = 0
+      bgSamples.forEach(function (s) { avgR += s[0]; avgG += s[1]; avgB += s[2] })
+      avgR = Math.round(avgR / bgSamples.length)
+      avgG = Math.round(avgG / bgSamples.length)
+      avgB = Math.round(avgB / bgSamples.length)
+
+      // Tolerance for background detection (higher = more aggressive)
+      var tolerance = 55
+
+      // Replace background pixels with black
+      for (var pi = 0; pi < data.length; pi += 4) {
+        var dr = Math.abs(data[pi] - avgR)
+        var dg = Math.abs(data[pi+1] - avgG)
+        var db = Math.abs(data[pi+2] - avgB)
+        var dist = Math.sqrt(dr * dr + dg * dg + db * db)
+
+        if (dist < tolerance) {
+          // Background pixel — make black
+          data[pi] = 0; data[pi+1] = 0; data[pi+2] = 0
+        }
+      }
+
+      // Apply edge smoothing: second pass with softer threshold near person edges
+      var softTolerance = tolerance * 1.3
+      for (var pi = 0; pi < data.length; pi += 4) {
+        if (data[pi] === 0 && data[pi+1] === 0 && data[pi+2] === 0) continue // already black
+        var dr = Math.abs(data[pi] - avgR)
+        var dg = Math.abs(data[pi+1] - avgG)
+        var db = Math.abs(data[pi+2] - avgB)
+        var dist = Math.sqrt(dr * dr + dg * dg + db * db)
+
+        if (dist < softTolerance) {
+          // Near-background pixel — blend toward black
+          var blend = (softTolerance - dist) / (softTolerance - tolerance)
+          blend = Math.max(0, Math.min(1, blend))
+          data[pi] = Math.round(data[pi] * (1 - blend))
+          data[pi+1] = Math.round(data[pi+1] * (1 - blend))
+          data[pi+2] = Math.round(data[pi+2] * (1 - blend))
+        }
+      }
+
+      ctx.putImageData(pixels, 0, 0)
+
+      c.toBlob(function (resultBlob) {
+        console.log('[FaceMapping] Background removed (canvas method)')
+        callback(resultBlob)
+      }, 'image/png')
+    }
+    img.src = URL.createObjectURL(blob)
   }
 
   function _cropMouseMove(e) {
