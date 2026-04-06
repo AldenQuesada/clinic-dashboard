@@ -276,11 +276,8 @@ function apptTransition(id, newStatus, by) {
   if (appt.pacienteId && window.SdrService) {
     if (newStatus === 'finalizado') {
       SdrService.onLeadAttended(appt.pacienteId)
-      // Garantir que fase muda pra paciente (onLeadAttended so vai ate compareceu)
+      // Sempre vai pra paciente no minimo (orcamento e tratado no confirmFinalize)
       if (SdrService.changePhase) SdrService.changePhase(appt.pacienteId, 'paciente', 'finalizacao-auto')
-    }
-    if (newStatus === 'na_clinica' || newStatus === 'em_consulta') {
-      if (SdrService.changePhase) SdrService.changePhase(appt.pacienteId, 'compareceu', 'status-' + newStatus)
     }
   }
 
@@ -1114,20 +1111,16 @@ function confirmFinalize(id) {
   if (parceria)   _logAuto(id, 'fluxo_parceria', 'pendente')
 
   // Bloco 4: Routing — muda fase do lead + aplica tags
+  // Regra: sempre sai como paciente ou orcamento. Nunca fica em compareceu/agendado.
   if (apptFinal.pacienteId) {
-    // Mudar fase do lead conforme routing
-    if (route === 'paciente' || route === 'pac_orcamento') {
-      if (window.SdrService && SdrService.changePhase) {
-        SdrService.changePhase(apptFinal.pacienteId, 'paciente', 'finalizacao')
-      }
-    } else if (route === 'orcamento') {
+    if (route === 'orcamento') {
       if (window.SdrService && SdrService.changePhase) {
         SdrService.changePhase(apptFinal.pacienteId, 'orcamento', 'finalizacao')
       }
     } else {
-      // route === 'nenhum' — pelo menos marcar como compareceu
+      // paciente, pac_orcamento, nenhum — todos vao pra paciente
       if (window.SdrService && SdrService.changePhase) {
-        SdrService.changePhase(apptFinal.pacienteId, 'compareceu', 'finalizacao')
+        SdrService.changePhase(apptFinal.pacienteId, 'paciente', 'finalizacao')
       }
     }
 
