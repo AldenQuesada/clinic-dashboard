@@ -718,7 +718,7 @@ function buildSemanaGrid() {
       const clickable = !isPast || hasCards
       return `<td ${clickable?'ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\',0)"':''}
         ${clickable?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\',0)"':''}
-        style="width:${colW};padding:2px 3px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};min-height:34px;vertical-align:top;cursor:${clickable?'pointer':'default'};background:${isToday?'#FEFCE8':isPast&&!hasCards?'#F9FAFB':''};${isPast&&!hasCards?'opacity:0.5;':''}"
+        style="width:${colW};padding:2px 3px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};height:34px;vertical-align:top;cursor:${clickable?'pointer':'default'};position:relative;background:${isToday?'#FEFCE8':isPast&&!hasCards?'#F9FAFB':''};${isPast&&!hasCards?'opacity:0.5;':''}"
         >${cards}</td>`
     }).join('')
     return `<tr style="background:${isHour?'#FAFAFA':'#fff'}">
@@ -772,7 +772,7 @@ function buildHojeGrid() {
       const canClick = !isPastDay || hasAppts
       return `<td ${canClick?'ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\','+pi+')"':''}
         ${canClick?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\','+pi+')"':''}
-        style="width:${profColW};padding:3px 4px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};min-height:38px;vertical-align:top;cursor:${canClick?'pointer':'default'};transition:background .1s;${isPastDay&&!hasAppts?'opacity:0.5;':''}"
+        style="width:${profColW};padding:3px 4px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};height:38px;vertical-align:top;cursor:${canClick?'pointer':'default'};transition:background .1s;position:relative;${isPastDay&&!hasAppts?'opacity:0.5;':''}"
         >${cards}</td>`
     }).join('')
     return `<tr style="background:${isHour?'#FAFAFA':'#fff'}">
@@ -826,6 +826,13 @@ function _apptTipHide() {
   if (tip) tip.style.display = 'none'
 }
 
+function _apptDurationSlots(a) {
+  if (!a.horaInicio || !a.horaFim) return 1
+  var sp = a.horaInicio.split(':'), ep = a.horaFim.split(':')
+  var mins = (parseInt(ep[0])*60+parseInt(ep[1])) - (parseInt(sp[0])*60+parseInt(sp[1]))
+  return Math.max(1, Math.round(mins / 30))
+}
+
 function apptCard(a, profIdx) {
   const s = APPT_STATUS_CFG[a.status] || APPT_STATUS_CFG.agendado
   const isCancelado = ['cancelado','no_show','finalizado'].includes(a.status)
@@ -833,10 +840,12 @@ function apptCard(a, profIdx) {
   const isLocked = ['finalizado','em_consulta','na_clinica'].includes(a.status)
   const cardOpacity = ['cancelado','no_show'].includes(a.status) ? 'opacity:0.55;' : ''
 
-  // Tipo de atendimento
+  // Altura proporcional a duracao (cada slot = 38px)
+  const slots = _apptDurationSlots(a)
+  const cardHeight = (slots * 38) - 4 // -4px para margem
+
   const tipoLabel = a.tipoConsulta === 'avaliacao' ? 'Avaliacao' : a.tipoConsulta === 'procedimento' ? 'Procedimento' : a.procedimento || '—'
 
-  // Transicoes permitidas (exceto cancelado/no_show que exigem modal)
   const allowed = window.STATE_MACHINE ? (window.STATE_MACHINE[a.status] || []) : []
   const statusLabels = window.STATUS_LABELS || {}
   const statusColors = window.STATUS_COLORS || {}
@@ -848,7 +857,7 @@ function apptCard(a, profIdx) {
     ondragstart="${canDrag ? `agendaDragStart(event,'${a.id}')` : `agendaDragStartBlocked(event,'${a.id}')`}"
     onclick="event.stopPropagation();openApptDetail('${a.id}')"
     onmouseenter="_apptTip(event,'${a.id}')" onmouseleave="_apptTipHide()"
-    style="background:${s.bg};border-left:3px solid ${s.color};border-radius:7px;padding:6px 8px;margin-bottom:2px;cursor:${canDrag?'grab':'default'};min-width:140px;${cardOpacity}${['cancelado','no_show'].includes(a.status)?'border-left-style:dashed;':''}">
+    style="background:${s.bg};border-left:3px solid ${s.color};border-radius:7px;padding:6px 8px;cursor:${canDrag?'grab':'default'};min-width:140px;${cardOpacity}${['cancelado','no_show'].includes(a.status)?'border-left-style:dashed;':''}position:absolute;top:0;left:2px;right:2px;height:${cardHeight}px;z-index:2;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
 
     <div style="font-size:11px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome || 'Paciente'}</div>
     <div style="font-size:10px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${tipoLabel}</div>
@@ -1029,18 +1038,20 @@ function apptCardSmall(a) {
   const profs    = getProfessionals()
   const profNome = a.profissionalNome || profs[a.profissionalIdx]?.nome || ''
   const canDrag  = window.AgendaValidator ? AgendaValidator.canDrag(a) : !['finalizado','em_consulta','na_clinica'].includes(a.status)
-  const isLocked = ['finalizado','em_consulta','na_clinica'].includes(a.status)
   const cardOpacity = ['cancelado','no_show'].includes(a.status) ? 'opacity:0.6;' : ''
+
+  // Altura proporcional (cada slot semana = 34px)
+  const slots = _apptDurationSlots(a)
+  const cardHeight = (slots * 34) - 4
 
   return `<div data-apptid="${a.id}" draggable="${canDrag}"
     ondragstart="${canDrag ? `agendaDragStart(event,'${a.id}')` : `agendaDragStartBlocked(event,'${a.id}')`}"
     onclick="event.stopPropagation();openApptDetail('${a.id}')"
     onmouseenter="_apptTip(event,'${a.id}')" onmouseleave="_apptTipHide()"
-    style="background:${s.bg};border-left:3px solid ${s.color}${['cancelado','no_show'].includes(a.status)?';border-left-style:dashed':''};border-radius:6px;padding:5px 7px;margin-bottom:2px;cursor:${canDrag?'grab':'default'};${cardOpacity}">
-    <div style="font-size:11px;font-weight:700;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome||'Paciente'}</div>
-    ${a.procedimento ? `<div style="font-size:10px;color:#4B5563;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.procedimento}</div>` : ''}
-    ${profNome ? `<div style="font-size:10px;color:#9CA3AF;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${profNome}</div>` : ''}
-    <span style="display:inline-block;font-size:9px;font-weight:700;color:${s.color};background:rgba(255,255,255,.65);padding:1px 6px;border-radius:10px;margin-top:2px">${s.label||a.status}</span>
+    style="background:${s.bg};border-left:3px solid ${s.color}${['cancelado','no_show'].includes(a.status)?';border-left-style:dashed':''};border-radius:6px;padding:4px 6px;cursor:${canDrag?'grab':'default'};${cardOpacity}position:absolute;top:0;left:2px;right:2px;height:${cardHeight}px;z-index:2;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+    <div style="font-size:10px;font-weight:700;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome||'Paciente'}</div>
+    <div style="font-size:9px;color:#4B5563;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.horaInicio||''}${a.horaFim?' – '+a.horaFim:''}</div>
+    <span style="display:inline-block;font-size:8px;font-weight:700;color:${s.color};background:rgba(255,255,255,.65);padding:1px 5px;border-radius:10px;margin-top:1px">${s.label||a.status}</span>
   </div>`
 }
 
