@@ -381,7 +381,7 @@ function renderAgenda() {
     return `<button onclick="setAgendaView('${v}')" style="padding:6px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid ${active?'#7C3AED':'#E5E7EB'};background:${active?'#7C3AED':'#fff'};color:${active?'#fff':'#374151'}">${label}</button>`
   }
 
-  const kpiBar = _buildAgendaKpis()
+  _updateAgendaKpis()
 
   const toolbar = `
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
@@ -406,11 +406,13 @@ function renderAgenda() {
   if (_agendaView === 'hoje')   body = buildHojeGrid()
 
   const filterBar = window.renderAgendaFilterBar ? renderAgendaFilterBar() : ''
-  root.innerHTML = kpiBar + toolbar + filterBar + legend + body
+  root.innerHTML = toolbar + filterBar + legend + body
 }
 
 // ── KPIs da Agenda — calculados pelo periodo visivel ─────────
-function _buildAgendaKpis() {
+function _updateAgendaKpis() {
+  var kpiRow = document.getElementById('agendaKpiRow')
+  if (!kpiRow) return
   var appts = window.getFilteredAppointments ? getFilteredAppointments() : getAppointments()
 
   // Determinar range de datas do periodo visivel
@@ -439,7 +441,7 @@ function _buildAgendaKpis() {
   var previsao = inRange.reduce(function(s, a) { return s + (parseFloat(a.valor) || 0) }, 0)
   var fmtR = function(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR') }
 
-  return '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+  kpiRow.innerHTML =
 
     // Card 1: Agendados | Confirmados
     '<div style="flex:1;background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:8px 14px;display:flex;align-items:center;gap:8px">' +
@@ -473,9 +475,7 @@ function _buildAgendaKpis() {
       '<span style="font-size:13px;font-weight:700;color:#6B7280;white-space:nowrap">' + fmtR(previsao) + '</span>' +
       '<span style="width:1px;height:16px;background:#E5E7EB"></span>' +
       '<span style="font-size:13px;font-weight:800;color:#10B981;white-space:nowrap">' + fmtR(faturamento) + '</span>' +
-    '</div>' +
-
-  '</div>'
+    '</div>'
 }
 
 function _getWeekStart(d) {
