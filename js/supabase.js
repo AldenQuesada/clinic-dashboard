@@ -847,7 +847,7 @@ window.sbClient = function() {
 //   3. sbStartRealtime() é reiniciado com o filtro de clinic_id correto.
 //
 document.addEventListener('clinicai:auth-success', () => {
-  _resetClient()   // descarta singleton → recria com headers de tenant
+  // Reutiliza singleton existente — NAO resetar para evitar GoTrueClient duplicado
   sbLoadAll().then(() => {
     _reRenderAll()
     try { sbStartRealtime() } catch (err) {
