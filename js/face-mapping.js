@@ -242,6 +242,13 @@
 
   function _saveSessionData(id, photoData) {
     try {
+      var photos = photoData || {}
+      // If no photos and no annotations, clear the session
+      if (Object.keys(photos).length === 0 && _annotations.length === 0) {
+        localStorage.removeItem('fm_session_' + id)
+        localStorage.removeItem('fm_last_session')
+        return
+      }
       var session = {
         lead: { id: _lead.id || _lead.lead_id, nome: _lead.nome || _lead.name },
         activeAngle: _activeAngle,
@@ -252,7 +259,7 @@
         editorMode: _editorMode,
         nextId: _nextId,
         nextVecId: _nextVecId,
-        photos: photoData || {},
+        photos: photos,
         savedAt: new Date().toISOString(),
       }
       localStorage.setItem('fm_session_' + id, JSON.stringify(session))
@@ -1886,15 +1893,22 @@
     delete _photos[angle]
     delete _photoUrls[angle]
     delete _originalFiles[angle]
-    // Remove annotations for this angle
     _annotations = _annotations.filter(function (a) { return a.angle !== angle })
-    // Switch to another angle if this was active
+    _simPhotoUrl = null
     if (_activeAngle === angle) {
       _activeAngle = _photoUrls['front'] ? 'front' : (_photoUrls['45'] ? '45' : (_photoUrls['lateral'] ? 'lateral' : null))
     }
     _selAnn = null
+    _autoSave()
     _render()
     if (_activeAngle) setTimeout(_initCanvas, 50)
+  }
+
+  function _clearSession() {
+    if (!_lead) return
+    var id = _lead.id || _lead.lead_id || 'unknown'
+    try { localStorage.removeItem('fm_session_' + id) } catch (e) {}
+    try { localStorage.removeItem('fm_last_session') } catch (e) {}
   }
 
   function _recrop(angle) {
@@ -2087,10 +2101,21 @@
   }
 
   function _clearAll() {
-    if (!confirm('Limpar todas as marcacoes?')) return
+    if (!confirm('Limpar todas as marcacoes e fotos?')) return
     _annotations = []
-    _redraw()
-    _refreshToolbar()
+    _vectors = []
+    _simPhotoUrl = null
+    _afterPhotoUrl = null
+    // Clear all photos
+    Object.keys(_photoUrls).forEach(function (k) {
+      if (_photoUrls[k]) URL.revokeObjectURL(_photoUrls[k])
+    })
+    _photos = {}
+    _photoUrls = {}
+    _activeAngle = null
+    _clearSession()
+    _autoSave()
+    _render()
   }
 
   function _refreshToolbar() {
