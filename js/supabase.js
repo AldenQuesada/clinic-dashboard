@@ -800,7 +800,8 @@ function _reRenderAll () {
     if (window.renderInjetaveis)        renderInjetaveis()
 
     // Orçamentos / Financeiro
-    if (window.renderOrcamentos)        renderOrcamentos()
+    // Desativado: orcamentos gerenciado por orcamentos.js
+    // if (window.renderOrcamentos)        renderOrcamentos()
     if (window.renderPatientsBudget)    renderPatientsBudget()
     if (window.renderFinanceiro)        renderFinanceiro()
 
