@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="css/templates-editor.css" />
   <link rel="stylesheet" href="css/inbox.css" />
   <link rel="stylesheet" href="css/analytics.css" />
+  <link rel="stylesheet" href="css/face-mapping.css" />
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3572,6 +3573,8 @@
       <div class="page" id="page-auto-flows-fullface"></div>
       <div class="page" id="page-leads-tags-fullface"></div>
       <div class="page" id="page-captacao-alertas-fullface"></div>
+      <div class="page" id="page-facial-analysis"><div id="facialAnalysisRoot" style="height:100%"></div></div>
+      <div class="page" id="page-facial-simulations"><div id="facialSimulationsRoot" style="height:100%"></div></div>
 
       <!-- ── Captação Procedimentos ─────────────────────────── -->
       <div class="page" id="page-leads-protocolos"><div id="leadsProtocolosRoot" style="height:100%"></div></div>
@@ -4716,6 +4719,10 @@
   <script src="js/agenda-overview.js?v=20260405e" defer></script>
   <script src="js/sdr.js?v=20260405e" defer></script>
   <script src="js/tags.js?v=20260405e" defer></script>
+  <script src="js/face-mapping.js?v=20260406a" defer></script>
+
+  <!-- html2canvas for report export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 
   <!-- Patient / Procedure Flyout -->
   <div id="aoFlyout" class="ao-flyout" style="display:none" onmouseleave="_aoHideFlyout&&_aoHideFlyout()">
