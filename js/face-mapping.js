@@ -195,8 +195,8 @@
   }
 
   function _zonesForAngle(angleId) {
-    if (!angleId) return ZONES
-    return ZONES.filter(function (z) { return z.angles.indexOf(angleId) !== -1 })
+    // All zones available on all views
+    return ZONES
   }
 
   function _viewProgress() {
@@ -1910,15 +1910,7 @@
       alert('Adicione marcacoes antes de exportar.')
       return
     }
-    var progress = _viewProgress()
-    var missing = progress.filter(function (v) { return !v.complete })
-    if (missing.length > 0) {
-      var names = missing.map(function (v) {
-        return v.label + (!v.hasPhoto ? ' (sem foto)' : ' (sem marcacoes)')
-      }).join(', ')
-      alert('Complete todas as 3 vistas antes de exportar.\nFalta: ' + names)
-      return
-    }
+    // No view restriction — export with whatever is available
 
     // Auto-generate simulation if not yet generated
     if (!_simPhotoUrl) {
