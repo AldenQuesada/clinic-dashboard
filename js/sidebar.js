@@ -77,6 +77,27 @@
    * @param {*} str
    * @returns {string}
    */
+  // ── Lazy-load: carrega scripts pesados sob demanda ─────────
+  var _lazyLoaded = {}
+  function _lazyLoad(pageId) {
+    var v = (window.ClinicEnv || {}).ASSET_VERSION || '0'
+    var map = {
+      'settings-injetaveis':   ['js/injetaveis.js?v=' + v],
+      'settings-procedimentos':['js/procedimentos.js?v=' + v],
+      'financeiro':            ['js/financeiro.js?v=' + v, 'js/financeiro-reports.js?v=' + v],
+    }
+    var scripts = map[pageId]
+    if (!scripts) return
+    scripts.forEach(function(src) {
+      if (_lazyLoaded[src]) return
+      _lazyLoaded[src] = true
+      var s = document.createElement('script')
+      s.src = src
+      s.defer = true
+      document.head.appendChild(s)
+    })
+  }
+
   function _esc(str) {
     return String(str)
       .replace(/&/g, '&amp;')
@@ -230,8 +251,15 @@
   /**
    * Anexa todos os event listeners ao DOM recém-renderizado.
    * Chamado internamente pelo buildSidebar — não use diretamente.
+   * Usa _navCleanup para remover listeners anteriores (evita acumulacao).
    */
+  var _navCleanup = []
+
   function _attachNavEvents() {
+    // Limpar listeners anteriores para evitar acumulacao
+    _navCleanup.forEach(function(fn) { fn() })
+    _navCleanup = []
+
     const flyout = document.getElementById('navFlyout')
 
     // ── Itens principais (header de cada seção) ──────────────
@@ -239,25 +267,30 @@
       const mainEl = navItem.querySelector('.nav-item-main')
       if (!mainEl) return
 
-      // Sidebar expandida: clique alterna o acordeão
-      mainEl.addEventListener('click', () => {
+      const onClick = () => {
         if (!document.body.classList.contains('sidebar-collapsed')) {
           navItem.classList.toggle('open')
         }
-      })
-
-      // Sidebar colapsada: hover abre o flyout lateral
-      mainEl.addEventListener('mouseenter', () => {
+      }
+      const onEnter = () => {
         if (document.body.classList.contains('sidebar-collapsed')) {
           _cancelFlyoutClose()
           _showNavFlyout(navItem, mainEl)
         }
-      })
-
-      mainEl.addEventListener('mouseleave', () => {
+      }
+      const onLeave = () => {
         if (document.body.classList.contains('sidebar-collapsed')) {
           _scheduleFlyoutClose()
         }
+      }
+
+      mainEl.addEventListener('click', onClick)
+      mainEl.addEventListener('mouseenter', onEnter)
+      mainEl.addEventListener('mouseleave', onLeave)
+      _navCleanup.push(function() {
+        mainEl.removeEventListener('click', onClick)
+        mainEl.removeEventListener('mouseenter', onEnter)
+        mainEl.removeEventListener('mouseleave', onLeave)
       })
     })
 
@@ -265,14 +298,20 @@
     if (flyout) {
       flyout.addEventListener('mouseenter', _cancelFlyoutClose)
       flyout.addEventListener('mouseleave', _scheduleFlyoutClose)
+      _navCleanup.push(function() {
+        flyout.removeEventListener('mouseenter', _cancelFlyoutClose)
+        flyout.removeEventListener('mouseleave', _scheduleFlyoutClose)
+      })
     }
 
     // ── Sub-itens: clique navega para a página ─────────────────
     document.querySelectorAll('.nav-subitem').forEach(subItem => {
-      subItem.addEventListener('click', (e) => {
+      const handler = (e) => {
         e.stopPropagation()
         handleSubItemClick(subItem)
-      })
+      }
+      subItem.addEventListener('click', handler)
+      _navCleanup.push(function() { subItem.removeEventListener('click', handler) })
     })
   }
 
@@ -451,6 +490,9 @@
 
     // Cirúrgico: reprocessa apenas os ícones da página recém-exibida
     _replaceFeatherIcons(activePage)
+
+    // Lazy-load: carrega modulos pesados sob demanda
+    _lazyLoad(pageId)
 
     // Hooks de módulos externos para páginas com init especial
     if (pageId === 'growth-partners' && typeof window.vpiRefreshKpis === 'function') {

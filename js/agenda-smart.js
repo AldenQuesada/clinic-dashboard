@@ -1106,11 +1106,7 @@ window._getQueue              = _getQueue
 window._saveQueue             = _saveQueue
 window.processQueue           = processQueue
 
-// ── Ativar processamento automatico da fila de automacoes ────
-// Roda ao carregar + a cada 60s para executar automacoes pendentes
-// (WhatsApp D-1, D-0, status aguardando, notificacao interna)
-setTimeout(processQueue, 2000)
-setInterval(processQueue, 60000)
+// Duplicado removido — _init() ja faz processQueue + setInterval(60s)
 window.WA_TPLS                = WA_TPLS
 window.STATUS_LABELS          = STATUS_LABELS
 window.STATUS_COLORS          = STATUS_COLORS
