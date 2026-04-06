@@ -2636,9 +2636,17 @@
     } catch (e) { /* ignore */ }
 
     if (window._sbShared) {
-      window._sbShared.rpc('upsert_facial_analysis', { p_data: data })
+      var clinicId = null
+      try { clinicId = JSON.parse(localStorage.getItem('clinicai_clinic_id') || 'null') } catch (e) {}
+      window._sbShared.rpc('upsert_facial_session', {
+        p_clinic_id: clinicId,
+        p_lead_id: data.lead_id,
+        p_session_data: data,
+        p_gpt_analysis: _lastAnalysis || null,
+      })
         .then(function (res) {
           if (res.error) console.error('[FaceMapping] Save error:', res.error)
+          else console.log('[FaceMapping] Saved to Supabase')
         })
         .catch(function (err) { console.error('[FaceMapping] Save failed:', err) })
     }
