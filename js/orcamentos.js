@@ -33,27 +33,26 @@
     var page = document.getElementById('page-orcamentos')
     if (!page) return
 
-    var now = Date.now()
-    var cacheValid = _cacheData && (now - _cacheTs) < _CACHE_TTL && !forceRefresh
-
-    if (cacheValid) { _render(); return }
-
-    if (window.LeadsService && LeadsService.loadAll) {
-      LeadsService.loadAll().then(function(leads) {
-        _cacheData = leads
-        _cacheTs = Date.now()
-        _render()
-      }).catch(function() {
-        // Fallback: usar getLocal mesmo sem loadAll
-        _cacheData = LeadsService.getLocal()
-        _cacheTs = Date.now()
-        _render()
-      })
-      return
+    // Renderizar IMEDIATO com dados locais (nao esperar Supabase)
+    var local = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+    if (local.length) {
+      _cacheData = local
+      _cacheTs = Date.now()
+      _render()
     }
-    // Sem LeadsService — tentar localStorage direto
-    _cacheData = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-    _render()
+
+    // Refresh em background (nao bloqueia UI)
+    if (forceRefresh && window.LeadsService && LeadsService.loadAll) {
+      var timeout = setTimeout(function() {}, 5000) // safety
+      LeadsService.loadAll().then(function(leads) {
+        clearTimeout(timeout)
+        if (leads && leads.length) {
+          _cacheData = leads
+          _cacheTs = Date.now()
+          _render()
+        }
+      }).catch(function() { clearTimeout(timeout) })
+    }
   }
 
   function _render() {
