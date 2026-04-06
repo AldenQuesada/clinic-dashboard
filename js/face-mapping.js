@@ -108,6 +108,8 @@
   var _lead = null
   var _photos = {}        // { front: File|Blob, '45': ..., lateral: ... }
   var _photoUrls = {}     // objectURLs (cropped)
+  var _afterPhotoUrl = null   // DEPOIS (resultado atual) — single photo
+  var _simPhotoUrl = null     // DEPOIS SIMULADO — single photo
   var _activeAngle = null
   var _annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
   var _canvas = null
@@ -187,6 +189,8 @@
     _doneItems = []
     _activeAngle = null
     _nextId = 1
+    _afterPhotoUrl = null
+    _simPhotoUrl = null
 
     if (window.navigateTo) window.navigateTo('facial-analysis')
     setTimeout(function () { _render() }, 100)
@@ -225,6 +229,8 @@
     _doneItems = []
     _activeAngle = null
     _nextId = 1
+    _afterPhotoUrl = null
+    _simPhotoUrl = null
 
     if (window.navigateTo) window.navigateTo('facial-analysis')
     setTimeout(function () { _render() }, 100)
@@ -327,7 +333,38 @@
       }
     })
 
+    // Separator + DEPOIS / SIMULADO slots for report
+    html += '<div style="border-top:1px solid var(--border);margin:8px 0;padding-top:8px">' +
+      '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);text-align:center;margin-bottom:6px">Report</div>'
+
+    // DEPOIS
+    if (_afterPhotoUrl) {
+      html += '<div class="fm-photo-thumb" style="border-color:#10B981" onclick="FaceMapping._triggerUploadExtra(\'after\')">' +
+        '<img src="' + _afterPhotoUrl + '" alt="Depois">' +
+        '<span class="fm-photo-thumb-label" style="background:rgba(16,185,129,0.8)">DEPOIS</span>' +
+        '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteExtraPhoto(\'after\')" title="Excluir">' + _icon('trash-2', 11) + '</button></div>' +
+      '</div>'
+    } else {
+      html += '<div class="fm-photo-upload" onclick="FaceMapping._triggerUploadExtra(\'after\')" style="border-color:#10B98140">' +
+        _icon('camera', 16) + '<span style="font-size:8px">DEPOIS</span></div>'
+    }
+
+    // SIMULADO
+    if (_simPhotoUrl) {
+      html += '<div class="fm-photo-thumb" style="border-color:#C9A96E" onclick="FaceMapping._triggerUploadExtra(\'sim\')">' +
+        '<img src="' + _simPhotoUrl + '" alt="Simulado">' +
+        '<span class="fm-photo-thumb-label" style="background:rgba(201,169,110,0.9)">SIMULADO</span>' +
+        '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteExtraPhoto(\'sim\')" title="Excluir">' + _icon('trash-2', 11) + '</button></div>' +
+      '</div>'
+    } else {
+      html += '<div class="fm-photo-upload" onclick="FaceMapping._triggerUploadExtra(\'sim\')" style="border-color:#C9A96E40">' +
+        _icon('camera', 16) + '<span style="font-size:8px">SIMULADO</span></div>'
+    }
+
+    html += '</div>'
+
     html += '<input type="file" id="fmFileInput" accept="image/*" style="display:none">'
+    html += '<input type="file" id="fmExtraFileInput" accept="image/*" style="display:none">'
     html += '</div>'
     return html
   }
@@ -937,6 +974,21 @@
     _cropRedraw()
   }
 
+  var _pendingExtraType = null // 'after' | 'sim'
+
+  function _triggerUploadExtra(type) {
+    _pendingExtraType = type
+    var input = document.getElementById('fmExtraFileInput')
+    if (input) { input.value = ''; input.click() }
+  }
+
+  function _deleteExtraPhoto(type) {
+    if (type === 'after') { if (_afterPhotoUrl) URL.revokeObjectURL(_afterPhotoUrl); _afterPhotoUrl = null }
+    if (type === 'sim') { if (_simPhotoUrl) URL.revokeObjectURL(_simPhotoUrl); _simPhotoUrl = null }
+    _render()
+    if (_activeAngle) setTimeout(_initCanvas, 50)
+  }
+
   function _deletePhoto(angle) {
     if (_photoUrls[angle]) URL.revokeObjectURL(_photoUrls[angle])
     delete _photos[angle]
@@ -991,6 +1043,25 @@
         // Open crop modal
         var tempUrl = URL.createObjectURL(file)
         _openCropModal(tempUrl, _pendingUploadAngle)
+      })
+    }
+
+    // Extra file input (DEPOIS / SIMULADO)
+    var extraInput = document.getElementById('fmExtraFileInput')
+    if (extraInput) {
+      extraInput.addEventListener('change', function (e) {
+        var file = e.target.files[0]
+        if (!file || !_pendingExtraType) return
+        var url = URL.createObjectURL(file)
+        if (_pendingExtraType === 'after') {
+          if (_afterPhotoUrl) URL.revokeObjectURL(_afterPhotoUrl)
+          _afterPhotoUrl = url
+        } else {
+          if (_simPhotoUrl) URL.revokeObjectURL(_simPhotoUrl)
+          _simPhotoUrl = url
+        }
+        _render()
+        if (_activeAngle) setTimeout(_initCanvas, 50)
       })
     }
 
@@ -1106,11 +1177,14 @@
     overlay.className = 'fm-export-overlay'
     overlay.id = 'fmExportOverlay'
 
+    // Use 45° photo as the main "ANTES" in report top row
+    var mainAngle = _photoUrls['45'] ? '45' : (_photoUrls['front'] ? 'front' : 'lateral')
+
     var html = '<div class="fm-export-modal">' +
       '<div class="fm-export-header">' +
         '<h3>Report de Analise Facial</h3>' +
         '<div style="display:flex;gap:8px">' +
-          '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._downloadReport()">'+
+          '<button style="display:flex;align-items:center;gap:5px;padding:8px 14px;border:none;border-radius:10px;background:#C8A97E;color:#fff;font-size:13px;font-weight:600;cursor:pointer" onclick="FaceMapping._downloadReport()">'+
             _icon('download', 14) + ' Baixar PNG</button>' +
           '<button class="fm-btn" onclick="FaceMapping._closeExport()">' +
             _icon('x', 14) + ' Fechar</button>' +
@@ -1125,56 +1199,65 @@
             '<div class="fm-report-patient">' + _esc(name) + ' \u2022 ' + _formatDate(new Date()) + '</div>' +
           '</div>' +
 
-          // Photos row — labeled ANTES
-          '<div class="fm-report-photos">'
-
-    ANGLES.forEach(function (a) {
-      html += '<div class="fm-report-photo-cell">'
-      if (_photoUrls[a.id]) {
-        html += '<canvas id="fmReportCanvas_' + a.id + '"></canvas>'
-      } else {
-        html += '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.3);font-size:12px">Sem foto</div>'
-      }
-      html += '<span class="fm-report-photo-label">ANTES \u2022 ' + a.label + '</span></div>'
-    })
-
-    html += '</div>' +
-
-      '<div class="fm-report-panels">' +
-
-        '<div class="fm-report-panel">' +
-          '<div class="fm-report-panel-title">O Que Falta Para o Resultado</div>' +
-          _renderDonePanel() +
-        '</div>' +
-
-        '<div class="fm-report-panel" style="padding:12px">' +
-          '<div class="fm-report-panel-title" style="padding:0 12px">Mapa de Tratamento</div>' +
-          '<div class="fm-report-center-photo">' +
-            '<canvas id="fmReportCenterCanvas"></canvas>' +
+          // TOP ROW: ANTES / DEPOIS / DEPOIS SIMULADO (like reference)
+          '<div class="fm-report-photos">' +
+            // ANTES (45° or main angle)
+            '<div class="fm-report-photo-cell">' +
+              '<canvas id="fmReportCanvas_main"></canvas>' +
+              '<span class="fm-report-photo-label">ANTES</span>' +
+            '</div>' +
+            // DEPOIS (resultado atual)
+            '<div class="fm-report-photo-cell">' +
+              (_afterPhotoUrl
+                ? '<img id="fmReportAfterImg" src="' + _afterPhotoUrl + '" style="width:100%;height:100%;object-fit:cover">'
+                : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.2);font-size:12px;flex-direction:column"><span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase">Sem foto</span></div>') +
+              '<span class="fm-report-photo-label">DEPOIS<br><span style="font-size:9px;font-weight:400">(seu resultado atual)</span></span>' +
+            '</div>' +
+            // DEPOIS SIMULADO
+            '<div class="fm-report-photo-cell">' +
+              (_simPhotoUrl
+                ? '<img id="fmReportSimImg" src="' + _simPhotoUrl + '" style="width:100%;height:100%;object-fit:cover">'
+                : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.2);font-size:12px;flex-direction:column"><span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase">Sem foto</span></div>') +
+              '<span class="fm-report-photo-label" style="background:linear-gradient(transparent,rgba(201,169,110,0.9))"><strong>DEPOIS SIMULADO</strong><br><span style="font-size:9px;font-weight:400">(protocolo completo)</span></span>' +
+            '</div>' +
           '</div>' +
-        '</div>' +
 
-        '<div class="fm-report-panel">' +
-          '<div class="fm-report-panel-title">Resultado Esperado</div>' +
-          _renderExpectedPanel() +
-        '</div>' +
+          // BOTTOM ROW: 3 panels (O Que Foi Feito / Mapa / Resultado Esperado)
+          '<div class="fm-report-panels">' +
 
-      '</div>' +
+            // LEFT: O que foi feito (impacto do problema)
+            '<div class="fm-report-panel">' +
+              '<div class="fm-report-panel-title">O Que Falta Para Chegar no -10 Anos</div>' +
+              _renderDonePanel() +
+            '</div>' +
 
-      '<div class="fm-report-summary">'
+            // CENTER: Annotated face map
+            '<div class="fm-report-panel" style="padding:12px">' +
+              '<div class="fm-report-panel-title" style="padding:0 12px">Mapa de Tratamento</div>' +
+              '<div class="fm-report-center-photo">' +
+                '<canvas id="fmReportCenterCanvas"></canvas>' +
+              '</div>' +
+            '</div>' +
+
+            // RIGHT: Resultado final simulado
+            '<div class="fm-report-panel">' +
+              '<div class="fm-report-panel-title">Resultado Final Simulado</div>' +
+              _renderExpectedPanel() +
+            '</div>' +
+
+          '</div>' +
+
+          // Summary bar
+          '<div class="fm-report-summary">'
 
     totals.forEach(function (t) {
       html += '<div class="fm-report-stat">' +
         '<div class="fm-report-stat-value" style="color:' + t.color + '">' + t.ml.toFixed(1) + '</div>' +
-        '<div class="fm-report-stat-label">' + t.label + ' (mL)</div>' +
+        '<div class="fm-report-stat-label">' + t.label + '</div>' +
       '</div>'
     })
 
     html += '<div class="fm-report-stat">' +
-      '<div class="fm-report-stat-value">' + totalMl.toFixed(1) + '</div>' +
-      '<div class="fm-report-stat-label">Total mL</div>' +
-    '</div>' +
-    '<div class="fm-report-stat">' +
       '<div class="fm-report-stat-value">' + _annotations.length + '</div>' +
       '<div class="fm-report-stat-label">Zonas Tratadas</div>' +
     '</div>'
@@ -1255,27 +1338,22 @@
   }
 
   function _renderReportCanvases() {
-    ANGLES.forEach(function (a) {
-      var rc = document.getElementById('fmReportCanvas_' + a.id)
-      if (!rc || !_photoUrls[a.id]) return
-
-      var img = new Image()
-      img.onload = function () {
-        var scale = 400 / img.width
-        rc.width = 400
-        rc.height = img.height * scale
-        var ctx = rc.getContext('2d')
-        ctx.drawImage(img, 0, 0, rc.width, rc.height)
-
-        var anns = _annotations.filter(function (ann) { return ann.angle === a.id })
-        var origScale = _canvas ? (rc.width / _canvas.width) : 1
-        anns.forEach(function (ann) {
-          _drawEllipseOn(ctx, _scaleAnn(ann, origScale))
-        })
+    // Main ANTES photo (45° preferred)
+    var mainAngle = _photoUrls['45'] ? '45' : (_photoUrls['front'] ? 'front' : 'lateral')
+    var mainCanvas = document.getElementById('fmReportCanvas_main')
+    if (mainCanvas && _photoUrls[mainAngle]) {
+      var mainImg = new Image()
+      mainImg.onload = function () {
+        var scale = 400 / mainImg.width
+        mainCanvas.width = 400
+        mainCanvas.height = mainImg.height * scale
+        var ctx = mainCanvas.getContext('2d')
+        ctx.drawImage(mainImg, 0, 0, mainCanvas.width, mainCanvas.height)
       }
-      img.src = _photoUrls[a.id]
-    })
+      mainImg.src = _photoUrls[mainAngle]
+    }
 
+    // Center map canvas (45° with annotations)
     var centerAngle = _photoUrls['45'] ? '45' : (_photoUrls['front'] ? 'front' : 'lateral')
     var cc = document.getElementById('fmReportCenterCanvas')
     if (!cc || !_photoUrls[centerAngle]) return
@@ -1545,6 +1623,8 @@
     _recrop: _recrop,
     _deletePhoto: _deletePhoto,
     _editRanges: _editRanges,
+    _triggerUploadExtra: _triggerUploadExtra,
+    _deleteExtraPhoto: _deleteExtraPhoto,
 
     get _selectedMl() { return _selectedMl },
     set _selectedMl(v) { _selectedMl = v },

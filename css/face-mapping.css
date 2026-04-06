@@ -281,7 +281,7 @@
   position: relative;
   background: #F0F1F4;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   overflow: hidden;
 }
@@ -295,8 +295,7 @@
 .fm-canvas-wrap canvas {
   display: block;
   max-width: 100%;
-  max-height: calc(100vh - 180px);
-  cursor: crosshair;
+  max-height: calc(100vh - 160px);
 }
 
 .fm-empty-state {
