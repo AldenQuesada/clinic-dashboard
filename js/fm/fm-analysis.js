@@ -282,6 +282,7 @@
   }
 
   FM._generateVectorsFromAnnotations = function () {
+    FM._pushUndo()
     var anns45 = FM._annotations.filter(function (a) { return a.angle === '45' })
     FM._vectors = []
     FM._nextVecId = 1

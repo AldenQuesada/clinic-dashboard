@@ -146,23 +146,56 @@
     return 'fh_' + Math.abs(hash).toString(36) + '_' + b64.length
   }
 
-  // ── Undo / Redo ────────────────────────────────────────────
+  // ── Undo / Redo (universal — all modes) ─────────────────────
+
+  // Snapshot all mutable state across every mode
+  FM._snapshotState = function () {
+    return JSON.stringify({
+      annotations: FM._annotations,
+      vectors: FM._vectors,
+      nextVecId: FM._nextVecId,
+      metricLines: FM._metricLines,
+      metricPoints: FM._metricPoints,
+      metricMidline: FM._metricMidline,
+      metricAngles: FM._metricAngles,
+      metricNextPointId: FM._metricNextPointId,
+      metricNextLineId: FM._metricNextLineId,
+      tercoLines: FM._tercoLines,
+      rickettsPoints: FM._rickettsPoints,
+    })
+  }
+
+  FM._restoreSnapshot = function (json) {
+    var s = JSON.parse(json)
+    FM._annotations = s.annotations || []
+    FM._vectors = s.vectors || []
+    FM._nextVecId = s.nextVecId || 1
+    FM._metricLines = s.metricLines || { h: [], v: [] }
+    FM._metricPoints = s.metricPoints || []
+    FM._metricMidline = s.metricMidline || null
+    FM._metricAngles = s.metricAngles || null
+    FM._metricNextPointId = s.metricNextPointId || 1
+    FM._metricNextLineId = s.metricNextLineId || 1
+    FM._tercoLines = s.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
+    FM._rickettsPoints = s.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
+  }
 
   // Push current state to undo stack (call BEFORE making a change)
   FM._pushUndo = function () {
-    FM._undoStack.push(JSON.stringify(FM._annotations))
+    FM._undoStack.push(FM._snapshotState())
     if (FM._undoStack.length > FM._MAX_UNDO) FM._undoStack.shift()
     FM._redoStack = [] // clear redo on new action
   }
 
   FM._undo = function () {
     if (FM._undoStack.length === 0) return
-    // Save current to redo
-    FM._redoStack.push(JSON.stringify(FM._annotations))
-    // Restore previous
-    FM._annotations = JSON.parse(FM._undoStack.pop())
+    FM._redoStack.push(FM._snapshotState())
+    FM._restoreSnapshot(FM._undoStack.pop())
     FM._selAnn = null
+    FM._selVec = null
     FM._simPhotoUrl = null
+    FM._metricDrag = null
+    FM._analysisDrag = null
     FM._redraw()
     FM._refreshToolbar()
     FM._autoSave()
@@ -170,12 +203,13 @@
 
   FM._redo = function () {
     if (FM._redoStack.length === 0) return
-    // Save current to undo
-    FM._undoStack.push(JSON.stringify(FM._annotations))
-    // Restore next
-    FM._annotations = JSON.parse(FM._redoStack.pop())
+    FM._undoStack.push(FM._snapshotState())
+    FM._restoreSnapshot(FM._redoStack.pop())
     FM._selAnn = null
+    FM._selVec = null
     FM._simPhotoUrl = null
+    FM._metricDrag = null
+    FM._analysisDrag = null
     FM._redraw()
     FM._refreshToolbar()
     FM._autoSave()

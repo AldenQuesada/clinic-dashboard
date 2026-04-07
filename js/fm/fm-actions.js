@@ -135,6 +135,7 @@
 
   FM._clearAll = function () {
     if (!confirm('Limpar todas as marcacoes e fotos?')) return
+    FM._pushUndo()
     FM._annotations = []
     FM._vectors = []
     FM._simPhotoUrl = null

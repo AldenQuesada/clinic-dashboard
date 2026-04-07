@@ -225,6 +225,7 @@
         for (var k = 0; k < keys.length; k++) {
           var ly = FM._tercoLines[keys[k]] * FM._imgH
           if (Math.abs(my - ly) < 12 && mx < FM._imgW) {
+            FM._pushUndo()
             FM._analysisDrag = keys[k]
             FM._mode = 'move'
             FM._canvas.style.cursor = 'ns-resize'
@@ -233,9 +234,9 @@
         }
       } else if (FM._activeAngle === 'lateral') {
         var nDist = Math.sqrt(Math.pow(mx - FM._rickettsPoints.nose.x * FM._imgW, 2) + Math.pow(my - FM._rickettsPoints.nose.y * FM._imgH, 2))
-        if (nDist < 15) { FM._analysisDrag = 'nose'; FM._mode = 'move'; FM._canvas.style.cursor = 'grab'; return }
+        if (nDist < 15) { FM._pushUndo(); FM._analysisDrag = 'nose'; FM._mode = 'move'; FM._canvas.style.cursor = 'grab'; return }
         var cDist = Math.sqrt(Math.pow(mx - FM._rickettsPoints.chin.x * FM._imgW, 2) + Math.pow(my - FM._rickettsPoints.chin.y * FM._imgH, 2))
-        if (cDist < 15) { FM._analysisDrag = 'chin'; FM._mode = 'move'; FM._canvas.style.cursor = 'grab'; return }
+        if (cDist < 15) { FM._pushUndo(); FM._analysisDrag = 'chin'; FM._mode = 'move'; FM._canvas.style.cursor = 'grab'; return }
       }
       FM._analysisDrag = null
       FM._redraw()
@@ -246,6 +247,7 @@
     if (FM._editorMode === 'vectors') {
       var hit = FM._hitVector(mx, my)
       if (hit) {
+        FM._pushUndo()
         FM._selVec = hit.vec
         FM._vecDragPart = hit.part
         FM._mode = 'move'

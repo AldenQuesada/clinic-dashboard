@@ -219,6 +219,7 @@
         if (!ap) continue
         var apx = ap.x * w, apy = ap.y * h
         if (Math.sqrt(Math.pow(mx - apx, 2) + Math.pow(my - apy, 2)) < threshold) {
+          FM._pushUndo()
           FM._metricDrag = { type: 'angle_point', key: ak }
           return true
         }
@@ -231,6 +232,7 @@
       for (var i = 0; i < FM._metricLines.h.length; i++) {
         var ly = FM._metricLines.h[i].y * h
         if (Math.abs(my - ly) < threshold && mx < w) {
+          FM._pushUndo()
           FM._metricDrag = { type: 'hline', index: i }
           return true
         }
@@ -249,6 +251,7 @@
       for (var j = 0; j < FM._metricLines.v.length; j++) {
         var lx = FM._metricLines.v[j].x * w
         if (Math.abs(mx - lx) < threshold && my < h) {
+          FM._pushUndo()
           FM._metricDrag = { type: 'vline', index: j }
           return true
         }
@@ -268,6 +271,7 @@
         var ppx = FM._metricPoints[k].x * w
         var ppy = FM._metricPoints[k].y * h
         if (Math.sqrt(Math.pow(mx - ppx, 2) + Math.pow(my - ppy, 2)) < threshold) {
+          FM._pushUndo()
           FM._metricDrag = { type: 'point', index: k }
           return true
         }
@@ -286,6 +290,7 @@
     if (FM._metricShowMidline) {
       var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
       if (Math.abs(mx - midX) < threshold && my < 30) {
+        FM._pushUndo()
         FM._metricDrag = { type: 'midline' }
         return true
       }
@@ -349,6 +354,7 @@
   }
 
   FM._clearMetricLines = function (type) {
+    FM._pushUndo()
     if (type === 'h') FM._metricLines.h = []
     else if (type === 'v') FM._metricLines.v = []
     else if (type === 'points') FM._metricPoints = []
@@ -392,6 +398,7 @@
       return
     }
 
+    FM._pushUndo()
     var kp = FM._scanData.key_points
     FM._metricPoints = []
     FM._metricNextPointId = 1
@@ -484,6 +491,7 @@
   }
 
   FM._removeLastMetric = function (type) {
+    FM._pushUndo()
     if (type === 'hline' && FM._metricLines.h.length > 0) FM._metricLines.h.pop()
     else if (type === 'vline' && FM._metricLines.v.length > 0) FM._metricLines.v.pop()
     else if (type === 'point' && FM._metricPoints.length > 0) FM._metricPoints.pop()
@@ -500,6 +508,7 @@
       return
     }
 
+    FM._pushUndo()
     var kp = FM._scanData.key_points
 
     // Horizontal lines at key anatomical points
@@ -610,6 +619,7 @@
       return
     }
 
+    FM._pushUndo()
     var kp = FM._scanData.key_points
     var w = FM._imgW || 1
     var h = FM._imgH || 1
