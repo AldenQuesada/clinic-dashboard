@@ -208,8 +208,6 @@
         '</div>' +
       '</div>'
     }
-
-  FM._renderCanvasArea = function () {
     if (FM._viewMode === '2x') {
       return FM._renderCanvasArea2x()
     }
