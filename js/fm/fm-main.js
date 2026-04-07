@@ -41,6 +41,9 @@
 
     _undo: FM._undo,
     _redo: FM._redo,
+    _openCompare: FM._openCompare,
+    _closeCompare: FM._closeCompare,
+    _exportCompare: FM._exportCompare,
 
     get _selectedMl() { return FM._selectedMl },
     set _selectedMl(v) { FM._selectedMl = v },

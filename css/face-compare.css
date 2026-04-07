@@ -1,0 +1,431 @@
+/* ============================================================
+   Face Compare — Premium ANTES vs DEPOIS
+   Clinica Mirian de Paula Brandbook
+   ============================================================ */
+
+/* ── Overlay ───────────────────────────────────────────────── */
+.fmc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99995;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fmcFadeIn 0.3s ease;
+}
+
+@keyframes fmcFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Container ─────────────────────────────────────────────── */
+.fmc-container {
+  width: 100%;
+  max-width: 1100px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+  position: relative;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+.fmc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: linear-gradient(180deg, rgba(44,44,44,0.95), rgba(26,26,26,0.95));
+  border-bottom: 1px solid rgba(200,169,126,0.12);
+  flex-shrink: 0;
+  backdrop-filter: blur(12px);
+  z-index: 2;
+}
+
+.fmc-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.fmc-brand-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 300;
+  color: #F5F0E8;
+  letter-spacing: 0.05em;
+}
+
+.fmc-brand-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #C8A97E;
+  margin-top: 1px;
+}
+
+/* Mode Toggle */
+.fmc-modes {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+}
+
+.fmc-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(245,240,232,0.4);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fmc-mode-btn:hover {
+  color: rgba(245,240,232,0.7);
+  background: rgba(255,255,255,0.05);
+}
+
+.fmc-mode-btn.active {
+  background: rgba(200,169,126,0.15);
+  color: #C8A97E;
+  box-shadow: 0 0 20px rgba(200,169,126,0.1);
+}
+
+.fmc-mode-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Actions */
+.fmc-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fmc-btn-export {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #C8A97E, #A8895E);
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 12px rgba(200,169,126,0.3);
+}
+
+.fmc-btn-export:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(200,169,126,0.4);
+}
+
+.fmc-btn-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: rgba(245,240,232,0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.fmc-btn-close:hover {
+  background: rgba(255,255,255,0.1);
+  color: #F5F0E8;
+}
+
+/* ── Viewport ──────────────────────────────────────────────── */
+.fmc-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+/* ── Slider Mode ───────────────────────────────────────────── */
+.fmc-slider-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.fmc-img-before,
+.fmc-img-after {
+  position: absolute;
+  inset: 0;
+}
+
+.fmc-img-before img,
+.fmc-img-after img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  image-rendering: high-quality;
+}
+
+.fmc-img-after {
+  clip-path: inset(0 0 0 50%);
+  transition: clip-path 0.02s linear;
+}
+
+/* Slider Line */
+.fmc-slider-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 3px;
+  margin-left: -1.5px;
+  background: linear-gradient(180deg,
+    rgba(200,169,126,0.3),
+    #C8A97E 20%,
+    #C8A97E 80%,
+    rgba(200,169,126,0.3)
+  );
+  z-index: 10;
+  pointer-events: none;
+  box-shadow:
+    0 0 8px rgba(200,169,126,0.4),
+    0 0 24px rgba(200,169,126,0.15);
+}
+
+/* Handle */
+.fmc-slider-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C8A97E, #DFC5A0);
+  border: 3px solid rgba(255,255,255,0.9);
+  cursor: ew-resize;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.4),
+    0 0 30px rgba(200,169,126,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  z-index: 11;
+}
+
+.fmc-slider-handle:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.5),
+    0 0 40px rgba(200,169,126,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.fmc-handle-arrows {
+  display: flex;
+  gap: 8px;
+  color: #fff;
+}
+
+/* ── Fade Mode ─────────────────────────────────────────────── */
+.fmc-fade-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.fmc-fade-before,
+.fmc-fade-after {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.fmc-fade-after {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* ── Side-by-Side Mode ─────────────────────────────────────── */
+.fmc-side-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 4px;
+}
+
+.fmc-side-panel {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+.fmc-side-panel img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  transition: transform 0.1s ease;
+  transform-origin: center center;
+}
+
+/* ── Labels ────────────────────────────────────────────────── */
+.fmc-label {
+  position: absolute;
+  bottom: 20px;
+  padding: 6px 18px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  color: #F5F0E8;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 5;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+.fmc-label-before {
+  left: 20px;
+  background: linear-gradient(135deg, rgba(44,44,44,0.8), rgba(44,44,44,0.6));
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.fmc-label-after {
+  right: 20px;
+  background: linear-gradient(135deg, rgba(200,169,126,0.7), rgba(168,137,94,0.6));
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(200,169,126,0.3);
+  color: #fff;
+}
+
+/* ── Controls ──────────────────────────────────────────────── */
+.fmc-controls {
+  padding: 12px 24px;
+  background: rgba(26,26,26,0.95);
+  border-top: 1px solid rgba(200,169,126,0.08);
+  flex-shrink: 0;
+}
+
+.fmc-slider-control,
+.fmc-fade-control,
+.fmc-zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.fmc-fade-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(200,169,126,0.6);
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Premium range slider */
+.fmc-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 300px;
+  max-width: 60%;
+  height: 4px;
+  background: linear-gradient(90deg,
+    rgba(200,169,126,0.15),
+    rgba(200,169,126,0.3),
+    rgba(200,169,126,0.15)
+  );
+  border-radius: 2px;
+  outline: none;
+}
+
+.fmc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C8A97E, #DFC5A0);
+  cursor: pointer;
+  border: 2px solid #1a1a1a;
+  box-shadow:
+    0 0 12px rgba(200,169,126,0.4),
+    0 2px 6px rgba(0,0,0,0.3);
+  transition: transform 0.15s ease;
+}
+
+.fmc-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.fmc-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C8A97E, #DFC5A0);
+  cursor: pointer;
+  border: 2px solid #1a1a1a;
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.fmc-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: rgba(44,44,44,0.5);
+  border-top: 1px solid rgba(200,169,126,0.06);
+  flex-shrink: 0;
+}
+
+.fmc-patient-name {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(245,240,232,0.6);
+}
+
+.fmc-date {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  color: rgba(200,169,126,0.4);
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .fmc-header { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+  .fmc-modes { order: 3; width: 100%; justify-content: center; }
+  .fmc-mode-btn { padding: 6px 10px; font-size: 10px; }
+  .fmc-range { width: 200px; }
+  .fmc-label { font-size: 14px; padding: 4px 12px; }
+}
