@@ -16,8 +16,13 @@
 
     // Determine which panel to show on the right
     var rightPanel
-    if (FM._editorMode === 'analysis') {
-      rightPanel = FM._renderClinicalPanel()
+    var activeTab = FM._editorMode
+    if (activeTab === 'analysis' && FM._analysisSubMode === 'metrics') activeTab = 'simetria'
+
+    if (activeTab === 'simetria') {
+      rightPanel = FM._renderSimetriaPanel()
+    } else if (activeTab === 'analysis') {
+      rightPanel = FM._renderAnalisePanel()
     } else {
       rightPanel = FM._renderToolbar()
     }
@@ -256,269 +261,215 @@
     '</div>'
   }
 
-  FM._renderClinicalPanel = function () {
-    var scan = FM._scanData
-    var ma = FM._metricAngles
-    var skin = FM._skinAnalysis
-    var age = FM._skinAge
-    var isSimetria = FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics'
+  // ── SIMETRIA PANEL (wireframe, linhas, angulos, 3 planos) ──
 
-    var html = '<div class="fm-clinical-panel" style="width:300px;flex-shrink:0;background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.15);overflow-y:auto;max-height:calc(100vh - 100px);font-size:11px">'
+  FM._renderSimetriaPanel = function () {
+    var html = '<div class="fm-toolbar" style="background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.1)">'
 
-    if (isSimetria) {
-      // Simetria tools
-      html += '<div style="padding:8px 12px;border-bottom:1px solid rgba(200,169,126,0.1)">' +
-        '<div style="font-size:9px;color:#10B981;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Ferramentas de Simetria</div>' +
-        '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
-          '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px">-- H</button>' +
-          '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px">| V</button>' +
-          '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:9px">Ponto</button>' +
-          '<button class="fm-btn" onclick="FaceMapping._autoAsymmetryPairs()" style="flex:1;font-size:9px;padding:4px;border-color:#F59E0B;color:#F59E0B">Pares</button>' +
-          '<button class="fm-btn" onclick="FaceMapping._autoAngles()" style="flex:1;font-size:9px;padding:4px;border-color:#C8A97E;color:#C8A97E">Angulos</button>' +
-          '<button class="fm-btn" onclick="FaceMapping._clearMetricLines(\'all\')" style="padding:4px 6px;font-size:9px;color:#EF4444">X</button>' +
-        '</div>' +
-      '</div>'
-    } else {
-      // Analysis tab — sub-modes: Tercos, Ricketts
-      html += '<div style="padding:8px 12px;border-bottom:1px solid rgba(200,169,126,0.1)">' +
-        '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Modo de Analise</div>' +
-        '<div style="display:flex;gap:4px">' +
-          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Tercos</button>' +
-          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Ricketts</button>' +
-        '</div>' +
+    // Wireframe toggle
+    html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Wireframe 478pts</span>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" style="font-size:9px;padding:3px 8px;border-color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.2)') + ';color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.4)') + '">' + (FM._showWireframe ? 'ON' : 'OFF') + '</button>' +
+      '</div>' +
+    '</div>'
+
+    // Metric tools
+    html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+      '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Ferramentas</div>' +
+      '<div style="display:flex;gap:3px;flex-wrap:wrap">' +
+        '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px;min-width:30px">-- H</button>' +
+        '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px;min-width:30px">| V</button>' +
+        '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:9px;min-width:30px">Pt</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:3px;margin-top:4px">' +
+        '<button class="fm-btn" onclick="FaceMapping._autoAsymmetryPairs()" style="flex:1;font-size:8px;padding:3px;border-color:rgba(200,169,126,0.2);color:rgba(200,169,126,0.6)">Pares</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._autoAngles()" style="flex:1;font-size:8px;padding:3px;border-color:rgba(200,169,126,0.2);color:rgba(200,169,126,0.6)">Angulos</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._clearMetricLines(\'all\')" style="font-size:8px;padding:3px 6px;color:rgba(200,169,126,0.3)">X</button>' +
+      '</div>' +
+    '</div>'
+
+    // Asymmetry score
+    if (FM._asymmetryScore) {
+      var as = FM._asymmetryScore
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">' +
+          '<span style="font-size:24px;font-weight:800;color:' + as.classification.color + '">' + as.score + '</span>' +
+          '<div>' +
+            '<div style="font-size:10px;font-weight:600;color:' + as.classification.color + '">' + as.classification.label + '</div>' +
+            '<div style="font-size:8px;color:rgba(245,240,232,0.3)">' + as.pair_count + ' pares</div>' +
+          '</div>' +
+        '</div>'
+      as.details.forEach(function (d) {
+        html += '<div style="display:flex;justify-content:space-between;font-size:9px;padding:2px 0">' +
+          '<span style="color:rgba(245,240,232,0.4)">' + d.pair + '</span>' +
+          '<span style="color:' + d.color + ';font-weight:600">' + d.severity + ' ' + d.higher + '</span>' +
+        '</div>'
+      })
+      html += '</div>'
+    }
+
+    // Mandibular angles
+    if (FM._metricAngles) {
+      var ma = FM._metricAngles
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Mandibula</div>' +
+        _clinVal('AMF', ma.amf + '\u00B0', ma.classification.color) +
+        _clinVal('Tipo', ma.classification.label, ma.classification.color) +
+        _clinVal('Ratio M/Z', ma.rmz, ma.rmz >= 0.85 && ma.rmz <= 0.95 ? '#10B981' : '#F59E0B') +
+        _clinVal('Jawline E/D', ma.aij_left + '\u00B0/' + ma.aij_right + '\u00B0', ma.jawline.color) +
       '</div>'
     }
 
-    // ── ASYMMETRY SCORE (if pairs exist) ──
-    if (FM._asymmetryScore) {
-      var as = FM._asymmetryScore
-      html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
-        '<div style="background:rgba(245,158,11,0.15);padding:6px 12px">' +
-          '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#F59E0B">SCORE ASSIMETRIA GLOBAL</span>' +
-        '</div>' +
-        '<div style="padding:10px 12px">' +
-          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
-            '<span style="font-size:28px;font-weight:800;color:' + as.classification.color + '">' + as.score + '</span>' +
-            '<div>' +
-              '<div style="font-size:11px;font-weight:600;color:' + as.classification.color + '">' + as.classification.label + '</div>' +
-              '<div style="font-size:9px;color:rgba(245,240,232,0.4)">' + as.pair_count + ' pares | media ' + as.avg_deviation + 'px</div>' +
-            '</div>' +
-          '</div>'
+    // Scanner data (shape, symmetry, golden)
+    if (FM._scanData) {
+      var sd = FM._scanData
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Scanner</div>'
+      if (sd.shape) html += _clinVal('Biotipo', sd.shape.shape, '#C8A97E')
+      if (sd.symmetry) html += _clinVal('Simetria', sd.symmetry.overall + '%', sd.symmetry.overall >= 85 ? '#10B981' : '#F59E0B')
+      if (sd.measurements) html += _clinVal('Prop. Aurea', Math.round(sd.measurements.golden_ratio_score) + '%', sd.measurements.golden_ratio_score >= 70 ? '#10B981' : '#F59E0B')
+      html += '</div>'
+    }
 
-      // Detail per pair
-      as.details.forEach(function (d) {
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
-          '<span style="font-size:10px;color:rgba(245,240,232,0.6)">' + d.pair + '</span>' +
-          '<div style="text-align:right">' +
-            '<span style="font-size:10px;font-weight:600;color:' + d.color + '">' + d.severity + '</span>' +
-            '<span style="font-size:9px;color:rgba(245,240,232,0.4);margin-left:6px">\u2195' + d.dy + 'px ' + d.higher + '</span>' +
+    html += '</div>'
+    return html
+  }
+
+  // ── ANALISE PANEL (skin, collagen, age, protocol) ──
+
+  FM._renderAnalisePanel = function () {
+    var html = '<div class="fm-toolbar" style="background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.1)">'
+
+    // Sub-mode: Tercos / Ricketts
+    html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+      '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Plano</div>' +
+      '<div style="display:flex;gap:4px">' +
+        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Tercos</button>' +
+        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Ricketts</button>' +
+      '</div>' +
+    '</div>'
+
+    // Skin analysis
+    if (FM._skinAnalysis) {
+      var metrics = [
+        { key: 'wrinkles', label: 'Rugas' },
+        { key: 'spots', label: 'Manchas' },
+        { key: 'pores', label: 'Poros' },
+        { key: 'redness', label: 'Vermelhidao' },
+        { key: 'pigmentation', label: 'Pigmentacao' },
+        { key: 'firmness', label: 'Firmeza' },
+      ]
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Pele</div>'
+      metrics.forEach(function (m) {
+        var val = FM._skinAnalysis[m.key]
+        if (val == null) return
+        var color = val >= 70 ? '#10B981' : val >= 50 ? '#F59E0B' : '#EF4444'
+        html += '<div style="padding:2px 0">' +
+          '<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:1px">' +
+            '<span style="color:rgba(245,240,232,0.5)">' + m.label + '</span>' +
+            '<span style="color:' + color + ';font-weight:600">' + Math.round(val) + '</span>' +
+          '</div>' +
+          '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.06)">' +
+            '<div style="height:100%;width:' + Math.round(val) + '%;border-radius:2px;background:' + color + '"></div>' +
           '</div>' +
         '</div>'
       })
+      var ov = FM._skinAnalysis.overall
+      if (ov != null) {
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 0 2px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px">' +
+          '<span style="font-size:10px;font-weight:600;color:rgba(245,240,232,0.5)">Score Geral</span>' +
+          '<span style="font-size:14px;font-weight:700;color:' + (ov >= 70 ? '#10B981' : '#F59E0B') + '">' + Math.round(ov) + '</span>' +
+        '</div>'
+      }
+      html += '</div>'
+    }
 
+    // Skin age
+    if (FM._skinAge) {
+      var ageColor = FM._skinAge.estimated_age <= 35 ? '#10B981' : FM._skinAge.estimated_age <= 45 ? '#F59E0B' : '#EF4444'
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        _clinVal('Idade da Pele', Math.round(FM._skinAge.estimated_age) + ' anos', ageColor) +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.3)">' + (FM._skinAge.description || '') + '</div>' +
+      '</div>'
+    }
+
+    // Heatmaps
+    if (FM._heatmapImages && Object.keys(FM._heatmapImages).length > 0) {
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Heatmaps</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:3px">'
+      var hBtns = [
+        { key: 'wrinkles', label: 'Rugas' },
+        { key: 'spots', label: 'Manchas' },
+        { key: 'pores', label: 'Poros' },
+        { key: 'redness', label: 'Verm.' },
+        { key: 'firmness', label: 'Firmeza' },
+      ]
+      hBtns.forEach(function (b) {
+        if (!FM._heatmapImages[b.key]) return
+        var active = FM._activeHeatmap === b.key
+        html += '<button style="padding:3px 6px;font-size:8px;border-radius:4px;border:1px solid ' +
+          (active ? '#C8A97E' : 'rgba(200,169,126,0.15)') + ';background:' +
+          (active ? 'rgba(200,169,126,0.15)' : 'transparent') + ';color:' +
+          (active ? '#C8A97E' : 'rgba(200,169,126,0.4)') + ';cursor:pointer" onclick="FaceMapping._toggleHeatmap(\'' + b.key + '\')">' +
+          b.label + '</button>'
+      })
       html += '</div></div>'
+    } else if (FM._skinAnalysis) {
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<button class="fm-btn" style="width:100%;font-size:9px" onclick="FaceMapping._loadHeatmaps()">Gerar Heatmaps</button>' +
+      '</div>'
     }
 
-    // ── SECTION 1: PLANO VERTICAL ──
-    html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
-      '<div style="background:rgba(16,185,129,0.15);padding:6px 12px">' +
-        '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#10B981">PLANO VERTICAL</span>' +
-      '</div>' +
-      '<div style="padding:10px 12px">'
-
-    if (scan && scan.thirds) {
-      var t = scan.thirds
-      html += _clinVal('Terco Superior', Math.round(t.superior) + '%', t.superior >= 28 && t.superior <= 38 ? '#10B981' : '#EF4444')
-      html += _clinVal('Terco Medio', Math.round(t.medio) + '%', t.medio >= 28 && t.medio <= 38 ? '#10B981' : '#F59E0B')
-      html += _clinVal('Terco Inferior', Math.round(t.inferior) + '%', t.inferior >= 28 && t.inferior <= 38 ? '#10B981' : '#F59E0B')
-      html += _clinVal('Equilibrio', t.balanced ? 'Sim' : 'Nao', t.balanced ? '#10B981' : '#EF4444')
-
-      if (t.inferior > 38) {
-        html += _clinRx('Terco inferior longo', 'Botox masseter 20-30U bilateral para reduzir')
-      } else if (t.inferior < 28) {
-        html += _clinRx('Terco inferior curto', 'AH mento 1-2mL para projecao vertical')
-      }
-      if (t.medio > 38) {
-        html += _clinRx('Terco medio aumentado', 'AH ponta nasal 0.5mL para encurtar')
-      }
-      if (t.balanced) {
-        html += '<div style="color:#10B981;font-size:10px;margin-top:4px">Proporcoes verticais equilibradas</div>'
-      }
-    } else {
-      html += '<div style="color:rgba(245,240,232,0.4);font-size:10px">Execute Auto Analise</div>'
-    }
-
-    if (scan && scan.symmetry) {
-      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
-      html += _clinVal('Simetria Global', scan.symmetry.overall + '%', scan.symmetry.overall >= 85 ? '#10B981' : scan.symmetry.overall >= 70 ? '#F59E0B' : '#EF4444')
-      if (scan.symmetry.overall < 85) {
-        html += _clinRx('Assimetria detectada', 'AH compensatorio no lado deficiente')
-      }
-      html += '</div>'
-    }
-
-    html += '</div></div>'
-
-    // ── SECTION 2: PLANO HORIZONTAL ──
-    html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
-      '<div style="background:rgba(59,130,246,0.15);padding:6px 12px">' +
-        '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#3B82F6">PLANO HORIZONTAL</span>' +
-      '</div>' +
-      '<div style="padding:10px 12px">'
-
-    if (scan && scan.shape) {
-      html += _clinVal('Biotipo', scan.shape.shape, '#C8A97E')
-      if (scan.shape.ratios) {
-        html += _clinVal('Larg/Altura', scan.shape.ratios.width_to_length, scan.shape.ratios.width_to_length >= 0.65 && scan.shape.ratios.width_to_length <= 0.85 ? '#10B981' : '#F59E0B')
-      }
-      if (scan.measurements) {
-        html += _clinVal('Prop. Aurea', Math.round(scan.measurements.golden_ratio_score) + '%', scan.measurements.golden_ratio_score >= 70 ? '#10B981' : '#F59E0B')
-      }
-
-      html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
-      var sh = scan.shape.shape
-      if (sh === 'redondo') {
-        html += _clinRx('Rosto redondo', 'AH mandibula 2-3mL bilateral')
-        html += _clinRx('', 'AH mento 1mL projecao')
-        html += _clinRx('', 'Botox masseter 25U bilateral')
-      } else if (sh === 'quadrado') {
-        html += _clinRx('Rosto quadrado', 'Botox masseter 30U bilateral')
-        html += _clinRx('', 'AH zigoma 1mL bilateral')
-        html += _clinRx('', 'AH temporal 0.5mL bilateral')
-      } else if (sh === 'oval') {
-        html += _clinRx('Biotipo ideal', 'AH pontual conforme queixas especificas')
-      } else if (sh === 'oblongo') {
-        html += _clinRx('Rosto oblongo', 'AH zigoma 1.5mL bilateral')
-        html += _clinRx('', 'AH mandibula 1mL bilateral')
-      } else if (sh === 'coracao') {
-        html += _clinRx('Rosto coracao', 'AH mandibula 2mL bilateral')
-        html += _clinRx('', 'AH mento 1mL projecao')
-      } else if (sh === 'diamante') {
-        html += _clinRx('Rosto diamante', 'AH temporal 1mL bilateral')
-        html += _clinRx('', 'AH mandibula 1.5mL bilateral')
-      }
-      html += '</div>'
-    } else {
-      html += '<div style="color:rgba(245,240,232,0.4);font-size:10px">Execute Auto Analise</div>'
-    }
-
-    html += '</div></div>'
-
-    // ── SECTION 3: LINHA MANDIBULAR ──
-    html += '<div>' +
-      '<div style="background:rgba(200,169,126,0.15);padding:6px 12px">' +
-        '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#C8A97E">LINHA MANDIBULAR</span>' +
-      '</div>' +
-      '<div style="padding:10px 12px">'
-
-    if (ma) {
-      html += _clinVal('AMF', ma.amf + '\u00B0', ma.classification.color)
-      html += _clinVal('Classificacao', ma.classification.label, ma.classification.color)
-      html += _clinVal('Ratio M/Z', ma.rmz, ma.rmz >= 0.85 && ma.rmz <= 0.95 ? '#10B981' : '#F59E0B')
-      html += _clinVal('Jawline E', ma.aij_left + '\u00B0', ma.jawline.color)
-      html += _clinVal('Jawline D', ma.aij_right + '\u00B0', ma.jawline.color)
-      html += _clinVal('Tensao', ma.jawline.label, ma.jawline.color)
-
-      var aijDiff = Math.abs(ma.aij_left - ma.aij_right)
-      if (aijDiff > 2) {
-        var side = ma.aij_left > ma.aij_right ? 'E' : 'D'
-        html += _clinVal('Assimetria', '\u0394' + Math.round(aijDiff * 10) / 10 + '\u00B0 (' + side + ')', aijDiff > 8 ? '#EF4444' : '#F59E0B')
-      }
-
-      html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
-      if (ma.classification.level <= 2) {
-        html += _clinRx('Contorno indefinido', 'AH mandibula 2-3mL bilateral')
-        html += _clinRx('', 'AH mento 1-1.5mL projecao')
-        if (ma.aij_avg > 30) html += _clinRx('', 'AH pre-jowl 0.5mL bilateral')
-      } else if (ma.classification.level === 3) {
-        html += _clinRx('Boa definicao', 'Refinar contorno e corrigir assimetrias')
-        if (aijDiff > 4) html += _clinRx('', 'AH compensatorio lado ' + side + ' 0.5-1mL')
-      } else {
-        html += _clinRx('Angular marcada', 'Botox masseter 20-25U se suavizar')
-      }
-      if (ma.aij_avg > 30) {
-        html += _clinRx('Jawline caida', 'AH temporal 1mL vetor lifting')
-        html += _clinRx('', 'Fios PDO 4-6 unidades')
-      }
-      html += '</div>'
-    } else {
-      html += '<div style="color:rgba(245,240,232,0.4);font-size:10px">Execute Auto Angulos</div>'
-    }
-
-    // ── PROTOCOL SECTION ──
+    // Protocol
     if (FM._protocolData) {
       var proto = FM._protocolData
-      html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
-        '<div style="background:rgba(139,92,246,0.15);padding:6px 12px">' +
-          '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#8B5CF6">PROTOCOLO RECOMENDADO</span>' +
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Protocolo</div>' +
+        _clinVal('Classe', proto.classification + ' — ' + proto.classification_name, '#C8A97E') +
+        _clinVal('Idade', proto.age_bracket, '#C8A97E') +
+        '<div style="display:flex;gap:6px;margin-top:6px">' +
+          '<div style="flex:1;text-align:center;padding:4px;background:rgba(200,169,126,0.08);border-radius:4px">' +
+            '<div style="font-size:14px;font-weight:700;color:#C8A97E">' + proto.totals.ah_ml + '</div>' +
+            '<div style="font-size:7px;color:rgba(245,240,232,0.3)">mL AH</div>' +
+          '</div>' +
+          '<div style="flex:1;text-align:center;padding:4px;background:rgba(200,169,126,0.08);border-radius:4px">' +
+            '<div style="font-size:14px;font-weight:700;color:#C8A97E">' + proto.totals.botox_units + '</div>' +
+            '<div style="font-size:7px;color:rgba(245,240,232,0.3)">U Botox</div>' +
+          '</div>' +
+          '<div style="flex:1;text-align:center;padding:4px;background:rgba(200,169,126,0.08);border-radius:4px">' +
+            '<div style="font-size:14px;font-weight:700;color:#C8A97E">' + proto.totals.bio_sessions + '</div>' +
+            '<div style="font-size:7px;color:rgba(245,240,232,0.3)">Bio</div>' +
+          '</div>' +
         '</div>' +
-        '<div style="padding:10px 12px">'
-
-      // Classification
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-        '<span style="color:rgba(245,240,232,0.6);font-size:10px">Classificacao</span>' +
-        '<span style="color:#8B5CF6;font-weight:700;font-size:12px">' + proto.classification + ' — ' + proto.classification_name + '</span>' +
       '</div>'
-
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-        '<span style="color:rgba(245,240,232,0.6);font-size:10px">Faixa Etaria</span>' +
-        '<span style="color:#C8A97E;font-weight:600;font-size:11px">' + proto.age_bracket + '</span>' +
-      '</div>'
-
-      // Totals
-      html += '<div style="display:flex;gap:8px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
-      html += '<div style="flex:1;text-align:center;padding:6px;background:rgba(59,130,246,0.1);border-radius:6px">' +
-        '<div style="font-size:16px;font-weight:800;color:#3B82F6">' + proto.totals.ah_ml + '</div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.4)">mL AH</div>' +
-      '</div>'
-      html += '<div style="flex:1;text-align:center;padding:6px;background:rgba(139,92,246,0.1);border-radius:6px">' +
-        '<div style="font-size:16px;font-weight:800;color:#8B5CF6">' + proto.totals.botox_units + '</div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.4)">U Botox</div>' +
-      '</div>'
-      html += '<div style="flex:1;text-align:center;padding:6px;background:rgba(16,185,129,0.1);border-radius:6px">' +
-        '<div style="font-size:16px;font-weight:800;color:#10B981">' + proto.totals.bio_sessions + '</div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.4)">Bio sess.</div>' +
-      '</div>'
-      html += '</div>'
-
-      // Protocol per zone
-      if (proto.protocol && proto.protocol.length > 0) {
-        html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
-        proto.protocol.forEach(function (p) {
-          var zColor = p.unit === 'U' ? '#8B5CF6' : '#3B82F6'
-          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:10px">' +
-            '<span style="color:rgba(245,240,232,0.5)">' + p.zone + (p.bilateral ? ' (bil)' : '') + '</span>' +
-            '<span style="color:' + zColor + ';font-weight:600">' + p.dose + p.unit + '</span>' +
-          '</div>'
-        })
-        html += '</div>'
-      }
-
-      // Assessment
-      if (proto.assessment) {
-        html += '<div style="margin-top:6px;font-size:9px;color:rgba(245,240,232,0.4);line-height:1.4">' + proto.assessment + '</div>'
-      }
-
-      html += '</div></div>'
     } else {
-      html += '<div style="padding:10px 12px;border-bottom:1px solid rgba(200,169,126,0.1)">' +
-        '<button class="fm-btn" style="width:100%" onclick="FaceMapping._runProtocol()">' +
-          FM._icon('clipboard', 14) + ' Gerar Protocolo</button>' +
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<button class="fm-btn" style="width:100%;font-size:9px" onclick="FaceMapping._runProtocol()">Gerar Protocolo</button>' +
       '</div>'
     }
 
-    // Skin age summary (if available)
-    if (age) {
-      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
-      var ageColor = age.estimated_age <= 35 ? '#10B981' : age.estimated_age <= 45 ? '#F59E0B' : '#EF4444'
-      html += _clinVal('Idade da Pele', Math.round(age.estimated_age) + ' anos', ageColor)
-      html += '<div style="font-size:9px;color:rgba(245,240,232,0.4);margin-top:2px">' + (age.description || '') + '</div>'
-      html += '</div>'
+    // Scan + analyze buttons
+    if (!FM._skinAnalysis) {
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<button class="fm-btn" style="width:100%;font-size:9px;margin-bottom:4px" onclick="FaceMapping._autoAnalyze()">Scanner 478pts</button>' +
+        '<button class="fm-btn" style="width:100%;font-size:9px" onclick="FaceMapping._runSkinAnalysis()">Analisar Pele</button>' +
+      '</div>'
     }
 
-    html += '</div></div></div>'
+    html += '</div>'
     return html
   }
+
+  // ── CLINICAL PANEL (legacy — used by analysis tab) ──
+
+  FM._renderClinicalPanel = function () {
+    return FM._renderAnalisePanel()
+  }
+
+  // (antigo clinical panel removido — substituido por _renderSimetriaPanel e _renderAnalisePanel)
 
   function _clinVal(label, value, color) {
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0">' +
