@@ -137,10 +137,34 @@ function _getQueue()    { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '
 function _saveQueue(q)  { store.set(QUEUE_KEY, q) }
 
 function scheduleAutomations(appt) {
-  const q = _getQueue().filter(x => x.apptId !== appt.id)
   const dt = new Date(`${appt.data}T${appt.horaInicio}:00`)
-  if (isNaN(dt.getTime())) { _saveQueue(q); return }
+  if (isNaN(dt.getTime())) return
 
+  // ── Server-side: WhatsApp messages go directly to wa_outbox ──
+  // Cancel any previous automations for this appointment first
+  if (window._sbShared && appt.id) {
+    window._sbShared.rpc('wa_outbox_cancel_by_appt', { p_appt_ref: appt.id })
+  }
+
+  const phone = (_getPhone(appt) || '').replace(/\D/g, '')
+  if (phone && window._sbShared) {
+    const vars = _waVars(appt)
+
+    // D-1: confirmacao (dia anterior as 10h)
+    const d1 = new Date(dt); d1.setDate(d1.getDate()-1); d1.setHours(10,0,0,0)
+    _scheduleWA(phone, WA_TPLS.confirmacao.fn(vars), appt, d1, 'confirmacao')
+
+    // D-0: chegou o dia (mesmo dia as 8h)
+    const d0 = new Date(dt); d0.setHours(8,0,0,0)
+    _scheduleWA(phone, WA_TPLS.chegou_o_dia.fn(vars), appt, d0, 'chegou_o_dia')
+
+    // 30min antes: msg WhatsApp
+    const d30wa = new Date(dt); d30wa.setMinutes(d30wa.getMinutes()-30)
+    _scheduleWA(phone, WA_TPLS.antes.fn(vars), appt, d30wa, 'antes')
+  }
+
+  // ── Client-side only: status change + internal notification ──
+  const q = _getQueue().filter(x => x.apptId !== appt.id)
   const push = (trigger, date, type) => q.push({
     id:          'aut_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
     apptId:      appt.id,
@@ -150,12 +174,6 @@ function scheduleAutomations(appt) {
     payload:     { pacienteNome: appt.pacienteNome, pacienteId: appt.pacienteId }
   })
 
-  const d1 = new Date(dt); d1.setDate(d1.getDate()-1); d1.setHours(10,0,0,0)
-  push('d_minus_1', d1, 'whatsapp_confirmacao')
-
-  const d0 = new Date(dt); d0.setHours(8,0,0,0)
-  push('dia_08h', d0, 'whatsapp_chegou_o_dia')
-
   const d30 = new Date(dt); d30.setMinutes(d30.getMinutes()-30)
   push('30min_antes', d30, 'status_aguardando')
 
@@ -163,6 +181,21 @@ function scheduleAutomations(appt) {
   push('10min_antes', d10, 'notif_interna')
 
   _saveQueue(q)
+}
+
+function _scheduleWA(phone, content, appt, scheduledAt, tplKey) {
+  if (!window._sbShared) return
+  window._sbShared.rpc('wa_outbox_schedule_automation', {
+    p_phone:        phone,
+    p_content:      content,
+    p_lead_id:      appt.pacienteId || '',
+    p_lead_name:    appt.pacienteNome || 'Paciente',
+    p_scheduled_at: scheduledAt.toISOString(),
+    p_appt_ref:     appt.id
+  }).then(function(res) {
+    if (res.error) console.error('[AutoWA] Falha ao agendar', tplKey, ':', res.error.message)
+    else _logAuto(appt.id, 'wa_' + tplKey, 'agendado_server')
+  }).catch(function(e) { console.error('[AutoWA] Exception:', e) })
 }
 
 function processQueue() {
@@ -181,43 +214,26 @@ function _execAuto(item) {
   if (!window.getAppointments) return
   const appt = getAppointments().find(a => a.id === item.apptId)
   if (!appt) return
-  // Nao executar se ja cancelado/no_show/finalizado
   if (['cancelado','no_show','finalizado'].includes(appt.status)) {
     _logAuto(appt.id, item.type, 'pulado')
     return
   }
 
-  if (item.type === 'whatsapp_confirmacao') {
-    // D-1: enviar confirmacao
-    sendWATemplate(appt.id, 'confirmacao')
-    _logAuto(appt.id, item.type, 'enviado')
-    return
-  }
-  if (item.type === 'whatsapp_chegou_o_dia') {
-    // D-0 08h: enviar lembrete do dia
-    sendWATemplate(appt.id, 'chegou_o_dia')
-    _logAuto(appt.id, item.type, 'enviado')
-    return
-  }
+  // WhatsApp messages are now handled server-side (wa_outbox with scheduled_at).
+  // Only client-side actions remain here.
+
   if (item.type === 'status_aguardando' && ['confirmado','agendado','aguardando_confirmacao'].includes(appt.status)) {
-    // 30min antes: mudar status + enviar msg 30min
+    // 30min antes: mudar status para aguardando (client-side only)
     apptTransition(appt.id, 'aguardando', 'automacao')
-    sendWATemplate(appt.id, 'antes')
-    _logAuto(appt.id, item.type, 'enviado')
+    _logAuto(appt.id, item.type, 'executado')
     return
   }
   if (item.type === 'notif_interna') {
-    // 10min antes: alerta interno para secretaria (handled pelo day panel alerts)
+    // 10min antes: alerta interno para secretaria
     _logAuto(appt.id, item.type, 'notificado')
     return
   }
-  if (item.type === 'whatsapp_avaliacao') {
-    // D+3: pedir avaliacao Google
-    sendWATemplate(appt.id, 'avaliacao')
-    _logAuto(appt.id, item.type, 'enviado')
-    return
-  }
-  _logAuto(appt.id, item.type, 'pendente')
+  _logAuto(appt.id, item.type, 'ignorado')
 }
 
 function _logAuto(apptId, type, status) {
@@ -269,6 +285,10 @@ function apptTransition(id, newStatus, by) {
   if (newStatus === 'cancelado' || newStatus === 'no_show') {
     const q = _getQueue().map(x => x.apptId === id ? {...x, executed:true} : x)
     _saveQueue(q)
+    // Cancel server-side scheduled messages too
+    if (window._sbShared) {
+      window._sbShared.rpc('wa_outbox_cancel_by_appt', { p_appt_ref: id })
+    }
   }
   if (newStatus === 'no_show') _createNoShowTask(appt)
 
