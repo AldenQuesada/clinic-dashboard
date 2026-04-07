@@ -910,15 +910,16 @@ function _buildFinModal(id, appt) {
   const pmOpts = PAYMENT_METHODS.map(pm=>`<option value="${pm.id}" ${appt.formaPagamento===pm.id?'selected':''}>${pm.label}</option>`).join('')
   const isAvalPaga = appt.tipoConsulta==='avaliacao' && appt.tipoAvaliacao==='paga'
 
-  // Populate procedures datalist
-  var _finProcOpts = ''
+  // Build procedures catalog (nome → preco)
+  var _finProcCatalog = {}
   try {
-    var techs = typeof getTechnologies === 'function' ? getTechnologies() : []
-    var procs = typeof getProcedimentos === 'function' ? getProcedimentos() : JSON.parse(localStorage.getItem('clinic_procedimentos') || '[]')
-    var all = techs.map(function(t){return t.nome}).concat(procs.map(function(p){return p.nome||p.name||''})).filter(Boolean)
-    var unique = all.filter(function(v,i,a){return a.indexOf(v)===i})
-    _finProcOpts = '<datalist id="apptProcList">' + unique.map(function(n){return '<option value="'+n+'"/>'}).join('') + '</datalist>'
-  } catch(e) { _finProcOpts = '' }
+    var _techs = typeof getTechnologies === 'function' ? getTechnologies() : []
+    var _procs = typeof getProcedimentos === 'function' ? getProcedimentos() : JSON.parse(localStorage.getItem('clinic_procedimentos') || '[]')
+    _techs.forEach(function(t) { if (t.nome) _finProcCatalog[t.nome] = { preco: t.preco||0, preco_promo: t.preco_promo||0 } })
+    _procs.forEach(function(p) { var n = p.nome||p.name; if (n) _finProcCatalog[n] = { preco: p.preco||0, preco_promo: p.preco_promo||0 } })
+  } catch(e) { /* silencioso */ }
+  window._finProcCatalog = _finProcCatalog
+  var _finProcOpts = '<datalist id="apptProcList">' + Object.keys(_finProcCatalog).map(function(n){return '<option value="'+n+'"/>'}).join('') + '</datalist>'
 
   m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px'
   m.innerHTML = _finProcOpts + `
@@ -937,10 +938,12 @@ function _buildFinModal(id, appt) {
           <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:7px">Procedimentos Realizados</div>
           <div id="finProcList">${_renderFinProcs()}</div>
           <div style="display:flex;gap:6px;margin-top:6px">
-            <input id="finProcNome" placeholder="Procedimento..." style="flex:1;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px" list="apptProcList">
-            <input id="finProcQtd"  type="number" value="1" min="1" style="width:52px;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;text-align:center">
+            <input id="finProcNome" placeholder="Procedimento..." style="flex:1;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px" list="apptProcList" onchange="finProcAutoPrice()">
+            <input id="finProcQtd"  type="number" value="1" min="1" style="width:52px;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;text-align:center" onchange="finProcAutoPrice()">
             <button onclick="addFinProc()" style="padding:7px 13px;background:#7C3AED;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700">+</button>
           </div>
+          <div id="finProcPriceHint" style="margin-top:4px;font-size:11px;color:#7C3AED;font-weight:600"></div>
+          <div id="finProcTotal" style="margin-top:8px;padding:8px 10px;background:#F5F3FF;border-radius:8px;font-size:13px;font-weight:700;color:#5B21B6;display:none"></div>
         </div>
 
         <!-- Financeiro -->
@@ -1033,25 +1036,91 @@ function _buildFinModal(id, appt) {
 
 function _renderFinProcs() {
   if (!_finalProcs.length) return '<div style="font-size:11px;color:#9CA3AF;padding:4px 0">Nenhum procedimento adicionado</div>'
-  return _finalProcs.map((p,i)=>`<div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #F3F4F6">
-    <span style="flex:1;font-size:12px;color:#374151">${(window.escHtml||String)(p.nome)}</span>
-    <span style="font-size:11px;color:#9CA3AF">×${p.qtd}</span>
-    <button onclick="removeFinProc(${i})" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px;line-height:1;padding:0 2px">×</button>
-  </div>`).join('')
+  return _finalProcs.map(function(p,i) {
+    var descontoInfo = ''
+    if (p.desconto > 0) {
+      var pct = p.precoOriginal > 0 ? Math.round((p.desconto / p.precoOriginal) * 100) : 0
+      descontoInfo = '<div style="font-size:10px;color:#F59E0B;font-weight:600">Desc: -R$ ' + _fmtBRL(p.desconto) + ' (' + pct + '%)</div>'
+    }
+    var valorFinal = ((p.precoOriginal || 0) - (p.desconto || 0)) * (p.qtd || 1)
+    return '<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid #F3F4F6">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:12px;font-weight:600;color:#374151">' + (window.escHtml||String)(p.nome) + ' <span style="color:#9CA3AF;font-weight:400">x' + p.qtd + '</span></div>' +
+        (p.precoOriginal > 0 ? '<div style="font-size:11px;color:#10B981;font-weight:600">R$ ' + _fmtBRL(p.precoOriginal) + '/un</div>' : '') +
+        descontoInfo +
+      '</div>' +
+      '<div style="text-align:right;flex-shrink:0">' +
+        (valorFinal > 0 ? '<div style="font-size:13px;font-weight:800;color:#5B21B6">R$ ' + _fmtBRL(valorFinal) + '</div>' : '') +
+        '<div style="display:flex;gap:3px;margin-top:2px">' +
+          '<button onclick="finProcDesconto(' + i + ')" style="background:none;border:1px solid #E5E7EB;border-radius:4px;cursor:pointer;color:#F59E0B;font-size:10px;padding:1px 5px;font-weight:600" title="Desconto">%</button>' +
+          '<button onclick="removeFinProc(' + i + ')" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px;line-height:1;padding:0 2px">x</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  }).join('')
 }
 
 function addFinProc() {
-  const n = document.getElementById('finProcNome')?.value?.trim()
-  const q = parseInt(document.getElementById('finProcQtd')?.value||'1')
+  var n = (document.getElementById('finProcNome')?.value||'').trim()
+  var q = parseInt(document.getElementById('finProcQtd')?.value||'1') || 1
   if (!n) return
-  _finalProcs.push({ nome:n, qtd:q||1 })
-  const el = document.getElementById('finProcList'); if(el) el.innerHTML = _renderFinProcs()
-  const inp = document.getElementById('finProcNome'); if(inp) inp.value = ''
+  var cat = window._finProcCatalog || {}
+  var info = cat[n] || {}
+  var preco = info.preco || 0
+  _finalProcs.push({ nome:n, qtd:q, precoOriginal:preco, desconto:0 })
+  document.getElementById('finProcList').innerHTML = _renderFinProcs()
+  document.getElementById('finProcNome').value = ''
+  document.getElementById('finProcPriceHint').textContent = ''
+  _finUpdateTotal()
 }
 
 function removeFinProc(i) {
   _finalProcs.splice(i,1)
-  const el = document.getElementById('finProcList'); if(el) el.innerHTML = _renderFinProcs()
+  document.getElementById('finProcList').innerHTML = _renderFinProcs()
+  _finUpdateTotal()
+}
+
+function finProcAutoPrice() {
+  var n = (document.getElementById('finProcNome')?.value||'').trim()
+  var q = parseInt(document.getElementById('finProcQtd')?.value||'1') || 1
+  var cat = window._finProcCatalog || {}
+  var info = cat[n]
+  var hint = document.getElementById('finProcPriceHint')
+  if (hint && info && info.preco > 0) {
+    hint.textContent = 'Valor: R$ ' + _fmtBRL(info.preco) + '/un' + (info.preco_promo > 0 ? ' | Promo: R$ ' + _fmtBRL(info.preco_promo) : '') + (q > 1 ? ' | Total: R$ ' + _fmtBRL(info.preco * q) : '')
+  } else if (hint) {
+    hint.textContent = ''
+  }
+}
+
+function finProcDesconto(i) {
+  var p = _finalProcs[i]; if (!p) return
+  var atual = p.desconto || 0
+  var input = prompt('Valor do desconto (R$) para "' + p.nome + '":\n(Preco original: R$ ' + _fmtBRL(p.precoOriginal) + ')', atual.toFixed(2))
+  if (input === null) return
+  var val = parseFloat(input.replace(',','.')) || 0
+  if (val < 0) val = 0
+  if (val > p.precoOriginal) val = p.precoOriginal
+  _finalProcs[i].desconto = val
+  document.getElementById('finProcList').innerHTML = _renderFinProcs()
+  _finUpdateTotal()
+}
+
+function _finUpdateTotal() {
+  var total = 0
+  _finalProcs.forEach(function(p) { total += ((p.precoOriginal||0) - (p.desconto||0)) * (p.qtd||1) })
+  var el = document.getElementById('finProcTotal')
+  if (el) {
+    if (_finalProcs.length && total > 0) {
+      el.style.display = 'block'
+      el.textContent = 'Total Procedimentos: R$ ' + _fmtBRL(total)
+    } else {
+      el.style.display = 'none'
+    }
+  }
+  // Auto-fill financial total
+  var finValor = document.getElementById('finValor')
+  if (finValor && total > 0) finValor.value = total.toFixed(2)
 }
 
 function finUpdateBalance() {
@@ -1412,6 +1481,8 @@ window.confirmFinalize        = confirmFinalize
 window.addFinProc             = addFinProc
 window.removeFinProc          = removeFinProc
 window.finUpdateBalance       = finUpdateBalance
+window.finProcAutoPrice       = finProcAutoPrice
+window.finProcDesconto        = finProcDesconto
 window.finRouteChange         = finRouteChange
 window.renderAgendaFilterBar  = renderAgendaFilterBar
 window.setAgendaFilter        = setAgendaFilter
