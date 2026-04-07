@@ -103,7 +103,38 @@
       '<div class="fm-report-stat-label">Zonas Tratadas</div>' +
     '</div>'
 
-    html += '</div></div></div></div>'
+    // Skin analysis scores (if available from Python API)
+    if (FM._skinAnalysis) {
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:' + (FM._skinAnalysis.overall >= 70 ? '#10B981' : FM._skinAnalysis.overall >= 50 ? '#F59E0B' : '#EF4444') + '">' + FM._skinAnalysis.overall + '</div>' +
+        '<div class="fm-report-stat-label">Score Pele</div>' +
+      '</div>'
+    }
+
+    html += '</div>'
+
+    // Skin detail bar (if available)
+    if (FM._skinAnalysis) {
+      html += '<div class="fm-report-summary" style="padding-top:0;gap:20px">'
+      var skinMetrics = [
+        { key: 'texture', label: 'Textura', icon: '' },
+        { key: 'uniformity', label: 'Uniformidade', icon: '' },
+        { key: 'spots', label: 'Manchas', icon: '' },
+        { key: 'redness', label: 'Vermelhidao', icon: '' },
+        { key: 'pores', label: 'Poros', icon: '' },
+      ]
+      skinMetrics.forEach(function (m) {
+        var val = FM._skinAnalysis[m.key] || 0
+        var color = val >= 70 ? '#10B981' : val >= 50 ? '#F59E0B' : '#EF4444'
+        html += '<div class="fm-report-stat">' +
+          '<div class="fm-report-stat-value" style="font-size:20px;color:' + color + '">' + Math.round(val) + '</div>' +
+          '<div class="fm-report-stat-label">' + m.label + '</div>' +
+        '</div>'
+      })
+      html += '</div>'
+    }
+
+    html += '</div></div></div>'
     overlay.innerHTML = html
     document.body.appendChild(overlay)
 
