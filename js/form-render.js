@@ -385,21 +385,29 @@
     TMPL_ID   = req.template_id
     clinicId  = req.clinic_id
 
-    // Busca dados do paciente — apenas tabela patients (clinic_data eliminado no Sprint Final)
+    // Busca dados do paciente (patients) + lead (enrichment)
     const ptRows = await _get('/patients', { 'id': 'eq.' + patientId, 'select': '*' })
     const pt = (ptRows && ptRows[0]) || {}
 
-    // Monta patientData a partir de patients (sem clinic_data)
+    // Busca lead para enriquecer com dados extras (cpf, sexo, endereco, etc.)
+    let leadData = {}
+    try {
+      const leadRows = await _get('/leads', { 'id': 'eq.' + patientId, 'select': 'name,phone,data' })
+      const ld = (leadRows && leadRows[0]) || {}
+      leadData = ld.data || {}
+    } catch(e) { /* lead nao encontrado, ok */ }
+
+    // Monta patientData: patients como base, lead.data como enrichment
     patientData = {
       id:             patientId,
-      nome:           [pt.first_name, pt.last_name].filter(Boolean).join(' ') || pt.full_name || '',
-      telefone:       pt.phone || '',
-      sexo:           pt.sex || '',
-      cpf:            pt.cpf || '',
-      rg:             pt.rg || '',
-      dataNascimento: pt.birth_date || '',
-      endereco:       pt.address_json || {},
-      leadId:         null,
+      nome:           pt.name || leadData.nome || '',
+      telefone:       pt.phone || leadData.telefone || '',
+      sexo:           pt.sex || leadData.sexo || '',
+      cpf:            pt.cpf || leadData.cpf || '',
+      rg:             pt.rg || leadData.rg || '',
+      dataNascimento: pt.birth_date || leadData.data_nascimento || leadData.dataNascimento || '',
+      endereco:       pt.address_json || _parseEndereco(leadData.endereco) || {},
+      leadId:         pt.leadId || patientId,
     }
 
     const ensureResult = await _ensureResponse(requestId, patientId, TMPL_ID, clinicId)
@@ -597,6 +605,23 @@
     for (let i = 0; i < 10; i++) s += +d[i] * (11-i)
     r = 11 - s%11; if (r >= 10) r = 0
     return r === +d[10]
+  }
+
+  function _parseEndereco(str) {
+    if (!str) return null
+    if (typeof str === 'object') return str
+    // Parse "Rua X, 123, Bairro, Cidade/UF, CEP"
+    var parts = str.split(',').map(function(s) { return s.trim() })
+    var obj = { logradouro: parts[0] || '' }
+    if (parts[1]) obj.numero = parts[1]
+    if (parts[2]) obj.bairro = parts[2]
+    if (parts[3]) {
+      var cityState = parts[3].split('/')
+      obj.cidade = (cityState[0] || '').trim()
+      obj.estado = (cityState[1] || '').trim()
+    }
+    if (parts[4]) obj.cep = parts[4].replace(/\D/g, '')
+    return obj
   }
 
   function _calcAge(dateStr) {
