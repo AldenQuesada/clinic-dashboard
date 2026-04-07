@@ -3852,7 +3852,17 @@
             <input id="appt_proc" type="hidden" value=""/>
             <datalist id="apptProcList"></datalist>
             <div id="apptProcsList" style="display:flex;flex-direction:column;gap:4px"></div>
-            <div id="apptProcsTotal" style="font-size:11px;font-weight:700;color:#4F46E5;margin-top:4px"></div>
+            <div style="margin-top:6px">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" id="appt_desconto_check" onchange="apptToggleDesconto(this)" style="width:13px;height:13px;accent-color:#F59E0B;cursor:pointer"/>
+                <span style="font-size:11px;font-weight:600;color:#D97706">Aplicar desconto</span>
+              </label>
+              <div id="apptDescontoRow" style="display:none;margin-top:6px;display:none;align-items:center;gap:8px">
+                <input id="appt_desconto_valor" type="number" step="0.01" placeholder="Valor do desconto R$" oninput="apptCalcDesconto()" style="flex:1;padding:7px 10px;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#FFFBEB"/>
+                <span id="appt_desconto_pct" style="font-size:11px;font-weight:700;color:#D97706"></span>
+              </div>
+            </div>
+            <div id="apptProcsTotal" style="font-size:11px;font-weight:700;color:#4F46E5;margin-top:6px"></div>
           </div>
         </div>
 

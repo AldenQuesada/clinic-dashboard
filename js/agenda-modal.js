@@ -146,6 +146,9 @@
     modal.style.display = 'flex'
     document.body.style.overflow = 'hidden'
     apptUpdateEndTime()
+
+    // Carregar procedimentos da BD (async, popula select quando pronto)
+    _loadClinicProcs().then(function(procs) { _populateProcSelect(procs) })
   }
 
   // ── closeApptModal ────────────────────────────────────────────
@@ -247,18 +250,107 @@
     if (hiddenEl) hiddenEl.value = val
   }
 
+  // ── Carregar procedimentos da BD ─────────────────────────────
+  var _cachedClinicProcs = null
+
+  async function _loadClinicProcs() {
+    if (_cachedClinicProcs) return _cachedClinicProcs
+    var procs = []
+
+    // Carregar procedimentos do Supabase
+    if (window.ProcedimentosRepository) {
+      var res = await ProcedimentosRepository.getAll(true)
+      if (res.ok && Array.isArray(res.data)) {
+        res.data.forEach(function(p) {
+          procs.push({ nome: p.nome, categoria: p.categoria || 'Procedimentos', valor: parseFloat(p.valor) || 0, duracao: parseInt(p.duracao_min) || 60 })
+        })
+      }
+    }
+
+    // Carregar injetaveis do Supabase
+    if (window.InjetaveisRepository) {
+      var res2 = await InjetaveisRepository.getAll(true)
+      if (res2.ok && Array.isArray(res2.data)) {
+        res2.data.forEach(function(inj) {
+          procs.push({ nome: inj.nome, categoria: 'Injetaveis', valor: parseFloat(inj.preco_custo) || 0, duracao: 60 })
+        })
+      }
+    }
+
+    // Carregar technologies (aparelhos)
+    if (typeof getTechnologies === 'function') {
+      getTechnologies().forEach(function(t) {
+        // Evitar duplicados
+        if (!procs.find(function(p) { return p.nome === t.nome })) {
+          procs.push({ nome: t.nome, categoria: 'Tecnologias', valor: 0, duracao: parseInt(t.duracao) || 60 })
+        }
+      })
+    }
+
+    // Se BD vazia, usar catalogo fallback
+    if (!procs.length) {
+      procs = [
+        { nome:'Toxina Botulinica (Botox)', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'AH - Labios', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'AH - Olheiras', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'AH - Bigode Chines', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'AH - Malar', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'AH - Mandibula', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'AH - Queixo', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'Bioestimulador - Sculptra', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'Bioestimulador - Radiesse', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'Bio Remodelador de Colageno', categoria:'Injetaveis', valor:0, duracao:60 },
+        { nome:'Fotona 4D', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Fotona - Intimo', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Fotona - Capilar', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Fotona - Corporal', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Peeling Quimico', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Microagulhamento', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Limpeza de Pele', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Hidratacao Facial', categoria:'Tecnologias', valor:0, duracao:60 },
+        { nome:'Lifting 5D - Protocolo Completo', categoria:'Lifting 5D', valor:0, duracao:60 },
+        { nome:'Lifting 5D - Sessao Fotona', categoria:'Lifting 5D', valor:0, duracao:60 },
+        { nome:'Lifting 5D - Sessao Injetaveis', categoria:'Lifting 5D', valor:0, duracao:60 },
+        { nome:'Veu de Noiva', categoria:'Lifting 5D', valor:0, duracao:60 },
+      ]
+    }
+
+    _cachedClinicProcs = procs
+    return procs
+  }
+
+  function _populateProcSelect(procs) {
+    var sel = document.getElementById('appt_proc_select')
+    if (!sel) return
+
+    // Agrupar por categoria
+    var cats = {}
+    procs.forEach(function(p) {
+      var cat = p.categoria || 'Outros'
+      if (!cats[cat]) cats[cat] = []
+      cats[cat].push(p)
+    })
+
+    var html = '<option value="">Selecionar procedimento...</option>'
+    Object.keys(cats).forEach(function(cat) {
+      html += '<optgroup label="' + cat.replace(/"/g, '&quot;') + '">'
+      cats[cat].forEach(function(p) {
+        html += '<option value="' + (p.nome || '').replace(/"/g, '&quot;') + '" data-valor="' + (p.valor || 0) + '" data-dur="' + (p.duracao || 60) + '">' + (p.nome || '').replace(/</g, '&lt;') + (p.valor > 0 ? ' — R$ ' + p.valor.toLocaleString('pt-BR') : '') + '</option>'
+      })
+      html += '</optgroup>'
+    })
+    sel.innerHTML = html
+  }
+
   // ── Selecionar procedimento do catalogo ─────────────────────
   function apptProcSelected(sel) {
     if (!sel.value) return
     var opt = sel.options[sel.selectedIndex]
-    var dur = opt && opt.dataset.dur ? parseInt(opt.dataset.dur) : 0
+    var valor = opt && opt.dataset.valor ? parseFloat(opt.dataset.valor) : 0
 
-    // Auto-preencher duracao
-    if (dur > 0) {
-      var durEl = document.getElementById('appt_duracao')
-      if (durEl) durEl.value = dur
-      apptUpdateEndTime()
-    }
+    // Preencher valor da tabela
+    var valorEl = document.getElementById('appt_proc_valor')
+    if (valorEl && valor > 0) valorEl.value = valor
 
     // Preencher campo hidden pra compatibilidade
     var procHidden = document.getElementById('appt_proc')
@@ -278,11 +370,81 @@
     if (nameEl) nameEl.value = ''
     if (valorEl) valorEl.value = ''
     _renderApptProcs()
+
+    // Alerta se mais de 1 procedimento em 1h
+    if (_apptProcs.length > 1) _checkMultiProcAlert()
   }
 
   function apptRemoveProc(i) {
     _apptProcs.splice(i, 1)
     _renderApptProcs()
+  }
+
+  // ── Alerta multi-procedimento ──────────────────────────────
+  function _checkMultiProcAlert() {
+    var durEl = document.getElementById('appt_duracao')
+    var durAtual = durEl ? parseInt(durEl.value) : 60
+    if (durAtual > 60) return // ja aumentou, nao alertar
+
+    var existing = document.getElementById('multiProcAlert')
+    if (existing) existing.remove()
+
+    var alert = document.createElement('div')
+    alert.id = 'multiProcAlert'
+    alert.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px'
+    alert.innerHTML =
+      '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">' +
+        '<div style="background:#F59E0B;padding:14px 18px">' +
+          '<div style="font-size:14px;font-weight:800;color:#fff">Mais de 1 procedimento</div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,.8);margin-top:2px">' + _apptProcs.length + ' procedimentos na mesma sessao</div>' +
+        '</div>' +
+        '<div style="padding:16px 18px">' +
+          '<div style="font-size:13px;color:#374151;line-height:1.6;margin-bottom:14px">O tempo pode nao ser suficiente para todos os procedimentos. Deseja aumentar a duracao?</div>' +
+          '<div style="display:flex;flex-direction:column;gap:8px">' +
+            '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer" onclick="_multiProcSelect(60)">' +
+              '<input type="radio" name="multiProcDur" value="60" style="accent-color:#F59E0B"> <span style="font-size:13px;font-weight:600;color:#374151">Manter 1h</span>' +
+            '</label>' +
+            '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer" onclick="_multiProcSelect(90)">' +
+              '<input type="radio" name="multiProcDur" value="90" style="accent-color:#F59E0B"> <span style="font-size:13px;font-weight:600;color:#374151">Aumentar pra 1h30</span>' +
+            '</label>' +
+            '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer" onclick="_multiProcSelect(120)">' +
+              '<input type="radio" name="multiProcDur" value="120" style="accent-color:#F59E0B"> <span style="font-size:13px;font-weight:600;color:#374151">Aumentar pra 2h</span>' +
+            '</label>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    document.body.appendChild(alert)
+  }
+
+  function _multiProcSelect(dur) {
+    var durEl = document.getElementById('appt_duracao')
+    if (durEl) durEl.value = dur
+    apptUpdateEndTime()
+
+    // Se manteve 1h com multiplos procs, avisar Mirian por WhatsApp
+    if (dur === 60 && _apptProcs.length > 1) {
+      var paciente = (document.getElementById('appt_paciente_q') && document.getElementById('appt_paciente_q').value) || 'Paciente'
+      var procsNomes = _apptProcs.map(function(p) { return p.nome }).join(', ')
+      var msg = 'Alerta Agenda: ' + paciente + ' tem ' + _apptProcs.length + ' procedimentos (' + procsNomes + ') agendados em 1 hora. Por favor revise e confirme se o tempo e suficiente.'
+
+      if (window._sbShared) {
+        // Enviar pra Mirian via Evolution (buscar telefone da Mirian nos profissionais)
+        var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+        var mirian = profs.find(function(p) { return /mirian/i.test(p.nome || p.display_name || '') })
+        var mirianPhone = mirian && (mirian.phone || mirian.whatsapp || mirian.telefone)
+        if (mirianPhone) {
+          window._sbShared.rpc('wa_outbox_enqueue_appt', {
+            p_phone: mirianPhone.replace(/\D/g, ''),
+            p_content: msg,
+            p_lead_name: 'Sistema'
+          })
+        }
+      }
+      if (window._showToast) _showToast('Alerta enviado', 'Mirian foi notificada sobre multiplos procedimentos em 1h', 'warning')
+    }
+
+    var alertEl = document.getElementById('multiProcAlert')
+    if (alertEl) alertEl.remove()
   }
 
   function _renderApptProcs() {
@@ -292,6 +454,7 @@
     if (!_apptProcs.length) {
       list.innerHTML = '<div style="font-size:11px;color:#9CA3AF;padding:4px 0">Nenhum procedimento adicionado</div>'
       if (totalEl) totalEl.textContent = ''
+      _updateApptTotalWithDiscount()
       return
     }
     list.innerHTML = _apptProcs.map(function(p, i) {
@@ -301,10 +464,46 @@
         '<button onclick="apptRemoveProc(' + i + ')" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:14px;padding:0 2px">x</button>' +
       '</div>'
     }).join('')
-    var total = _apptProcs.reduce(function(s, p) { return s + (p.valor || 0) }, 0)
-    if (totalEl) totalEl.textContent = total > 0 ? 'Total: R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''
 
-    // Atualizar campo valor principal com total
+    _updateApptTotalWithDiscount()
+  }
+
+  // ── Desconto ───────────────────────────────────────────────
+  function apptToggleDesconto(cb) {
+    var row = document.getElementById('apptDescontoRow')
+    if (row) row.style.display = cb.checked ? '' : 'none'
+    if (!cb.checked) {
+      var inp = document.getElementById('appt_desconto_valor')
+      if (inp) inp.value = ''
+    }
+    _updateApptTotalWithDiscount()
+  }
+
+  function apptCalcDesconto() {
+    _updateApptTotalWithDiscount()
+  }
+
+  function _updateApptTotalWithDiscount() {
+    var totalEl = document.getElementById('apptProcsTotal')
+    var subtotal = _apptProcs.reduce(function(s, p) { return s + (p.valor || 0) }, 0)
+    var descontoVal = parseFloat((document.getElementById('appt_desconto_valor') || {}).value || '0') || 0
+    var total = Math.max(0, subtotal - descontoVal)
+    var pct = subtotal > 0 ? Math.round((descontoVal / subtotal) * 100) : 0
+
+    var pctEl = document.getElementById('appt_desconto_pct')
+    if (pctEl) pctEl.textContent = descontoVal > 0 ? '(' + pct + '% de desconto)' : ''
+
+    if (totalEl) {
+      if (subtotal <= 0) { totalEl.textContent = ''; return }
+      var html = 'Subtotal: R$ ' + subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+      if (descontoVal > 0) {
+        html += '  —  Desconto: R$ ' + descontoVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + ' (' + pct + '%)'
+        html += '  —  <strong style="color:#10B981">Total: R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '</strong>'
+      }
+      totalEl.innerHTML = html
+    }
+
+    // Atualizar campo valor principal
     var valorPrincipal = document.getElementById('appt_valor')
     if (valorPrincipal) valorPrincipal.value = total || ''
   }
@@ -686,7 +885,10 @@
   window.apptSetAval       = apptSetAval
   window.apptAddProc       = apptAddProc
   window.apptRemoveProc    = apptRemoveProc
-  window.apptAutoSala      = apptAutoSala
-  window.apptProcSelected  = apptProcSelected
+  window.apptAutoSala       = apptAutoSala
+  window.apptProcSelected   = apptProcSelected
+  window.apptToggleDesconto = apptToggleDesconto
+  window.apptCalcDesconto   = apptCalcDesconto
+  window._multiProcSelect   = _multiProcSelect
 
 })()
