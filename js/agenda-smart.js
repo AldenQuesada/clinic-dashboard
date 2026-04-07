@@ -1333,7 +1333,7 @@ function _checkDailySummary() {
   var header = '*' + clinica + ' — Agenda do Dia*\n'
   header += dia + ', ' + dataFmt + '\n'
   header += today.length + ' agendamento' + (today.length > 1 ? 's' : '') + '\n'
-  header += '━━━━━━━━━━━━━━━━━━━━━━\n\n'
+  header += '━━━━━━━━━━━━━━\n\n'
 
   var body = today.map(function(a, i) {
     var nome = a.pacienteNome || 'Paciente'
@@ -1348,7 +1348,7 @@ function _checkDailySummary() {
            obs
   }).join('\n\n')
 
-  var footer = '\n\n━━━━━━━━━━━━━━━━━━━━━━\n'
+  var footer = '\n\n━━━━━━━━━━━━━━\n'
   footer += 'Bom dia e sucesso Dra. Mirian!'
 
   var msg = header + body + footer
@@ -1364,7 +1364,7 @@ function _checkDailySummary() {
       grupos.push(today.slice(g, g + 3))
     }
     grupos.forEach(function(grupo, gi) {
-      var partHeader = '*Agenda do Dia (' + (gi + 1) + '/' + grupos.length + ')*\n' + dia + ', ' + dataFmt + '\n━━━━━━━━━━━━━━━━━━━━━━\n\n'
+      var partHeader = '*Agenda do Dia (' + (gi + 1) + '/' + grupos.length + ')*\n' + dia + ', ' + dataFmt + '\n━━━━━━━━━━━━━━\n\n'
       var partBody = grupo.map(function(a, i) {
         var idx = gi * 3 + i + 1
         var nome = a.pacienteNome || 'Paciente'
@@ -1373,7 +1373,7 @@ function _checkDailySummary() {
         var obs = a.obs ? '\n   Obs: ' + a.obs : ''
         return idx + '. *' + nome + '*\n   ' + proc + '\n   ' + hora + obs
       }).join('\n\n')
-      if (gi === grupos.length - 1) partBody += '\n\n━━━━━━━━━━━━━━━━━━━━━━\nBom dia e sucesso Dra. Mirian!'
+      if (gi === grupos.length - 1) partBody += '\n\n━━━━━━━━━━━━━━\nBom dia e sucesso Dra. Mirian!'
       parts.push(partHeader + partBody)
     })
   }

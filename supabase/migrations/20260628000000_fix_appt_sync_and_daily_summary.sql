@@ -243,9 +243,9 @@ BEGIN
     v_msg := '*Clínica — Agenda do Dia*' || E'\n';
     v_msg := v_msg || v_dow_names[v_dow + 1] || ', ' || v_today_txt || E'\n';
     v_msg := v_msg || v_count || ' agendamento' || CASE WHEN v_count > 1 THEN 's' ELSE '' END || E'\n';
-    v_msg := v_msg || '━━━━━━━━━━━━━━━━━━━━━━' || E'\n\n';
+    v_msg := v_msg || '━━━━━━━━━━━━━━' || E'\n\n';
     v_msg := v_msg || v_body;
-    v_msg := v_msg || '━━━━━━━━━━━━━━━━━━━━━━' || E'\n';
+    v_msg := v_msg || '━━━━━━━━━━━━━━' || E'\n';
     v_msg := v_msg || 'Bom dia e sucesso ' || v_first_name || '!';
 
     INSERT INTO wa_outbox (
