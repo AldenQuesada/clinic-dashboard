@@ -190,8 +190,9 @@
         document.getElementById('fmCropOverlay').style.display = 'none'
 
         var ctrl = new AbortController()
-        var tmout = setTimeout(function () { ctrl.abort() }, 15000)
+        var tmout = setTimeout(function () { ctrl.abort() }, 30000)
 
+        console.log('[FaceMapping] Calling remove-bg:', apiUrl, 'b64 length:', b64.length)
         fetch(apiUrl + '/remove-bg', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -200,10 +201,11 @@
         })
         .then(function (r) { clearTimeout(tmout); return r.json() })
         .then(function (d) {
+          console.log('[FaceMapping] remove-bg result:', d.success, d.elapsed_s)
           if (d.success && d.image_b64) {
             // Step 2: Auto-normalize the image (CLAHE + white balance + denoise)
             FM._showLoading('Normalizando iluminacao...')
-            fetch(apiUrl + FM.API.normalize, {
+            fetch(apiUrl + '/enhance/normalize', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ photo_base64: d.image_b64, strength: 0.7 }),
