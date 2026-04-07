@@ -3812,14 +3812,45 @@
               </div>
             </div>
           </div>
-          <!-- Procedimento: lista de procedimentos -->
+          <!-- Procedimento: catalogo por categoria -->
           <div id="apptProcRow" style="display:none">
             <div style="display:flex;gap:6px;margin-bottom:6px">
-              <input id="appt_proc" type="text" list="apptProcList" placeholder="Buscar procedimento..." oninput="apptProcAutofill(this.value)" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
-              <datalist id="apptProcList"></datalist>
+              <select id="appt_proc_select" onchange="apptProcSelected(this)" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
+                <option value="">Selecionar procedimento...</option>
+                <optgroup label="Injetaveis">
+                  <option value="Toxina Botulinica (Botox)" data-dur="60">Toxina Botulinica (Botox)</option>
+                  <option value="Acido Hialuronico - Labios" data-dur="45">AH - Labios</option>
+                  <option value="Acido Hialuronico - Olheiras" data-dur="45">AH - Olheiras</option>
+                  <option value="Acido Hialuronico - Bigode Chines" data-dur="45">AH - Bigode Chines</option>
+                  <option value="Acido Hialuronico - Malar" data-dur="45">AH - Malar</option>
+                  <option value="Acido Hialuronico - Mandibula" data-dur="60">AH - Mandibula</option>
+                  <option value="Acido Hialuronico - Queixo" data-dur="45">AH - Queixo</option>
+                  <option value="Bioestimulador - Sculptra" data-dur="60">Bioestimulador - Sculptra</option>
+                  <option value="Bioestimulador - Radiesse" data-dur="60">Bioestimulador - Radiesse</option>
+                  <option value="Bio Remodelador de Colageno" data-dur="45">Bio Remodelador de Colageno</option>
+                </optgroup>
+                <optgroup label="Tecnologias">
+                  <option value="Fotona 4D" data-dur="90">Fotona 4D</option>
+                  <option value="Fotona - Intimo" data-dur="60">Fotona - Intimo</option>
+                  <option value="Fotona - Capilar" data-dur="60">Fotona - Capilar</option>
+                  <option value="Fotona - Corporal" data-dur="60">Fotona - Corporal</option>
+                  <option value="Peeling Quimico" data-dur="45">Peeling Quimico</option>
+                  <option value="Microagulhamento" data-dur="60">Microagulhamento</option>
+                  <option value="Limpeza de Pele" data-dur="60">Limpeza de Pele</option>
+                  <option value="Hidratacao Facial" data-dur="45">Hidratacao Facial</option>
+                </optgroup>
+                <optgroup label="Lifting 5D (Full Face)">
+                  <option value="Lifting 5D - Protocolo Completo" data-dur="180">Lifting 5D - Protocolo Completo</option>
+                  <option value="Lifting 5D - Sessao Fotona" data-dur="90">Lifting 5D - Sessao Fotona</option>
+                  <option value="Lifting 5D - Sessao Injetaveis" data-dur="120">Lifting 5D - Sessao Injetaveis</option>
+                  <option value="Veu de Noiva" data-dur="120">Veu de Noiva</option>
+                </optgroup>
+              </select>
               <input id="appt_proc_valor" type="number" step="0.01" placeholder="R$" style="width:80px;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
               <button type="button" onclick="apptAddProc()" style="padding:7px 12px;background:#4F46E5;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">+</button>
             </div>
+            <input id="appt_proc" type="hidden" value=""/>
+            <datalist id="apptProcList"></datalist>
             <div id="apptProcsList" style="display:flex;flex-direction:column;gap:4px"></div>
             <div id="apptProcsTotal" style="font-size:11px;font-weight:700;color:#4F46E5;margin-top:4px"></div>
           </div>

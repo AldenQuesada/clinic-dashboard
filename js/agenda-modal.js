@@ -247,14 +247,34 @@
     if (hiddenEl) hiddenEl.value = val
   }
 
+  // ── Selecionar procedimento do catalogo ─────────────────────
+  function apptProcSelected(sel) {
+    if (!sel.value) return
+    var opt = sel.options[sel.selectedIndex]
+    var dur = opt && opt.dataset.dur ? parseInt(opt.dataset.dur) : 0
+
+    // Auto-preencher duracao
+    if (dur > 0) {
+      var durEl = document.getElementById('appt_duracao')
+      if (durEl) durEl.value = dur
+      apptUpdateEndTime()
+    }
+
+    // Preencher campo hidden pra compatibilidade
+    var procHidden = document.getElementById('appt_proc')
+    if (procHidden) procHidden.value = sel.value
+  }
+
   // ── Adicionar procedimento a lista ─────────────────────────
   function apptAddProc() {
+    var selEl = document.getElementById('appt_proc_select')
     var nameEl = document.getElementById('appt_proc')
     var valorEl = document.getElementById('appt_proc_valor')
-    var name = nameEl && nameEl.value.trim()
+    var name = (selEl && selEl.value) || (nameEl && nameEl.value.trim())
     var valor = valorEl ? parseFloat(valorEl.value || '0') : 0
     if (!name) return
     _apptProcs.push({ nome: name, valor: valor })
+    if (selEl) selEl.value = ''
     if (nameEl) nameEl.value = ''
     if (valorEl) valorEl.value = ''
     _renderApptProcs()
@@ -667,5 +687,6 @@
   window.apptAddProc       = apptAddProc
   window.apptRemoveProc    = apptRemoveProc
   window.apptAutoSala      = apptAutoSala
+  window.apptProcSelected  = apptProcSelected
 
 })()
