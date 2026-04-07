@@ -14,7 +14,7 @@
 
     var name = FM._lead.nome || FM._lead.name || 'Paciente'
 
-    // Determine which panel to show on the right
+    // Determine which panel to show on the right — based on _activeTab ONLY
     var rightPanel
     var activeTab = FM._activeTab || 'zones'
 
@@ -22,8 +22,12 @@
       rightPanel = FM._renderSimetriaPanel()
     } else if (activeTab === 'analysis') {
       rightPanel = FM._renderAnalisePanel()
+    } else if (activeTab === 'zones') {
+      rightPanel = FM._renderZonesPanel()
+    } else if (activeTab === 'vectors') {
+      rightPanel = FM._renderVectorsPanel()
     } else {
-      rightPanel = FM._renderToolbar()
+      rightPanel = FM._renderZonesPanel()
     }
 
     root.innerHTML = '<div class="fm-page">' +
@@ -518,6 +522,146 @@
     return html
   }
 
+  // ── ZONES PANEL (dedicated for Estruturacao tab) ──
+  FM._renderZonesPanel = function () {
+    var html = '<div class="fm-toolbar">'
+
+    var allowedZones = FM._zonesForAngle(FM._activeAngle)
+    var allowedIds = allowedZones.map(function (z) { return z.id })
+    var selZone = FM._selectedZone ? FM.ZONES.find(function (z) { return z.id === FM._selectedZone }) : null
+    var curUnit = selZone ? selZone.unit : 'mL'
+    var curStep = curUnit === 'U' ? '1' : '0.1'
+
+    // Auto zonas button
+    html += '<div class="fm-tool-section">' +
+      '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoDetectZones()">' + FM._icon('zap', 12) + ' Auto Zonas (scanner)</button>' +
+    '</div>'
+
+    // Preenchimento
+    var fillZones = FM.ZONES.filter(function (z) { return z.cat === 'fill' })
+    html += '<div class="fm-tool-section">' +
+      '<div class="fm-tool-section-title">Preenchimento (mL)</div>' +
+      '<div class="fm-zone-grid">'
+    fillZones.forEach(function (z) { html += FM._renderZoneBtn(z, allowedIds) })
+    html += '</div></div>'
+
+    // Toxina
+    var toxZones = FM.ZONES.filter(function (z) { return z.cat === 'tox' })
+    html += '<div class="fm-tool-section">' +
+      '<div class="fm-tool-section-title">Rugas / Toxina (U)</div>' +
+      '<div class="fm-zone-grid">'
+    toxZones.forEach(function (z) { html += FM._renderZoneBtn(z, allowedIds) })
+    html += '</div></div>'
+
+    // Treatment
+    html += '<div class="fm-tool-section">' +
+      '<div class="fm-tool-section-title">Tratamento</div>' +
+      '<select class="fm-select" id="fmTreatment" onchange="FaceMapping._onTreatmentChange(this.value)">'
+    FM.TREATMENTS.forEach(function (t) {
+      html += '<option value="' + t.id + '"' + (FM._selectedTreatment === t.id ? ' selected' : '') + '>' + t.label + '</option>'
+    })
+    html += '</select></div>'
+
+    // Details
+    var rangeHint = selZone ? (selZone.min + ' — ' + selZone.max + ' ' + selZone.unit) : ''
+    html += '<div class="fm-tool-section">' +
+      '<div class="fm-tool-section-title">Detalhes</div>' +
+      '<div class="fm-input-row" style="margin-bottom:8px">' +
+        '<label>' + curUnit + '</label>' +
+        '<input class="fm-input" id="fmMl" type="number" step="' + curStep + '" min="0" max="999" value="' + FM._selectedMl + '" onchange="FaceMapping._selectedMl=this.value" style="width:70px">' +
+        (rangeHint ? '<span style="font-size:9px;color:rgba(200,169,126,0.3)">' + rangeHint + '</span>' : '') +
+      '</div>' +
+      '<div class="fm-input-row" style="margin-bottom:8px">' +
+        '<label>Lado</label>' +
+        '<select class="fm-select" id="fmSide" onchange="FaceMapping._selectedSide=this.value" style="width:auto;flex:1">' +
+          '<option value="bilateral"' + (FM._selectedSide === 'bilateral' ? ' selected' : '') + '>Bilateral</option>' +
+          '<option value="esquerdo"' + (FM._selectedSide === 'esquerdo' ? ' selected' : '') + '>Esquerdo</option>' +
+          '<option value="direito"' + (FM._selectedSide === 'direito' ? ' selected' : '') + '>Direito</option>' +
+        '</select>' +
+      '</div>' +
+      '<input class="fm-input" id="fmProduct" placeholder="Produto (ex: Juvederm Voluma)" value="' + FM._esc(FM._selectedProduct) + '" onchange="FaceMapping._selectedProduct=this.value">' +
+    '</div>'
+
+    // Annotations list
+    html += '<div class="fm-tool-section" style="flex:1">' +
+      '<div class="fm-tool-section-title">Marcacoes (' + FM._annotations.length + ')</div>' +
+      '<div class="fm-annotations-list">'
+    var angleAnnotations = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
+    if (angleAnnotations.length === 0) {
+      html += '<div style="font-size:10px;color:rgba(200,169,126,0.3);text-align:center;padding:12px">Selecione uma zona e desenhe na foto</div>'
+    } else {
+      angleAnnotations.forEach(function (ann) {
+        var t = FM.TREATMENTS.find(function (x) { return x.id === ann.treatment }) || FM.TREATMENTS[0]
+        var z = FM.ZONES.find(function (x) { return x.id === ann.zone })
+        var zColor = z ? z.color : '#999'
+        html += '<div class="fm-annotation-item">' +
+          '<span class="fm-annotation-dot" style="background:' + zColor + '"></span>' +
+          '<div class="fm-annotation-info">' +
+            '<div class="fm-annotation-zone">' + (z ? z.label : ann.zone) + '</div>' +
+            '<div class="fm-annotation-detail">' + t.label + ' \u2022 ' + ann.ml + (z ? z.unit : 'mL') + '</div>' +
+          '</div>' +
+          '<button class="fm-annotation-remove" onclick="FaceMapping._removeAnnotation(' + ann.id + ')">&times;</button>' +
+        '</div>'
+      })
+    }
+    html += '</div></div>'
+
+    // Totals
+    var totals = FM._calcTotals()
+    if (totals.length > 0) {
+      html += '<div class="fm-tool-section">' +
+        '<div class="fm-tool-section-title">Resumo Total</div>'
+      totals.forEach(function (t) {
+        html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">' +
+          '<span style="color:' + t.color + '">' + t.label + '</span>' +
+          '<span style="color:rgba(245,240,232,0.85);font-weight:600">' + t.ml.toFixed(1) + ' mL</span>' +
+        '</div>'
+      })
+      html += '</div>'
+    }
+
+    html += '</div>'
+    return html
+  }
+
+  // ── VECTORS PANEL (dedicated for Vetores tab) ──
+  FM._renderVectorsPanel = function () {
+    var html = '<div class="fm-toolbar">'
+
+    html += '<div class="fm-tool-section">' +
+      '<div class="fm-tool-section-title">Vetores Faciais</div>' +
+      '<div style="font-size:9px;color:rgba(200,169,126,0.3);line-height:1.5">' +
+        'Setas que indicam a direcao do tratamento (vetor de lifting).<br>' +
+        'Clique na foto para criar vetores. Arraste para ajustar.' +
+      '</div>' +
+    '</div>'
+
+    // Auto vectors button
+    html += '<div class="fm-tool-section">' +
+      '<button class="fm-btn" style="width:100%" onclick="FaceMapping._generateVectorsFromAnnotations()">' + FM._icon('trending-up', 12) + ' Gerar Vetores das Zonas</button>' +
+    '</div>'
+
+    // Vector list
+    if (FM._vectors.length > 0) {
+      html += '<div class="fm-tool-section" style="flex:1">' +
+        '<div class="fm-tool-section-title">Vetores (' + FM._vectors.length + ')</div>'
+      FM._vectors.forEach(function (vec) {
+        var zone = FM.ZONES.find(function (z) { return z.id === vec.zone })
+        var label = zone ? zone.label : vec.zone
+        var preset = FM.VECTOR_PRESETS[vec.zone]
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:10px">' +
+          '<span style="color:rgba(200,169,126,0.5)">' + label + '</span>' +
+          '<span style="color:rgba(200,169,126,0.3)">' + (preset ? preset.desc : '') + '</span>' +
+        '</div>'
+      })
+      html += '</div>'
+    }
+
+    html += '</div>'
+    return html
+  }
+
+  // ── TOOLBAR (legacy — fallback) ──
   FM._renderToolbar = function () {
     var html = '<div class="fm-toolbar">'
 

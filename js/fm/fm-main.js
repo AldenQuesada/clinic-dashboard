@@ -54,6 +54,7 @@
     _showTemplates: FM._showTemplates,
     _applyTemplate: FM._applyTemplate,
     _autoDetectZones: FM._autoDetectZones,
+    _generateVectorsFromAnnotations: FM._generateVectorsFromAnnotations,
     _openBeforeAfter: FM._openBeforeAfter,
     _closeBeforeAfter: FM._closeBeforeAfter,
     _uploadBA: FM._uploadBA,
