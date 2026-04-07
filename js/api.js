@@ -267,9 +267,9 @@ const APPT_KEY = 'clinicai_appointments'
 
 const AGENDA_SLOTS = (() => {
   const s = []
-  for (let h = 7; h <= 20; h++) {
+  for (let h = 7; h <= 22; h++) {
     s.push(`${String(h).padStart(2,'0')}:00`)
-    if (h < 20) s.push(`${String(h).padStart(2,'0')}:30`)
+    if (h < 22) s.push(`${String(h).padStart(2,'0')}:30`)
   }
   return s
 })()
