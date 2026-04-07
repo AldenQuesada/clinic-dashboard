@@ -823,7 +823,25 @@ function _renderResponseModal() {
         </div>
       ` : ''}
 
-      <!-- Respostas agrupadas por sessão -->
+      <!-- Consentimento LGPD -->
+      ${(() => {
+        const lgpd = (answers||[]).find(a => a.field_key === '__lgpd_consent')
+        if (!lgpd || !lgpd.value_json) return ''
+        const c = typeof lgpd.value_json === 'string' ? JSON.parse(lgpd.value_json) : lgpd.value_json
+        return `<div class="anm-response-section" style="background:#F0FDF4;border-radius:8px;padding:10px 14px;border:1px solid #BBF7D0">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#065F46">
+            <svg width="14" height="14" fill="none" stroke="#10B981" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Consentimento LGPD
+          </div>
+          <div style="font-size:11px;color:#374151;margin-top:4px">
+            Aceito em: <strong>${_esc(c.accepted_at || '—')}</strong> |
+            Versao: ${_esc(c.terms_version || '1.0')} |
+            Slug: ${_esc(c.form_slug || '—')}
+          </div>
+        </div>`
+      })()}
+
+      <!-- Respostas agrupadas por sessao -->
       <div class="anm-response-section">
         <div class="anm-response-section-title">Respostas (${totalAnswers})</div>
         ${totalAnswers ? groupedHtml + noSessHtml : '<div style="color:#9CA3AF;font-size:13px;padding:8px 0">Nenhuma resposta registrada ainda.</div>'}

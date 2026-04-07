@@ -123,7 +123,7 @@
         const raw = values[f.field_key]
         if (raw === undefined || raw === null || raw === '') continue
 
-        const _NON_INPUT_TYPES = ['section_title', 'label', 'description_text', 'file_upload', 'image_upload', 'image_pair']
+        const _NON_INPUT_TYPES = ['section_title', 'label', 'description_text', 'image_pair']
         if (_NON_INPUT_TYPES.includes(f.field_type)) continue
 
         let normalizedText = ''
@@ -1155,11 +1155,76 @@
           }
         }
 
+      } else if (f.field_type === 'file_upload' || f.field_type === 'image_upload') {
+        inp.addEventListener('change', function() { _handleFileUpload(f, inp) })
+
       } else {
         // fallback: input genérico
         inp.addEventListener('input', function() { FRM.setValue(f.field_key, inp.value, f.id) })
       }
     })
+  }
+
+  // ── File upload handler ─────────────────────────────────────────────────────
+  async function _handleFileUpload(f, inputEl) {
+    var file = inputEl.files && inputEl.files[0]
+    if (!file) return
+
+    var maxSize = f.field_type === 'image_upload' ? 10 * 1024 * 1024 : 25 * 1024 * 1024 // 10MB images, 25MB files
+    if (file.size > maxSize) {
+      alert('Arquivo muito grande. Maximo: ' + (maxSize / 1024 / 1024) + 'MB')
+      inputEl.value = ''
+      return
+    }
+
+    // Show uploading state
+    var wrapper = inputEl.closest('.f-field')
+    var preview = wrapper ? wrapper.querySelector('.f-upload-preview') : null
+    if (!preview) {
+      preview = document.createElement('div')
+      preview.className = 'f-upload-preview'
+      preview.style.cssText = 'margin-top:8px;font-size:12px;color:#6B7280'
+      if (wrapper) wrapper.appendChild(preview)
+    }
+    preview.innerHTML = '<div style="color:#7C3AED;font-weight:600">Enviando...</div>'
+
+    try {
+      var ext = file.name.split('.').pop() || 'bin'
+      var path = 'anamnese/' + (responseId || 'tmp') + '/' + f.field_key + '_' + Date.now() + '.' + ext
+
+      var sb = window._anamneseSb || (window.supabase ? window.supabase.createClient(
+        window.ClinicEnv?.SUPABASE_URL || 'https://oqboitkpcvuaudouwvkl.supabase.co',
+        window.ClinicEnv?.SUPABASE_KEY || ''
+      ) : null)
+
+      if (!sb) {
+        // Fallback: store as base64 in value_json
+        var reader = new FileReader()
+        reader.onload = function() {
+          FRM.setValue(f.field_key, { name: file.name, size: file.size, type: file.type, data: reader.result }, f.id)
+          preview.innerHTML = _renderUploadPreview(f.field_type, file.name, reader.result)
+        }
+        reader.readAsDataURL(file)
+        return
+      }
+
+      var { data, error } = await sb.storage.from('uploads').upload(path, file, { upsert: true })
+      if (error) throw error
+
+      var publicUrl = sb.storage.from('uploads').getPublicUrl(path).data.publicUrl
+      FRM.setValue(f.field_key, { name: file.name, url: publicUrl, size: file.size, type: file.type }, f.id)
+      preview.innerHTML = _renderUploadPreview(f.field_type, file.name, publicUrl)
+    } catch(e) {
+      console.error('[Anamnese] Upload falhou:', e)
+      preview.innerHTML = '<div style="color:#DC2626;font-weight:600">Erro no upload. Tente novamente.</div>'
+    }
+  }
+
+  function _renderUploadPreview(fieldType, name, src) {
+    if (fieldType === 'image_upload' && src) {
+      return '<div style="margin-top:4px"><img src="' + src + '" style="max-width:200px;max-height:150px;border-radius:8px;border:1px solid #E5E7EB" alt="' + (name||'') + '"><div style="font-size:11px;color:#10B981;font-weight:600;margin-top:4px">Enviado: ' + (name||'') + '</div></div>'
+    }
+    return '<div style="display:flex;align-items:center;gap:6px;margin-top:4px;padding:8px;background:#F0FDF4;border-radius:6px;border:1px solid #BBF7D0"><svg width="14" height="14" fill="none" stroke="#10B981" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span style="font-size:12px;color:#065F46;font-weight:600">' + (name||'Arquivo') + '</span></div>'
   }
 
   // ── Restore value into DOM ───────────────────────────────────────────────────
@@ -1787,7 +1852,24 @@
         }
       }
 
-      // ── 4. RPC atômico com retry (3 tentativas, backoff 1s/2s/4s) ───────
+      // ── 4. Registrar consentimento LGPD ─────────────────────────
+      var lgpdConsent = {
+        accepted: true,
+        accepted_at: new Date().toISOString(),
+        terms_version: '1.0',
+        user_agent: navigator.userAgent || '',
+        form_slug: SLUG || '',
+      }
+
+      // Salvar consentimento como answer especial
+      finalAnswers.push({
+        field_id: null,
+        field_key: '__lgpd_consent',
+        value_json: lgpdConsent,
+        normalized_text: 'LGPD aceito em ' + lgpdConsent.accepted_at,
+      })
+
+      // ── 5. RPC atomico com retry (3 tentativas, backoff 1s/2s/4s) ───────
       try {
         await _withRetry(async function() {
           await _rpc('complete_anamnesis_form', {
