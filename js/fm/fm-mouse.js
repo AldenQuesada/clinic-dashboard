@@ -21,9 +21,9 @@
       var areaW = isFS ? window.innerWidth : (area ? area.clientWidth : 800)
       var areaH = window.innerHeight - fixedH
 
-      // Never exceed viewport — image must fit on screen without scroll
-      var maxW = Math.min(areaW - LABEL_MARGIN - 10, window.innerWidth - LABEL_MARGIN - 60)
-      var maxH = Math.min(areaH, window.innerHeight - fixedH - 20)
+      // Fit in viewport — no scroll needed
+      var maxW = Math.min(areaW - LABEL_MARGIN - 10, window.innerWidth - LABEL_MARGIN - 80)
+      var maxH = Math.min(areaH, window.innerHeight - fixedH - 60) * 0.85
       var scale = Math.min(maxW / FM._img.width, maxH / FM._img.height)
       FM._imgW = Math.round(FM._img.width * scale)
       FM._imgH = Math.round(FM._img.height * scale)
