@@ -68,6 +68,7 @@
     // Metric lines overlay (if in metrics mode)
     if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
       if (FM._drawMetrics) FM._drawMetrics()
+      if (FM._drawAngles) FM._drawAngles()
     }
 
     // Heatmap overlay (if active)

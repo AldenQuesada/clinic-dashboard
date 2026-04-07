@@ -247,10 +247,12 @@
           '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Clique na foto para adicionar</div>' +
         '</div>'
 
-        // Auto-place button
+        // Auto-place buttons
         html += '<div class="fm-tool-section">' +
-          '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoMetricLines()">' +
-            FM._icon('cpu', 14) + ' Auto Metrificar (via landmarks)</button>' +
+          '<button class="fm-btn" style="width:100%;margin-bottom:6px" onclick="FaceMapping._autoMetricLines()">' +
+            FM._icon('cpu', 14) + ' Auto Metrificar</button>' +
+          '<button class="fm-btn" style="width:100%;border-color:#C8A97E;color:#C8A97E" onclick="FaceMapping._autoAngles()">' +
+            FM._icon('triangle', 14) + ' Auto Angulos Mandibulares</button>' +
         '</div>'
 
         // Current measurements summary
@@ -307,6 +309,48 @@
               }
               html += '</div>'
             })
+          }
+
+          html += '</div>'
+        }
+
+        // Mandibular angles panel
+        if (FM._metricAngles) {
+          var ma = FM._metricAngles
+          html += '<div class="fm-tool-section">' +
+            '<div class="fm-tool-section-title">Angulos Mandibulares</div>'
+
+          // AMF
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">AMF (Gonial-Mento-Gonial)</span>' +
+            '<span style="font-size:14px;font-weight:700;color:' + ma.classification.color + '">' + ma.amf + '\u00B0</span>' +
+          '</div>' +
+          '<div style="font-size:10px;color:' + ma.classification.color + ';font-weight:600;padding:2px 0 6px">' + ma.classification.label + '</div>'
+
+          // RMZ
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">Ratio Mand/Zigoma</span>' +
+            '<span style="font-size:12px;font-weight:600;color:' + (ma.rmz >= 0.85 && ma.rmz <= 0.95 ? '#10B981' : '#F59E0B') + '">' + ma.rmz + '</span>' +
+          '</div>' +
+          '<div style="font-size:9px;color:var(--text-muted)">Ideal: 0.85-0.95</div>'
+
+          // AIJ
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-top:4px">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">Jawline E / D</span>' +
+            '<span style="font-size:12px;font-weight:600;color:' + ma.jawline.color + '">' + ma.aij_left + '\u00B0 / ' + ma.aij_right + '\u00B0</span>' +
+          '</div>' +
+          '<div style="font-size:10px;color:' + ma.jawline.color + ';font-weight:500">' + ma.jawline.label + ' (media ' + ma.aij_avg + '\u00B0)</div>'
+
+          // Asymmetry between left and right AIJ
+          var aijDiff = Math.abs(ma.aij_left - ma.aij_right)
+          if (aijDiff > 2) {
+            var aijSide = ma.aij_left > ma.aij_right ? 'Esquerdo mais caido' : 'Direito mais caido'
+            var aijColor = aijDiff > 8 ? '#EF4444' : aijDiff > 4 ? '#F59E0B' : '#10B981'
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-top:2px">' +
+              '<span style="font-size:10px;color:var(--text-muted)">Assimetria jawline</span>' +
+              '<span style="font-size:10px;font-weight:600;color:' + aijColor + '">\u0394' + Math.round(aijDiff * 10) / 10 + '\u00B0</span>' +
+            '</div>' +
+            '<div style="font-size:9px;color:' + aijColor + '">' + aijSide + '</div>'
           }
 
           html += '</div>'

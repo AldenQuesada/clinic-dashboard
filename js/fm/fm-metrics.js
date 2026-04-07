@@ -477,7 +477,209 @@
       })
     }
 
+    // Mandibular angles
+    if (FM._metricAngles) {
+      summary.angles = FM._metricAngles
+    }
+
     return summary
+  }
+
+  // ── Mandibular Angle System ─────────────────────────────
+
+  FM._metricAngles = null  // {amf, rmz, aij_left, aij_right, classification}
+
+  FM._autoAngles = function () {
+    if (!FM._scanData || !FM._scanData.key_points) {
+      FM._showToast('Execute Auto Analise primeiro', 'warn')
+      return
+    }
+
+    var kp = FM._scanData.key_points
+    var w = FM._imgW || 1
+    var h = FM._imgH || 1
+
+    // Key points for mandibular analysis
+    var gonialL = kp.jaw_left_angle || kp.jaw_left
+    var gonialR = kp.jaw_right_angle || kp.jaw_right
+    var mento = kp.chin
+    var zigomaL = kp.left_zygomatic
+    var zigomaR = kp.right_zygomatic
+
+    if (!gonialL || !gonialR || !mento) {
+      FM._showToast('Landmarks insuficientes para angulos', 'error')
+      return
+    }
+
+    // 1. AMF — Angulo Mandibular Frontal (Gonial E → Mento → Gonial D)
+    var amf = _calcAngle3Points(gonialL, mento, gonialR)
+
+    // 2. RMZ — Ratio Mandibula / Zigoma
+    var mandW = Math.sqrt(Math.pow((gonialR.x - gonialL.x) * w, 2) + Math.pow((gonialR.y - gonialL.y) * h, 2))
+    var zigoW = Math.sqrt(Math.pow((zigomaR.x - zigomaL.x) * w, 2) + Math.pow((zigomaR.y - zigomaL.y) * h, 2))
+    var rmz = zigoW > 0 ? mandW / zigoW : 0
+
+    // 3. AIJ — Angulo de Inclinacao do Jawline (cada lado)
+    // Angulo da linha gonial→mento vs horizontal
+    var aijL = Math.abs(Math.atan2((mento.y - gonialL.y) * h, (mento.x - gonialL.x) * w) * 180 / Math.PI)
+    var aijR = Math.abs(Math.atan2((mento.y - gonialR.y) * h, (gonialR.x - mento.x) * w) * 180 / Math.PI)
+
+    // Classification
+    var classification
+    if (amf > 150) classification = { label: 'Mandibula Arredondada', color: '#EF4444', level: 1 }
+    else if (amf > 135) classification = { label: 'Mandibula Suave', color: '#F59E0B', level: 2 }
+    else if (amf > 115) classification = { label: 'Mandibula Definida', color: '#10B981', level: 3 }
+    else classification = { label: 'Mandibula Angular', color: '#3B82F6', level: 4 }
+
+    // Jawline tension classification
+    var avgAij = (aijL + aijR) / 2
+    var jawlineTension
+    if (avgAij > 35) jawlineTension = { label: 'Jawline Caida', color: '#EF4444' }
+    else if (avgAij > 25) jawlineTension = { label: 'Jawline Suave', color: '#F59E0B' }
+    else jawlineTension = { label: 'Jawline Tensa', color: '#10B981' }
+
+    FM._metricAngles = {
+      amf: Math.round(amf * 10) / 10,
+      rmz: Math.round(rmz * 1000) / 1000,
+      aij_left: Math.round(aijL * 10) / 10,
+      aij_right: Math.round(aijR * 10) / 10,
+      aij_avg: Math.round(avgAij * 10) / 10,
+      classification: classification,
+      jawline: jawlineTension,
+      points: {
+        gonial_left: { x: gonialL.x, y: gonialL.y },
+        gonial_right: { x: gonialR.x, y: gonialR.y },
+        mento: { x: mento.x, y: mento.y },
+        zigoma_left: { x: zigomaL.x, y: zigomaL.y },
+        zigoma_right: { x: zigomaR.x, y: zigomaR.y },
+      },
+    }
+
+    FM._showToast(
+      'AMF: ' + FM._metricAngles.amf + '° (' + classification.label + ') | ' +
+      'Jawline: ' + FM._metricAngles.aij_avg + '° (' + jawlineTension.label + ') | ' +
+      'Ratio M/Z: ' + FM._metricAngles.rmz,
+      'success'
+    )
+    FM._redraw()
+    FM._refreshToolbar()
+  }
+
+  // Draw mandibular angles on canvas
+  FM._drawAngles = function () {
+    if (!FM._metricAngles || !FM._ctx) return
+    var ctx = FM._ctx
+    var w = FM._imgW
+    var h = FM._imgH
+    var pts = FM._metricAngles.points
+
+    ctx.save()
+
+    var gLx = pts.gonial_left.x * w
+    var gLy = pts.gonial_left.y * h
+    var gRx = pts.gonial_right.x * w
+    var gRy = pts.gonial_right.y * h
+    var mx = pts.mento.x * w
+    var my = pts.mento.y * h
+    var zLx = pts.zigoma_left.x * w
+    var zLy = pts.zigoma_left.y * h
+    var zRx = pts.zigoma_right.x * w
+    var zRy = pts.zigoma_right.y * h
+
+    // Draw jawline (Gonial L → Mento → Gonial R)
+    ctx.beginPath()
+    ctx.strokeStyle = FM._metricAngles.classification.color
+    ctx.lineWidth = 2.5
+    ctx.setLineDash([])
+    ctx.moveTo(gLx, gLy)
+    ctx.lineTo(mx, my)
+    ctx.lineTo(gRx, gRy)
+    ctx.stroke()
+
+    // Draw zigoma line (reference)
+    ctx.beginPath()
+    ctx.strokeStyle = 'rgba(200,169,126,0.4)'
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 4])
+    ctx.moveTo(zLx, zLy)
+    ctx.lineTo(zRx, zRy)
+    ctx.stroke()
+
+    // Draw mandibula line (reference)
+    ctx.beginPath()
+    ctx.strokeStyle = 'rgba(200,169,126,0.3)'
+    ctx.lineWidth = 1
+    ctx.moveTo(gLx, gLy)
+    ctx.lineTo(gRx, gRy)
+    ctx.stroke()
+    ctx.setLineDash([])
+
+    // AMF arc at mento
+    var arcRadius = 25
+    var angleL = Math.atan2(gLy - my, gLx - mx)
+    var angleR = Math.atan2(gRy - my, gRx - mx)
+    ctx.beginPath()
+    ctx.strokeStyle = FM._metricAngles.classification.color
+    ctx.lineWidth = 2
+    ctx.arc(mx, my, arcRadius, angleR, angleL)
+    ctx.stroke()
+
+    // AMF label
+    ctx.font = '700 12px Inter, sans-serif'
+    ctx.fillStyle = FM._metricAngles.classification.color
+    ctx.textAlign = 'center'
+    ctx.fillText(FM._metricAngles.amf + '°', mx, my + arcRadius + 16)
+    ctx.font = '600 9px Inter, sans-serif'
+    ctx.fillText(FM._metricAngles.classification.label, mx, my + arcRadius + 30)
+
+    // Points with labels
+    var anglePoints = [
+      { x: gLx, y: gLy, label: 'Gonial E', color: '#C8A97E' },
+      { x: gRx, y: gRy, label: 'Gonial D', color: '#C8A97E' },
+      { x: mx, y: my, label: 'Mento', color: FM._metricAngles.classification.color },
+      { x: zLx, y: zLy, label: 'Zigoma E', color: 'rgba(200,169,126,0.6)' },
+      { x: zRx, y: zRy, label: 'Zigoma D', color: 'rgba(200,169,126,0.6)' },
+    ]
+
+    anglePoints.forEach(function (p) {
+      ctx.beginPath()
+      ctx.fillStyle = p.color
+      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = '#fff'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+
+      ctx.font = '500 9px Inter, sans-serif'
+      ctx.fillStyle = p.color
+      ctx.textAlign = 'center'
+      ctx.fillText(p.label, p.x, p.y - 10)
+    })
+
+    // AIJ labels on each side
+    ctx.font = '400 10px Inter, sans-serif'
+    ctx.fillStyle = FM._metricAngles.jawline.color
+    ctx.textAlign = 'right'
+    ctx.fillText('AIJ: ' + FM._metricAngles.aij_left + '°', (gLx + mx) / 2 - 5, (gLy + my) / 2 - 5)
+    ctx.textAlign = 'left'
+    ctx.fillText('AIJ: ' + FM._metricAngles.aij_right + '°', (gRx + mx) / 2 + 5, (gRy + my) / 2 - 5)
+
+    ctx.restore()
+  }
+
+  function _calcAngle3Points(a, b, c) {
+    // Angle at point B formed by lines BA and BC
+    var baX = a.x - b.x
+    var baY = a.y - b.y
+    var bcX = c.x - b.x
+    var bcY = c.y - b.y
+    var dot = baX * bcX + baY * bcY
+    var magBA = Math.sqrt(baX * baX + baY * baY)
+    var magBC = Math.sqrt(bcX * bcX + bcY * bcY)
+    if (magBA === 0 || magBC === 0) return 0
+    var cosAngle = dot / (magBA * magBC)
+    cosAngle = Math.max(-1, Math.min(1, cosAngle))
+    return Math.acos(cosAngle) * 180 / Math.PI
   }
 
 })()
