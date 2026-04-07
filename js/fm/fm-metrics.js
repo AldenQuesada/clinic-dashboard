@@ -692,6 +692,355 @@
     ctx.restore()
   }
 
+  // ── Clinical Analysis Panel (drawn in label area) ────────
+
+  FM._drawClinicalAnalysis = function () {
+    if (!FM._ctx || !FM._imgW) return
+    var ctx = FM._ctx
+    var x0 = FM._imgW + 8  // start of label area
+    var w = 170  // label area width
+    var totalH = FM._imgH || 600
+
+    // Divide into 3 sections
+    var sectionH = Math.floor(totalH / 3)
+    var y1 = 0
+    var y2 = sectionH
+    var y3 = sectionH * 2
+
+    ctx.save()
+
+    // Background for each section
+    ctx.fillStyle = '#1E1E1E'
+    ctx.fillRect(x0 - 4, 0, w + 8, totalH)
+
+    // Section dividers
+    ctx.strokeStyle = 'rgba(200,169,126,0.2)'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(x0, y2)
+    ctx.lineTo(x0 + w, y2)
+    ctx.moveTo(x0, y3)
+    ctx.lineTo(x0 + w, y3)
+    ctx.stroke()
+
+    // ── SECTION 1: PLANO VERTICAL ─────────────────────────
+    _drawSection(ctx, x0, y1, w, sectionH, 'PLANO VERTICAL', '#10B981', function (x, y, maxW) {
+      var lineH = 13
+      var data = _getVerticalAnalysis()
+
+      ctx.font = '600 9px Inter, sans-serif'
+      ctx.fillStyle = '#F5F0E8'
+
+      data.forEach(function (item) {
+        if (item.type === 'header') {
+          ctx.font = '700 9px Inter, sans-serif'
+          ctx.fillStyle = item.color || '#C8A97E'
+          ctx.fillText(item.text, x, y)
+          y += lineH
+        } else if (item.type === 'value') {
+          ctx.font = '400 9px Inter, sans-serif'
+          ctx.fillStyle = 'rgba(245,240,232,0.7)'
+          ctx.fillText(item.label + ':', x, y)
+          ctx.fillStyle = item.color || '#F5F0E8'
+          ctx.font = '600 9px Inter, sans-serif'
+          ctx.textAlign = 'right'
+          ctx.fillText(item.value, x + maxW - 4, y)
+          ctx.textAlign = 'left'
+          y += lineH
+        } else if (item.type === 'text') {
+          ctx.font = '400 8px Inter, sans-serif'
+          ctx.fillStyle = item.color || 'rgba(245,240,232,0.5)'
+          _wrapText(ctx, item.text, x, y, maxW - 4, 10)
+          y += Math.ceil(item.text.length / 22) * 10 + 2
+        } else if (item.type === 'spacer') {
+          y += 4
+        } else if (item.type === 'rx') {
+          ctx.font = '600 8px Inter, sans-serif'
+          ctx.fillStyle = item.color || '#3B82F6'
+          ctx.fillText('Rx: ' + item.text, x, y)
+          y += lineH
+        }
+      })
+    })
+
+    // ── SECTION 2: PLANO HORIZONTAL ───────────────────────
+    _drawSection(ctx, x0, y2, w, sectionH, 'PLANO HORIZONTAL', '#3B82F6', function (x, y, maxW) {
+      var lineH = 13
+      var data = _getHorizontalAnalysis()
+
+      data.forEach(function (item) {
+        if (item.type === 'header') {
+          ctx.font = '700 9px Inter, sans-serif'
+          ctx.fillStyle = item.color || '#C8A97E'
+          ctx.fillText(item.text, x, y)
+          y += lineH
+        } else if (item.type === 'value') {
+          ctx.font = '400 9px Inter, sans-serif'
+          ctx.fillStyle = 'rgba(245,240,232,0.7)'
+          ctx.fillText(item.label + ':', x, y)
+          ctx.fillStyle = item.color || '#F5F0E8'
+          ctx.font = '600 9px Inter, sans-serif'
+          ctx.textAlign = 'right'
+          ctx.fillText(item.value, x + maxW - 4, y)
+          ctx.textAlign = 'left'
+          y += lineH
+        } else if (item.type === 'text') {
+          ctx.font = '400 8px Inter, sans-serif'
+          ctx.fillStyle = item.color || 'rgba(245,240,232,0.5)'
+          _wrapText(ctx, item.text, x, y, maxW - 4, 10)
+          y += Math.ceil(item.text.length / 22) * 10 + 2
+        } else if (item.type === 'rx') {
+          ctx.font = '600 8px Inter, sans-serif'
+          ctx.fillStyle = item.color || '#3B82F6'
+          ctx.fillText('Rx: ' + item.text, x, y)
+          y += lineH
+        } else if (item.type === 'spacer') {
+          y += 4
+        }
+      })
+    })
+
+    // ── SECTION 3: LINHA MANDIBULAR ───────────────────────
+    _drawSection(ctx, x0, y3, w, sectionH, 'LINHA MANDIBULAR', '#C8A97E', function (x, y, maxW) {
+      var lineH = 13
+      var data = _getMandibularAnalysis()
+
+      data.forEach(function (item) {
+        if (item.type === 'header') {
+          ctx.font = '700 9px Inter, sans-serif'
+          ctx.fillStyle = item.color || '#C8A97E'
+          ctx.fillText(item.text, x, y)
+          y += lineH
+        } else if (item.type === 'value') {
+          ctx.font = '400 9px Inter, sans-serif'
+          ctx.fillStyle = 'rgba(245,240,232,0.7)'
+          ctx.fillText(item.label + ':', x, y)
+          ctx.fillStyle = item.color || '#F5F0E8'
+          ctx.font = '600 9px Inter, sans-serif'
+          ctx.textAlign = 'right'
+          ctx.fillText(item.value, x + maxW - 4, y)
+          ctx.textAlign = 'left'
+          y += lineH
+        } else if (item.type === 'text') {
+          ctx.font = '400 8px Inter, sans-serif'
+          ctx.fillStyle = item.color || 'rgba(245,240,232,0.5)'
+          _wrapText(ctx, item.text, x, y, maxW - 4, 10)
+          y += Math.ceil(item.text.length / 22) * 10 + 2
+        } else if (item.type === 'rx') {
+          ctx.font = '600 8px Inter, sans-serif'
+          ctx.fillStyle = item.color || '#3B82F6'
+          ctx.fillText('Rx: ' + item.text, x, y)
+          y += lineH
+        } else if (item.type === 'spacer') {
+          y += 4
+        }
+      })
+    })
+
+    ctx.restore()
+  }
+
+  function _drawSection(ctx, x0, y0, w, h, title, titleColor, contentFn) {
+    var pad = 6
+    // Title bar
+    ctx.fillStyle = titleColor
+    ctx.globalAlpha = 0.15
+    ctx.fillRect(x0, y0, w, 18)
+    ctx.globalAlpha = 1.0
+
+    ctx.font = '700 8px Inter, sans-serif'
+    ctx.fillStyle = titleColor
+    ctx.textAlign = 'left'
+    ctx.letterSpacing = '0.1em'
+    ctx.fillText(title, x0 + pad, y0 + 12)
+
+    // Content
+    contentFn(x0 + pad, y0 + 26, w - pad * 2)
+  }
+
+  function _wrapText(ctx, text, x, y, maxW, lineH) {
+    var words = text.split(' ')
+    var line = ''
+    for (var i = 0; i < words.length; i++) {
+      var test = line + words[i] + ' '
+      if (ctx.measureText(test).width > maxW && i > 0) {
+        ctx.fillText(line.trim(), x, y)
+        line = words[i] + ' '
+        y += lineH
+      } else {
+        line = test
+      }
+    }
+    ctx.fillText(line.trim(), x, y)
+  }
+
+  // ── Clinical Analysis Data ──────────────────────────────
+
+  function _getVerticalAnalysis() {
+    var items = []
+    var scan = FM._scanData
+    var thirds = scan ? scan.thirds : null
+
+    items.push({ type: 'header', text: 'Proporcoes Faciais', color: '#10B981' })
+
+    if (thirds) {
+      var sup = thirds.superior, med = thirds.medio, inf = thirds.inferior
+      items.push({ type: 'value', label: 'Terco Superior', value: Math.round(sup) + '%', color: sup >= 28 && sup <= 38 ? '#10B981' : '#F59E0B' })
+      items.push({ type: 'value', label: 'Terco Medio', value: Math.round(med) + '%', color: med >= 28 && med <= 38 ? '#10B981' : '#F59E0B' })
+      items.push({ type: 'value', label: 'Terco Inferior', value: Math.round(inf) + '%', color: inf >= 28 && inf <= 38 ? '#10B981' : '#F59E0B' })
+      items.push({ type: 'value', label: 'Equilibrio', value: thirds.balanced ? 'Sim' : 'Nao', color: thirds.balanced ? '#10B981' : '#EF4444' })
+      items.push({ type: 'spacer' })
+
+      // Clinical interpretation
+      if (inf > 38) {
+        items.push({ type: 'text', text: 'Terco inferior alongado — indica excesso vertical ou mento projetado.', color: 'rgba(245,240,232,0.6)' })
+        items.push({ type: 'rx', text: 'Botox masseter (20-30U bilateral) para reduzir volume', color: '#8B5CF6' })
+      } else if (inf < 28) {
+        items.push({ type: 'text', text: 'Terco inferior curto — indica mento retruido ou mordida profunda.', color: 'rgba(245,240,232,0.6)' })
+        items.push({ type: 'rx', text: 'AH mento 1-2mL para projecao', color: '#3B82F6' })
+      }
+      if (sup < 28) {
+        items.push({ type: 'text', text: 'Terco superior curto — linha do cabelo baixa ou testa pequena.', color: 'rgba(245,240,232,0.6)' })
+      }
+      if (med > 38) {
+        items.push({ type: 'text', text: 'Terco medio aumentado — nariz pode parecer longo.', color: 'rgba(245,240,232,0.6)' })
+        items.push({ type: 'rx', text: 'AH ponta nasal 0.5mL para encurtar visualmente', color: '#3B82F6' })
+      }
+      if (thirds.balanced) {
+        items.push({ type: 'text', text: 'Proporcoes verticais equilibradas — boa harmonia.', color: '#10B981' })
+      }
+    } else {
+      items.push({ type: 'text', text: 'Execute Auto Analise para obter dados verticais.' })
+    }
+
+    // Symmetry
+    if (scan && scan.symmetry) {
+      items.push({ type: 'spacer' })
+      items.push({ type: 'header', text: 'Simetria', color: '#10B981' })
+      items.push({ type: 'value', label: 'Global', value: scan.symmetry.overall + '%', color: scan.symmetry.overall >= 85 ? '#10B981' : scan.symmetry.overall >= 70 ? '#F59E0B' : '#EF4444' })
+      if (scan.symmetry.overall < 85) {
+        items.push({ type: 'rx', text: 'AH compensatorio no lado deficiente', color: '#3B82F6' })
+      }
+    }
+
+    return items
+  }
+
+  function _getHorizontalAnalysis() {
+    var items = []
+    var scan = FM._scanData
+    var shape = scan ? scan.shape : null
+    var measurements = scan ? scan.measurements : null
+
+    items.push({ type: 'header', text: 'Morfologia Facial', color: '#3B82F6' })
+
+    if (shape) {
+      items.push({ type: 'value', label: 'Biotipo', value: shape.shape, color: '#C8A97E' })
+      items.push({ type: 'spacer' })
+
+      // Ratios
+      if (shape.ratios) {
+        items.push({ type: 'value', label: 'Larg/Alt', value: shape.ratios.width_to_length, color: shape.ratios.width_to_length >= 0.65 && shape.ratios.width_to_length <= 0.85 ? '#10B981' : '#F59E0B' })
+        items.push({ type: 'value', label: 'Testa/Mand', value: shape.ratios.forehead_to_jaw, color: Math.abs(shape.ratios.forehead_to_jaw - 1.0) < 0.15 ? '#10B981' : '#F59E0B' })
+      }
+      items.push({ type: 'spacer' })
+
+      // Treatment by face shape
+      if (shape.shape === 'redondo') {
+        items.push({ type: 'text', text: 'Rosto redondo: focar em angulacao e definicao para criar contorno.' })
+        items.push({ type: 'rx', text: 'AH mandibula 2-3mL bilateral', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mento 1mL projecao', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'Botox masseter 25U bilateral', color: '#8B5CF6' })
+      } else if (shape.shape === 'quadrado') {
+        items.push({ type: 'text', text: 'Rosto quadrado: suavizar angulos e criar curvas femininas.' })
+        items.push({ type: 'rx', text: 'Botox masseter 30U bilateral', color: '#8B5CF6' })
+        items.push({ type: 'rx', text: 'AH zigoma 1mL bilateral', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH temporal 0.5mL bilateral', color: '#3B82F6' })
+      } else if (shape.shape === 'oval') {
+        items.push({ type: 'text', text: 'Rosto oval: biotipo ideal. Manter proporcoes, refinar detalhes.' })
+        items.push({ type: 'rx', text: 'AH pontual conforme queixas', color: '#3B82F6' })
+      } else if (shape.shape === 'oblongo') {
+        items.push({ type: 'text', text: 'Rosto oblongo: criar largura para equilibrar comprimento.' })
+        items.push({ type: 'rx', text: 'AH zigoma 1.5mL bilateral', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mandibula 1mL bilateral', color: '#3B82F6' })
+      } else if (shape.shape === 'coracao') {
+        items.push({ type: 'text', text: 'Rosto coracao: equilibrar testa larga com mandibula estreita.' })
+        items.push({ type: 'rx', text: 'AH mandibula 2mL bilateral', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mento 1mL', color: '#3B82F6' })
+      } else if (shape.shape === 'diamante') {
+        items.push({ type: 'text', text: 'Rosto diamante: preencher temporal e mandibula.' })
+        items.push({ type: 'rx', text: 'AH temporal 1mL bilateral', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mandibula 1.5mL bilateral', color: '#3B82F6' })
+      }
+    }
+
+    // Golden ratio
+    if (measurements && measurements.golden_ratio_score != null) {
+      items.push({ type: 'spacer' })
+      items.push({ type: 'value', label: 'Prop. Aurea', value: Math.round(measurements.golden_ratio_score) + '%', color: measurements.golden_ratio_score >= 70 ? '#10B981' : '#F59E0B' })
+    }
+
+    return items
+  }
+
+  function _getMandibularAnalysis() {
+    var items = []
+    var ma = FM._metricAngles
+
+    items.push({ type: 'header', text: 'Contorno Mandibular', color: '#C8A97E' })
+
+    if (ma) {
+      items.push({ type: 'value', label: 'AMF', value: ma.amf + '\u00B0', color: ma.classification.color })
+      items.push({ type: 'value', label: 'Classificacao', value: ma.classification.label, color: ma.classification.color })
+      items.push({ type: 'value', label: 'Ratio M/Z', value: ma.rmz + '', color: ma.rmz >= 0.85 && ma.rmz <= 0.95 ? '#10B981' : '#F59E0B' })
+      items.push({ type: 'value', label: 'Jawline E', value: ma.aij_left + '\u00B0', color: ma.jawline.color })
+      items.push({ type: 'value', label: 'Jawline D', value: ma.aij_right + '\u00B0', color: ma.jawline.color })
+      items.push({ type: 'value', label: 'Tensao', value: ma.jawline.label, color: ma.jawline.color })
+
+      // Asymmetry
+      var aijDiff = Math.abs(ma.aij_left - ma.aij_right)
+      if (aijDiff > 2) {
+        var side = ma.aij_left > ma.aij_right ? 'E' : 'D'
+        items.push({ type: 'value', label: 'Assimetria', value: '\u0394' + Math.round(aijDiff * 10) / 10 + '\u00B0 (' + side + ')', color: aijDiff > 8 ? '#EF4444' : '#F59E0B' })
+      }
+
+      items.push({ type: 'spacer' })
+
+      // Treatment recommendations
+      if (ma.classification.level <= 2) {
+        // Arredondada ou Suave — precisa definir
+        items.push({ type: 'text', text: 'Contorno indefinido. Protocolo de definicao mandibular recomendado.' })
+        items.push({ type: 'rx', text: 'AH mandibula 2-3mL bilateral', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mento 1-1.5mL projecao', color: '#3B82F6' })
+        if (ma.aij_avg > 30) {
+          items.push({ type: 'rx', text: 'AH pre-jowl 0.5mL bilateral', color: '#3B82F6' })
+        }
+      } else if (ma.classification.level === 3) {
+        // Definida — manter ou refinar
+        items.push({ type: 'text', text: 'Boa definicao mandibular. Refinar contorno e tratar assimetrias.' })
+        if (aijDiff > 4) {
+          items.push({ type: 'rx', text: 'AH compensatorio lado ' + side + ' 0.5-1mL', color: '#3B82F6' })
+        }
+      } else {
+        // Angular — pode suavizar se desejado
+        items.push({ type: 'text', text: 'Mandibula angular marcada. Considerar suavizacao se desejado.' })
+        items.push({ type: 'rx', text: 'Botox masseter 20-25U bilateral', color: '#8B5CF6' })
+      }
+
+      // Jawline tension treatment
+      if (ma.aij_avg > 30) {
+        items.push({ type: 'spacer' })
+        items.push({ type: 'text', text: 'Jawline caida — perda de sustentacao. Vetor de lifting necessario.' })
+        items.push({ type: 'rx', text: 'AH temporal 1mL vetor lifting', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'Fios PDO 4-6 unidades', color: '#06B6D4' })
+      }
+    } else {
+      items.push({ type: 'text', text: 'Execute Auto Angulos para analise mandibular completa.' })
+    }
+
+    return items
+  }
+
   function _recalcAngles() {
     if (!FM._metricAngles || !FM._metricAngles.points) return
     var pts = FM._metricAngles.points
