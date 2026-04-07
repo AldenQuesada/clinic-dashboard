@@ -319,6 +319,36 @@
             FM._icon('activity', 14) + ' Analisar Pele</button>'
         }
 
+        // Heatmap toggle buttons
+        if (FM._heatmapImages && Object.keys(FM._heatmapImages).length > 0) {
+          html += '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px">' +
+            '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:6px">Heatmaps</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:4px">'
+
+          var heatmapBtns = [
+            { key: 'wrinkles', label: 'Rugas', color: '#EF4444' },
+            { key: 'spots', label: 'Manchas', color: '#F59E0B' },
+            { key: 'pores', label: 'Poros', color: '#3B82F6' },
+            { key: 'redness', label: 'Verm.', color: '#DC2626' },
+            { key: 'pigmentation', label: 'Pigm.', color: '#D97706' },
+            { key: 'firmness', label: 'Firmeza', color: '#06B6D4' },
+          ]
+          heatmapBtns.forEach(function (b) {
+            if (!FM._heatmapImages[b.key]) return
+            var active = FM._activeHeatmap === b.key
+            html += '<button style="padding:4px 8px;font-size:10px;border-radius:6px;border:1px solid ' +
+              (active ? b.color : 'rgba(255,255,255,0.1)') + ';background:' +
+              (active ? b.color + '22' : 'transparent') + ';color:' +
+              (active ? b.color : 'var(--text-secondary)') + ';cursor:pointer;font-weight:' +
+              (active ? '600' : '400') + '" onclick="FaceMapping._toggleHeatmap(\'' + b.key + '\')">' +
+              b.label + '</button>'
+          })
+          html += '</div></div>'
+        } else if (FM._skinAnalysis) {
+          html += '<button class="fm-btn" style="width:100%;margin-top:8px" onclick="FaceMapping._loadHeatmaps()">' +
+            FM._icon('layers', 14) + ' Gerar Heatmaps</button>'
+        }
+
         html += '</div>'
       }
 

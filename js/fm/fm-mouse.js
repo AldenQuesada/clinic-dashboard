@@ -65,6 +65,13 @@
 
     FM._ctx.drawImage(FM._img, 0, 0, FM._imgW, FM._imgH)
 
+    // Heatmap overlay (if active)
+    if (FM._activeHeatmap && FM._heatmapImages && FM._heatmapImages[FM._activeHeatmap]) {
+      FM._ctx.globalAlpha = 0.55
+      FM._ctx.drawImage(FM._heatmapImages[FM._activeHeatmap], 0, 0, FM._imgW, FM._imgH)
+      FM._ctx.globalAlpha = 1.0
+    }
+
     // Label area background (right side)
     FM._ctx.fillStyle = '#2C2C2C'
     FM._ctx.fillRect(FM._imgW, 0, LABEL_MARGIN, FM._canvas.height)

@@ -523,6 +523,76 @@
     img.src = FM._photoUrls[angle]
   }
 
+  // ── Heatmap overlay management ───────────────────────────
+
+  FM._loadHeatmaps = function () {
+    var angle = FM._activeAngle || 'front'
+    if (!FM._photoUrls[angle]) return
+
+    FM._showLoading('Gerando heatmaps (rugas, manchas, poros, vermelhidao)...')
+
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
+
+      fetch(FM.FACIAL_API_URL + '/skin/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_base64: b64, generate_heatmaps: true }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (data) {
+        FM._hideLoading()
+        if (!data.success || !data.heatmaps) {
+          FM._showToast('Falha ao gerar heatmaps', 'error')
+          return
+        }
+
+        // Store scores
+        FM._skinAnalysis = data.scores
+        FM._skinAge = data.skin_age
+
+        // Convert heatmap base64 to Image objects
+        FM._heatmapImages = {}
+        var metrics = ['wrinkles', 'spots', 'pores', 'redness', 'pigmentation', 'firmness']
+        var loaded = 0
+
+        metrics.forEach(function (m) {
+          if (!data.heatmaps[m]) return
+          var hImg = new Image()
+          hImg.onload = function () {
+            FM._heatmapImages[m] = hImg
+            loaded++
+            if (loaded === metrics.length) {
+              FM._showToast('6 heatmaps carregados — clique para visualizar', 'success')
+              FM._refreshToolbar()
+            }
+          }
+          hImg.onerror = function () { loaded++ }
+          hImg.src = 'data:image/png;base64,' + data.heatmaps[m]
+        })
+      })
+      .catch(function () {
+        FM._hideLoading()
+        FM._showToast('API offline.', 'warn')
+      })
+    }
+    img.src = FM._photoUrls[angle]
+  }
+
+  FM._toggleHeatmap = function (metric) {
+    if (FM._activeHeatmap === metric) {
+      FM._activeHeatmap = null  // toggle off
+    } else {
+      FM._activeHeatmap = metric
+    }
+    FM._redraw()
+    FM._refreshToolbar()
+  }
+
   FM._toggleFullscreen = function () {
     var area = document.getElementById('fmCanvasArea')
     if (!area) return
