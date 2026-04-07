@@ -992,7 +992,8 @@ function _buildFinModal(id, appt) {
 
         <!-- Bloco 4: Routing de tags (próximo estado do paciente) -->
         <div style="background:#F5F3FF;padding:13px;border-radius:10px;border:1px solid #DDD6FE">
-          <div style="font-size:11px;font-weight:800;color:#4C1D95;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Bloco 4 — Próximo Estado do Paciente</div>
+          <div style="font-size:11px;font-weight:800;color:#4C1D95;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Bloco 4 — Proximo Estado do Paciente</div>
+          <div id="finRouteHint" style="display:none;font-size:11px;color:#D97706;font-weight:600;margin-bottom:8px;padding:6px 8px;background:#FFFBEB;border-radius:6px;border:1px solid #FDE68A"></div>
           <div style="display:flex;flex-direction:column;gap:7px">
             <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;cursor:pointer;padding:8px;border-radius:8px;border:1.5px solid transparent" id="finRouteLabel_paciente">
               <input type="radio" name="finRoute" value="paciente" style="margin-top:2px;accent-color:#10B981" onchange="finRouteChange()">
@@ -1120,22 +1121,50 @@ function removeFinProc(i) {
   _finAutoRoute()
 }
 
-// Auto-route: procedimento → paciente, procedimento + orcamento → pac_orcamento
+// Auto-route logic:
+// - Procedimento pago     → paciente
+// - Procedimento cortesia → orcamento (registra proc, mas nao e paciente ate pagar)
+// - Procedimento + orcamento check → pac_orcamento (se pago) ou orcamento (se cortesia)
+// - Sem procedimento      → orcamento (consulta + orcamento)
 function _finAutoRoute() {
   var hasProc = _finalProcs.length > 0
-  var hasOrc = document.getElementById('finEnviarOrcamento')?.checked || false
-  // Also check dynamic checks for orcamento
+  var forma = document.getElementById('finFormaPag')?.value || ''
+  var isCortesia = forma === 'cortesia'
+
+  var hasOrc = false
+  // Check for orcamento in fixed or dynamic checks
+  var orcCheck = document.getElementById('finEnviarOrcamento')
+  if (orcCheck && orcCheck.checked) hasOrc = true
   document.querySelectorAll('#finFlowChecks input[type=checkbox]').forEach(function(cb) {
     if (cb.labels && cb.labels[0] && /orcamento/i.test(cb.labels[0].textContent) && cb.checked) hasOrc = true
   })
 
   var target = 'nenhum'
-  if (hasProc && hasOrc) target = 'pac_orcamento'
-  else if (hasProc) target = 'paciente'
-  else if (hasOrc) target = 'orcamento'
+  if (hasProc && isCortesia) {
+    // Cortesia: procedimento registrado mas vai pra orcamento (nao e paciente ate pagar)
+    target = 'orcamento'
+  } else if (hasProc && hasOrc) {
+    target = 'pac_orcamento'
+  } else if (hasProc) {
+    target = 'paciente'
+  } else {
+    // Sem procedimento = consulta, vai pra orcamento
+    target = 'orcamento'
+  }
 
   var radio = document.querySelector('input[name="finRoute"][value="' + target + '"]')
   if (radio) { radio.checked = true; finRouteChange() }
+
+  // Show hint about cortesia routing
+  var hint = document.getElementById('finRouteHint')
+  if (hint) {
+    if (hasProc && isCortesia) {
+      hint.style.display = 'block'
+      hint.textContent = 'Cortesia: procedimento registrado, mas so vira Paciente quando pagar.'
+    } else {
+      hint.style.display = 'none'
+    }
+  }
 }
 
 function finProcAutoPrice() {
@@ -1297,6 +1326,7 @@ function finPayChanged() {
   }
 
   finUpdateBalance()
+  _finAutoRoute()
 }
 
 // ── Credit card: a vista / parcelado toggle ──
@@ -1395,6 +1425,36 @@ function confirmFinalize(id) {
   const avalGoogle = document.getElementById('finAvalGoogle')?.checked
   const parceria = document.getElementById('finFluxoParceria')?.checked
   const route    = document.querySelector('input[name="finRoute"]:checked')?.value || 'nenhum'
+
+  // ── Validacao completa ──
+  var erros = []
+  if (forma !== 'cortesia' && valor <= 0) erros.push('Informe o valor total')
+  if (forma !== 'cortesia' && forma !== 'link' && statusP === 'pago' && pago <= 0) erros.push('Status "Pago" mas valor pago e zero')
+  if (forma === 'cortesia') {
+    var motivo = document.getElementById('finCortesiaMotivo')?.value?.trim()
+    if (!motivo) erros.push('Informe o motivo da cortesia')
+  }
+  if (forma === 'convenio') {
+    if (!(document.getElementById('finConvNome')?.value?.trim())) erros.push('Informe o nome do convenio')
+  }
+  if (forma === 'entrada_saldo') {
+    var entVal = parseFloat(document.getElementById('finEntradaVal')?.value||'0')
+    if (entVal <= 0) erros.push('Informe o valor da entrada')
+    if (!(document.getElementById('finSaldoData')?.value)) erros.push('Informe o vencimento do saldo')
+  }
+  if (forma === 'parcelado' || (forma === 'credito' && document.querySelector('input[name="finCredTipo"]:checked')?.value === 'parcelado')) {
+    // ok, auto-calculated
+  }
+  if (forma === 'boleto' && parseInt(document.getElementById('finBoletoN')?.value||'1') > 1) {
+    if (!(document.getElementById('finBoletoData')?.value)) erros.push('Informe o 1o vencimento do boleto')
+  }
+  var routeVal = document.querySelector('input[name="finRoute"]:checked')?.value || 'nenhum'
+  if (routeVal === 'nenhum') erros.push('Selecione o proximo estado do paciente (Bloco 4)')
+
+  if (erros.length) {
+    alert('Corrija antes de finalizar:\n\n- ' + erros.join('\n- '))
+    return
+  }
 
   // Collect payment details per method
   var pagDetalhes = { forma }
