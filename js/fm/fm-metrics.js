@@ -36,116 +36,84 @@
 
     ctx.save()
 
-    // Draw midline
+    // Draw midline (subtle)
     if (FM._metricShowMidline) {
-      var mx = FM._metricMidline ? FM._metricMidline.x * w : w / 2
+      var mlx = FM._metricMidline ? FM._metricMidline.x * w : w / 2
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(139,92,246,0.6)'  // purple
-      ctx.lineWidth = 1.5
-      ctx.setLineDash([8, 4])
-      ctx.moveTo(mx, 0)
-      ctx.lineTo(mx, h)
+      ctx.strokeStyle = 'rgba(139,92,246,0.35)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([4, 4])
+      ctx.moveTo(mlx, 0)
+      ctx.lineTo(mlx, h)
       ctx.stroke()
       ctx.setLineDash([])
 
-      // Midline label
-      ctx.font = '600 9px Inter, sans-serif'
-      ctx.fillStyle = 'rgba(139,92,246,0.8)'
-      ctx.textAlign = 'center'
-      ctx.fillText('MIDLINE', mx, 12)
-
-      // Midline handle
+      // Small handle
       ctx.beginPath()
       ctx.fillStyle = '#8B5CF6'
-      ctx.arc(mx, 20, 5, 0, Math.PI * 2)
+      ctx.arc(mlx, 12, 4, 0, Math.PI * 2)
       ctx.fill()
-      ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 1.5
-      ctx.stroke()
     }
 
-    // Draw horizontal lines
+    // Draw horizontal lines (dashed, clean)
     FM._metricLines.h.forEach(function (line, i) {
       var y = line.y * h
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(16,185,129,0.7)'  // green
-      ctx.lineWidth = 1.5
-      ctx.setLineDash([])
+      ctx.strokeStyle = 'rgba(16,185,129,0.5)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([6, 4])
       ctx.moveTo(0, y)
       ctx.lineTo(w, y)
       ctx.stroke()
+      ctx.setLineDash([])
 
-      // Handle
+      // Small handle dot
       ctx.beginPath()
       ctx.fillStyle = '#10B981'
-      ctx.arc(12, y, 5, 0, Math.PI * 2)
+      ctx.arc(8, y, 4, 0, Math.PI * 2)
       ctx.fill()
-      ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 1.5
-      ctx.stroke()
 
-      // Label with percentage
-      var pct = Math.round(line.y * 100)
-      ctx.font = '600 10px Inter, sans-serif'
-      ctx.fillStyle = '#10B981'
+      // Minimal label
+      ctx.font = '500 9px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(16,185,129,0.7)'
       ctx.textAlign = 'left'
-      ctx.fillText('H' + (i + 1) + ': ' + pct + '%', 22, y - 4)
+      var label = line.label || ('H' + (i + 1))
+      ctx.fillText(label, 16, y - 4)
 
-      // Distance to previous line
+      // Distance to previous (small, between lines)
       if (i > 0) {
         var prevY = FM._metricLines.h[i - 1].y * h
-        var dist = Math.abs(y - prevY)
         var distPct = Math.round(Math.abs(line.y - FM._metricLines.h[i - 1].y) * 100)
-        ctx.fillStyle = 'rgba(16,185,129,0.5)'
-        ctx.font = '400 9px Inter, sans-serif'
-        ctx.fillText(distPct + '% (' + Math.round(dist) + 'px)', 22, (y + prevY) / 2 + 3)
-
-        // Bracket line
-        ctx.beginPath()
-        ctx.strokeStyle = 'rgba(16,185,129,0.2)'
-        ctx.lineWidth = 1
-        ctx.moveTo(8, prevY)
-        ctx.lineTo(8, y)
-        ctx.stroke()
+        ctx.font = '400 8px Inter, sans-serif'
+        ctx.fillStyle = 'rgba(16,185,129,0.4)'
+        ctx.fillText(distPct + '%', 16, (y + prevY) / 2 + 3)
       }
     })
 
-    // Draw vertical lines
+    // Draw vertical lines (dashed, clean)
     FM._metricLines.v.forEach(function (line, i) {
       var x = line.x * w
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(59,130,246,0.7)'  // blue
-      ctx.lineWidth = 1.5
-      ctx.setLineDash([])
+      ctx.strokeStyle = 'rgba(59,130,246,0.5)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([6, 4])
       ctx.moveTo(x, 0)
       ctx.lineTo(x, h)
       ctx.stroke()
+      ctx.setLineDash([])
 
-      // Handle
+      // Small handle dot
       ctx.beginPath()
       ctx.fillStyle = '#3B82F6'
-      ctx.arc(x, h - 12, 5, 0, Math.PI * 2)
+      ctx.arc(x, h - 8, 4, 0, Math.PI * 2)
       ctx.fill()
-      ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 1.5
-      ctx.stroke()
 
-      // Label
-      var pct = Math.round(line.x * 100)
-      ctx.font = '600 10px Inter, sans-serif'
-      ctx.fillStyle = '#3B82F6'
+      // Minimal label
+      var label = line.label || ('V' + (i + 1))
+      ctx.font = '500 9px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(59,130,246,0.7)'
       ctx.textAlign = 'center'
-      ctx.fillText('V' + (i + 1) + ': ' + pct + '%', x, h - 22)
-
-      // Asymmetry from midline
-      if (FM._metricShowMidline) {
-        var midX = FM._metricMidline ? FM._metricMidline.x : 0.5
-        var deviation = Math.round(Math.abs(line.x - midX) * 100)
-        var side = line.x < midX ? 'E' : 'D'
-        ctx.fillStyle = 'rgba(59,130,246,0.5)'
-        ctx.font = '400 9px Inter, sans-serif'
-        ctx.fillText(side + ' ' + deviation + '%', x, h - 34)
-      }
+      ctx.fillText(label, x, h - 16)
     })
 
     // Draw measurement points
@@ -614,27 +582,10 @@
     // Draw jawline (Gonial L → Mento → Gonial R)
     ctx.beginPath()
     ctx.strokeStyle = FM._metricAngles.classification.color
-    ctx.lineWidth = 2.5
-    ctx.setLineDash([])
+    ctx.lineWidth = 2
+    ctx.setLineDash([6, 4])
     ctx.moveTo(gLx, gLy)
     ctx.lineTo(mx, my)
-    ctx.lineTo(gRx, gRy)
-    ctx.stroke()
-
-    // Draw zigoma line (reference)
-    ctx.beginPath()
-    ctx.strokeStyle = 'rgba(200,169,126,0.4)'
-    ctx.lineWidth = 1
-    ctx.setLineDash([4, 4])
-    ctx.moveTo(zLx, zLy)
-    ctx.lineTo(zRx, zRy)
-    ctx.stroke()
-
-    // Draw mandibula line (reference)
-    ctx.beginPath()
-    ctx.strokeStyle = 'rgba(200,169,126,0.3)'
-    ctx.lineWidth = 1
-    ctx.moveTo(gLx, gLy)
     ctx.lineTo(gRx, gRy)
     ctx.stroke()
     ctx.setLineDash([])
