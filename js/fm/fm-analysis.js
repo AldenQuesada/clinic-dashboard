@@ -237,6 +237,7 @@
     } else if (tabId === 'analysis') {
       FM._editorMode = 'analysis'
       FM._analysisSubMode = 'tercos'
+      if (FM._photoUrls['front']) FM._activeAngle = 'front'
     }
     FM._setEditorMode(FM._editorMode)
   }

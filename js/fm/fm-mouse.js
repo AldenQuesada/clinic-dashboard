@@ -102,9 +102,11 @@
         FM._ctx.restore()
       }
     } else if (FM._editorMode === 'analysis') {
-      if (FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front') {
+      // Always draw tercos on front, ricketts on lateral
+      if (FM._activeAngle === 'front' && FM._tercoLines) {
         FM._drawTercos()
-      } else if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral') {
+      }
+      if (FM._activeAngle === 'lateral' && FM._rickettsPoints) {
         FM._drawRicketts()
       }
     } else {
