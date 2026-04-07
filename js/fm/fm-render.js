@@ -375,6 +375,68 @@
       html += '<div style="color:rgba(245,240,232,0.4);font-size:10px">Execute Auto Angulos</div>'
     }
 
+    // ── PROTOCOL SECTION ──
+    if (FM._protocolData) {
+      var proto = FM._protocolData
+      html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
+        '<div style="background:rgba(139,92,246,0.15);padding:6px 12px">' +
+          '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#8B5CF6">PROTOCOLO RECOMENDADO</span>' +
+        '</div>' +
+        '<div style="padding:10px 12px">'
+
+      // Classification
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+        '<span style="color:rgba(245,240,232,0.6);font-size:10px">Classificacao</span>' +
+        '<span style="color:#8B5CF6;font-weight:700;font-size:12px">' + proto.classification + ' — ' + proto.classification_name + '</span>' +
+      '</div>'
+
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+        '<span style="color:rgba(245,240,232,0.6);font-size:10px">Faixa Etaria</span>' +
+        '<span style="color:#C8A97E;font-weight:600;font-size:11px">' + proto.age_bracket + '</span>' +
+      '</div>'
+
+      // Totals
+      html += '<div style="display:flex;gap:8px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
+      html += '<div style="flex:1;text-align:center;padding:6px;background:rgba(59,130,246,0.1);border-radius:6px">' +
+        '<div style="font-size:16px;font-weight:800;color:#3B82F6">' + proto.totals.ah_ml + '</div>' +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.4)">mL AH</div>' +
+      '</div>'
+      html += '<div style="flex:1;text-align:center;padding:6px;background:rgba(139,92,246,0.1);border-radius:6px">' +
+        '<div style="font-size:16px;font-weight:800;color:#8B5CF6">' + proto.totals.botox_units + '</div>' +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.4)">U Botox</div>' +
+      '</div>'
+      html += '<div style="flex:1;text-align:center;padding:6px;background:rgba(16,185,129,0.1);border-radius:6px">' +
+        '<div style="font-size:16px;font-weight:800;color:#10B981">' + proto.totals.bio_sessions + '</div>' +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.4)">Bio sess.</div>' +
+      '</div>'
+      html += '</div>'
+
+      // Protocol per zone
+      if (proto.protocol && proto.protocol.length > 0) {
+        html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
+        proto.protocol.forEach(function (p) {
+          var zColor = p.unit === 'U' ? '#8B5CF6' : '#3B82F6'
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:10px">' +
+            '<span style="color:rgba(245,240,232,0.5)">' + p.zone + (p.bilateral ? ' (bil)' : '') + '</span>' +
+            '<span style="color:' + zColor + ';font-weight:600">' + p.dose + p.unit + '</span>' +
+          '</div>'
+        })
+        html += '</div>'
+      }
+
+      // Assessment
+      if (proto.assessment) {
+        html += '<div style="margin-top:6px;font-size:9px;color:rgba(245,240,232,0.4);line-height:1.4">' + proto.assessment + '</div>'
+      }
+
+      html += '</div></div>'
+    } else {
+      html += '<div style="padding:10px 12px;border-bottom:1px solid rgba(200,169,126,0.1)">' +
+        '<button class="fm-btn" style="width:100%" onclick="FaceMapping._runProtocol()">' +
+          FM._icon('clipboard', 14) + ' Gerar Protocolo</button>' +
+      '</div>'
+    }
+
     // Skin age summary (if available)
     if (age) {
       html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'

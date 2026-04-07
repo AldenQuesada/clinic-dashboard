@@ -61,6 +61,7 @@
     // Skin analysis + heatmaps
     _runSkinAnalysis: FM._runSkinAnalysis,
     _runCollagenScore: FM._runCollagenScore,
+    _runProtocol: FM._runProtocol,
     _loadHeatmaps: FM._loadHeatmaps,
     _toggleHeatmap: FM._toggleHeatmap,
 

@@ -333,9 +333,10 @@
           FM._redraw()
         }
 
-        // Auto-trigger skin analysis + collagen in background
+        // Auto-trigger skin + collagen + protocol in background
         if (!FM._skinAnalysis) FM._runSkinAnalysis()
         if (!FM._collagenData) FM._runCollagenScore()
+        if (!FM._protocolData) FM._runProtocol()
       })
       .catch(function (err) {
         clearTimeout(timeout)
@@ -616,6 +617,58 @@
     }
     FM._redraw()
     FM._refreshToolbar()
+  }
+
+  // ── Full Protocol Recommendation ─────────────────────────
+
+  FM._runProtocol = function () {
+    var angle = FM._activeAngle || 'front'
+    if (!FM._photoUrls[angle]) {
+      FM._showToast('Envie uma foto primeiro.', 'warn')
+      return
+    }
+
+    FM._showLoading('Gerando protocolo de tratamento...')
+
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
+
+      var name = FM._lead ? (FM._lead.nome || FM._lead.name || 'Paciente') : 'Paciente'
+
+      fetch(FM.FACIAL_API_URL + '/recommend-protocol', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_base64: b64, lead_name: name, complaint: '' }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (data) {
+        FM._hideLoading()
+        if (data.success) {
+          FM._protocolData = data
+          FM._showToast(
+            'Classificacao: ' + data.classification + ' (' + data.classification_name + ') | ' +
+            'AH: ' + data.totals.ah_ml + 'mL | Botox: ' + data.totals.botox_units + 'U | Bio: ' + data.totals.bio_sessions + ' sessoes',
+            'success'
+          )
+          FM._refreshToolbar()
+          if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+            FM._render()
+            setTimeout(FM._initCanvas, 100)
+          }
+        } else {
+          FM._showToast('Falha no protocolo.', 'error')
+        }
+      })
+      .catch(function () {
+        FM._hideLoading()
+        FM._showToast('API offline.', 'warn')
+      })
+    }
+    img.src = FM._photoUrls[angle]
   }
 
   FM._toggleFullscreen = function () {

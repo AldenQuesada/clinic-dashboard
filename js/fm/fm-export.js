@@ -260,6 +260,40 @@
       html += '</div>'
     }
 
+    // ── Protocol in report ──
+    if (FM._protocolData) {
+      var proto = FM._protocolData
+      html += '<div class="fm-report-summary" style="padding-top:0;gap:16px">' +
+        '<div style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#8B5CF6;width:100%;text-align:center;margin-bottom:4px">Protocolo — ' + proto.classification + ' (' + proto.classification_name + ') — ' + proto.age_bracket + '</div>'
+
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:#3B82F6">' + proto.totals.ah_ml + '</div>' +
+        '<div class="fm-report-stat-label">mL AH Total</div>' +
+      '</div>'
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:#8B5CF6">' + proto.totals.botox_units + '</div>' +
+        '<div class="fm-report-stat-label">U Botox Total</div>' +
+      '</div>'
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:#10B981">' + proto.totals.bio_sessions + '</div>' +
+        '<div class="fm-report-stat-label">Sessoes Bio</div>' +
+      '</div>'
+
+      html += '</div>'
+
+      // Protocol detail per zone
+      if (proto.protocol && proto.protocol.length > 0) {
+        html += '<div class="fm-report-summary" style="padding-top:0;flex-direction:column;gap:2px;padding:8px 32px">'
+        proto.protocol.forEach(function (p) {
+          html += '<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">' +
+            '<span style="color:rgba(245,240,232,0.6)">' + p.zone + (p.bilateral ? ' (bilateral)' : '') + ' — ' + p.product + '</span>' +
+            '<span style="color:' + (p.unit === 'U' ? '#8B5CF6' : '#3B82F6') + ';font-weight:600">' + p.dose + ' ' + p.unit + '</span>' +
+          '</div>'
+        })
+        html += '</div>'
+      }
+    }
+
     // Color legend
     html += '<div class="fm-report-summary" style="padding-top:0;flex-wrap:wrap;gap:12px">' +
       '<div style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#C8A97E;width:100%;text-align:center;margin-bottom:4px">Legenda de Cores</div>'
