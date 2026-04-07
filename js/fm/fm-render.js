@@ -68,6 +68,12 @@
 
     html += '</div>' +
 
+      // 1x/2x toggle
+      '<div style="display:flex;background:rgba(200,169,126,0.08);border-radius:8px;padding:2px;margin:0 8px">' +
+        '<button onclick="FaceMapping._setViewMode(\'1x\')" style="padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:11px;font-weight:' + (FM._viewMode === '1x' ? '700' : '400') + ';background:' + (FM._viewMode === '1x' ? '#C8A97E' : 'transparent') + ';color:' + (FM._viewMode === '1x' ? '#fff' : 'var(--text-muted)') + '">1x</button>' +
+        '<button onclick="FaceMapping._setViewMode(\'2x\')" style="padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:11px;font-weight:' + (FM._viewMode === '2x' ? '700' : '400') + ';background:' + (FM._viewMode === '2x' ? '#C8A97E' : 'transparent') + ';color:' + (FM._viewMode === '2x' ? '#fff' : 'var(--text-muted)') + '">2x</button>' +
+      '</div>' +
+
       // Right actions
       '<div style="display:flex;gap:4px;align-items:center">' +
         '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="Scanner 478pts" style="font-size:10px;padding:5px 10px">' + FM._icon('cpu', 12) + ' Scanner</button>' +
@@ -203,7 +209,55 @@
       '</div>'
     }
 
-    return '<div class="fm-canvas-area" id="fmCanvasArea">' +
+  FM._setViewMode = function (mode) {
+    FM._viewMode = mode
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+    if (mode === '2x') {
+      setTimeout(FM._initCanvas2, 100)
+    }
+  }
+
+  FM._renderCanvasArea = function () {
+    if (FM._viewMode === '2x') {
+      return FM._renderCanvasArea2x()
+    }
+    return FM._renderCanvasArea1x()
+  }
+
+  FM._renderCanvasArea2x = function () {
+    return '<div class="fm-canvas-area" id="fmCanvasArea" style="display:flex;gap:2px;flex:1">' +
+      // LEFT: ANTES
+      '<div style="flex:1;display:flex;flex-direction:column;background:#0A0A0A;border-radius:8px;overflow:hidden;position:relative">' +
+        '<div style="padding:4px 12px;background:rgba(239,68,68,0.1);display:flex;justify-content:space-between;align-items:center">' +
+          '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#EF4444;letter-spacing:0.1em">ANTES</span>' +
+          '<div style="display:flex;gap:3px">' +
+            '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" style="font-size:8px;padding:2px 6px">' + FM._icon('cpu', 10) + '</button>' +
+            '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" style="font-size:8px;padding:2px 6px;border-color:#10B981;color:#10B981">' + FM._icon('zap', 10) + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
+          '<canvas id="fmCanvas" style="cursor:crosshair"></canvas>' +
+        '</div>' +
+      '</div>' +
+      // RIGHT: DEPOIS
+      '<div style="flex:1;display:flex;flex-direction:column;background:#0A0A0A;border-radius:8px;overflow:hidden;position:relative">' +
+        '<div style="padding:4px 12px;background:rgba(16,185,129,0.1);display:flex;justify-content:space-between;align-items:center">' +
+          '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#10B981;letter-spacing:0.1em">DEPOIS</span>' +
+          '<label style="font-size:8px;padding:2px 6px;border:1px solid rgba(16,185,129,0.3);border-radius:4px;color:#10B981;cursor:pointer">' +
+            'Upload<input type="file" accept="image/*" onchange="FaceMapping._uploadAfterPhoto(this)" style="display:none">' +
+          '</label>' +
+        '</div>' +
+        '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
+          (FM._afterPhotoUrl || FM._simPhotoUrl
+            ? '<canvas id="fmCanvas2" style="cursor:crosshair"></canvas>'
+            : '<div style="color:rgba(245,240,232,0.2);font-size:12px;text-align:center">Upload foto DEPOIS<br>ou gere uma simulacao</div>') +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  }
+
+  FM._renderCanvasArea1x = function () {
       '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap">' +
         '<canvas id="fmCanvas"></canvas>' +
       '</div>' +

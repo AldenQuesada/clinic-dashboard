@@ -5,7 +5,8 @@
   'use strict'
 
   var FM = window._FM
-  var LABEL_MARGIN = FM._LABEL_MARGIN || 180
+
+  FM._viewMode = FM._viewMode || '1x'  // '1x' or '2x'
 
   FM._initCanvas = function () {
     FM._canvas = document.getElementById('fmCanvas')
@@ -19,20 +20,21 @@
 
       var fixedH = isFS ? 44 : 90
       var areaW = isFS ? window.innerWidth : (area ? area.clientWidth : 800)
-      var areaH = window.innerHeight - fixedH
 
-      // Fit in viewport — no scroll, maximize image size
-      var maxW = Math.min(areaW - LABEL_MARGIN - 10, window.innerWidth - LABEL_MARGIN - 80)
+      // No label margin — image fills canvas
+      var is2x = FM._viewMode === '2x'
+      var maxW = is2x ? (areaW / 2 - 20) : (areaW - 20)
       var maxH = (window.innerHeight - fixedH - 40) * 0.88
       var scale = Math.min(maxW / FM._img.width, maxH / FM._img.height)
-      // Ensure minimum visible size — at least 60% of viewport height
+
+      // Min 60% viewport height
       var minH = window.innerHeight * 0.6
       if (FM._img.height * scale < minH) {
         scale = Math.min(minH / FM._img.height, maxW / FM._img.width)
       }
       FM._imgW = Math.round(FM._img.width * scale)
       FM._imgH = Math.round(FM._img.height * scale)
-      FM._canvas.width = FM._imgW + LABEL_MARGIN
+      FM._canvas.width = FM._imgW
       FM._canvas.height = FM._imgH
       FM._redraw()
     }
@@ -83,21 +85,9 @@
       FM._ctx.globalAlpha = 1.0
     }
 
-    // Label area background (right side)
-    FM._ctx.fillStyle = '#2C2C2C'
-    FM._ctx.fillRect(FM._imgW, 0, LABEL_MARGIN, FM._canvas.height)
-
-    // Clinical analysis — rendered in toolbar, not canvas (see fm-render.js)
-
+    // Draw mode-specific overlays (no label area — everything on the photo)
     if (FM._editorMode === 'vectors') {
-      var vecLabelY = 20
-      var VEC_LABEL_H = 38
-      var sortedVecs = FM._vectors.slice().sort(function (a, b) { return a.start.y - b.start.y })
-      sortedVecs.forEach(function (vec) {
-        FM._drawVector(vec)
-        vecLabelY = FM._drawVectorLabel(vec, vecLabelY, VEC_LABEL_H)
-      })
-
+      FM._vectors.forEach(function (vec) { FM._drawVector(vec) })
       if (FM._selVec) {
         FM._ctx.save()
         FM._ctx.fillStyle = '#fff'
@@ -117,16 +107,24 @@
       } else if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral') {
         FM._drawRicketts()
       }
-      // metrics sub-mode: lines drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else {
+      // Zones mode — draw ellipses with compact labels on the photo
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
-      var sorted = anns.slice().sort(function (a, b) { return a.shape.y - b.shape.y })
-      var labelY = 20
-      var LABEL_H = 38
-
-      sorted.forEach(function (ann) {
+      anns.forEach(function (ann) {
         FM._drawEllipseClean(ann)
-        labelY = FM._drawLabelExternal(ann, labelY, LABEL_H)
+        // Compact label near the ellipse (no external label area)
+        var z = FM.ZONES.find(function (zz) { return zz.id === ann.zone })
+        if (z) {
+          FM._ctx.save()
+          FM._ctx.font = '500 9px Montserrat, Inter, sans-serif'
+          FM._ctx.fillStyle = 'rgba(245,240,232,0.85)'
+          FM._ctx.textAlign = 'center'
+          FM._ctx.fillText(z.label, ann.shape.x, ann.shape.y - ann.shape.ry - 6)
+          FM._ctx.font = '400 8px Montserrat, Inter, sans-serif'
+          FM._ctx.fillStyle = z.color
+          FM._ctx.fillText(ann.ml + (z.unit || 'mL'), ann.shape.x, ann.shape.y - ann.shape.ry - 18)
+          FM._ctx.restore()
+        }
       })
     }
 

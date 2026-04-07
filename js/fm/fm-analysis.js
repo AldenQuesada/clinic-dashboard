@@ -687,6 +687,54 @@
     img.src = FM._photoUrls[angle]
   }
 
+  // ── Upload After Photo (for 2x mode) ─────────────────────
+
+  FM._uploadAfterPhoto = function (input) {
+    var file = input.files[0]
+    if (!file) return
+    if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
+    FM._afterPhotoUrl = URL.createObjectURL(file)
+    FM._render()
+    setTimeout(function () {
+      FM._initCanvas()
+      FM._initCanvas2()
+    }, 100)
+    FM._showToast('Foto DEPOIS carregada', 'success')
+  }
+
+  // ── Init Canvas 2 (after photo in 2x mode) ─────────────
+
+  FM._initCanvas2 = function () {
+    var canvas2 = document.getElementById('fmCanvas2')
+    if (!canvas2) return
+
+    var src = FM._afterPhotoUrl || FM._simPhotoUrl
+    if (!src) return
+
+    var ctx2 = canvas2.getContext('2d')
+    var img2 = new Image()
+    img2.onload = function () {
+      var area = document.getElementById('fmCanvasArea')
+      var maxW = area ? (area.clientWidth / 2 - 20) : 400
+      var maxH = (window.innerHeight - 130) * 0.85
+
+      var scale = Math.min(maxW / img2.width, maxH / img2.height)
+      var w = Math.round(img2.width * scale)
+      var h = Math.round(img2.height * scale)
+
+      canvas2.width = w
+      canvas2.height = h
+      ctx2.drawImage(img2, 0, 0, w, h)
+
+      FM._canvas2 = canvas2
+      FM._ctx2 = ctx2
+      FM._img2 = img2
+      FM._imgW2 = w
+      FM._imgH2 = h
+    }
+    img2.src = src
+  }
+
   FM._toggleFullscreen = function () {
     var area = document.getElementById('fmCanvasArea')
     if (!area) return
