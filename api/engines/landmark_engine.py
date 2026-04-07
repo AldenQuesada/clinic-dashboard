@@ -73,8 +73,8 @@ LANDMARKS = {
     # Jaw
     "jaw_left": 172,
     "jaw_right": 397,
-    "jaw_left_angle": 132,
-    "jaw_right_angle": 361,
+    "jaw_left_angle": 172,   # true gonial angle (lowest lateral point of jaw)
+    "jaw_right_angle": 397,  # true gonial angle (lowest lateral point of jaw)
 
     # Temples
     "left_temple": 54,
