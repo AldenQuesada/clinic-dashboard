@@ -19,25 +19,25 @@
     var boxW = 360, boxH = 300
 
     overlay.innerHTML =
-      '<div style="background:#fff;border-radius:14px;width:420px;box-shadow:0 24px 80px rgba(0,0,0,0.3);overflow:hidden">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #E8EAF0">' +
-          '<span style="font-size:14px;font-weight:600;color:#1A1B2E">Recortar — ANTES ' + (FM.ANGLES.find(function (a) { return a.id === angle }) || {}).label + '</span>' +
-          '<button onclick="document.getElementById(\'fmCropOverlay\').remove()" style="width:28px;height:28px;border-radius:50%;background:#F3F4F6;border:none;cursor:pointer;color:#6B7280;display:flex;align-items:center;justify-content:center">' +
+      '<div class="fm-crop-modal">' +
+        '<div class="fm-crop-header">' +
+          '<span class="fm-crop-title">Recortar — ANTES ' + (FM.ANGLES.find(function (a) { return a.id === angle }) || {}).label + '</span>' +
+          '<button class="fm-crop-close" onclick="document.getElementById(\'fmCropOverlay\').remove()">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
           '</button>' +
         '</div>' +
-        '<div style="padding:12px 16px;display:flex;flex-direction:column;align-items:center;gap:10px">' +
-          '<div id="fmCropBox" style="width:' + boxW + 'px;height:' + boxH + 'px;overflow:hidden;border-radius:8px;border:2px solid #E8EAF0;position:relative;cursor:grab;background:#111">' +
+        '<div class="fm-crop-body">' +
+          '<div id="fmCropBox" class="fm-crop-box" style="width:' + boxW + 'px;height:' + boxH + 'px">' +
             '<canvas id="fmCropCanvas" style="position:absolute;top:0;left:0"></canvas>' +
           '</div>' +
-          '<div style="display:flex;align-items:center;gap:10px;width:100%">' +
-            '<span style="font-size:11px;color:#9CA3AF">Zoom</span>' +
-            '<input type="range" id="fmCropZoom" min="0.3" max="3" step="0.02" value="1" style="flex:1">' +
-            '<span id="fmCropZoomLabel" style="font-size:11px;color:#9CA3AF;min-width:36px">100%</span>' +
+          '<div class="fm-crop-zoom-row">' +
+            '<span class="fm-crop-zoom-label">Zoom</span>' +
+            '<input type="range" id="fmCropZoom" class="fm-crop-slider" min="0.3" max="3" step="0.02" value="1">' +
+            '<span id="fmCropZoomLabel" class="fm-crop-zoom-label" style="min-width:36px">100%</span>' +
           '</div>' +
-          '<div style="display:flex;gap:8px;width:100%">' +
-            '<button onclick="document.getElementById(\'fmCropOverlay\').remove()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 16px;border:1px solid #E8EAF0;border-radius:10px;background:#fff;color:#374151;font-size:13px;font-weight:500;cursor:pointer">Cancelar</button>' +
-            '<button id="fmCropConfirm" style="flex:2;display:flex;align-items:center;justify-content:center;gap:5px;padding:10px 16px;border:none;border-radius:10px;background:#C8A97E;color:#fff;font-size:14px;font-weight:600;cursor:pointer">' + FM._icon('check', 16) + ' Salvar Recorte</button>' +
+          '<div class="fm-crop-actions">' +
+            '<button class="fm-crop-btn-cancel" onclick="document.getElementById(\'fmCropOverlay\').remove()">Cancelar</button>' +
+            '<button id="fmCropConfirm" class="fm-crop-btn-confirm">' + FM._icon('check', 16) + ' Salvar Recorte</button>' +
           '</div>' +
         '</div>' +
       '</div>'

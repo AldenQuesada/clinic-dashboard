@@ -95,6 +95,14 @@
     'olheira':         { dx: 0.03, dy: -0.03, curve: 0.15, desc: 'Elevacao' },
     'sulco':           { dx: 0.05, dy: -0.04, curve: 0.20, desc: 'Suavizacao' },
     'marionete':       { dx: 0.04, dy: -0.05, curve: 0.20, desc: 'Elevacao' },
+    'cod-barras':      { dx: 0.04, dy: -0.02, curve: 0.10, desc: 'Suavizacao perioral' },
+    'pescoco':         { dx: 0.02, dy: -0.08, curve: 0.15, desc: 'Lifting cervical' },
+    'glabela':         { dx: 0.00, dy: -0.06, curve: 0.10, desc: 'Relaxamento muscular' },
+    'frontal':         { dx: 0.00, dy: -0.08, curve: 0.10, desc: 'Suavizacao linhas' },
+    'periorbital':     { dx: 0.05, dy: -0.03, curve: 0.15, desc: 'Suavizacao periocular' },
+    'gingival':        { dx: 0.00, dy: -0.03, curve: 0.10, desc: 'Reducao exposicao' },
+    'dao':             { dx: 0.03, dy: -0.04, curve: 0.15, desc: 'Elevacao comissura' },
+    'platisma':        { dx: 0.02, dy: -0.06, curve: 0.20, desc: 'Suavizacao bandas' },
   }
 
   FM.TREATMENTS = [
