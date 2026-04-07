@@ -1181,8 +1181,8 @@
     if (lm.length < 468) return
 
     ctx.save()
-    ctx.strokeStyle = 'rgba(200,169,126,0.2)'
-    ctx.lineWidth = 0.5
+    ctx.strokeStyle = 'rgba(200,169,126,0.5)'
+    ctx.lineWidth = 1
 
     // Face oval
     _drawLP(ctx, lm, [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10], w, h)
@@ -1202,7 +1202,7 @@
     _drawLP(ctx, lm, [78,95,88,178,87,14,317,402,318,324,308,415,310,311,312,13,82,81,80,191,78], w, h)
 
     // All 468 dots
-    ctx.fillStyle = 'rgba(200,169,126,0.15)'
+    ctx.fillStyle = 'rgba(200,169,126,0.35)'
     for (var i = 0; i < Math.min(468, lm.length); i++) {
       ctx.beginPath()
       ctx.arc(lm[i].x * w, lm[i].y * h, 1, 0, Math.PI * 2)
