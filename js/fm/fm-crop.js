@@ -139,18 +139,56 @@
       outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height)
       outCtx.drawImage(FM._cropCanvas, 0, 0)
 
-      outCanvas.toBlob(function (blob) {
-          if (FM._photoUrls[FM._pendingCropAngle]) URL.revokeObjectURL(FM._photoUrls[FM._pendingCropAngle])
-          FM._photoUrls[FM._pendingCropAngle] = URL.createObjectURL(blob)
-          FM._photos[FM._pendingCropAngle] = blob
+      // Try Python API for background removal, fallback to raw crop
+      var b64 = outCanvas.toDataURL('image/jpeg', 0.95).split(',')[1]
+      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8100'
 
-          if (!FM._activeAngle) FM._activeAngle = FM._pendingCropAngle
+      FM._showLoading('Removendo fundo com IA...')
+      document.getElementById('fmCropOverlay').style.display = 'none'
 
-          document.getElementById('fmCropOverlay').remove()
-          FM._render()
-          FM._autoSave()
-          if (FM._activeAngle === FM._pendingCropAngle) setTimeout(FM._initCanvas, 50)
-      }, 'image/jpeg', 0.95)
+      var controller = new AbortController()
+      var timeout = setTimeout(function () { controller.abort() }, 10000)
+
+      fetch(apiUrl + '/remove-bg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({ photo_base64: b64 }),
+      })
+      .then(function (res) { clearTimeout(timeout); return res.json() })
+      .then(function (data) {
+        FM._hideLoading()
+        if (data.success && data.image_b64) {
+          // Convert b64 to blob
+          var binary = atob(data.image_b64)
+          var arr = new Uint8Array(binary.length)
+          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+          var processedBlob = new Blob([arr], { type: 'image/jpeg' })
+          _finishCrop(processedBlob)
+          FM._showToast('Fundo removido com sucesso', 'success')
+        } else {
+          // Fallback: use original cropped image
+          outCanvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/jpeg', 0.95)
+        }
+      })
+      .catch(function (err) {
+        clearTimeout(timeout)
+        FM._hideLoading()
+        // Fallback: use original cropped image silently
+        outCanvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/jpeg', 0.95)
+      })
+
+      function _finishCrop(blob) {
+        if (FM._photoUrls[FM._pendingCropAngle]) URL.revokeObjectURL(FM._photoUrls[FM._pendingCropAngle])
+        FM._photoUrls[FM._pendingCropAngle] = URL.createObjectURL(blob)
+        FM._photos[FM._pendingCropAngle] = blob
+        if (!FM._activeAngle) FM._activeAngle = FM._pendingCropAngle
+        var overlay = document.getElementById('fmCropOverlay')
+        if (overlay) overlay.remove()
+        FM._render()
+        FM._autoSave()
+        if (FM._activeAngle === FM._pendingCropAngle) setTimeout(FM._initCanvas, 50)
+      }
     })
   }
 

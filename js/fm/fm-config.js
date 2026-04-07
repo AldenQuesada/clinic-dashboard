@@ -28,6 +28,11 @@
     }
   }
 
+  // ── Python Facial API URL ──────────────────────────────────
+  // Local dev: http://localhost:8100
+  // Production: set via FM.FACIAL_API_URL = 'https://facial-api.easypanel.host'
+  FM.FACIAL_API_URL = localStorage.getItem('fm_api_url') || 'http://localhost:8100'
+
   // ── Zone categories ────────────────────────────────────────
   // cat: 'fill' (preenchimento, mL) or 'tox' (rugas/toxina, U)
   // min/max: default ranges (editable, saved to localStorage)
