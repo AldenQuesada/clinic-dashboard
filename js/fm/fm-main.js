@@ -28,6 +28,7 @@
     _recrop: FM._recrop,
     _deletePhoto: FM._deletePhoto,
     _editRanges: FM._editRanges,
+    _switchTab: FM._switchTab,
     _setEditorMode: FM._setEditorMode,
     _setCanvasZoom: FM._setCanvasZoom,
     _zoomCanvas: FM._zoomCanvas,

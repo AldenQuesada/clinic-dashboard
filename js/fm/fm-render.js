@@ -14,15 +14,21 @@
 
     var name = FM._lead.nome || FM._lead.name || 'Paciente'
 
+    // Determine which panel to show on the right
+    var rightPanel
+    if (FM._editorMode === 'analysis') {
+      rightPanel = FM._renderClinicalPanel()
+    } else {
+      rightPanel = FM._renderToolbar()
+    }
+
     root.innerHTML = '<div class="fm-page">' +
       FM._renderHeader(name) +
       FM._renderProgressBar() +
       '<div class="fm-body">' +
         FM._renderPhotoStrip() +
         FM._renderCanvasArea() +
-        (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics' && (FM._scanData || FM._metricAngles)
-          ? FM._renderClinicalPanel()
-          : FM._renderToolbar()) +
+        rightPanel +
       '</div>' +
     '</div>'
 
@@ -31,26 +37,49 @@
   }
 
   FM._renderHeader = function (name) {
-    return '<div class="fm-header">' +
-      '<div class="fm-header-left">' +
-        '<span class="fm-header-title">Analise Facial</span>' +
+    var tabs = [
+      { id: 'simetria',      label: 'Simetria',       icon: 'git-commit', color: '#10B981' },
+      { id: 'zones',         label: 'Estruturacao',   icon: 'layers',     color: '#3B82F6' },
+      { id: 'vectors',       label: 'Vetores',        icon: 'trending-up', color: '#8B5CF6' },
+      { id: 'analysis',      label: 'Analise',        icon: 'activity',   color: '#C8A97E' },
+    ]
+
+    // Map old modes to new
+    var activeTab = FM._editorMode
+    if (activeTab === 'analysis' && FM._analysisSubMode === 'metrics') activeTab = 'simetria'
+
+    var html = '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid var(--border)">' +
+      '<div class="fm-header-left" style="display:flex;align-items:center;gap:12px">' +
+        '<span style="font-family:Cormorant Garamond,serif;font-size:20px;font-weight:300;font-style:italic;color:#C8A97E">Analise Facial</span>' +
       '</div>' +
-      '<div class="fm-header-actions">' +
-        '<div class="fm-mode-toggle">' +
-          '<button class="fm-mode-btn' + (FM._editorMode === 'zones' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'zones\')">' + FM._icon('layers', 14) + ' Zonas</button>' +
-          '<button class="fm-mode-btn' + (FM._editorMode === 'vectors' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'vectors\')">' + FM._icon('trending-up', 14) + ' Vetores</button>' +
-          '<button class="fm-mode-btn' + (FM._editorMode === 'analysis' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'analysis\')">' + FM._icon('git-commit', 14) + ' Analise</button>' +
-        '</div>' +
-        '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" title="IA detecta zonas" style="border-color:#10B981;color:#10B981">' + FM._icon('zap', 14) + ' Auto Zonas</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="IA 478 pontos">' + FM._icon('cpu', 14) + ' Auto Analise</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe 478pts" style="border-color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.3)') + ';color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.5)') + '">' + FM._icon('grid', 14) + '</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._toggle3DView()" title="3D" style="border-color:#8B5CF6;color:#8B5CF6">' + FM._icon('box', 14) + ' 3D</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._openBeforeAfter()" style="border-color:#F59E0B;color:#F59E0B">' + FM._icon('columns', 14) + ' A/D</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._openCompare()" style="background:linear-gradient(135deg,#C8A97E,#A8895E);color:#fff;border-color:transparent">' + FM._icon('eye', 14) + ' Comparar</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._exportReport()">' + FM._icon('download', 14) + ' Report</button>' +
-        '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()">' + FM._icon('save', 14) + ' Salvar</button>' +
+
+      // 4 Tab buttons (premium style)
+      '<div style="display:flex;gap:2px;background:rgba(200,169,126,0.08);border-radius:10px;padding:3px">'
+
+    tabs.forEach(function (tab) {
+      var isActive = activeTab === tab.id
+      html += '<button onclick="FaceMapping._switchTab(\'' + tab.id + '\')" style="' +
+        'padding:6px 16px;border-radius:8px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:11px;font-weight:' + (isActive ? '600' : '400') + ';' +
+        'letter-spacing:0.03em;transition:all 0.2s;' +
+        'background:' + (isActive ? 'linear-gradient(135deg,' + tab.color + ',' + tab.color + 'CC)' : 'transparent') + ';' +
+        'color:' + (isActive ? '#fff' : 'var(--text-secondary)') + ';' +
+        '">' + FM._icon(tab.icon, 12) + ' ' + tab.label + '</button>'
+    })
+
+    html += '</div>' +
+
+      // Right actions
+      '<div style="display:flex;gap:4px;align-items:center">' +
+        '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="Scanner 478pts" style="font-size:10px;padding:5px 10px">' + FM._icon('cpu', 12) + ' Scanner</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe" style="font-size:10px;padding:5px 8px;border-color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.2)') + ';color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.4)') + '">' + FM._icon('grid', 12) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._openBeforeAfter()" title="Antes/Depois" style="font-size:10px;padding:5px 8px;border-color:rgba(200,169,126,0.2);color:rgba(200,169,126,0.4)">' + FM._icon('columns', 12) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._openCompare()" title="Comparar" style="font-size:10px;padding:5px 8px;background:linear-gradient(135deg,#C8A97E,#A8895E);color:#fff;border:none">' + FM._icon('eye', 12) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._exportReport()" title="Report" style="font-size:10px;padding:5px 8px">' + FM._icon('download', 12) + '</button>' +
+        '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()" style="font-size:10px;padding:5px 10px">' + FM._icon('save', 12) + ' Salvar</button>' +
       '</div>' +
     '</div>'
+
+    return html
   }
 
   FM._renderProgressBar = function () {
@@ -185,39 +214,37 @@
   }
 
   FM._renderClinicalPanel = function () {
-    // Only show in metrics mode with data
-    if (FM._editorMode !== 'analysis' || FM._analysisSubMode !== 'metrics') {
-      return ''
-    }
-
     var scan = FM._scanData
     var ma = FM._metricAngles
     var skin = FM._skinAnalysis
     var age = FM._skinAge
-
-    // If no data at all, return empty
-    if (!scan && !ma && !skin) return ''
+    var isSimetria = FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics'
 
     var html = '<div class="fm-clinical-panel" style="width:300px;flex-shrink:0;background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.15);overflow-y:auto;max-height:calc(100vh - 100px);font-size:11px">'
 
-    // Sub-mode toggle + tools at top
-    html += '<div style="padding:8px 12px;border-bottom:1px solid rgba(200,169,126,0.1);display:flex;flex-wrap:wrap;gap:4px">' +
-      '<button class="fm-zone-btn" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px;min-width:60px">Tercos</button>' +
-      '<button class="fm-zone-btn" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px;min-width:60px">Ricketts</button>' +
-      '<button class="fm-zone-btn active" style="flex:1;justify-content:center;font-size:10px;min-width:60px;border-color:#10B981;color:#fff">Metrificar</button>' +
-    '</div>' +
-    '<div style="padding:6px 12px;border-bottom:1px solid rgba(200,169,126,0.1);display:flex;gap:4px">' +
-      '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px">-- H</button>' +
-      '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px">| V</button>' +
-      '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:9px">Ponto</button>' +
-      '<button class="fm-btn" onclick="FaceMapping._autoAsymmetryPairs()" style="flex:1;font-size:9px;padding:4px;border-color:#F59E0B;color:#F59E0B">Pares</button>' +
-      '<button class="fm-btn" onclick="FaceMapping._autoAngles()" style="flex:1;font-size:9px;padding:4px;border-color:#C8A97E;color:#C8A97E">Angulos</button>' +
-      '<button class="fm-btn" onclick="FaceMapping._clearMetricLines(\'all\')" style="padding:4px 6px;font-size:9px;color:#EF4444">X</button>' +
-    '</div>' +
-    '<div style="padding:4px 12px;border-bottom:1px solid rgba(200,169,126,0.1);display:flex;gap:4px">' +
-      '<button class="fm-btn" onclick="FaceMapping._exportReport()" style="flex:1;font-size:9px;padding:4px">' + FM._icon('download', 12) + ' Report</button>' +
-      '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()" style="flex:1;font-size:9px;padding:4px">' + FM._icon('save', 12) + ' Salvar</button>' +
-    '</div>'
+    if (isSimetria) {
+      // Simetria tools
+      html += '<div style="padding:8px 12px;border-bottom:1px solid rgba(200,169,126,0.1)">' +
+        '<div style="font-size:9px;color:#10B981;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Ferramentas de Simetria</div>' +
+        '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
+          '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px">-- H</button>' +
+          '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px">| V</button>' +
+          '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:9px">Ponto</button>' +
+          '<button class="fm-btn" onclick="FaceMapping._autoAsymmetryPairs()" style="flex:1;font-size:9px;padding:4px;border-color:#F59E0B;color:#F59E0B">Pares</button>' +
+          '<button class="fm-btn" onclick="FaceMapping._autoAngles()" style="flex:1;font-size:9px;padding:4px;border-color:#C8A97E;color:#C8A97E">Angulos</button>' +
+          '<button class="fm-btn" onclick="FaceMapping._clearMetricLines(\'all\')" style="padding:4px 6px;font-size:9px;color:#EF4444">X</button>' +
+        '</div>' +
+      '</div>'
+    } else {
+      // Analysis tab — sub-modes: Tercos, Ricketts
+      html += '<div style="padding:8px 12px;border-bottom:1px solid rgba(200,169,126,0.1)">' +
+        '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Modo de Analise</div>' +
+        '<div style="display:flex;gap:4px">' +
+          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Tercos</button>' +
+          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Ricketts</button>' +
+        '</div>' +
+      '</div>'
+    }
 
     // ── ASYMMETRY SCORE (if pairs exist) ──
     if (FM._asymmetryScore) {

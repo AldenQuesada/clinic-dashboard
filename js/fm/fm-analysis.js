@@ -210,10 +210,26 @@
     FM._ctx.restore()
   }
 
+  FM._switchTab = function (tabId) {
+    // Map tab IDs to editor modes
+    if (tabId === 'simetria') {
+      FM._editorMode = 'analysis'
+      FM._analysisSubMode = 'metrics'
+    } else if (tabId === 'zones') {
+      FM._editorMode = 'zones'
+    } else if (tabId === 'vectors') {
+      FM._editorMode = 'vectors'
+    } else if (tabId === 'analysis') {
+      FM._editorMode = 'analysis'
+      FM._analysisSubMode = 'tercos'
+    }
+    FM._setEditorMode(FM._editorMode)
+  }
+
   FM._setEditorMode = function (mode) {
     FM._editorMode = mode
-    if (mode === 'analysis') {
-      FM._analysisSubMode = FM._analysisSubMode || 'tercos'
+    if (mode === 'analysis' && !FM._analysisSubMode) {
+      FM._analysisSubMode = 'tercos'
     }
     if (mode === 'vectors') {
       if (FM._photoUrls['45']) {
