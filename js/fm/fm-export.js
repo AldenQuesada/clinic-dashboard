@@ -7,14 +7,19 @@
   var FM = window._FM
 
   FM._exportReport = function () {
-    if (FM._annotations.length === 0) {
-      alert('Adicione marcacoes antes de exportar.')
+    // Allow export with annotations OR metric data
+    if (FM._annotations.length === 0 && !FM._metricAngles && !FM._scanData) {
+      alert('Adicione marcacoes ou execute Auto Analise antes de exportar.')
       return
     }
 
-    // Auto-generate simulation if not yet generated
-    if (!FM._simPhotoUrl) {
-      FM._generateSimulation(function () { FM._exportReport() })
+    // Auto-generate simulation if not yet generated (only if annotations exist)
+    if (!FM._simPhotoUrl && FM._annotations.length > 0) {
+      FM._showLoading('Gerando simulacao para report...')
+      FM._generateSimulation(function () {
+        FM._hideLoading()
+        FM._exportReport()
+      })
       return
     }
 

@@ -324,7 +324,14 @@
 
         FM._showToast(parts.join(' | '), 'success')
         FM._autoSave()
-        FM._redraw()
+
+        // Re-render if in metrics mode (needs full re-render for clinical panel)
+        if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+          FM._render()
+          setTimeout(FM._initCanvas, 100)
+        } else {
+          FM._redraw()
+        }
 
         // Auto-trigger skin analysis + collagen in background
         if (!FM._skinAnalysis) FM._runSkinAnalysis()
@@ -541,16 +548,30 @@
       c.getContext('2d').drawImage(img, 0, 0)
       var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
 
+      console.log('[FaceMapping] Calling /skin/analyze with heatmaps, b64 length:', b64.length)
+
       fetch(FM.FACIAL_API_URL + '/skin/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photo_base64: b64, generate_heatmaps: true }),
       })
-      .then(function (r) { return r.json() })
+      .then(function (r) {
+        console.log('[FaceMapping] skin/analyze response status:', r.status)
+        return r.json()
+      })
       .then(function (data) {
         FM._hideLoading()
-        if (!data.success || !data.heatmaps) {
-          FM._showToast('Falha ao gerar heatmaps', 'error')
+        console.log('[FaceMapping] skin/analyze result:', data.success, 'heatmaps:', data.heatmaps ? Object.keys(data.heatmaps) : 'none')
+        if (!data.success) {
+          FM._showToast('Falha: ' + (data.detail || 'erro desconhecido'), 'error')
+          return
+        }
+        if (!data.heatmaps || Object.keys(data.heatmaps).length === 0) {
+          FM._showToast('Analise OK mas heatmaps vazios', 'warn')
+          // Still save scores
+          if (data.scores) FM._skinAnalysis = data.scores
+          if (data.skin_age) FM._skinAge = data.skin_age
+          FM._refreshToolbar()
           return
         }
 
@@ -578,9 +599,10 @@
           hImg.src = 'data:image/png;base64,' + data.heatmaps[m]
         })
       })
-      .catch(function () {
+      .catch(function (err) {
         FM._hideLoading()
-        FM._showToast('API offline.', 'warn')
+        console.error('[FaceMapping] Heatmap error:', err)
+        FM._showToast('Erro heatmaps: ' + (err.message || 'API offline'), 'error')
       })
     }
     img.src = FM._photoUrls[angle]

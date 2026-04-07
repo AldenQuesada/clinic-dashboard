@@ -282,10 +282,10 @@
     var apiUrl = FM.FACIAL_API_URL
     if (!apiUrl) return
 
-    fetch(apiUrl + FM.API.scanFace, {
+    fetch(apiUrl + '/landmarks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ photo_base64: b64, include_landmarks: false, include_measurements: false }),
+      body: JSON.stringify({ photo_base64: b64 }),
     })
     .then(function (r) { return r.json() })
     .then(function (data) {
