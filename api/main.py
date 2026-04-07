@@ -141,15 +141,17 @@ async def remove_background(req: PhotoRequest):
             final_bgr = final_bgr[y1:y2, x1:x2]
             log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
 
-        # Remove excess black border (trim rows/cols that are all black)
+        # Remove excess black border — trim rows/cols that are mostly black
         gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
-        rows = np.any(gray_trim > 10, axis=1)
-        cols = np.any(gray_trim > 10, axis=0)
+        # Use higher threshold (25) and require at least 15% of row/col to be non-black
+        row_content = np.mean(gray_trim > 25, axis=1)  # % of non-black pixels per row
+        col_content = np.mean(gray_trim > 25, axis=0)  # % of non-black pixels per col
+        rows = row_content > 0.15  # row has content if >15% is non-black
+        cols = col_content > 0.15
         if np.any(rows) and np.any(cols):
             rmin, rmax = np.where(rows)[0][[0, -1]]
             cmin, cmax = np.where(cols)[0][[0, -1]]
-            # Small padding around content (5px)
-            pad = 5
+            pad = 8
             rmin = max(0, rmin - pad)
             rmax = min(final_bgr.shape[0], rmax + pad)
             cmin = max(0, cmin - pad)
