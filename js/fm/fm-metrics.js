@@ -365,15 +365,25 @@
   // ── Auto Anatomical Pairs ─────────────────────────────────
 
   // 12 pairs: matching left/right structures for asymmetry measurement
+  // MediaPipe "left" = patient's left = viewer's RIGHT in frontal photo
+  // So we swap: MediaPipe left_* landmarks get label "D" (viewer's right = patient's left... no)
+  // Actually: in a frontal photo, the patient's RIGHT side appears on the LEFT of the image
+  // MediaPipe "left_eye" = patient's left eye = RIGHT side of image
+  // So: kp "left_*" → label "E" (appears on right of image = patient's left = E)
+  // Wait — in medicine, E/D refers to the PATIENT's perspective:
+  //   Patient's right (D) = viewer's left in frontal photo
+  //   Patient's left (E) = viewer's right in frontal photo
+  // MediaPipe uses viewer's perspective: "left" = left side of image = patient's RIGHT
+  // So: MediaPipe "left_*" = patient's D (direito), MediaPipe "right_*" = patient's E (esquerdo)
   var ANATOMICAL_PAIRS = [
-    { id: 'sobrancelha', label_e: 'Sobrancelha E', label_d: 'Sobrancelha D', kp_e: 'left_brow_top', kp_d: 'right_brow_top' },
-    { id: 'olho_ext', label_e: 'Olho Ext E', label_d: 'Olho Ext D', kp_e: 'left_eye_outer', kp_d: 'right_eye_outer' },
-    { id: 'olho_int', label_e: 'Olho Int E', label_d: 'Olho Int D', kp_e: 'left_eye_inner', kp_d: 'right_eye_inner' },
-    { id: 'zigoma', label_e: 'Zigoma E', label_d: 'Zigoma D', kp_e: 'left_zygomatic', kp_d: 'right_zygomatic' },
-    { id: 'nariz', label_e: 'Asa Nasal E', label_d: 'Asa Nasal D', kp_e: 'nose_left', kp_d: 'nose_right' },
-    { id: 'comissura', label_e: 'Comissura E', label_d: 'Comissura D', kp_e: 'lip_left', kp_d: 'lip_right' },
-    { id: 'mandibula', label_e: 'Mandibula E', label_d: 'Mandibula D', kp_e: 'jaw_left_angle', kp_d: 'jaw_right_angle' },
-    { id: 'temple', label_e: 'Temporal E', label_d: 'Temporal D', kp_e: 'left_temple', kp_d: 'right_temple' },
+    { id: 'sobrancelha', label_e: 'Sobrancelha D', label_d: 'Sobrancelha E', kp_e: 'left_brow_top', kp_d: 'right_brow_top' },
+    { id: 'olho_ext', label_e: 'Olho Ext D', label_d: 'Olho Ext E', kp_e: 'left_eye_outer', kp_d: 'right_eye_outer' },
+    { id: 'olho_int', label_e: 'Olho Int D', label_d: 'Olho Int E', kp_e: 'left_eye_inner', kp_d: 'right_eye_inner' },
+    { id: 'zigoma', label_e: 'Zigoma D', label_d: 'Zigoma E', kp_e: 'left_zygomatic', kp_d: 'right_zygomatic' },
+    { id: 'nariz', label_e: 'Asa Nasal D', label_d: 'Asa Nasal E', kp_e: 'nose_left', kp_d: 'nose_right' },
+    { id: 'comissura', label_e: 'Comissura D', label_d: 'Comissura E', kp_e: 'lip_left', kp_d: 'lip_right' },
+    { id: 'mandibula', label_e: 'Mandibula D', label_d: 'Mandibula E', kp_e: 'jaw_left_angle', kp_d: 'jaw_right_angle' },
+    { id: 'temple', label_e: 'Temporal D', label_d: 'Temporal E', kp_e: 'left_temple', kp_d: 'right_temple' },
   ]
 
   FM._autoAsymmetryPairs = function () {
