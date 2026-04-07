@@ -327,7 +327,9 @@
       '</div>' +
     '</div>'
 
-    // Asymmetry score
+    } // end of if metrics sub-mode
+
+    // Asymmetry score (shared)
     if (FM._asymmetryScore) {
       var as = FM._asymmetryScore
       html += '<div class="fm-tool-section" style="padding:10px 12px">' +
@@ -702,8 +704,6 @@
           '</div>' +
         '</div>'
       }
-
-    } // end of if metrics sub-mode
 
     // Scanner data (shared across all simetria sub-modes)
     if (FM._scanData) {
