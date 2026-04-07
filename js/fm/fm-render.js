@@ -299,8 +299,8 @@
         '</div>'
       }
 
-      // ── Scanner Data Panel (shape, symmetry, golden ratio) ──
-      if (FM._scanData) {
+      // ── Scanner Data Panel (shape, symmetry, golden ratio) — hide in metrics mode ──
+      if (FM._scanData && FM._analysisSubMode !== 'metrics') {
         var sd = FM._scanData
         html += '<div class="fm-tool-section">' +
           '<div class="fm-tool-section-title">Scanner Facial</div>'
@@ -343,8 +343,8 @@
         html += '</div>'
       }
 
-      // ── Skin Age + Collagen Panel ──
-      if (FM._skinAge || FM._skinAnalysis) {
+      // ── Skin Age + Collagen Panel — hide in metrics mode ──
+      if ((FM._skinAge || FM._skinAnalysis) && FM._analysisSubMode !== 'metrics') {
         html += '<div class="fm-tool-section">' +
           '<div class="fm-tool-section-title">Analise da Pele</div>'
 

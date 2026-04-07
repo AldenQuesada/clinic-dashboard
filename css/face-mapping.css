@@ -70,8 +70,10 @@
 
 .fm-header-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 250px);
 }
 
 /* Mode toggle */
@@ -436,6 +438,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  max-height: calc(100vh - 100px);
 }
 
 .fm-tool-section {
