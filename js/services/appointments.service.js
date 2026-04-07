@@ -146,6 +146,8 @@
       ...local.filter(l => l.data >= dateFrom && l.data <= dateTo && !remoteById[l.id]),
     ]
 
+    // Backup antes de sobrescrever (rollback em caso de dados corrompidos)
+    try { localStorage.setItem(APPT_KEY + '_backup', localStorage.getItem(APPT_KEY) || '[]') } catch(e) { /* quota */ }
     _writeLocal(merged)
     return remote
   }

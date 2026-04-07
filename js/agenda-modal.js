@@ -526,14 +526,28 @@
     }
   }
 
-  // ── apptSearchPatient ─────────────────────────────────────────
+  // ── apptSearchPatient (debounced 300ms) ──────────────────────
+  var _searchTimer = null
+  var _leadsCache = null
+
   function apptSearchPatient(q) {
+    if (_searchTimer) clearTimeout(_searchTimer)
+    _searchTimer = setTimeout(function() { _doPatientSearch(q) }, 300)
+  }
+
+  function _doPatientSearch(q) {
     const drop = document.getElementById('apptPatientDrop')
     const warn = document.getElementById('appt_paciente_warn')
     if (!q.trim()) { drop.style.display = 'none'; warn.style.display = 'none'; return }
-    const leads = window.LeadsService
-      ? LeadsService.getLocal()
-      : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+    // Cache leads to avoid reloading on every keystroke
+    if (!_leadsCache) {
+      _leadsCache = window.LeadsService
+        ? LeadsService.getLocal()
+        : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+      // Invalidate cache after 30s
+      setTimeout(function() { _leadsCache = null }, 30000)
+    }
+    const leads = _leadsCache
     const matches = leads.filter(l => (l.nome || l.name || '').toLowerCase().includes(q.toLowerCase())).slice(0, 8)
 
     if (!matches.length) {
@@ -553,10 +567,11 @@
         ${phone ? `<div style="font-size:11px;color:#9CA3AF">${phone.replace(/</g, '&lt;')}</div>` : ''}
       </div>`
     }).join('')
-    drop.addEventListener('click', function(e) {
+    // Use event delegation with single handler (prevents listener accumulation)
+    drop.onclick = function(e) {
       var el = e.target.closest('[data-lead-id]')
       if (el) selectApptPatient(el.dataset.leadId, el.dataset.leadName, el.dataset.leadPhone)
-    })
+    }
     drop.style.display = 'block'
   }
 

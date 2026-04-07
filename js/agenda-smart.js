@@ -198,8 +198,20 @@ function _execAuto(item) {
     return
   }
   if (item.type === 'notif_interna') {
-    // 10min antes: alerta interno para secretaria
     _logAuto(appt.id, item.type, 'notificado')
+    return
+  }
+  // Engine-scheduled alerts and tasks
+  if (item.type === 'engine_alert' && item.payload) {
+    if (window._showToast) _showToast('Automacao', item.payload.title || 'Alerta', item.payload.alertType || 'info')
+    _logAuto(appt.id, item.type, 'executado')
+    return
+  }
+  if (item.type === 'engine_task' && item.payload) {
+    var tasks = JSON.parse(localStorage.getItem('clinic_op_tasks') || '[]')
+    tasks.push({ id:'task_auto_'+Date.now(), tipo:'automacao', titulo:item.payload.title||'', responsavel:item.payload.assignee||'sdr', status:'pendente', prioridade:item.payload.priority||'normal', prazo:item.payload.deadlineHours ? new Date(Date.now()+item.payload.deadlineHours*3600000).toISOString() : null, apptId:item.apptId, createdAt:new Date().toISOString() })
+    try { localStorage.setItem('clinic_op_tasks', JSON.stringify(tasks)) } catch(e) { /* quota */ }
+    _logAuto(appt.id, item.type, 'executado')
     return
   }
   _logAuto(appt.id, item.type, 'ignorado')
@@ -256,6 +268,7 @@ function apptTransition(id, newStatus, by) {
     _saveQueue(q)
     if (window._sbShared) {
       window._sbShared.rpc('wa_outbox_cancel_by_appt', { p_appt_ref: id })
+        .catch(function(e) { console.warn('[Agenda] cancel_by_appt falhou:', e) })
     }
   }
 
@@ -404,7 +417,7 @@ function _enviarConsentimento(appt, tipo) {
       var labels = { imagem: 'Consent. Imagem', procedimento: 'Consent. Procedimento', pagamento: 'Consent. Pagamento' }
       _showToast('Consentimento enviado', (labels[tipo] || tipo) + ' para ' + nome, 'success')
     }
-  }).catch(function() { /* silencioso */ })
+  }).catch(function(e) { console.warn('[Agenda] wa_enqueue consentimento falhou:', e) })
 
   _logAuto(appt.id, 'wa_consentimento_' + tipo, 'enviado')
 }
@@ -1755,7 +1768,8 @@ function _checkDailySummary() {
 
   // Buscar telefone do responsavel
   var profs = window.getProfessionals ? getProfessionals() : []
-  var responsavel = profs.find(function(p) { return /mirian/i.test(p.nome || p.display_name || '') }) || profs[0]
+  // Buscar primeiro profissional com telefone (nao hardcodar nome)
+  var responsavel = profs.find(function(p) { return !!(p.phone || p.whatsapp || p.telefone) }) || profs[0]
   var phone = responsavel && (responsavel.phone || responsavel.whatsapp || responsavel.telefone)
   if (!phone || !window._sbShared) return
 
@@ -1843,12 +1857,18 @@ function _autoSyncAppointments() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────
+var _queueInterval = null
+var _dailyInterval = null
+
 function _init() {
   processQueue()
   _checkDailySummary()
   _autoSyncAppointments()
-  setInterval(processQueue, 60_000)
-  setInterval(_checkDailySummary, 60_000) // Verifica a cada minuto
+  // Clear previous intervals (prevents leak on re-init/navigation)
+  if (_queueInterval) clearInterval(_queueInterval)
+  if (_dailyInterval) clearInterval(_dailyInterval)
+  _queueInterval = setInterval(processQueue, 60_000)
+  _dailyInterval = setInterval(_checkDailySummary, 60_000)
 }
 
 if (document.readyState === 'loading') {
