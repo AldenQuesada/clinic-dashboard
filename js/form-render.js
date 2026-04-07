@@ -385,29 +385,19 @@
     TMPL_ID   = req.template_id
     clinicId  = req.clinic_id
 
-    // Busca dados do paciente (patients) + lead (enrichment)
-    const ptRows = await _get('/patients', { 'id': 'eq.' + patientId, 'select': '*' })
-    const pt = (ptRows && ptRows[0]) || {}
-
-    // Busca lead para enriquecer com dados extras (cpf, sexo, endereco, etc.)
-    let leadData = {}
-    try {
-      const leadRows = await _get('/leads', { 'id': 'eq.' + patientId, 'select': 'name,phone,data' })
-      const ld = (leadRows && leadRows[0]) || {}
-      leadData = ld.data || {}
-    } catch(e) { /* lead nao encontrado, ok */ }
-
-    // Monta patientData: patients como base, lead.data como enrichment
+    // Dados do paciente vem enriquecidos da RPC validate_anamnesis_token
+    // (patient_name, patient_phone, patient_data com CPF, sexo, endereco, etc.)
+    var enrichedData = req.patient_data || {}
     patientData = {
       id:             patientId,
-      nome:           pt.name || leadData.nome || '',
-      telefone:       pt.phone || leadData.telefone || '',
-      sexo:           pt.sex || leadData.sexo || '',
-      cpf:            pt.cpf || leadData.cpf || '',
-      rg:             pt.rg || leadData.rg || '',
-      dataNascimento: pt.birth_date || leadData.data_nascimento || leadData.dataNascimento || '',
-      endereco:       pt.address_json || _parseEndereco(leadData.endereco) || {},
-      leadId:         pt.leadId || patientId,
+      nome:           req.patient_name || enrichedData.nome || '',
+      telefone:       req.patient_phone || enrichedData.telefone || '',
+      sexo:           enrichedData.sexo || '',
+      cpf:            enrichedData.cpf || '',
+      rg:             enrichedData.rg || '',
+      dataNascimento: enrichedData.data_nascimento || enrichedData.dataNascimento || '',
+      endereco:       _parseEndereco(enrichedData.endereco) || {},
+      leadId:         patientId,
     }
 
     const ensureResult = await _ensureResponse(requestId, patientId, TMPL_ID, clinicId)
@@ -424,7 +414,7 @@
       }).catch(function(e) { console.warn("[form-render]", e.message || e) })
     }
 
-    await bootWithTemplate(TMPL_ID, patientData, pt.settings_json || null, req.template_snapshot_json || null)
+    await bootWithTemplate(TMPL_ID, patientData, null, req.template_snapshot_json || null)
   }
 
   // ── Boot com template ────────────────────────────────────────────────────────
@@ -1547,16 +1537,53 @@
     document.getElementById('lgpd-screen').style.display  = 'none'
     document.getElementById('form-view').style.display    = 'none'
     document.getElementById('state-screen').style.display = 'flex'
-    document.getElementById('state-screen').innerHTML = `
-      <div class="state-box">
-        <div class="state-icon success">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </div>
-        <div class="state-title">Formulário enviado!</div>
-        <div class="state-body">Seus dados foram registrados com segurança e serão utilizados exclusivamente para fins da sua consulta. Obrigado!</div>
-      </div>`
+
+    // Redirect URL: configurable via template settings or localStorage
+    var redirectUrl = ''
+    var redirectLabel = ''
+    try {
+      var tplSettings = _getTplSettings(TMPL_ID)
+      redirectUrl   = (tplSettings && tplSettings.redirect_url)   || localStorage.getItem('anm_redirect_url')   || ''
+      redirectLabel = (tplSettings && tplSettings.redirect_label) || localStorage.getItem('anm_redirect_label') || 'Conheca nossos tratamentos'
+    } catch(e) {}
+
+    // Default: Instagram or clinic website
+    if (!redirectUrl) {
+      redirectUrl   = 'https://www.instagram.com/dra.miriandepaula/'
+      redirectLabel = 'Siga-nos no Instagram'
+    }
+
+    var redirectBtn = redirectUrl
+      ? '<a href="' + redirectUrl + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:12px 24px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border-radius:12px;font-size:14px;font-weight:700;text-decoration:none;box-shadow:0 4px 12px rgba(124,58,237,.3)">'
+        + '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+        + redirectLabel + '</a>'
+      : ''
+
+    var autoRedirect = redirectUrl
+      ? '<div style="margin-top:12px;font-size:12px;color:#9CA3AF">Redirecionando em <span id="anm-countdown">10</span> segundos...</div>'
+      : ''
+
+    document.getElementById('state-screen').innerHTML =
+      '<div class="state-box">'
+      + '<div class="state-icon success">'
+      + '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+      + '</div>'
+      + '<div class="state-title">Formulario enviado!</div>'
+      + '<div class="state-body">Seus dados foram registrados com seguranca e serao utilizados exclusivamente para fins da sua consulta. Obrigado!</div>'
+      + redirectBtn
+      + autoRedirect
+      + '</div>'
+
+    // Auto-redirect after 10s
+    if (redirectUrl) {
+      var countdown = 10
+      var timer = setInterval(function() {
+        countdown--
+        var el = document.getElementById('anm-countdown')
+        if (el) el.textContent = countdown
+        if (countdown <= 0) { clearInterval(timer); window.location.href = redirectUrl }
+      }, 1000)
+    }
   }
 
   // ── Re-evaluate conditionals ─────────────────────────────────────────────────
