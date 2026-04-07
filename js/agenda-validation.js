@@ -127,8 +127,10 @@ const AgendaValidator = {
 
     const s = _toMins(horaInicio)
     const e = _toMins(horaFim)
-    if (e <= s) errs.push('Horário final deve ser posterior ao horário inicial.')
-    if (e === s) errs.push('Duração não pode ser zero.')
+    if (e <= s) errs.push('Horario final deve ser posterior ao horario inicial.')
+    var duracao = e - s
+    if (duracao <= 0) errs.push('Duracao nao pode ser zero.')
+    if (duracao > 480) errs.push('Duracao maxima e 8 horas (480 min). Atual: ' + duracao + ' min.')
 
     const hf = _getClinicHours()
     const hfS = _toMins(hf.inicio)

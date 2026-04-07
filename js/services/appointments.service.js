@@ -160,25 +160,57 @@
    *
    * @param {object} appt  — agendamento no formato localStorage
    */
+  var OFFLINE_QUEUE_KEY = 'clinicai_appt_offline_queue'
+
+  function _addToOfflineQueue(appt) {
+    try {
+      var q = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]')
+      // Avoid duplicates
+      q = q.filter(function(x) { return x.id !== appt.id })
+      q.push(appt)
+      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q))
+    } catch(e) { /* quota */ }
+  }
+
+  function _retryOfflineQueue() {
+    var repo = _repo()
+    if (!repo) return
+    try {
+      var q = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]')
+      if (!q.length) return
+      var remaining = []
+      var processing = q.slice(0, 5) // Process 5 at a time
+      processing.forEach(function(appt) {
+        repo.upsert(appt).then(function(r) {
+          if (!r || !r.ok) remaining.push(appt)
+        }).catch(function() { remaining.push(appt) })
+      })
+      // Save remaining + unprocessed
+      setTimeout(function() {
+        var rest = q.slice(5).concat(remaining)
+        if (rest.length) localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(rest))
+        else localStorage.removeItem(OFFLINE_QUEUE_KEY)
+      }, 5000)
+    } catch(e) { /* silencioso */ }
+  }
+
   function syncOne(appt) {
     const repo = _repo()
-    if (!repo || !appt?.id) return
+    if (!repo || !appt?.id) { _addToOfflineQueue(_enrichForSupabase(appt)); return }
 
     const enriched = _enrichForSupabase(appt)
     repo.upsert(enriched).then(function(result) {
       if (result && !result.ok) {
-        console.error('[AppointmentsService] syncOne ERRO:', result.error, '| appt:', appt.id)
-        // Retry uma vez apos 3s
-        setTimeout(function() {
-          repo.upsert(enriched).then(function(r2) {
-            if (r2 && !r2.ok) console.error('[AppointmentsService] syncOne retry FALHOU:', r2.error)
-            else console.log('[AppointmentsService] syncOne retry OK:', appt.id)
-          }).catch(function(e) { console.error('[AppointmentsService] syncOne retry exception:', e) })
-        }, 3000)
+        console.warn('[AppointmentsService] syncOne falhou, adicionando ao offline queue:', appt.id)
+        _addToOfflineQueue(enriched)
       }
     }).catch(function(err) {
-      console.error('[AppointmentsService] syncOne exception:', err.message || err, '| appt:', appt.id)
+      console.warn('[AppointmentsService] syncOne offline:', appt.id, err.message || err)
+      _addToOfflineQueue(enriched)
     })
+
+    // Retry offline queue on every successful connection
+    _retryOfflineQueue()
   }
 
   // ── softDelete ────────────────────────────────────────────────

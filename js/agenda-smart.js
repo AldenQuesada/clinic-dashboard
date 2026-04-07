@@ -28,6 +28,7 @@ const STATE_MACHINE = {
   remarcado:              ['agendado','cancelado'],
   cancelado:              [],
   no_show:                [],
+  bloqueado:              ['cancelado'],  // Block time: almoco, ferias, manutencao
 }
 
 const STATUS_LABELS = {
@@ -42,6 +43,7 @@ const STATUS_LABELS = {
   remarcado:              'Remarcado',
   cancelado:              'Cancelado',
   no_show:                'No-show',
+  bloqueado:              'Bloqueado',
 }
 
 const STATUS_COLORS = {
@@ -56,7 +58,48 @@ const STATUS_COLORS = {
   remarcado:              { color:'#F97316', bg:'#FFF7ED' },
   cancelado:              { color:'#EF4444', bg:'#FEF2F2' },
   no_show:                { color:'#DC2626', bg:'#FEF2F2' },
+  bloqueado:              { color:'#6B7280', bg:'#F3F4F6' },
 }
+
+// ── Block Time: criar bloqueio de horario ─────────────────────
+const BLOCK_REASONS = [
+  { id:'almoco',      label:'Almoco' },
+  { id:'intervalo',   label:'Intervalo' },
+  { id:'reuniao',     label:'Reuniao' },
+  { id:'manutencao',  label:'Manutencao' },
+  { id:'ferias',      label:'Ferias' },
+  { id:'pessoal',     label:'Pessoal' },
+  { id:'outro',       label:'Outro' },
+]
+
+function createBlockTime(data, horaInicio, horaFim, profissionalIdx, motivo) {
+  if (!window.getAppointments || !window.saveAppointments) return null
+  var appts = getAppointments()
+  var profs = window.getProfessionals ? getProfessionals() : []
+  var prof = profs[profissionalIdx] || {}
+  var block = {
+    id:               'block_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    pacienteNome:     motivo || 'Bloqueado',
+    pacienteId:       '',
+    data:             data,
+    horaInicio:       horaInicio,
+    horaFim:          horaFim,
+    profissionalIdx:  profissionalIdx,
+    profissionalNome: prof.nome || prof.display_name || '',
+    status:           'bloqueado',
+    tipoConsulta:     'bloqueio',
+    procedimento:     (BLOCK_REASONS.find(function(r){return r.id===motivo})||{}).label || motivo || 'Bloqueado',
+    obs:              '',
+    createdAt:        new Date().toISOString(),
+  }
+  appts.push(block)
+  saveAppointments(appts)
+  if (window.renderAgenda) renderAgenda()
+  return block
+}
+
+window.createBlockTime = createBlockTime
+window.BLOCK_REASONS   = BLOCK_REASONS
 
 // ── Tag mapping por status ────────────────────────────────────────
 const STATUS_TAG_MAP = {
@@ -136,6 +179,29 @@ const QUEUE_KEY = 'clinicai_automations_queue'
 function _getQueue()    { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]') } catch(e) { return [] } }
 function _saveQueue(q)  { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)) } catch(e) { if (e.name === 'QuotaExceededError') { _clearOldLogs(); try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)) } catch(e2) { /* quota full */ } } } }
 function _clearOldLogs() { try { var logs = JSON.parse(localStorage.getItem('clinicai_auto_logs')||'[]'); if (logs.length > 100) localStorage.setItem('clinicai_auto_logs', JSON.stringify(logs.slice(-50))); } catch(e) { /* silencioso */ } }
+
+// ── Inline validation alert (replaces browser alert()) ──────
+function _showInlineAlert(title, items, parentId) {
+  var containerId = 'finValidationAlert'
+  var old = document.getElementById(containerId); if (old) old.remove()
+  var target = parentId ? document.getElementById(parentId) : document.querySelector('#smartFinalizeModal > div > div:nth-child(2)')
+  if (!target) { alert(title + '\n\n' + (Array.isArray(items) ? items.join('\n') : items)); return }
+  var html = '<div id="' + containerId + '" style="position:sticky;top:0;z-index:10;margin:-18px -18px 12px;padding:12px 16px;background:#FEF2F2;border-bottom:2px solid #FCA5A5;animation:slideDown .2s ease">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between">'
+    + '<div style="font-size:12px;font-weight:700;color:#991B1B">' + title + '</div>'
+    + '<button onclick="document.getElementById(\'' + containerId + '\').remove()" style="background:none;border:none;cursor:pointer;color:#991B1B;font-size:16px">x</button>'
+    + '</div>'
+  if (Array.isArray(items) && items.length) {
+    html += '<ul style="margin:6px 0 0;padding-left:18px;font-size:11px;color:#DC2626;line-height:1.8">'
+    items.forEach(function(e) { html += '<li>' + e + '</li>' })
+    html += '</ul>'
+  } else if (items) {
+    html += '<div style="font-size:11px;color:#DC2626;margin-top:4px">' + items + '</div>'
+  }
+  html += '</div>'
+  target.insertAdjacentHTML('afterbegin', html)
+  document.getElementById(containerId).scrollIntoView({ behavior:'smooth', block:'nearest' })
+}
 
 function scheduleAutomations(appt) {
   const dt = new Date(`${appt.data}T${appt.horaInicio}:00`)
@@ -1478,7 +1544,7 @@ function confirmFinalize(id) {
   const appt = appts[idx]
 
   // Already finalized? Prevent re-processing
-  if (appt.status === 'finalizado') { _finalizingInProgress = false; alert('Consulta ja finalizada.'); return }
+  if (appt.status === 'finalizado') { _finalizingInProgress = false; _showInlineAlert('Consulta ja finalizada', 'Esta consulta ja foi finalizada anteriormente.'); return }
 
   const valor    = parseFloat(document.getElementById('finValor')?.value||'0')
   const pago     = parseFloat(document.getElementById('finPago')?.value||'0')
@@ -1517,7 +1583,7 @@ function confirmFinalize(id) {
 
   if (erros.length) {
     _finalizingInProgress = false
-    alert('Corrija antes de finalizar:\n\n- ' + erros.join('\n- '))
+    _showInlineAlert('Corrija antes de finalizar', erros)
     return
   }
 
@@ -1560,7 +1626,7 @@ function confirmFinalize(id) {
     pagDetalhes.troco = Math.max(0, pagDetalhes.recebido - valor)
   } else if (forma === 'cortesia') {
     pagDetalhes.motivo = document.getElementById('finCortesiaMotivo')?.value || ''
-    if (!pagDetalhes.motivo.trim()) { alert('Informe o motivo da cortesia'); return }
+    if (!pagDetalhes.motivo.trim()) { _finalizingInProgress = false; _showInlineAlert('Campo obrigatorio', 'Informe o motivo da cortesia'); return }
   } else if (forma === 'convenio') {
     pagDetalhes.convenioNome = document.getElementById('finConvNome')?.value || ''
     pagDetalhes.autorizacao = document.getElementById('finConvAuth')?.value || ''
@@ -1582,7 +1648,7 @@ function confirmFinalize(id) {
       return
     }
   } else if (appt.tipoConsulta==='avaliacao'&&appt.tipoAvaliacao==='paga'&&statusP==='pendente') {
-    alert('Avaliação paga: registre o pagamento antes de finalizar.'); return
+    _finalizingInProgress = false; _showInlineAlert('Avaliacao paga', 'Registre o pagamento antes de finalizar.'); return
   }
 
   // Determinar status pagamento automático
@@ -1683,6 +1749,32 @@ function confirmFinalize(id) {
   // Enviar consentimento de pagamento se boleto/parcelado/entrada_saldo
   if (['boleto','parcelado','entrada_saldo'].includes(forma)) {
     _enviarConsentimento(apptFinal, 'pagamento')
+  }
+
+  // ── Payment tracking: criar tarefas de follow-up para pagamentos pendentes ──
+  if (spFinal !== 'pago' && valor > 0 && ['boleto','parcelado','entrada_saldo','link'].includes(forma)) {
+    var det = pagDetalhes || {}
+    var venc = det.primeiroVencimento || det.vencimentoSaldo || ''
+    var prazoH = venc ? Math.max(24, Math.round((new Date(venc+'T12:00:00').getTime() - Date.now()) / 3600000)) : 168 // 7 dias default
+    var descPag = forma === 'boleto' ? (det.parcelas||1) + 'x boleto' :
+                  forma === 'parcelado' ? (det.parcelas||1) + 'x parcelado' :
+                  forma === 'entrada_saldo' ? 'Entrada R$ ' + _fmtBRL(det.entrada||0) + ' + saldo R$ ' + _fmtBRL(det.saldo||0) :
+                  'Link pagamento'
+    var payTasks = JSON.parse(localStorage.getItem('clinic_op_tasks') || '[]')
+    payTasks.push({
+      id:           'task_pay_' + Date.now(),
+      tipo:         'pagamento',
+      titulo:       'Follow-up pagamento: ' + (apptFinal.pacienteNome||'Paciente') + ' — ' + descPag,
+      descricao:    'Valor total: R$ ' + _fmtBRL(valor) + ' | Pago: R$ ' + _fmtBRL(pago) + ' | Saldo: R$ ' + _fmtBRL(valor-pago) + (venc ? ' | Venc: ' + venc : ''),
+      responsavel:  'secretaria',
+      status:       'pendente',
+      prioridade:   'alta',
+      prazo:        new Date(Date.now() + prazoH * 3600000).toISOString(),
+      apptId:       id,
+      pacienteNome: apptFinal.pacienteNome,
+      createdAt:    new Date().toISOString(),
+    })
+    try { localStorage.setItem('clinic_op_tasks', JSON.stringify(payTasks)) } catch(e) { /* quota */ }
   }
 
   _finalizingInProgress = false

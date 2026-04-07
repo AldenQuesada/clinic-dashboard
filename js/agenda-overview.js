@@ -125,11 +125,20 @@ function showToast(msg, type = 'success') {
 }
 
 // ── Benchmarks do mercado (clínicas de estética BR) ──────────
+// Configuraveis via localStorage: clinic_config.benchmarks.{occupancy|confirmRate|noshowRate}
+function _getBenchConfig() {
+  try {
+    var cfg = JSON.parse(localStorage.getItem('clinic_config') || '{}')
+    return (cfg && cfg.benchmarks) || {}
+  } catch(e) { return {} }
+}
+var _benchCfg = _getBenchConfig()
+
 const AO_BENCH = {
   occupancy: {
     label: 'Índice de Ocupação',
-    good: 70, warn: 50,           // % — maior é melhor
-    marketAvg: 67,
+    good: _benchCfg.occupancy_good || 70, warn: _benchCfg.occupancy_warn || 50,
+    marketAvg: _benchCfg.occupancy_avg || 67,
     inverted: false,
     msgs: {
       good: { badge: '✓ Acima da média', tip: 'Ótimo! Sua clínica está acima dos 67% que é a média do mercado de estética. Continue com as estratégias de retenção.' },
@@ -140,8 +149,8 @@ const AO_BENCH = {
   },
   confirmRate: {
     label: 'Taxa de Confirmação',
-    good: 68, warn: 50,           // % — maior é melhor
-    marketAvg: 68,
+    good: _benchCfg.confirm_good || 68, warn: _benchCfg.confirm_warn || 50,
+    marketAvg: _benchCfg.confirm_avg || 68,
     inverted: false,
     msgs: {
       good: { badge: '✓ Boa confirmação', tip: 'Acima dos 68% da média. Clínicas que enviam 2 lembretes (48h e 24h antes) chegam a 82% — considere automatizar.' },
@@ -152,8 +161,8 @@ const AO_BENCH = {
   },
   noshowRate: {
     label: 'Taxa de No-show',
-    good: 12, warn: 22,           // % — MENOR é melhor (invertido)
-    marketAvg: 12,
+    good: _benchCfg.noshow_good || 12, warn: _benchCfg.noshow_warn || 22,
+    marketAvg: _benchCfg.noshow_avg || 12,
     inverted: true,
     msgs: {
       good: { badge: '✓ No-show sob controle', tip: 'Parabéns! Sua taxa está igual ou abaixo dos 12% da média do mercado. Mantenha os lembretes automáticos.' },
