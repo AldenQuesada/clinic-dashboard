@@ -33,6 +33,12 @@
   // Production: set via FM.FACIAL_API_URL = 'https://facial-api.easypanel.host'
   FM.FACIAL_API_URL = localStorage.getItem('fm_api_url') || 'http://localhost:8107'
 
+  // Auto-fix stale localStorage URL (old port references)
+  if (FM.FACIAL_API_URL && FM.FACIAL_API_URL.indexOf('localhost') !== -1 && FM.FACIAL_API_URL.indexOf(':8107') === -1) {
+    FM.FACIAL_API_URL = 'http://localhost:8107'
+    localStorage.setItem('fm_api_url', FM.FACIAL_API_URL)
+  }
+
   // API v2 endpoint paths
   FM.API = {
     // Core (legacy)

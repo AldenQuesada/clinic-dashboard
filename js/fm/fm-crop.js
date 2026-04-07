@@ -182,10 +182,27 @@
 
     // Primary button: Salvar + Remover Fundo (auto-pipeline)
     document.getElementById('fmCropConfirm').addEventListener('click', function () {
-      var canvas = _renderHiRes()
-      var b64 = canvas.toDataURL('image/png').split(',')[1]
+      var hiRes = _renderHiRes()
+
+      // Downscale for API (max 1024px) — keeps hi-res for final save
+      var maxDim = 1024
+      var apiCanvas = hiRes
+      if (hiRes.width > maxDim || hiRes.height > maxDim) {
+        var ratio = Math.min(maxDim / hiRes.width, maxDim / hiRes.height)
+        apiCanvas = document.createElement('canvas')
+        apiCanvas.width = Math.round(hiRes.width * ratio)
+        apiCanvas.height = Math.round(hiRes.height * ratio)
+        var actx = apiCanvas.getContext('2d')
+        actx.imageSmoothingEnabled = true
+        actx.imageSmoothingQuality = 'high'
+        actx.drawImage(hiRes, 0, 0, apiCanvas.width, apiCanvas.height)
+      }
+
+      // Use JPEG for smaller payload
+      var b64 = apiCanvas.toDataURL('image/jpeg', 0.85).split(',')[1]
       var apiUrl = FM.FACIAL_API_URL
 
+      console.log('[FM] remove-bg: sending', Math.round(b64.length / 1024) + 'KB to', apiUrl)
       FM._showLoading('Removendo fundo com IA...')
       var ov = document.getElementById('fmCropOverlay')
       if (ov) ov.style.display = 'none'
@@ -195,21 +212,27 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ photo_base64: b64 }),
       })
-      .then(function (r) { return r.json() })
+      .then(function (r) {
+        console.log('[FM] remove-bg: response status', r.status)
+        return r.json()
+      })
       .then(function (d) {
+        console.log('[FM] remove-bg: success=' + d.success, 'elapsed=' + d.elapsed_s)
         if (d.success && d.image_b64) {
           FM._hideLoading()
           _finishCrop(_b64ToBlob(d.image_b64))
           FM._showToast('Fundo removido com sucesso', 'success')
         } else {
           FM._hideLoading()
-          canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+          console.warn('[FM] remove-bg failed:', d.error || d)
+          hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
           FM._showToast('Falha no bg removal — salvo original', 'warn')
         }
       })
-      .catch(function () {
+      .catch(function (err) {
+        console.error('[FM] remove-bg error:', err)
         FM._hideLoading()
-        canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
         FM._showToast('API offline — salvo sem processamento', 'warn')
       })
     })
