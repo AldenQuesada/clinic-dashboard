@@ -130,16 +130,32 @@ async def remove_background(req: PhotoRequest):
         if len(faces) > 0:
             fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
             ih, iw = final_bgr.shape[:2]
-            # Tight face crop: forehead/hair above, chin below, no body
-            margin_top = int(fh * 0.45)
-            margin_bottom = int(fh * 0.15)
-            margin_side = int(fw * 0.25)
+            # Tight face crop: hair above, chin below, minimal sides
+            margin_top = int(fh * 0.5)
+            margin_bottom = int(fh * 0.2)
+            margin_side = int(fw * 0.15)
             x1 = max(0, fx - margin_side)
             y1 = max(0, fy - margin_top)
             x2 = min(iw, fx + fw + margin_side)
             y2 = min(ih, fy + fh + margin_bottom)
             final_bgr = final_bgr[y1:y2, x1:x2]
             log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
+
+        # Remove excess black border (trim rows/cols that are all black)
+        gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
+        rows = np.any(gray_trim > 10, axis=1)
+        cols = np.any(gray_trim > 10, axis=0)
+        if np.any(rows) and np.any(cols):
+            rmin, rmax = np.where(rows)[0][[0, -1]]
+            cmin, cmax = np.where(cols)[0][[0, -1]]
+            # Small padding around content (5px)
+            pad = 5
+            rmin = max(0, rmin - pad)
+            rmax = min(final_bgr.shape[0], rmax + pad)
+            cmin = max(0, cmin - pad)
+            cmax = min(final_bgr.shape[1], cmax + pad)
+            final_bgr = final_bgr[rmin:rmax, cmin:cmax]
+            log.info(f"Trimmed black border: {cmax-cmin}x{rmax-rmin}")
 
         # Subtle unsharp mask — restore detail without creating artifacts
         gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
