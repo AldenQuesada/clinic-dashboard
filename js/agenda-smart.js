@@ -1103,8 +1103,7 @@ function addFinProc() {
   var n = (document.getElementById('finProcNome')?.value||'').trim()
   var q = parseInt(document.getElementById('finProcQtd')?.value||'1') || 1
   if (!n) return
-  var cat = window._finProcCatalog || {}
-  var info = cat[n] || {}
+  var info = _findProcInCatalog(n) || {}
   var preco = info.preco || 0
   _finalProcs.push({ nome:n, qtd:q, precoOriginal:preco, desconto:0 })
   document.getElementById('finProcList').innerHTML = _renderFinProcs()
@@ -1167,11 +1166,24 @@ function _finAutoRoute() {
   }
 }
 
+function _findProcInCatalog(nome) {
+  var cat = window._finProcCatalog || {}
+  if (cat[nome]) return cat[nome]
+  var nLow = (nome||'').toLowerCase()
+  var keys = Object.keys(cat)
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i].toLowerCase() === nLow) return cat[keys[i]]
+  }
+  for (var j = 0; j < keys.length; j++) {
+    if (keys[j].toLowerCase().indexOf(nLow) >= 0 || nLow.indexOf(keys[j].toLowerCase()) >= 0) return cat[keys[j]]
+  }
+  return null
+}
+
 function finProcAutoPrice() {
   var n = (document.getElementById('finProcNome')?.value||'').trim()
   var q = parseInt(document.getElementById('finProcQtd')?.value||'1') || 1
-  var cat = window._finProcCatalog || {}
-  var info = cat[n]
+  var info = _findProcInCatalog(n)
   var hint = document.getElementById('finProcPriceHint')
   if (hint && info && info.preco > 0) {
     hint.textContent = 'Valor: R$ ' + _fmtBRL(info.preco) + '/un' + (info.preco_promo > 0 ? ' | Promo: R$ ' + _fmtBRL(info.preco_promo) : '') + (q > 1 ? ' | Total: R$ ' + _fmtBRL(info.preco * q) : '')
