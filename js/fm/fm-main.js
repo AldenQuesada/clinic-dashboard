@@ -69,6 +69,7 @@
     _clearMetricLines: FM._clearMetricLines,
     _removeLastMetric: FM._removeLastMetric,
     _autoAngles: FM._autoAngles,
+    _autoAsymmetryPairs: FM._autoAsymmetryPairs,
 
     // Sub-mode access
     get _analysisSubMode() { return FM._analysisSubMode },

@@ -208,6 +208,7 @@
       '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px">-- H</button>' +
       '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px">| V</button>' +
       '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:9px">Ponto</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._autoAsymmetryPairs()" style="flex:1;font-size:9px;padding:4px;border-color:#F59E0B;color:#F59E0B">Pares</button>' +
       '<button class="fm-btn" onclick="FaceMapping._autoAngles()" style="flex:1;font-size:9px;padding:4px;border-color:#C8A97E;color:#C8A97E">Angulos</button>' +
       '<button class="fm-btn" onclick="FaceMapping._clearMetricLines(\'all\')" style="padding:4px 6px;font-size:9px;color:#EF4444">X</button>' +
     '</div>' +
@@ -215,6 +216,36 @@
       '<button class="fm-btn" onclick="FaceMapping._exportReport()" style="flex:1;font-size:9px;padding:4px">' + FM._icon('download', 12) + ' Report</button>' +
       '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()" style="flex:1;font-size:9px;padding:4px">' + FM._icon('save', 12) + ' Salvar</button>' +
     '</div>'
+
+    // ── ASYMMETRY SCORE (if pairs exist) ──
+    if (FM._asymmetryScore) {
+      var as = FM._asymmetryScore
+      html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
+        '<div style="background:rgba(245,158,11,0.15);padding:6px 12px">' +
+          '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#F59E0B">SCORE ASSIMETRIA GLOBAL</span>' +
+        '</div>' +
+        '<div style="padding:10px 12px">' +
+          '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">' +
+            '<span style="font-size:28px;font-weight:800;color:' + as.classification.color + '">' + as.score + '</span>' +
+            '<div>' +
+              '<div style="font-size:11px;font-weight:600;color:' + as.classification.color + '">' + as.classification.label + '</div>' +
+              '<div style="font-size:9px;color:rgba(245,240,232,0.4)">' + as.pair_count + ' pares | media ' + as.avg_deviation + 'px</div>' +
+            '</div>' +
+          '</div>'
+
+      // Detail per pair
+      as.details.forEach(function (d) {
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+          '<span style="font-size:10px;color:rgba(245,240,232,0.6)">' + d.pair + '</span>' +
+          '<div style="text-align:right">' +
+            '<span style="font-size:10px;font-weight:600;color:' + d.color + '">' + d.severity + '</span>' +
+            '<span style="font-size:9px;color:rgba(245,240,232,0.4);margin-left:6px">\u2195' + d.dy + 'px ' + d.higher + '</span>' +
+          '</div>' +
+        '</div>'
+      })
+
+      html += '</div></div>'
+    }
 
     // ── SECTION 1: PLANO VERTICAL ──
     html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +

@@ -130,21 +130,13 @@
       ctx.lineWidth = 2
       ctx.stroke()
 
-      // Point label
-      ctx.font = '700 8px Inter, sans-serif'
-      ctx.fillStyle = '#fff'
-      ctx.textAlign = 'center'
-      ctx.fillText('P' + pt.id, px, py + 3)
-
-      // Asymmetry from midline
-      if (FM._metricShowMidline) {
-        var midX = FM._metricMidline ? FM._metricMidline.x : 0.5
-        var devPx = Math.round(Math.abs(pt.x - midX) * w)
-        var devSide = pt.x < midX ? 'E' : (pt.x > midX ? 'D' : 'C')
-        ctx.font = '400 9px Inter, sans-serif'
-        ctx.fillStyle = 'rgba(245,158,11,0.7)'
-        ctx.fillText(devSide + devPx + 'px', px + 10, py - 8)
-      }
+      // Point label (anatomical name or P#)
+      var ptLabel = pt.label || ('P' + pt.id)
+      ctx.font = '500 8px Inter, sans-serif'
+      ctx.fillStyle = 'rgba(245,240,232,0.8)'
+      ctx.textAlign = pt.x < 0.5 ? 'right' : 'left'
+      var labelOffX = pt.x < 0.5 ? -10 : 10
+      ctx.fillText(ptLabel, px + labelOffX, py - 8)
     })
 
     // Draw connections between consecutive point pairs (P1-P2, P3-P4, etc.)
@@ -368,6 +360,117 @@
     FM._redraw()
     FM._refreshToolbar()
     FM._autoSave()
+  }
+
+  // ── Auto Anatomical Pairs ─────────────────────────────────
+
+  // 12 pairs: matching left/right structures for asymmetry measurement
+  var ANATOMICAL_PAIRS = [
+    { id: 'sobrancelha', label_e: 'Sobrancelha E', label_d: 'Sobrancelha D', kp_e: 'left_brow_top', kp_d: 'right_brow_top' },
+    { id: 'olho_ext', label_e: 'Olho Ext E', label_d: 'Olho Ext D', kp_e: 'left_eye_outer', kp_d: 'right_eye_outer' },
+    { id: 'olho_int', label_e: 'Olho Int E', label_d: 'Olho Int D', kp_e: 'left_eye_inner', kp_d: 'right_eye_inner' },
+    { id: 'zigoma', label_e: 'Zigoma E', label_d: 'Zigoma D', kp_e: 'left_zygomatic', kp_d: 'right_zygomatic' },
+    { id: 'nariz', label_e: 'Asa Nasal E', label_d: 'Asa Nasal D', kp_e: 'nose_left', kp_d: 'nose_right' },
+    { id: 'comissura', label_e: 'Comissura E', label_d: 'Comissura D', kp_e: 'lip_left', kp_d: 'lip_right' },
+    { id: 'mandibula', label_e: 'Mandibula E', label_d: 'Mandibula D', kp_e: 'jaw_left_angle', kp_d: 'jaw_right_angle' },
+    { id: 'temple', label_e: 'Temporal E', label_d: 'Temporal D', kp_e: 'left_temple', kp_d: 'right_temple' },
+  ]
+
+  FM._autoAsymmetryPairs = function () {
+    if (!FM._scanData || !FM._scanData.key_points) {
+      FM._showToast('Execute Auto Analise primeiro', 'warn')
+      return
+    }
+
+    var kp = FM._scanData.key_points
+    FM._metricPoints = []
+    FM._metricNextPointId = 1
+
+    ANATOMICAL_PAIRS.forEach(function (pair) {
+      var ptE = kp[pair.kp_e]
+      var ptD = kp[pair.kp_d]
+      if (!ptE || !ptD) return
+
+      FM._metricPoints.push({
+        x: ptE.x, y: ptE.y,
+        id: FM._metricNextPointId++,
+        label: pair.label_e,
+        pair_id: pair.id,
+      })
+      FM._metricPoints.push({
+        x: ptD.x, y: ptD.y,
+        id: FM._metricNextPointId++,
+        label: pair.label_d,
+        pair_id: pair.id,
+      })
+    })
+
+    // Set midline
+    if (kp.nose_bridge) {
+      FM._metricMidline = { x: kp.nose_bridge.x }
+    }
+
+    // Calculate global asymmetry score
+    FM._asymmetryScore = _calcGlobalAsymmetry()
+
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+    FM._showToast(FM._metricPoints.length / 2 + ' pares anatomicos | Assimetria global: ' + FM._asymmetryScore.score + '/100', 'success')
+  }
+
+  function _calcGlobalAsymmetry() {
+    var w = FM._imgW || 1
+    var h = FM._imgH || 1
+    var midX = FM._metricMidline ? FM._metricMidline.x : 0.5
+    var totalDev = 0
+    var pairCount = 0
+    var details = []
+
+    for (var i = 0; i + 1 < FM._metricPoints.length; i += 2) {
+      var a = FM._metricPoints[i]
+      var b = FM._metricPoints[i + 1]
+      var dy = Math.abs(a.y - b.y) * h
+      var dxFromMid_a = Math.abs(a.x - midX) * w
+      var dxFromMid_b = Math.abs(b.x - midX) * w
+      var dxDiff = Math.abs(dxFromMid_a - dxFromMid_b)
+
+      var deviation = Math.sqrt(dy * dy + dxDiff * dxDiff)
+      totalDev += deviation
+      pairCount++
+
+      var severity = deviation > 12 ? 'evidente' : deviation > 6 ? 'moderada' : 'leve'
+      var sevColor = deviation > 12 ? '#EF4444' : deviation > 6 ? '#F59E0B' : '#10B981'
+
+      details.push({
+        pair: a.label ? a.label.replace(' E', '') : 'Par ' + (i / 2 + 1),
+        dy: Math.round(dy),
+        dx_diff: Math.round(dxDiff),
+        total: Math.round(deviation),
+        severity: severity,
+        color: sevColor,
+        higher: a.y < b.y ? 'E' : 'D',
+      })
+    }
+
+    // Score: 100 = perfect symmetry, 0 = severe asymmetry
+    // Average deviation per pair, normalize (max expected ~25px)
+    var avgDev = pairCount > 0 ? totalDev / pairCount : 0
+    var score = Math.round(Math.max(0, Math.min(100, 100 - avgDev * 4)))
+
+    var classification
+    if (score >= 90) classification = { label: 'Simetria Excelente', color: '#10B981' }
+    else if (score >= 75) classification = { label: 'Leve Assimetria', color: '#F59E0B' }
+    else if (score >= 60) classification = { label: 'Assimetria Moderada', color: '#F97316' }
+    else classification = { label: 'Assimetria Evidente', color: '#EF4444' }
+
+    return {
+      score: score,
+      classification: classification,
+      details: details,
+      pair_count: pairCount,
+      avg_deviation: Math.round(avgDev),
+    }
   }
 
   FM._removeLastMetric = function (type) {
