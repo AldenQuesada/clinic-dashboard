@@ -184,7 +184,7 @@
 
       // Vertical asymmetry (dy) — KEY metric for structure comparison
       if (dy > 2) {
-        var higherSide = ay < by ? 'E' : 'D'
+        var higherSide = ay < by ? 'D' : 'E'
         ctx.font = '700 11px Inter, sans-serif'
         ctx.fillStyle = dy > 10 ? '#EF4444' : dy > 5 ? '#F59E0B' : '#10B981'
         ctx.fillText('↕ ' + Math.round(dy) + 'px (' + higherSide + ' mais alto)', midPx, midPy - 2)
@@ -459,7 +459,7 @@
         total: Math.round(deviation),
         severity: severity,
         color: sevColor,
-        higher: a.y < b.y ? 'E' : 'D',
+        higher: a.y < b.y ? 'D' : 'E',
       })
     }
 
@@ -587,7 +587,7 @@
         distance_px: Math.round(Math.sqrt(pdx * pdx + pdy * pdy)),
         vertical_diff_px: Math.round(absDy),
         horizontal_diff_px: Math.round(absDx),
-        higher_side: pdy < 0 ? 'Esquerdo' : (pdy > 0 ? 'Direito' : 'Alinhado'),
+        higher_side: pdy < 0 ? 'Direito' : (pdy > 0 ? 'Esquerdo' : 'Alinhado'),
         severity: absDy > 10 ? 'evidente' : absDy > 5 ? 'moderada' : 'leve',
       })
     }
