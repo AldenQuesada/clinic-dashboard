@@ -1070,8 +1070,14 @@ function _buildFinFlowChecks() {
       { id:'finAvalGoogle',     label:'Solicitar avaliacao Google',                  checked:true },
       { id:'finGerarRetorno',   label:'Gerar retorno / proximo agendamento',         checked:true },
       { id:'finFluxoParceria',  label:'Fluxo de parceria / indicacao',               checked:false },
-      { id:'finEnviarOrcamento',label:'Enviar orcamento',                            checked:false },
+      { id:'finEnviarOrcamento',label:'Enviar orcamento',                            checked:true },
     ]
+  }
+
+  // Always ensure "Enviar orcamento" exists and is checked by default
+  var hasOrc = checks.some(function(c) { return c.id === 'finEnviarOrcamento' || /orcamento/i.test(c.label) })
+  if (!hasOrc) {
+    checks.push({ id:'finEnviarOrcamento', label:'Enviar orcamento', checked:true })
   }
 
   return checks.map(function(c) {
