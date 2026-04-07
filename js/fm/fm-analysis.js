@@ -210,6 +210,15 @@
     FM._ctx.restore()
   }
 
+  FM._setViewMode = function (mode) {
+    FM._viewMode = mode
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+    if (mode === '2x') {
+      setTimeout(FM._initCanvas2, 100)
+    }
+  }
+
   FM._switchTab = function (tabId) {
     // Map tab IDs to editor modes
     if (tabId === 'simetria') {

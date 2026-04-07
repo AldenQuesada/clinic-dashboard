@@ -209,15 +209,6 @@
       '</div>'
     }
 
-  FM._setViewMode = function (mode) {
-    FM._viewMode = mode
-    FM._render()
-    setTimeout(FM._initCanvas, 50)
-    if (mode === '2x') {
-      setTimeout(FM._initCanvas2, 100)
-    }
-  }
-
   FM._renderCanvasArea = function () {
     if (FM._viewMode === '2x') {
       return FM._renderCanvasArea2x()
