@@ -1121,8 +1121,14 @@
   FM._refreshToolbar = function () {
     var toolbar = document.querySelector('.fm-toolbar')
     if (!toolbar) return
+    var activeTab = FM._activeTab || 'zones'
+    var html
+    if (activeTab === 'simetria') html = FM._renderSimetriaPanel()
+    else if (activeTab === 'analysis') html = FM._renderAnalisePanel()
+    else if (activeTab === 'vectors') html = FM._renderVectorsPanel()
+    else html = FM._renderZonesPanel()
     var temp = document.createElement('div')
-    temp.innerHTML = FM._renderToolbar()
+    temp.innerHTML = html
     toolbar.parentNode.replaceChild(temp.firstChild, toolbar)
     if (window.feather) window.feather.replace()
   }
