@@ -17,7 +17,7 @@
     // Determine which panel to show on the right
     var rightPanel
     var activeTab = FM._editorMode
-    if (activeTab === 'analysis' && FM._analysisSubMode === 'metrics') activeTab = 'simetria'
+    if (activeTab === 'analysis' && FM._analysisSubMode !== 'skin') activeTab = 'simetria'
 
     if (activeTab === 'simetria') {
       rightPanel = FM._renderSimetriaPanel()
@@ -50,7 +50,7 @@
     ]
 
     var activeTab = FM._editorMode
-    if (activeTab === 'analysis' && FM._analysisSubMode === 'metrics') activeTab = 'simetria'
+    if (activeTab === 'analysis' && FM._analysisSubMode !== 'skin') activeTab = 'simetria'
 
     var html = '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid rgba(200,169,126,0.12)">' +
       '<div style="display:flex;align-items:center;gap:12px">' +
@@ -126,7 +126,7 @@
     html += '<div style="display:flex;align-items:center;gap:8px;margin-left:auto;padding-left:12px">'
     var pname = FM._lead ? (FM._lead.nome || FM._lead.name || '') : ''
     if (pname) {
-      html += '<span style="font-size:11px;color:var(--text-secondary);font-weight:500">' + FM._icon('user', 12) + ' ' + FM._esc(pname) + '</span>'
+      html += '<span style="font-size:11px;color:rgba(200,169,126,0.5);font-weight:500">' + FM._icon('user', 12) + ' ' + FM._esc(pname) + '</span>'
     }
     html += '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges" style="padding:4px 8px;font-size:10px">' + FM._icon('sliders', 12) + ' Ranges</button>'
     html += '<button class="fm-btn" onclick="FaceMapping._showTemplates()" title="Templates" style="padding:4px 8px;font-size:10px">' + FM._icon('clipboard', 12) + ' Templates</button>'
@@ -167,7 +167,7 @@
 
     // Separator + DEPOIS / SIMULADO slots
     html += '<div style="border-top:1px solid var(--border);margin:8px 0;padding-top:8px">' +
-      '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);text-align:center;margin-bottom:6px">Report</div>'
+      '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.3);text-align:center;margin-bottom:6px">Report</div>'
 
     // DEPOIS
     if (FM._afterPhotoUrl) {
@@ -266,14 +266,45 @@
   FM._renderSimetriaPanel = function () {
     var html = '<div class="fm-toolbar">'
 
-    // Tercos / Ricketts (pertence a Simetria)
+    // Sub-modes: Tercos / Ricketts / Metrificar
     html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Plano</div>' +
-      '<div style="display:flex;gap:4px">' +
-        '<button class="fm-zone-btn' + (FM._analysisSubMode !== 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Tercos</button>' +
+      '<div class="fm-tool-section-title">Modo</div>' +
+      '<div style="display:flex;gap:3px">' +
+        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Tercos</button>' +
         '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Ricketts</button>' +
+        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'metrics' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Metrificar</button>' +
       '</div>' +
     '</div>'
+
+    // Tercos info (only when in tercos sub-mode and scanner ran)
+    if (FM._analysisSubMode === 'tercos' && FM._scanData && FM._scanData.thirds) {
+      var t = FM._scanData.thirds
+      html += '<div class="fm-tool-section">' +
+        '<div class="fm-tool-section-title">Proporcoes</div>' +
+        '<div style="font-size:9px;color:rgba(200,169,126,0.3);margin-bottom:6px">Ideal: 33% cada terco</div>' +
+        _clinVal('Superior', Math.round(t.superior) + '%', t.superior >= 28 && t.superior <= 38 ? '#10B981' : '#F59E0B') +
+        _clinVal('Medio', Math.round(t.medio) + '%', t.medio >= 28 && t.medio <= 38 ? '#10B981' : '#F59E0B') +
+        _clinVal('Inferior', Math.round(t.inferior) + '%', t.inferior >= 28 && t.inferior <= 38 ? '#10B981' : '#F59E0B') +
+        '<div style="font-size:9px;color:rgba(200,169,126,0.25);margin-top:4px">Arraste as linhas para ajustar</div>' +
+      '</div>'
+    } else if (FM._analysisSubMode === 'tercos' && !FM._scanData) {
+      html += '<div class="fm-tool-section">' +
+        '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoAnalyze()">Scanner (posicionar tercos)</button>' +
+      '</div>'
+    }
+
+    // Ricketts info
+    if (FM._analysisSubMode === 'ricketts') {
+      html += '<div class="fm-tool-section">' +
+        '<div class="fm-tool-section-title">Linha de Ricketts</div>' +
+        '<div style="font-size:9px;color:rgba(200,169,126,0.3);line-height:1.5">' +
+          'Arraste os pontos N e M para ajustar ao perfil da paciente.' +
+        '</div>' +
+      '</div>'
+    }
+
+    // Metrificar tools (only in metrics sub-mode)
+    if (FM._analysisSubMode === 'metrics') {
 
     // Wireframe toggle
     html += '<div class="fm-tool-section">' +
@@ -520,7 +551,7 @@
         var pInf = totalH > 0 ? Math.round((t.chin - t.noseBase) / totalH * 100) : 33
         html += '<div class="fm-tool-section">' +
           '<div class="fm-tool-section-title">Proporcoes</div>' +
-          '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">Ideal: 33% cada terco</div>' +
+          '<div style="font-size:12px;color:rgba(200,169,126,0.5);margin-bottom:8px">Ideal: 33% cada terco</div>' +
           '<div style="display:flex;flex-direction:column;gap:6px">' +
             FM._propBar('Superior', pSup) +
             FM._propBar('Medio', pMed) +
@@ -528,12 +559,12 @@
           '</div>' +
         '</div>'
         html += '<div class="fm-tool-section">' +
-          '<div style="font-size:11px;color:var(--text-muted)">Arraste as linhas horizontais na foto para posicionar nos pontos anatomicos.</div>' +
+          '<div style="font-size:11px;color:rgba(200,169,126,0.3)">Arraste as linhas horizontais na foto para posicionar nos pontos anatomicos.</div>' +
         '</div>'
       } else {
         html += '<div class="fm-tool-section">' +
           '<div class="fm-tool-section-title">Linha de Ricketts</div>' +
-          '<div style="font-size:11px;color:var(--text-secondary);line-height:1.6">' +
+          '<div style="font-size:11px;color:rgba(200,169,126,0.5);line-height:1.6">' +
             'Linha da beleza do perfil.<br><br>' +
             'Conecta o ponto mais proeminente do <strong>nariz</strong> ao <strong>mento</strong>.<br><br>' +
             'Os labios devem tocar ou ficar ligeiramente atras desta linha para um perfil harmonioso.<br><br>' +
@@ -551,7 +582,7 @@
             '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:10px">| V</button>' +
             '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:10px">' + FM._icon('crosshair', 12) + '</button>' +
           '</div>' +
-          '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Clique na foto para adicionar</div>' +
+          '<div style="font-size:10px;color:rgba(200,169,126,0.3);margin-top:4px">Clique na foto para adicionar</div>' +
         '</div>'
 
         // Auto-place buttons
@@ -573,7 +604,7 @@
             html += '<div style="font-size:9px;color:#10B981;text-transform:uppercase;margin-bottom:4px">Horizontais</div>'
             summary.horizontal_distances.forEach(function (d) {
               html += '<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">' +
-                '<span style="color:var(--text-secondary)">' + d.from + ' → ' + d.to + '</span>' +
+                '<span style="color:rgba(200,169,126,0.5)">' + d.from + ' → ' + d.to + '</span>' +
                 '<span style="color:#10B981;font-weight:600">' + d.pct + '% (' + d.px + 'px)</span>' +
               '</div>'
             })
@@ -585,7 +616,7 @@
             summary.asymmetry.forEach(function (a) {
               var color = a.deviation_pct > 5 ? '#EF4444' : a.deviation_pct > 2 ? '#F59E0B' : '#10B981'
               html += '<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">' +
-                '<span style="color:var(--text-secondary)">' + a.line + (a.label ? ' (' + a.label + ')' : '') + '</span>' +
+                '<span style="color:rgba(200,169,126,0.5)">' + a.line + (a.label ? ' (' + a.label + ')' : '') + '</span>' +
                 '<span style="color:' + color + ';font-weight:600">' + a.side + ' ' + a.deviation_pct + '% (' + a.deviation_px + 'px)</span>' +
               '</div>'
             })
@@ -598,20 +629,20 @@
               var sevColor = d.severity === 'evidente' ? '#EF4444' : d.severity === 'moderada' ? '#F59E0B' : '#10B981'
               html += '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)">' +
                 '<div style="display:flex;justify-content:space-between;font-size:10px">' +
-                  '<span style="color:var(--text-secondary)">' + d.from + ' ↔ ' + d.to + '</span>' +
+                  '<span style="color:rgba(200,169,126,0.5)">' + d.from + ' ↔ ' + d.to + '</span>' +
                   '<span style="color:#F59E0B;font-weight:600">' + d.distance_px + 'px</span>' +
                 '</div>'
               if (d.vertical_diff_px > 2) {
                 html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:2px">' +
-                  '<span style="color:var(--text-muted)">↕ Desnivel vertical</span>' +
+                  '<span style="color:rgba(200,169,126,0.3)">↕ Desnivel vertical</span>' +
                   '<span style="color:' + sevColor + ';font-weight:700">' + d.vertical_diff_px + 'px — ' + d.severity + '</span>' +
                 '</div>' +
-                '<div style="font-size:9px;color:var(--text-muted);margin-top:1px">Lado ' + d.higher_side + ' mais alto</div>'
+                '<div style="font-size:9px;color:rgba(200,169,126,0.3);margin-top:1px">Lado ' + d.higher_side + ' mais alto</div>'
               }
               if (d.horizontal_diff_px > 2) {
                 html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:2px">' +
-                  '<span style="color:var(--text-muted)">↔ Diferenca lateral</span>' +
-                  '<span style="color:var(--text-secondary)">' + d.horizontal_diff_px + 'px</span>' +
+                  '<span style="color:rgba(200,169,126,0.3)">↔ Diferenca lateral</span>' +
+                  '<span style="color:rgba(200,169,126,0.5)">' + d.horizontal_diff_px + 'px</span>' +
                 '</div>'
               }
               html += '</div>'
@@ -629,21 +660,21 @@
 
           // AMF
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">AMF (Gonial-Mento-Gonial)</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">AMF (Gonial-Mento-Gonial)</span>' +
             '<span style="font-size:14px;font-weight:700;color:' + ma.classification.color + '">' + ma.amf + '\u00B0</span>' +
           '</div>' +
           '<div style="font-size:10px;color:' + ma.classification.color + ';font-weight:600;padding:2px 0 6px">' + ma.classification.label + '</div>'
 
           // RMZ
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">Ratio Mand/Zigoma</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Ratio Mand/Zigoma</span>' +
             '<span style="font-size:12px;font-weight:600;color:' + (ma.rmz >= 0.85 && ma.rmz <= 0.95 ? '#10B981' : '#F59E0B') + '">' + ma.rmz + '</span>' +
           '</div>' +
-          '<div style="font-size:9px;color:var(--text-muted)">Ideal: 0.85-0.95</div>'
+          '<div style="font-size:9px;color:rgba(200,169,126,0.3)">Ideal: 0.85-0.95</div>'
 
           // AIJ
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-top:4px">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">Jawline E / D</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Jawline E / D</span>' +
             '<span style="font-size:12px;font-weight:600;color:' + ma.jawline.color + '">' + ma.aij_left + '\u00B0 / ' + ma.aij_right + '\u00B0</span>' +
           '</div>' +
           '<div style="font-size:10px;color:' + ma.jawline.color + ';font-weight:500">' + ma.jawline.label + ' (media ' + ma.aij_avg + '\u00B0)</div>'
@@ -654,7 +685,7 @@
             var aijSide = ma.aij_left > ma.aij_right ? 'Esquerdo mais caido' : 'Direito mais caido'
             var aijColor = aijDiff > 8 ? '#EF4444' : aijDiff > 4 ? '#F59E0B' : '#10B981'
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;margin-top:2px">' +
-              '<span style="font-size:10px;color:var(--text-muted)">Assimetria jawline</span>' +
+              '<span style="font-size:10px;color:rgba(200,169,126,0.3)">Assimetria jawline</span>' +
               '<span style="font-size:10px;font-weight:600;color:' + aijColor + '">\u0394' + Math.round(aijDiff * 10) / 10 + '\u00B0</span>' +
             '</div>' +
             '<div style="font-size:9px;color:' + aijColor + '">' + aijSide + '</div>'
@@ -674,8 +705,10 @@
         '</div>'
       }
 
-      // ── Scanner Data Panel (shape, symmetry, golden ratio) — hide in metrics mode ──
-      if (FM._scanData && FM._analysisSubMode !== 'metrics') {
+    } // end of if metrics sub-mode
+
+    // Scanner data (shared across all simetria sub-modes)
+    if (FM._scanData) {
         var sd = FM._scanData
         html += '<div class="fm-tool-section">' +
           '<div class="fm-tool-section-title">Scanner Facial</div>'
@@ -683,7 +716,7 @@
         // Face shape
         if (sd.shape) {
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">Biotipo</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Biotipo</span>' +
             '<span style="font-size:12px;font-weight:600;color:#C8A97E;text-transform:capitalize">' + sd.shape.shape + '</span>' +
           '</div>'
         }
@@ -692,7 +725,7 @@
         if (sd.symmetry) {
           var symColor = sd.symmetry.overall >= 85 ? '#10B981' : sd.symmetry.overall >= 70 ? '#F59E0B' : '#EF4444'
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">Simetria</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Simetria</span>' +
             '<span style="font-size:12px;font-weight:600;color:' + symColor + '">' + sd.symmetry.overall + '%</span>' +
           '</div>'
         }
@@ -701,7 +734,7 @@
         if (sd.measurements && sd.measurements.golden_ratio_score != null) {
           var grColor = sd.measurements.golden_ratio_score >= 70 ? '#10B981' : sd.measurements.golden_ratio_score >= 50 ? '#F59E0B' : '#EF4444'
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">Proporcao Aurea</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Proporcao Aurea</span>' +
             '<span style="font-size:12px;font-weight:600;color:' + grColor + '">' + Math.round(sd.measurements.golden_ratio_score) + '%</span>' +
           '</div>'
         }
@@ -709,8 +742,8 @@
         // Pose
         if (sd.pose && sd.pose.estimated) {
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">Angulo</span>' +
-            '<span style="font-size:12px;font-weight:500;color:var(--text-primary);text-transform:capitalize">' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Angulo</span>' +
+            '<span style="font-size:12px;font-weight:500;color:rgba(245,240,232,0.85);text-transform:capitalize">' +
               (sd.pose.angle_description || '').replace('_', ' ') + '</span>' +
           '</div>'
         }
@@ -727,10 +760,10 @@
         if (FM._skinAge) {
           var ageColor = FM._skinAge.estimated_age <= 35 ? '#10B981' : FM._skinAge.estimated_age <= 45 ? '#F59E0B' : '#EF4444'
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:var(--text-secondary)">Idade Biologica</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Idade Biologica</span>' +
             '<span style="font-size:14px;font-weight:700;color:' + ageColor + '">' + Math.round(FM._skinAge.estimated_age) + ' anos</span>' +
           '</div>' +
-          '<div style="font-size:10px;color:var(--text-muted);padding:2px 0 6px">' + (FM._skinAge.description || '') + '</div>'
+          '<div style="font-size:10px;color:rgba(200,169,126,0.3);padding:2px 0 6px">' + (FM._skinAge.description || '') + '</div>'
         }
 
         // Skin scores
@@ -749,7 +782,7 @@
             var barW = Math.round(Math.min(100, Math.max(0, val)))
             html += '<div style="padding:3px 0">' +
               '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">' +
-                '<span style="color:var(--text-secondary)">' + m.label + '</span>' +
+                '<span style="color:rgba(200,169,126,0.5)">' + m.label + '</span>' +
                 '<span style="color:' + color + ';font-weight:600">' + Math.round(val) + '</span>' +
               '</div>' +
               '<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08)">' +
@@ -763,7 +796,7 @@
           if (overall != null) {
             var oColor = overall >= 70 ? '#10B981' : overall >= 50 ? '#F59E0B' : '#EF4444'
             html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px solid rgba(255,255,255,0.06);margin-top:6px">' +
-              '<span style="font-size:11px;font-weight:600;color:var(--text-secondary)">Score Geral</span>' +
+              '<span style="font-size:11px;font-weight:600;color:rgba(200,169,126,0.5)">Score Geral</span>' +
               '<span style="font-size:16px;font-weight:700;color:' + oColor + '">' + Math.round(overall) + '</span>' +
             '</div>'
           }
@@ -778,7 +811,7 @@
         // Heatmap toggle buttons
         if (FM._heatmapImages && Object.keys(FM._heatmapImages).length > 0) {
           html += '<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px">' +
-            '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);margin-bottom:6px">Heatmaps</div>' +
+            '<div style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.3);margin-bottom:6px">Heatmaps</div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:4px">'
 
           var heatmapBtns = [
@@ -795,7 +828,7 @@
             html += '<button style="padding:4px 8px;font-size:10px;border-radius:6px;border:1px solid ' +
               (active ? b.color : 'rgba(255,255,255,0.1)') + ';background:' +
               (active ? b.color + '22' : 'transparent') + ';color:' +
-              (active ? b.color : 'var(--text-secondary)') + ';cursor:pointer;font-weight:' +
+              (active ? b.color : 'rgba(200,169,126,0.5)') + ';cursor:pointer;font-weight:' +
               (active ? '600' : '400') + '" onclick="FaceMapping._toggleHeatmap(\'' + b.key + '\')">' +
               b.label + '</button>'
           })
@@ -813,7 +846,7 @@
         html += '<div class="fm-tool-section">' +
           '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoAnalyze()">' +
             FM._icon('cpu', 14) + ' Escanear Rosto</button>' +
-          '<div style="font-size:10px;color:var(--text-muted);margin-top:6px">Detecta 478 pontos, biotipo, simetria, idade da pele</div>' +
+          '<div style="font-size:10px;color:rgba(200,169,126,0.3);margin-top:6px">Detecta 478 pontos, biotipo, simetria, idade da pele</div>' +
         '</div>'
       }
 
@@ -831,7 +864,7 @@
     // Preenchimento section
     var fillZones = FM.ZONES.filter(function (z) { return z.cat === 'fill' })
     html += '<div class="fm-tool-section" style="padding-bottom:10px">' +
-      '<div class="fm-tool-section-title">Preenchimento <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(mL)</span></div>' +
+      '<div class="fm-tool-section-title">Preenchimento <span style="font-weight:400;color:rgba(200,169,126,0.3);text-transform:none;letter-spacing:0">(mL)</span></div>' +
       '<div class="fm-zone-grid">'
     fillZones.forEach(function (z) {
       html += FM._renderZoneBtn(z, allowedIds)
@@ -841,7 +874,7 @@
     // Rugas / Toxina section
     var toxZones = FM.ZONES.filter(function (z) { return z.cat === 'tox' })
     html += '<div class="fm-tool-section" style="padding-bottom:10px">' +
-      '<div class="fm-tool-section-title">Rugas / Toxina <span style="font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(U)</span></div>' +
+      '<div class="fm-tool-section-title">Rugas / Toxina <span style="font-weight:400;color:rgba(200,169,126,0.3);text-transform:none;letter-spacing:0">(U)</span></div>' +
       '<div class="fm-zone-grid">'
     toxZones.forEach(function (z) {
       html += FM._renderZoneBtn(z, allowedIds)
@@ -868,7 +901,7 @@
         '<input class="fm-input" id="fmMl" type="number" step="' + curStep + '" min="0" max="999" value="' + FM._selectedMl + '" ' +
           'onchange="FaceMapping._selectedMl=this.value" style="width:70px"' +
           (rangeHint ? ' placeholder="' + rangeHint + '"' : '') + '>' +
-        (rangeHint ? '<span style="font-size:10px;color:var(--text-muted)">' + rangeHint + '</span>' : '') +
+        (rangeHint ? '<span style="font-size:10px;color:rgba(200,169,126,0.3)">' + rangeHint + '</span>' : '') +
       '</div>' +
       '<div class="fm-input-row" style="margin-bottom:8px">' +
         '<label>Lado</label>' +
@@ -889,7 +922,7 @@
 
     var angleAnnotations = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
     if (angleAnnotations.length === 0) {
-      html += '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px">Selecione uma zona e desenhe na foto</div>'
+      html += '<div style="font-size:12px;color:rgba(200,169,126,0.3);text-align:center;padding:12px">Selecione uma zona e desenhe na foto</div>'
     } else {
       angleAnnotations.forEach(function (ann) {
         var t = FM.TREATMENTS.find(function (x) { return x.id === ann.treatment }) || FM.TREATMENTS[0]
@@ -916,7 +949,7 @@
       totals.forEach(function (t) {
         html += '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">' +
           '<span style="color:' + t.color + ';font-weight:600">' + t.label + '</span>' +
-          '<span style="color:var(--text-primary);font-weight:600">' + t.ml.toFixed(1) + ' mL</span>' +
+          '<span style="color:rgba(245,240,232,0.85);font-weight:600">' + t.ml.toFixed(1) + ' mL</span>' +
         '</div>'
       })
       html += '</div>'

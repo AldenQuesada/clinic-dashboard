@@ -102,13 +102,14 @@
         FM._ctx.restore()
       }
     } else if (FM._editorMode === 'analysis') {
-      // Always draw tercos on front, ricketts on lateral
-      if (FM._activeAngle === 'front' && FM._tercoLines) {
+      // Only draw tercos/ricketts in their specific sub-modes
+      if (FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front' && FM._tercoLines && FM._scanData) {
         FM._drawTercos()
       }
-      if (FM._activeAngle === 'lateral' && FM._rickettsPoints) {
+      if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral' && FM._rickettsPoints) {
         FM._drawRicketts()
       }
+      // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else {
       // Zones mode — draw ellipses with compact labels on the photo
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })

@@ -226,20 +226,24 @@
   }
 
   FM._switchTab = function (tabId) {
-    // Map tab IDs to editor modes
     if (tabId === 'simetria') {
       FM._editorMode = 'analysis'
-      FM._analysisSubMode = 'metrics'
+      // Keep current sub-mode if already in simetria, else default to tercos
+      if (FM._analysisSubMode !== 'tercos' && FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics') {
+        FM._analysisSubMode = 'tercos'
+      }
+      if (FM._analysisSubMode === 'tercos' && FM._photoUrls['front']) FM._activeAngle = 'front'
+      if (FM._analysisSubMode === 'ricketts' && FM._photoUrls['lateral']) FM._activeAngle = 'lateral'
     } else if (tabId === 'zones') {
       FM._editorMode = 'zones'
     } else if (tabId === 'vectors') {
       FM._editorMode = 'vectors'
     } else if (tabId === 'analysis') {
       FM._editorMode = 'analysis'
-      FM._analysisSubMode = 'tercos'
-      if (FM._photoUrls['front']) FM._activeAngle = 'front'
+      FM._analysisSubMode = 'skin'  // dedicated sub-mode for analysis tab
     }
-    FM._setEditorMode(FM._editorMode)
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
   }
 
   FM._setEditorMode = function (mode) {
