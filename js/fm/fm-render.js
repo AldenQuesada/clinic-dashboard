@@ -210,6 +210,10 @@
       '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:9px">Ponto</button>' +
       '<button class="fm-btn" onclick="FaceMapping._autoAngles()" style="flex:1;font-size:9px;padding:4px;border-color:#C8A97E;color:#C8A97E">Angulos</button>' +
       '<button class="fm-btn" onclick="FaceMapping._clearMetricLines(\'all\')" style="padding:4px 6px;font-size:9px;color:#EF4444">X</button>' +
+    '</div>' +
+    '<div style="padding:4px 12px;border-bottom:1px solid rgba(200,169,126,0.1);display:flex;gap:4px">' +
+      '<button class="fm-btn" onclick="FaceMapping._exportReport()" style="flex:1;font-size:9px;padding:4px">' + FM._icon('download', 12) + ' Report</button>' +
+      '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()" style="flex:1;font-size:9px;padding:4px">' + FM._icon('save', 12) + ' Salvar</button>' +
     '</div>'
 
     // ── SECTION 1: PLANO VERTICAL ──

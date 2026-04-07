@@ -107,11 +107,12 @@
         FM._ctx.restore()
       }
     } else if (FM._editorMode === 'analysis') {
-      if (FM._activeAngle === 'front') {
+      if (FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front') {
         FM._drawTercos()
-      } else if (FM._activeAngle === 'lateral') {
+      } else if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral') {
         FM._drawRicketts()
       }
+      // metrics sub-mode: lines drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else {
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
       var sorted = anns.slice().sort(function (a, b) { return a.shape.y - b.shape.y })
