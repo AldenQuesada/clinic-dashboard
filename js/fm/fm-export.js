@@ -180,6 +180,86 @@
       '</div>'
     }
 
+    // ── Mandibular Angles Section ──
+    if (FM._metricAngles) {
+      var ma = FM._metricAngles
+      html += '<div class="fm-report-summary" style="padding-top:0;gap:24px">' +
+        '<div style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#C8A97E;width:100%;text-align:center;margin-bottom:4px">Analise Mandibular</div>'
+
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:' + ma.classification.color + '">' + ma.amf + '\u00B0</div>' +
+        '<div class="fm-report-stat-label">AMF</div>' +
+        '<div style="font-size:9px;color:' + ma.classification.color + '">' + ma.classification.label + '</div>' +
+      '</div>'
+
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:' + (ma.rmz >= 0.85 && ma.rmz <= 0.95 ? '#10B981' : '#F59E0B') + '">' + ma.rmz + '</div>' +
+        '<div class="fm-report-stat-label">Ratio M/Z</div>' +
+      '</div>'
+
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:' + ma.jawline.color + '">' + ma.aij_avg + '\u00B0</div>' +
+        '<div class="fm-report-stat-label">Jawline</div>' +
+        '<div style="font-size:9px;color:' + ma.jawline.color + '">' + ma.jawline.label + '</div>' +
+      '</div>'
+
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="font-size:18px">' + ma.aij_left + '\u00B0 / ' + ma.aij_right + '\u00B0</div>' +
+        '<div class="fm-report-stat-label">Jawline E / D</div>' +
+      '</div>'
+
+      html += '</div>'
+    }
+
+    // ── Asymmetry Score Section ──
+    if (FM._asymmetryScore) {
+      var as = FM._asymmetryScore
+      html += '<div class="fm-report-summary" style="padding-top:0">' +
+        '<div style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#F59E0B;width:100%;text-align:center;margin-bottom:8px">Score de Assimetria</div>' +
+        '<div style="display:flex;align-items:center;gap:16px;justify-content:center;width:100%">' +
+          '<div style="text-align:center">' +
+            '<div style="font-size:36px;font-weight:800;color:' + as.classification.color + '">' + as.score + '</div>' +
+            '<div style="font-size:11px;color:' + as.classification.color + '">' + as.classification.label + '</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;gap:2px">'
+
+      as.details.forEach(function (d) {
+        html += '<div style="display:flex;align-items:center;gap:8px;font-size:10px">' +
+          '<span style="color:rgba(245,240,232,0.5);width:80px">' + d.pair + '</span>' +
+          '<span style="color:' + d.color + ';font-weight:600;width:60px">' + d.severity + '</span>' +
+          '<span style="color:rgba(245,240,232,0.3)">\u2195' + d.dy + 'px ' + d.higher + '</span>' +
+        '</div>'
+      })
+
+      html += '</div></div></div>'
+    }
+
+    // ── Tercos in report ──
+    if (FM._scanData && FM._scanData.thirds) {
+      var t = FM._scanData.thirds
+      html += '<div class="fm-report-summary" style="padding-top:0;gap:24px">' +
+        '<div style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#10B981;width:100%;text-align:center;margin-bottom:4px">Proporcoes Faciais (Tercos)</div>'
+
+      var thirds = [
+        { label: 'Superior', val: t.superior },
+        { label: 'Medio', val: t.medio },
+        { label: 'Inferior', val: t.inferior },
+      ]
+      thirds.forEach(function (tc) {
+        var c = tc.val >= 28 && tc.val <= 38 ? '#10B981' : tc.val < 28 ? '#EF4444' : '#F59E0B'
+        html += '<div class="fm-report-stat">' +
+          '<div class="fm-report-stat-value" style="color:' + c + '">' + Math.round(tc.val) + '%</div>' +
+          '<div class="fm-report-stat-label">' + tc.label + '</div>' +
+        '</div>'
+      })
+
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:' + (t.balanced ? '#10B981' : '#F59E0B') + '">' + (t.balanced ? 'Equilibrado' : 'Desequilibrado') + '</div>' +
+        '<div class="fm-report-stat-label">Proporcao</div>' +
+      '</div>'
+      html += '</div>'
+    }
+
     // Color legend
     html += '<div class="fm-report-summary" style="padding-top:0;flex-wrap:wrap;gap:12px">' +
       '<div style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#C8A97E;width:100%;text-align:center;margin-bottom:4px">Legenda de Cores</div>'
