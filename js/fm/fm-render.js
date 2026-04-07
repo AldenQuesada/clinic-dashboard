@@ -218,6 +218,119 @@
         '</div>'
       }
 
+      // ── Scanner Data Panel (shape, symmetry, golden ratio) ──
+      if (FM._scanData) {
+        var sd = FM._scanData
+        html += '<div class="fm-tool-section">' +
+          '<div class="fm-tool-section-title">Scanner Facial</div>'
+
+        // Face shape
+        if (sd.shape) {
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">Biotipo</span>' +
+            '<span style="font-size:12px;font-weight:600;color:#C8A97E;text-transform:capitalize">' + sd.shape.shape + '</span>' +
+          '</div>'
+        }
+
+        // Symmetry
+        if (sd.symmetry) {
+          var symColor = sd.symmetry.overall >= 85 ? '#10B981' : sd.symmetry.overall >= 70 ? '#F59E0B' : '#EF4444'
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">Simetria</span>' +
+            '<span style="font-size:12px;font-weight:600;color:' + symColor + '">' + sd.symmetry.overall + '%</span>' +
+          '</div>'
+        }
+
+        // Golden ratio
+        if (sd.measurements && sd.measurements.golden_ratio_score != null) {
+          var grColor = sd.measurements.golden_ratio_score >= 70 ? '#10B981' : sd.measurements.golden_ratio_score >= 50 ? '#F59E0B' : '#EF4444'
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">Proporcao Aurea</span>' +
+            '<span style="font-size:12px;font-weight:600;color:' + grColor + '">' + Math.round(sd.measurements.golden_ratio_score) + '%</span>' +
+          '</div>'
+        }
+
+        // Pose
+        if (sd.pose && sd.pose.estimated) {
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">Angulo</span>' +
+            '<span style="font-size:12px;font-weight:500;color:var(--text-primary);text-transform:capitalize">' +
+              (sd.pose.angle_description || '').replace('_', ' ') + '</span>' +
+          '</div>'
+        }
+
+        html += '</div>'
+      }
+
+      // ── Skin Age + Collagen Panel ──
+      if (FM._skinAge || FM._skinAnalysis) {
+        html += '<div class="fm-tool-section">' +
+          '<div class="fm-tool-section-title">Analise da Pele</div>'
+
+        // Skin age
+        if (FM._skinAge) {
+          var ageColor = FM._skinAge.estimated_age <= 35 ? '#10B981' : FM._skinAge.estimated_age <= 45 ? '#F59E0B' : '#EF4444'
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
+            '<span style="font-size:11px;color:var(--text-secondary)">Idade Biologica</span>' +
+            '<span style="font-size:14px;font-weight:700;color:' + ageColor + '">' + Math.round(FM._skinAge.estimated_age) + ' anos</span>' +
+          '</div>' +
+          '<div style="font-size:10px;color:var(--text-muted);padding:2px 0 6px">' + (FM._skinAge.description || '') + '</div>'
+        }
+
+        // Skin scores
+        if (FM._skinAnalysis) {
+          var metrics = [
+            { key: 'wrinkles', label: 'Rugas' },
+            { key: 'spots', label: 'Manchas' },
+            { key: 'pores', label: 'Poros' },
+            { key: 'redness', label: 'Vermelhidao' },
+            { key: 'firmness', label: 'Firmeza' },
+          ]
+          metrics.forEach(function (m) {
+            var val = FM._skinAnalysis[m.key]
+            if (val == null) return
+            var color = val >= 70 ? '#10B981' : val >= 50 ? '#F59E0B' : '#EF4444'
+            var barW = Math.round(Math.min(100, Math.max(0, val)))
+            html += '<div style="padding:3px 0">' +
+              '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">' +
+                '<span style="color:var(--text-secondary)">' + m.label + '</span>' +
+                '<span style="color:' + color + ';font-weight:600">' + Math.round(val) + '</span>' +
+              '</div>' +
+              '<div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.08)">' +
+                '<div style="height:100%;width:' + barW + '%;border-radius:2px;background:' + color + '"></div>' +
+              '</div>' +
+            '</div>'
+          })
+
+          // Overall
+          var overall = FM._skinAnalysis.overall
+          if (overall != null) {
+            var oColor = overall >= 70 ? '#10B981' : overall >= 50 ? '#F59E0B' : '#EF4444'
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0 2px;border-top:1px solid rgba(255,255,255,0.06);margin-top:6px">' +
+              '<span style="font-size:11px;font-weight:600;color:var(--text-secondary)">Score Geral</span>' +
+              '<span style="font-size:16px;font-weight:700;color:' + oColor + '">' + Math.round(overall) + '</span>' +
+            '</div>'
+          }
+        }
+
+        // Button to run skin analysis
+        if (!FM._skinAnalysis) {
+          html += '<button class="fm-btn" style="width:100%;margin-top:8px" onclick="FaceMapping._runSkinAnalysis()">' +
+            FM._icon('activity', 14) + ' Analisar Pele</button>'
+        }
+
+        html += '</div>'
+      }
+
+      // Button to trigger analysis if no data yet
+      if (!FM._scanData && !FM._skinAge) {
+        html += '<div class="fm-tool-section">' +
+          '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoAnalyze()">' +
+            FM._icon('cpu', 14) + ' Escanear Rosto</button>' +
+          '<div style="font-size:10px;color:var(--text-muted);margin-top:6px">Detecta 478 pontos, biotipo, simetria, idade da pele</div>' +
+        '</div>'
+      }
+
       html += '</div>'
       return html
     }

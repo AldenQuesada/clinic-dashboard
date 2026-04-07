@@ -322,6 +322,10 @@
         FM._showToast(parts.join(' | '), 'success')
         FM._autoSave()
         FM._redraw()
+
+        // Auto-trigger skin analysis + collagen in background
+        if (!FM._skinAnalysis) FM._runSkinAnalysis()
+        if (!FM._collagenData) FM._runCollagenScore()
       })
       .catch(function (err) {
         clearTimeout(timeout)
@@ -435,6 +439,86 @@
         FM._hideLoading()
         FM._showToast('API offline. Marque manualmente.', 'warn')
       })
+    }
+    img.src = FM._photoUrls[angle]
+  }
+
+  // ── Run Skin Analysis v2 (standalone) ─────────────────────
+
+  FM._runSkinAnalysis = function () {
+    var angle = FM._activeAngle || 'front'
+    if (!FM._photoUrls[angle]) {
+      FM._showToast('Envie uma foto primeiro.', 'warn')
+      return
+    }
+
+    FM._showLoading('Analisando pele (6 metricas + idade biologica)...')
+
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
+
+      var apiUrl = FM.FACIAL_API_URL
+
+      fetch(apiUrl + '/skin/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_base64: b64, generate_heatmaps: false }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (data) {
+        FM._hideLoading()
+        if (data.success) {
+          FM._skinAnalysis = data.scores
+          FM._skinAge = data.skin_age
+          FM._zoneScores = data.zone_scores
+
+          var msg = 'Score geral: ' + Math.round(data.scores.overall)
+          if (data.skin_age) msg += ' | Idade pele: ' + Math.round(data.skin_age.estimated_age) + ' anos'
+          FM._showToast(msg, 'success')
+          FM._refreshToolbar()
+        } else {
+          FM._showToast('Analise falhou.', 'error')
+        }
+      })
+      .catch(function () {
+        FM._hideLoading()
+        FM._showToast('API offline.', 'warn')
+      })
+    }
+    img.src = FM._photoUrls[angle]
+  }
+
+  // ── Run Collagen Score ───────────────────────────────────
+
+  FM._runCollagenScore = function () {
+    var angle = FM._activeAngle || 'front'
+    if (!FM._photoUrls[angle]) return
+
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
+
+      fetch(FM.FACIAL_API_URL + '/collagen-score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_base64: b64 }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (data) {
+        if (data.success) {
+          FM._collagenData = data
+          FM._showToast('Colageno: Grade ' + data.grade + ' (' + data.grade_name + ') | Index: ' + data.collagen_index, 'success')
+          FM._refreshToolbar()
+        }
+      })
+      .catch(function () {})
     }
     img.src = FM._photoUrls[angle]
   }
