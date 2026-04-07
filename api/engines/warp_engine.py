@@ -28,38 +28,38 @@ log = logging.getLogger("facial-api.warp-engine")
 ZONE_TRANSFORMS = {
     "temporal_esq": {
         "type": "inflate",
-        "direction": (0.3, -0.2),   # slightly outward + up
-        "magnitude": 1.0,
-        "smooth": 0.0,
+        "direction": (0.4, -0.3),   # outward + up (lifting vector)
+        "magnitude": 1.5,
+        "smooth": 0.1,
     },
     "temporal_dir": {
         "type": "inflate",
-        "direction": (-0.3, -0.2),
-        "magnitude": 1.0,
-        "smooth": 0.0,
+        "direction": (-0.4, -0.3),
+        "magnitude": 1.5,
+        "smooth": 0.1,
     },
     "zigoma_lat_esq": {
         "type": "inflate",
-        "direction": (0.4, -0.1),   # outward + slightly up
-        "magnitude": 1.2,
+        "direction": (0.5, -0.15),   # outward + slightly up
+        "magnitude": 1.8,
         "smooth": 0.0,
     },
     "zigoma_lat_dir": {
         "type": "inflate",
-        "direction": (-0.4, -0.1),
-        "magnitude": 1.2,
+        "direction": (-0.5, -0.15),
+        "magnitude": 1.8,
         "smooth": 0.0,
     },
     "zigoma_ant_esq": {
         "type": "inflate",
-        "direction": (0.2, -0.3),   # forward + up
-        "magnitude": 1.0,
+        "direction": (0.25, -0.35),   # forward + up
+        "magnitude": 1.4,
         "smooth": 0.0,
     },
     "zigoma_ant_dir": {
         "type": "inflate",
-        "direction": (-0.2, -0.3),
-        "magnitude": 1.0,
+        "direction": (-0.25, -0.35),
+        "magnitude": 1.4,
         "smooth": 0.0,
     },
     "olheira_esq": {
@@ -78,51 +78,51 @@ ZONE_TRANSFORMS = {
     },
     "sulco_esq": {
         "type": "smooth",
-        "direction": (0.1, -0.1),
-        "magnitude": 0.6,
-        "smooth": 0.7,
+        "direction": (0.12, -0.12),
+        "magnitude": 1.0,
+        "smooth": 0.85,
     },
     "sulco_dir": {
         "type": "smooth",
-        "direction": (-0.1, -0.1),
-        "magnitude": 0.6,
-        "smooth": 0.7,
+        "direction": (-0.12, -0.12),
+        "magnitude": 1.0,
+        "smooth": 0.85,
     },
     "marionete_esq": {
         "type": "smooth",
-        "direction": (0.05, -0.15),
-        "magnitude": 0.5,
-        "smooth": 0.6,
+        "direction": (0.08, -0.18),
+        "magnitude": 0.8,
+        "smooth": 0.8,
     },
     "marionete_dir": {
         "type": "smooth",
-        "direction": (-0.05, -0.15),
-        "magnitude": 0.5,
-        "smooth": 0.6,
+        "direction": (-0.08, -0.18),
+        "magnitude": 0.8,
+        "smooth": 0.8,
     },
     "mandibula_esq": {
         "type": "contour",
-        "direction": (0.2, -0.3),   # define jawline: outward + up
-        "magnitude": 1.5,
-        "smooth": 0.1,
+        "direction": (0.3, -0.35),   # define jawline: outward + up
+        "magnitude": 2.0,
+        "smooth": 0.15,
     },
     "mandibula_dir": {
         "type": "contour",
-        "direction": (-0.2, -0.3),
-        "magnitude": 1.5,
-        "smooth": 0.1,
+        "direction": (-0.3, -0.35),
+        "magnitude": 2.0,
+        "smooth": 0.15,
     },
     "mento": {
         "type": "inflate",
-        "direction": (0, 0.15),     # project chin forward/down slightly
-        "magnitude": 1.0,
+        "direction": (0, 0.2),     # project chin forward/down
+        "magnitude": 1.4,
         "smooth": 0.0,
     },
     "labio": {
         "type": "inflate",
-        "direction": (0, -0.05),    # subtle volume + projection
-        "magnitude": 0.8,
-        "smooth": 0.0,
+        "direction": (0, -0.08),    # volume + projection
+        "magnitude": 1.2,
+        "smooth": 0.1,
     },
     "nariz": {
         "type": "contour",
@@ -226,12 +226,12 @@ def _apply_inflate(
     Simulate volume addition (AH injection) via radial displacement.
     Pushes pixels outward from center, creating a "fuller" appearance.
     """
-    radius = int(min(w, h) * 0.06 * transform["magnitude"])
+    radius = int(min(w, h) * 0.07 * transform["magnitude"])
     if radius < 5:
         return img
 
     dx_dir, dy_dir = transform["direction"]
-    max_displacement = radius * 0.15 * strength
+    max_displacement = radius * 0.22 * strength
 
     # Create displacement map
     y_coords, x_coords = np.mgrid[0:h, 0:w]
@@ -274,9 +274,9 @@ def _apply_smooth(
 ) -> np.ndarray:
     """
     Simulate wrinkle reduction via localized bilateral smoothing.
-    Preserves skin tone and edges while softening fine lines.
+    Multi-pass for deeper wrinkles. Preserves skin tone.
     """
-    radius = int(min(w, h) * 0.05 * transform["magnitude"])
+    radius = int(min(w, h) * 0.06 * transform["magnitude"])
     if radius < 5:
         return img
 
@@ -291,10 +291,14 @@ def _apply_smooth(
     roi = img[y1:y2, x1:x2].copy()
     roi_uint8 = np.clip(roi, 0, 255).astype(np.uint8)
 
-    # Bilateral filter (edge-preserving smoothing)
-    d = max(5, int(15 * smooth_strength))
-    sigma = 75 * smooth_strength
-    smoothed = cv2.bilateralFilter(roi_uint8, d, sigma, sigma).astype(np.float32)
+    # Multi-pass bilateral filter for deeper smoothing
+    d = max(7, int(17 * smooth_strength))
+    sigma = 85 * smooth_strength
+    smoothed = roi_uint8.copy()
+    passes = max(1, int(2 * smooth_strength))
+    for _ in range(passes):
+        smoothed = cv2.bilateralFilter(smoothed, d, sigma, sigma)
+    smoothed = smoothed.astype(np.float32)
 
     # Blend with Gaussian falloff mask
     rh, rw = roi.shape[:2]
@@ -372,12 +376,12 @@ def _apply_contour(
     Simulate contour definition (mandibula, nariz) via directional warp.
     Pushes tissue in a specific direction to create sharper definition.
     """
-    radius = int(min(w, h) * 0.06 * transform["magnitude"])
+    radius = int(min(w, h) * 0.07 * transform["magnitude"])
     if radius < 5:
         return img
 
     dx_dir, dy_dir = transform["direction"]
-    max_displacement = radius * 0.12 * strength
+    max_displacement = radius * 0.18 * strength
 
     y_coords, x_coords = np.mgrid[0:h, 0:w]
     x_coords = x_coords.astype(np.float32)

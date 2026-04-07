@@ -130,10 +130,10 @@ async def remove_background(req: PhotoRequest):
         if len(faces) > 0:
             fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
             ih, iw = final_bgr.shape[:2]
-            # Tight face crop: hair above, chin below, minimal sides
-            margin_top = int(fh * 0.5)
-            margin_bottom = int(fh * 0.2)
-            margin_side = int(fw * 0.15)
+            # Face crop: generous hair, chin, ears visible
+            margin_top = int(fh * 0.6)
+            margin_bottom = int(fh * 0.25)
+            margin_side = int(fw * 0.2)
             x1 = max(0, fx - margin_side)
             y1 = max(0, fy - margin_top)
             x2 = min(iw, fx + fw + margin_side)
