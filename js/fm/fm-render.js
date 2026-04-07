@@ -177,15 +177,23 @@
 
     // ANALYSIS MODE
     if (FM._editorMode === 'analysis') {
+      if (!FM._analysisSubMode) FM._analysisSubMode = 'tercos'
+
       html += '<div class="fm-tool-section">' +
         '<div class="fm-tool-section-title">Tipo de Analise</div>' +
-        '<div style="display:flex;gap:6px">' +
-          '<button class="fm-zone-btn' + (FM._activeAngle === 'front' ? ' active' : '') + '" ' +
-            'onclick="FaceMapping._selectAngle(\'front\')" style="flex:1;justify-content:center"' +
-            (FM._photoUrls['front'] ? '' : ' disabled') + '>Tercos Faciais</button>' +
-          '<button class="fm-zone-btn' + (FM._activeAngle === 'lateral' ? ' active' : '') + '" ' +
-            'onclick="FaceMapping._selectAngle(\'lateral\')" style="flex:1;justify-content:center"' +
-            (FM._photoUrls['lateral'] ? '' : ' disabled') + '>Linha de Ricketts</button>' +
+        '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
+          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" ' +
+            'onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._refreshToolbar();FaceMapping._redraw()" ' +
+            'style="flex:1;justify-content:center;min-width:80px"' +
+            (FM._photoUrls['front'] ? '' : ' disabled') + '>Tercos</button>' +
+          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" ' +
+            'onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._refreshToolbar();FaceMapping._redraw()" ' +
+            'style="flex:1;justify-content:center;min-width:80px"' +
+            (FM._photoUrls['lateral'] ? '' : ' disabled') + '>Ricketts</button>' +
+          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'metrics' ? ' active' : '') + '" ' +
+            'onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._refreshToolbar();FaceMapping._redraw()" ' +
+            'style="flex:1;justify-content:center;min-width:80px;border-color:#10B981;color:' + (FM._analysisSubMode === 'metrics' ? '#fff' : '#10B981') + '"' +
+            '>Metrificar</button>' +
         '</div>' +
       '</div>'
 
@@ -215,6 +223,78 @@
             'Conecta o ponto mais proeminente do <strong>nariz</strong> ao <strong>mento</strong>.<br><br>' +
             'Os labios devem tocar ou ficar ligeiramente atras desta linha para um perfil harmonioso.<br><br>' +
             '<strong>Arraste os pontos N e M</strong> para ajustar ao rosto da paciente.' +
+          '</div>' +
+        '</div>'
+      }
+
+      // ── Metrics toolbar ──
+      if (FM._analysisSubMode === 'metrics') {
+        html += '<div class="fm-tool-section">' +
+          '<div class="fm-tool-section-title">Ferramenta</div>' +
+          '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
+            '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:10px">— H</button>' +
+            '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:10px">| V</button>' +
+            '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:10px">' + FM._icon('crosshair', 12) + '</button>' +
+          '</div>' +
+          '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">Clique na foto para adicionar</div>' +
+        '</div>'
+
+        // Auto-place button
+        html += '<div class="fm-tool-section">' +
+          '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoMetricLines()">' +
+            FM._icon('cpu', 14) + ' Auto Metrificar (via landmarks)</button>' +
+        '</div>'
+
+        // Current measurements summary
+        var summary = FM._getMetricsSummary ? FM._getMetricsSummary() : null
+        if (summary) {
+          html += '<div class="fm-tool-section">' +
+            '<div class="fm-tool-section-title">Medidas</div>'
+
+          // H distances
+          if (summary.horizontal_distances.length > 0) {
+            html += '<div style="font-size:9px;color:#10B981;text-transform:uppercase;margin-bottom:4px">Horizontais</div>'
+            summary.horizontal_distances.forEach(function (d) {
+              html += '<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">' +
+                '<span style="color:var(--text-secondary)">' + d.from + ' → ' + d.to + '</span>' +
+                '<span style="color:#10B981;font-weight:600">' + d.pct + '% (' + d.px + 'px)</span>' +
+              '</div>'
+            })
+          }
+
+          // Asymmetry
+          if (summary.asymmetry.length > 0) {
+            html += '<div style="font-size:9px;color:#3B82F6;text-transform:uppercase;margin-top:6px;margin-bottom:4px">Assimetria (desvio da midline)</div>'
+            summary.asymmetry.forEach(function (a) {
+              var color = a.deviation_pct > 5 ? '#EF4444' : a.deviation_pct > 2 ? '#F59E0B' : '#10B981'
+              html += '<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">' +
+                '<span style="color:var(--text-secondary)">' + a.line + (a.label ? ' (' + a.label + ')' : '') + '</span>' +
+                '<span style="color:' + color + ';font-weight:600">' + a.side + ' ' + a.deviation_pct + '% (' + a.deviation_px + 'px)</span>' +
+              '</div>'
+            })
+          }
+
+          // Point distances
+          if (summary.point_distances.length > 0) {
+            html += '<div style="font-size:9px;color:#F59E0B;text-transform:uppercase;margin-top:6px;margin-bottom:4px">Distancias (pontos)</div>'
+            summary.point_distances.forEach(function (d) {
+              html += '<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">' +
+                '<span style="color:var(--text-secondary)">' + d.from + ' → ' + d.to + '</span>' +
+                '<span style="color:#F59E0B;font-weight:600">' + d.distance_px + 'px</span>' +
+              '</div>'
+            })
+          }
+
+          html += '</div>'
+        }
+
+        // Clear buttons
+        html += '<div class="fm-tool-section">' +
+          '<div style="display:flex;gap:4px">' +
+            '<button class="fm-btn" style="flex:1;font-size:10px" onclick="FaceMapping._removeLastMetric(\'hline\')">- H</button>' +
+            '<button class="fm-btn" style="flex:1;font-size:10px" onclick="FaceMapping._removeLastMetric(\'vline\')">- V</button>' +
+            '<button class="fm-btn" style="flex:1;font-size:10px" onclick="FaceMapping._removeLastMetric(\'point\')">- Pt</button>' +
+            '<button class="fm-btn" style="flex:1;font-size:10px;color:#EF4444" onclick="FaceMapping._clearMetricLines(\'all\')">Limpar</button>' +
           '</div>' +
         '</div>'
       }

@@ -65,6 +65,11 @@
 
     FM._ctx.drawImage(FM._img, 0, 0, FM._imgW, FM._imgH)
 
+    // Metric lines overlay (if in metrics mode)
+    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+      if (FM._drawMetrics) FM._drawMetrics()
+    }
+
     // Heatmap overlay (if active)
     if (FM._activeHeatmap && FM._heatmapImages && FM._heatmapImages[FM._activeHeatmap]) {
       FM._ctx.globalAlpha = 0.55
@@ -204,6 +209,14 @@
     var mx = e.offsetX, my = e.offsetY
     var inLabelArea = mx > FM._imgW
 
+    // ANALYSIS MODE — Metrics sub-mode
+    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+      if (FM._onMetricMouseDown && FM._onMetricMouseDown(mx, my)) {
+        FM._mode = 'move'
+        return
+      }
+    }
+
     // ANALYSIS MODE
     if (FM._editorMode === 'analysis') {
       if (FM._activeAngle === 'front') {
@@ -285,6 +298,11 @@
 
   FM._onMouseMove = function (e) {
     var mx = e.offsetX, my = e.offsetY
+
+    // METRICS MODE drag
+    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics' && FM._mode === 'move') {
+      if (FM._onMetricMouseMove && FM._onMetricMouseMove(mx, my)) return
+    }
 
     // ANALYSIS MODE drag
     if (FM._editorMode === 'analysis' && FM._mode === 'move' && FM._analysisDrag) {
@@ -382,6 +400,7 @@
 
   FM._onMouseUp = function () {
     if (FM._editorMode === 'analysis') {
+      if (FM._onMetricMouseUp) FM._onMetricMouseUp()
       FM._mode = 'idle'
       FM._analysisDrag = null
       FM._canvas.style.cursor = 'default'

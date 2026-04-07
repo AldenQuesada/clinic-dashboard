@@ -212,6 +212,9 @@
 
   FM._setEditorMode = function (mode) {
     FM._editorMode = mode
+    if (mode === 'analysis') {
+      FM._analysisSubMode = FM._analysisSubMode || 'tercos'
+    }
     if (mode === 'vectors') {
       if (FM._photoUrls['45']) {
         FM._activeAngle = '45'
