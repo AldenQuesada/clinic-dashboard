@@ -133,16 +133,21 @@ const WA_TPLS = {
 // ── Automation Queue ──────────────────────────────────────────────
 const QUEUE_KEY = 'clinicai_automations_queue'
 
-function _getQueue()    { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]') }
-function _saveQueue(q)  { store.set(QUEUE_KEY, q) }
+function _getQueue()    { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]') } catch(e) { return [] } }
+function _saveQueue(q)  { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)) } catch(e) { if (e.name === 'QuotaExceededError') { _clearOldLogs(); try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)) } catch(e2) { /* quota full */ } } } }
+function _clearOldLogs() { try { var logs = JSON.parse(localStorage.getItem('clinicai_auto_logs')||'[]'); if (logs.length > 100) localStorage.setItem('clinicai_auto_logs', JSON.stringify(logs.slice(-50))); } catch(e) { /* silencioso */ } }
 
 function scheduleAutomations(appt) {
   const dt = new Date(`${appt.data}T${appt.horaInicio}:00`)
   if (isNaN(dt.getTime())) return
 
   // ── Delegate to AutomationsEngine (reads rules from DB) ──
+  // Engine is async (loads rules on first call). We call it fire-and-forget
+  // but catch errors to prevent silent failures.
   if (window.AutomationsEngine) {
-    AutomationsEngine.processAppointment(appt)
+    AutomationsEngine.processAppointment(appt).catch(function(e) {
+      console.error('[Agenda] Engine.processAppointment falhou:', e)
+    })
   }
 
   // ── Client-side only: status change queue ──
@@ -256,8 +261,8 @@ function apptTransition(id, newStatus, by) {
 
   // ── AutomationsEngine: dispatch on_status rules ──
   if (window.AutomationsEngine) {
-    AutomationsEngine.processStatusChange(appt, newStatus)
-    if (newStatus === 'finalizado') AutomationsEngine.processFinalize(appt)
+    AutomationsEngine.processStatusChange(appt, newStatus).catch(function(e) { console.error('[Agenda] Engine.processStatusChange falhou:', e) })
+    if (newStatus === 'finalizado') AutomationsEngine.processFinalize(appt).catch(function(e) { console.error('[Agenda] Engine.processFinalize falhou:', e) })
   }
 
   // Hook SDR unificado: disparar regras + mudar fase do lead
@@ -1444,11 +1449,23 @@ function closeFinalizeModal(force) {
   const m = document.getElementById('smartFinalizeModal'); if(m) m.style.display='none'
 }
 
+var _finalizingInProgress = false
+
 function confirmFinalize(id) {
-  if (!window.getAppointments) return
+  // Idempotency guard: prevent double-click
+  if (_finalizingInProgress) return
+  _finalizingInProgress = true
+
+  // Re-enable after 3s safety timeout (in case of error)
+  setTimeout(function() { _finalizingInProgress = false }, 3000)
+
+  if (!window.getAppointments) { _finalizingInProgress = false; return }
   const appts = getAppointments()
-  const idx = appts.findIndex(a=>a.id===id); if(idx<0) return
+  const idx = appts.findIndex(a=>a.id===id); if(idx<0) { _finalizingInProgress = false; return }
   const appt = appts[idx]
+
+  // Already finalized? Prevent re-processing
+  if (appt.status === 'finalizado') { _finalizingInProgress = false; alert('Consulta ja finalizada.'); return }
 
   const valor    = parseFloat(document.getElementById('finValor')?.value||'0')
   const pago     = parseFloat(document.getElementById('finPago')?.value||'0')
@@ -1486,6 +1503,7 @@ function confirmFinalize(id) {
   if (routeVal === 'nenhum') erros.push('Selecione o proximo estado do paciente (Bloco 4)')
 
   if (erros.length) {
+    _finalizingInProgress = false
     alert('Corrija antes de finalizar:\n\n- ' + erros.join('\n- '))
     return
   }
@@ -1499,7 +1517,7 @@ function confirmFinalize(id) {
     + 'Pagamento: ' + (forma||'—') + '\n'
     + 'Destino: ' + routeLabel
 
-  if (!confirm(resumo)) return
+  if (!confirm(resumo)) { _finalizingInProgress = false; return }
 
   // Collect payment details per method
   var pagDetalhes = { forma }
@@ -1654,7 +1672,9 @@ function confirmFinalize(id) {
     _enviarConsentimento(apptFinal, 'pagamento')
   }
 
-  closeFinalizeModal()
+  _finalizingInProgress = false
+  closeFinalizeModal(true)
+  if (window._showToast) _showToast('Finalizado', apptFinal.pacienteNome + ' finalizado com sucesso', 'success')
   if (window.renderAgenda) renderAgenda()
   setTimeout(()=>openApptDetail(id), 80)
 }
@@ -1849,6 +1869,7 @@ window.updatePayStatus        = updatePayStatus
 window.savePay                = savePay
 window.sendWATemplate         = sendWATemplate
 window.openFinalizeModal      = openFinalizeModal
+window.openFinalizarModal     = openFinalizeModal  // Bridge: legacy name → canonical
 window.closeFinalizeModal     = closeFinalizeModal
 window.confirmFinalize        = confirmFinalize
 window.addFinProc             = addFinProc
