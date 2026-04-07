@@ -1,5 +1,5 @@
 /**
- * fm-crop.js — Crop modal, pan/zoom, background removal
+ * fm-crop.js — Crop modal, pan/zoom, optional background removal via Python API
  */
 ;(function () {
   'use strict'
@@ -27,7 +27,7 @@
           '</button>' +
         '</div>' +
         '<div class="fm-crop-body">' +
-          '<div style="font-size:10px;color:#C8A97E;text-align:center;margin-bottom:6px">Enquadre apenas o rosto — use zoom para aproximar</div>' +
+          '<div style="font-size:10px;color:#C8A97E;text-align:center;margin-bottom:6px">Enquadre o rosto — use zoom para aproximar</div>' +
           '<div id="fmCropBox" class="fm-crop-box" style="width:' + boxW + 'px;height:' + boxH + 'px">' +
             '<canvas id="fmCropCanvas" style="position:absolute;top:0;left:0"></canvas>' +
             '<div class="fm-crop-guide"></div>' +
@@ -39,7 +39,8 @@
           '</div>' +
           '<div class="fm-crop-actions">' +
             '<button class="fm-crop-btn-cancel" onclick="document.getElementById(\'fmCropOverlay\').remove()">Cancelar</button>' +
-            '<button id="fmCropConfirm" class="fm-crop-btn-confirm">' + FM._icon('check', 16) + ' Salvar Recorte</button>' +
+            '<button id="fmCropConfirm" class="fm-crop-btn-confirm">' + FM._icon('check', 16) + ' Salvar</button>' +
+            '<button id="fmCropConfirmBG" class="fm-crop-btn-confirm" style="flex:1;background:linear-gradient(135deg,#8A9E88,#6B8B6A)">' + FM._icon('zap', 16) + ' Remover Fundo</button>' +
           '</div>' +
         '</div>' +
       '</div>'
@@ -83,7 +84,6 @@
   FM._cropRedraw = function () {
     if (!FM._cropCtx || !FM._cropImg) return
     FM._cropCtx.clearRect(0, 0, FM._cropCanvas.width, FM._cropCanvas.height)
-
     var w = FM._cropImg.width * FM._cropZoom
     var h = FM._cropImg.height * FM._cropZoom
     FM._cropCtx.drawImage(FM._cropImg, FM._cropPanX, FM._cropPanY, w, h)
@@ -93,18 +93,15 @@
     var box = document.getElementById('fmCropBox')
     var slider = document.getElementById('fmCropZoom')
     var label = document.getElementById('fmCropZoomLabel')
-    var confirm = document.getElementById('fmCropConfirm')
 
+    // Pan
     box.addEventListener('mousedown', function (e) {
       FM._cropDragging = true
       FM._cropDragStart = { x: e.clientX - FM._cropPanX, y: e.clientY - FM._cropPanY }
       box.style.cursor = 'grabbing'
     })
     document.addEventListener('mousemove', FM._cropMouseMove)
-    document.addEventListener('mouseup', function () {
-      FM._cropDragging = false
-      if (box) box.style.cursor = 'grab'
-    })
+    document.addEventListener('mouseup', function () { FM._cropDragging = false; if (box) box.style.cursor = 'grab' })
 
     box.addEventListener('touchstart', function (e) {
       e.preventDefault()
@@ -121,107 +118,103 @@
     })
     document.addEventListener('touchend', function () { FM._cropDragging = false })
 
+    // Zoom
     slider.addEventListener('input', function () {
       var oldZoom = FM._cropZoom
       FM._cropZoom = parseFloat(this.value)
       label.textContent = Math.round(FM._cropZoom * 100) + '%'
-
       var cx = boxW / 2, cy = boxH / 2
       FM._cropPanX = cx - (cx - FM._cropPanX) * (FM._cropZoom / oldZoom)
       FM._cropPanY = cy - (cy - FM._cropPanY) * (FM._cropZoom / oldZoom)
       FM._cropRedraw()
     })
 
-    confirm.addEventListener('click', function () {
-      // Render crop at HIGH RESOLUTION using the original image
-      // (not the small crop canvas which is display-sized)
+    // Shared: render hi-res crop from original image
+    function _renderHiRes() {
       var dpr = Math.max(window.devicePixelRatio || 1, 2)
-      var outW = boxW * dpr   // e.g. 720
-      var outH = boxH * dpr   // e.g. 600
-
-      // If original image is bigger, use it for better quality
+      var outW = boxW * dpr, outH = boxH * dpr
       if (FM._cropImg && FM._cropImg.width > outW) {
-        var scale = FM._cropImg.width / (boxW * FM._cropZoom)
-        outW = Math.round(boxW * scale)
-        outH = Math.round(boxH * scale)
+        var s = FM._cropImg.width / (boxW * FM._cropZoom)
+        outW = Math.round(boxW * s); outH = Math.round(boxH * s)
       }
+      if (outW > 2048) { var r = 2048 / outW; outW = 2048; outH = Math.round(outH * r) }
 
-      // Cap at 2048 to avoid memory issues
-      if (outW > 2048) { var ratio = 2048 / outW; outW = 2048; outH = Math.round(outH * ratio) }
-
-      var outCanvas = document.createElement('canvas')
-      outCanvas.width = outW
-      outCanvas.height = outH
-      var outCtx = outCanvas.getContext('2d')
-      outCtx.fillStyle = '#000000'
-      outCtx.fillRect(0, 0, outW, outH)
-
-      // Redraw from original image at full resolution
+      var c = document.createElement('canvas')
+      c.width = outW; c.height = outH
+      var ctx = c.getContext('2d')
+      ctx.fillStyle = '#000000'
+      ctx.fillRect(0, 0, outW, outH)
       if (FM._cropImg) {
-        var sx = outW / (boxW * dpr)  // scale factor from display to output
-        var drawW = FM._cropImg.width * FM._cropZoom * sx
-        var drawH = FM._cropImg.height * FM._cropZoom * sx
-        var px = FM._cropPanX * sx
-        var py = FM._cropPanY * sx
-        outCtx.imageSmoothingEnabled = true
-        outCtx.imageSmoothingQuality = 'high'
-        outCtx.drawImage(FM._cropImg, px, py, drawW, drawH)
+        var sx = outW / (boxW * dpr)
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(FM._cropImg, FM._cropPanX * sx, FM._cropPanY * sx,
+          FM._cropImg.width * FM._cropZoom * sx, FM._cropImg.height * FM._cropZoom * sx)
       } else {
-        // Fallback: copy from crop canvas
-        outCtx.drawImage(FM._cropCanvas, 0, 0, outW, outH)
+        ctx.drawImage(FM._cropCanvas, 0, 0, outW, outH)
       }
+      return c
+    }
 
-      // Send to Python API for background removal
-      var b64 = outCanvas.toDataURL('image/png').split(',')[1]
-      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8101'
+    function _finishCrop(blob) {
+      if (FM._photoUrls[FM._pendingCropAngle]) URL.revokeObjectURL(FM._photoUrls[FM._pendingCropAngle])
+      FM._photoUrls[FM._pendingCropAngle] = URL.createObjectURL(blob)
+      FM._photos[FM._pendingCropAngle] = blob
+      if (!FM._activeAngle) FM._activeAngle = FM._pendingCropAngle
+      var ov = document.getElementById('fmCropOverlay')
+      if (ov) ov.remove()
+      FM._render()
+      FM._autoSave()
+      if (FM._activeAngle === FM._pendingCropAngle) setTimeout(FM._initCanvas, 50)
+    }
 
-      FM._showLoading('Removendo fundo com IA...')
-      document.getElementById('fmCropOverlay').style.display = 'none'
-
-      var controller = new AbortController()
-      var timeout = setTimeout(function () { controller.abort() }, 10000)
-
-      fetch(apiUrl + '/remove-bg', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({ photo_base64: b64 }),
-      })
-      .then(function (res) { clearTimeout(timeout); return res.json() })
-      .then(function (data) {
-        FM._hideLoading()
-        if (data.success && data.image_b64) {
-          // Convert b64 to blob
-          var binary = atob(data.image_b64)
-          var arr = new Uint8Array(binary.length)
-          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
-          var processedBlob = new Blob([arr], { type: 'image/png' })
-          _finishCrop(processedBlob)
-          FM._showToast('Fundo removido com sucesso', 'success')
-        } else {
-          // Fallback: use original cropped image
-          outCanvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/png')
-        }
-      })
-      .catch(function (err) {
-        clearTimeout(timeout)
-        FM._hideLoading()
-        // Fallback: use original cropped image silently
-        outCanvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/jpeg', 0.95)
-      })
-
-      function _finishCrop(blob) {
-        if (FM._photoUrls[FM._pendingCropAngle]) URL.revokeObjectURL(FM._photoUrls[FM._pendingCropAngle])
-        FM._photoUrls[FM._pendingCropAngle] = URL.createObjectURL(blob)
-        FM._photos[FM._pendingCropAngle] = blob
-        if (!FM._activeAngle) FM._activeAngle = FM._pendingCropAngle
-        var overlay = document.getElementById('fmCropOverlay')
-        if (overlay) overlay.remove()
-        FM._render()
-        FM._autoSave()
-        if (FM._activeAngle === FM._pendingCropAngle) setTimeout(FM._initCanvas, 50)
-      }
+    // Button 1: Salvar (no bg removal — fast, preserves original quality)
+    document.getElementById('fmCropConfirm').addEventListener('click', function () {
+      var canvas = _renderHiRes()
+      canvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/png')
     })
+
+    // Button 2: Remover Fundo (calls Python rembg API)
+    var bgBtn = document.getElementById('fmCropConfirmBG')
+    if (bgBtn) {
+      bgBtn.addEventListener('click', function () {
+        var canvas = _renderHiRes()
+        var b64 = canvas.toDataURL('image/png').split(',')[1]
+        var apiUrl = FM.FACIAL_API_URL
+
+        FM._showLoading('Removendo fundo com IA...')
+        document.getElementById('fmCropOverlay').style.display = 'none'
+
+        var ctrl = new AbortController()
+        var tmout = setTimeout(function () { ctrl.abort() }, 15000)
+
+        fetch(apiUrl + '/remove-bg', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: ctrl.signal,
+          body: JSON.stringify({ photo_base64: b64 }),
+        })
+        .then(function (r) { clearTimeout(tmout); return r.json() })
+        .then(function (d) {
+          FM._hideLoading()
+          if (d.success && d.image_b64) {
+            var bin = atob(d.image_b64)
+            var arr = new Uint8Array(bin.length)
+            for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+            _finishCrop(new Blob([arr], { type: 'image/png' }))
+            FM._showToast('Fundo removido com sucesso', 'success')
+          } else {
+            canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+            FM._showToast('Falha no bg removal', 'warn')
+          }
+        })
+        .catch(function () {
+          clearTimeout(tmout); FM._hideLoading()
+          canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+          FM._showToast('API offline — salvo sem processamento', 'warn')
+        })
+      })
+    }
   }
 
   FM._cropMouseMove = function (e) {
@@ -239,7 +232,5 @@
     }
     FM._openCropModal(src, angle)
   }
-
-  // Background removal disabled — use dark background in clinic for best results
 
 })()
