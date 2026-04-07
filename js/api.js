@@ -2091,6 +2091,9 @@ function _confirmFinalizar(id) {
   a.pendente_finalizar = false
   saveAppointments(appts)
 
+  // Sync to Supabase so status persists across reloads
+  if (window.AppointmentsService && AppointmentsService.syncOne) AppointmentsService.syncOne(a)
+
   // Promover lead para 'patient' — aparece em Pacientes
   if (a.pacienteId) _setLeadStatus(a.pacienteId, 'patient')
 
