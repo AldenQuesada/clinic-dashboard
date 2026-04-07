@@ -360,6 +360,10 @@ async function anamneseCreateRequest() {
     anamneseCloseNewRequest()
     _copyToClipboard(fullLink)
     _showLinkModal(r.public_slug, fullLink)
+
+    // ── WhatsApp automatico: enviar link ao paciente ──
+    _sendAnamneseWhatsApp(leadId, fullLink)
+
     anamneseTab('requests')
   } catch (e) {
     _showToast('Erro ao criar solicitação: ' + _parseDbError(e), 'error')
@@ -399,7 +403,14 @@ function _showLinkModal(slug, link) {
           Copiar
         </button>
       </div>
-      <div style="margin-top:12px;font-size:11px;color:#9CA3AF;text-align:right">slug: ${_esc(slug)}</div>
+      <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
+        <button onclick="_resendAnamneseWA('${_esc(slug)}')"
+                style="padding:8px 14px;border:1.5px solid #25D366;border-radius:8px;background:#fff;color:#25D366;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
+          Reenviar WhatsApp
+        </button>
+        <span style="font-size:11px;color:#9CA3AF">slug: ${_esc(slug)}</span>
+      </div>
     </div>`
 
   document.body.appendChild(modal)
@@ -423,6 +434,58 @@ function _copyLinkFromModal(slug) {
     setTimeout(() => { btn.textContent = 'Copiar'; btn.style.background = '#7C3AED' }, 2000)
   }
   _showToast('Link copiado!')
+}
+
+// ── WhatsApp automatico: enviar link da anamnese ao paciente ──
+function _sendAnamneseWhatsApp(leadId, link) {
+  if (!window._sbShared) return
+  try {
+    var leads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+    var lead = leads.find(function(l) { return l.id === leadId })
+    if (!lead) return
+    var phone = ((lead.whatsapp || lead.phone || lead.telefone) || '').replace(/\D/g, '')
+    if (!phone) { _showToast('Paciente sem telefone — envie o link manualmente', 'warning'); return }
+    var nome = lead.nome || lead.name || 'Paciente'
+    var clinica = window._getClinicaNome ? _getClinicaNome() : 'Clinica'
+
+    var msg = 'Ola, *' + nome + '*!\n\n'
+      + 'Para garantirmos o melhor atendimento personalizado, pedimos que preencha sua *Ficha de Anamnese* antes da consulta:\n\n'
+      + link + '\n\n'
+      + 'O preenchimento e rapido (5 min) e nos ajuda a entender melhor o seu historico e objetivos.\n\n'
+      + 'Qualquer duvida estamos a disposicao!\n'
+      + '*Equipe ' + clinica + '*'
+
+    window._sbShared.rpc('wa_outbox_enqueue_appt', {
+      p_phone: phone,
+      p_content: msg,
+      p_lead_name: nome,
+    }).then(function(res) {
+      if (res.error) {
+        console.warn('[Anamnese] WA falhou:', res.error.message)
+        _showToast('Link copiado, mas WhatsApp falhou — envie manualmente', 'warning')
+      } else {
+        _showToast('Link enviado via WhatsApp para ' + nome, 'success')
+      }
+    }).catch(function(e) {
+      console.warn('[Anamnese] WA exception:', e)
+      _showToast('Link copiado, mas WhatsApp falhou', 'warning')
+    })
+  } catch(e) {
+    console.warn('[Anamnese] _sendAnamneseWhatsApp erro:', e)
+  }
+}
+
+function _resendAnamneseWA(slug) {
+  var link = _getRawLink(slug)
+  if (!link) { _showToast('Link nao disponivel. O token so e exibido na criacao.', 'warning'); return }
+  // Find the request to get the patient
+  var reqRow = document.querySelector('[data-slug="' + slug + '"]')
+  var leadId = reqRow ? reqRow.dataset.patientId : null
+  if (leadId) {
+    _sendAnamneseWhatsApp(leadId, link)
+  } else {
+    _showToast('Paciente nao encontrado — copie e envie manualmente', 'warning')
+  }
 }
 
 function anameseCopyLink(slug) {
@@ -539,6 +602,21 @@ function _renderResponsesList() {
 }
 
 // hint = 'request' quando chamado da aba Requests (id é request_id, não response_id)
+function _formatAddress(addr) {
+  if (!addr) return ''
+  if (typeof addr === 'string') { try { addr = JSON.parse(addr) } catch(e) { return addr } }
+  var parts = []
+  if (addr.logradouro) parts.push(addr.logradouro + (addr.numero ? ', ' + addr.numero : ''))
+  if (addr.complemento) parts.push(addr.complemento)
+  if (addr.bairro) parts.push(addr.bairro)
+  var cityState = []
+  if (addr.cidade) cityState.push(addr.cidade)
+  if (addr.estado) cityState.push(addr.estado)
+  if (cityState.length) parts.push(cityState.join(' - '))
+  if (addr.cep) parts.push('CEP: ' + addr.cep)
+  return parts.join(' | ') || '—'
+}
+
 async function anamneseOpenResponse(idArg, hint) {
   const modal = document.getElementById('anmResponseModal')
   if (!modal) return
@@ -702,11 +780,16 @@ function _renderResponseModal() {
       <div class="anm-response-section">
         <div class="anm-response-section-title">Paciente</div>
         <div class="anm-response-grid2">
-          <div><label>Nome</label><div>${_esc(patName)}</div></div>
+          <div><label>Nome</label><div style="font-weight:600">${_esc(patName)}</div></div>
           <div><label>Telefone</label><div>${_esc(pat?.phone || '—')}</div></div>
-          <div><label>E-mail</label><div>${_esc(pat?.email || '—')}</div></div>
+          ${pat?.cpf ? `<div><label>CPF</label><div>${_esc(pat.cpf)}</div></div>` : ''}
+          ${pat?.sex ? `<div><label>Sexo</label><div>${pat.sex === 'M' ? 'Masculino' : 'Feminino'}</div></div>` : ''}
+          ${pat?.birth_date ? `<div><label>Nascimento</label><div>${_esc(pat.birth_date)}</div></div>` : ''}
+          ${pat?.rg ? `<div><label>RG</label><div>${_esc(pat.rg)}</div></div>` : ''}
+          ${pat?.email ? `<div><label>E-mail</label><div>${_esc(pat.email)}</div></div>` : ''}
           ${response?.progress_percent != null ? `<div><label>Progresso</label><div>${parseFloat(response.progress_percent).toFixed(0)}%</div></div>` : ''}
         </div>
+        ${pat?.address_json ? `<div style="margin-top:8px"><label style="font-size:10px;color:#9CA3AF;font-weight:600">Endereco</label><div style="font-size:12px;color:#374151">${_formatAddress(pat.address_json)}</div></div>` : ''}
       </div>
 
       <!-- Flags clínicas -->
@@ -984,6 +1067,7 @@ window.anamneseCloseNewRequest   = anamneseCloseNewRequest
 window.anamneseCreateRequest     = anamneseCreateRequest
 window.anameseCopyLink           = anameseCopyLink
 window._copyLinkFromModal        = _copyLinkFromModal
+window._resendAnamneseWA         = _resendAnamneseWA
 window.anamneseRevokeRequest     = anamneseRevokeRequest
 window.anamneseOpenResponse      = anamneseOpenResponse
 window.anamneseCloseResponse     = anamneseCloseResponse

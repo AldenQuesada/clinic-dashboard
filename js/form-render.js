@@ -268,7 +268,15 @@
   const IS_TEST  = params.get('mode') === 'test'
   const SLUG     = params.get('slug')
   // Token lido do fragment (#token=) para não vazar em logs/Referer.
-  const TOKEN    = new URLSearchParams(location.hash.substring(1)).get('token') || params.get('token')
+  // Fallback: recuperar do localStorage se paciente fechou e reabriu a aba.
+  var _rawToken = new URLSearchParams(location.hash.substring(1)).get('token') || params.get('token')
+  if (!_rawToken && SLUG) {
+    try { _rawToken = localStorage.getItem('anm_token_' + SLUG) } catch(e) {}
+  }
+  if (_rawToken && SLUG) {
+    try { localStorage.setItem('anm_token_' + SLUG, _rawToken) } catch(e) {}
+  }
+  const TOKEN = _rawToken
 
   // ── State ───────────────────────────────────────────────────────────────────
   let sessions      = []
@@ -1806,6 +1814,9 @@
         showStateScreen('error', 'Erro ao enviar', 'Não foi possível registrar o envio. Verifique sua conexão e tente novamente.')
         return
       }
+
+      // Limpar token do localStorage apos completar (nao precisa mais)
+      if (SLUG) { try { localStorage.removeItem('anm_token_' + SLUG) } catch(e) {} }
 
       showSuccessScreen()
     },
