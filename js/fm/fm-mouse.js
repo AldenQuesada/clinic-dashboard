@@ -111,22 +111,13 @@
       }
       // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else {
-      // Zones mode — draw ellipses with compact labels on the photo
+      // Zones mode — draw anatomical regions (or ellipse fallback)
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
       anns.forEach(function (ann) {
-        FM._drawEllipseClean(ann)
-        // Compact label near the ellipse (no external label area)
-        var z = FM.ZONES.find(function (zz) { return zz.id === ann.zone })
-        if (z) {
-          FM._ctx.save()
-          FM._ctx.font = '500 9px Montserrat, Inter, sans-serif'
-          FM._ctx.fillStyle = 'rgba(245,240,232,0.85)'
-          FM._ctx.textAlign = 'center'
-          FM._ctx.fillText(z.label, ann.shape.x, ann.shape.y - ann.shape.ry - 6)
-          FM._ctx.font = '400 8px Montserrat, Inter, sans-serif'
-          FM._ctx.fillStyle = z.color
-          FM._ctx.fillText(ann.ml + (z.unit || 'mL'), ann.shape.x, ann.shape.y - ann.shape.ry - 18)
-          FM._ctx.restore()
+        if (FM._drawRegionOrEllipse) {
+          FM._drawRegionOrEllipse(ann)
+        } else {
+          FM._drawEllipseClean(ann)
         }
       })
     }
