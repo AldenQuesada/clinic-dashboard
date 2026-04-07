@@ -116,16 +116,37 @@
   ]
 
   var CHANNELS = [
-    { id: 'whatsapp', label: 'WhatsApp' },
-    { id: 'alert',    label: 'Alerta Visual' },
-    { id: 'both',     label: 'Ambos' },
+    { id: 'whatsapp',       label: 'WhatsApp' },
+    { id: 'alert',          label: 'Alerta Visual' },
+    { id: 'task',           label: 'Tarefa' },
+    { id: 'whatsapp_alert', label: 'WhatsApp + Alerta' },
+    { id: 'whatsapp_task',  label: 'WhatsApp + Tarefa' },
+    { id: 'alert_task',     label: 'Alerta + Tarefa' },
+    { id: 'all',            label: 'Todos' },
   ]
 
   var CATEGORIES = [
-    { id: 'before',  label: 'Antes',   color: '#3B82F6' },
-    { id: 'during',  label: 'Durante', color: '#7C3AED' },
-    { id: 'after',   label: 'Depois',  color: '#10B981' },
-    { id: 'summary', label: 'Resumo',  color: '#F59E0B' },
+    { id: 'captacao',  label: 'Captacao',  color: '#6366F1' },
+    { id: 'before',    label: 'Antes',     color: '#3B82F6' },
+    { id: 'during',    label: 'Durante',   color: '#7C3AED' },
+    { id: 'after',     label: 'Depois',    color: '#10B981' },
+    { id: 'pos',       label: 'Pos',       color: '#0891B2' },
+    { id: 'orcamento', label: 'Orcamento', color: '#F59E0B' },
+  ]
+
+  var TASK_ASSIGNEES = [
+    { id: 'sdr',        label: 'SDR / Comercial' },
+    { id: 'secretaria', label: 'Secretaria' },
+    { id: 'cs',         label: 'CS / Pos-venda' },
+    { id: 'clinica',    label: 'Equipe Clinica' },
+    { id: 'gestao',     label: 'Gestao' },
+  ]
+
+  var TASK_PRIORITIES = [
+    { id: 'urgente', label: 'Urgente', color: '#DC2626' },
+    { id: 'alta',    label: 'Alta',    color: '#F59E0B' },
+    { id: 'normal',  label: 'Normal',  color: '#3B82F6' },
+    { id: 'baixa',   label: 'Baixa',   color: '#6B7280' },
   ]
 
   var TEMPLATE_VARS = [
@@ -145,5 +166,6 @@
     getActive, getByTrigger, getByCategory, getByStatus, getByTag,
     renderTemplate,
     TRIGGER_TYPES, RECIPIENT_TYPES, CHANNELS, CATEGORIES, TEMPLATE_VARS,
+    TASK_ASSIGNEES, TASK_PRIORITIES,
   })
 })()

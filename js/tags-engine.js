@@ -312,6 +312,11 @@ function applyTag(eid, etype, tagId, appliedBy, vars) {
   // 5. Notificar UI
   if (window.onTagApplied) window.onTagApplied(eid, etype, tagId)
 
+  // 6. AutomationsEngine: dispatch on_tag rules
+  if (window.AutomationsEngine) {
+    AutomationsEngine.processTag(eid, etype, tagId, vars || {})
+  }
+
   return { ok:true }
 }
 

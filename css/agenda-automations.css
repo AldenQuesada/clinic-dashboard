@@ -92,6 +92,9 @@
 .aa-fmt-btn { width:26px; height:24px; border-radius:4px; border:1px solid var(--border); background:#fff; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; }
 .aa-fmt-btn:hover { background:var(--bg-secondary); }
 
+/* Section title in editor */
+.aa-section-title { font-size:12px; font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px; margin:16px 0 8px; padding-top:12px; border-top:1px solid var(--border, #E2E8F0); }
+
 /* Trigger config */
 .aa-trigger-config { padding:8px 0; }
 

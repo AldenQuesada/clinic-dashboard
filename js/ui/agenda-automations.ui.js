@@ -42,12 +42,27 @@
       content_template: '',
       alert_title: '',
       alert_type: 'info',
+      task_title: '',
+      task_assignee: 'sdr',
+      task_priority: 'normal',
+      task_deadline_hours: 24,
       is_active: true,
       sort_order: 0,
     }
   }
 
   var _svc = function() { return window.AgendaAutomationsService }
+
+  function _channelIncludes(channel, type) {
+    if (!channel) return false
+    if (channel === type) return true
+    if (channel === 'both') return type === 'whatsapp' || type === 'alert'
+    if (channel === 'all') return true
+    if (channel === 'whatsapp_alert') return type === 'whatsapp' || type === 'alert'
+    if (channel === 'whatsapp_task') return type === 'whatsapp' || type === 'task'
+    if (channel === 'alert_task') return type === 'alert' || type === 'task'
+    return false
+  }
 
   // ── Status & Trigger labels ────────────────────────────────
   var STATUS_OPTIONS = [
@@ -63,9 +78,10 @@
     { id:'no_show', label:'No-show' },
   ]
 
-  var CATEGORY_COLORS = { before:'#3B82F6', during:'#7C3AED', after:'#10B981', summary:'#F59E0B' }
-  var CATEGORY_LABELS = { before:'Antes', during:'Durante', after:'Depois', summary:'Resumo' }
-  var CHANNEL_ICONS   = { whatsapp:'messageCircle', alert:'bell', both:'radio' }
+  var CATEGORY_COLORS = { captacao:'#6366F1', before:'#3B82F6', during:'#7C3AED', after:'#10B981', pos:'#0891B2', orcamento:'#F59E0B' }
+  var CATEGORY_LABELS = { captacao:'Captacao', before:'Antes', during:'Durante', after:'Depois', pos:'Pos', orcamento:'Orcamento' }
+  var CHANNEL_ICONS   = { whatsapp:'messageCircle', alert:'bell', task:'clipboard', whatsapp_alert:'radio', whatsapp_task:'radio', alert_task:'radio', all:'radio', both:'radio' }
+  var CHANNEL_LABELS  = { whatsapp:'WhatsApp', alert:'Alerta', task:'Tarefa', whatsapp_alert:'WA+Alerta', whatsapp_task:'WA+Tarefa', alert_task:'Alerta+Tarefa', all:'Todos', both:'WA+Alerta' }
   var RECIPIENT_ICONS = { patient:'user', professional:'briefcase', both:'users' }
 
   // ── Load ───────────────────────────────────────────────────
@@ -94,7 +110,7 @@
 
   // ── Center: rules list ─────────────────────────────────────
   function _renderCenterPanel() {
-    var cats = ['all','before','during','after']
+    var cats = ['all','captacao','before','during','after','pos','orcamento']
     var tabs = cats.map(function(c) {
       var active = _filterCategory === c ? ' aa-tab-active' : ''
       var label = c === 'all' ? 'Todas' : CATEGORY_LABELS[c]
@@ -150,7 +166,7 @@
     var channelIcon = CHANNEL_ICONS[r.channel] || 'messageCircle'
 
     var recipientLabel = r.recipient_type === 'patient' ? 'Paciente' : r.recipient_type === 'professional' ? 'Profissional' : 'Ambos'
-    var channelLabel = r.channel === 'whatsapp' ? 'WhatsApp' : r.channel === 'alert' ? 'Alerta' : 'Ambos'
+    var channelLabel = CHANNEL_LABELS[r.channel] || r.channel
 
     // Delete confirmation
     if (_deleteConfirm === r.id) {
@@ -242,12 +258,21 @@
       + '</div>'
 
     // Show WhatsApp preview if channel includes whatsapp
-    if (r.channel === 'whatsapp' || r.channel === 'both') {
+    if (_channelIncludes(r.channel, 'whatsapp')) {
       html += _renderPhonePreview(rendered)
     }
 
     // Show alert preview if channel includes alert
-    if (r.channel === 'alert' || r.channel === 'both') {
+    if (_channelIncludes(r.channel, 'task') && r.task_title) {
+      var tColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[r.task_priority] || '#3B82F6'
+      html += '<div style="margin-top:12px;padding:12px;border-radius:8px;border-left:4px solid ' + tColor + ';background:' + tColor + '08;font-size:13px">'
+        + '<div style="font-weight:600;color:' + tColor + '">' + _feather('clipboard', 14) + ' Tarefa</div>'
+        + '<div style="margin-top:4px">' + _esc(r.task_title) + '</div>'
+        + '<div style="margin-top:2px;font-size:11px;color:var(--text-secondary)">Para: ' + (r.task_assignee||'sdr') + ' | Prazo: ' + (r.task_deadline_hours||24) + 'h | ' + (r.task_priority||'normal') + '</div>'
+        + '</div>'
+    }
+
+    if (_channelIncludes(r.channel, 'alert')) {
       var alertColor = { info:'#3B82F6', warning:'#F59E0B', success:'#10B981', error:'#DC2626' }[r.alert_type] || '#3B82F6'
       var alertTitle = _svc().renderTemplate(r.alert_title, vars)
       html += '<div style="margin-top:12px;padding:12px;border-radius:8px;border-left:4px solid ' + alertColor + ';background:' + alertColor + '10;font-size:13px">'
@@ -338,8 +363,8 @@
     })
     html += '</div></div>'
 
-    // Content template (show if whatsapp or both)
-    if (f.channel === 'whatsapp' || f.channel === 'both') {
+    // Content template (show if channel includes whatsapp)
+    if (_channelIncludes(f.channel, 'whatsapp')) {
       html += '<div class="aa-field"><label>Mensagem WhatsApp</label>'
 
       // Variable tags bar
@@ -363,8 +388,9 @@
       html += _renderPhonePreview(_svc().renderTemplate(f.content_template, { nome:'Maria Silva', data:'15/04/2026', hora:'14:30', profissional:'Dra. Mirian', procedimento:'Bioestimulador', clinica:'Clinica' }))
     }
 
-    // Alert config (show if alert or both)
-    if (f.channel === 'alert' || f.channel === 'both') {
+    // Alert config (show if channel includes alert)
+    if (_channelIncludes(f.channel, 'alert')) {
+      html += '<div class="aa-section-title">' + _feather('bell', 14) + ' Alerta Visual</div>'
       html += '<div class="aa-field"><label>Titulo do Alerta</label>'
         + '<input type="text" id="aaAlertTitle" value="' + _esc(f.alert_title) + '" placeholder="Ex: Paciente chegou: {{nome}}">'
         + '</div>'
@@ -374,6 +400,37 @@
         + '<option value="success"' + (f.alert_type==='success'?' selected':'') + '>Sucesso</option>'
         + '<option value="error"' + (f.alert_type==='error'?' selected':'') + '>Erro</option>'
         + '</select></div>'
+    }
+
+    // Task config (show if channel includes task)
+    if (_channelIncludes(f.channel, 'task')) {
+      html += '<div class="aa-section-title">' + _feather('clipboard', 14) + ' Tarefa</div>'
+      html += '<div class="aa-field"><label>Titulo da Tarefa</label>'
+        + '<input type="text" id="aaTaskTitle" value="' + _esc(f.task_title || '') + '" placeholder="Ex: Confirmar presenca do paciente">'
+        + '</div>'
+      html += '<div class="aa-field-row">'
+      html += '<div class="aa-field"><label>Responsavel</label><select id="aaTaskAssignee">'
+      svc.TASK_ASSIGNEES.forEach(function(a) {
+        html += '<option value="' + a.id + '"' + ((f.task_assignee||'sdr')===a.id?' selected':'') + '>' + a.label + '</option>'
+      })
+      html += '</select></div>'
+      html += '<div class="aa-field"><label>Prioridade</label><select id="aaTaskPriority">'
+      svc.TASK_PRIORITIES.forEach(function(p) {
+        html += '<option value="' + p.id + '"' + ((f.task_priority||'normal')===p.id?' selected':'') + '>' + p.label + '</option>'
+      })
+      html += '</select></div>'
+      html += '<div class="aa-field"><label>Prazo (h)</label>'
+        + '<input type="number" id="aaTaskDeadline" min="1" max="720" value="' + (f.task_deadline_hours||24) + '">'
+        + '</div>'
+      html += '</div>'
+
+      // Task preview
+      var taskPrevColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[f.task_priority||'normal'] || '#3B82F6'
+      html += '<div style="margin-top:8px;padding:10px;border-radius:8px;border-left:4px solid ' + taskPrevColor + ';background:' + taskPrevColor + '08;font-size:12px">'
+        + '<div style="font-weight:700;color:' + taskPrevColor + '">' + _feather('clipboard', 12) + ' Preview Tarefa</div>'
+        + '<div style="margin-top:4px">' + _esc(f.task_title || 'Titulo da tarefa') + '</div>'
+        + '<div style="margin-top:2px;color:var(--text-secondary);font-size:11px">Para: ' + (f.task_assignee||'sdr') + ' | Prazo: ' + (f.task_deadline_hours||24) + 'h | ' + (f.task_priority||'normal') + '</div>'
+        + '</div>'
     }
 
     return html
@@ -430,6 +487,10 @@
     _form.content_template = val('aaContent')
     _form.alert_title = val('aaAlertTitle')
     _form.alert_type = val('aaAlertType') || 'info'
+    _form.task_title = val('aaTaskTitle')
+    _form.task_assignee = val('aaTaskAssignee') || 'sdr'
+    _form.task_priority = val('aaTaskPriority') || 'normal'
+    _form.task_deadline_hours = parseInt(val('aaTaskDeadline')) || 24
 
     var cat = document.querySelector('input[name=aaCategory]:checked')
     if (cat) _form.category = cat.value
@@ -499,7 +560,9 @@
             trigger_type: r.trigger_type, trigger_config: r.trigger_config||{},
             recipient_type: r.recipient_type, channel: r.channel,
             content_template: r.content_template||'', alert_title: r.alert_title||'',
-            alert_type: r.alert_type||'info', is_active: r.is_active, sort_order: r.sort_order||0,
+            alert_type: r.alert_type||'info', task_title: r.task_title||'',
+            task_assignee: r.task_assignee||'sdr', task_priority: r.task_priority||'normal',
+            task_deadline_hours: r.task_deadline_hours||24, is_active: r.is_active, sort_order: r.sort_order||0,
           }
           _panelTab = 'editor'; _render()
         }

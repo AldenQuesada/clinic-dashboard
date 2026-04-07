@@ -140,30 +140,12 @@ function scheduleAutomations(appt) {
   const dt = new Date(`${appt.data}T${appt.horaInicio}:00`)
   if (isNaN(dt.getTime())) return
 
-  // ── Server-side: WhatsApp messages go directly to wa_outbox ──
-  // Cancel any previous automations for this appointment first
-  if (window._sbShared && appt.id) {
-    window._sbShared.rpc('wa_outbox_cancel_by_appt', { p_appt_ref: appt.id })
+  // ── Delegate to AutomationsEngine (reads rules from DB) ──
+  if (window.AutomationsEngine) {
+    AutomationsEngine.processAppointment(appt)
   }
 
-  const phone = (_getPhone(appt) || '').replace(/\D/g, '')
-  if (phone && window._sbShared) {
-    const vars = _waVars(appt)
-
-    // D-1: confirmacao (dia anterior as 10h)
-    const d1 = new Date(dt); d1.setDate(d1.getDate()-1); d1.setHours(10,0,0,0)
-    _scheduleWA(phone, WA_TPLS.confirmacao.fn(vars), appt, d1, 'confirmacao')
-
-    // D-0: chegou o dia (mesmo dia as 8h)
-    const d0 = new Date(dt); d0.setHours(8,0,0,0)
-    _scheduleWA(phone, WA_TPLS.chegou_o_dia.fn(vars), appt, d0, 'chegou_o_dia')
-
-    // 30min antes: msg WhatsApp
-    const d30wa = new Date(dt); d30wa.setMinutes(d30wa.getMinutes()-30)
-    _scheduleWA(phone, WA_TPLS.antes.fn(vars), appt, d30wa, 'antes')
-  }
-
-  // ── Client-side only: status change + internal notification ──
+  // ── Client-side only: status change queue ──
   const q = _getQueue().filter(x => x.apptId !== appt.id)
   const push = (trigger, date, type) => q.push({
     id:          'aut_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
@@ -177,25 +159,7 @@ function scheduleAutomations(appt) {
   const d30 = new Date(dt); d30.setMinutes(d30.getMinutes()-30)
   push('30min_antes', d30, 'status_aguardando')
 
-  const d10 = new Date(dt); d10.setMinutes(d10.getMinutes()-10)
-  push('10min_antes', d10, 'notif_interna')
-
   _saveQueue(q)
-}
-
-function _scheduleWA(phone, content, appt, scheduledAt, tplKey) {
-  if (!window._sbShared) return
-  window._sbShared.rpc('wa_outbox_schedule_automation', {
-    p_phone:        phone,
-    p_content:      content,
-    p_lead_id:      appt.pacienteId || '',
-    p_lead_name:    appt.pacienteNome || 'Paciente',
-    p_scheduled_at: scheduledAt.toISOString(),
-    p_appt_ref:     appt.id
-  }).then(function(res) {
-    if (res.error) console.error('[AutoWA] Falha ao agendar', tplKey, ':', res.error.message)
-    else _logAuto(appt.id, 'wa_' + tplKey, 'agendado_server')
-  }).catch(function(e) { console.error('[AutoWA] Exception:', e) })
 }
 
 function processQueue() {
@@ -285,28 +249,27 @@ function apptTransition(id, newStatus, by) {
   if (newStatus === 'cancelado' || newStatus === 'no_show') {
     const q = _getQueue().map(x => x.apptId === id ? {...x, executed:true} : x)
     _saveQueue(q)
-    // Cancel server-side scheduled messages too
     if (window._sbShared) {
       window._sbShared.rpc('wa_outbox_cancel_by_appt', { p_appt_ref: id })
     }
   }
-  if (newStatus === 'no_show') _createNoShowTask(appt)
+
+  // ── AutomationsEngine: dispatch on_status rules ──
+  if (window.AutomationsEngine) {
+    AutomationsEngine.processStatusChange(appt, newStatus)
+    if (newStatus === 'finalizado') AutomationsEngine.processFinalize(appt)
+  }
 
   // Hook SDR unificado: disparar regras + mudar fase do lead
   if (appt.pacienteId && window.SdrService) {
     if (newStatus === 'finalizado') {
       SdrService.onLeadAttended(appt.pacienteId)
-      // Sempre vai pra paciente no minimo (orcamento e tratado no confirmFinalize)
       if (SdrService.changePhase) SdrService.changePhase(appt.pacienteId, 'paciente', 'finalizacao-auto')
     }
   }
 
-  // Ações contextuais
-  if (newStatus === 'na_clinica') {
-    setTimeout(() => _showChecklist(appt, 'na_clinica'), 200)
-    // Enviar consentimento de imagem automaticamente via WhatsApp
-    _enviarConsentimento(appt, 'imagem')
-  }
+  // Ações contextuais (checklists + recovery modals only)
+  if (newStatus === 'na_clinica') setTimeout(() => _showChecklist(appt, 'na_clinica'), 200)
   if (newStatus === 'em_consulta') setTimeout(() => _showChecklist(appt, 'em_consulta'), 200)
   if (newStatus === 'cancelado')   setTimeout(() => _openRecovery(appt), 400)
   if (newStatus === 'no_show')     setTimeout(() => _openRecovery(appt), 400)
