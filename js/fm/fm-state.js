@@ -45,6 +45,8 @@
   FM._selectedProduct = ''
   FM._nextId = 1
   FM._exportCanvas = null
+  FM._landmarkData = null   // MediaPipe 468 landmarks
+  FM._skinAnalysis = null   // OpenCV skin scores
 
   // Undo/Redo history (snapshots of annotations)
   FM._undoStack = []

@@ -22,8 +22,24 @@
       var btn = document.querySelector('.fm-btn-primary')
       if (btn) { var origBtn = btn.innerHTML; btn.textContent = 'Analisando com IA...' }
 
-      console.log('[FaceMapping] Calling GPT via n8n webhook...')
+      console.log('[FaceMapping] Calling GPT + Python skin analysis...')
       FM._showLoading('Analisando rosto com IA...')
+
+      // Call Python skin analysis in parallel (fire-and-forget enrichment)
+      var pyApi = FM.FACIAL_API_URL || 'http://localhost:8100'
+      fetch(pyApi + '/analyze-skin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_base64: b64 }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (skin) {
+        if (skin.success) {
+          FM._skinAnalysis = skin.scores
+          console.log('[FaceMapping] Skin analysis:', skin.scores)
+        }
+      })
+      .catch(function () { /* silent — skin analysis is optional */ })
 
       // 5-second timeout via AbortController
       var controller = new AbortController()

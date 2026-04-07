@@ -41,6 +41,8 @@
 
     _undo: FM._undo,
     _redo: FM._redo,
+    _autoAnalyze: FM._autoAnalyze,
+    _autoDetectZones: FM._autoDetectZones,
     _openCompare: FM._openCompare,
     _closeCompare: FM._closeCompare,
     _exportCompare: FM._exportCompare,

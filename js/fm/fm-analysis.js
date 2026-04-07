@@ -258,6 +258,145 @@
     })
   }
 
+  // ── Auto-analyze via Python API ─────────────────────────────
+
+  FM._autoAnalyze = function () {
+    var angle = FM._activeAngle || 'front'
+    if (!FM._photoUrls[angle]) {
+      FM._showToast('Envie uma foto primeiro.', 'warn')
+      return
+    }
+
+    FM._showLoading('Analisando rosto com IA...')
+
+    // Convert photo to base64
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
+
+      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8100'
+      var controller = new AbortController()
+      var timeout = setTimeout(function () { controller.abort() }, 8000)
+
+      fetch(apiUrl + '/landmarks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({ photo_base64: b64 }),
+      })
+      .then(function (res) { clearTimeout(timeout); return res.json() })
+      .then(function (data) {
+        FM._hideLoading()
+        if (!data.success) {
+          FM._showToast('Nenhum rosto detectado na foto.', 'error')
+          return
+        }
+
+        // Auto-position terco lines from landmarks
+        FM._tercoLines.hairline = data.key_points.forehead.y
+        FM._tercoLines.brow = (data.landmarks[70].y + data.landmarks[300].y) / 2
+        FM._tercoLines.noseBase = data.landmarks[2].y
+        FM._tercoLines.chin = data.key_points.chin.y
+
+        // Auto-position Ricketts points
+        FM._rickettsPoints.nose = { x: data.key_points.nose_tip.x, y: data.key_points.nose_tip.y }
+        FM._rickettsPoints.chin = { x: data.key_points.chin.x, y: data.key_points.chin.y }
+
+        // Store full landmark data
+        FM._landmarkData = data
+
+        FM._showToast('468 pontos faciais detectados! Tercos e Ricketts posicionados.', 'success')
+        FM._autoSave()
+        FM._redraw()
+      })
+      .catch(function (err) {
+        clearTimeout(timeout)
+        FM._hideLoading()
+        FM._showToast('API offline. Posicione manualmente.', 'warn')
+      })
+    }
+    img.src = FM._photoUrls[angle]
+  }
+
+  FM._autoDetectZones = function () {
+    var angle = FM._activeAngle || '45'
+    if (!FM._photoUrls[angle]) {
+      FM._showToast('Envie uma foto primeiro.', 'warn')
+      return
+    }
+
+    FM._showLoading('Detectando zonas automaticamente...')
+
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
+
+      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8100'
+      var controller = new AbortController()
+      var timeout = setTimeout(function () { controller.abort() }, 8000)
+
+      fetch(apiUrl + '/auto-zones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({ photo_base64: b64 }),
+      })
+      .then(function (res) { clearTimeout(timeout); return res.json() })
+      .then(function (data) {
+        FM._hideLoading()
+        if (!data.success || !data.zones || data.zones.length === 0) {
+          FM._showToast('Nenhuma zona detectada.', 'warn')
+          return
+        }
+
+        // Create annotations from detected zones
+        FM._pushUndo()
+        var imgW = FM._imgW || 400
+        var imgH = FM._imgH || 500
+
+        data.zones.forEach(function (z) {
+          var zoneDef = FM.ZONES.find(function (zd) { return zd.id === z.zone })
+          if (!zoneDef) return
+
+          // Convert normalized coords to canvas coords
+          var cx = z.center.x * imgW
+          var cy = z.center.y * imgH
+          var rx = imgW * 0.06  // default ellipse size
+          var ry = imgH * 0.04
+
+          FM._annotations.push({
+            id: FM._nextId++,
+            angle: angle,
+            zone: z.zone,
+            treatment: zoneDef.defaultTx || 'ah',
+            ml: zoneDef.min || 0.5,
+            product: '',
+            side: z.side || 'bilateral',
+            shape: { x: cx, y: cy, rx: rx, ry: ry },
+          })
+        })
+
+        FM._simPhotoUrl = null
+        FM._autoSave()
+        FM._redraw()
+        FM._refreshToolbar()
+        FM._showToast(data.zones.length + ' zonas detectadas automaticamente!', 'success')
+      })
+      .catch(function (err) {
+        clearTimeout(timeout)
+        FM._hideLoading()
+        FM._showToast('API offline. Marque manualmente.', 'warn')
+      })
+    }
+    img.src = FM._photoUrls[angle]
+  }
+
   FM._toggleFullscreen = function () {
     var area = document.getElementById('fmCanvasArea')
     if (!area) return
