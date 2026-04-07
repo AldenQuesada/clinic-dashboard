@@ -445,6 +445,46 @@ async def detect_zones(req: LandmarkRequest):
         raise HTTPException(500, detail=str(e))
 
 
+# ── Protocol Recommendation ──────────────────────────────────
+
+class ProtocolRequest(BaseModel):
+    photo_base64: str
+    complaint: Optional[str] = ''
+    lead_name: Optional[str] = 'Paciente'
+
+
+@app.post("/recommend-protocol")
+async def recommend(req: ProtocolRequest):
+    """AI-powered treatment protocol recommendation based on facial analysis."""
+    t0 = time.time()
+    try:
+        from protocol_engine import recommend_protocol
+
+        img_cv = b64_to_cv2(req.photo_base64)
+        result = recommend_protocol(img_cv, req.complaint or '')
+
+        if result is None:
+            return {"success": False, "error": "No face detected"}
+
+        elapsed = round(time.time() - t0, 2)
+        result['elapsed_s'] = elapsed
+        result['success'] = True
+        result['lead_name'] = req.lead_name
+
+        log.info(
+            f"Protocol recommended in {elapsed}s | "
+            f"class={result['classification']} | "
+            f"AH={result['totals']['ah_ml']}mL | "
+            f"Botox={result['totals']['botox_units']}U | "
+            f"Bio={result['totals']['bio_sessions']} sessions"
+        )
+
+        return result
+    except Exception as e:
+        log.error(f"Protocol recommendation failed: {e}")
+        raise HTTPException(500, detail=str(e))
+
+
 # ── Health Check ─────────────────────────────────────────────
 
 @app.get("/health")
