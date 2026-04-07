@@ -1329,7 +1329,7 @@ function _checkDailySummary() {
   }).join('\n\n')
 
   var footer = '\n\n━━━━━━━━━━━━━━━━━━━━━━\n'
-  footer += 'Bom dia e bom trabalho!'
+  footer += 'Bom dia e sucesso Dra. Mirian!'
 
   var msg = header + body + footer
 
@@ -1353,7 +1353,7 @@ function _checkDailySummary() {
         var obs = a.obs ? '\n   Obs: ' + a.obs : ''
         return idx + '. *' + nome + '*\n   ' + proc + '\n   ' + hora + obs
       }).join('\n\n')
-      if (gi === grupos.length - 1) partBody += '\n\n━━━━━━━━━━━━━━━━━━━━━━\nBom dia e bom trabalho!'
+      if (gi === grupos.length - 1) partBody += '\n\n━━━━━━━━━━━━━━━━━━━━━━\nBom dia e sucesso Dra. Mirian!'
       parts.push(partHeader + partBody)
     })
   }
