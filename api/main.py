@@ -1,10 +1,16 @@
 """
-ClinicAI — Facial Analysis API
-FastAPI backend for face processing: background removal, landmarks, skin analysis
+ClinicAI — Facial Analysis API v2.0
+FastAPI backend for face processing: background removal, landmarks, skin analysis,
+image enhancement, face scanning, and treatment simulation.
+
+Architecture:
+  main.py         — Core endpoints (BG removal, landmarks, skin, zones, collagen, protocol)
+  routers/        — Feature-specific routers (enhance, scanner, skin_v2, simulate)
+  engines/        — Business logic engines (collagen, protocol, landmark, skin, warp)
+  utils/          — Shared utilities (image helpers, color grading, face parsing, pipeline)
+  models/         — Pre-trained model weights (lazy-loaded)
 """
 
-import base64
-import io
 import time
 import logging
 from typing import Optional
@@ -16,14 +22,17 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from utils.image_helpers import b64_to_image, b64_to_cv2, image_to_b64, cv2_to_b64
+
 # Lazy imports (heavy models loaded on first use)
 _rembg_session = None
 _mp_face_mesh = None
 
 app = FastAPI(
     title="ClinicAI Facial API",
-    version="1.0.0",
+    version="2.0.0",
     docs_url="/docs",
+    description="Professional facial analysis, enhancement, and treatment planning API",
 )
 
 app.add_middleware(
@@ -35,6 +44,16 @@ app.add_middleware(
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("facial-api")
+
+# ── Register Routers ────────────────────────────────────────
+from routers.enhance import router as enhance_router
+from routers.scanner import router as scanner_router
+from routers.skin_v2 import router as skin_v2_router
+from routers.simulate import router as simulate_router
+app.include_router(enhance_router)
+app.include_router(scanner_router)
+app.include_router(skin_v2_router)
+app.include_router(simulate_router)
 
 
 # ── Models ───────────────────────────────────────────────────
@@ -49,38 +68,6 @@ class LandmarkRequest(BaseModel):
 class AnalyzeRequest(BaseModel):
     photo_base64: str
     zones: Optional[list] = []
-
-
-# ── Helpers ──────────────────────────────────────────────────
-
-def b64_to_image(b64: str) -> Image.Image:
-    """Convert base64 string to PIL Image."""
-    if "," in b64:
-        b64 = b64.split(",")[1]
-    data = base64.b64decode(b64)
-    return Image.open(io.BytesIO(data)).convert("RGBA")
-
-
-def b64_to_cv2(b64: str) -> np.ndarray:
-    """Convert base64 string to OpenCV BGR image."""
-    if "," in b64:
-        b64 = b64.split(",")[1]
-    data = base64.b64decode(b64)
-    arr = np.frombuffer(data, np.uint8)
-    return cv2.imdecode(arr, cv2.IMREAD_COLOR)
-
-
-def image_to_b64(img: Image.Image, fmt: str = "PNG") -> str:
-    """Convert PIL Image to base64 string."""
-    buf = io.BytesIO()
-    img.save(buf, format=fmt, quality=95)
-    return base64.b64encode(buf.getvalue()).decode("utf-8")
-
-
-def cv2_to_b64(img: np.ndarray, fmt: str = ".png") -> str:
-    """Convert OpenCV image to base64 string."""
-    _, buf = cv2.imencode(fmt, img)
-    return base64.b64encode(buf.tobytes()).decode("utf-8")
 
 
 # ── Background Removal ──────────────────────────────────────
@@ -522,17 +509,31 @@ async def recommend(req: ProtocolRequest):
 
 @app.get("/health")
 async def health():
+    from utils.image_pipeline import get_enhancement_capabilities
+    caps = get_enhancement_capabilities()
     return {
         "status": "ok",
         "service": "ClinicAI Facial API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "models": {
             "rembg": _rembg_session is not None,
             "mediapipe": _mp_face_mesh is not None,
+            "super_resolution": caps["super_resolution"]["available"],
+            "face_restore": caps["face_restore"]["available"],
         },
     }
 
 
 @app.get("/")
 async def root():
-    return {"message": "ClinicAI Facial API", "docs": "/docs"}
+    return {
+        "message": "ClinicAI Facial API v2.0",
+        "docs": "/docs",
+        "endpoints": {
+            "core": ["/remove-bg", "/landmarks", "/analyze-skin", "/auto-zones", "/collagen-score", "/recommend-protocol"],
+            "enhance": ["/enhance/normalize", "/enhance/full", "/enhance/segment-skin", "/enhance/quality", "/enhance/capabilities"],
+            "scanner": ["/scanner/scan-face", "/scanner/measure", "/scanner/classify-face", "/scanner/zone-centers"],
+            "skin_v2": ["/skin/analyze", "/skin/heatmap", "/skin/zone-report"],
+            "simulate": ["/simulate/preview", "/simulate/compare"],
+        },
+    }
