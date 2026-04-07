@@ -120,9 +120,26 @@ async def remove_background(req: PhotoRequest):
         composite = Image.alpha_composite(black_bg, result_refined)
         final = composite.convert("RGB")
 
-        # No auto-crop — user controls framing in the crop modal
+        # Auto-crop to face with generous margin (forehead + chin space)
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
+
+        face_cascade = get_face_cascade()
+        gray = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+        if len(faces) > 0:
+            fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
+            ih, iw = final_bgr.shape[:2]
+            # Tight face crop: forehead/hair above, chin below, no body
+            margin_top = int(fh * 0.45)
+            margin_bottom = int(fh * 0.15)
+            margin_side = int(fw * 0.25)
+            x1 = max(0, fx - margin_side)
+            y1 = max(0, fy - margin_top)
+            x2 = min(iw, fx + fw + margin_side)
+            y2 = min(ih, fy + fh + margin_bottom)
+            final_bgr = final_bgr[y1:y2, x1:x2]
+            log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
 
         # Subtle unsharp mask — restore detail without creating artifacts
         gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
