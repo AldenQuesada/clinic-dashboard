@@ -1688,7 +1688,7 @@
             <div id="cs_panel_alexa" style="display:none">
               <div class="cs-subsection-hdr">Integracao Alexa — Notificacoes de Chegada</div>
               <div style="background:#ECFEFF;border:1px solid #06B6D440;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:12px;color:#0891B2;line-height:1.6">
-                <strong>Como funciona:</strong> Quando a secretaria marca a paciente como "Na Clinica", a Alexa da recepcao da as boas-vindas e a Alexa da sala do profissional avisa que a paciente chegou. Configure o webhook do n8n e os nomes dos dispositivos abaixo.
+                <strong>Como funciona:</strong> Quando a secretaria marca a paciente como "Na Clinica", a Alexa da recepcao da as boas-vindas e a Alexa da sala do profissional avisa que a paciente chegou. Configure o webhook do n8n e registre todos os dispositivos abaixo.
               </div>
 
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
@@ -1704,29 +1704,21 @@
                 #sc_alexa_active:checked + .alexa-toggle-track::before { transform:translateX(18px) }
               </style>
 
+              <!-- Config global -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                 <div style="grid-column:1/span 2">
                   <label class="cs-label">Webhook URL (n8n)</label>
                   <input id="sc_alexa_webhook" type="url" placeholder="https://flows.aldenquesada.site/webhook/alexa-announce" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
-                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">URL do webhook no n8n que recebe os eventos de chegada</div>
-                </div>
-                <div>
-                  <label class="cs-label">Nome do Dispositivo — Recepcao</label>
-                  <input id="sc_alexa_reception" type="text" placeholder="Recepcao" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
-                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Nome da Alexa na recepcao (boas-vindas)</div>
-                </div>
-                <div>
-                  <label class="cs-label">Dispositivos das Salas</label>
-                  <div style="font-size:12px;color:#6B7280;padding:9px 0">Configurados em cada sala (Settings > Salas)</div>
+                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">URL do webhook no n8n que recebe os eventos</div>
                 </div>
               </div>
 
+              <!-- Templates de mensagem -->
               <div style="margin-top:18px;padding-top:14px;border-top:1px solid #F3F4F6">
                 <label class="cs-label">Mensagem de Boas-vindas (Recepcao)</label>
                 <input id="sc_alexa_welcome" type="text" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
                 <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Variaveis: {{nome}}, {{profissional}}, {{hora}}, {{procedimento}}, {{sala}}</div>
               </div>
-
               <div style="margin-top:14px">
                 <label class="cs-label">Mensagem para a Sala do Profissional</label>
                 <input id="sc_alexa_room_msg" type="text" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
@@ -1735,7 +1727,42 @@
 
               <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px">
                 <button onclick="testAlexaNotification()" style="padding:9px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Testar Notificacao</button>
-                <button onclick="saveAlexaConfig()" style="padding:9px 20px;background:linear-gradient(135deg,#06B6D4,#0891B2);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Salvar Configuracao Alexa</button>
+                <button onclick="saveAlexaConfig()" style="padding:9px 20px;background:linear-gradient(135deg,#06B6D4,#0891B2);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Salvar Config Global</button>
+              </div>
+
+              <!-- ═══════════════════════════════════════════════
+                   DISPOSITIVOS ALEXA — Registro centralizado
+              ═══════════════════════════════════════════════ -->
+              <div style="margin-top:28px;padding-top:20px;border-top:2px solid #E5E7EB">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                  <div>
+                    <div style="font-size:14px;font-weight:700;color:#111">Dispositivos Alexa</div>
+                    <div style="font-size:11px;color:#9CA3AF;margin-top:2px">Registre todos os Echo/Alexa da clinica. Vincule a uma sala e/ou funcionario.</div>
+                  </div>
+                  <button onclick="addAlexaDeviceRow()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#06B6D4,#0891B2);color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Adicionar Dispositivo
+                  </button>
+                </div>
+
+                <!-- Header da tabela -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 140px 60px;gap:10px;padding:8px 12px;background:#F9FAFB;border-radius:8px;margin-bottom:6px">
+                  <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em">Nome do Dispositivo</div>
+                  <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em">Sala</div>
+                  <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em">Funcionario</div>
+                  <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em">Local/Rotulo</div>
+                  <div style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;text-align:center">Acoes</div>
+                </div>
+
+                <!-- Lista dinamica de dispositivos -->
+                <div id="alexa_devices_list" style="display:flex;flex-direction:column;gap:6px">
+                  <div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando dispositivos...</div>
+                </div>
+
+                <!-- Contador -->
+                <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+                  <div id="alexa_devices_count" style="font-size:11px;color:#9CA3AF">0 dispositivos registrados</div>
+                </div>
               </div>
             </div>
 
@@ -4837,7 +4864,8 @@
   <script src="js/prontuario.js?v=20260407p" defer></script>
   <script src="js/team.js?v=20260407p" defer></script>
   <script src="js/clinic-settings.js?v=20260407p" defer></script>
-  <script src="js/alexa-settings.js?v=20260407q" defer></script>
+  <script src="js/repositories/alexa-devices.repository.js?v=20260407r" defer></script>
+  <script src="js/alexa-settings.js?v=20260407r" defer></script>
   <script src="js/users-admin.js?v=20260407p" defer></script>
   <script src="js/professionals.js?v=20260407p" defer></script>
   <!-- Módulos extraídos de api.js — devem carregar ANTES de api.js -->
