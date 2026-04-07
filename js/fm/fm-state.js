@@ -16,6 +16,8 @@
   FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
   FM._lastAnalysis = null  // GPT analysis result
   FM._editorMode = 'zones' // 'zones' | 'vectors' | 'analysis'
+  FM._activeTab = 'zones'  // 'simetria' | 'zones' | 'vectors' | 'analysis'
+  FM._viewMode = '1x'     // '1x' | '2x'
   FM._vectors = []       // [{ id, zone, start:{x,y}, end:{x,y}, curve:0.3 }]
   FM._nextVecId = 1
   FM._selVec = null      // selected vector for dragging
