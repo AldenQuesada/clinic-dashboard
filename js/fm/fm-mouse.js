@@ -65,6 +65,11 @@
 
     FM._ctx.drawImage(FM._img, 0, 0, FM._imgW, FM._imgH)
 
+    // Wireframe overlay (any analysis sub-mode)
+    if (FM._editorMode === 'analysis' && FM._drawWireframe) {
+      FM._drawWireframe()
+    }
+
     // Metric lines overlay (if in metrics mode)
     if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
       if (FM._drawMetrics) FM._drawMetrics()

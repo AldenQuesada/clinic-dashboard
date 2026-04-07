@@ -66,6 +66,7 @@
 
     // 3D view
     _toggle3DView: FM._toggle3DView,
+    _toggleWireframe: FM._toggleWireframe,
 
     // Metrification
     _setMetricTool: FM._setMetricTool,

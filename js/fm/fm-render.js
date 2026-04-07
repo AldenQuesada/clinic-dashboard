@@ -43,6 +43,7 @@
         '</div>' +
         '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" title="IA detecta zonas" style="border-color:#10B981;color:#10B981">' + FM._icon('zap', 14) + ' Auto Zonas</button>' +
         '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="IA 478 pontos">' + FM._icon('cpu', 14) + ' Auto Analise</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe 478pts" style="border-color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.3)') + ';color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.5)') + '">' + FM._icon('grid', 14) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._toggle3DView()" title="3D" style="border-color:#8B5CF6;color:#8B5CF6">' + FM._icon('box', 14) + ' 3D</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openBeforeAfter()" style="border-color:#F59E0B;color:#F59E0B">' + FM._icon('columns', 14) + ' A/D</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" style="background:linear-gradient(135deg,#C8A97E,#A8895E);color:#fff;border-color:transparent">' + FM._icon('eye', 14) + ' Comparar</button>' +

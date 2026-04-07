@@ -1163,4 +1163,62 @@
     return Math.acos(cosAngle) * 180 / Math.PI
   }
 
+  // ── Wireframe 478pts overlay ──────────────────────────────
+
+  FM._showWireframe = false
+
+  FM._toggleWireframe = function () {
+    FM._showWireframe = !FM._showWireframe
+    FM._redraw()
+  }
+
+  FM._drawWireframe = function () {
+    if (!FM._showWireframe || !FM._scanData || !FM._scanData.landmarks) return
+    var ctx = FM._ctx
+    var w = FM._imgW
+    var h = FM._imgH
+    var lm = FM._scanData.landmarks
+    if (lm.length < 468) return
+
+    ctx.save()
+    ctx.strokeStyle = 'rgba(200,169,126,0.2)'
+    ctx.lineWidth = 0.5
+
+    // Face oval
+    _drawLP(ctx, lm, [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10], w, h)
+    // Left eye
+    _drawLP(ctx, lm, [33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246,33], w, h)
+    // Right eye
+    _drawLP(ctx, lm, [362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398,362], w, h)
+    // Left eyebrow
+    _drawLP(ctx, lm, [70,63,105,66,107,55,65,52,53,46], w, h)
+    // Right eyebrow
+    _drawLP(ctx, lm, [300,293,334,296,336,285,295,282,283,276], w, h)
+    // Nose
+    _drawLP(ctx, lm, [168,6,197,195,5,4,1,19,94,2], w, h)
+    // Lips outer
+    _drawLP(ctx, lm, [61,146,91,181,84,17,314,405,321,375,291,409,270,269,267,0,37,39,40,185,61], w, h)
+    // Lips inner
+    _drawLP(ctx, lm, [78,95,88,178,87,14,317,402,318,324,308,415,310,311,312,13,82,81,80,191,78], w, h)
+
+    // All 468 dots
+    ctx.fillStyle = 'rgba(200,169,126,0.15)'
+    for (var i = 0; i < Math.min(468, lm.length); i++) {
+      ctx.beginPath()
+      ctx.arc(lm[i].x * w, lm[i].y * h, 1, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.restore()
+  }
+
+  function _drawLP(ctx, lm, idx, w, h) {
+    ctx.beginPath()
+    for (var i = 0; i < idx.length; i++) {
+      if (idx[i] >= lm.length) continue
+      var px = lm[idx[i]].x * w, py = lm[idx[i]].y * h
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py)
+    }
+    ctx.stroke()
+  }
+
 })()
