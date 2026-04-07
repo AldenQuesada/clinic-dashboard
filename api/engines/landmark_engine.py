@@ -439,16 +439,16 @@ def _calculate_symmetry(kp: Dict) -> Dict:
         # Height comparison
         y_diff = abs(left["y"] - right["y"])
 
-        # Symmetry = 1 - normalized difference
+        # Symmetry = 1 - normalized difference (more sensitive to real asymmetries)
         if max(left_dist, right_dist) > 0:
-            x_sym = 1.0 - abs(left_dist - right_dist) / max(left_dist, right_dist)
+            x_sym = 1.0 - abs(left_dist - right_dist) / max(left_dist, right_dist) * 1.5
         else:
             x_sym = 1.0
 
-        y_sym = max(0, 1.0 - y_diff * 10)  # penalize height differences
+        y_sym = max(0, 1.0 - y_diff * 20)  # penalize height differences more aggressively
 
-        score = (x_sym * 0.6 + y_sym * 0.4) * 100
-        scores[name] = round(min(100, score), 1)
+        score = (x_sym * 0.5 + y_sym * 0.5) * 100
+        scores[name] = round(max(0, min(100, score)), 1)
 
     overall = round(sum(scores.values()) / len(scores), 1)
 

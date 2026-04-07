@@ -423,24 +423,31 @@ def _estimate_skin_age(
     # Filter out tiny spots (noise)
     significant_spots = sum(1 for i in range(1, num_spots) if stats[i, cv2.CC_STAT_AREA] > 20)
 
-    # Age estimation formula (calibrated for clinical use)
-    # Base age = 28 (young healthy skin)
-    base_age = 28
+    # Age estimation formula (calibrated for clinical use — real patients 30-65)
+    base_age = 30
 
-    # Wrinkle contribution: +0-30 years (primary age indicator)
-    wrinkle_years = (100 - wrinkle_score) * 0.30
+    # Wrinkle contribution: +0-35 years (primary age indicator)
+    wrinkle_years = (100 - wrinkle_score) * 0.35
 
-    # Spot contribution: +0-15 years
-    spot_years = min(15, significant_spots * 0.8)
+    # Spot contribution: +0-18 years
+    spot_years = min(18, significant_spots * 1.2)
 
     # Firmness contribution: +0-15 years
     firmness_years = (100 - firmness_score) * 0.15
 
-    # Pore contribution: +0-5 years
+    # Pore contribution: +0-7 years
     pore_score = scores.get("pores", 50)
-    pore_years = (100 - pore_score) * 0.05
+    pore_years = (100 - pore_score) * 0.07
 
-    estimated_age = base_age + wrinkle_years + spot_years + firmness_years + pore_years
+    # Pigmentation contribution: +0-8 years
+    pigment_score = scores.get("pigmentation", 50)
+    pigment_years = (100 - pigment_score) * 0.08
+
+    # Redness contribution: +0-5 years
+    redness_score_val = scores.get("redness", 50)
+    redness_years = (100 - redness_score_val) * 0.05
+
+    estimated_age = base_age + wrinkle_years + spot_years + firmness_years + pore_years + pigment_years + redness_years
 
     # Age bracket
     if estimated_age < 30:
