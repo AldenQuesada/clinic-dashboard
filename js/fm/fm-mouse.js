@@ -17,13 +17,13 @@
       var area = document.getElementById('fmCanvasArea')
       var isFS = area && area.classList.contains('fm-fullscreen')
 
-      var fixedH = isFS ? 44 : 158
+      var fixedH = isFS ? 44 : 90
       var areaW = isFS ? window.innerWidth : (area ? area.clientWidth : 800)
       var areaH = window.innerHeight - fixedH
 
       var maxW = areaW - LABEL_MARGIN - 10
       var maxH = areaH
-      var scale = Math.min(maxW / FM._img.width, maxH / FM._img.height)
+      var scale = Math.min(maxW / FM._img.width, maxH / FM._img.height, 1.5)
       FM._imgW = Math.round(FM._img.width * scale)
       FM._imgH = Math.round(FM._img.height * scale)
       FM._canvas.width = FM._imgW + LABEL_MARGIN

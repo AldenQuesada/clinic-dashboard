@@ -16,7 +16,8 @@
     overlay.className = 'fm-export-overlay'
     overlay.id = 'fmCropOverlay'
 
-    var boxW = 360, boxH = 300
+    var boxW = Math.min(520, window.innerWidth - 80)
+    var boxH = Math.min(480, window.innerHeight - 200)
 
     overlay.innerHTML =
       '<div class="fm-crop-modal">' +
@@ -77,6 +78,9 @@
 
       FM._cropRedraw()
       FM._bindCropEvents(boxW, boxH)
+
+      // Auto-zoom to face via scanner API
+      FM._cropAutoZoomFace(boxW, boxH)
     }
     FM._cropImg.src = imgSrc
   }
@@ -253,6 +257,74 @@
       src = URL.createObjectURL(FM._photos[angle])
     }
     FM._openCropModal(src, angle)
+  }
+
+  // ── Auto-zoom to face in crop modal ─────────────────────────
+
+  FM._cropAutoZoomFace = function (boxW, boxH) {
+    if (!FM._cropImg) return
+
+    // Send image to scanner to detect face rect
+    var c = document.createElement('canvas')
+    var maxDim = 640 // downscale for speed
+    var ratio = Math.min(maxDim / FM._cropImg.width, maxDim / FM._cropImg.height, 1)
+    c.width = Math.round(FM._cropImg.width * ratio)
+    c.height = Math.round(FM._cropImg.height * ratio)
+    c.getContext('2d').drawImage(FM._cropImg, 0, 0, c.width, c.height)
+    var b64 = c.toDataURL('image/jpeg', 0.7).split(',')[1]
+
+    var apiUrl = FM.FACIAL_API_URL
+    if (!apiUrl) return
+
+    fetch(apiUrl + FM.API.scanFace, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo_base64: b64, include_landmarks: false, include_measurements: false }),
+    })
+    .then(function (r) { return r.json() })
+    .then(function (data) {
+      if (!data.success || !data.face_rect) return
+
+      // face_rect is in pixels of the downscaled image — scale back to original
+      var fr = data.face_rect
+      var fx = fr.x / ratio
+      var fy = fr.y / ratio
+      var fw = fr.w / ratio
+      var fh = fr.h / ratio
+
+      // Add margin (30% around face for context — forehead, chin)
+      var margin = Math.max(fw, fh) * 0.35
+      var cx = fx + fw / 2
+      var cy = fy + fh / 2
+      var viewW = fw + margin * 2
+      var viewH = fh + margin * 2
+
+      // Calculate zoom to fill the crop box with the face
+      var zoomX = boxW / viewW
+      var zoomY = boxH / viewH
+      var newZoom = Math.min(zoomX, zoomY)
+
+      // Clamp zoom to slider range
+      var slider = document.getElementById('fmCropZoom')
+      if (slider) {
+        newZoom = Math.max(parseFloat(slider.min), Math.min(parseFloat(slider.max), newZoom))
+      }
+
+      // Calculate pan to center the face
+      FM._cropZoom = newZoom
+      FM._cropPanX = boxW / 2 - cx * newZoom
+      FM._cropPanY = boxH / 2 - cy * newZoom
+
+      // Update slider
+      if (slider) {
+        slider.value = newZoom
+        var label = document.getElementById('fmCropZoomLabel')
+        if (label) label.textContent = Math.round(newZoom * 100) + '%'
+      }
+
+      FM._cropRedraw()
+    })
+    .catch(function () { /* silent — keep default zoom if API fails */ })
   }
 
 })()
