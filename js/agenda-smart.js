@@ -1392,10 +1392,26 @@ function _checkDailySummary() {
   _logAuto('daily_summary', 'resumo_diario', 'enviado')
 }
 
+// ── Auto-sync appointments to Supabase ───────────────────────────
+var APPT_SYNC_KEY = 'clinicai_appt_synced_v1'
+function _autoSyncAppointments() {
+  if (localStorage.getItem(APPT_SYNC_KEY) === 'done') return
+  if (!window.AppointmentsService?.syncBatch) return
+  AppointmentsService.syncBatch().then(function(res) {
+    if (res && res.ok) {
+      localStorage.setItem(APPT_SYNC_KEY, 'done')
+      console.info('[AutoSync] Appointments synced to Supabase:', res)
+    } else {
+      console.warn('[AutoSync] Appointments sync failed:', res?.error)
+    }
+  }).catch(function(e) { console.warn('[AutoSync] Exception:', e) })
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 function _init() {
   processQueue()
   _checkDailySummary()
+  _autoSyncAppointments()
   setInterval(processQueue, 60_000)
   setInterval(_checkDailySummary, 60_000) // Verifica a cada minuto
 }
