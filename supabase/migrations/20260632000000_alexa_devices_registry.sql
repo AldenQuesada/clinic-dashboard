@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.clinic_alexa_devices (
   clinic_id       uuid        NOT NULL DEFAULT app_clinic_id(),
   device_name     text        NOT NULL,
   room_id         uuid                 REFERENCES public.clinic_rooms(id) ON DELETE SET NULL,
-  professional_id uuid                 REFERENCES public.clinic_professionals(id) ON DELETE SET NULL,
+  professional_id uuid                 REFERENCES public.professional_profiles(id) ON DELETE SET NULL,
   location_label  text,
   is_active       boolean     NOT NULL DEFAULT true,
   created_at      timestamptz NOT NULL DEFAULT now(),
