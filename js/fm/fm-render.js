@@ -215,7 +215,7 @@
   }
 
   FM._renderCanvasArea2x = function () {
-    return '<div class="fm-canvas-area" id="fmCanvasArea" style="display:flex;gap:2px;flex:1">' +
+    return '<div class="fm-canvas-area" id="fmCanvasArea" style="display:flex;flex-direction:row;gap:4px;flex:1">' +
       // LEFT: ANTES
       '<div style="flex:1;display:flex;flex-direction:column;background:#0A0A0A;border-radius:8px;overflow:hidden;position:relative">' +
         '<div style="padding:4px 12px;background:rgba(239,68,68,0.1);display:flex;justify-content:space-between;align-items:center">' +
@@ -247,7 +247,7 @@
   }
 
   FM._renderCanvasArea1x = function () {
-    return '<div class="fm-canvas-area" id="fmCanvasArea">' +
+    return '<div class="fm-canvas-area" id="fmCanvasArea" style="flex-direction:column">' +
       '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap">' +
         '<canvas id="fmCanvas"></canvas>' +
       '</div>' +
