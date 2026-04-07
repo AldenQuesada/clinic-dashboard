@@ -147,8 +147,11 @@
     document.body.style.overflow = 'hidden'
     apptUpdateEndTime()
 
+    // Auto-preencher sala do profissional selecionado
+    apptAutoSala()
+
     // Carregar procedimentos da BD (async, popula select quando pronto)
-    _cachedClinicProcs = null // Forcar reload a cada abertura
+    _cachedClinicProcs = null
     _loadClinicProcs().then(function(procs) { _populateProcSelect(procs) })
   }
 

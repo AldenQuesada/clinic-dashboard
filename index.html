@@ -3881,17 +3881,10 @@
               <option value="">--</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option><option value="indicacao">Indicacao</option><option value="site">Site</option><option value="direto">Direto</option>
             </select>
           </div>
-          <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-              <input type="checkbox" id="appt_confirmacao" style="width:13px;height:13px;accent-color:#7C3AED;cursor:pointer"/>
-              <span style="font-size:11px;color:#374151">Confirmacao enviada</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-              <input type="checkbox" id="appt_consentimento" style="width:13px;height:13px;accent-color:#7C3AED;cursor:pointer"/>
-              <span style="font-size:11px;color:#374151">Consentimento de imagem</span>
-            </label>
-          </div>
-          <textarea id="appt_obs" rows="2" placeholder="Notas sobre a consulta..." style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px;outline:none;resize:none;box-sizing:border-box;font-family:inherit"></textarea>
+          <input type="hidden" id="appt_confirmacao" value=""/>
+          <input type="hidden" id="appt_consentimento" value=""/>
+          <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">NOTAS</label>
+          <textarea id="appt_obs" rows="4" placeholder="Observacoes sobre a consulta, alergias, cuidados especiais..." style="width:100%;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit"></textarea>
         </div>
 
       </div>
