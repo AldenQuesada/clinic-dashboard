@@ -33,6 +33,35 @@
   // Production: set via FM.FACIAL_API_URL = 'https://facial-api.easypanel.host'
   FM.FACIAL_API_URL = localStorage.getItem('fm_api_url') || 'http://localhost:8107'
 
+  // API v2 endpoint paths
+  FM.API = {
+    // Core (legacy)
+    removeBg:       '/remove-bg',
+    landmarks:      '/landmarks',
+    analyzeSkin:    '/analyze-skin',
+    autoZones:      '/auto-zones',
+    collagenScore:  '/collagen-score',
+    recommendProtocol: '/recommend-protocol',
+    // v2: Enhancement
+    normalize:      '/enhance/normalize',
+    enhanceFull:    '/enhance/full',
+    segmentSkin:    '/enhance/segment-skin',
+    quality:        '/enhance/quality',
+    capabilities:   '/enhance/capabilities',
+    // v2: Scanner (478 landmarks)
+    scanFace:       '/scanner/scan-face',
+    measure:        '/scanner/measure',
+    classifyFace:   '/scanner/classify-face',
+    zoneCenters:    '/scanner/zone-centers',
+    // v2: Skin Analysis
+    skinAnalyze:    '/skin/analyze',
+    skinHeatmap:    '/skin/heatmap',
+    skinZoneReport: '/skin/zone-report',
+    // v2: Simulation
+    simulatePreview: '/simulate/preview',
+    simulateCompare: '/simulate/compare',
+  }
+
   // ── Zone categories ────────────────────────────────────────
   // cat: 'fill' (preenchimento, mL) or 'tox' (rugas/toxina, U)
   // min/max: default ranges (editable, saved to localStorage)

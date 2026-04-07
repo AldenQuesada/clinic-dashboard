@@ -1,5 +1,6 @@
 /**
- * fm-simulation.js — AI simulation generation (n8n webhook + canvas fallback)
+ * fm-simulation.js — Local deterministic simulation via Python API v2
+ * Replaces n8n webhook with /simulate/preview (zero cost, <1s, deterministic)
  */
 ;(function () {
   'use strict'
@@ -20,59 +21,79 @@
       var anns = FM._annotations.filter(function (a) { return a.angle === srcAngle })
 
       var btn = document.querySelector('.fm-btn-primary')
-      if (btn) { var origBtn = btn.innerHTML; btn.textContent = 'Analisando com IA...' }
+      if (btn) { var origBtn = btn.innerHTML; btn.textContent = 'Simulando...' }
 
-      console.log('[FaceMapping] Calling GPT + Python skin analysis...')
-      FM._showLoading('Analisando rosto com IA...')
+      FM._showLoading('Simulando resultado do tratamento...')
 
-      // Call Python skin analysis in parallel (fire-and-forget enrichment)
-      var pyApi = FM.FACIAL_API_URL || 'http://localhost:8100'
-      fetch(pyApi + '/analyze-skin', {
+      // Build zones for the simulation API
+      var zones = anns.map(function (a) {
+        // Map frontend zone IDs to backend zone IDs
+        var backendZone = _mapZoneToBackend(a.zone, a.side)
+        return {
+          zone: backendZone,
+          severity: _mlToSeverity(a.ml, a.zone),
+          treatment: (a.treatment || 'ah').toUpperCase(),
+        }
+      }).filter(function (z) { return z.zone })
+
+      // Call skin analysis v2 in parallel (enrichment — does not block simulation)
+      var pyApi = FM.FACIAL_API_URL
+      fetch(pyApi + FM.API.skinAnalyze, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: b64 }),
+        body: JSON.stringify({ photo_base64: b64, generate_heatmaps: false }),
       })
       .then(function (r) { return r.json() })
       .then(function (skin) {
         if (skin.success) {
           FM._skinAnalysis = skin.scores
-          console.log('[FaceMapping] Skin analysis:', skin.scores)
+          FM._skinAge = skin.skin_age
+          FM._zoneScores = skin.zone_scores
         }
       })
-      .catch(function () { /* silent — skin analysis is optional */ })
+      .catch(function () { /* silent — skin analysis is optional enrichment */ })
 
-      // 5-second timeout via AbortController
+      // Call /simulate/preview (primary — deterministic, <1s)
       var controller = new AbortController()
-      var timeoutId = setTimeout(function () { controller.abort() }, 5000)
+      var timeoutId = setTimeout(function () { controller.abort() }, 10000)
 
-      fetch('https://flows.aldenquesada.site/webhook/lara-webhook', {
+      fetch(pyApi + FM.API.simulatePreview, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
-          action: 'facial-ai',
           photo_base64: b64,
-          annotations: anns.map(function (a) { return { zone: a.zone, treatment: a.treatment, ml: a.ml } }),
-          lead_id: FM._lead ? (FM._lead.id || FM._lead.lead_id) : null,
-          lead_name: FM._lead ? (FM._lead.nome || FM._lead.name) : 'Paciente',
-          source: 'dashboard',
+          zones: zones,
+          intensity: 0.7,
+          use_scanner: true,
         }),
       })
       .then(function (res) { clearTimeout(timeoutId); return res.json() })
       .then(function (data) {
-        console.log('[FaceMapping] GPT response:', data)
-        if (data.success && data.analysis) {
-          FM._lastAnalysis = data.analysis
-          FM._autoSave() // persist analysis
-        }
         FM._hideLoading()
-        FM._generateSimulationCanvas(callback)
+        if (data.success && data.image_b64) {
+          // Convert base64 to blob URL
+          var bin = atob(data.image_b64)
+          var arr = new Uint8Array(bin.length)
+          for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+          var blob = new Blob([arr], { type: 'image/png' })
+
+          if (FM._simPhotoUrl) URL.revokeObjectURL(FM._simPhotoUrl)
+          FM._simPhotoUrl = URL.createObjectURL(blob)
+
+          FM._showToast(data.zones_applied + ' zonas simuladas em ' + data.elapsed_s + 's', 'success')
+          FM._autoSave()
+          if (callback) callback()
+        } else {
+          // Fallback: canvas-based simulation
+          FM._generateSimulationCanvas(callback)
+        }
         if (btn) { btn.innerHTML = origBtn }
       })
       .catch(function (err) {
         clearTimeout(timeoutId)
         FM._hideLoading()
-        console.warn('[FaceMapping] Webhook skipped:', err.name === 'AbortError' ? 'timeout 5s' : err.message)
+        // Fallback: canvas-based simulation (always works, even offline)
         FM._generateSimulationCanvas(callback)
         if (btn) { btn.innerHTML = origBtn }
       })
@@ -122,6 +143,56 @@
       }, 'image/jpeg', 0.95)
     }
     img.src = FM._photoUrls[srcAngle]
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────
+
+  function _mapZoneToBackend(frontendId, side) {
+    // Map frontend zone IDs to backend warp engine zone IDs
+    var map = {
+      'zigoma-lateral':  'zigoma_lat',
+      'zigoma-anterior': 'zigoma_ant',
+      'temporal':        'temporal',
+      'olheira':         'olheira',
+      'sulco':           'sulco',
+      'marionete':       'marionete',
+      'mandibula':       'mandibula',
+      'mento':           'mento',
+      'labio':           'labio',
+      'nariz-dorso':     'nariz',
+      'nariz-base':      'nariz',
+      'glabela':         'glabela',
+      'frontal':         'testa',
+      'periorbital':     'pes_galinha',
+    }
+
+    var base = map[frontendId]
+    if (!base) return null
+
+    // Add side suffix for bilateral zones
+    var bilateral = ['temporal', 'zigoma_lat', 'zigoma_ant', 'olheira', 'sulco', 'marionete', 'mandibula', 'pes_galinha']
+    if (bilateral.indexOf(base) > -1) {
+      if (side === 'esquerdo') return base + '_esq'
+      if (side === 'direito') return base + '_dir'
+      // bilateral: return both sides as separate zones
+      return base + '_esq' // default to left, right will be auto-mirrored
+    }
+    return base
+  }
+
+  function _mlToSeverity(ml, zoneId) {
+    // Convert mL/units to severity 0-3 based on zone ranges
+    var zoneDef = FM.ZONES.find(function (z) { return z.id === zoneId })
+    if (!zoneDef) return 1
+
+    var range = zoneDef.max - zoneDef.min
+    if (range <= 0) return 1
+
+    var normalized = (ml - zoneDef.min) / range
+    if (normalized <= 0) return 0
+    if (normalized <= 0.33) return 1
+    if (normalized <= 0.66) return 2
+    return 3
   }
 
 })()

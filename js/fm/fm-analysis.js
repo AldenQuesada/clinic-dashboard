@@ -267,9 +267,8 @@
       return
     }
 
-    FM._showLoading('Analisando rosto com IA...')
+    FM._showLoading('Escaneando rosto (478 pontos 3D)...')
 
-    // Convert photo to base64
     var img = new Image()
     img.onload = function () {
       var c = document.createElement('canvas')
@@ -277,15 +276,15 @@
       c.getContext('2d').drawImage(img, 0, 0)
       var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
 
-      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8100'
+      var apiUrl = FM.FACIAL_API_URL
       var controller = new AbortController()
-      var timeout = setTimeout(function () { controller.abort() }, 8000)
+      var timeout = setTimeout(function () { controller.abort() }, 12000)
 
-      fetch(apiUrl + '/landmarks', {
+      fetch(apiUrl + FM.API.scanFace, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
-        body: JSON.stringify({ photo_base64: b64 }),
+        body: JSON.stringify({ photo_base64: b64, include_landmarks: true, include_measurements: true }),
       })
       .then(function (res) { clearTimeout(timeout); return res.json() })
       .then(function (data) {
@@ -295,20 +294,32 @@
           return
         }
 
-        // Auto-position terco lines from landmarks
-        FM._tercoLines.hairline = data.key_points.forehead.y
-        FM._tercoLines.brow = (data.landmarks[70].y + data.landmarks[300].y) / 2
-        FM._tercoLines.noseBase = data.landmarks[2].y
-        FM._tercoLines.chin = data.key_points.chin.y
+        // Auto-position terco lines from scanner thirds
+        if (data.thirds && data.thirds.points) {
+          FM._tercoLines.hairline = data.thirds.points.trichion.y
+          FM._tercoLines.brow = data.thirds.points.glabela.y
+          FM._tercoLines.noseBase = data.thirds.points.subnasal.y
+          FM._tercoLines.chin = data.thirds.points.mento.y
+        }
 
         // Auto-position Ricketts points
-        FM._rickettsPoints.nose = { x: data.key_points.nose_tip.x, y: data.key_points.nose_tip.y }
-        FM._rickettsPoints.chin = { x: data.key_points.chin.x, y: data.key_points.chin.y }
+        if (data.ricketts) {
+          FM._rickettsPoints.nose = { x: data.ricketts.nose_point.x, y: data.ricketts.nose_point.y }
+          FM._rickettsPoints.chin = { x: data.ricketts.chin_point.x, y: data.ricketts.chin_point.y }
+        }
 
-        // Store full landmark data
+        // Store full scan data (landmarks, symmetry, shape, pose, measurements)
         FM._landmarkData = data
+        FM._scanData = data
 
-        FM._showToast('468 pontos faciais detectados! Tercos e Ricketts posicionados.', 'success')
+        // Build summary toast
+        var parts = [data.landmark_count + ' pontos detectados']
+        if (data.shape) parts.push('Biotipo: ' + data.shape.shape)
+        if (data.symmetry) parts.push('Simetria: ' + data.symmetry.overall + '%')
+        if (data.pose && data.pose.angle_description) parts.push('Angulo: ' + data.pose.angle_description)
+        if (data.measurements && data.measurements.golden_ratio_score) parts.push('Golden Ratio: ' + data.measurements.golden_ratio_score)
+
+        FM._showToast(parts.join(' | '), 'success')
         FM._autoSave()
         FM._redraw()
       })
@@ -328,7 +339,7 @@
       return
     }
 
-    FM._showLoading('Detectando zonas automaticamente...')
+    FM._showLoading('Detectando zonas via scanner 478pts...')
 
     var img = new Image()
     img.onload = function () {
@@ -337,11 +348,11 @@
       c.getContext('2d').drawImage(img, 0, 0)
       var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
 
-      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8100'
+      var apiUrl = FM.FACIAL_API_URL
       var controller = new AbortController()
-      var timeout = setTimeout(function () { controller.abort() }, 8000)
+      var timeout = setTimeout(function () { controller.abort() }, 12000)
 
-      fetch(apiUrl + '/auto-zones', {
+      fetch(apiUrl + FM.API.zoneCenters, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
@@ -350,43 +361,74 @@
       .then(function (res) { clearTimeout(timeout); return res.json() })
       .then(function (data) {
         FM._hideLoading()
-        if (!data.success || !data.zones || data.zones.length === 0) {
-          FM._showToast('Nenhuma zona detectada.', 'warn')
+        if (!data.success || !data.zone_centers) {
+          FM._showToast('Nenhum rosto detectado.', 'warn')
           return
         }
 
-        // Create annotations from detected zones
+        // Map backend zone IDs to frontend zone IDs
+        var zoneMap = {
+          'temporal_esq': 'temporal', 'temporal_dir': 'temporal',
+          'zigoma_lat_esq': 'zigoma-lateral', 'zigoma_lat_dir': 'zigoma-lateral',
+          'zigoma_ant_esq': 'zigoma-anterior', 'zigoma_ant_dir': 'zigoma-anterior',
+          'olheira_esq': 'olheira', 'olheira_dir': 'olheira',
+          'sulco_esq': 'sulco', 'sulco_dir': 'sulco',
+          'marionete_esq': 'marionete', 'marionete_dir': 'marionete',
+          'mandibula_esq': 'mandibula', 'mandibula_dir': 'mandibula',
+          'mento': 'mento',
+          'labio': 'labio',
+          'nariz': 'nariz-dorso',
+          'testa': 'frontal',
+          'glabela': 'glabela',
+          'pes_galinha_esq': 'periorbital', 'pes_galinha_dir': 'periorbital',
+        }
+
         FM._pushUndo()
         var imgW = FM._imgW || 400
         var imgH = FM._imgH || 500
+        var count = 0
 
-        data.zones.forEach(function (z) {
-          var zoneDef = FM.ZONES.find(function (zd) { return zd.id === z.zone })
+        Object.keys(data.zone_centers).forEach(function (backendId) {
+          var frontendId = zoneMap[backendId]
+          if (!frontendId) return
+
+          var zoneDef = FM.ZONES.find(function (zd) { return zd.id === frontendId })
           if (!zoneDef) return
 
-          // Convert normalized coords to canvas coords
-          var cx = z.center.x * imgW
-          var cy = z.center.y * imgH
-          var rx = imgW * 0.06  // default ellipse size
-          var ry = imgH * 0.04
+          // Check if this zone is allowed for the current angle
+          if (zoneDef.angles && zoneDef.angles.indexOf(angle) === -1) return
+
+          var center = data.zone_centers[backendId]
+          var cx = center.x * imgW
+          var cy = center.y * imgH
+
+          // Determine side from backend zone name
+          var side = 'bilateral'
+          if (backendId.indexOf('_esq') > -1) side = 'esquerdo'
+          else if (backendId.indexOf('_dir') > -1) side = 'direito'
+
+          // Scale ellipse size based on zone type
+          var rx = imgW * (zoneDef.cat === 'tox' ? 0.04 : 0.06)
+          var ry = imgH * (zoneDef.cat === 'tox' ? 0.025 : 0.04)
 
           FM._annotations.push({
             id: FM._nextId++,
             angle: angle,
-            zone: z.zone,
+            zone: frontendId,
             treatment: zoneDef.defaultTx || 'ah',
             ml: zoneDef.min || 0.5,
             product: '',
-            side: z.side || 'bilateral',
+            side: side,
             shape: { x: cx, y: cy, rx: rx, ry: ry },
           })
+          count++
         })
 
         FM._simPhotoUrl = null
         FM._autoSave()
         FM._redraw()
         FM._refreshToolbar()
-        FM._showToast(data.zones.length + ' zonas detectadas automaticamente!', 'success')
+        FM._showToast(count + ' zonas posicionadas via scanner 478pts', 'success')
       })
       .catch(function (err) {
         clearTimeout(timeout)

@@ -107,28 +107,56 @@
       '<div class="fm-report-stat-label">Zonas Tratadas</div>' +
     '</div>'
 
-    // Skin analysis scores (if available from Python API)
+    // Skin analysis scores (v2 — wrinkles, spots, pores, redness, pigmentation, firmness)
     if (FM._skinAnalysis) {
       html += '<div class="fm-report-stat">' +
-        '<div class="fm-report-stat-value" style="color:' + (FM._skinAnalysis.overall >= 70 ? '#10B981' : FM._skinAnalysis.overall >= 50 ? '#F59E0B' : '#EF4444') + '">' + FM._skinAnalysis.overall + '</div>' +
+        '<div class="fm-report-stat-value" style="color:' + (FM._skinAnalysis.overall >= 70 ? '#10B981' : FM._skinAnalysis.overall >= 50 ? '#F59E0B' : '#EF4444') + '">' + Math.round(FM._skinAnalysis.overall) + '</div>' +
         '<div class="fm-report-stat-label">Score Pele</div>' +
+      '</div>'
+    }
+
+    // Skin age (v2)
+    if (FM._skinAge) {
+      var ageColor = FM._skinAge.estimated_age <= 35 ? '#10B981' : FM._skinAge.estimated_age <= 45 ? '#F59E0B' : '#EF4444'
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:' + ageColor + '">' + Math.round(FM._skinAge.estimated_age) + '</div>' +
+        '<div class="fm-report-stat-label">Idade da Pele</div>' +
+      '</div>'
+    }
+
+    // Face shape (v2 scanner)
+    if (FM._scanData && FM._scanData.shape) {
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="font-size:16px;color:#C8A97E">' + FM._scanData.shape.shape + '</div>' +
+        '<div class="fm-report-stat-label">Biotipo</div>' +
+      '</div>'
+    }
+
+    // Symmetry (v2 scanner)
+    if (FM._scanData && FM._scanData.symmetry) {
+      var symColor = FM._scanData.symmetry.overall >= 85 ? '#10B981' : FM._scanData.symmetry.overall >= 70 ? '#F59E0B' : '#EF4444'
+      html += '<div class="fm-report-stat">' +
+        '<div class="fm-report-stat-value" style="color:' + symColor + '">' + FM._scanData.symmetry.overall + '%</div>' +
+        '<div class="fm-report-stat-label">Simetria</div>' +
       '</div>'
     }
 
     html += '</div>'
 
-    // Skin detail bar (if available)
+    // Skin detail bar (v2 — 6 metrics)
     if (FM._skinAnalysis) {
       html += '<div class="fm-report-summary" style="padding-top:0;gap:20px">'
       var skinMetrics = [
-        { key: 'texture', label: 'Textura', icon: '' },
-        { key: 'uniformity', label: 'Uniformidade', icon: '' },
-        { key: 'spots', label: 'Manchas', icon: '' },
-        { key: 'redness', label: 'Vermelhidao', icon: '' },
-        { key: 'pores', label: 'Poros', icon: '' },
+        { key: 'wrinkles', label: 'Rugas' },
+        { key: 'spots', label: 'Manchas' },
+        { key: 'pores', label: 'Poros' },
+        { key: 'redness', label: 'Vermelhidao' },
+        { key: 'pigmentation', label: 'Pigmentacao' },
+        { key: 'firmness', label: 'Firmeza' },
       ]
       skinMetrics.forEach(function (m) {
-        var val = FM._skinAnalysis[m.key] || 0
+        var val = FM._skinAnalysis[m.key]
+        if (val == null) return
         var color = val >= 70 ? '#10B981' : val >= 50 ? '#F59E0B' : '#EF4444'
         html += '<div class="fm-report-stat">' +
           '<div class="fm-report-stat-value" style="font-size:20px;color:' + color + '">' + Math.round(val) + '</div>' +
@@ -136,6 +164,15 @@
         '</div>'
       })
       html += '</div>'
+    }
+
+    // Skin age detail (v2)
+    if (FM._skinAge) {
+      html += '<div class="fm-report-summary" style="padding-top:0;justify-content:center">' +
+        '<div style="text-align:center;font-size:11px;color:rgba(245,240,232,0.6)">' +
+          FM._skinAge.description +
+        '</div>' +
+      '</div>'
     }
 
     // Color legend

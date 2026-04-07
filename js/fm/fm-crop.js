@@ -196,14 +196,36 @@
         })
         .then(function (r) { clearTimeout(tmout); return r.json() })
         .then(function (d) {
-          FM._hideLoading()
           if (d.success && d.image_b64) {
-            var bin = atob(d.image_b64)
-            var arr = new Uint8Array(bin.length)
-            for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-            _finishCrop(new Blob([arr], { type: 'image/png' }))
-            FM._showToast('Fundo removido com sucesso', 'success')
+            // Step 2: Auto-normalize the image (CLAHE + white balance + denoise)
+            FM._showLoading('Normalizando iluminacao...')
+            fetch(apiUrl + FM.API.normalize, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ photo_base64: d.image_b64, strength: 0.7 }),
+            })
+            .then(function (r) { return r.json() })
+            .then(function (nd) {
+              FM._hideLoading()
+              var finalB64 = (nd.success && nd.image_b64) ? nd.image_b64 : d.image_b64
+              var bin = atob(finalB64)
+              var arr = new Uint8Array(bin.length)
+              for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+              _finishCrop(new Blob([arr], { type: 'image/png' }))
+              var msg = 'Fundo removido'
+              if (nd.success) msg += ' + iluminacao normalizada'
+              FM._showToast(msg, 'success')
+            })
+            .catch(function () {
+              FM._hideLoading()
+              var bin = atob(d.image_b64)
+              var arr = new Uint8Array(bin.length)
+              for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+              _finishCrop(new Blob([arr], { type: 'image/png' }))
+              FM._showToast('Fundo removido (normalizacao indisponivel)', 'success')
+            })
           } else {
+            FM._hideLoading()
             canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
             FM._showToast('Falha no bg removal', 'warn')
           }
