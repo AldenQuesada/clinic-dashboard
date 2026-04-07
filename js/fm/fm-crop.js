@@ -180,61 +180,62 @@
       return new Blob([arr], { type: 'image/png' })
     }
 
-    // Primary button: Salvar + Remover Fundo (auto-pipeline)
+    // Primary button: Salvar + Remover Fundo
     document.getElementById('fmCropConfirm').addEventListener('click', function () {
+      // Read cropped image as base64 directly from visible crop canvas (same approach as test-api.html)
       var hiRes = _renderHiRes()
-
-      // Downscale for API (max 1024px) — keeps hi-res for final save
-      var maxDim = 1024
-      var apiCanvas = hiRes
-      if (hiRes.width > maxDim || hiRes.height > maxDim) {
-        var ratio = Math.min(maxDim / hiRes.width, maxDim / hiRes.height)
-        apiCanvas = document.createElement('canvas')
-        apiCanvas.width = Math.round(hiRes.width * ratio)
-        apiCanvas.height = Math.round(hiRes.height * ratio)
-        var actx = apiCanvas.getContext('2d')
-        actx.imageSmoothingEnabled = true
-        actx.imageSmoothingQuality = 'high'
-        actx.drawImage(hiRes, 0, 0, apiCanvas.width, apiCanvas.height)
+      var b64
+      try {
+        b64 = hiRes.toDataURL('image/jpeg', 0.85).split(',')[1]
+      } catch (e) {
+        console.error('[FM] toDataURL failed:', e)
+        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        FM._showToast('Erro ao processar imagem', 'warn')
+        return
       }
 
-      // Use JPEG for smaller payload
-      var b64 = apiCanvas.toDataURL('image/jpeg', 0.85).split(',')[1]
       var apiUrl = FM.FACIAL_API_URL
+      console.log('[FM] remove-bg: ' + Math.round(b64.length / 1024) + 'KB → ' + apiUrl + '/remove-bg')
 
-      console.log('[FM] remove-bg: sending', Math.round(b64.length / 1024) + 'KB to', apiUrl)
       FM._showLoading('Removendo fundo com IA...')
       var ov = document.getElementById('fmCropOverlay')
       if (ov) ov.style.display = 'none'
 
-      fetch(apiUrl + '/remove-bg', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: b64 }),
-      })
-      .then(function (r) {
-        console.log('[FM] remove-bg: response status', r.status)
-        return r.json()
-      })
-      .then(function (d) {
-        console.log('[FM] remove-bg: success=' + d.success, 'elapsed=' + d.elapsed_s)
-        if (d.success && d.image_b64) {
-          FM._hideLoading()
-          _finishCrop(_b64ToBlob(d.image_b64))
-          FM._showToast('Fundo removido com sucesso', 'success')
-        } else {
-          FM._hideLoading()
+      var xhr = new XMLHttpRequest()
+      xhr.open('POST', apiUrl + '/remove-bg', true)
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      xhr.timeout = 60000
+      xhr.onload = function () {
+        console.log('[FM] remove-bg response:', xhr.status)
+        try {
+          var d = JSON.parse(xhr.responseText)
+          if (d.success && d.image_b64) {
+            FM._hideLoading()
+            _finishCrop(_b64ToBlob(d.image_b64))
+            FM._showToast('Fundo removido (' + (d.elapsed_s || '?') + 's)', 'success')
+            return
+          }
           console.warn('[FM] remove-bg failed:', d.error || d)
-          hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
-          FM._showToast('Falha no bg removal — salvo original', 'warn')
+        } catch (e) {
+          console.error('[FM] parse error:', e)
         }
-      })
-      .catch(function (err) {
-        console.error('[FM] remove-bg error:', err)
+        FM._hideLoading()
+        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        FM._showToast('Falha no bg removal — salvo original', 'warn')
+      }
+      xhr.onerror = function () {
+        console.error('[FM] remove-bg network error')
         FM._hideLoading()
         hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
         FM._showToast('API offline — salvo sem processamento', 'warn')
-      })
+      }
+      xhr.ontimeout = function () {
+        console.error('[FM] remove-bg timeout')
+        FM._hideLoading()
+        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        FM._showToast('API timeout — salvo sem processamento', 'warn')
+      }
+      xhr.send(JSON.stringify({ photo_base64: b64 }))
     })
 
     // Secondary button: Sem processar (raw save)
