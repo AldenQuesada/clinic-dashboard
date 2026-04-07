@@ -20,8 +20,9 @@
       '<div class="fm-body">' +
         FM._renderPhotoStrip() +
         FM._renderCanvasArea() +
-        FM._renderClinicalPanel() +
-        FM._renderToolbar() +
+        (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics' && (FM._scanData || FM._metricAngles)
+          ? FM._renderClinicalPanel()
+          : FM._renderToolbar()) +
       '</div>' +
     '</div>'
 
@@ -195,7 +196,21 @@
     // If no data at all, return empty
     if (!scan && !ma && !skin) return ''
 
-    var html = '<div class="fm-clinical-panel" style="width:260px;flex-shrink:0;background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.15);overflow-y:auto;max-height:calc(100vh - 100px);font-size:11px">'
+    var html = '<div class="fm-clinical-panel" style="width:300px;flex-shrink:0;background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.15);overflow-y:auto;max-height:calc(100vh - 100px);font-size:11px">'
+
+    // Sub-mode toggle + tools at top
+    html += '<div style="padding:8px 12px;border-bottom:1px solid rgba(200,169,126,0.1);display:flex;flex-wrap:wrap;gap:4px">' +
+      '<button class="fm-zone-btn" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px;min-width:60px">Tercos</button>' +
+      '<button class="fm-zone-btn" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px;min-width:60px">Ricketts</button>' +
+      '<button class="fm-zone-btn active" style="flex:1;justify-content:center;font-size:10px;min-width:60px;border-color:#10B981;color:#fff">Metrificar</button>' +
+    '</div>' +
+    '<div style="padding:6px 12px;border-bottom:1px solid rgba(200,169,126,0.1);display:flex;gap:4px">' +
+      '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px">-- H</button>' +
+      '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px">| V</button>' +
+      '<button class="fm-zone-btn' + (FM._metricTool === 'point' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'point\')" style="flex:1;justify-content:center;font-size:9px">Ponto</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._autoAngles()" style="flex:1;font-size:9px;padding:4px;border-color:#C8A97E;color:#C8A97E">Angulos</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._clearMetricLines(\'all\')" style="padding:4px 6px;font-size:9px;color:#EF4444">X</button>' +
+    '</div>'
 
     // ── SECTION 1: PLANO VERTICAL ──
     html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
@@ -363,15 +378,15 @@
         '<div class="fm-tool-section-title">Tipo de Analise</div>' +
         '<div style="display:flex;gap:4px;flex-wrap:wrap">' +
           '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" ' +
-            'onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._refreshToolbar();FaceMapping._redraw()" ' +
+            'onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" ' +
             'style="flex:1;justify-content:center;min-width:80px"' +
             (FM._photoUrls['front'] ? '' : ' disabled') + '>Tercos</button>' +
           '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" ' +
-            'onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._refreshToolbar();FaceMapping._redraw()" ' +
+            'onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" ' +
             'style="flex:1;justify-content:center;min-width:80px"' +
             (FM._photoUrls['lateral'] ? '' : ' disabled') + '>Ricketts</button>' +
           '<button class="fm-zone-btn' + (FM._analysisSubMode === 'metrics' ? ' active' : '') + '" ' +
-            'onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._refreshToolbar();FaceMapping._redraw()" ' +
+            'onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" ' +
             'style="flex:1;justify-content:center;min-width:80px;border-color:#10B981;color:' + (FM._analysisSubMode === 'metrics' ? '#fff' : '#10B981') + '"' +
             '>Metrificar</button>' +
         '</div>' +
