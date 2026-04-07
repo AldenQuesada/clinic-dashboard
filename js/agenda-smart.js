@@ -910,8 +910,18 @@ function _buildFinModal(id, appt) {
   const pmOpts = PAYMENT_METHODS.map(pm=>`<option value="${pm.id}" ${appt.formaPagamento===pm.id?'selected':''}>${pm.label}</option>`).join('')
   const isAvalPaga = appt.tipoConsulta==='avaliacao' && appt.tipoAvaliacao==='paga'
 
+  // Populate procedures datalist
+  var _finProcOpts = ''
+  try {
+    var techs = typeof getTechnologies === 'function' ? getTechnologies() : []
+    var procs = typeof getProcedimentos === 'function' ? getProcedimentos() : JSON.parse(localStorage.getItem('clinic_procedimentos') || '[]')
+    var all = techs.map(function(t){return t.nome}).concat(procs.map(function(p){return p.nome||p.name||''})).filter(Boolean)
+    var unique = all.filter(function(v,i,a){return a.indexOf(v)===i})
+    _finProcOpts = '<datalist id="apptProcList">' + unique.map(function(n){return '<option value="'+n+'"/>'}).join('') + '</datalist>'
+  } catch(e) { _finProcOpts = '' }
+
   m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px'
-  m.innerHTML = `
+  m.innerHTML = _finProcOpts + `
     <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:540px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25)">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;flex-shrink:0">
         <div>
