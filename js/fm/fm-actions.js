@@ -48,13 +48,7 @@
       if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
       return
     }
-    try {
-      var lastId = localStorage.getItem('fm_last_session')
-      if (lastId) {
-        FM.init(lastId)
-        return
-      }
-    } catch (e) {}
+    // Don't auto-restore — always show patient selection on page load
 
     var root = document.getElementById('facialAnalysisRoot')
     if (!root) return
