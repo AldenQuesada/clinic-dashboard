@@ -421,26 +421,21 @@
     if (durEl) durEl.value = dur
     apptUpdateEndTime()
 
-    // Se manteve 1h com multiplos procs, avisar Mirian por WhatsApp
+    // Se manteve 1h com multiplos procs, double-check com responsavel
     if (dur === 60 && _apptProcs.length > 1) {
       var paciente = (document.getElementById('appt_paciente_q') && document.getElementById('appt_paciente_q').value) || 'Paciente'
       var procsNomes = _apptProcs.map(function(p) { return p.nome }).join(', ')
-      var msg = 'Alerta Agenda: ' + paciente + ' tem ' + _apptProcs.length + ' procedimentos (' + procsNomes + ') agendados em 1 hora. Por favor revise e confirme se o tempo e suficiente.'
+      var msg = paciente + ' tem ' + _apptProcs.length + ' procedimentos (' + procsNomes + ') agendados em 1 hora.\nPor favor revise e confirme se o tempo e suficiente.'
 
-      if (window._sbShared) {
-        // Enviar pra Mirian via Evolution (buscar telefone da Mirian nos profissionais)
-        var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
-        var mirian = profs.find(function(p) { return /mirian/i.test(p.nome || p.display_name || '') })
-        var mirianPhone = mirian && (mirian.phone || mirian.whatsapp || mirian.telefone)
-        if (mirianPhone) {
-          window._sbShared.rpc('wa_outbox_enqueue_appt', {
-            p_phone: mirianPhone.replace(/\D/g, ''),
-            p_content: msg,
-            p_lead_name: 'Sistema'
-          })
-        }
+      // Buscar telefone do responsavel da agenda (Mirian ou owner)
+      var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+      var responsavel = profs.find(function(p) { return /mirian/i.test(p.nome || p.display_name || '') }) || profs[0]
+      var respPhone = responsavel && (responsavel.phone || responsavel.whatsapp || responsavel.telefone) || ''
+      var respName = responsavel && (responsavel.display_name || responsavel.nome) || 'Responsavel'
+
+      if (window.createDoubleCheck) {
+        createDoubleCheck('multi_proc', 'Multiplos procedimentos em 1h', msg, respPhone, respName)
       }
-      if (window._showToast) _showToast('Alerta enviado', 'Mirian foi notificada sobre multiplos procedimentos em 1h', 'warning')
     }
 
     var alertEl = document.getElementById('multiProcAlert')

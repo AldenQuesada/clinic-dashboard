@@ -166,9 +166,150 @@
     }, 50)
   }
 
+  // ── Sistema de Double-Check — alertas persistentes com acknowledge ──
+  var DCHECK_KEY = 'clinicai_double_checks'
+
+  function _getDoubleChecks() {
+    return JSON.parse(localStorage.getItem(DCHECK_KEY) || '[]')
+  }
+
+  function _saveDoubleChecks(arr) {
+    localStorage.setItem(DCHECK_KEY, JSON.stringify(arr))
+  }
+
+  /**
+   * Criar alerta de double-check
+   * @param {string} tipo - 'multi_proc' | 'tempo_curto' | 'custom'
+   * @param {string} titulo - Titulo do alerta
+   * @param {string} mensagem - Descricao detalhada
+   * @param {string} targetPhone - Telefone do responsavel (WhatsApp)
+   * @param {string} targetName - Nome do responsavel
+   */
+  function createDoubleCheck(tipo, titulo, mensagem, targetPhone, targetName) {
+    var checks = _getDoubleChecks()
+    var id = 'dck_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)
+
+    checks.push({
+      id: id,
+      tipo: tipo,
+      titulo: titulo,
+      mensagem: mensagem,
+      targetName: targetName || '',
+      acknowledged: false,
+      acknowledgedBy: null,
+      acknowledgedAt: null,
+      createdAt: new Date().toISOString(),
+      createdBy: 'secretaria',
+    })
+    _saveDoubleChecks(checks)
+
+    // Enviar WhatsApp via Evolution (por baixo)
+    if (targetPhone && window._sbShared) {
+      window._sbShared.rpc('wa_outbox_enqueue_appt', {
+        p_phone: targetPhone.replace(/\D/g, ''),
+        p_content: 'ALERTA CLINICA:\n\n' + titulo + '\n\n' + mensagem,
+        p_lead_name: 'Sistema ClinicAI'
+      }).catch(function() {})
+    }
+
+    // Mostrar imediatamente na tela
+    _showDoubleCheckAlert(checks[checks.length - 1])
+
+    // Atualizar sino
+    _renderNotificationBell()
+
+    return id
+  }
+
+  function _showDoubleCheckAlert(check) {
+    // Som de alerta
+    _playDoubleCheckSound()
+
+    // Modal central que nao pode ser ignorado
+    var existing = document.getElementById('dcheckAlert_' + check.id)
+    if (existing) return
+
+    var overlay = document.createElement('div')
+    overlay.id = 'dcheckAlert_' + check.id
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10002;display:flex;align-items:center;justify-content:center;padding:16px'
+
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)">' +
+        '<div style="background:linear-gradient(135deg,#F59E0B,#D97706);padding:16px 20px;display:flex;align-items:center;gap:10px">' +
+          '<div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:10px;display:flex;align-items:center;justify-content:center">' +
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:14px;font-weight:800;color:#fff">Double-Check Necessario</div>' +
+            '<div style="font-size:11px;color:rgba(255,255,255,.8)">' + (check.targetName || 'Responsavel') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="padding:18px 20px">' +
+          '<div style="font-size:14px;font-weight:700;color:#111;margin-bottom:8px">' + (check.titulo || '').replace(/</g, '&lt;') + '</div>' +
+          '<div style="font-size:13px;color:#374151;line-height:1.6;margin-bottom:16px;padding:10px 12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px">' + (check.mensagem || '').replace(/</g, '&lt;').replace(/\n/g, '<br>') + '</div>' +
+          '<div style="font-size:11px;color:#9CA3AF;margin-bottom:12px">WhatsApp enviado automaticamente para ' + (check.targetName || 'o responsavel') + '</div>' +
+          '<button onclick="acknowledgeDoubleCheck(\'' + check.id + '\')" style="width:100%;padding:12px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' +
+            'Confirmo que recebi e estou ciente' +
+          '</button>' +
+        '</div>' +
+      '</div>'
+
+    document.body.appendChild(overlay)
+  }
+
+  function acknowledgeDoubleCheck(id) {
+    var checks = _getDoubleChecks()
+    var idx = checks.findIndex(function(c) { return c.id === id })
+    if (idx >= 0) {
+      checks[idx].acknowledged = true
+      checks[idx].acknowledgedAt = new Date().toISOString()
+      checks[idx].acknowledgedBy = 'usuario'
+      _saveDoubleChecks(checks)
+    }
+
+    var el = document.getElementById('dcheckAlert_' + id)
+    if (el) el.remove()
+
+    _renderNotificationBell()
+
+    if (window._showToast) _showToast('Double-check confirmado', 'Alerta registrado como recebido', 'success')
+  }
+
+  function _playDoubleCheckSound() {
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)()
+      // Dois beeps curtos
+      for (var i = 0; i < 2; i++) {
+        var osc = ctx.createOscillator()
+        var gain = ctx.createGain()
+        osc.connect(gain)
+        gain.connect(ctx.destination)
+        osc.frequency.value = 880
+        gain.gain.value = 0.2
+        osc.start(ctx.currentTime + i * 0.25)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.25 + 0.2)
+        osc.stop(ctx.currentTime + i * 0.25 + 0.2)
+      }
+    } catch(e) {}
+  }
+
+  // Mostrar double-checks pendentes ao carregar a pagina
+  function _showPendingDoubleChecks() {
+    var checks = _getDoubleChecks()
+    checks.filter(function(c) { return !c.acknowledged }).forEach(function(c) {
+      _showDoubleCheckAlert(c)
+    })
+  }
+
+  // Iniciar ao carregar
+  setTimeout(_showPendingDoubleChecks, 2000)
+
   // ── Exposição global ──────────────────────────────────────────
   window._showToast              = _showToast
   window._dismissToast           = _dismissToast
   window._renderNotificationBell = _renderNotificationBell
+  window.createDoubleCheck       = createDoubleCheck
+  window.acknowledgeDoubleCheck  = acknowledgeDoubleCheck
 
 })()
