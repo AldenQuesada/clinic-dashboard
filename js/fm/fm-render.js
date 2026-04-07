@@ -43,6 +43,7 @@
         '<button class="fm-btn" onclick="FaceMapping._showTemplates()" title="Templates de protocolo">' + FM._icon('clipboard', 14) + ' Templates</button>' +
         '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" title="IA detecta zonas automaticamente" style="border-color:#10B981;color:#10B981">' + FM._icon('zap', 14) + ' Auto Zonas</button>' +
         '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="IA posiciona tercos e Ricketts">' + FM._icon('cpu', 14) + ' Auto Analise</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._showHistory()" title="Historico de sessoes">' + FM._icon('clock', 14) + ' Historico</button>' +
         '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges">' + FM._icon('sliders', 14) + ' Ranges</button>' +
         '<button class="fm-btn" onclick="FaceMapping._clearAll()" title="Limpar tudo">' + FM._icon('trash-2', 14) + ' Limpar</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" style="background:linear-gradient(135deg,#C8A97E,#A8895E);color:#fff;border-color:transparent">' + FM._icon('eye', 14) + ' Comparar</button>' +

@@ -35,6 +35,8 @@
             FM._icon('download', 14) + ' Baixar PNG</button>' +
           '<button style="display:flex;align-items:center;gap:5px;padding:8px 14px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:13px;font-weight:500;cursor:pointer" onclick="FaceMapping._printReport()">' +
             FM._icon('printer', 14) + ' Imprimir</button>' +
+          '<button style="display:flex;align-items:center;gap:5px;padding:8px 14px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:13px;font-weight:500;cursor:pointer" onclick="FaceMapping._shareReport()">' +
+            FM._icon('share-2', 14) + ' Compartilhar</button>' +
           '<button class="fm-btn" onclick="FaceMapping._closeExport()">' +
             FM._icon('x', 14) + ' Fechar</button>' +
         '</div>' +
