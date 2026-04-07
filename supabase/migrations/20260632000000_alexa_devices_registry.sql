@@ -64,7 +64,7 @@ BEGIN
   INTO v_result
   FROM public.clinic_alexa_devices d
   LEFT JOIN public.clinic_rooms r ON r.id = d.room_id
-  LEFT JOIN public.clinic_professionals p ON p.id = d.professional_id
+  LEFT JOIN public.professional_profiles p ON p.id = d.professional_id
   WHERE d.clinic_id = app_clinic_id();
 
   RETURN jsonb_build_object('ok', true, 'data', v_result);
