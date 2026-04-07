@@ -228,7 +228,8 @@
           '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#EF4444;letter-spacing:0.1em">ANTES</span>' +
           '<div style="display:flex;gap:3px">' +
             '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" style="font-size:8px;padding:2px 6px">' + FM._icon('cpu', 10) + '</button>' +
-            '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" style="font-size:8px;padding:2px 6px;border-color:#10B981;color:#10B981">' + FM._icon('zap', 10) + '</button>' +
+            // auto detect zones desativado
+            // '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" style="font-size:8px;padding:2px 6px;border-color:#10B981;color:#10B981">' + FM._icon('zap', 10) + '</button>' +
           '</div>' +
         '</div>' +
         '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
@@ -532,10 +533,10 @@
     var curUnit = selZone ? selZone.unit : 'mL'
     var curStep = curUnit === 'U' ? '1' : '0.1'
 
-    // Auto zonas button
-    html += '<div class="fm-tool-section">' +
-      '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoDetectZones()">' + FM._icon('zap', 12) + ' Auto Zonas (scanner)</button>' +
-    '</div>'
+    // Auto zonas button (desativado — deteccao automatica nao confiavel)
+    // html += '<div class="fm-tool-section">' +
+    //   '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoDetectZones()">' + FM._icon('zap', 12) + ' Auto Zonas (scanner)</button>' +
+    // '</div>'
 
     // Preenchimento
     var fillZones = FM.ZONES.filter(function (z) { return z.cat === 'fill' })
