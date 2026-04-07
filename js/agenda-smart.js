@@ -352,6 +352,11 @@ function apptTransition(id, newStatus, by) {
     }
   }
 
+  // Alexa: boas-vindas na recepcao + aviso na sala
+  if (newStatus === 'na_clinica' && window.AlexaNotificationService) {
+    AlexaNotificationService.notifyArrival(appt).catch(function(e) { console.warn('[Agenda] Alexa notify falhou:', e) })
+  }
+
   // Ações contextuais (checklists + recovery modals only)
   if (newStatus === 'na_clinica') setTimeout(() => _showChecklist(appt, 'na_clinica'), 200)
   if (newStatus === 'em_consulta') setTimeout(() => _showChecklist(appt, 'em_consulta'), 200)

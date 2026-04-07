@@ -76,7 +76,8 @@ async function renderRoomsList() {
           </div>
         </div>
         ${responsaveis.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${responsaveis.slice(0,2).map(n=>`<span style="background:#F0FDF4;color:#16A34A;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600">${n}</span>`).join('')}${responsaveis.length>2?`<span style="font-size:11px;color:#9CA3AF">+${responsaveis.length-2}</span>`:''}</div>` : ''}
-        ${aparelhos.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px">${aparelhos.slice(0,3).map(a=>`<span style="background:#EDE9FE;color:#7C3AED;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600">${a}</span>`).join('')}${aparelhos.length>3?`<span style="font-size:11px;color:#9CA3AF">+${aparelhos.length-3}</span>`:''}</div>` : ''}
+        ${aparelhos.length ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">${aparelhos.slice(0,3).map(a=>`<span style="background:#EDE9FE;color:#7C3AED;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600">${a}</span>`).join('')}${aparelhos.length>3?`<span style="font-size:11px;color:#9CA3AF">+${aparelhos.length-3}</span>`:''}</div>` : ''}
+        ${r.alexa_device_name ? `<div style="display:flex;align-items:center;gap:5px;margin-top:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg><span style="font-size:11px;color:#06B6D4;font-weight:600">Alexa: ${r.alexa_device_name}</span></div>` : ''}
       </div>`
     }).join('') + `</div>`
 }
@@ -122,7 +123,8 @@ function _roomGetCurrentState() {
   return JSON.stringify({
     nome: document.getElementById('sr_nome')?.value?.trim() || '',
     responsaveis: Array.from(document.querySelectorAll('#sr_responsaveis_list input[type=checkbox]:checked')).map(c=>c.value),
-    aparelhos: Array.from(document.querySelectorAll('#sr_aparelhos_list input[type=checkbox]:checked')).map(c=>c.value)
+    aparelhos: Array.from(document.querySelectorAll('#sr_aparelhos_list input[type=checkbox]:checked')).map(c=>c.value),
+    alexa_device: document.getElementById('sr_alexa_device')?.value?.trim() || ''
   })
 }
 
@@ -160,6 +162,7 @@ function showAddRoomForm() {
   document.getElementById('roomModalTitle').textContent = 'Nova Sala'
   document.getElementById('sr_index').value = '-1'
   const nomeEl = document.getElementById('sr_nome'); if (nomeEl) nomeEl.value = ''
+  const alexaEl = document.getElementById('sr_alexa_device'); if (alexaEl) alexaEl.value = ''
   _populateRoomResponsaveisList([])
   _populateRoomAparelhosList([])
   _roomModalSnapshot = null
@@ -191,8 +194,10 @@ async function saveRoom() {
   const btn = document.getElementById('roomSaveBtn')
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...' }
 
+  const alexaDevice = document.getElementById('sr_alexa_device')?.value?.trim() || ''
+
   if (window.RoomsRepository) {
-    const r = await window.RoomsRepository.upsert({ id, nome })
+    const r = await window.RoomsRepository.upsert({ id, nome, alexa_device_name: alexaDevice || null })
     if (!r.ok) {
       alert(r.error || 'Erro ao salvar sala')
       if (btn) { btn.disabled = false; btn.textContent = 'Salvar' }
@@ -270,6 +275,7 @@ function editRoom(idOrIndex) {
   document.getElementById('roomModalTitle').textContent = r.nome
   document.getElementById('sr_index').value = r.id || idOrIndex
   document.getElementById('sr_nome').value  = r.nome || ''
+  var alexaEl = document.getElementById('sr_alexa_device'); if (alexaEl) alexaEl.value = r.alexa_device_name || ''
   // Responsaveis: calculados a partir do cache de professionals
   const profs = typeof getProfessionals === 'function' ? getProfessionals() : []
   const responsaveis = profs

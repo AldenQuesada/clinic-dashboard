@@ -115,7 +115,7 @@ const CLINIC_FIELDS = [
 ]
 
 const CLINIC_TOGGLES  = ['notif_confirmacao','notif_lembrete24','notif_lembrete1h']
-const CLINIC_SECTIONS = ['perfil','fiscal','visual','atendimento','notificacoes','sistema','observacoes']
+const CLINIC_SECTIONS = ['perfil','fiscal','visual','atendimento','notificacoes','sistema','alexa','observacoes']
 
 // ── Navegação de seções ──────────────────────────────────────
 function clinicSection(sec) {

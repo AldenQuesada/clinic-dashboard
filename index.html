@@ -1217,6 +1217,9 @@
             <button onclick="clinicSection('sistema')" id="csn_sistema" class="csn">
               <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:4px"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Sistema
             </button>
+            <button onclick="clinicSection('alexa')" id="csn_alexa" class="csn">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:4px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>Alexa
+            </button>
             <button onclick="clinicSection('observacoes')" id="csn_observacoes" class="csn">
               <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Observações
             </button>
@@ -1676,6 +1679,63 @@
                     <option value="yyyy-MM-dd">AAAA-MM-DD (ISO 8601)</option>
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 PANEL: ALEXA
+            ═══════════════════════════════════════════════════════ -->
+            <div id="cs_panel_alexa" style="display:none">
+              <div class="cs-subsection-hdr">Integracao Alexa — Notificacoes de Chegada</div>
+              <div style="background:#ECFEFF;border:1px solid #06B6D440;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:12px;color:#0891B2;line-height:1.6">
+                <strong>Como funciona:</strong> Quando a secretaria marca a paciente como "Na Clinica", a Alexa da recepcao da as boas-vindas e a Alexa da sala do profissional avisa que a paciente chegou. Configure o webhook do n8n e os nomes dos dispositivos abaixo.
+              </div>
+
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+                <label style="font-size:12px;font-weight:600;color:#374151">Notificacoes Alexa ativas</label>
+                <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer">
+                  <input type="checkbox" id="sc_alexa_active" style="opacity:0;width:0;height:0" onchange="_alexaConfigDirty=true">
+                  <span style="position:absolute;inset:0;background:#ccc;border-radius:22px;transition:.2s" class="alexa-toggle-track"></span>
+                </label>
+              </div>
+              <style>
+                #sc_alexa_active:checked + .alexa-toggle-track { background: #06B6D4 !important }
+                .alexa-toggle-track::before { content:''; position:absolute; height:16px; width:16px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s }
+                #sc_alexa_active:checked + .alexa-toggle-track::before { transform:translateX(18px) }
+              </style>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div style="grid-column:1/span 2">
+                  <label class="cs-label">Webhook URL (n8n)</label>
+                  <input id="sc_alexa_webhook" type="url" placeholder="https://flows.aldenquesada.site/webhook/alexa-announce" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
+                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">URL do webhook no n8n que recebe os eventos de chegada</div>
+                </div>
+                <div>
+                  <label class="cs-label">Nome do Dispositivo — Recepcao</label>
+                  <input id="sc_alexa_reception" type="text" placeholder="Recepcao" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
+                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Nome da Alexa na recepcao (boas-vindas)</div>
+                </div>
+                <div>
+                  <label class="cs-label">Dispositivos das Salas</label>
+                  <div style="font-size:12px;color:#6B7280;padding:9px 0">Configurados em cada sala (Settings > Salas)</div>
+                </div>
+              </div>
+
+              <div style="margin-top:18px;padding-top:14px;border-top:1px solid #F3F4F6">
+                <label class="cs-label">Mensagem de Boas-vindas (Recepcao)</label>
+                <input id="sc_alexa_welcome" type="text" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
+                <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Variaveis: {{nome}}, {{profissional}}, {{hora}}, {{procedimento}}, {{sala}}</div>
+              </div>
+
+              <div style="margin-top:14px">
+                <label class="cs-label">Mensagem para a Sala do Profissional</label>
+                <input id="sc_alexa_room_msg" type="text" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
+                <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Variaveis: {{nome}}, {{profissional}}, {{hora}}, {{procedimento}}, {{sala}}</div>
+              </div>
+
+              <div style="margin-top:18px;display:flex;justify-content:flex-end;gap:10px">
+                <button onclick="testAlexaNotification()" style="padding:9px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Testar Notificacao</button>
+                <button onclick="saveAlexaConfig()" style="padding:9px 20px;background:linear-gradient(135deg,#06B6D4,#0891B2);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Salvar Configuracao Alexa</button>
               </div>
             </div>
 
@@ -4546,6 +4606,15 @@
             </div>
           </div>
 
+          <div style="grid-column:1/span 2;margin-top:4px;padding-top:14px;border-top:1px solid #F3F4F6">
+            <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:6px;margin-bottom:5px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+              Dispositivo Alexa
+            </label>
+            <input id="sr_alexa_device" type="text" placeholder="Ex: Echo da Sala 1, Consultorio Dra Mirian" oninput="_roomCheckDirty()" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>
+            <div style="font-size:11px;color:#9CA3AF;margin-top:4px">Nome do dispositivo Echo/Alexa nesta sala (para notificacoes de chegada de paciente)</div>
+          </div>
+
         </div>
       </div>
 
@@ -4768,6 +4837,7 @@
   <script src="js/prontuario.js?v=20260407p" defer></script>
   <script src="js/team.js?v=20260407p" defer></script>
   <script src="js/clinic-settings.js?v=20260407p" defer></script>
+  <script src="js/alexa-settings.js?v=20260407q" defer></script>
   <script src="js/users-admin.js?v=20260407p" defer></script>
   <script src="js/professionals.js?v=20260407p" defer></script>
   <!-- Módulos extraídos de api.js — devem carregar ANTES de api.js -->
@@ -4791,7 +4861,8 @@
   <script src="js/agenda-validation.js?v=20260407p" defer></script>
   <script src="js/agenda-module.js?v=20260407p" defer></script>
   <script src="js/agenda-automations.engine.js?v=20260407p" defer></script>
-  <script src="js/agenda-smart.js?v=20260407b" defer></script>
+  <script src="js/services/alexa-notification.service.js?v=20260407q" defer></script>
+  <script src="js/agenda-smart.js?v=20260407q" defer></script>
   <script src="js/agenda-day-panel.js?v=20260406a" defer></script>
   <script src="js/agenda-leads.js?v=20260406a" defer></script>
   <script src="js/orcamentos.js?v=20260407p" defer></script>

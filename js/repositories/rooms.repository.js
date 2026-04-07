@@ -21,12 +21,13 @@
     }
   }
 
-  async function upsert({ id, nome, descricao }) {
+  async function upsert({ id, nome, descricao, alexa_device_name }) {
     try {
       const { data, error } = await _sb().rpc('upsert_room', {
-        p_id:        id        ?? null,
-        p_nome:      nome      ?? null,
-        p_descricao: descricao ?? null,
+        p_id:                id                ?? null,
+        p_nome:              nome              ?? null,
+        p_descricao:         descricao         ?? null,
+        p_alexa_device_name: alexa_device_name ?? null,
       })
       if (error) return _err(error.message || String(error))
       return _ok(data)
