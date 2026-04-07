@@ -16,8 +16,7 @@
 
     // Determine which panel to show on the right
     var rightPanel
-    var activeTab = FM._editorMode
-    if (activeTab === 'analysis' && FM._analysisSubMode !== 'skin') activeTab = 'simetria'
+    var activeTab = FM._activeTab || 'zones'
 
     if (activeTab === 'simetria') {
       rightPanel = FM._renderSimetriaPanel()
@@ -49,8 +48,7 @@
       { id: 'analysis',      label: 'Analise',        icon: 'activity' },
     ]
 
-    var activeTab = FM._editorMode
-    if (activeTab === 'analysis' && FM._analysisSubMode !== 'skin') activeTab = 'simetria'
+    var activeTab = FM._activeTab || 'zones'
 
     var html = '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid rgba(200,169,126,0.12)">' +
       '<div style="display:flex;align-items:center;gap:12px">' +

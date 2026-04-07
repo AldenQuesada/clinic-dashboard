@@ -225,10 +225,12 @@
     }
   }
 
+  FM._activeTab = FM._activeTab || 'zones'
+
   FM._switchTab = function (tabId) {
+    FM._activeTab = tabId
     if (tabId === 'simetria') {
       FM._editorMode = 'analysis'
-      // Keep current sub-mode if already in simetria, else default to tercos
       if (FM._analysisSubMode !== 'tercos' && FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics') {
         FM._analysisSubMode = 'tercos'
       }
@@ -240,7 +242,7 @@
       FM._editorMode = 'vectors'
     } else if (tabId === 'analysis') {
       FM._editorMode = 'analysis'
-      FM._analysisSubMode = 'skin'  // dedicated sub-mode for analysis tab
+      FM._analysisSubMode = 'skin'
     }
     FM._render()
     setTimeout(FM._initCanvas, 50)
