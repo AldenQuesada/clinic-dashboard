@@ -139,14 +139,10 @@
       outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height)
       outCtx.drawImage(FM._cropCanvas, 0, 0)
 
-      var confirmBtn = document.getElementById('fmCropConfirm')
-      if (confirmBtn) confirmBtn.textContent = 'Removendo fundo...'
-
       outCanvas.toBlob(function (blob) {
-        FM._removeBackground(blob, function (processedBlob) {
           if (FM._photoUrls[FM._pendingCropAngle]) URL.revokeObjectURL(FM._photoUrls[FM._pendingCropAngle])
-          FM._photoUrls[FM._pendingCropAngle] = URL.createObjectURL(processedBlob)
-          FM._photos[FM._pendingCropAngle] = processedBlob
+          FM._photoUrls[FM._pendingCropAngle] = URL.createObjectURL(blob)
+          FM._photos[FM._pendingCropAngle] = blob
 
           if (!FM._activeAngle) FM._activeAngle = FM._pendingCropAngle
 
@@ -154,8 +150,7 @@
           FM._render()
           FM._autoSave()
           if (FM._activeAngle === FM._pendingCropAngle) setTimeout(FM._initCanvas, 50)
-        })
-      }, 'image/png')
+      }, 'image/jpeg', 0.95)
     })
   }
 
@@ -175,75 +170,6 @@
     FM._openCropModal(src, angle)
   }
 
-  // ── Background Removal ────────────────────────────────────
-
-  FM._removeBackground = function (blob, callback) {
-    var img = new Image()
-    img.onload = function () {
-      var w = img.width, h = img.height
-      var c = document.createElement('canvas')
-      c.width = w; c.height = h
-      var ctx = c.getContext('2d')
-      ctx.drawImage(img, 0, 0)
-
-      var pixels = ctx.getImageData(0, 0, w, h)
-      var data = pixels.data
-
-      var bgSamples = []
-      var sampleSize = Math.floor(Math.min(w, h) * 0.05)
-      for (var sy = 0; sy < sampleSize; sy++) {
-        for (var sx = 0; sx < sampleSize; sx++) {
-          var i = (sy * w + sx) * 4
-          bgSamples.push([data[i], data[i+1], data[i+2]])
-          i = (sy * w + (w - 1 - sx)) * 4
-          bgSamples.push([data[i], data[i+1], data[i+2]])
-        }
-      }
-
-      var avgR = 0, avgG = 0, avgB = 0
-      bgSamples.forEach(function (s) { avgR += s[0]; avgG += s[1]; avgB += s[2] })
-      avgR = Math.round(avgR / bgSamples.length)
-      avgG = Math.round(avgG / bgSamples.length)
-      avgB = Math.round(avgB / bgSamples.length)
-
-      var tolerance = 55
-
-      for (var pi = 0; pi < data.length; pi += 4) {
-        var dr = Math.abs(data[pi] - avgR)
-        var dg = Math.abs(data[pi+1] - avgG)
-        var db = Math.abs(data[pi+2] - avgB)
-        var dist = Math.sqrt(dr * dr + dg * dg + db * db)
-
-        if (dist < tolerance) {
-          data[pi] = 0; data[pi+1] = 0; data[pi+2] = 0
-        }
-      }
-
-      var softTolerance = tolerance * 1.3
-      for (var pi = 0; pi < data.length; pi += 4) {
-        if (data[pi] === 0 && data[pi+1] === 0 && data[pi+2] === 0) continue
-        var dr = Math.abs(data[pi] - avgR)
-        var dg = Math.abs(data[pi+1] - avgG)
-        var db = Math.abs(data[pi+2] - avgB)
-        var dist = Math.sqrt(dr * dr + dg * dg + db * db)
-
-        if (dist < softTolerance) {
-          var blend = (softTolerance - dist) / (softTolerance - tolerance)
-          blend = Math.max(0, Math.min(1, blend))
-          data[pi] = Math.round(data[pi] * (1 - blend))
-          data[pi+1] = Math.round(data[pi+1] * (1 - blend))
-          data[pi+2] = Math.round(data[pi+2] * (1 - blend))
-        }
-      }
-
-      ctx.putImageData(pixels, 0, 0)
-
-      c.toBlob(function (resultBlob) {
-        console.log('[FaceMapping] Background removed (canvas method)')
-        callback(resultBlob)
-      }, 'image/png')
-    }
-    img.src = URL.createObjectURL(blob)
-  }
+  // Background removal disabled — use dark background in clinic for best results
 
 })()
