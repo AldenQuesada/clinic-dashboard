@@ -140,7 +140,7 @@
       outCtx.drawImage(FM._cropCanvas, 0, 0)
 
       // Try Python API for background removal, fallback to raw crop
-      var b64 = outCanvas.toDataURL('image/jpeg', 0.95).split(',')[1]
+      var b64 = outCanvas.toDataURL('image/png').split(',')[1]
       var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8100'
 
       FM._showLoading('Removendo fundo com IA...')
@@ -163,12 +163,12 @@
           var binary = atob(data.image_b64)
           var arr = new Uint8Array(binary.length)
           for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
-          var processedBlob = new Blob([arr], { type: 'image/jpeg' })
+          var processedBlob = new Blob([arr], { type: 'image/png' })
           _finishCrop(processedBlob)
           FM._showToast('Fundo removido com sucesso', 'success')
         } else {
           // Fallback: use original cropped image
-          outCanvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/jpeg', 0.95)
+          outCanvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/png')
         }
       })
       .catch(function (err) {

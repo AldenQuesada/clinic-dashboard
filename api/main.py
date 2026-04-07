@@ -97,7 +97,7 @@ def get_rembg_session():
 
 @app.post("/remove-bg")
 async def remove_background(req: PhotoRequest):
-    """Remove background from portrait photo, replace with black."""
+    """Remove background from portrait photo, replace with black. High quality."""
     t0 = time.time()
     try:
         from rembg import remove
@@ -105,17 +105,39 @@ async def remove_background(req: PhotoRequest):
         img = b64_to_image(req.photo_base64)
         session = get_rembg_session()
 
-        # Remove background (returns RGBA with transparent bg)
-        result = remove(img, session=session, alpha_matting=True)
+        # Remove background with refined alpha matting for hair detail
+        result = remove(
+            img,
+            session=session,
+            alpha_matting=True,
+            alpha_matting_foreground_threshold=240,   # more generous foreground (keeps hair)
+            alpha_matting_background_threshold=10,     # strict background (removes more bg)
+            alpha_matting_erode_size=10,               # smaller erode = less edge loss
+        )
+
+        # Refine edges: soften the alpha channel for natural hair blending
+        result_np = np.array(result)
+        alpha = result_np[:, :, 3].astype(np.float32)
+
+        # Gentle gaussian blur on alpha for smooth edges (preserves hair strands)
+        alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.8)
+
+        # Boost contrast on alpha: make semi-transparent areas more opaque
+        alpha_boosted = np.clip(alpha_smooth * 1.3, 0, 255).astype(np.uint8)
+        result_np[:, :, 3] = alpha_boosted
+
+        result_refined = Image.fromarray(result_np, "RGBA")
 
         # Composite onto black background
-        black_bg = Image.new("RGBA", result.size, (0, 0, 0, 255))
-        composite = Image.alpha_composite(black_bg, result)
-        final = composite.convert("RGB")
+        black_bg = Image.new("RGBA", result_refined.size, (0, 0, 0, 255))
+        composite = Image.alpha_composite(black_bg, result_refined)
 
-        b64_result = image_to_b64(final, "JPEG")
+        # Output as PNG (lossless — zero quality loss on skin/hair)
+        final = composite.convert("RGB")
+        b64_result = image_to_b64(final, "PNG")
+
         elapsed = round(time.time() - t0, 2)
-        log.info(f"BG removed in {elapsed}s | {img.size[0]}x{img.size[1]}")
+        log.info(f"BG removed in {elapsed}s | {img.size[0]}x{img.size[1]} | PNG output")
 
         return {
             "success": True,
