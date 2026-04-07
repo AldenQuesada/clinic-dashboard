@@ -510,6 +510,9 @@
     if (pageId === 'wa-disparos' && typeof window.AutomationsUI?.init === 'function') {
       window.AutomationsUI.init('disparos-root', 'disparos')
     }
+    if (pageId === 'agenda-automations' && typeof window.AgendaAutomationsUI?.init === 'function') {
+      window.AgendaAutomationsUI.init('agenda-automations-root')
+    }
     if (pageId === 'settings-automation' && typeof window.AutomationsUI?.init === 'function') {
       window.AutomationsUI.init('automations-root', 'rules')
     }
