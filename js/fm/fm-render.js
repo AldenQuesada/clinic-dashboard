@@ -264,10 +264,19 @@
   // ── SIMETRIA PANEL (wireframe, linhas, angulos, 3 planos) ──
 
   FM._renderSimetriaPanel = function () {
-    var html = '<div class="fm-toolbar" style="background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.1)">'
+    var html = '<div class="fm-toolbar">'
+
+    // Tercos / Ricketts (pertence a Simetria)
+    html += '<div class="fm-tool-section">' +
+      '<div class="fm-tool-section-title">Plano</div>' +
+      '<div style="display:flex;gap:4px">' +
+        '<button class="fm-zone-btn' + (FM._analysisSubMode !== 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Tercos</button>' +
+        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Ricketts</button>' +
+      '</div>' +
+    '</div>'
 
     // Wireframe toggle
-    html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+    html += '<div class="fm-tool-section">' +
       '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<span style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Wireframe 478pts</span>' +
         '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" style="font-size:9px;padding:3px 8px;border-color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.2)') + ';color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.4)') + '">' + (FM._showWireframe ? 'ON' : 'OFF') + '</button>' +
@@ -339,16 +348,7 @@
   // ── ANALISE PANEL (skin, collagen, age, protocol) ──
 
   FM._renderAnalisePanel = function () {
-    var html = '<div class="fm-toolbar" style="background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.1)">'
-
-    // Sub-mode: Tercos / Ricketts
-    html += '<div class="fm-tool-section" style="padding:10px 12px">' +
-      '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Plano</div>' +
-      '<div style="display:flex;gap:4px">' +
-        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Tercos</button>' +
-        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center;font-size:10px">Ricketts</button>' +
-      '</div>' +
-    '</div>'
+    var html = '<div class="fm-toolbar">'
 
     // Skin analysis
     if (FM._skinAnalysis) {
