@@ -32,3 +32,4 @@ qrcode-whatsapp.png
 # Build artifacts
 dist/
 build/
+__pycache__/

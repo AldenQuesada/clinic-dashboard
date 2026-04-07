@@ -239,7 +239,7 @@
         if (!_validateFile(file)) { e.target.value = ''; return }
 
         var url = URL.createObjectURL(file)
-        if (_pendingExtraType === 'after') {
+        if (FM._pendingExtraType === 'after') {
           if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
           FM._afterPhotoUrl = url
         } else {
