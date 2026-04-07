@@ -203,12 +203,12 @@
         .then(function (d) {
           console.log('[FaceMapping] remove-bg result:', d.success, d.elapsed_s)
           if (d.success && d.image_b64) {
-            // Step 2: Auto-normalize the image (CLAHE + white balance + denoise)
-            FM._showLoading('Normalizando iluminacao...')
-            fetch(apiUrl + '/enhance/normalize', {
+            // Step 2: Premium enhancement (normalize + face restore + super-res)
+            FM._showLoading('Enhancement premium (restauracao + super-resolucao)...')
+            fetch(apiUrl + '/enhance/premium', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ photo_base64: d.image_b64, strength: 0.7 }),
+              body: JSON.stringify({ photo_base64: d.image_b64 }),
             })
             .then(function (r) { return r.json() })
             .then(function (nd) {
@@ -219,7 +219,11 @@
               for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
               _finishCrop(new Blob([arr], { type: 'image/png' }))
               var msg = 'Fundo removido'
-              if (nd.success) msg += ' + iluminacao normalizada'
+              if (nd.success) {
+                var stg = nd.stages ? nd.stages.map(function(s){return s.name}).join(' + ') : ''
+                msg += ' + ' + stg
+                if (nd.output_size) msg += ' (' + nd.output_size.w + 'x' + nd.output_size.h + ')'
+              }
               FM._showToast(msg, 'success')
             })
             .catch(function () {
@@ -228,7 +232,7 @@
               var arr = new Uint8Array(bin.length)
               for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
               _finishCrop(new Blob([arr], { type: 'image/png' }))
-              FM._showToast('Fundo removido (normalizacao indisponivel)', 'success')
+              FM._showToast('Fundo removido (enhancement indisponivel)', 'success')
             })
           } else {
             FM._hideLoading()

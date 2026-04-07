@@ -21,6 +21,7 @@ from utils.image_helpers import b64_to_cv2, cv2_to_b64
 from utils.color_grading import normalize_image, detect_lighting_quality
 from utils.image_pipeline import enhance_photo, enhance_opencv_only, get_enhancement_capabilities
 from utils.face_parsing import segment_skin, get_skin_region_stats
+from utils.super_resolution import enhance_full_pipeline, super_resolve, face_restore
 
 log = logging.getLogger("facial-api.enhance")
 router = APIRouter(prefix="/enhance", tags=["Enhancement"])
@@ -192,6 +193,46 @@ async def segment_skin_endpoint(req: SegmentRequest):
         return result
     except Exception as e:
         log.error(f"Skin segmentation failed: {e}")
+        raise HTTPException(500, detail=str(e))
+
+
+class PremiumRequest(BaseModel):
+    photo_base64: str
+
+
+@router.post("/premium")
+async def premium_enhance(req: PremiumRequest):
+    """
+    Premium enhancement: normalize + face restore + super-resolution.
+    Best possible quality — uses EDSR super-res + bilateral detail recovery.
+    """
+    t0 = time.time()
+    try:
+        img = b64_to_cv2(req.photo_base64)
+        h, w = img.shape[:2]
+
+        result = enhance_full_pipeline(img)
+        enhanced = result["image"]
+        rh, rw = enhanced.shape[:2]
+
+        b64_result = cv2_to_b64(enhanced, ".png")
+        elapsed = round(time.time() - t0, 2)
+
+        log.info(
+            f"Premium enhance in {elapsed}s | {w}x{h} -> {rw}x{rh} | "
+            f"stages: {[s['name'] for s in result['stages']]}"
+        )
+
+        return {
+            "success": True,
+            "image_b64": b64_result,
+            "input_size": result["input_size"],
+            "output_size": result["output_size"],
+            "stages": result["stages"],
+            "elapsed_s": elapsed,
+        }
+    except Exception as e:
+        log.error(f"Premium enhance failed: {e}")
         raise HTTPException(500, detail=str(e))
 
 
