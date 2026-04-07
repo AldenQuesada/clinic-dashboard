@@ -46,6 +46,7 @@
         '<button class="fm-btn" onclick="FaceMapping._showHistory()" title="Historico de sessoes">' + FM._icon('clock', 14) + ' Historico</button>' +
         '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges">' + FM._icon('sliders', 14) + ' Ranges</button>' +
         '<button class="fm-btn" onclick="FaceMapping._clearAll()" title="Limpar tudo">' + FM._icon('trash-2', 14) + ' Limpar</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggle3DView()" title="Visualizacao 3D do rosto" style="border-color:#8B5CF6;color:#8B5CF6">' + FM._icon('box', 14) + ' 3D</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" style="background:linear-gradient(135deg,#C8A97E,#A8895E);color:#fff;border-color:transparent">' + FM._icon('eye', 14) + ' Comparar</button>' +
         '<button class="fm-btn" onclick="FaceMapping._exportReport()">' + FM._icon('download', 14) + ' Exportar Report</button>' +
         '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()">' + FM._icon('save', 14) + ' Salvar</button>' +
