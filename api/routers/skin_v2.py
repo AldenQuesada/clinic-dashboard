@@ -12,6 +12,7 @@ import time
 import logging
 from typing import Optional, List
 
+import numpy as np
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -68,6 +69,16 @@ async def analyze_skin_full(req: SkinAnalyzeRequest):
         face_rect = tuple(max(faces, key=lambda f: f[2] * f[3])) if len(faces) > 0 else None
 
         skin_mask = segment_skin(img, face_rect=face_rect)
+
+        # Fallback: if skin mask is empty or None, use full image
+        if skin_mask is None or np.sum(skin_mask > 0) < 100:
+            log.warning("Skin mask empty, using full image as fallback")
+            skin_mask = np.ones((h, w), dtype=np.uint8) * 255
+            # If we have face_rect, at least restrict to face area
+            if face_rect:
+                skin_mask = np.zeros((h, w), dtype=np.uint8)
+                fx, fy, fw, fh = face_rect
+                skin_mask[fy:fy+fh, fx:fx+fw] = 255
 
         # Step 2: Try to get zone centers from scanner
         zone_centers = None
