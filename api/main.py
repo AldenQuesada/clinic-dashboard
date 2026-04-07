@@ -445,6 +445,39 @@ async def detect_zones(req: LandmarkRequest):
         raise HTTPException(500, detail=str(e))
 
 
+# ── Collagen Assessment ──────────────────────────────────────
+
+@app.post("/collagen-score")
+async def collagen_assessment(req: PhotoRequest):
+    """Assess collagen loss grade (I-IV) with detailed skin analysis."""
+    t0 = time.time()
+    try:
+        from collagen_engine import assess_collagen
+
+        img_cv = b64_to_cv2(req.photo_base64)
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+        h, w = img_cv.shape[:2]
+
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+
+        if len(faces) == 0:
+            return {"success": False, "error": "No face detected"}
+
+        face_rect = tuple(int(v) for v in max(faces, key=lambda f: f[2] * f[3]))
+        result = assess_collagen(img_cv, face_rect)
+
+        elapsed = round(time.time() - t0, 2)
+        result['success'] = True
+        result['elapsed_s'] = elapsed
+
+        log.info(f"Collagen assessment in {elapsed}s | grade={result['grade']} ({result['grade_name']}) | index={result['collagen_index']}")
+        return result
+    except Exception as e:
+        log.error(f"Collagen assessment failed: {e}")
+        raise HTTPException(500, detail=str(e))
+
+
 # ── Protocol Recommendation ──────────────────────────────────
 
 class ProtocolRequest(BaseModel):
