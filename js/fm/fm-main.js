@@ -54,6 +54,27 @@
     _closeCompare: FM._closeCompare,
     _exportCompare: FM._exportCompare,
 
+    // Skin analysis + heatmaps
+    _runSkinAnalysis: FM._runSkinAnalysis,
+    _runCollagenScore: FM._runCollagenScore,
+    _loadHeatmaps: FM._loadHeatmaps,
+    _toggleHeatmap: FM._toggleHeatmap,
+
+    // 3D view
+    _toggle3DView: FM._toggle3DView,
+
+    // Metrification
+    _setMetricTool: FM._setMetricTool,
+    _autoMetricLines: FM._autoMetricLines,
+    _clearMetricLines: FM._clearMetricLines,
+    _removeLastMetric: FM._removeLastMetric,
+
+    // Sub-mode access
+    get _analysisSubMode() { return FM._analysisSubMode },
+    set _analysisSubMode(v) { FM._analysisSubMode = v },
+    _refreshToolbar: FM._refreshToolbar,
+    _redraw: FM._redraw,
+
     get _selectedMl() { return FM._selectedMl },
     set _selectedMl(v) { FM._selectedMl = v },
     get _selectedSide() { return FM._selectedSide },
