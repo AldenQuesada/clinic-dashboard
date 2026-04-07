@@ -246,6 +246,9 @@
     }
     FM._render()
     setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') {
+      setTimeout(FM._initCanvas2, 100)
+    }
   }
 
   FM._setEditorMode = function (mode) {
@@ -738,8 +741,8 @@
     var img2 = new Image()
     img2.onload = function () {
       var area = document.getElementById('fmCanvasArea')
-      var maxW = area ? (area.clientWidth / 2 - 20) : 400
-      var maxH = (window.innerHeight - 130) * 0.85
+      var maxW = area ? (area.clientWidth / 2 - 16) : 400
+      var maxH = area ? (area.clientHeight - 8) : 600
 
       var scale = Math.min(maxW / img2.width, maxH / img2.height)
       var w = Math.round(img2.width * scale)

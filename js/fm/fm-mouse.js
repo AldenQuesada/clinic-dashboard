@@ -18,20 +18,15 @@
       var area = document.getElementById('fmCanvasArea')
       var isFS = area && area.classList.contains('fm-fullscreen')
 
-      var fixedH = isFS ? 44 : 90
+      // Use actual area dimensions for precise fit
       var areaW = isFS ? window.innerWidth : (area ? area.clientWidth : 800)
+      var areaH = isFS ? window.innerHeight : (area ? area.clientHeight : 600)
 
-      // No label margin — image fills canvas
       var is2x = FM._viewMode === '2x'
-      var maxW = is2x ? (areaW / 2 - 20) : (areaW - 20)
-      var maxH = (window.innerHeight - fixedH - 40) * 0.88
+      var maxW = is2x ? (areaW / 2 - 16) : (areaW - 8)
+      var maxH = areaH - 8  // fill available height minus tiny padding
       var scale = Math.min(maxW / FM._img.width, maxH / FM._img.height)
 
-      // Min 60% viewport height
-      var minH = window.innerHeight * 0.6
-      if (FM._img.height * scale < minH) {
-        scale = Math.min(minH / FM._img.height, maxW / FM._img.width)
-      }
       FM._imgW = Math.round(FM._img.width * scale)
       FM._imgH = Math.round(FM._img.height * scale)
       FM._canvas.width = FM._imgW
