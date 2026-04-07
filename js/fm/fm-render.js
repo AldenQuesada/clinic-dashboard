@@ -32,7 +32,6 @@
     return '<div class="fm-header">' +
       '<div class="fm-header-left">' +
         '<span class="fm-header-title">Analise Facial</span>' +
-        '<span class="fm-patient-badge">' + FM._icon('user', 14) + ' ' + FM._esc(name) + '</span>' +
       '</div>' +
       '<div class="fm-header-actions">' +
         '<div class="fm-mode-toggle">' +
@@ -40,15 +39,11 @@
           '<button class="fm-mode-btn' + (FM._editorMode === 'vectors' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'vectors\')">' + FM._icon('trending-up', 14) + ' Vetores</button>' +
           '<button class="fm-mode-btn' + (FM._editorMode === 'analysis' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'analysis\')">' + FM._icon('git-commit', 14) + ' Analise</button>' +
         '</div>' +
-        '<button class="fm-btn" onclick="FaceMapping._showTemplates()" title="Templates de protocolo">' + FM._icon('clipboard', 14) + ' Templates</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" title="IA detecta zonas automaticamente" style="border-color:#10B981;color:#10B981">' + FM._icon('zap', 14) + ' Auto Zonas</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="IA posiciona tercos e Ricketts">' + FM._icon('cpu', 14) + ' Auto Analise</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._showHistory()" title="Historico de sessoes">' + FM._icon('clock', 14) + ' Historico</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges">' + FM._icon('sliders', 14) + ' Ranges</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._clearAll()" title="Limpar tudo">' + FM._icon('trash-2', 14) + ' Limpar</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._toggle3DView()" title="Visualizacao 3D do rosto" style="border-color:#8B5CF6;color:#8B5CF6">' + FM._icon('box', 14) + ' 3D</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" title="IA detecta zonas" style="border-color:#10B981;color:#10B981">' + FM._icon('zap', 14) + ' Auto Zonas</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="IA 478 pontos">' + FM._icon('cpu', 14) + ' Auto Analise</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggle3DView()" title="3D" style="border-color:#8B5CF6;color:#8B5CF6">' + FM._icon('box', 14) + ' 3D</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" style="background:linear-gradient(135deg,#C8A97E,#A8895E);color:#fff;border-color:transparent">' + FM._icon('eye', 14) + ' Comparar</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._exportReport()">' + FM._icon('download', 14) + ' Exportar Report</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._exportReport()">' + FM._icon('download', 14) + ' Report</button>' +
         '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()">' + FM._icon('save', 14) + ' Salvar</button>' +
       '</div>' +
     '</div>'
@@ -83,6 +78,19 @@
     })
 
     html += '<div class="fm-progress-summary">' + doneCount + '/3</div>'
+
+    // Patient name + secondary actions (moved from header)
+    html += '<div style="display:flex;align-items:center;gap:8px;margin-left:auto;padding-left:12px">'
+    var pname = FM._lead ? (FM._lead.nome || FM._lead.name || '') : ''
+    if (pname) {
+      html += '<span style="font-size:11px;color:var(--text-secondary);font-weight:500">' + FM._icon('user', 12) + ' ' + FM._esc(pname) + '</span>'
+    }
+    html += '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges" style="padding:4px 8px;font-size:10px">' + FM._icon('sliders', 12) + ' Ranges</button>'
+    html += '<button class="fm-btn" onclick="FaceMapping._showTemplates()" title="Templates" style="padding:4px 8px;font-size:10px">' + FM._icon('clipboard', 12) + ' Templates</button>'
+    html += '<button class="fm-btn" onclick="FaceMapping._showHistory()" title="Historico" style="padding:4px 8px;font-size:10px">' + FM._icon('clock', 12) + '</button>'
+    html += '<button class="fm-btn" onclick="FaceMapping._clearAll()" title="Limpar tudo" style="padding:4px 8px;font-size:10px">' + FM._icon('trash-2', 12) + '</button>'
+    html += '</div>'
+
     html += '</div>'
     return html
   }
