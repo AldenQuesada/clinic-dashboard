@@ -24,9 +24,14 @@
 
       console.log('[FaceMapping] Calling GPT via n8n webhook...')
 
+      // 5-second timeout via AbortController
+      var controller = new AbortController()
+      var timeoutId = setTimeout(function () { controller.abort() }, 5000)
+
       fetch('https://flows.aldenquesada.site/webhook/lara-webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           action: 'facial-ai',
           photo_base64: b64,
@@ -36,18 +41,19 @@
           source: 'dashboard',
         }),
       })
-      .then(function (res) { return res.json() })
+      .then(function (res) { clearTimeout(timeoutId); return res.json() })
       .then(function (data) {
         console.log('[FaceMapping] GPT response:', data)
-        if (data.success) {
-          if (data.analysis) FM._lastAnalysis = data.analysis
-          console.log('[FaceMapping] Analysis:', FM._lastAnalysis ? 'OK' : 'null (using canvas)')
+        if (data.success && data.analysis) {
+          FM._lastAnalysis = data.analysis
+          FM._autoSave() // persist analysis
         }
         FM._generateSimulationCanvas(callback)
         if (btn) { btn.innerHTML = origBtn }
       })
       .catch(function (err) {
-        console.error('[FaceMapping] Webhook failed:', err)
+        clearTimeout(timeoutId)
+        console.warn('[FaceMapping] Webhook skipped:', err.name === 'AbortError' ? 'timeout 5s' : err.message)
         FM._generateSimulationCanvas(callback)
         if (btn) { btn.innerHTML = origBtn }
       })

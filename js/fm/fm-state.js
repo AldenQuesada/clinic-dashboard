@@ -44,7 +44,6 @@
   FM._selectedSide = 'bilateral'
   FM._selectedProduct = ''
   FM._nextId = 1
-  FM._doneItems = []
   FM._exportCanvas = null
 
   // Crop state

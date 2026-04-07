@@ -49,6 +49,7 @@
         editorMode: FM._editorMode,
         nextId: FM._nextId,
         nextVecId: FM._nextVecId,
+        lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
         savedAt: new Date().toISOString(),
       }
@@ -70,6 +71,7 @@
       FM._editorMode = session.editorMode || 'zones'
       FM._nextId = session.nextId || 1
       FM._nextVecId = session.nextVecId || 1
+      FM._lastAnalysis = session.lastAnalysis || null
       FM._activeAngle = session.activeAngle || null
 
       var photos = session.photos || {}
@@ -120,7 +122,6 @@
         }
       }),
       totals: FM._calcTotals(),
-      done_items: FM._doneItems,
     }
 
     try {

@@ -9,6 +9,25 @@
   window._FM = {}
   var FM = window._FM
 
+  // Polyfill: CanvasRenderingContext2D.roundRect (Safari, older browsers)
+  if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      if (typeof r === 'number') r = [r, r, r, r]
+      var tl = r[0] || 0
+      this.moveTo(x + tl, y)
+      this.lineTo(x + w - tl, y)
+      this.arcTo(x + w, y, x + w, y + tl, tl)
+      this.lineTo(x + w, y + h - tl)
+      this.arcTo(x + w, y + h, x + w - tl, y + h, tl)
+      this.lineTo(x + tl, y + h)
+      this.arcTo(x, y + h, x, y + h - tl, tl)
+      this.lineTo(x, y + tl)
+      this.arcTo(x, y, x + tl, y, tl)
+      this.closePath()
+      return this
+    }
+  }
+
   // ── Zone categories ────────────────────────────────────────
   // cat: 'fill' (preenchimento, mL) or 'tox' (rugas/toxina, U)
   // min/max: default ranges (editable, saved to localStorage)

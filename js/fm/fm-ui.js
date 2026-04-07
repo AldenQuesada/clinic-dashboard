@@ -16,7 +16,6 @@
     FM._photos = {}
     FM._photoUrls = {}
     FM._annotations = []
-    FM._doneItems = []
     FM._activeAngle = null
     FM._nextId = 1
     FM._afterPhotoUrl = null
@@ -33,7 +32,6 @@
     FM._photos = {}
     FM._photoUrls = {}
     FM._annotations = []
-    FM._doneItems = []
     FM._activeAngle = null
     FM._nextId = 1
     FM._afterPhotoUrl = null
