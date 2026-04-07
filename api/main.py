@@ -133,47 +133,44 @@ async def remove_background(req: PhotoRequest):
         composite = Image.alpha_composite(black_bg, result_refined)
         final = composite.convert("RGB")
 
-        # Auto-crop to head+neck: detect face and crop below chin
+        # Auto-crop to head+neck: detect face, cut below chin
         final_np = np.array(final)
+        img_h, img_w = final_np.shape[:2]
         gray = cv2.cvtColor(final_np, cv2.COLOR_RGB2GRAY)
 
-        # Find non-black region (the person)
-        _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
-        coords = cv2.findNonZero(thresh)
-        if coords is not None:
-            x, y, bw, bh = cv2.boundingRect(coords)
-            # Try face detection to find chin line
-            try:
-                import mediapipe as mp
-                mp_mesh = get_face_mesh()
-                rgb_for_mesh = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
-                rgb_for_mesh = cv2.cvtColor(rgb_for_mesh, cv2.COLOR_BGR2RGB)
-                face_results = mp_mesh.process(rgb_for_mesh)
-                if face_results.multi_face_landmarks:
-                    chin_y = face_results.multi_face_landmarks[0].landmark[152].y
-                    img_h = final_np.shape[0]
-                    # Cut 15% below chin (keeps neck, removes body)
-                    cut_y = min(img_h, int(chin_y * img_h * 1.15))
-                    final_np = final_np[max(0, y):cut_y, :]
-                    # Re-pad with black to maintain aspect ratio
-                    final = Image.fromarray(final_np)
-                    log.info(f"Auto-cropped to head+neck: chin_y={chin_y:.2f}, cut_y={cut_y}")
-                else:
-                    final = Image.fromarray(final_np)
-            except Exception as crop_err:
-                log.warning(f"Face crop fallback: {crop_err}")
-                # Fallback: crop to top 65% of person bounding box
-                cut_y = y + int(bh * 0.65)
-                final_np = final_np[y:cut_y, x:x+bw]
+        # Find face using OpenCV Haar cascade (fast, reliable)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4, minSize=(80, 80))
+
+        if len(faces) > 0:
+            # Use largest face
+            fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
+            # Cut at face_bottom + 30% of face height (keeps neck, removes body)
+            chin_y = fy + fh
+            cut_y = min(img_h, chin_y + int(fh * 0.35))
+            # Keep some space above forehead
+            top_y = max(0, fy - int(fh * 0.5))
+            final_np = final_np[top_y:cut_y, :]
+            final = Image.fromarray(final_np)
+            log.info(f"Auto-cropped: face at ({fx},{fy},{fw},{fh}), cut_y={cut_y}")
+        else:
+            # Fallback: find non-black region, crop to top 60%
+            _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
+            coords = cv2.findNonZero(thresh)
+            if coords is not None:
+                bx, by, bw, bh = cv2.boundingRect(coords)
+                cut_y = by + int(bh * 0.60)
+                final_np = final_np[by:cut_y, bx:bx+bw]
                 final = Image.fromarray(final_np)
+                log.info(f"Fallback crop: top 60% of person")
 
         # Re-get numpy for sharpening
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
 
-        # Unsharp mask: sharpen without adding noise
-        gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 2.0)
-        sharpened = cv2.addWeighted(final_bgr, 1.5, gaussian, -0.5, 0)
+        # Subtle unsharp mask — restore detail without creating artifacts
+        gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
+        sharpened = cv2.addWeighted(final_bgr, 1.2, gaussian, -0.2, 0)
 
         # Convert back to PIL
         sharpened_rgb = cv2.cvtColor(sharpened, cv2.COLOR_BGR2RGB)
