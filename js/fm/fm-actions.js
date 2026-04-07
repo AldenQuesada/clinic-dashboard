@@ -239,16 +239,51 @@
         if (!file || !FM._pendingExtraType) return
         if (!_validateFile(file)) { e.target.value = ''; return }
 
-        var url = URL.createObjectURL(file)
         if (FM._pendingExtraType === 'after') {
-          if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-          FM._afterPhotoUrl = url
+          // Auto remove-bg for DEPOIS photo
+          var reader = new FileReader()
+          reader.onload = function () {
+            var b64 = reader.result.split(',')[1]
+            FM._showLoading('Removendo fundo (DEPOIS)...')
+            fetch(FM.FACIAL_API_URL + '/remove-bg', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ photo_base64: b64 }),
+            })
+            .then(function (r) { return r.json() })
+            .then(function (d) {
+              FM._hideLoading()
+              if (d.success && d.image_b64) {
+                var bin = atob(d.image_b64)
+                var arr = new Uint8Array(bin.length)
+                for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+                if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
+                FM._afterPhotoUrl = URL.createObjectURL(new Blob([arr], { type: 'image/png' }))
+                FM._showToast('Fundo removido', 'success')
+              } else {
+                if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
+                FM._afterPhotoUrl = URL.createObjectURL(file)
+              }
+              FM._render()
+              if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
+              if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+            })
+            .catch(function () {
+              FM._hideLoading()
+              if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
+              FM._afterPhotoUrl = URL.createObjectURL(file)
+              FM._render()
+              if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
+            })
+          }
+          reader.readAsDataURL(file)
         } else {
+          var url = URL.createObjectURL(file)
           if (FM._simPhotoUrl) URL.revokeObjectURL(FM._simPhotoUrl)
           FM._simPhotoUrl = url
+          FM._render()
+          if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
         }
-        FM._render()
-        if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
       })
     }
 
