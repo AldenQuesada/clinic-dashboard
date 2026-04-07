@@ -419,9 +419,18 @@ def _estimate_skin_age(
     # Spot count (connected components above threshold)
     _, spot_binary = cv2.threshold(spot_map, 100, 255, cv2.THRESH_BINARY)
     spot_binary = cv2.bitwise_and(spot_binary, spot_binary, mask=mask)
+
+    # Erode mask to ignore edge artifacts (black background border creates false spots)
+    erode_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+    mask_eroded = cv2.erode(mask, erode_kernel, iterations=2)
+    spot_binary = cv2.bitwise_and(spot_binary, spot_binary, mask=mask_eroded)
+
     num_spots, _, stats, _ = cv2.connectedComponentsWithStats(spot_binary)
-    # Filter out tiny spots (noise)
-    significant_spots = sum(1 for i in range(1, num_spots) if stats[i, cv2.CC_STAT_AREA] > 20)
+    # Filter out tiny spots (noise) and very large blobs (not spots)
+    significant_spots = sum(
+        1 for i in range(1, num_spots)
+        if 30 < stats[i, cv2.CC_STAT_AREA] < 5000
+    )
 
     # Age estimation formula (calibrated with real clinical patients)
     # Calibration reference: Pri, 50 anos, rosto quadrado, assimetria evidente
@@ -431,8 +440,8 @@ def _estimate_skin_age(
     # Wrinkle contribution: strongest signal (0-35 years)
     wrinkle_years = (100 - wrinkle_score) * 0.35
 
-    # Spot contribution: significant (0-20 years)
-    spot_years = min(20, significant_spots * 1.5 + (100 - spot_score) * 0.05)
+    # Spot contribution: moderate (0-12 years)
+    spot_years = min(12, significant_spots * 0.6 + (100 - spot_score) * 0.04)
 
     # Firmness contribution (0-15 years)
     firmness_years = (100 - firmness_score) * 0.15
