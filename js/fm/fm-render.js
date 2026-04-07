@@ -20,6 +20,7 @@
       '<div class="fm-body">' +
         FM._renderPhotoStrip() +
         FM._renderCanvasArea() +
+        FM._renderClinicalPanel() +
         FM._renderToolbar() +
       '</div>' +
     '</div>'
@@ -178,6 +179,177 @@
         '<button onclick="FaceMapping._toggleFullscreen()" title="Tela cheia" class="fm-canvas-ctrl-btn">' + FM._icon('maximize-2', 14) + '</button>' +
       '</div>' +
     '</div>'
+  }
+
+  FM._renderClinicalPanel = function () {
+    // Only show in metrics mode with data
+    if (FM._editorMode !== 'analysis' || FM._analysisSubMode !== 'metrics') {
+      return ''
+    }
+
+    var scan = FM._scanData
+    var ma = FM._metricAngles
+    var skin = FM._skinAnalysis
+    var age = FM._skinAge
+
+    // If no data at all, return empty
+    if (!scan && !ma && !skin) return ''
+
+    var html = '<div class="fm-clinical-panel" style="width:260px;flex-shrink:0;background:#1A1A1A;border-left:1px solid rgba(200,169,126,0.15);overflow-y:auto;max-height:calc(100vh - 100px);font-size:11px">'
+
+    // ── SECTION 1: PLANO VERTICAL ──
+    html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
+      '<div style="background:rgba(16,185,129,0.15);padding:6px 12px">' +
+        '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#10B981">PLANO VERTICAL</span>' +
+      '</div>' +
+      '<div style="padding:10px 12px">'
+
+    if (scan && scan.thirds) {
+      var t = scan.thirds
+      html += _clinVal('Terco Superior', Math.round(t.superior) + '%', t.superior >= 28 && t.superior <= 38 ? '#10B981' : '#EF4444')
+      html += _clinVal('Terco Medio', Math.round(t.medio) + '%', t.medio >= 28 && t.medio <= 38 ? '#10B981' : '#F59E0B')
+      html += _clinVal('Terco Inferior', Math.round(t.inferior) + '%', t.inferior >= 28 && t.inferior <= 38 ? '#10B981' : '#F59E0B')
+      html += _clinVal('Equilibrio', t.balanced ? 'Sim' : 'Nao', t.balanced ? '#10B981' : '#EF4444')
+
+      if (t.inferior > 38) {
+        html += _clinRx('Terco inferior longo', 'Botox masseter 20-30U bilateral para reduzir')
+      } else if (t.inferior < 28) {
+        html += _clinRx('Terco inferior curto', 'AH mento 1-2mL para projecao vertical')
+      }
+      if (t.medio > 38) {
+        html += _clinRx('Terco medio aumentado', 'AH ponta nasal 0.5mL para encurtar')
+      }
+      if (t.balanced) {
+        html += '<div style="color:#10B981;font-size:10px;margin-top:4px">Proporcoes verticais equilibradas</div>'
+      }
+    } else {
+      html += '<div style="color:rgba(245,240,232,0.4);font-size:10px">Execute Auto Analise</div>'
+    }
+
+    if (scan && scan.symmetry) {
+      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
+      html += _clinVal('Simetria Global', scan.symmetry.overall + '%', scan.symmetry.overall >= 85 ? '#10B981' : scan.symmetry.overall >= 70 ? '#F59E0B' : '#EF4444')
+      if (scan.symmetry.overall < 85) {
+        html += _clinRx('Assimetria detectada', 'AH compensatorio no lado deficiente')
+      }
+      html += '</div>'
+    }
+
+    html += '</div></div>'
+
+    // ── SECTION 2: PLANO HORIZONTAL ──
+    html += '<div style="border-bottom:1px solid rgba(200,169,126,0.1)">' +
+      '<div style="background:rgba(59,130,246,0.15);padding:6px 12px">' +
+        '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#3B82F6">PLANO HORIZONTAL</span>' +
+      '</div>' +
+      '<div style="padding:10px 12px">'
+
+    if (scan && scan.shape) {
+      html += _clinVal('Biotipo', scan.shape.shape, '#C8A97E')
+      if (scan.shape.ratios) {
+        html += _clinVal('Larg/Altura', scan.shape.ratios.width_to_length, scan.shape.ratios.width_to_length >= 0.65 && scan.shape.ratios.width_to_length <= 0.85 ? '#10B981' : '#F59E0B')
+      }
+      if (scan.measurements) {
+        html += _clinVal('Prop. Aurea', Math.round(scan.measurements.golden_ratio_score) + '%', scan.measurements.golden_ratio_score >= 70 ? '#10B981' : '#F59E0B')
+      }
+
+      html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
+      var sh = scan.shape.shape
+      if (sh === 'redondo') {
+        html += _clinRx('Rosto redondo', 'AH mandibula 2-3mL bilateral')
+        html += _clinRx('', 'AH mento 1mL projecao')
+        html += _clinRx('', 'Botox masseter 25U bilateral')
+      } else if (sh === 'quadrado') {
+        html += _clinRx('Rosto quadrado', 'Botox masseter 30U bilateral')
+        html += _clinRx('', 'AH zigoma 1mL bilateral')
+        html += _clinRx('', 'AH temporal 0.5mL bilateral')
+      } else if (sh === 'oval') {
+        html += _clinRx('Biotipo ideal', 'AH pontual conforme queixas especificas')
+      } else if (sh === 'oblongo') {
+        html += _clinRx('Rosto oblongo', 'AH zigoma 1.5mL bilateral')
+        html += _clinRx('', 'AH mandibula 1mL bilateral')
+      } else if (sh === 'coracao') {
+        html += _clinRx('Rosto coracao', 'AH mandibula 2mL bilateral')
+        html += _clinRx('', 'AH mento 1mL projecao')
+      } else if (sh === 'diamante') {
+        html += _clinRx('Rosto diamante', 'AH temporal 1mL bilateral')
+        html += _clinRx('', 'AH mandibula 1.5mL bilateral')
+      }
+      html += '</div>'
+    } else {
+      html += '<div style="color:rgba(245,240,232,0.4);font-size:10px">Execute Auto Analise</div>'
+    }
+
+    html += '</div></div>'
+
+    // ── SECTION 3: LINHA MANDIBULAR ──
+    html += '<div>' +
+      '<div style="background:rgba(200,169,126,0.15);padding:6px 12px">' +
+        '<span style="font-size:9px;font-weight:700;letter-spacing:0.1em;color:#C8A97E">LINHA MANDIBULAR</span>' +
+      '</div>' +
+      '<div style="padding:10px 12px">'
+
+    if (ma) {
+      html += _clinVal('AMF', ma.amf + '\u00B0', ma.classification.color)
+      html += _clinVal('Classificacao', ma.classification.label, ma.classification.color)
+      html += _clinVal('Ratio M/Z', ma.rmz, ma.rmz >= 0.85 && ma.rmz <= 0.95 ? '#10B981' : '#F59E0B')
+      html += _clinVal('Jawline E', ma.aij_left + '\u00B0', ma.jawline.color)
+      html += _clinVal('Jawline D', ma.aij_right + '\u00B0', ma.jawline.color)
+      html += _clinVal('Tensao', ma.jawline.label, ma.jawline.color)
+
+      var aijDiff = Math.abs(ma.aij_left - ma.aij_right)
+      if (aijDiff > 2) {
+        var side = ma.aij_left > ma.aij_right ? 'E' : 'D'
+        html += _clinVal('Assimetria', '\u0394' + Math.round(aijDiff * 10) / 10 + '\u00B0 (' + side + ')', aijDiff > 8 ? '#EF4444' : '#F59E0B')
+      }
+
+      html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
+      if (ma.classification.level <= 2) {
+        html += _clinRx('Contorno indefinido', 'AH mandibula 2-3mL bilateral')
+        html += _clinRx('', 'AH mento 1-1.5mL projecao')
+        if (ma.aij_avg > 30) html += _clinRx('', 'AH pre-jowl 0.5mL bilateral')
+      } else if (ma.classification.level === 3) {
+        html += _clinRx('Boa definicao', 'Refinar contorno e corrigir assimetrias')
+        if (aijDiff > 4) html += _clinRx('', 'AH compensatorio lado ' + side + ' 0.5-1mL')
+      } else {
+        html += _clinRx('Angular marcada', 'Botox masseter 20-25U se suavizar')
+      }
+      if (ma.aij_avg > 30) {
+        html += _clinRx('Jawline caida', 'AH temporal 1mL vetor lifting')
+        html += _clinRx('', 'Fios PDO 4-6 unidades')
+      }
+      html += '</div>'
+    } else {
+      html += '<div style="color:rgba(245,240,232,0.4);font-size:10px">Execute Auto Angulos</div>'
+    }
+
+    // Skin age summary (if available)
+    if (age) {
+      html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)">'
+      var ageColor = age.estimated_age <= 35 ? '#10B981' : age.estimated_age <= 45 ? '#F59E0B' : '#EF4444'
+      html += _clinVal('Idade da Pele', Math.round(age.estimated_age) + ' anos', ageColor)
+      html += '<div style="font-size:9px;color:rgba(245,240,232,0.4);margin-top:2px">' + (age.description || '') + '</div>'
+      html += '</div>'
+    }
+
+    html += '</div></div></div>'
+    return html
+  }
+
+  function _clinVal(label, value, color) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0">' +
+      '<span style="color:rgba(245,240,232,0.6);font-size:10px">' + label + '</span>' +
+      '<span style="color:' + (color || '#F5F0E8') + ';font-weight:600;font-size:11px">' + value + '</span>' +
+    '</div>'
+  }
+
+  function _clinRx(title, rx) {
+    var html = ''
+    if (title) {
+      html += '<div style="font-size:9px;color:rgba(245,240,232,0.5);margin-top:4px">' + title + '</div>'
+    }
+    html += '<div style="font-size:9px;color:#3B82F6;font-weight:600;padding:2px 0">Rx: ' + rx + '</div>'
+    return html
   }
 
   FM._renderToolbar = function () {

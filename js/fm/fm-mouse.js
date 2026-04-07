@@ -82,10 +82,7 @@
     FM._ctx.fillStyle = '#2C2C2C'
     FM._ctx.fillRect(FM._imgW, 0, LABEL_MARGIN, FM._canvas.height)
 
-    // Clinical analysis panel (drawn ON TOP of label area background)
-    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
-      if (FM._drawClinicalAnalysis) FM._drawClinicalAnalysis()
-    }
+    // Clinical analysis — rendered in toolbar, not canvas (see fm-render.js)
 
     if (FM._editorMode === 'vectors') {
       var vecLabelY = 20
