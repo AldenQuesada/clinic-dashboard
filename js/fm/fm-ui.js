@@ -226,8 +226,8 @@
 
     html += '</div>'
 
-    html += '<input type="file" id="fmFileInput" accept="image/*" style="display:none">'
-    html += '<input type="file" id="fmExtraFileInput" accept="image/*" style="display:none">'
+    html += '<input type="file" id="fmFileInput" accept="image/jpeg,image/png,image/webp" style="display:none">'
+    html += '<input type="file" id="fmExtraFileInput" accept="image/jpeg,image/png,image/webp" style="display:none">'
     html += '</div>'
     return html
   }
@@ -541,11 +541,28 @@
   }
 
   FM._bindEvents = function () {
+    var ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+    var MAX_SIZE_MB = 15
+
+    function _validateFile(file) {
+      if (!file) return false
+      if (ALLOWED_TYPES.indexOf(file.type) === -1) {
+        FM._showToast('Formato nao suportado. Use JPG, PNG ou WebP.', 'error')
+        return false
+      }
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        FM._showToast('Arquivo muito grande (' + Math.round(file.size / 1024 / 1024) + 'MB). Maximo: ' + MAX_SIZE_MB + 'MB.', 'error')
+        return false
+      }
+      return true
+    }
+
     var input = document.getElementById('fmFileInput')
     if (input) {
       input.addEventListener('change', function (e) {
         var file = e.target.files[0]
         if (!file || !FM._pendingUploadAngle) return
+        if (!_validateFile(file)) { e.target.value = ''; return }
 
         FM._originalFiles[FM._pendingUploadAngle] = file
 
@@ -559,6 +576,8 @@
       extraInput.addEventListener('change', function (e) {
         var file = e.target.files[0]
         if (!file || !FM._pendingExtraType) return
+        if (!_validateFile(file)) { e.target.value = ''; return }
+
         var url = URL.createObjectURL(file)
         if (FM._pendingExtraType === 'after') {
           if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
