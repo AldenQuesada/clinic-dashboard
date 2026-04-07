@@ -33,6 +33,8 @@
         '<div style="display:flex;gap:8px">' +
           '<button style="display:flex;align-items:center;gap:5px;padding:8px 14px;border:none;border-radius:10px;background:#C8A97E;color:#fff;font-size:13px;font-weight:600;cursor:pointer" onclick="FaceMapping._downloadReport()">' +
             FM._icon('download', 14) + ' Baixar PNG</button>' +
+          '<button style="display:flex;align-items:center;gap:5px;padding:8px 14px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:13px;font-weight:500;cursor:pointer" onclick="FaceMapping._printReport()">' +
+            FM._icon('printer', 14) + ' Imprimir</button>' +
           '<button class="fm-btn" onclick="FaceMapping._closeExport()">' +
             FM._icon('x', 14) + ' Fechar</button>' +
         '</div>' +
@@ -133,6 +135,33 @@
       })
       html += '</div>'
     }
+
+    // Color legend
+    html += '<div class="fm-report-summary" style="padding-top:0;flex-wrap:wrap;gap:12px">' +
+      '<div style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#C8A97E;width:100%;text-align:center;margin-bottom:4px">Legenda de Cores</div>'
+    var usedZones = []
+    FM._annotations.forEach(function (a) {
+      if (usedZones.indexOf(a.zone) !== -1) return
+      usedZones.push(a.zone)
+      var z = FM.ZONES.find(function (zz) { return zz.id === a.zone })
+      if (!z) return
+      html += '<div style="display:flex;align-items:center;gap:4px">' +
+        '<span style="width:10px;height:10px;border-radius:50%;background:' + z.color + ';flex-shrink:0"></span>' +
+        '<span style="font-size:9px;color:#F5F0E8">' + z.label + '</span>' +
+      '</div>'
+    })
+    html += '</div>'
+
+    // Professional signature
+    var profName = localStorage.getItem('fm_professional_name') || 'Dra. Mirian de Paula'
+    var profCRM = localStorage.getItem('fm_professional_crm') || 'CRM/SP 000000'
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;padding:16px 32px;border-top:1px solid rgba(200,169,126,0.15)">' +
+      '<div style="font-size:9px;color:rgba(245,240,232,0.3)">Documento gerado por ClinicAI</div>' +
+      '<div style="text-align:right">' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;color:#C8A97E">' + FM._esc(profName) + '</div>' +
+        '<div style="font-size:9px;color:rgba(245,240,232,0.4);letter-spacing:0.1em">' + FM._esc(profCRM) + '</div>' +
+      '</div>' +
+    '</div>'
 
     html += '</div></div></div>'
     overlay.innerHTML = html
@@ -276,6 +305,18 @@
         link.click()
       }
     }
+  }
+
+  FM._printReport = function () {
+    var report = document.getElementById('fmReportCard')
+    if (!report) return
+    var win = window.open('', '_blank')
+    win.document.write('<!DOCTYPE html><html><head><title>Analise Facial</title>' +
+      '<style>body{margin:0;background:#2C2C2C;font-family:Montserrat,sans-serif}' +
+      '@media print{body{background:#fff}}</style></head><body>' +
+      report.outerHTML + '</body></html>')
+    win.document.close()
+    setTimeout(function () { win.print() }, 500)
   }
 
   FM._closeExport = function () {

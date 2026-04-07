@@ -91,8 +91,10 @@
     var s = ann.shape
 
     ctx.save()
+    var opacity = typeof ann.opacity === 'number' ? ann.opacity : 0.44
+    var opHex = Math.round(opacity * 255).toString(16).padStart(2, '0')
     ctx.beginPath()
-    ctx.fillStyle = color + '70'
+    ctx.fillStyle = color + opHex
     ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
     ctx.fill()
 

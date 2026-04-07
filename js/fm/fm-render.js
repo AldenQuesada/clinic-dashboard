@@ -40,6 +40,7 @@
           '<button class="fm-mode-btn' + (FM._editorMode === 'vectors' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'vectors\')">' + FM._icon('trending-up', 14) + ' Vetores</button>' +
           '<button class="fm-mode-btn' + (FM._editorMode === 'analysis' ? ' active' : '') + '" onclick="FaceMapping._setEditorMode(\'analysis\')">' + FM._icon('git-commit', 14) + ' Analise</button>' +
         '</div>' +
+        '<button class="fm-btn" onclick="FaceMapping._showTemplates()" title="Templates de protocolo">' + FM._icon('clipboard', 14) + ' Templates</button>' +
         '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" title="IA detecta zonas automaticamente" style="border-color:#10B981;color:#10B981">' + FM._icon('zap', 14) + ' Auto Zonas</button>' +
         '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="IA posiciona tercos e Ricketts">' + FM._icon('cpu', 14) + ' Auto Analise</button>' +
         '<button class="fm-btn" onclick="FaceMapping._editRanges()" title="Editar ranges">' + FM._icon('sliders', 14) + ' Ranges</button>' +
