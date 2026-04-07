@@ -133,7 +133,41 @@ async def remove_background(req: PhotoRequest):
         composite = Image.alpha_composite(black_bg, result_refined)
         final = composite.convert("RGB")
 
-        # Apply sharpening to restore detail lost in processing
+        # Auto-crop to head+neck: detect face and crop below chin
+        final_np = np.array(final)
+        gray = cv2.cvtColor(final_np, cv2.COLOR_RGB2GRAY)
+
+        # Find non-black region (the person)
+        _, thresh = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
+        coords = cv2.findNonZero(thresh)
+        if coords is not None:
+            x, y, bw, bh = cv2.boundingRect(coords)
+            # Try face detection to find chin line
+            try:
+                import mediapipe as mp
+                mp_mesh = get_face_mesh()
+                rgb_for_mesh = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
+                rgb_for_mesh = cv2.cvtColor(rgb_for_mesh, cv2.COLOR_BGR2RGB)
+                face_results = mp_mesh.process(rgb_for_mesh)
+                if face_results.multi_face_landmarks:
+                    chin_y = face_results.multi_face_landmarks[0].landmark[152].y
+                    img_h = final_np.shape[0]
+                    # Cut 15% below chin (keeps neck, removes body)
+                    cut_y = min(img_h, int(chin_y * img_h * 1.15))
+                    final_np = final_np[max(0, y):cut_y, :]
+                    # Re-pad with black to maintain aspect ratio
+                    final = Image.fromarray(final_np)
+                    log.info(f"Auto-cropped to head+neck: chin_y={chin_y:.2f}, cut_y={cut_y}")
+                else:
+                    final = Image.fromarray(final_np)
+            except Exception as crop_err:
+                log.warning(f"Face crop fallback: {crop_err}")
+                # Fallback: crop to top 65% of person bounding box
+                cut_y = y + int(bh * 0.65)
+                final_np = final_np[y:cut_y, x:x+bw]
+                final = Image.fromarray(final_np)
+
+        # Re-get numpy for sharpening
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
 
