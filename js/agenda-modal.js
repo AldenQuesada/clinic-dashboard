@@ -148,6 +148,7 @@
     apptUpdateEndTime()
 
     // Carregar procedimentos da BD (async, popula select quando pronto)
+    _cachedClinicProcs = null // Forcar reload a cada abertura
     _loadClinicProcs().then(function(procs) { _populateProcSelect(procs) })
   }
 
@@ -262,7 +263,7 @@
       var res = await ProcedimentosRepository.getAll(true)
       if (res.ok && Array.isArray(res.data)) {
         res.data.forEach(function(p) {
-          procs.push({ nome: p.nome, categoria: p.categoria || 'Procedimentos', valor: parseFloat(p.valor) || 0, duracao: parseInt(p.duracao_min) || 60 })
+          procs.push({ nome: p.nome, categoria: p.categoria || p.tipo || 'Procedimentos', valor: parseFloat(p.preco || p.valor) || 0, duracao: parseInt(p.duracao_min || p.duracao) || 60 })
         })
       }
     }
@@ -272,7 +273,7 @@
       var res2 = await InjetaveisRepository.getAll(true)
       if (res2.ok && Array.isArray(res2.data)) {
         res2.data.forEach(function(inj) {
-          procs.push({ nome: inj.nome, categoria: 'Injetaveis', valor: parseFloat(inj.preco_custo) || 0, duracao: 60 })
+          procs.push({ nome: inj.nome, categoria: 'Injetaveis', valor: parseFloat(inj.preco || inj.preco_custo) || 0, duracao: 60 })
         })
       }
     }
