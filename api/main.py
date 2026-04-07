@@ -250,7 +250,7 @@ async def detect_landmarks(req: LandmarkRequest):
             "key_points": key_points,
             "thirds": thirds,
             "ricketts": ricketts,
-            "face_rect": {"x": fx, "y": fy, "w": fw, "h": fh},
+            "face_rect": {"x": int(fx), "y": int(fy), "w": int(fw), "h": int(fh)},
             "image_size": {"w": w, "h": h},
             "elapsed_s": elapsed,
         }
