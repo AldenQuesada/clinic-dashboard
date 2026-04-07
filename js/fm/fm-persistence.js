@@ -55,7 +55,12 @@
       }
       localStorage.setItem('fm_session_' + id, JSON.stringify(session))
       localStorage.setItem('fm_last_session', id)
-    } catch (e) { console.warn('[FaceMapping] Storage full or error:', e) }
+    } catch (e) {
+      console.warn('[FaceMapping] Storage full or error:', e)
+      if (e.name === 'QuotaExceededError' || (e.message && e.message.indexOf('quota') !== -1)) {
+        FM._showToast('Armazenamento local cheio. Limpe sessoes antigas.', 'warn')
+      }
+    }
   }
 
   FM._restoreSession = function (leadId) {
@@ -141,10 +146,18 @@
         p_gpt_analysis: FM._lastAnalysis || null,
       })
         .then(function (res) {
-          if (res.error) console.error('[FaceMapping] Save error:', res.error)
-          else console.log('[FaceMapping] Saved to Supabase')
+          if (res.error) {
+            console.error('[FaceMapping] Save error:', res.error)
+            FM._showToast('Erro ao salvar no banco: ' + (res.error.message || ''), 'error')
+          } else {
+            console.log('[FaceMapping] Saved to Supabase')
+            FM._showToast('Sessao salva com sucesso', 'success')
+          }
         })
-        .catch(function (err) { console.error('[FaceMapping] Save failed:', err) })
+        .catch(function (err) {
+          console.error('[FaceMapping] Save failed:', err)
+          FM._showToast('Falha ao salvar: ' + (err.message || ''), 'error')
+        })
     }
 
     var btn = document.querySelector('.fm-btn-primary')

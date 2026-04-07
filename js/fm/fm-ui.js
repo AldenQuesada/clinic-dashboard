@@ -22,6 +22,7 @@
     FM._simPhotoUrl = null
 
     FM._restoreSession(leadId)
+    FM._cleanupStorage()
 
     if (window.navigateTo) window.navigateTo('facial-analysis')
     setTimeout(function () { FM._render() }, 100)

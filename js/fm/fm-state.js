@@ -137,4 +137,66 @@
     return 'fh_' + Math.abs(hash).toString(36) + '_' + b64.length
   }
 
+  // Toast notification (temporary, top-right)
+  FM._showToast = function (msg, type) {
+    var existing = document.getElementById('fmToast')
+    if (existing) existing.remove()
+
+    var colors = {
+      error: { bg: '#991B1B', border: '#EF4444' },
+      success: { bg: '#065F46', border: '#10B981' },
+      warn: { bg: '#78350F', border: '#F59E0B' },
+    }
+    var c = colors[type] || colors.warn
+
+    var el = document.createElement('div')
+    el.id = 'fmToast'
+    el.style.cssText = 'position:fixed;top:80px;right:20px;z-index:99999;padding:12px 18px;border-radius:10px;' +
+      'background:' + c.bg + ';border:1px solid ' + c.border + ';color:#F5F0E8;font-size:13px;font-weight:500;' +
+      'box-shadow:0 8px 24px rgba(0,0,0,0.3);max-width:360px;animation:fmFadeIn .2s ease'
+    el.textContent = msg
+    document.body.appendChild(el)
+    setTimeout(function () { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(function () { el.remove() }, 300) }, 4000)
+  }
+
+  // Cleanup old sessions from localStorage (keep last 5, delete >7 days)
+  FM._cleanupStorage = function () {
+    try {
+      var keys = []
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i)
+        if (k && k.startsWith('fm_session_')) keys.push(k)
+      }
+      if (keys.length <= 5) return // nothing to clean
+
+      // Parse and sort by savedAt
+      var sessions = keys.map(function (k) {
+        try {
+          var d = JSON.parse(localStorage.getItem(k))
+          return { key: k, savedAt: d.savedAt || '2000-01-01' }
+        } catch (e) { return { key: k, savedAt: '2000-01-01' } }
+      }).sort(function (a, b) { return b.savedAt.localeCompare(a.savedAt) })
+
+      // Keep 5 most recent, delete the rest
+      var sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+      sessions.forEach(function (s, idx) {
+        if (idx >= 5 || s.savedAt < sevenDaysAgo) {
+          localStorage.removeItem(s.key)
+        }
+      })
+
+      // Also estimate total size and warn if >4MB
+      var totalSize = 0
+      for (var j = 0; j < localStorage.length; j++) {
+        var key = localStorage.key(j)
+        if (key && key.startsWith('fm_')) {
+          totalSize += (localStorage.getItem(key) || '').length
+        }
+      }
+      if (totalSize > 4000000) {
+        console.warn('[FaceMapping] localStorage usage high:', Math.round(totalSize / 1024) + 'KB')
+      }
+    } catch (e) { /* silent */ }
+  }
+
 })()
