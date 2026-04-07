@@ -115,15 +115,15 @@ async def remove_background(req: PhotoRequest):
             alpha_matting_erode_size=10,               # smaller erode = less edge loss
         )
 
-        # Refine edges: soften the alpha channel for natural hair blending
+        # Refine alpha mask for clean hair edges
         result_np = np.array(result)
         alpha = result_np[:, :, 3].astype(np.float32)
 
-        # Gentle gaussian blur on alpha for smooth edges (preserves hair strands)
-        alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.8)
+        # Minimal alpha smoothing (1px only — preserve hair strands)
+        alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.5)
 
-        # Boost contrast on alpha: make semi-transparent areas more opaque
-        alpha_boosted = np.clip(alpha_smooth * 1.3, 0, 255).astype(np.uint8)
+        # Boost semi-transparent areas to be more opaque
+        alpha_boosted = np.clip(alpha_smooth * 1.4, 0, 255).astype(np.uint8)
         result_np[:, :, 3] = alpha_boosted
 
         result_refined = Image.fromarray(result_np, "RGBA")
@@ -131,9 +131,21 @@ async def remove_background(req: PhotoRequest):
         # Composite onto black background
         black_bg = Image.new("RGBA", result_refined.size, (0, 0, 0, 255))
         composite = Image.alpha_composite(black_bg, result_refined)
-
-        # Output as PNG (lossless — zero quality loss on skin/hair)
         final = composite.convert("RGB")
+
+        # Apply sharpening to restore detail lost in processing
+        final_np = np.array(final)
+        final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
+
+        # Unsharp mask: sharpen without adding noise
+        gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 2.0)
+        sharpened = cv2.addWeighted(final_bgr, 1.5, gaussian, -0.5, 0)
+
+        # Convert back to PIL
+        sharpened_rgb = cv2.cvtColor(sharpened, cv2.COLOR_BGR2RGB)
+        final = Image.fromarray(sharpened_rgb)
+
+        # Output as PNG (lossless)
         b64_result = image_to_b64(final, "PNG")
 
         elapsed = round(time.time() - t0, 2)

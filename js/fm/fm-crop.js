@@ -131,17 +131,47 @@
     })
 
     confirm.addEventListener('click', function () {
+      // Render crop at HIGH RESOLUTION using the original image
+      // (not the small crop canvas which is display-sized)
+      var dpr = Math.max(window.devicePixelRatio || 1, 2)
+      var outW = boxW * dpr   // e.g. 720
+      var outH = boxH * dpr   // e.g. 600
+
+      // If original image is bigger, use it for better quality
+      if (FM._cropImg && FM._cropImg.width > outW) {
+        var scale = FM._cropImg.width / (boxW * FM._cropZoom)
+        outW = Math.round(boxW * scale)
+        outH = Math.round(boxH * scale)
+      }
+
+      // Cap at 2048 to avoid memory issues
+      if (outW > 2048) { var ratio = 2048 / outW; outW = 2048; outH = Math.round(outH * ratio) }
+
       var outCanvas = document.createElement('canvas')
-      outCanvas.width = FM._cropCanvas.width
-      outCanvas.height = FM._cropCanvas.height
+      outCanvas.width = outW
+      outCanvas.height = outH
       var outCtx = outCanvas.getContext('2d')
       outCtx.fillStyle = '#000000'
-      outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height)
-      outCtx.drawImage(FM._cropCanvas, 0, 0)
+      outCtx.fillRect(0, 0, outW, outH)
 
-      // Try Python API for background removal, fallback to raw crop
+      // Redraw from original image at full resolution
+      if (FM._cropImg) {
+        var sx = outW / (boxW * dpr)  // scale factor from display to output
+        var drawW = FM._cropImg.width * FM._cropZoom * sx
+        var drawH = FM._cropImg.height * FM._cropZoom * sx
+        var px = FM._cropPanX * sx
+        var py = FM._cropPanY * sx
+        outCtx.imageSmoothingEnabled = true
+        outCtx.imageSmoothingQuality = 'high'
+        outCtx.drawImage(FM._cropImg, px, py, drawW, drawH)
+      } else {
+        // Fallback: copy from crop canvas
+        outCtx.drawImage(FM._cropCanvas, 0, 0, outW, outH)
+      }
+
+      // Send to Python API for background removal
       var b64 = outCanvas.toDataURL('image/png').split(',')[1]
-      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8100'
+      var apiUrl = FM.FACIAL_API_URL || 'http://localhost:8101'
 
       FM._showLoading('Removendo fundo com IA...')
       document.getElementById('fmCropOverlay').style.display = 'none'
