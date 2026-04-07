@@ -185,7 +185,7 @@ function _showInlineAlert(title, items, parentId) {
   var containerId = 'finValidationAlert'
   var old = document.getElementById(containerId); if (old) old.remove()
   var target = parentId ? document.getElementById(parentId) : document.querySelector('#smartFinalizeModal > div > div:nth-child(2)')
-  if (!target) { alert(title + '\n\n' + (Array.isArray(items) ? items.join('\n') : items)); return }
+  if (!target) { if (window._showToast) _showToast(title, Array.isArray(items) ? items[0] : items, 'error'); else console.warn('[Validation]', title, items); return }
   var html = '<div id="' + containerId + '" style="position:sticky;top:0;z-index:10;margin:-18px -18px 12px;padding:12px 16px;background:#FEF2F2;border-bottom:2px solid #FCA5A5;animation:slideDown .2s ease">'
     + '<div style="display:flex;align-items:center;justify-content:space-between">'
     + '<div style="font-size:12px;font-weight:700;color:#991B1B">' + title + '</div>'
@@ -286,7 +286,7 @@ function _execAuto(item) {
 function _logAuto(apptId, type, status) {
   const logs = JSON.parse(localStorage.getItem('clinicai_auto_logs') || '[]')
   logs.push({ id:'log_'+Date.now(), apptId, type, status, at:new Date().toISOString() })
-  store.set('clinicai_auto_logs', logs)
+  try { localStorage.setItem('clinicai_auto_logs', JSON.stringify(logs)) } catch(e) { /* quota */ }
 }
 
 // ── State Machine Transition ──────────────────────────────────────
@@ -374,7 +374,7 @@ function _createNoShowTask(appt) {
     apptId:      appt.id,
     createdAt:   new Date().toISOString(),
   })
-  store.set('clinic_op_tasks', tasks)
+  try { localStorage.setItem('clinic_op_tasks', JSON.stringify(tasks)) } catch(e) { /* quota */ }
 }
 
 // ── Checklist Contextual ──────────────────────────────────────────
@@ -935,8 +935,8 @@ function smartTransition(id, newStatus) {
     if (appt) {
       const errs = AgendaValidator.validateTransition(appt, newStatus)
       if (errs.length) {
-        if (window.showValidationErrors) showValidationErrors(errs, 'Transição não permitida')
-        else alert(errs[0])
+        if (window.showValidationErrors) showValidationErrors(errs, 'Transicao nao permitida')
+        else if (window._showToast) _showToast('Transicao bloqueada', errs[0], 'error')
         return
       }
     }
@@ -944,8 +944,7 @@ function smartTransition(id, newStatus) {
 
   const ok = apptTransition(id, newStatus, 'manual')
   if (!ok) {
-    if (window.showErrorToast) showErrorToast('Transição não permitida no fluxo atual.')
-    else alert('Transição não permitida no fluxo atual.')
+    if (window._showToast) _showToast('Transicao bloqueada', 'Transicao nao permitida no fluxo atual.', 'error')
     return
   }
   if (window.renderAgenda) renderAgenda()

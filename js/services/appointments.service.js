@@ -172,26 +172,27 @@
     } catch(e) { /* quota */ }
   }
 
-  function _retryOfflineQueue() {
+  var _retryingOffline = false
+
+  async function _retryOfflineQueue() {
     var repo = _repo()
-    if (!repo) return
+    if (!repo || _retryingOffline) return
+    _retryingOffline = true
     try {
       var q = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]')
-      if (!q.length) return
-      var remaining = []
-      var processing = q.slice(0, 5) // Process 5 at a time
-      processing.forEach(function(appt) {
-        repo.upsert(appt).then(function(r) {
-          if (!r || !r.ok) remaining.push(appt)
-        }).catch(function() { remaining.push(appt) })
+      if (!q.length) { _retryingOffline = false; return }
+      var batch = q.slice(0, 5)
+      var rest = q.slice(5)
+      var results = await Promise.allSettled(batch.map(function(appt) { return repo.upsert(appt) }))
+      var failed = []
+      results.forEach(function(r, i) {
+        if (r.status === 'rejected' || (r.value && !r.value.ok)) failed.push(batch[i])
       })
-      // Save remaining + unprocessed
-      setTimeout(function() {
-        var rest = q.slice(5).concat(remaining)
-        if (rest.length) localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(rest))
-        else localStorage.removeItem(OFFLINE_QUEUE_KEY)
-      }, 5000)
+      var remaining = rest.concat(failed)
+      if (remaining.length) localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(remaining))
+      else localStorage.removeItem(OFFLINE_QUEUE_KEY)
     } catch(e) { /* silencioso */ }
+    _retryingOffline = false
   }
 
   function syncOne(appt) {
