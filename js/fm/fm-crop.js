@@ -27,8 +27,10 @@
           '</button>' +
         '</div>' +
         '<div class="fm-crop-body">' +
+          '<div style="font-size:10px;color:#C8A97E;text-align:center;margin-bottom:6px">Enquadre apenas o rosto — use zoom para aproximar</div>' +
           '<div id="fmCropBox" class="fm-crop-box" style="width:' + boxW + 'px;height:' + boxH + 'px">' +
             '<canvas id="fmCropCanvas" style="position:absolute;top:0;left:0"></canvas>' +
+            '<div class="fm-crop-guide"></div>' +
           '</div>' +
           '<div class="fm-crop-zoom-row">' +
             '<span class="fm-crop-zoom-label">Zoom</span>' +
