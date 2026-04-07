@@ -952,19 +952,25 @@ function _buildFinModal(id, appt) {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
             <div>
               <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Valor Total (R$)</label>
-              <input id="finValor" type="number" step="0.01" placeholder="0,00" value="${appt.valor||''}" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:13px;font-weight:700">
+              <input id="finValor" type="number" step="0.01" placeholder="0,00" value="${appt.valor||''}" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:13px;font-weight:700" oninput="finPayChanged()">
             </div>
+            <div>
+              <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Forma de Pagamento</label>
+              <select id="finFormaPag" onchange="finPayChanged()" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">${pmOpts}</select>
+            </div>
+          </div>
+
+          <!-- Dynamic payment details per method -->
+          <div id="finPayDetails" style="margin-top:10px"></div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px">
             <div>
               <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Valor Pago (R$)</label>
               <input id="finPago" type="number" step="0.01" placeholder="0,00" value="${appt.valorPago||''}" oninput="finUpdateBalance()" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:13px">
             </div>
             <div>
-              <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Forma de Pagamento</label>
-              <select id="finFormaPag" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">${pmOpts}</select>
-            </div>
-            <div>
               <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Status</label>
-              <select id="finStatusPag" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">
+              <select id="finStatusPag" onchange="finPayChanged()" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">
                 <option value="pendente" ${appt.statusPagamento==='pendente'?'selected':''}>Pendente</option>
                 <option value="parcial"  ${appt.statusPagamento==='parcial'?'selected':''}>Parcial</option>
                 <option value="pago"     ${appt.statusPagamento==='pago'?'selected':''}>Pago</option>
@@ -1123,6 +1129,179 @@ function _finUpdateTotal() {
   if (finValor && total > 0) finValor.value = total.toFixed(2)
 }
 
+// ── Dynamic payment fields per method ─────────────────────────────
+function finPayChanged() {
+  var forma = document.getElementById('finFormaPag')?.value || ''
+  var total = parseFloat(document.getElementById('finValor')?.value || '0')
+  var el = document.getElementById('finPayDetails')
+  if (!el) return
+
+  var s = 'font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px'
+  var inp = 'width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px'
+  var html = ''
+
+  if (forma === 'credito') {
+    html = '<div style="background:#EFF6FF;padding:10px;border-radius:8px;border:1px solid #BFDBFE">' +
+      '<div style="font-size:10px;font-weight:800;color:#1D4ED8;margin-bottom:8px">CARTAO DE CREDITO</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:6px">' +
+        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="radio" name="finCredTipo" value="avista" checked onchange="finCredChanged()"> A Vista</label>' +
+        '<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer"><input type="radio" name="finCredTipo" value="parcelado" onchange="finCredChanged()"> Parcelado</label>' +
+      '</div>' +
+      '<div id="finCredParc" style="display:none">' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+          '<div><label style="'+s+'">Parcelas</label><select id="finCredNParc" onchange="finCredCalc()" style="'+inp+'">' +
+            [2,3,4,5,6,7,8,9,10,11,12].map(function(n){return '<option value="'+n+'">'+n+'x</option>'}).join('') +
+          '</select></div>' +
+          '<div><label style="'+s+'">Valor Parcela</label><input id="finCredValParc" type="text" readonly style="'+inp+';background:#F3F4F6;font-weight:700"></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  }
+
+  else if (forma === 'parcelado') {
+    html = '<div style="background:#FFF7ED;padding:10px;border-radius:8px;border:1px solid #FED7AA">' +
+      '<div style="font-size:10px;font-weight:800;color:#C2410C;margin-bottom:8px">PARCELAMENTO</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
+        '<div><label style="'+s+'">Parcelas</label><select id="finParcN" onchange="finParcCalc()" style="'+inp+'">' +
+          [2,3,4,5,6,7,8,9,10,11,12].map(function(n){return '<option value="'+n+'">'+n+'x</option>'}).join('') +
+        '</select></div>' +
+        '<div><label style="'+s+'">Valor Parcela</label><input id="finParcVal" type="text" readonly style="'+inp+';background:#F3F4F6;font-weight:700"></div>' +
+        '<div><label style="'+s+'">1o Vencimento</label><input id="finParcData" type="date" style="'+inp+'"></div>' +
+      '</div>' +
+    '</div>'
+  }
+
+  else if (forma === 'entrada_saldo') {
+    html = '<div style="background:#F0FDF4;padding:10px;border-radius:8px;border:1px solid #BBF7D0">' +
+      '<div style="font-size:10px;font-weight:800;color:#166534;margin-bottom:8px">ENTRADA + SALDO</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+        '<div><label style="'+s+'">Valor Entrada (R$)</label><input id="finEntradaVal" type="number" step="0.01" placeholder="0,00" oninput="finEntradaCalc()" style="'+inp+'"></div>' +
+        '<div><label style="'+s+'">Forma Entrada</label><select id="finEntradaForma" style="'+inp+'">' +
+          '<option value="pix">PIX</option><option value="dinheiro">Dinheiro</option><option value="debito">Debito</option><option value="credito">Credito</option></select></div>' +
+        '<div><label style="'+s+'">Saldo Restante</label><input id="finSaldoVal" type="text" readonly style="'+inp+';background:#F3F4F6;font-weight:700;color:#DC2626"></div>' +
+        '<div><label style="'+s+'">Forma Saldo</label><select id="finSaldoForma" style="'+inp+'">' +
+          '<option value="boleto">Boleto</option><option value="pix">PIX</option><option value="credito">Credito</option><option value="parcelado">Parcelado</option></select></div>' +
+        '<div style="grid-column:span 2"><label style="'+s+'">Vencimento Saldo</label><input id="finSaldoData" type="date" style="'+inp+'"></div>' +
+      '</div>' +
+    '</div>'
+  }
+
+  else if (forma === 'boleto') {
+    html = '<div style="background:#FFFBEB;padding:10px;border-radius:8px;border:1px solid #FDE68A">' +
+      '<div style="font-size:10px;font-weight:800;color:#92400E;margin-bottom:8px">BOLETO</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">' +
+        '<div><label style="'+s+'">Parcelas</label><select id="finBoletoN" onchange="finBoletoCalc()" style="'+inp+'">' +
+          [1,2,3,4,5,6].map(function(n){return '<option value="'+n+'">'+(n===1?'A vista':n+'x')+'</option>'}).join('') +
+        '</select></div>' +
+        '<div><label style="'+s+'">Valor Parcela</label><input id="finBoletoVal" type="text" readonly style="'+inp+';background:#F3F4F6;font-weight:700"></div>' +
+        '<div><label style="'+s+'">1o Vencimento</label><input id="finBoletoData" type="date" style="'+inp+'"></div>' +
+      '</div>' +
+    '</div>'
+  }
+
+  else if (forma === 'dinheiro') {
+    html = '<div style="background:#ECFDF5;padding:10px;border-radius:8px;border:1px solid #A7F3D0">' +
+      '<div style="font-size:10px;font-weight:800;color:#065F46;margin-bottom:8px">DINHEIRO</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+        '<div><label style="'+s+'">Recebido (R$)</label><input id="finDinRecebido" type="number" step="0.01" oninput="finDinCalc()" style="'+inp+'"></div>' +
+        '<div><label style="'+s+'">Troco</label><input id="finDinTroco" type="text" readonly style="'+inp+';background:#F3F4F6;font-weight:700;color:#059669"></div>' +
+      '</div>' +
+    '</div>'
+  }
+
+  else if (forma === 'cortesia') {
+    html = '<div style="background:#FEF2F2;padding:10px;border-radius:8px;border:1px solid #FECACA">' +
+      '<div style="font-size:10px;font-weight:800;color:#991B1B;margin-bottom:8px">CORTESIA</div>' +
+      '<div><label style="'+s+'">Motivo da cortesia (obrigatorio)</label><input id="finCortesiaMotivo" type="text" placeholder="Ex: primeira consulta, parceria..." style="'+inp+'"></div>' +
+    '</div>'
+  }
+
+  else if (forma === 'convenio') {
+    html = '<div style="background:#EDE9FE;padding:10px;border-radius:8px;border:1px solid #C4B5FD">' +
+      '<div style="font-size:10px;font-weight:800;color:#5B21B6;margin-bottom:8px">CONVENIO</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+        '<div><label style="'+s+'">Nome do Convenio</label><input id="finConvNome" type="text" placeholder="Ex: Unimed, Amil..." style="'+inp+'"></div>' +
+        '<div><label style="'+s+'">N. Autorizacao</label><input id="finConvAuth" type="text" placeholder="Numero" style="'+inp+'"></div>' +
+      '</div>' +
+    '</div>'
+  }
+
+  else if (forma === 'link') {
+    html = '<div style="background:#F0F9FF;padding:10px;border-radius:8px;border:1px solid #BAE6FD">' +
+      '<div style="font-size:10px;font-weight:800;color:#0369A1;margin-bottom:8px">LINK DE PAGAMENTO</div>' +
+      '<div><label style="'+s+'">URL do Link</label><input id="finLinkUrl" type="url" placeholder="https://..." style="'+inp+'"></div>' +
+    '</div>'
+  }
+
+  el.innerHTML = html
+
+  // Auto-calc on render
+  if (forma === 'credito') finCredChanged()
+  if (forma === 'parcelado') finParcCalc()
+  if (forma === 'boleto') finBoletoCalc()
+  if (forma === 'cortesia') {
+    var pago = document.getElementById('finPago'); if (pago) pago.value = '0'
+    var stat = document.getElementById('finStatusPag'); if (stat) stat.value = 'pago'
+  }
+
+  finUpdateBalance()
+}
+
+// ── Credit card: a vista / parcelado toggle ──
+function finCredChanged() {
+  var tipo = document.querySelector('input[name="finCredTipo"]:checked')?.value
+  var parcDiv = document.getElementById('finCredParc')
+  if (parcDiv) parcDiv.style.display = tipo === 'parcelado' ? 'block' : 'none'
+  if (tipo === 'parcelado') finCredCalc()
+}
+
+function finCredCalc() {
+  var total = parseFloat(document.getElementById('finValor')?.value || '0')
+  var n = parseInt(document.getElementById('finCredNParc')?.value || '2')
+  var el = document.getElementById('finCredValParc')
+  if (el && total > 0) el.value = 'R$ ' + _fmtBRL(total / n)
+}
+
+// ── Parcelado calc ──
+function finParcCalc() {
+  var total = parseFloat(document.getElementById('finValor')?.value || '0')
+  var n = parseInt(document.getElementById('finParcN')?.value || '2')
+  var el = document.getElementById('finParcVal')
+  if (el && total > 0) el.value = 'R$ ' + _fmtBRL(total / n)
+}
+
+// ── Boleto calc ──
+function finBoletoCalc() {
+  var total = parseFloat(document.getElementById('finValor')?.value || '0')
+  var n = parseInt(document.getElementById('finBoletoN')?.value || '1')
+  var el = document.getElementById('finBoletoVal')
+  if (el && total > 0) el.value = 'R$ ' + _fmtBRL(total / n)
+}
+
+// ── Entrada + Saldo calc ──
+function finEntradaCalc() {
+  var total = parseFloat(document.getElementById('finValor')?.value || '0')
+  var entrada = parseFloat(document.getElementById('finEntradaVal')?.value || '0')
+  var saldo = total - entrada
+  var el = document.getElementById('finSaldoVal')
+  if (el) el.value = saldo > 0 ? 'R$ ' + _fmtBRL(saldo) : 'R$ 0,00'
+  // Auto-fill valor pago = entrada
+  var pago = document.getElementById('finPago')
+  if (pago) { pago.value = entrada.toFixed(2); finUpdateBalance() }
+}
+
+// ── Dinheiro: troco ──
+function finDinCalc() {
+  var total = parseFloat(document.getElementById('finValor')?.value || '0')
+  var recebido = parseFloat(document.getElementById('finDinRecebido')?.value || '0')
+  var troco = recebido - total
+  var el = document.getElementById('finDinTroco')
+  if (el) el.value = troco > 0 ? 'R$ ' + _fmtBRL(troco) : '—'
+  // Auto-fill valor pago
+  var pago = document.getElementById('finPago')
+  if (pago && recebido > 0) { pago.value = Math.min(recebido, total).toFixed(2); finUpdateBalance() }
+}
+
 function finUpdateBalance() {
   const tot = parseFloat(document.getElementById('finValor')?.value||'0')
   const pag = parseFloat(document.getElementById('finPago')?.value||'0')
@@ -1165,6 +1344,42 @@ function confirmFinalize(id) {
   const parceria = document.getElementById('finFluxoParceria')?.checked
   const route    = document.querySelector('input[name="finRoute"]:checked')?.value || 'nenhum'
 
+  // Collect payment details per method
+  var pagDetalhes = { forma }
+  if (forma === 'credito') {
+    var credTipo = document.querySelector('input[name="finCredTipo"]:checked')?.value || 'avista'
+    pagDetalhes.tipo = credTipo
+    if (credTipo === 'parcelado') {
+      pagDetalhes.parcelas = parseInt(document.getElementById('finCredNParc')?.value||'2')
+      pagDetalhes.valorParcela = valor / pagDetalhes.parcelas
+    }
+  } else if (forma === 'parcelado') {
+    pagDetalhes.parcelas = parseInt(document.getElementById('finParcN')?.value||'2')
+    pagDetalhes.valorParcela = valor / pagDetalhes.parcelas
+    pagDetalhes.primeiroVencimento = document.getElementById('finParcData')?.value || ''
+  } else if (forma === 'entrada_saldo') {
+    pagDetalhes.entrada = parseFloat(document.getElementById('finEntradaVal')?.value||'0')
+    pagDetalhes.formaEntrada = document.getElementById('finEntradaForma')?.value || 'pix'
+    pagDetalhes.saldo = valor - pagDetalhes.entrada
+    pagDetalhes.formaSaldo = document.getElementById('finSaldoForma')?.value || 'boleto'
+    pagDetalhes.vencimentoSaldo = document.getElementById('finSaldoData')?.value || ''
+  } else if (forma === 'boleto') {
+    pagDetalhes.parcelas = parseInt(document.getElementById('finBoletoN')?.value||'1')
+    pagDetalhes.valorParcela = valor / pagDetalhes.parcelas
+    pagDetalhes.primeiroVencimento = document.getElementById('finBoletoData')?.value || ''
+  } else if (forma === 'dinheiro') {
+    pagDetalhes.recebido = parseFloat(document.getElementById('finDinRecebido')?.value||'0')
+    pagDetalhes.troco = Math.max(0, pagDetalhes.recebido - valor)
+  } else if (forma === 'cortesia') {
+    pagDetalhes.motivo = document.getElementById('finCortesiaMotivo')?.value || ''
+    if (!pagDetalhes.motivo.trim()) { alert('Informe o motivo da cortesia'); return }
+  } else if (forma === 'convenio') {
+    pagDetalhes.convenioNome = document.getElementById('finConvNome')?.value || ''
+    pagDetalhes.autorizacao = document.getElementById('finConvAuth')?.value || ''
+  } else if (forma === 'link') {
+    pagDetalhes.linkUrl = document.getElementById('finLinkUrl')?.value || ''
+  }
+
   // Validação completa de finalização via AgendaValidator
   if (window.AgendaValidator) {
     const finValidData = {
@@ -1206,6 +1421,7 @@ function confirmFinalize(id) {
     valorPago:              pago,
     formaPagamento:         forma,
     statusPagamento:        spFinal,
+    pagamentoDetalhes:      pagDetalhes,
     obsFinal:               obs,
     procedimentosRealizados:procs,
     routingFinal:           route,
@@ -1483,6 +1699,13 @@ window.removeFinProc          = removeFinProc
 window.finUpdateBalance       = finUpdateBalance
 window.finProcAutoPrice       = finProcAutoPrice
 window.finProcDesconto        = finProcDesconto
+window.finPayChanged          = finPayChanged
+window.finCredChanged         = finCredChanged
+window.finCredCalc            = finCredCalc
+window.finParcCalc            = finParcCalc
+window.finBoletoCalc          = finBoletoCalc
+window.finEntradaCalc         = finEntradaCalc
+window.finDinCalc             = finDinCalc
 window.finRouteChange         = finRouteChange
 window.renderAgendaFilterBar  = renderAgendaFilterBar
 window.setAgendaFilter        = setAgendaFilter
