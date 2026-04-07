@@ -58,11 +58,11 @@ def analyze_face_zones(img_bgr: np.ndarray, face_rect: tuple) -> Dict:
             if roi.size > 0:
                 edges = cv2.Canny(roi, 50, 150)
                 density = float(np.sum(edges > 0) / max(1, edges.size))
-                if density > 0.25:
+                if density > 0.15:
                     sulco_severity = max(sulco_severity, 3)
-                elif density > 0.18:
+                elif density > 0.10:
                     sulco_severity = max(sulco_severity, 2)
-                elif density > 0.12:
+                elif density > 0.06:
                     sulco_severity = max(sulco_severity, 1)
     zones['sulco'] = sulco_severity
 
@@ -77,9 +77,9 @@ def analyze_face_zones(img_bgr: np.ndarray, face_rect: tuple) -> Dict:
             if roi.size > 0:
                 edges = cv2.Canny(roi, 40, 130)
                 density = float(np.sum(edges > 0) / max(1, edges.size))
-                if density > 0.2:
+                if density > 0.12:
                     marionete_severity = max(marionete_severity, 2)
-                elif density > 0.12:
+                elif density > 0.06:
                     marionete_severity = max(marionete_severity, 1)
     zones['marionete'] = marionete_severity
 
@@ -91,11 +91,11 @@ def analyze_face_zones(img_bgr: np.ndarray, face_rect: tuple) -> Dict:
     if forehead_roi.size > 0:
         h_edges = cv2.Sobel(forehead_roi, cv2.CV_64F, 0, 1, ksize=3)
         h_density = float(np.mean(np.abs(h_edges)))
-        if h_density > 30:
+        if h_density > 18:
             rugas_severity = 3
-        elif h_density > 20:
+        elif h_density > 10:
             rugas_severity = 2
-        elif h_density > 12:
+        elif h_density > 5:
             rugas_severity = 1
     zones['rugas_frontais'] = rugas_severity
 
@@ -108,25 +108,38 @@ def analyze_face_zones(img_bgr: np.ndarray, face_rect: tuple) -> Dict:
         if roi.size > 0:
             v_edges = cv2.Sobel(roi, cv2.CV_64F, 1, 0, ksize=3)
             v_density = float(np.mean(np.abs(v_edges)))
-            if v_density > 25:
+            if v_density > 15:
                 glabela_severity = 3
-            elif v_density > 15:
-                glabela_severity = 2
             elif v_density > 8:
+                glabela_severity = 2
+            elif v_density > 4:
                 glabela_severity = 1
     zones['glabela'] = glabela_severity
 
     # ── Volume loss detection (skin texture uniformity = proxy for age/volume)
     face_lab = lab[fy:fy+fh, fx:fx+fw]
-    if face_lab.size > 0:
-        skin_std = float(np.std(face_lab[:,:,0]))
-        skin_mean = float(np.mean(face_lab[:,:,0]))
-    else:
-        skin_std = 20
-        skin_mean = 140
+    skin_std = float(np.std(face_lab[:,:,0])) if face_lab.size > 0 else 20.0
+    skin_mean = float(np.mean(face_lab[:,:,0])) if face_lab.size > 0 else 140.0
+
+    # Overall texture roughness (high = more wrinkles/pores = older)
+    face_gray = gray[fy:fy+fh, fx:fx+fw]
+    texture_var = float(cv2.Laplacian(face_gray, cv2.CV_64F).var()) if face_gray.size > 0 else 0
+
+    # Boost severity if skin is rough (older skin)
+    age_boost = 0
+    if texture_var > 500:
+        age_boost = 2
+    elif texture_var > 200:
+        age_boost = 1
+
+    # Apply age boost to volume-related zones
+    if age_boost > 0:
+        zones['olheira'] = min(3, zones.get('olheira', 0) + age_boost)
+        zones['sulco'] = min(3, max(zones.get('sulco', 0), age_boost))
+        zones['marionete'] = min(3, max(zones.get('marionete', 0), age_boost - 1))
 
     # Temporal (estimate from face width ratio — wider face = less temporal loss)
-    face_ratio = fw / max(1, fh)
+    face_ratio = float(fw) / max(1, float(fh))
     temporal_severity = 0
     if face_ratio < 0.65:
         temporal_severity = 2  # narrow = likely temporal loss
@@ -174,11 +187,11 @@ def analyze_face_zones(img_bgr: np.ndarray, face_rect: tuple) -> Dict:
     total_face = fh
     lower_ratio = lower_third / max(1, total_face)
     mento_severity = 0
-    if lower_ratio < 0.32:
+    if lower_ratio < 0.34:
         mento_severity = 3  # very short = retruded
-    elif lower_ratio < 0.35:
-        mento_severity = 2
     elif lower_ratio < 0.37:
+        mento_severity = 2
+    elif lower_ratio < 0.39:
         mento_severity = 1
     zones['mento'] = mento_severity
 
@@ -196,10 +209,24 @@ def analyze_face_zones(img_bgr: np.ndarray, face_rect: tuple) -> Dict:
             labio_severity = 0  # already has volume
     zones['labio'] = labio_severity
 
-    # Overall severity score
+    # Baseline: texture-based minimum severities
+    # Higher texture = older skin = more zones need treatment
+    if texture_var > 50:  # any visible texture = at least some treatment
+        zones['temporal'] = max(zones.get('temporal', 0), 1)
+        zones['labio'] = max(zones.get('labio', 0), 1)
+    if texture_var > 100:
+        zones['sulco'] = max(zones.get('sulco', 0), 1)
+        zones['zigoma'] = max(zones.get('zigoma', 0), 1)
+    if texture_var > 200:
+        zones['marionete'] = max(zones.get('marionete', 0), 1)
+        zones['temporal'] = max(zones.get('temporal', 0), 2)
+
+    # Metadata for classification
     zones['_skin_std'] = round(skin_std, 1)
     zones['_skin_mean'] = round(skin_mean, 1)
     zones['_face_ratio'] = round(face_ratio, 3)
+    zones['_texture_var'] = round(texture_var, 1)
+    zones['_age_boost'] = age_boost
 
     return zones
 
@@ -207,18 +234,21 @@ def analyze_face_zones(img_bgr: np.ndarray, face_rect: tuple) -> Dict:
 # ── Age Estimation (rough) ───────────────────────────────────
 
 def estimate_age_bracket(zones: Dict) -> str:
-    """Estimate age bracket from zone severities."""
+    """Estimate age bracket from zone severities + texture."""
     wrinkle_score = zones.get('rugas_frontais', 0) + zones.get('glabela', 0)
     volume_score = zones.get('sulco', 0) + zones.get('marionete', 0) + zones.get('olheira', 0)
     structure_score = zones.get('mandibula', 0) + zones.get('mento', 0) + zones.get('zigoma', 0)
+    texture_var = zones.get('_texture_var', 0)
+    age_boost = zones.get('_age_boost', 0)
 
     total = wrinkle_score + volume_score + structure_score
 
-    if wrinkle_score >= 4 and volume_score >= 5:
+    # Texture variance is a strong age signal
+    if texture_var > 300 or (wrinkle_score >= 4 and volume_score >= 4):
         return '50+'
-    elif wrinkle_score >= 2 and volume_score >= 3:
+    elif texture_var > 120 or (wrinkle_score >= 2 and volume_score >= 2) or (age_boost >= 2):
         return '40-50'
-    elif volume_score >= 2 or total >= 6:
+    elif texture_var > 50 or volume_score >= 2 or total >= 5 or age_boost >= 1:
         return '30-40'
     else:
         return '<30'
