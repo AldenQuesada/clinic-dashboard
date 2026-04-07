@@ -164,68 +164,62 @@ async def remove_background(req: PhotoRequest):
 
 # ── Face Landmarks ───────────────────────────────────────────
 
-def get_face_mesh():
-    global _mp_face_mesh
-    if _mp_face_mesh is None:
-        import mediapipe as mp
-        log.info("Loading MediaPipe Face Mesh...")
-        _mp_face_mesh = mp.solutions.face_mesh.FaceMesh(
-            static_image_mode=True,
-            max_num_faces=1,
-            refine_landmarks=True,
-            min_detection_confidence=0.5,
-        )
-        log.info("Face Mesh loaded.")
-    return _mp_face_mesh
+def get_face_cascade():
+    """OpenCV Haar cascade for face detection (works on all Python versions)."""
+    return cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+
+def get_eye_cascade():
+    return cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 
 
 @app.post("/landmarks")
 async def detect_landmarks(req: LandmarkRequest):
-    """Detect 468 face landmarks using MediaPipe."""
+    """Detect face and estimate key points using OpenCV Haar cascades."""
     t0 = time.time()
     try:
         img_cv = b64_to_cv2(req.photo_base64)
         h, w = img_cv.shape[:2]
-        rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
 
-        mesh = get_face_mesh()
-        results = mesh.process(rgb)
+        face_cascade = get_face_cascade()
+        eye_cascade = get_eye_cascade()
 
-        if not results.multi_face_landmarks:
+        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+        if len(faces) == 0:
             return {"success": False, "error": "No face detected"}
 
-        face = results.multi_face_landmarks[0]
-        landmarks = []
-        for lm in face.landmark:
-            landmarks.append({
-                "x": round(lm.x, 5),
-                "y": round(lm.y, 5),
-                "z": round(lm.z, 5),
-            })
+        # Use largest face
+        fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
 
-        # Key anatomical points
-        # Forehead top (10), chin bottom (152), nose tip (1),
-        # left eye outer (263), right eye outer (33)
+        # Detect eyes within face region
+        face_roi = gray[fy:fy+fh, fx:fx+fw]
+        eyes = eye_cascade.detectMultiScale(face_roi, 1.1, 5, minSize=(20, 20))
+
+        # Estimate key points from face bounding box + eyes
+        # Normalize to 0-1 range
         key_points = {
-            "forehead": landmarks[10],
-            "chin": landmarks[152],
-            "nose_tip": landmarks[1],
-            "nose_bridge": landmarks[6],
-            "left_eye_outer": landmarks[263],
-            "right_eye_outer": landmarks[33],
-            "left_ear": landmarks[234],
-            "right_ear": landmarks[454],
-            "upper_lip": landmarks[13],
-            "lower_lip": landmarks[14],
-            "left_cheek": landmarks[234],
-            "right_cheek": landmarks[454],
+            "forehead": {"x": round((fx + fw/2) / w, 4), "y": round(fy / h, 4)},
+            "chin": {"x": round((fx + fw/2) / w, 4), "y": round((fy + fh) / h, 4)},
+            "nose_tip": {"x": round((fx + fw/2) / w, 4), "y": round((fy + fh * 0.65) / h, 4)},
+            "nose_bridge": {"x": round((fx + fw/2) / w, 4), "y": round((fy + fh * 0.45) / h, 4)},
+            "upper_lip": {"x": round((fx + fw/2) / w, 4), "y": round((fy + fh * 0.78) / h, 4)},
+            "lower_lip": {"x": round((fx + fw/2) / w, 4), "y": round((fy + fh * 0.85) / h, 4)},
         }
 
-        # Calculate facial thirds
-        forehead_y = landmarks[10]["y"]
-        brow_y = (landmarks[70]["y"] + landmarks[300]["y"]) / 2
-        nose_base_y = landmarks[2]["y"]
-        chin_y = landmarks[152]["y"]
+        if len(eyes) >= 2:
+            eyes_sorted = sorted(eyes, key=lambda e: e[0])
+            le = eyes_sorted[0]
+            re = eyes_sorted[-1]
+            key_points["left_eye_outer"] = {"x": round((fx + le[0]) / w, 4), "y": round((fy + le[1] + le[3]/2) / h, 4)}
+            key_points["right_eye_outer"] = {"x": round((fx + re[0] + re[2]) / w, 4), "y": round((fy + re[1] + re[3]/2) / h, 4)}
+
+        # Calculate facial thirds from face bounding box
+        # Hairline ~ top of face box, brow ~ 33% down, nose base ~ 62%, chin ~ bottom
+        forehead_y = fy / h
+        brow_y = (fy + fh * 0.33) / h
+        nose_base_y = (fy + fh * 0.62) / h
+        chin_y = (fy + fh) / h
 
         total = chin_y - forehead_y
         thirds = {
@@ -234,39 +228,29 @@ async def detect_landmarks(req: LandmarkRequest):
             "inferior": round((chin_y - nose_base_y) / total * 100, 1) if total > 0 else 33,
         }
 
-        # Ricketts line analysis (nose tip to chin, check lip position)
-        nose_x, nose_y = landmarks[1]["x"], landmarks[1]["y"]
-        chin_x, chin_y_pt = landmarks[152]["x"], landmarks[152]["y"]
-        lip_x, lip_y = landmarks[13]["x"], landmarks[13]["y"]
-
-        # Distance of upper lip from Ricketts line
-        # Positive = lip in front of line, Negative = lip behind
-        dx = chin_x - nose_x
-        dy = chin_y_pt - nose_y
-        line_len = (dx**2 + dy**2) ** 0.5
-        if line_len > 0:
-            # Perpendicular distance
-            ricketts_dist = ((lip_x - nose_x) * dy - (lip_y - nose_y) * dx) / line_len
-        else:
-            ricketts_dist = 0
+        # Ricketts estimate from nose tip to chin
+        nose_x = key_points["nose_tip"]["x"]
+        nose_y_pt = key_points["nose_tip"]["y"]
+        chin_x = key_points["chin"]["x"]
+        chin_y_pt = key_points["chin"]["y"]
 
         ricketts = {
-            "nose_point": {"x": round(nose_x, 4), "y": round(nose_y, 4)},
-            "chin_point": {"x": round(chin_x, 4), "y": round(chin_y_pt, 4)},
-            "lip_distance": round(ricketts_dist, 4),
-            "assessment": "harmonious" if abs(ricketts_dist) < 0.02 else ("retruded" if ricketts_dist < -0.02 else "protruded"),
+            "nose_point": {"x": nose_x, "y": nose_y_pt},
+            "chin_point": {"x": chin_x, "y": chin_y_pt},
+            "assessment": "estimated",
         }
 
         elapsed = round(time.time() - t0, 2)
-        log.info(f"Landmarks detected in {elapsed}s | {w}x{h} | thirds: {thirds}")
+        log.info(f"Face detected in {elapsed}s | {w}x{h} | face: ({fx},{fy},{fw},{fh}) | thirds: {thirds}")
 
         return {
             "success": True,
-            "landmark_count": len(landmarks),
-            "landmarks": landmarks,
+            "landmark_count": len(eyes) + 6,  # eyes + estimated points
+            "landmarks": [],  # No 468-point mesh without MediaPipe
             "key_points": key_points,
             "thirds": thirds,
             "ricketts": ricketts,
+            "face_rect": {"x": fx, "y": fy, "w": fw, "h": fh},
             "image_size": {"w": w, "h": h},
             "elapsed_s": elapsed,
         }
@@ -357,93 +341,98 @@ async def analyze_skin(req: AnalyzeRequest):
 
 @app.post("/auto-zones")
 async def detect_zones(req: LandmarkRequest):
-    """Auto-detect treatment zones based on face landmarks + skin analysis."""
+    """Auto-detect treatment zones using OpenCV face/eye detection + skin analysis."""
     t0 = time.time()
     try:
-        # Get landmarks first
         img_cv = b64_to_cv2(req.photo_base64)
         h, w = img_cv.shape[:2]
-        rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+        lab = cv2.cvtColor(img_cv, cv2.COLOR_BGR2LAB)
 
-        mesh = get_face_mesh()
-        results = mesh.process(rgb)
+        face_cascade = get_face_cascade()
+        eye_cascade = get_eye_cascade()
 
-        if not results.multi_face_landmarks:
+        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+        if len(faces) == 0:
             return {"success": False, "error": "No face detected"}
 
-        face = results.multi_face_landmarks[0]
-        lm = face.landmark
-
-        # Analyze specific zones
+        fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
         zones = []
 
         # Olheira: dark circles under eyes
-        # Sample pixels under eyes (landmarks 111, 340 = under eye)
-        for side, idx in [("esquerdo", 111), ("direito", 340)]:
-            uy, ux = int(lm[idx].y * h), int(lm[idx].x * w)
-            if 0 < uy < h and 0 < ux < w:
-                roi = img_cv[max(0,uy-10):uy+10, max(0,ux-15):ux+15]
+        eyes = eye_cascade.detectMultiScale(gray[fy:fy+fh, fx:fx+fw], 1.1, 5, minSize=(20, 20))
+        for ex, ey, ew, eh in eyes[:2]:
+            # Below each eye
+            under_y = fy + ey + eh + 5
+            under_x = fx + ex + ew // 2
+            if under_y + 15 < h:
+                roi = lab[under_y:under_y+15, max(0,under_x-15):under_x+15]
                 if roi.size > 0:
-                    lab_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2LAB)
-                    darkness = float(np.mean(lab_roi[:,:,0]))
-                    if darkness < 140:  # dark area detected
+                    darkness = float(np.mean(roi[:,:,0]))
+                    if darkness < 160:
                         zones.append({
                             "zone": "olheira",
-                            "side": side,
-                            "severity": round(max(0, (140 - darkness) / 40), 2),
-                            "center": {"x": round(lm[idx].x, 4), "y": round(lm[idx].y, 4)},
+                            "severity": round(max(0, (160 - darkness) / 60), 2),
+                            "center": {"x": round(under_x / w, 4), "y": round(under_y / h, 4)},
                         })
 
-        # Sulco nasogeniano: detect fold lines
-        for side, idx in [("esquerdo", 205), ("direito", 425)]:
-            sy, sx = int(lm[idx].y * h), int(lm[idx].x * w)
-            if 0 < sy < h and 0 < sx < w:
-                roi = img_cv[max(0,sy-8):sy+8, max(0,sx-8):sx+8]
+        # Sulco nasogeniano: wrinkle detection beside nose
+        nose_x = fx + fw // 2
+        nose_y = fy + int(fh * 0.65)
+        for dx_off in [-int(fw*0.2), int(fw*0.2)]:
+            sx = nose_x + dx_off
+            if 0 < sx < w and 0 < nose_y < h:
+                roi = gray[max(0,nose_y-10):nose_y+10, max(0,sx-8):sx+8]
                 if roi.size > 0:
-                    gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-                    edges = cv2.Canny(gray_roi, 50, 150)
-                    edge_density = float(np.sum(edges > 0) / max(1, edges.size))
-                    if edge_density > 0.15:
+                    edges = cv2.Canny(roi, 50, 150)
+                    density = float(np.sum(edges > 0) / max(1, edges.size))
+                    if density > 0.12:
                         zones.append({
                             "zone": "sulco",
-                            "side": side,
-                            "severity": round(min(1, edge_density / 0.3), 2),
-                            "center": {"x": round(lm[idx].x, 4), "y": round(lm[idx].y, 4)},
+                            "severity": round(min(1, density / 0.25), 2),
+                            "center": {"x": round(sx / w, 4), "y": round(nose_y / h, 4)},
                         })
 
-        # Temporal: check volume loss (concavity)
-        for side, idx in [("esquerdo", 162), ("direito", 389)]:
+        # Temporal: always suggest (common treatment area)
+        for side, x_off in [("esquerdo", -0.35), ("direito", 0.35)]:
             zones.append({
                 "zone": "temporal",
                 "side": side,
-                "severity": 0.5,  # Default medium
-                "center": {"x": round(lm[idx].x, 4), "y": round(lm[idx].y, 4)},
+                "severity": 0.5,
+                "center": {"x": round((fx + fw/2 + fw*x_off) / w, 4), "y": round((fy + fh*0.2) / h, 4)},
             })
 
         # Glabela: wrinkle detection between brows
-        g_y, g_x = int(lm[9].y * h), int(lm[9].x * w)
-        if 0 < g_y < h and 0 < g_x < w:
-            roi = img_cv[max(0,g_y-12):g_y+12, max(0,g_x-20):g_x+20]
+        gx = fx + fw // 2
+        gy = fy + int(fh * 0.28)
+        if 0 < gy < h and 0 < gx < w:
+            roi = gray[max(0,gy-12):gy+12, max(0,gx-18):gx+18]
             if roi.size > 0:
-                gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-                lines = cv2.Canny(gray_roi, 40, 120)
-                line_density = float(np.sum(lines > 0) / max(1, lines.size))
-                if line_density > 0.1:
+                lines = cv2.Canny(roi, 40, 120)
+                density = float(np.sum(lines > 0) / max(1, lines.size))
+                if density > 0.1:
                     zones.append({
                         "zone": "glabela",
-                        "severity": round(min(1, line_density / 0.25), 2),
-                        "center": {"x": round(lm[9].x, 4), "y": round(lm[9].y, 4)},
+                        "severity": round(min(1, density / 0.25), 2),
+                        "center": {"x": round(gx / w, 4), "y": round(gy / h, 4)},
                     })
 
-        # Mandibula contour
+        # Mandibula: always suggest
         zones.append({
             "zone": "mandibula",
-            "center": {"x": round((lm[172].x + lm[397].x) / 2, 4), "y": round(lm[172].y, 4)},
             "severity": 0.4,
+            "center": {"x": round((fx + fw/2) / w, 4), "y": round((fy + fh*0.95) / h, 4)},
+        })
+
+        # Mento
+        zones.append({
+            "zone": "mento",
+            "severity": 0.3,
+            "center": {"x": round((fx + fw/2) / w, 4), "y": round((fy + fh) / h, 4)},
         })
 
         elapsed = round(time.time() - t0, 2)
-        log.info(f"Auto-zones detected in {elapsed}s | {len(zones)} zones")
+        log.info(f"Auto-zones: {len(zones)} zones in {elapsed}s")
 
         return {
             "success": True,
