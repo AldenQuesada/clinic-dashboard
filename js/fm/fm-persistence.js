@@ -39,16 +39,34 @@
         localStorage.removeItem('fm_last_session')
         return
       }
+      // Capture DEPOIS photo as base64 if present
+      var afterB64 = null
+      if (FM._afterPhotoUrl) {
+        try {
+          var aImg = document.createElement('img')
+          // We'll save it async below; for now set to null
+        } catch (e) {}
+      }
+
       var session = {
         lead: { id: FM._lead.id || FM._lead.lead_id, nome: FM._lead.nome || FM._lead.name },
         activeAngle: FM._activeAngle,
+        activeTab: FM._activeTab || 'zones',
+        viewMode: FM._viewMode || '1x',
         annotations: FM._annotations,
         vectors: FM._vectors,
         tercoLines: FM._tercoLines,
         rickettsPoints: FM._rickettsPoints,
+        metricLines: FM._metricLines,
+        metricPoints: FM._metricPoints,
+        metricMidline: FM._metricMidline,
+        metricAngles: FM._metricAngles,
         editorMode: FM._editorMode,
+        analysisSubMode: FM._analysisSubMode,
         nextId: FM._nextId,
         nextVecId: FM._nextVecId,
+        metricNextPointId: FM._metricNextPointId,
+        metricNextLineId: FM._metricNextLineId,
         lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
         savedAt: new Date().toISOString(),
@@ -73,7 +91,16 @@
       FM._vectors = session.vectors || []
       FM._tercoLines = session.tercoLines || FM._tercoLines
       FM._rickettsPoints = session.rickettsPoints || FM._rickettsPoints
+      FM._metricLines = session.metricLines || { h: [], v: [] }
+      FM._metricPoints = session.metricPoints || []
+      FM._metricMidline = session.metricMidline || null
+      FM._metricAngles = session.metricAngles || null
+      FM._metricNextPointId = session.metricNextPointId || 1
+      FM._metricNextLineId = session.metricNextLineId || 1
       FM._editorMode = session.editorMode || 'zones'
+      FM._activeTab = session.activeTab || 'zones'
+      FM._viewMode = session.viewMode || '1x'
+      FM._analysisSubMode = session.analysisSubMode || 'tercos'
       FM._nextId = session.nextId || 1
       FM._nextVecId = session.nextVecId || 1
       FM._lastAnalysis = session.lastAnalysis || null
