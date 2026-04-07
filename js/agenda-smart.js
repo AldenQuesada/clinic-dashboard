@@ -982,25 +982,11 @@ function _buildFinModal(id, appt) {
 
         ${isAvalPaga?`<div style="padding:9px 12px;background:#FFFBEB;border-radius:8px;border:1.5px solid #F59E0B"><div style="font-size:11px;font-weight:700;color:#92400E">Avaliação Paga — confirme o pagamento antes de finalizar</div></div>`:''}
 
-        <!-- Bloco 3: Fluxos pós-atendimento -->
+        <!-- Bloco 3: Fluxos pós-atendimento (gerado das automacoes + fixos) -->
         <div style="background:#F0FDF4;padding:13px;border-radius:10px;border:1px solid #D1FAE5">
-          <div style="font-size:11px;font-weight:800;color:#065F46;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Bloco 3 — Fluxos Pós-Atendimento</div>
-          <div style="display:flex;flex-direction:column;gap:7px">
-            <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:#374151;cursor:pointer">
-              <input type="checkbox" id="finWAPos" checked style="width:14px;height:14px;accent-color:#10B981"> Enviar WhatsApp pós-atendimento (cuidados)
-            </label>
-            <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:#374151;cursor:pointer">
-              <input type="checkbox" id="finAvalGoogle" style="width:14px;height:14px;accent-color:#10B981"> Solicitar avaliação Google
-            </label>
-            <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:#374151;cursor:pointer">
-              <input type="checkbox" id="finFluxoParceria" style="width:14px;height:14px;accent-color:#10B981"> Fluxo de parceria / indicação
-            </label>
-            <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:#374151;cursor:pointer">
-              <input type="checkbox" id="finGerarRetorno" style="width:14px;height:14px;accent-color:#10B981"> Gerar retorno / próximo agendamento
-            </label>
-            <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:#374151;cursor:pointer">
-              <input type="checkbox" id="finEnviarOrcamento" style="width:14px;height:14px;accent-color:#10B981"> Enviar orçamento
-            </label>
+          <div style="font-size:11px;font-weight:800;color:#065F46;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Bloco 3 — Fluxos Pos-Atendimento</div>
+          <div id="finFlowChecks" style="display:flex;flex-direction:column;gap:7px">
+            ${_buildFinFlowChecks()}
           </div>
         </div>
 
@@ -1038,6 +1024,52 @@ function _buildFinModal(id, appt) {
         <button onclick="confirmFinalize('${id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:800">Confirmar Finalização</button>
       </div>
     </div>`
+}
+
+function _buildFinFlowChecks() {
+  var checks = []
+  var _lbl = 'display:flex;align-items:center;gap:7px;font-size:12px;color:#374151;cursor:pointer'
+  var _chk = 'width:14px;height:14px;accent-color:#10B981'
+
+  // Dynamic: load on_finalize + d_after rules from AutomationsEngine cache
+  if (window.AgendaAutomationsService) {
+    var rules = AgendaAutomationsService.getActive().filter(function(r) {
+      return r.trigger_type === 'on_finalize' || r.trigger_type === 'd_after'
+    })
+    rules.forEach(function(r) {
+      var icon = r.channel === 'whatsapp' ? 'WhatsApp' : r.channel === 'alert' ? 'Alerta' : r.channel === 'task' ? 'Tarefa' : 'Auto'
+      var label = r.name
+      if (r.trigger_type === 'd_after') {
+        var cfg = r.trigger_config || {}
+        label += ' (D+' + (cfg.days||1) + ')'
+      }
+      checks.push({
+        id: 'finAuto_' + r.id.replace(/-/g,'').slice(0,8),
+        ruleId: r.id,
+        label: icon + ': ' + label,
+        checked: r.is_active,
+        fromEngine: true,
+      })
+    })
+  }
+
+  // Fallback fixed checks if engine not loaded
+  if (!checks.length) {
+    checks = [
+      { id:'finWAPos',          label:'Enviar WhatsApp pos-atendimento (cuidados)', checked:true },
+      { id:'finAvalGoogle',     label:'Solicitar avaliacao Google',                  checked:true },
+      { id:'finGerarRetorno',   label:'Gerar retorno / proximo agendamento',         checked:true },
+      { id:'finFluxoParceria',  label:'Fluxo de parceria / indicacao',               checked:false },
+      { id:'finEnviarOrcamento',label:'Enviar orcamento',                            checked:false },
+    ]
+  }
+
+  return checks.map(function(c) {
+    return '<label style="' + _lbl + '">' +
+      '<input type="checkbox" id="' + c.id + '" ' + (c.checked?'checked ':'') +
+      (c.ruleId ? 'data-rule-id="' + c.ruleId + '" ' : '') +
+      'style="' + _chk + '"> ' + c.label + '</label>'
+  }).join('')
 }
 
 function _renderFinProcs() {
