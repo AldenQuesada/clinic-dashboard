@@ -1271,10 +1271,113 @@ function getAgendaReportData(period) {
            txComparecimento:pct(realizados), txConfirmacao:pct(confirmados), txNoshow:pct(noshow), txCancelamento:pct(cancelados), porDia }
 }
 
+// ── Resumo Diario — WhatsApp as 8h para o responsavel ────────────
+var DAILY_SENT_KEY = 'clinicai_daily_summary_sent'
+
+function _checkDailySummary() {
+  var now = new Date()
+  var todayIso = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0')
+  var hora = now.getHours()
+  var minuto = now.getMinutes()
+
+  // So envia entre 8:00 e 8:05
+  if (hora !== 8 || minuto > 5) return
+
+  // Verificar se ja enviou hoje
+  var lastSent = localStorage.getItem(DAILY_SENT_KEY)
+  if (lastSent === todayIso) return
+
+  // Marcar como enviado ANTES de enviar (evita duplicados)
+  localStorage.setItem(DAILY_SENT_KEY, todayIso)
+
+  // Buscar agendamentos do dia
+  var appts = window.getAppointments ? getAppointments() : []
+  var today = appts.filter(function(a) {
+    return a.data === todayIso && a.status !== 'cancelado' && a.status !== 'no_show'
+  }).sort(function(a, b) { return (a.horaInicio || '').localeCompare(b.horaInicio || '') })
+
+  if (!today.length) return // Sem agendamentos, nao envia
+
+  // Buscar telefone do responsavel
+  var profs = window.getProfessionals ? getProfessionals() : []
+  var responsavel = profs.find(function(p) { return /mirian/i.test(p.nome || p.display_name || '') }) || profs[0]
+  var phone = responsavel && (responsavel.phone || responsavel.whatsapp || responsavel.telefone)
+  if (!phone || !window._sbShared) return
+
+  // Formatar mensagem elegante
+  var clinica = window._getClinicaNome ? _getClinicaNome() : 'Clinica'
+  var dias = ['Domingo','Segunda-feira','Terca-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sabado']
+  var dia = dias[now.getDay()]
+  var dataFmt = String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear()
+
+  var header = '*' + clinica + ' — Agenda do Dia*\n'
+  header += dia + ', ' + dataFmt + '\n'
+  header += today.length + ' agendamento' + (today.length > 1 ? 's' : '') + '\n'
+  header += '━━━━━━━━━━━━━━━━━━━━━━\n\n'
+
+  var body = today.map(function(a, i) {
+    var nome = a.pacienteNome || 'Paciente'
+    var proc = a.procedimento || a.tipoConsulta || '—'
+    var hora = (a.horaInicio || '') + (a.horaFim ? ' - ' + a.horaFim : '')
+    var obs = a.obs ? '\n   Obs: ' + a.obs : ''
+    var status = (STATUS_LABELS[a.status] || a.status)
+
+    return (i + 1) + '. *' + nome + '*\n' +
+           '   ' + proc + '\n' +
+           '   ' + hora + ' | ' + status +
+           obs
+  }).join('\n\n')
+
+  var footer = '\n\n━━━━━━━━━━━━━━━━━━━━━━\n'
+  footer += 'Bom dia e bom trabalho!'
+
+  var msg = header + body + footer
+
+  // Enviar (dividir se necessario — max ~4000 chars por msg)
+  var parts = []
+  if (msg.length <= 3800) {
+    parts.push(msg)
+  } else {
+    // Dividir pacientes em grupos de 3
+    var grupos = []
+    for (var g = 0; g < today.length; g += 3) {
+      grupos.push(today.slice(g, g + 3))
+    }
+    grupos.forEach(function(grupo, gi) {
+      var partHeader = '*Agenda do Dia (' + (gi + 1) + '/' + grupos.length + ')*\n' + dia + ', ' + dataFmt + '\n━━━━━━━━━━━━━━━━━━━━━━\n\n'
+      var partBody = grupo.map(function(a, i) {
+        var idx = gi * 3 + i + 1
+        var nome = a.pacienteNome || 'Paciente'
+        var proc = a.procedimento || a.tipoConsulta || '—'
+        var hora = (a.horaInicio || '') + (a.horaFim ? ' - ' + a.horaFim : '')
+        var obs = a.obs ? '\n   Obs: ' + a.obs : ''
+        return idx + '. *' + nome + '*\n   ' + proc + '\n   ' + hora + obs
+      }).join('\n\n')
+      if (gi === grupos.length - 1) partBody += '\n\n━━━━━━━━━━━━━━━━━━━━━━\nBom dia e bom trabalho!'
+      parts.push(partHeader + partBody)
+    })
+  }
+
+  // Enviar cada parte
+  parts.forEach(function(part, pi) {
+    setTimeout(function() {
+      window._sbShared.rpc('wa_outbox_enqueue_appt', {
+        p_phone: phone.replace(/\D/g, ''),
+        p_content: part,
+        p_lead_name: 'Sistema ClinicAI'
+      })
+    }, pi * 2000) // 2s entre cada mensagem
+  })
+
+  _logAuto('daily_summary', 'resumo_diario', 'enviado')
+}
+
 // ── Init ──────────────────────────────────────────────────────────
 function _init() {
   processQueue()
+  _checkDailySummary()
   setInterval(processQueue, 60_000)
+  setInterval(_checkDailySummary, 60_000) // Verifica a cada minuto
 }
 
 if (document.readyState === 'loading') {
