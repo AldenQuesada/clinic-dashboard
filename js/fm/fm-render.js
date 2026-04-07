@@ -282,14 +282,30 @@
             })
           }
 
-          // Point distances
+          // Point pairs — asymmetry measurement
           if (summary.point_distances.length > 0) {
-            html += '<div style="font-size:9px;color:#F59E0B;text-transform:uppercase;margin-top:6px;margin-bottom:4px">Distancias (pontos)</div>'
+            html += '<div style="font-size:9px;color:#F59E0B;text-transform:uppercase;margin-top:6px;margin-bottom:4px">Assimetria (pares de pontos)</div>'
             summary.point_distances.forEach(function (d) {
-              html += '<div style="display:flex;justify-content:space-between;font-size:10px;padding:2px 0">' +
-                '<span style="color:var(--text-secondary)">' + d.from + ' → ' + d.to + '</span>' +
-                '<span style="color:#F59E0B;font-weight:600">' + d.distance_px + 'px</span>' +
-              '</div>'
+              var sevColor = d.severity === 'evidente' ? '#EF4444' : d.severity === 'moderada' ? '#F59E0B' : '#10B981'
+              html += '<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)">' +
+                '<div style="display:flex;justify-content:space-between;font-size:10px">' +
+                  '<span style="color:var(--text-secondary)">' + d.from + ' ↔ ' + d.to + '</span>' +
+                  '<span style="color:#F59E0B;font-weight:600">' + d.distance_px + 'px</span>' +
+                '</div>'
+              if (d.vertical_diff_px > 2) {
+                html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:2px">' +
+                  '<span style="color:var(--text-muted)">↕ Desnivel vertical</span>' +
+                  '<span style="color:' + sevColor + ';font-weight:700">' + d.vertical_diff_px + 'px — ' + d.severity + '</span>' +
+                '</div>' +
+                '<div style="font-size:9px;color:var(--text-muted);margin-top:1px">Lado ' + d.higher_side + ' mais alto</div>'
+              }
+              if (d.horizontal_diff_px > 2) {
+                html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-top:2px">' +
+                  '<span style="color:var(--text-muted)">↔ Diferenca lateral</span>' +
+                  '<span style="color:var(--text-secondary)">' + d.horizontal_diff_px + 'px</span>' +
+                '</div>'
+              }
+              html += '</div>'
             })
           }
 

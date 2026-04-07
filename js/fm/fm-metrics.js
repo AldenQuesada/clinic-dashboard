@@ -188,7 +188,7 @@
 
       // Connection line
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(245,158,11,0.5)'
+      ctx.strokeStyle = 'rgba(245,158,11,0.6)'
       ctx.lineWidth = 1.5
       ctx.setLineDash([4, 3])
       ctx.moveTo(ax, ay)
@@ -196,14 +196,46 @@
       ctx.stroke()
       ctx.setLineDash([])
 
-      // Distance label
-      var dist = Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2))
+      // Horizontal reference line (shows Y difference = vertical asymmetry)
+      ctx.beginPath()
+      ctx.strokeStyle = 'rgba(239,68,68,0.4)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([2, 2])
+      ctx.moveTo(ax, ay)
+      ctx.lineTo(bx, ay)  // horizontal from A to B's X at A's height
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(bx, ay)
+      ctx.lineTo(bx, by)  // vertical from A's height to B
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      var dx = Math.abs(bx - ax)
+      var dy = Math.abs(by - ay)
+      var dist = Math.sqrt(dx * dx + dy * dy)
       var midPx = (ax + bx) / 2
       var midPy = (ay + by) / 2
+
+      // Total distance
       ctx.font = '600 10px Inter, sans-serif'
       ctx.fillStyle = '#F59E0B'
       ctx.textAlign = 'center'
-      ctx.fillText(Math.round(dist) + 'px', midPx, midPy - 6)
+      ctx.fillText(Math.round(dist) + 'px', midPx, midPy - 16)
+
+      // Vertical asymmetry (dy) — KEY metric for structure comparison
+      if (dy > 2) {
+        var higherSide = ay < by ? 'E' : 'D'
+        ctx.font = '700 11px Inter, sans-serif'
+        ctx.fillStyle = dy > 10 ? '#EF4444' : dy > 5 ? '#F59E0B' : '#10B981'
+        ctx.fillText('↕ ' + Math.round(dy) + 'px (' + higherSide + ' mais alto)', midPx, midPy - 2)
+      }
+
+      // Horizontal difference (dx)
+      if (dx > 2) {
+        ctx.font = '400 9px Inter, sans-serif'
+        ctx.fillStyle = 'rgba(245,158,11,0.6)'
+        ctx.fillText('↔ ' + Math.round(dx) + 'px', midPx, midPy + 12)
+      }
     }
 
     ctx.restore()
@@ -426,16 +458,22 @@
       })
     })
 
-    // Point pair distances
+    // Point pair distances + asymmetry
     for (var j = 0; j + 1 < FM._metricPoints.length; j += 2) {
       var a = FM._metricPoints[j]
       var b = FM._metricPoints[j + 1]
-      var dx = (b.x - a.x) * w
-      var dy = (b.y - a.y) * h
+      var pdx = (b.x - a.x) * w
+      var pdy = (b.y - a.y) * h
+      var absDy = Math.abs(pdy)
+      var absDx = Math.abs(pdx)
       summary.point_distances.push({
         from: 'P' + a.id,
         to: 'P' + b.id,
-        distance_px: Math.round(Math.sqrt(dx * dx + dy * dy)),
+        distance_px: Math.round(Math.sqrt(pdx * pdx + pdy * pdy)),
+        vertical_diff_px: Math.round(absDy),
+        horizontal_diff_px: Math.round(absDx),
+        higher_side: pdy < 0 ? 'Esquerdo' : (pdy > 0 ? 'Direito' : 'Alinhado'),
+        severity: absDy > 10 ? 'evidente' : absDy > 5 ? 'moderada' : 'leve',
       })
     }
 
