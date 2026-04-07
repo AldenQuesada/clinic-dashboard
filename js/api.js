@@ -320,7 +320,7 @@ function addMinutes(time, mins) {
   return `${String(Math.floor(total / 60)).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`
 }
 function dateToISO(d) {
-  return d.toISOString().slice(0,10)
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0')
 }
 function fmtDate(iso) {
   const [y,m,d] = iso.split('-')
