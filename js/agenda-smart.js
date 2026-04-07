@@ -1406,7 +1406,14 @@ function finRouteChange() {
   })
 }
 
-function closeFinalizeModal() {
+function closeFinalizeModal(force) {
+  if (!force) {
+    // Perguntar antes de fechar — dados podem ser perdidos
+    var hasData = _finalProcs.length > 0 || parseFloat(document.getElementById('finValor')?.value||'0') > 0
+    if (hasData) {
+      if (!confirm('Tem dados preenchidos. Deseja sair sem finalizar?\n\nOs dados serao perdidos.')) return
+    }
+  }
   const m = document.getElementById('smartFinalizeModal'); if(m) m.style.display='none'
 }
 
@@ -1455,6 +1462,17 @@ function confirmFinalize(id) {
     alert('Corrija antes de finalizar:\n\n- ' + erros.join('\n- '))
     return
   }
+
+  // ── Confirmacao de seguranca ──
+  var nomePac = appt.pacienteNome || 'Paciente'
+  var routeLabel = { paciente:'Paciente', pac_orcamento:'Paciente + Orcamento', orcamento:'Orcamento', nenhum:'—' }[routeVal] || routeVal
+  var resumo = 'Tem certeza que quer finalizar a consulta de *' + nomePac + '*?\n\n'
+    + 'Procedimentos: ' + (_finalProcs.length ? _finalProcs.map(function(p){return p.nome}).join(', ') : 'nenhum') + '\n'
+    + 'Valor: R$ ' + _fmtBRL(valor) + '\n'
+    + 'Pagamento: ' + (forma||'—') + '\n'
+    + 'Destino: ' + routeLabel
+
+  if (!confirm(resumo)) return
 
   // Collect payment details per method
   var pagDetalhes = { forma }
