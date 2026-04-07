@@ -597,6 +597,65 @@
     return r === +d[10]
   }
 
+  // ── Collagen Timeline Animation + Slider ──────────────────────
+  function _initCollagenField(f, container) {
+    var ct = container.querySelector('[data-collagen-timeline]')
+    if (!ct) return
+    var faceImgs=ct.querySelectorAll('[data-face-img]'), ageLabel=ct.querySelector('[data-age-label]')
+    var pctLabel=ct.querySelector('[data-collagen-pct]'), bar=ct.querySelector('[data-collagen-bar]')
+    var curvePath=ct.querySelector('[data-curve-path]'), phaseText=ct.querySelector('[data-phase-text]')
+    var badgesWrap=ct.querySelector('[data-badges-wrap]')
+    var phases=[
+      {tS:0,tE:2000,aS:18,aE:34,pS:100,pE:95,face:0,text:'Producao maxima de colageno. Pele firme e elastica.',badges:[]},
+      {tS:2000,tE:4000,aS:35,aE:44,pS:95,pE:85,face:1,text:'Inicio da queda. Primeiras linhas finas aparecem. -5%',badges:['Rugas finas']},
+      {tS:4000,tE:6000,aS:45,aE:54,pS:85,pE:70,face:2,text:'Perda acelerada. Rugas e flacidez se intensificam. -30%',badges:['Rugas finas','Perda de volume','Flacidez']},
+      {tS:6000,tE:8000,aS:55,aE:65,pS:70,pE:50,face:3,text:'Flacidez avancada. Perda de contorno facial. -50%',badges:['Rugas finas','Perda de volume','Flacidez','Rugas profundas']},
+    ]
+    var pathLen=curvePath?curvePath.getTotalLength():500
+    if(curvePath){curvePath.style.strokeDasharray=pathLen;curvePath.style.strokeDashoffset=pathLen}
+    var startTime=null,lastP=-1,shownB={},animId=null
+    function lerp(a,b,t){return a+(b-a)*t}
+    function barColor(p){return p>70?'linear-gradient(90deg,#32D74B,#34D058)':p>45?'linear-gradient(90deg,#FFD60A,#FFCA28)':'linear-gradient(90deg,#FF453A,#FF6B6B)'}
+    function pctColor(p){return p>70?'#32D74B':p>45?'#D97706':'#FF453A'}
+    function tick(now){
+      if(!startTime)startTime=now;var el=now-startTime,pr=Math.min(el/8000,1)
+      var ph=null,pi=-1;for(var i=0;i<phases.length;i++){if(el>=phases[i].tS&&el<phases[i].tE){ph=phases[i];pi=i;break}}
+      if(!ph&&el>=8000){ph=phases[3];pi=3}
+      if(ph){
+        var pp=Math.min((el-ph.tS)/(ph.tE-ph.tS),1),cp=Math.round(lerp(ph.pS,ph.pE,pp)),ca=Math.round(lerp(ph.aS,ph.aE,pp))
+        if(bar){bar.style.width=cp+'%';bar.style.background=barColor(cp)}
+        if(pctLabel){pctLabel.textContent=cp+'%';pctLabel.style.color=pctColor(cp)}
+        if(ageLabel)ageLabel.textContent=ca+' anos'
+        if(pi!==lastP){lastP=pi;faceImgs.forEach(function(img,i){img.style.opacity=i===ph.face?'1':'0'})
+          if(phaseText){phaseText.style.opacity='0';setTimeout(function(){phaseText.textContent=ph.text;phaseText.style.opacity='1'},300)}
+          ph.badges.forEach(function(b){if(!shownB[b]){shownB[b]=1;var el2=document.createElement('span');el2.style.cssText='padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#FEF3C7;color:#92400E;opacity:0;transform:translateY(6px);transition:all 0.5s';el2.textContent=b;badgesWrap.appendChild(el2);setTimeout(function(){el2.style.opacity='1';el2.style.transform='translateY(0)'},50)}})
+        }
+      }
+      if(curvePath)curvePath.style.strokeDashoffset=pathLen*(1-pr)
+      if(pr<1)animId=requestAnimationFrame(tick)
+      else setTimeout(function(){ct.querySelector('[data-collagen-interactive]').style.display='block'},1000)
+    }
+    // Start on visibility
+    var obs=new IntersectionObserver(function(entries){if(entries[0].isIntersecting){obs.disconnect();requestAnimationFrame(tick)}},{threshold:0.3})
+    obs.observe(ct)
+    // Slider
+    var slider=ct.querySelector('[data-age-slider]')
+    if(slider){
+      slider.addEventListener('input',function(){
+        var age=parseInt(slider.value),pct=age<=25?100:age<=30?100-((age-25)*1):age<=40?95-((age-40+10)*1.5):age<=50?80-((age-40)*2):60-((age-50)*1.5)
+        pct=Math.max(30,Math.round(pct))
+        var disp=ct.querySelector('[data-age-display]'),imp=ct.querySelector('[data-age-impact]')
+        if(disp)disp.textContent=age+' anos'
+        if(imp)imp.textContent=pct>85?'Colageno em alta producao':pct>70?'Inicio da queda natural':pct>55?'Perda moderada - tratamento recomendado':'Perda significativa - intervencao indicada'
+        if(bar){bar.style.width=pct+'%';bar.style.background=barColor(pct)}
+        if(pctLabel){pctLabel.textContent=pct+'%';pctLabel.style.color=pctColor(pct)}
+        if(ageLabel)ageLabel.textContent=age+' anos'
+        var fi=age<=34?0:age<=44?1:age<=54?2:3;faceImgs.forEach(function(img,i){img.style.opacity=i===fi?'1':'0'})
+        FRM.setValue(f.field_key,{idade:age,colageno_pct:pct},f.id)
+      })
+    }
+  }
+
   function _parseEndereco(str) {
     if (!str) return null
     if (typeof str === 'object') return str
@@ -1090,6 +1149,50 @@
         </div>`, false)
     }
 
+    // ── Collagen Timeline (special animated field) ──
+    if (s.display === 'collagen_timeline' || f.field_key === 'collagen_timeline') {
+      var ctImgs = [
+        'https://drive.google.com/thumbnail?id=1g6nasKaKer1SVmvnyVblU26MDaDUoQnP&sz=w400',
+        'https://drive.google.com/thumbnail?id=1UVVXFbhNT7YQQG5AF9TYFsDKUVyCuHoi&sz=w400',
+        'https://drive.google.com/thumbnail?id=1Fff3ywU87iAwQkZxS6i7fqcOEGt-yfZ7&sz=w400',
+        'https://drive.google.com/thumbnail?id=1dYZK5sOOQP30Nv_zF8iSDGexvqXcZi3v&sz=w400',
+      ]
+      var ctCurve = 'M 0,55 C 20,50 40,8 60,6 C 80,4 90,5 100,8 C 130,14 160,24 190,36 C 220,46 250,52 300,58'
+      var ctGrid = ''; for(var gi=0;gi<4;gi++){var gy=15*gi+8;ctGrid+='<line x1="0" y1="'+gy+'" x2="300" y2="'+gy+'" stroke="#E5E7EB" stroke-width="0.5" stroke-dasharray="4,4"/>'}
+      var ctXL = [{x:30,l:'25'},{x:60,l:'30'},{x:130,l:'40'},{x:200,l:'50'},{x:270,l:'60'}].map(function(a){return'<text x="'+a.x+'" y="72" text-anchor="middle" fill="#9CA3AF" font-size="9">'+a.l+'</text>'}).join('')
+      var ctHtml =
+        '<div data-collagen-timeline style="max-width:400px;margin:12px auto;padding:20px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);background:#fff">' +
+        '<div style="text-align:center;font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:16px">Evolucao do Colageno</div>' +
+        '<div style="position:relative;width:180px;height:180px;margin:0 auto 16px;border-radius:50%;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.12)">' +
+        ctImgs.map(function(u,i){return'<img data-face-img="'+i+'" src="'+u+'" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:'+(i===0?'1':'0')+';transition:opacity 0.8s">'}).join('') +
+        '<div data-age-label style="position:absolute;bottom:0;left:0;right:0;padding:6px;background:linear-gradient(transparent,rgba(0,0,0,0.6));text-align:center;color:#fff;font-size:14px;font-weight:600">25 anos</div></div>' +
+        '<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;font-weight:600;color:#374151">Nivel de Colageno</span><span data-collagen-pct style="font-size:13px;font-weight:700;color:#32D74B">100%</span></div>' +
+        '<div style="width:100%;height:12px;border-radius:6px;background:#F3F4F6;overflow:hidden"><div data-collagen-bar style="width:100%;height:100%;border-radius:6px;background:linear-gradient(90deg,#32D74B,#34D058);transition:width 0.3s,background 0.3s"></div></div></div>' +
+        '<svg data-collagen-svg viewBox="0 0 300 75" style="width:100%;height:80px;display:block">' + ctGrid +
+        '<path d="'+ctCurve+'" fill="none" stroke="#E5E7EB" stroke-width="1.5"/>' +
+        '<path data-curve-path d="'+ctCurve+'" fill="none" stroke="url(#cg-'+f.id+')" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="500" stroke-dashoffset="500"/>' +
+        '<defs><linearGradient id="cg-'+f.id+'" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#32D74B"/><stop offset="50%" stop-color="#FFD60A"/><stop offset="100%" stop-color="#FF453A"/></linearGradient></defs>' + ctXL + '</svg>' +
+        '<div data-phase-text style="text-align:center;font-size:13px;color:#4B5563;line-height:1.5;min-height:36px;margin:10px 0;font-weight:500">Producao maxima de colageno. Pele firme e elastica.</div>' +
+        '<div data-badges-wrap style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:26px"></div>' +
+        '<div data-collagen-interactive style="display:none;margin-top:16px;text-align:center">' +
+        '<div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:4px">Qual e a sua idade?</div>' +
+        '<div style="font-size:12px;color:#8B8BA3;margin-bottom:12px">Arraste para ver seu nivel de colageno</div>' +
+        '<input data-age-slider type="range" min="18" max="65" value="30" step="1" style="width:100%;height:14px;border-radius:7px;outline:none;-webkit-appearance:none;appearance:none;background:linear-gradient(90deg,#32D74B 0%,#FFD60A 50%,#FF453A 100%);cursor:pointer;touch-action:none">' +
+        '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:#9CA3AF;font-weight:600"><span>18</span><span>30</span><span>40</span><span>50</span><span>65</span></div>' +
+        '<div data-age-display style="margin-top:10px;font-size:28px;font-weight:800;color:#1a1a2e">30 anos</div>' +
+        '<div data-age-impact style="font-size:13px;color:#4B5563;margin-top:4px;font-weight:500">Colageno em alta producao</div>' +
+        '</div></div>'
+
+      // Inject slider CSS
+      if (!document.getElementById('ct-slider-css')) {
+        var sty = document.createElement('style'); sty.id = 'ct-slider-css'
+        sty.textContent = '[data-age-slider]::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid #5B6CFF;box-shadow:0 3px 12px rgba(91,108,255,0.4);cursor:pointer;margin-top:-11px}[data-age-slider]::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid #5B6CFF;cursor:pointer}'
+        document.head.appendChild(sty)
+      }
+
+      return wrap(ctHtml)
+    }
+
     if (f.field_type === 'file_upload' || f.field_type === 'image_upload') {
       const accept = s.accept || (f.field_type === 'image_upload' ? 'image/*' : '')
       return wrap(`<input type="file" class="f-file" id="${inputId}" accept="${esc(accept)}">`)
@@ -1169,6 +1272,9 @@
             })(i)
           }
         }
+
+      } else if (f.settings_json?.display === 'collagen_timeline' || f.field_key === 'collagen_timeline') {
+        _initCollagenField(f, inp)
 
       } else if (f.field_type === 'file_upload' || f.field_type === 'image_upload') {
         inp.addEventListener('change', function() { _handleFileUpload(f, inp) })
