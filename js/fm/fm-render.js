@@ -38,50 +38,49 @@
 
   FM._renderHeader = function (name) {
     var tabs = [
-      { id: 'simetria',      label: 'Simetria',       icon: 'git-commit', color: '#10B981' },
-      { id: 'zones',         label: 'Estruturacao',   icon: 'layers',     color: '#3B82F6' },
-      { id: 'vectors',       label: 'Vetores',        icon: 'trending-up', color: '#8B5CF6' },
-      { id: 'analysis',      label: 'Analise',        icon: 'activity',   color: '#C8A97E' },
+      { id: 'simetria',      label: 'Simetria',       icon: 'git-commit' },
+      { id: 'zones',         label: 'Estruturacao',   icon: 'layers' },
+      { id: 'vectors',       label: 'Vetores',        icon: 'trending-up' },
+      { id: 'analysis',      label: 'Analise',        icon: 'activity' },
     ]
 
-    // Map old modes to new
     var activeTab = FM._editorMode
     if (activeTab === 'analysis' && FM._analysisSubMode === 'metrics') activeTab = 'simetria'
 
-    var html = '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid var(--border)">' +
-      '<div class="fm-header-left" style="display:flex;align-items:center;gap:12px">' +
-        '<span style="font-family:Cormorant Garamond,serif;font-size:20px;font-weight:300;font-style:italic;color:#C8A97E">Analise Facial</span>' +
+    var html = '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid rgba(200,169,126,0.12)">' +
+      '<div style="display:flex;align-items:center;gap:12px">' +
+        '<span style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Analise Facial</span>' +
       '</div>' +
 
-      // 4 Tab buttons (premium style)
-      '<div style="display:flex;gap:2px;background:rgba(200,169,126,0.08);border-radius:10px;padding:3px">'
+      // Tabs — all champagne, minimal
+      '<div style="display:flex;gap:1px;background:rgba(200,169,126,0.06);border-radius:8px;padding:2px">'
 
     tabs.forEach(function (tab) {
       var isActive = activeTab === tab.id
       html += '<button onclick="FaceMapping._switchTab(\'' + tab.id + '\')" style="' +
-        'padding:6px 16px;border-radius:8px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:11px;font-weight:' + (isActive ? '600' : '400') + ';' +
-        'letter-spacing:0.03em;transition:all 0.2s;' +
-        'background:' + (isActive ? 'linear-gradient(135deg,' + tab.color + ',' + tab.color + 'CC)' : 'transparent') + ';' +
-        'color:' + (isActive ? '#fff' : 'var(--text-secondary)') + ';' +
-        '">' + FM._icon(tab.icon, 12) + ' ' + tab.label + '</button>'
+        'padding:5px 14px;border-radius:6px;border:none;cursor:pointer;' +
+        'font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:0.04em;' +
+        'font-weight:' + (isActive ? '600' : '400') + ';' +
+        'background:' + (isActive ? '#C8A97E' : 'transparent') + ';' +
+        'color:' + (isActive ? '#fff' : 'rgba(200,169,126,0.5)') + ';' +
+        '">' + tab.label + '</button>'
     })
 
     html += '</div>' +
 
-      // 1x/2x toggle
-      '<div style="display:flex;background:rgba(200,169,126,0.08);border-radius:8px;padding:2px;margin:0 8px">' +
-        '<button onclick="FaceMapping._setViewMode(\'1x\')" style="padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:11px;font-weight:' + (FM._viewMode === '1x' ? '700' : '400') + ';background:' + (FM._viewMode === '1x' ? '#C8A97E' : 'transparent') + ';color:' + (FM._viewMode === '1x' ? '#fff' : 'var(--text-muted)') + '">1x</button>' +
-        '<button onclick="FaceMapping._setViewMode(\'2x\')" style="padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:11px;font-weight:' + (FM._viewMode === '2x' ? '700' : '400') + ';background:' + (FM._viewMode === '2x' ? '#C8A97E' : 'transparent') + ';color:' + (FM._viewMode === '2x' ? '#fff' : 'var(--text-muted)') + '">2x</button>' +
+      // 1x/2x toggle — minimal
+      '<div style="display:flex;background:rgba(200,169,126,0.06);border-radius:6px;padding:2px;margin:0 6px">' +
+        '<button onclick="FaceMapping._setViewMode(\'1x\')" style="padding:3px 10px;border-radius:4px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:10px;font-weight:' + (FM._viewMode === '1x' ? '600' : '400') + ';background:' + (FM._viewMode === '1x' ? 'rgba(200,169,126,0.25)' : 'transparent') + ';color:' + (FM._viewMode === '1x' ? '#C8A97E' : 'rgba(200,169,126,0.35)') + '">1x</button>' +
+        '<button onclick="FaceMapping._setViewMode(\'2x\')" style="padding:3px 10px;border-radius:4px;border:none;cursor:pointer;font-family:Montserrat,sans-serif;font-size:10px;font-weight:' + (FM._viewMode === '2x' ? '600' : '400') + ';background:' + (FM._viewMode === '2x' ? 'rgba(200,169,126,0.25)' : 'transparent') + ';color:' + (FM._viewMode === '2x' ? '#C8A97E' : 'rgba(200,169,126,0.35)') + '">2x</button>' +
       '</div>' +
 
-      // Right actions
-      '<div style="display:flex;gap:4px;align-items:center">' +
-        '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="Scanner 478pts" style="font-size:10px;padding:5px 10px">' + FM._icon('cpu', 12) + ' Scanner</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe" style="font-size:10px;padding:5px 8px;border-color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.2)') + ';color:' + (FM._showWireframe ? '#C8A97E' : 'rgba(200,169,126,0.4)') + '">' + FM._icon('grid', 12) + '</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._openBeforeAfter()" title="Antes/Depois" style="font-size:10px;padding:5px 8px;border-color:rgba(200,169,126,0.2);color:rgba(200,169,126,0.4)">' + FM._icon('columns', 12) + '</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._openCompare()" title="Comparar" style="font-size:10px;padding:5px 8px;background:linear-gradient(135deg,#C8A97E,#A8895E);color:#fff;border:none">' + FM._icon('eye', 12) + '</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._exportReport()" title="Report" style="font-size:10px;padding:5px 8px">' + FM._icon('download', 12) + '</button>' +
-        '<button class="fm-btn fm-btn-primary" onclick="FaceMapping._saveToSupabase()" style="font-size:10px;padding:5px 10px">' + FM._icon('save', 12) + ' Salvar</button>' +
+      // Right actions — minimal, all champagne
+      '<div style="display:flex;gap:3px;align-items:center">' +
+        '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="Scanner 478pts" style="font-size:9px;padding:4px 8px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('cpu', 11) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,' + (FM._showWireframe ? '0.8' : '0.3') + ')">' + FM._icon('grid', 11) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._openCompare()" title="Comparar" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('eye', 11) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._exportReport()" title="Report" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('download', 11) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._saveToSupabase()" style="font-size:9px;padding:4px 8px;border-color:rgba(200,169,126,0.3);color:#C8A97E;font-weight:600">' + FM._icon('save', 11) + ' Salvar</button>' +
       '</div>' +
     '</div>'
 

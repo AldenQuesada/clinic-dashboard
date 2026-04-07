@@ -157,8 +157,9 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 10px 24px;
-  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(200,169,126,0.08);
+  background: rgba(0,0,0,0.02);
   background: #FAFBFC;
   flex-shrink: 0;
 }
@@ -242,10 +243,10 @@
 
 /* ── Photo strip (left) ────────────────────────────────────── */
 .fm-photo-strip {
-  width: 120px;
+  width: 100px;
   flex-shrink: 0;
-  background: #FAFBFC;
-  border-right: 1px solid var(--border);
+  background: #0A0A0A;
+  border-right: 1px solid rgba(200,169,126,0.08);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -255,18 +256,18 @@
 
 .fm-photo-thumb {
   position: relative;
-  width: 96px;
-  height: 96px;
-  border-radius: var(--radius-sm);
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color var(--transition);
-  background: var(--border);
+  border: 1px solid rgba(200,169,126,0.15);
+  transition: border-color 0.2s;
+  background: #1A1A1A;
 }
 
 .fm-photo-thumb.active {
-  border-color: var(--fm-champagne);
+  border-color: rgba(200,169,126,0.5);
 }
 
 .fm-photo-thumb img {
@@ -291,25 +292,26 @@
 }
 
 .fm-photo-upload {
-  width: 96px;
-  height: 96px;
-  border: 2px dashed var(--border);
-  border-radius: var(--radius-sm);
+  width: 80px;
+  height: 80px;
+  border: 1px dashed rgba(200,169,126,0.2);
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
   cursor: pointer;
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 500;
-  transition: all var(--transition);
+  color: rgba(200,169,126,0.35);
+  font-size: 9px;
+  font-weight: 400;
+  transition: all 0.2s;
+  background: transparent;
 }
 
 .fm-photo-upload:hover {
-  border-color: var(--fm-champagne);
-  color: var(--fm-champagne-dark);
+  border-color: rgba(200,169,126,0.4);
+  color: rgba(200,169,126,0.6);
 }
 
 .fm-photo-upload svg {
