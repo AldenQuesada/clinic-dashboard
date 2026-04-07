@@ -246,7 +246,7 @@
   }
 
   FM._renderCanvasArea1x = function () {
-    return '<div class="fm-canvas-area" id="fmCanvasArea" style="flex-direction:column">' +
+    return '<div class="fm-canvas-area" id="fmCanvasArea" style="flex-direction:column;align-items:center;justify-content:center">' +
       '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap">' +
         '<canvas id="fmCanvas"></canvas>' +
       '</div>' +
