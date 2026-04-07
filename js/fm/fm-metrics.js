@@ -59,8 +59,8 @@
     FM._metricLines.h.forEach(function (line, i) {
       var y = line.y * h
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(16,185,129,0.5)'
-      ctx.lineWidth = 1
+      ctx.strokeStyle = 'rgba(16,185,129,0.6)'
+      ctx.lineWidth = 1.5
       ctx.setLineDash([6, 4])
       ctx.moveTo(0, y)
       ctx.lineTo(w, y)
@@ -94,8 +94,8 @@
     FM._metricLines.v.forEach(function (line, i) {
       var x = line.x * w
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(59,130,246,0.5)'
-      ctx.lineWidth = 1
+      ctx.strokeStyle = 'rgba(59,130,246,0.6)'
+      ctx.lineWidth = 1.5
       ctx.setLineDash([6, 4])
       ctx.moveTo(x, 0)
       ctx.lineTo(x, h)
@@ -215,7 +215,9 @@
     var w = FM._imgW, h = FM._imgH
     var threshold = 12
 
-    // Check angle points (Gonial E, Gonial D, Mento, Zigoma E, Zigoma D)
+    var tool = FM._metricTool
+
+    // Angle points — always draggable (they're special)
     if (FM._metricAngles && FM._metricAngles.points) {
       var pts = FM._metricAngles.points
       var angleKeys = ['gonial_left', 'gonial_right', 'mento', 'zigoma_left', 'zigoma_right']
@@ -231,61 +233,68 @@
       }
     }
 
-    // Check midline handle
-    if (FM._metricShowMidline) {
-      var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
-      if (Math.abs(mx - midX) < threshold && my < 30) {
-        FM._metricDrag = { type: 'midline' }
-        return true
+    // Only check/add elements matching the selected tool
+    if (tool === 'hline') {
+      // Drag existing H line
+      for (var i = 0; i < FM._metricLines.h.length; i++) {
+        var ly = FM._metricLines.h[i].y * h
+        if (Math.abs(my - ly) < threshold && mx < w) {
+          FM._metricDrag = { type: 'hline', index: i }
+          return true
+        }
       }
-    }
-
-    // Check horizontal lines
-    for (var i = 0; i < FM._metricLines.h.length; i++) {
-      var ly = FM._metricLines.h[i].y * h
-      if (Math.abs(my - ly) < threshold && mx < w) {
-        FM._metricDrag = { type: 'hline', index: i }
-        return true
-      }
-    }
-
-    // Check vertical lines
-    for (var j = 0; j < FM._metricLines.v.length; j++) {
-      var lx = FM._metricLines.v[j].x * w
-      if (Math.abs(mx - lx) < threshold && my < h) {
-        FM._metricDrag = { type: 'vline', index: j }
-        return true
-      }
-    }
-
-    // Check points
-    for (var k = 0; k < FM._metricPoints.length; k++) {
-      var px = FM._metricPoints[k].x * w
-      var py = FM._metricPoints[k].y * h
-      if (Math.sqrt(Math.pow(mx - px, 2) + Math.pow(my - py, 2)) < threshold) {
-        FM._metricDrag = { type: 'point', index: k }
-        return true
-      }
-    }
-
-    // If tool is active and click is on image, add new element
-    if (mx > 0 && mx < w && my > 0 && my < h) {
-      if (FM._metricTool === 'hline') {
+      // Add new H line
+      if (mx > 0 && mx < w && my > 0 && my < h) {
+        FM._pushUndo()
         FM._metricLines.h.push({ y: my / h, id: FM._metricNextLineId++ })
         FM._metricLines.h.sort(function (a, b) { return a.y - b.y })
         FM._redraw()
         FM._refreshToolbar()
         return true
-      } else if (FM._metricTool === 'vline') {
+      }
+    } else if (tool === 'vline') {
+      // Drag existing V line
+      for (var j = 0; j < FM._metricLines.v.length; j++) {
+        var lx = FM._metricLines.v[j].x * w
+        if (Math.abs(mx - lx) < threshold && my < h) {
+          FM._metricDrag = { type: 'vline', index: j }
+          return true
+        }
+      }
+      // Add new V line
+      if (mx > 0 && mx < w && my > 0 && my < h) {
+        FM._pushUndo()
         FM._metricLines.v.push({ x: mx / w, id: FM._metricNextLineId++ })
         FM._metricLines.v.sort(function (a, b) { return a.x - b.x })
         FM._redraw()
         FM._refreshToolbar()
         return true
-      } else if (FM._metricTool === 'point') {
+      }
+    } else if (tool === 'point') {
+      // Drag existing point
+      for (var k = 0; k < FM._metricPoints.length; k++) {
+        var ppx = FM._metricPoints[k].x * w
+        var ppy = FM._metricPoints[k].y * h
+        if (Math.sqrt(Math.pow(mx - ppx, 2) + Math.pow(my - ppy, 2)) < threshold) {
+          FM._metricDrag = { type: 'point', index: k }
+          return true
+        }
+      }
+      // Add new point
+      if (mx > 0 && mx < w && my > 0 && my < h) {
+        FM._pushUndo()
         FM._metricPoints.push({ x: mx / w, y: my / h, id: FM._metricNextPointId++ })
         FM._redraw()
         FM._refreshToolbar()
+        return true
+      }
+    }
+
+    // Midline — always draggable
+    if (FM._metricShowMidline) {
+      var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
+      if (Math.abs(mx - midX) < threshold && my < 30) {
+        FM._metricDrag = { type: 'midline' }
         return true
       }
     }

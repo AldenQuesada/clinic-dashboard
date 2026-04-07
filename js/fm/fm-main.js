@@ -75,6 +75,8 @@
     set _analysisSubMode(v) { FM._analysisSubMode = v },
     _refreshToolbar: FM._refreshToolbar,
     _redraw: FM._redraw,
+    _initCanvas: FM._initCanvas,
+    _render: FM._render,
 
     get _selectedMl() { return FM._selectedMl },
     set _selectedMl(v) { FM._selectedMl = v },
