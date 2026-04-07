@@ -119,32 +119,33 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--card);
-  color: var(--text-primary);
-  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid rgba(200,169,126,0.15);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(200,169,126,0.6);
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--transition);
 }
 
 .fm-btn:hover {
-  border-color: var(--fm-champagne);
-  color: var(--fm-champagne-dark);
+  border-color: rgba(200,169,126,0.4);
+  color: #C8A97E;
 }
 
 .fm-btn-primary {
-  background: var(--fm-champagne);
-  border-color: var(--fm-champagne);
-  color: #fff;
+  background: transparent;
+  border-color: #C8A97E;
+  color: #C8A97E;
+  font-weight: 600;
 }
 
 .fm-btn-primary:hover {
-  background: var(--fm-champagne-dark);
-  border-color: var(--fm-champagne-dark);
-  color: #fff;
+  background: rgba(200,169,126,0.1);
+  border-color: #C8A97E;
+  color: #C8A97E;
 }
 
 .fm-btn svg {
