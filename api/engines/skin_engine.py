@@ -423,45 +423,56 @@ def _estimate_skin_age(
     # Filter out tiny spots (noise)
     significant_spots = sum(1 for i in range(1, num_spots) if stats[i, cv2.CC_STAT_AREA] > 20)
 
-    # Age estimation formula (calibrated for clinical use — real patients 30-65)
-    base_age = 30
+    # Age estimation formula (calibrated with real clinical patients)
+    # Calibration reference: Pri, 50 anos, rosto quadrado, assimetria evidente
+    # Goal: real clinical photos should land within ±3 years of real age
+    base_age = 32
 
-    # Wrinkle contribution: +0-35 years (primary age indicator)
+    # Wrinkle contribution: strongest signal (0-35 years)
     wrinkle_years = (100 - wrinkle_score) * 0.35
 
-    # Spot contribution: +0-18 years
-    spot_years = min(18, significant_spots * 1.2)
+    # Spot contribution: significant (0-20 years)
+    spot_years = min(20, significant_spots * 1.5 + (100 - spot_score) * 0.05)
 
-    # Firmness contribution: +0-15 years
+    # Firmness contribution (0-15 years)
     firmness_years = (100 - firmness_score) * 0.15
 
-    # Pore contribution: +0-7 years
-    pore_score = scores.get("pores", 50)
-    pore_years = (100 - pore_score) * 0.07
+    # Pore contribution (0-8 years)
+    pore_score_val = scores.get("pores", 50)
+    pore_years = (100 - pore_score_val) * 0.08
 
-    # Pigmentation contribution: +0-8 years
+    # Pigmentation contribution (0-10 years)
     pigment_score = scores.get("pigmentation", 50)
-    pigment_years = (100 - pigment_score) * 0.08
+    pigment_years = (100 - pigment_score) * 0.10
 
-    # Redness contribution: +0-5 years
+    # Redness contribution (0-5 years)
     redness_score_val = scores.get("redness", 50)
     redness_years = (100 - redness_score_val) * 0.05
 
-    estimated_age = base_age + wrinkle_years + spot_years + firmness_years + pore_years + pigment_years + redness_years
+    # Overall score penalty: if overall < 60, skin is clearly aging
+    overall_penalty = max(0, (60 - overall) * 0.3)
+
+    estimated_age = base_age + wrinkle_years + spot_years + firmness_years + pore_years + pigment_years + redness_years + overall_penalty
+
+    # Minimum floor: never estimate below 25
+    estimated_age = max(25, estimated_age)
 
     # Age bracket
     if estimated_age < 30:
         bracket = "<30"
-        description = "Pele jovem com boa elasticidade"
+        description = "Pele jovem com boa elasticidade e colageno preservado"
     elif estimated_age < 40:
         bracket = "30-40"
-        description = "Sinais iniciais de envelhecimento, boa estrutura"
+        description = "Primeiros sinais de envelhecimento, boa estrutura base"
     elif estimated_age < 50:
         bracket = "40-50"
-        description = "Envelhecimento moderado, perda de volume e elasticidade"
+        description = "Envelhecimento moderado, perda progressiva de volume e elasticidade"
+    elif estimated_age < 60:
+        bracket = "50-60"
+        description = "Envelhecimento avancado, sulcos e perda de contorno evidentes"
     else:
-        bracket = "50+"
-        description = "Envelhecimento avancado, multiplos indicadores"
+        bracket = "60+"
+        description = "Envelhecimento severo, perda estrutural significativa"
 
     return {
         "estimated_age": round(estimated_age, 0),

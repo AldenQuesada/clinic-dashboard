@@ -439,15 +439,22 @@ def _calculate_symmetry(kp: Dict) -> Dict:
         # Height comparison
         y_diff = abs(left["y"] - right["y"])
 
-        # Symmetry = 1 - normalized difference (more sensitive to real asymmetries)
+        # Symmetry = 1 - normalized difference
+        # Calibrated: real faces with visible asymmetry should score 60-75%
         if max(left_dist, right_dist) > 0:
-            x_sym = 1.0 - abs(left_dist - right_dist) / max(left_dist, right_dist) * 1.5
+            x_sym = 1.0 - abs(left_dist - right_dist) / max(left_dist, right_dist) * 2.5
         else:
             x_sym = 1.0
 
-        y_sym = max(0, 1.0 - y_diff * 20)  # penalize height differences more aggressively
+        y_sym = max(0, 1.0 - y_diff * 30)  # strong penalty for height differences
 
-        score = (x_sym * 0.5 + y_sym * 0.5) * 100
+        # Also measure z-depth asymmetry if available
+        z_sym = 1.0
+        if "z" in left and "z" in right:
+            z_diff = abs(left["z"] - right["z"])
+            z_sym = max(0, 1.0 - z_diff * 15)
+
+        score = (x_sym * 0.4 + y_sym * 0.35 + z_sym * 0.25) * 100
         scores[name] = round(max(0, min(100, score)), 1)
 
     overall = round(sum(scores.values()) / len(scores), 1)
