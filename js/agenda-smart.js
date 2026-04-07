@@ -923,72 +923,77 @@ function _buildFinModal(id, appt) {
 
   m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px'
   m.innerHTML = _finProcOpts + `
-    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:540px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.25)">
+    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:960px;max-height:96vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25)">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;flex-shrink:0">
         <div>
           <div style="font-size:15px;font-weight:800;color:#111">Finalizar Atendimento</div>
           <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${appt.pacienteNome} · ${appt.data?_fmtD(appt.data):''} ${appt.horaInicio||''}</div>
         </div>
-        <button onclick="closeFinalizeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9CA3AF">✕</button>
+        <button onclick="closeFinalizeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9CA3AF">&#10005;</button>
       </div>
-      <div style="flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:16px">
+      <div style="flex:1;overflow-y:auto;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px">
 
-        <!-- Procedimentos -->
-        <div>
-          <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:7px">Procedimentos Realizados</div>
-          <div id="finProcList">${_renderFinProcs()}</div>
-          <div style="display:flex;gap:6px;margin-top:6px">
-            <input id="finProcNome" placeholder="Procedimento..." style="flex:1;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px" list="apptProcList" onchange="finProcAutoPrice()">
-            <input id="finProcQtd"  type="number" value="1" min="1" style="width:52px;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;text-align:center" onchange="finProcAutoPrice()">
-            <button onclick="addFinProc()" style="padding:7px 13px;background:#7C3AED;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700">+</button>
+        <!-- ════ COLUNA ESQUERDA: Procedimentos + Financeiro ════ -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          <!-- Procedimentos -->
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:7px">Procedimentos Realizados</div>
+            <div id="finProcList">${_renderFinProcs()}</div>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <input id="finProcNome" placeholder="Procedimento..." style="flex:1;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px" list="apptProcList" onchange="finProcAutoPrice()">
+              <input id="finProcQtd"  type="number" value="1" min="1" style="width:52px;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;text-align:center" onchange="finProcAutoPrice()">
+              <button onclick="addFinProc()" style="padding:7px 13px;background:#7C3AED;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700">+</button>
+            </div>
+            <div id="finProcPriceHint" style="margin-top:4px;font-size:11px;color:#7C3AED;font-weight:600"></div>
+            <div id="finProcTotal" style="margin-top:8px;padding:8px 10px;background:#F5F3FF;border-radius:8px;font-size:13px;font-weight:700;color:#5B21B6;display:none"></div>
           </div>
-          <div id="finProcPriceHint" style="margin-top:4px;font-size:11px;color:#7C3AED;font-weight:600"></div>
-          <div id="finProcTotal" style="margin-top:8px;padding:8px 10px;background:#F5F3FF;border-radius:8px;font-size:13px;font-weight:700;color:#5B21B6;display:none"></div>
+
+          <!-- Financeiro -->
+          <div style="background:#F9FAFB;padding:13px;border-radius:10px">
+            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:10px">Financeiro</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+              <div>
+                <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Valor Total (R$)</label>
+                <input id="finValor" type="number" step="0.01" placeholder="0,00" value="${appt.valor||''}" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:13px;font-weight:700" oninput="finPayChanged()">
+              </div>
+              <div>
+                <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Forma de Pagamento</label>
+                <select id="finFormaPag" onchange="finPayChanged()" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">${pmOpts}</select>
+              </div>
+            </div>
+            <div id="finPayDetails" style="margin-top:10px"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px">
+              <div>
+                <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Valor Pago (R$)</label>
+                <input id="finPago" type="number" step="0.01" placeholder="0,00" value="${appt.valorPago||''}" oninput="finUpdateBalance()" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:13px">
+              </div>
+              <div>
+                <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Status</label>
+                <select id="finStatusPag" onchange="finPayChanged()" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">
+                  <option value="pendente" ${appt.statusPagamento==='pendente'?'selected':''}>Pendente</option>
+                  <option value="parcial"  ${appt.statusPagamento==='parcial'?'selected':''}>Parcial</option>
+                  <option value="pago"     ${appt.statusPagamento==='pago'?'selected':''}>Pago</option>
+                </select>
+              </div>
+            </div>
+            <div id="finBalInfo" style="margin-top:7px;font-size:11px;font-weight:600"></div>
+          </div>
+
+          ${isAvalPaga?`<div style="padding:9px 12px;background:#FFFBEB;border-radius:8px;border:1.5px solid #F59E0B"><div style="font-size:11px;font-weight:700;color:#92400E">Avaliacao Paga — confirme o pagamento antes de finalizar</div></div>`:''}
+
         </div>
 
-        <!-- Financeiro -->
-        <div style="background:#F9FAFB;padding:13px;border-radius:10px">
-          <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:10px">Financeiro</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
-            <div>
-              <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Valor Total (R$)</label>
-              <input id="finValor" type="number" step="0.01" placeholder="0,00" value="${appt.valor||''}" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:13px;font-weight:700" oninput="finPayChanged()">
-            </div>
-            <div>
-              <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Forma de Pagamento</label>
-              <select id="finFormaPag" onchange="finPayChanged()" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">${pmOpts}</select>
+        <!-- ════ COLUNA DIREITA: Fluxos + Routing + Obs ════ -->
+        <div style="display:flex;flex-direction:column;gap:16px">
+
+          <!-- Bloco 3: Fluxos pos-atendimento -->
+          <div style="background:#F0FDF4;padding:13px;border-radius:10px;border:1px solid #D1FAE5">
+            <div style="font-size:11px;font-weight:800;color:#065F46;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Fluxos Pos-Atendimento</div>
+            <div id="finFlowChecks" style="display:flex;flex-direction:column;gap:7px" onchange="_finAutoRoute()">
+              ${_buildFinFlowChecks()}
             </div>
           </div>
-
-          <!-- Dynamic payment details per method -->
-          <div id="finPayDetails" style="margin-top:10px"></div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px">
-            <div>
-              <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Valor Pago (R$)</label>
-              <input id="finPago" type="number" step="0.01" placeholder="0,00" value="${appt.valorPago||''}" oninput="finUpdateBalance()" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:13px">
-            </div>
-            <div>
-              <label style="font-size:10px;color:#9CA3AF;font-weight:700;display:block;margin-bottom:3px">Status</label>
-              <select id="finStatusPag" onchange="finPayChanged()" style="width:100%;box-sizing:border-box;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px">
-                <option value="pendente" ${appt.statusPagamento==='pendente'?'selected':''}>Pendente</option>
-                <option value="parcial"  ${appt.statusPagamento==='parcial'?'selected':''}>Parcial</option>
-                <option value="pago"     ${appt.statusPagamento==='pago'?'selected':''}>Pago</option>
-              </select>
-            </div>
-          </div>
-          <div id="finBalInfo" style="margin-top:7px;font-size:11px;font-weight:600"></div>
-        </div>
-
-        ${isAvalPaga?`<div style="padding:9px 12px;background:#FFFBEB;border-radius:8px;border:1.5px solid #F59E0B"><div style="font-size:11px;font-weight:700;color:#92400E">Avaliação Paga — confirme o pagamento antes de finalizar</div></div>`:''}
-
-        <!-- Bloco 3: Fluxos pós-atendimento (gerado das automacoes + fixos) -->
-        <div style="background:#F0FDF4;padding:13px;border-radius:10px;border:1px solid #D1FAE5">
-          <div style="font-size:11px;font-weight:800;color:#065F46;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Bloco 3 — Fluxos Pos-Atendimento</div>
-          <div id="finFlowChecks" style="display:flex;flex-direction:column;gap:7px" onchange="_finAutoRoute()">
-            ${_buildFinFlowChecks()}
-          </div>
-        </div>
 
         <!-- Bloco 4: Routing de tags (próximo estado do paciente) -->
         <div style="background:#F5F3FF;padding:13px;border-radius:10px;border:1px solid #DDD6FE">
@@ -1014,15 +1019,19 @@ function _buildFinModal(id, appt) {
           </div>
         </div>
 
-        <div>
-          <label style="font-size:10px;font-weight:700;color:#9CA3AF;display:block;margin-bottom:4px">Observações Finais</label>
-          <textarea id="finObs" rows="2" placeholder="Notas sobre o atendimento..." style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;resize:none;font-family:inherit">${appt.obsFinal||''}</textarea>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:#9CA3AF;display:block;margin-bottom:4px">Observacoes Finais</label>
+            <textarea id="finObs" rows="3" placeholder="Notas sobre o atendimento..." style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;resize:none;font-family:inherit">${appt.obsFinal||''}</textarea>
+          </div>
+
         </div>
+        <!-- ════ FIM COLUNA DIREITA ════ -->
+
       </div>
 
       <div style="padding:14px 20px;border-top:1px solid #E5E7EB;display:flex;gap:9px;flex-shrink:0">
         <button onclick="closeFinalizeModal()" style="flex:1;padding:10px;border:1.5px solid #E5E7EB;background:#fff;color:#374151;border-radius:9px;cursor:pointer;font-size:13px;font-weight:700">Cancelar</button>
-        <button onclick="confirmFinalize('${id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:800">Confirmar Finalização</button>
+        <button onclick="confirmFinalize('${id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:800">Confirmar Finalizacao</button>
       </div>
     </div>`
 }
