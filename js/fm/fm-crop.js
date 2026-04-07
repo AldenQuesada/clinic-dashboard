@@ -40,8 +40,8 @@
           '</div>' +
           '<div class="fm-crop-actions">' +
             '<button class="fm-crop-btn-cancel" onclick="document.getElementById(\'fmCropOverlay\').remove()">Cancelar</button>' +
-            '<button id="fmCropConfirm" class="fm-crop-btn-confirm">' + FM._icon('check', 16) + ' Salvar</button>' +
-            '<button id="fmCropConfirmBG" class="fm-crop-btn-confirm" style="flex:1;background:linear-gradient(135deg,#8A9E88,#6B8B6A)">' + FM._icon('zap', 16) + ' Remover Fundo</button>' +
+            '<button id="fmCropConfirm" class="fm-crop-btn-confirm" style="flex:1;background:linear-gradient(135deg,#8A9E88,#6B8B6A)">' + FM._icon('zap', 16) + ' Salvar + Remover Fundo</button>' +
+            '<button id="fmCropRaw" class="fm-crop-btn-confirm" style="opacity:0.5;font-size:10px">' + FM._icon('check', 14) + ' Sem processar</button>' +
           '</div>' +
         '</div>' +
       '</div>'
@@ -172,79 +172,54 @@
       if (FM._activeAngle === FM._pendingCropAngle) setTimeout(FM._initCanvas, 50)
     }
 
-    // Button 1: Salvar (no bg removal — fast, preserves original quality)
+    // Helper: convert b64 to blob and finish
+    function _b64ToBlob(b64) {
+      var bin = atob(b64)
+      var arr = new Uint8Array(bin.length)
+      for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+      return new Blob([arr], { type: 'image/png' })
+    }
+
+    // Primary button: Salvar + Remover Fundo (auto-pipeline)
     document.getElementById('fmCropConfirm').addEventListener('click', function () {
       var canvas = _renderHiRes()
-      canvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/png')
+      var b64 = canvas.toDataURL('image/png').split(',')[1]
+      var apiUrl = FM.FACIAL_API_URL
+
+      FM._showLoading('Removendo fundo com IA...')
+      var ov = document.getElementById('fmCropOverlay')
+      if (ov) ov.style.display = 'none'
+
+      fetch(apiUrl + '/remove-bg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_base64: b64 }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (d) {
+        if (d.success && d.image_b64) {
+          FM._hideLoading()
+          _finishCrop(_b64ToBlob(d.image_b64))
+          FM._showToast('Fundo removido com sucesso', 'success')
+        } else {
+          FM._hideLoading()
+          canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+          FM._showToast('Falha no bg removal — salvo original', 'warn')
+        }
+      })
+      .catch(function () {
+        FM._hideLoading()
+        canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        FM._showToast('API offline — salvo sem processamento', 'warn')
+      })
     })
 
-    // Button 2: Remover Fundo (calls Python rembg API)
-    var bgBtn = document.getElementById('fmCropConfirmBG')
-    if (bgBtn) {
-      bgBtn.addEventListener('click', function () {
+    // Secondary button: Sem processar (raw save)
+    var rawBtn = document.getElementById('fmCropRaw')
+    if (rawBtn) {
+      rawBtn.addEventListener('click', function () {
         var canvas = _renderHiRes()
-        var b64 = canvas.toDataURL('image/png').split(',')[1]
-        var apiUrl = FM.FACIAL_API_URL
-
-        FM._showLoading('Removendo fundo com IA...')
-        document.getElementById('fmCropOverlay').style.display = 'none'
-
-        var ctrl = new AbortController()
-        var tmout = setTimeout(function () { ctrl.abort() }, 30000)
-
-        console.log('[FaceMapping] Calling remove-bg:', apiUrl, 'b64 length:', b64.length)
-        fetch(apiUrl + '/remove-bg', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: ctrl.signal,
-          body: JSON.stringify({ photo_base64: b64 }),
-        })
-        .then(function (r) { clearTimeout(tmout); return r.json() })
-        .then(function (d) {
-          console.log('[FaceMapping] remove-bg result:', d.success, d.elapsed_s)
-          if (d.success && d.image_b64) {
-            // Step 2: Premium enhancement (normalize + face restore + super-res)
-            FM._showLoading('Enhancement premium (restauracao + super-resolucao)...')
-            fetch(apiUrl + '/enhance/premium', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ photo_base64: d.image_b64 }),
-            })
-            .then(function (r) { return r.json() })
-            .then(function (nd) {
-              FM._hideLoading()
-              var finalB64 = (nd.success && nd.image_b64) ? nd.image_b64 : d.image_b64
-              var bin = atob(finalB64)
-              var arr = new Uint8Array(bin.length)
-              for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-              _finishCrop(new Blob([arr], { type: 'image/png' }))
-              var msg = 'Fundo removido'
-              if (nd.success) {
-                var stg = nd.stages ? nd.stages.map(function(s){return s.name}).join(' + ') : ''
-                msg += ' + ' + stg
-                if (nd.output_size) msg += ' (' + nd.output_size.w + 'x' + nd.output_size.h + ')'
-              }
-              FM._showToast(msg, 'success')
-            })
-            .catch(function () {
-              FM._hideLoading()
-              var bin = atob(d.image_b64)
-              var arr = new Uint8Array(bin.length)
-              for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-              _finishCrop(new Blob([arr], { type: 'image/png' }))
-              FM._showToast('Fundo removido (enhancement indisponivel)', 'success')
-            })
-          } else {
-            FM._hideLoading()
-            canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
-            FM._showToast('Falha no bg removal', 'warn')
-          }
-        })
-        .catch(function () {
-          clearTimeout(tmout); FM._hideLoading()
-          canvas.toBlob(function (b) { _finishCrop(b) }, 'image/png')
-          FM._showToast('API offline — salvo sem processamento', 'warn')
-        })
+        canvas.toBlob(function (blob) { _finishCrop(blob) }, 'image/png')
       })
     }
   }
