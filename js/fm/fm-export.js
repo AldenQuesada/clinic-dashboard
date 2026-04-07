@@ -221,17 +221,20 @@
     if (!report) return
 
     if (window.html2canvas) {
+      FM._showLoading('Gerando imagem do report...')
       window.html2canvas(report, {
         backgroundColor: '#2C2C2C',
         scale: 2,
         useCORS: true,
       }).then(function (canvas) {
+        FM._hideLoading()
         var link = document.createElement('a')
         var name = (FM._lead.nome || FM._lead.name || 'paciente').replace(/\s+/g, '-').toLowerCase()
         link.download = 'analise-facial-' + name + '-' + FM._dateStr() + '.png'
         link.href = canvas.toDataURL('image/png')
         link.click()
-      })
+        FM._showToast('Report exportado!', 'success')
+      }).catch(function () { FM._hideLoading() })
     } else {
       var cc = document.getElementById('fmReportCenterCanvas')
       if (cc) {

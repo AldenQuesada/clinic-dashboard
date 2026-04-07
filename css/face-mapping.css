@@ -972,6 +972,44 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
+/* ── Loading Spinner ────────────────────────────────────────── */
+.fm-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.fm-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(200,169,126,0.2);
+  border-top-color: #C8A97E;
+  border-radius: 50%;
+  animation: fmSpin 0.8s linear infinite;
+}
+
+.fm-loading-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #F5F0E8;
+  letter-spacing: 0.03em;
+}
+
+@keyframes fmSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fmFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Crop Modal (dark theme) ────────────────────────────────── */
 .fm-crop-modal {
   background: #2C2C2C;

@@ -137,6 +137,21 @@
     return 'fh_' + Math.abs(hash).toString(36) + '_' + b64.length
   }
 
+  // Loading overlay
+  FM._showLoading = function (msg) {
+    FM._hideLoading()
+    var el = document.createElement('div')
+    el.id = 'fmLoading'
+    el.className = 'fm-loading'
+    el.innerHTML = '<div class="fm-loading-spinner"></div><div class="fm-loading-text">' + (msg || 'Processando...') + '</div>'
+    document.body.appendChild(el)
+  }
+
+  FM._hideLoading = function () {
+    var el = document.getElementById('fmLoading')
+    if (el) el.remove()
+  }
+
   // Toast notification (temporary, top-right)
   FM._showToast = function (msg, type) {
     var existing = document.getElementById('fmToast')

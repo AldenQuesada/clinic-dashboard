@@ -23,6 +23,7 @@
       if (btn) { var origBtn = btn.innerHTML; btn.textContent = 'Analisando com IA...' }
 
       console.log('[FaceMapping] Calling GPT via n8n webhook...')
+      FM._showLoading('Analisando rosto com IA...')
 
       // 5-second timeout via AbortController
       var controller = new AbortController()
@@ -48,11 +49,13 @@
           FM._lastAnalysis = data.analysis
           FM._autoSave() // persist analysis
         }
+        FM._hideLoading()
         FM._generateSimulationCanvas(callback)
         if (btn) { btn.innerHTML = origBtn }
       })
       .catch(function (err) {
         clearTimeout(timeoutId)
+        FM._hideLoading()
         console.warn('[FaceMapping] Webhook skipped:', err.name === 'AbortError' ? 'timeout 5s' : err.message)
         FM._generateSimulationCanvas(callback)
         if (btn) { btn.innerHTML = origBtn }
