@@ -8,10 +8,11 @@
 
   FM._drawTercos = function () {
     var t = FM._tercoLines
-    var y1 = t.hairline * FM._imgH
-    var y2 = t.brow * FM._imgH
-    var y3 = t.noseBase * FM._imgH
-    var y4 = t.chin * FM._imgH
+    var w = FM._imgW, h = FM._imgH
+    var y1 = t.hairline * h
+    var y2 = t.brow * h
+    var y3 = t.noseBase * h
+    var y4 = t.chin * h
 
     var totalH = y4 - y1
     var sup = y2 - y1
@@ -21,37 +22,9 @@
     var pMed = totalH > 0 ? Math.round(med / totalH * 100) : 33
     var pInf = totalH > 0 ? Math.round(inf / totalH * 100) : 33
 
-    FM._ctx.save()
+    var ctx = FM._ctx
+    ctx.save()
 
-    var lines = [
-      { y: y1, label: 'Linha do cabelo' },
-      { y: y2, label: 'Sobrancelha' },
-      { y: y3, label: 'Base do nariz' },
-      { y: y4, label: 'Mento' },
-    ]
-
-    lines.forEach(function (l) {
-      FM._ctx.beginPath()
-      FM._ctx.strokeStyle = 'rgba(200,169,126,0.7)'
-      FM._ctx.lineWidth = 1.5
-      FM._ctx.setLineDash([])
-      FM._ctx.moveTo(0, l.y)
-      FM._ctx.lineTo(FM._imgW, l.y)
-      FM._ctx.stroke()
-
-      FM._ctx.beginPath()
-      FM._ctx.fillStyle = '#C8A97E'
-      FM._ctx.arc(FM._imgW - 15, l.y, 6, 0, Math.PI * 2)
-      FM._ctx.fill()
-      FM._ctx.strokeStyle = '#fff'
-      FM._ctx.lineWidth = 2
-      FM._ctx.stroke()
-    })
-
-    FM._ctx.setLineDash([])
-
-    var barX = FM._imgW + 15
-    var barW = 20
     var idealMin = 28, idealMax = 38
 
     function _propColor(pct) {
@@ -60,47 +33,80 @@
       return '#EF4444'
     }
 
+    // Horizontal lines across the photo
+    var lines = [
+      { y: y1, label: 'Trichion' },
+      { y: y2, label: 'Glabela' },
+      { y: y3, label: 'Subnasal' },
+      { y: y4, label: 'Mento' },
+    ]
+
+    lines.forEach(function (l) {
+      ctx.beginPath()
+      ctx.strokeStyle = 'rgba(200,169,126,0.5)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([6, 4])
+      ctx.moveTo(0, l.y)
+      ctx.lineTo(w, l.y)
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      // Drag handle
+      ctx.beginPath()
+      ctx.fillStyle = '#C8A97E'
+      ctx.arc(8, l.y, 4, 0, Math.PI * 2)
+      ctx.fill()
+    })
+
+    // Color bar on the RIGHT edge of the photo (overlay, inside canvas)
+    var barX = w - 28
+    var barW = 16
+
     var cSup = _propColor(pSup)
-    FM._ctx.fillStyle = cSup
-    FM._ctx.fillRect(barX, y1, barW, sup)
+    ctx.globalAlpha = 0.7
+    ctx.fillStyle = cSup
+    ctx.fillRect(barX, y1, barW, sup)
 
     var cMed = _propColor(pMed)
-    FM._ctx.fillStyle = cMed
-    FM._ctx.fillRect(barX, y2, barW, med)
+    ctx.fillStyle = cMed
+    ctx.fillRect(barX, y2, barW, med)
 
     var cInf = _propColor(pInf)
-    FM._ctx.fillStyle = cInf
-    FM._ctx.fillRect(barX, y3, barW, inf)
+    ctx.fillStyle = cInf
+    ctx.fillRect(barX, y3, barW, inf)
+    ctx.globalAlpha = 1.0
 
-    var lx = barX + barW + 10
-    FM._ctx.font = '700 13px Inter, Montserrat, sans-serif'
-    FM._ctx.textAlign = 'left'
+    // Labels inside the bars
+    ctx.font = '700 11px Montserrat, sans-serif'
+    ctx.textAlign = 'right'
 
-    FM._ctx.fillStyle = '#F5F0E8'
-    FM._ctx.fillText('Terco Superior', lx, y1 + sup / 2 - 2)
-    FM._ctx.font = '400 11px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = cSup
-    FM._ctx.fillText(pSup + '%' + (pSup >= idealMin && pSup <= idealMax ? '' : (pSup < idealMin ? ' <<' : ' >>')), lx, y1 + sup / 2 + 14)
+    ctx.fillStyle = '#F5F0E8'
+    ctx.fillText('Sup', barX - 6, y1 + sup / 2 - 2)
+    ctx.font = '600 10px Montserrat, sans-serif'
+    ctx.fillStyle = cSup
+    ctx.fillText(pSup + '%', barX - 6, y1 + sup / 2 + 12)
 
-    FM._ctx.font = '700 13px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = '#F5F0E8'
-    FM._ctx.fillText('Terco Medio', lx, y2 + med / 2 - 2)
-    FM._ctx.font = '400 11px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = cMed
-    FM._ctx.fillText(pMed + '%' + (pMed >= idealMin && pMed <= idealMax ? '' : (pMed < idealMin ? ' <<' : ' >>')), lx, y2 + med / 2 + 14)
+    ctx.font = '700 11px Montserrat, sans-serif'
+    ctx.fillStyle = '#F5F0E8'
+    ctx.fillText('Med', barX - 6, y2 + med / 2 - 2)
+    ctx.font = '600 10px Montserrat, sans-serif'
+    ctx.fillStyle = cMed
+    ctx.fillText(pMed + '%', barX - 6, y2 + med / 2 + 12)
 
-    FM._ctx.font = '700 13px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = '#F5F0E8'
-    FM._ctx.fillText('Terco Inferior', lx, y3 + inf / 2 - 2)
-    FM._ctx.font = '400 11px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = cInf
-    FM._ctx.fillText(pInf + '%' + (pInf >= idealMin && pInf <= idealMax ? '' : (pInf < idealMin ? ' <' : ' >')), lx, y3 + inf / 2 + 14)
+    ctx.font = '700 11px Montserrat, sans-serif'
+    ctx.fillStyle = '#F5F0E8'
+    ctx.fillText('Inf', barX - 6, y3 + inf / 2 - 2)
+    ctx.font = '600 10px Montserrat, sans-serif'
+    ctx.fillStyle = cInf
+    ctx.fillText(pInf + '%', barX - 6, y3 + inf / 2 + 12)
 
-    FM._ctx.font = '400 9px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = 'rgba(200,169,126,0.5)'
-    FM._ctx.fillText('Ideal: 33% cada terco', lx, FM._imgH - 10)
+    // Ideal reference
+    ctx.font = '400 8px Montserrat, sans-serif'
+    ctx.fillStyle = 'rgba(200,169,126,0.4)'
+    ctx.textAlign = 'right'
+    ctx.fillText('Ideal: 33%', barX - 6, h - 6)
 
-    FM._ctx.restore()
+    ctx.restore()
   }
 
   FM._drawRicketts = function () {
