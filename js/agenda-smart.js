@@ -985,7 +985,7 @@ function _buildFinModal(id, appt) {
         <!-- Bloco 3: Fluxos pós-atendimento (gerado das automacoes + fixos) -->
         <div style="background:#F0FDF4;padding:13px;border-radius:10px;border:1px solid #D1FAE5">
           <div style="font-size:11px;font-weight:800;color:#065F46;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Bloco 3 — Fluxos Pos-Atendimento</div>
-          <div id="finFlowChecks" style="display:flex;flex-direction:column;gap:7px">
+          <div id="finFlowChecks" style="display:flex;flex-direction:column;gap:7px" onchange="_finAutoRoute()">
             ${_buildFinFlowChecks()}
           </div>
         </div>
@@ -1110,12 +1110,32 @@ function addFinProc() {
   document.getElementById('finProcNome').value = ''
   document.getElementById('finProcPriceHint').textContent = ''
   _finUpdateTotal()
+  _finAutoRoute()
 }
 
 function removeFinProc(i) {
   _finalProcs.splice(i,1)
   document.getElementById('finProcList').innerHTML = _renderFinProcs()
   _finUpdateTotal()
+  _finAutoRoute()
+}
+
+// Auto-route: procedimento → paciente, procedimento + orcamento → pac_orcamento
+function _finAutoRoute() {
+  var hasProc = _finalProcs.length > 0
+  var hasOrc = document.getElementById('finEnviarOrcamento')?.checked || false
+  // Also check dynamic checks for orcamento
+  document.querySelectorAll('#finFlowChecks input[type=checkbox]').forEach(function(cb) {
+    if (cb.labels && cb.labels[0] && /orcamento/i.test(cb.labels[0].textContent) && cb.checked) hasOrc = true
+  })
+
+  var target = 'nenhum'
+  if (hasProc && hasOrc) target = 'pac_orcamento'
+  else if (hasProc) target = 'paciente'
+  else if (hasOrc) target = 'orcamento'
+
+  var radio = document.querySelector('input[name="finRoute"][value="' + target + '"]')
+  if (radio) { radio.checked = true; finRouteChange() }
 }
 
 function finProcAutoPrice() {
@@ -1731,6 +1751,7 @@ window.removeFinProc          = removeFinProc
 window.finUpdateBalance       = finUpdateBalance
 window.finProcAutoPrice       = finProcAutoPrice
 window.finProcDesconto        = finProcDesconto
+window._finAutoRoute          = _finAutoRoute
 window.finPayChanged          = finPayChanged
 window.finCredChanged         = finCredChanged
 window.finCredCalc            = finCredCalc

@@ -720,9 +720,18 @@ function _lmPhaseActions(lead) {
     transitions.push({ to: 'paciente',  label: 'Marcar Paciente',  color: '#10b981', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' })
     transitions.push({ to: 'orcamento', label: 'Gerar Orcamento',  color: '#f59e0b', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' })
   }
-  // Orcamento: pode voltar a agendar
+  // Orcamento: pode fechar e virar paciente
   if (phase === 'orcamento') {
     transitions.push({ to: 'paciente', label: 'Fechou! Marcar Paciente', color: '#10b981', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' })
+  }
+  // Paciente: pode adicionar orcamento
+  if (phase === 'paciente') {
+    transitions.push({ to: 'pac_orcamento', label: 'Adicionar Orcamento', color: '#7c3aed', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' })
+  }
+  // Paciente + Orcamento: pode voltar a so paciente (fechou orcamento)
+  if (phase === 'pac_orcamento') {
+    transitions.push({ to: 'paciente', label: 'Orcamento Fechado', color: '#10b981', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' })
+    transitions.push({ to: 'orcamento', label: 'Remover como Paciente', color: '#f59e0b', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' })
   }
   // Perdido: disponivel em qualquer fase exceto se ja perdido ou paciente
   if (phase !== 'perdido' && phase !== 'paciente') {
