@@ -247,6 +247,22 @@
     var w = FM._imgW, h = FM._imgH
     var threshold = 12
 
+    // Check angle points (Gonial E, Gonial D, Mento, Zigoma E, Zigoma D)
+    if (FM._metricAngles && FM._metricAngles.points) {
+      var pts = FM._metricAngles.points
+      var angleKeys = ['gonial_left', 'gonial_right', 'mento', 'zigoma_left', 'zigoma_right']
+      for (var ai = 0; ai < angleKeys.length; ai++) {
+        var ak = angleKeys[ai]
+        var ap = pts[ak]
+        if (!ap) continue
+        var apx = ap.x * w, apy = ap.y * h
+        if (Math.sqrt(Math.pow(mx - apx, 2) + Math.pow(my - apy, 2)) < threshold) {
+          FM._metricDrag = { type: 'angle_point', key: ak }
+          return true
+        }
+      }
+    }
+
     // Check midline handle
     if (FM._metricShowMidline) {
       var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
@@ -313,6 +329,15 @@
     if (!FM._metricDrag) return false
     var w = FM._imgW, h = FM._imgH
 
+    if (FM._metricDrag.type === 'angle_point') {
+      var key = FM._metricDrag.key
+      FM._metricAngles.points[key].x = Math.max(0.01, Math.min(0.99, mx / w))
+      FM._metricAngles.points[key].y = Math.max(0.01, Math.min(0.99, my / h))
+      // Recalculate angles with new positions
+      _recalcAngles()
+      FM._redraw()
+      return true
+    }
     if (FM._metricDrag.type === 'midline') {
       if (!FM._metricMidline) FM._metricMidline = { x: 0.5 }
       FM._metricMidline.x = Math.max(0.1, Math.min(0.9, mx / w))
@@ -665,6 +690,40 @@
     ctx.fillText('AIJ: ' + FM._metricAngles.aij_right + '°', (gRx + mx) / 2 + 5, (gRy + my) / 2 - 5)
 
     ctx.restore()
+  }
+
+  function _recalcAngles() {
+    if (!FM._metricAngles || !FM._metricAngles.points) return
+    var pts = FM._metricAngles.points
+    var w = FM._imgW || 1
+    var h = FM._imgH || 1
+
+    // AMF
+    FM._metricAngles.amf = Math.round(_calcAngle3Points(pts.gonial_left, pts.mento, pts.gonial_right) * 10) / 10
+
+    // RMZ
+    var mandW = Math.sqrt(Math.pow((pts.gonial_right.x - pts.gonial_left.x) * w, 2) + Math.pow((pts.gonial_right.y - pts.gonial_left.y) * h, 2))
+    var zigoW = Math.sqrt(Math.pow((pts.zigoma_right.x - pts.zigoma_left.x) * w, 2) + Math.pow((pts.zigoma_right.y - pts.zigoma_left.y) * h, 2))
+    FM._metricAngles.rmz = Math.round((zigoW > 0 ? mandW / zigoW : 0) * 1000) / 1000
+
+    // AIJ
+    var aijL = Math.abs(Math.atan2((pts.mento.y - pts.gonial_left.y) * h, (pts.mento.x - pts.gonial_left.x) * w) * 180 / Math.PI)
+    var aijR = Math.abs(Math.atan2((pts.mento.y - pts.gonial_right.y) * h, (pts.gonial_right.x - pts.mento.x) * w) * 180 / Math.PI)
+    FM._metricAngles.aij_left = Math.round(aijL * 10) / 10
+    FM._metricAngles.aij_right = Math.round(aijR * 10) / 10
+    FM._metricAngles.aij_avg = Math.round((aijL + aijR) / 2 * 10) / 10
+
+    // Reclassify
+    var amf = FM._metricAngles.amf
+    if (amf > 150) FM._metricAngles.classification = { label: 'Mandibula Arredondada', color: '#EF4444', level: 1 }
+    else if (amf > 135) FM._metricAngles.classification = { label: 'Mandibula Suave', color: '#F59E0B', level: 2 }
+    else if (amf > 115) FM._metricAngles.classification = { label: 'Mandibula Definida', color: '#10B981', level: 3 }
+    else FM._metricAngles.classification = { label: 'Mandibula Angular', color: '#3B82F6', level: 4 }
+
+    var avgAij = FM._metricAngles.aij_avg
+    if (avgAij > 35) FM._metricAngles.jawline = { label: 'Jawline Caida', color: '#EF4444' }
+    else if (avgAij > 25) FM._metricAngles.jawline = { label: 'Jawline Suave', color: '#F59E0B' }
+    else FM._metricAngles.jawline = { label: 'Jawline Tensa', color: '#10B981' }
   }
 
   function _calcAngle3Points(a, b, c) {
