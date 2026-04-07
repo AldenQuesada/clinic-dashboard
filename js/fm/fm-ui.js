@@ -457,6 +457,7 @@
   }
 
   FM._removeAnnotation = function (id) {
+    FM._pushUndo()
     FM._annotations = FM._annotations.filter(function (a) { return a.id !== id })
     FM._simPhotoUrl = null
     FM._autoSave()

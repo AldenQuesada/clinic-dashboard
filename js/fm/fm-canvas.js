@@ -490,6 +490,7 @@
     if (FM._selAnn) {
       var handle = FM._hitHandle(mx, my)
       if (handle) {
+        FM._pushUndo()
         FM._mode = 'resize'
         FM._resizeHandle = handle
         return
@@ -499,6 +500,7 @@
     // 2. Hit existing annotation -> move
     var hit = FM._hitEllipse(mx, my)
     if (hit) {
+      FM._pushUndo()
       FM._selAnn = hit
       FM._mode = 'move'
       FM._moveStart = { x: mx - hit.shape.x, y: my - hit.shape.y }
@@ -680,6 +682,7 @@
         side: sideSelect ? sideSelect.value : FM._selectedSide,
         shape: { x: cx, y: cy, rx: rx, ry: ry },
       }
+      FM._pushUndo()
       FM._annotations.push(newAnn)
       FM._selAnn = newAnn
       FM._simPhotoUrl = null

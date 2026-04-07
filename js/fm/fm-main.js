@@ -39,6 +39,9 @@
       FM._generateSimulation(function () { FM._render(); if (FM._activeAngle) setTimeout(FM._initCanvas, 50) })
     },
 
+    _undo: FM._undo,
+    _redo: FM._redo,
+
     get _selectedMl() { return FM._selectedMl },
     set _selectedMl(v) { FM._selectedMl = v },
     get _selectedSide() { return FM._selectedSide },
@@ -46,5 +49,22 @@
     get _selectedProduct() { return FM._selectedProduct },
     set _selectedProduct(v) { FM._selectedProduct = v },
   }
+
+  // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Shift+Z / Ctrl+Y = redo
+  document.addEventListener('keydown', function (e) {
+    // Only when facial analysis page is active
+    var page = document.getElementById('page-facial-analysis')
+    if (!page || !page.classList.contains('active')) return
+
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      if (e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        FM._undo()
+      } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
+        e.preventDefault()
+        FM._redo()
+      }
+    }
+  })
 
 })()

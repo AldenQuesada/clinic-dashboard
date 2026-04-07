@@ -46,6 +46,11 @@
   FM._nextId = 1
   FM._exportCanvas = null
 
+  // Undo/Redo history (snapshots of annotations)
+  FM._undoStack = []
+  FM._redoStack = []
+  FM._MAX_UNDO = 30
+
   // Crop state
   FM._cropImg = null
   FM._cropCanvas = null
@@ -135,6 +140,41 @@
       hash |= 0
     }
     return 'fh_' + Math.abs(hash).toString(36) + '_' + b64.length
+  }
+
+  // ── Undo / Redo ────────────────────────────────────────────
+
+  // Push current state to undo stack (call BEFORE making a change)
+  FM._pushUndo = function () {
+    FM._undoStack.push(JSON.stringify(FM._annotations))
+    if (FM._undoStack.length > FM._MAX_UNDO) FM._undoStack.shift()
+    FM._redoStack = [] // clear redo on new action
+  }
+
+  FM._undo = function () {
+    if (FM._undoStack.length === 0) return
+    // Save current to redo
+    FM._redoStack.push(JSON.stringify(FM._annotations))
+    // Restore previous
+    FM._annotations = JSON.parse(FM._undoStack.pop())
+    FM._selAnn = null
+    FM._simPhotoUrl = null
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+  }
+
+  FM._redo = function () {
+    if (FM._redoStack.length === 0) return
+    // Save current to undo
+    FM._undoStack.push(JSON.stringify(FM._annotations))
+    // Restore next
+    FM._annotations = JSON.parse(FM._redoStack.pop())
+    FM._selAnn = null
+    FM._simPhotoUrl = null
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
   }
 
   // Loading overlay
