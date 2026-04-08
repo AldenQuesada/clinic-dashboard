@@ -162,8 +162,12 @@
       FM._ctx.restore()
     }
 
-    // Mirror overlays to canvas2 (DEPOIS) in 2x mode
-    if (FM._viewMode === '2x' && FM._redrawCanvas2) FM._redrawCanvas2()
+    // Redraw canvas2 (DEPOIS) clean — no overlays mirrored from ANTES
+    if (FM._viewMode === '2x' && FM._ctx2 && FM._img2) {
+      FM._ctx2.fillStyle = '#000000'
+      FM._ctx2.fillRect(0, 0, FM._imgW2, FM._imgH2)
+      FM._ctx2.drawImage(FM._img2, 0, 0, FM._imgW2, FM._imgH2)
+    }
   }
 
   FM._hitHandle = function (x, y) {
