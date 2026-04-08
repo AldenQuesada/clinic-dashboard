@@ -161,8 +161,20 @@ app.post('/api/announce', authMiddleware, function (req, res) {
   }
 })
 
+// ── Manual login endpoint (primeira vez) ────────────────────
+app.get('/api/login-status', authMiddleware, function (req, res) {
+  res.json({
+    alexa_connected: alexaReady,
+    cookie_exists: require('fs').existsSync(process.env.ALEXA_COOKIE_FILE || '.alexa-cookie'),
+    proxy_port: parseInt(process.env.PROXY_PORT || '3457'),
+    hint: alexaReady
+      ? 'Alexa conectada e pronta'
+      : 'Acesse http://<host>:3457 no navegador para autenticar na Amazon'
+  })
+})
+
 // ── Start ────────────────────────────────────────────────────
-app.listen(PORT, function () {
+app.listen(PORT, '0.0.0.0', function () {
   console.log('[Alexa Bridge] Rodando na porta ' + PORT)
   initAlexa()
 })
