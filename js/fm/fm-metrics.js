@@ -166,12 +166,18 @@
       ctx.fillText(label, x, h - 16)
     })
 
-    // ── Dynamic proportions bar (bottom edge) for V lines ──────
-    // Horizontal bar at bottom showing % between vertical lines
-    if (FM._metricLines.v.length >= 2) {
+    // ── Dynamic proportions bar (bottom edge) for V lines + midline ──
+    // Merge midline into V lines for proportions calculation
+    var allVLines = FM._metricLines.v.slice()
+    if (FM._metricShowMidline) {
+      var midX = FM._metricMidline ? FM._metricMidline.x : 0.5
+      allVLines.push({ x: midX, label: 'Mid' })
+      allVLines.sort(function (a, b) { return a.x - b.x })
+    }
+    if (allVLines.length >= 2) {
       var barY = h - 24
       var barH = 14
-      var vLines = FM._metricLines.v  // already sorted by x
+      var vLines = allVLines
       var firstX = vLines[0].x * w
       var lastX = vLines[vLines.length - 1].x * w
       var totalSpanV = lastX - firstX
