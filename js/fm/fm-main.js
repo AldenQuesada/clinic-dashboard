@@ -37,6 +37,7 @@
     _zoomCanvas: FM._zoomCanvas,
     _toggleFullscreen: FM._toggleFullscreen,
     _triggerUploadExtra: FM._triggerUploadExtra,
+    _deleteAfterPhoto: FM._deleteAfterPhoto,
     _deleteExtraPhoto: FM._deleteExtraPhoto,
     _regenSim: function () {
       FM._simPhotoUrl = null
