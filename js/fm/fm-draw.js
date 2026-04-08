@@ -268,7 +268,7 @@
   // ── Force Vector Drawing ──────────────────────────────────
 
   FM._drawForceArrow = function (ctx, x1, y1, x2, y2, color, thickness, glowColor) {
-    var headLen = 12
+    var headLen = 18
     var dx = x2 - x1, dy = y2 - y1
     var angle = Math.atan2(dy, dx)
     var len = Math.sqrt(dx * dx + dy * dy)
@@ -339,7 +339,7 @@
     ctx.restore()
 
     // Draw force arrow
-    FM._drawForceArrow(ctx, cx, cy, curX, curY, color, selected ? 3.5 : 2.5, glow)
+    FM._drawForceArrow(ctx, cx, cy, curX, curY, color, selected ? 7 : 5, glow)
 
     // Label
     ctx.save()

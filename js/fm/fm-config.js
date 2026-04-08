@@ -210,13 +210,13 @@
   // 7 zone groups with young (lifting) and aged (falling) vector directions
   // Offsets are relative to zone center (normalized 0-1)
   FM.FORCE_VECTORS = [
-    { id: 'temporal',    label: 'Temporal',        color: '#9b59b6', bilateral: true,  youngDx: -0.06, youngDy: -0.09, agedDx: 0.04, agedDy: 0.09, curve: 0.2 },
-    { id: 'zigoma',      label: 'Zigoma',          color: '#f1c40f', bilateral: true,  youngDx: -0.07, youngDy: -0.07, agedDx: 0.04, agedDy: 0.09, curve: 0.2 },
-    { id: 'olheira',     label: 'Olheira',         color: '#3498db', bilateral: true,  youngDx: -0.03, youngDy: -0.05, agedDx: 0.02, agedDy: 0.05, curve: 0.15 },
-    { id: 'nasolabial',  label: 'Bigode Chines',   color: '#e67e22', bilateral: true,  youngDx: -0.05, youngDy: -0.07, agedDx: 0.01, agedDy: 0.08, curve: 0.2 },
-    { id: 'marionete',   label: 'Marionete',       color: '#e74c3c', bilateral: true,  youngDx: -0.04, youngDy: -0.07, agedDx: -0.01, agedDy: 0.07, curve: 0.2 },
-    { id: 'jowl',        label: 'Mandibula',       color: '#8b5e3c', bilateral: true,  youngDx: -0.06, youngDy: -0.08, agedDx: 0.03, agedDy: 0.08, curve: 0.2 },
-    { id: 'queixo',      label: 'Queixo',          color: '#7f8c8d', bilateral: false, youngDx: 0,     youngDy: -0.08, agedDx: 0,    agedDy: 0.07, curve: 0.1 },
+    { id: 'temporal',    label: 'Temporal',        color: '#9b59b6', bilateral: true,  youngDx: -0.04, youngDy: -0.07, agedDx: 0.03, agedDy: 0.07, curve: 0.2 },
+    { id: 'zigoma',      label: 'Zigoma',          color: '#f1c40f', bilateral: true,  youngDx: -0.04, youngDy: -0.06, agedDx: 0.03, agedDy: 0.07, curve: 0.2 },
+    { id: 'olheira',     label: 'Olheira',         color: '#3498db', bilateral: true,  youngDx: -0.02, youngDy: -0.04, agedDx: 0.01, agedDy: 0.04, curve: 0.15 },
+    { id: 'nasolabial',  label: 'Bigode Chines',   color: '#e67e22', bilateral: true,  youngDx: -0.03, youngDy: -0.06, agedDx: 0.01, agedDy: 0.06, curve: 0.2 },
+    { id: 'marionete',   label: 'Marionete',       color: '#e74c3c', bilateral: true,  youngDx: -0.02, youngDy: -0.06, agedDx: 0.00, agedDy: 0.06, curve: 0.2 },
+    { id: 'jowl',        label: 'Mandibula',       color: '#8b5e3c', bilateral: true,  youngDx: -0.04, youngDy: -0.06, agedDx: 0.02, agedDy: 0.06, curve: 0.2 },
+    { id: 'queixo',      label: 'Queixo',          color: '#7f8c8d', bilateral: false, youngDx: 0,     youngDy: -0.06, agedDx: 0,    agedDy: 0.05, curve: 0.1 },
   ]
 
   FM.FORCE_REGION_INFO = {
@@ -231,13 +231,13 @@
 
   // Default zone centers (normalized) when scanner is not available
   FM.FORCE_DEFAULT_CENTERS = {
-    temporal_esq:  { x: 0.22, y: 0.20 }, temporal_dir:  { x: 0.78, y: 0.20 },
-    zigoma_esq:    { x: 0.20, y: 0.40 }, zigoma_dir:    { x: 0.80, y: 0.40 },
-    olheira_esq:   { x: 0.32, y: 0.35 }, olheira_dir:   { x: 0.68, y: 0.35 },
-    nasolabial_esq:{ x: 0.35, y: 0.55 }, nasolabial_dir:{ x: 0.65, y: 0.55 },
-    marionete_esq: { x: 0.36, y: 0.65 }, marionete_dir: { x: 0.64, y: 0.65 },
-    jowl_esq:      { x: 0.25, y: 0.72 }, jowl_dir:      { x: 0.75, y: 0.72 },
-    queixo:        { x: 0.50, y: 0.82 },
+    temporal_esq:  { x: 0.28, y: 0.18 }, temporal_dir:  { x: 0.72, y: 0.18 },
+    zigoma_esq:    { x: 0.26, y: 0.38 }, zigoma_dir:    { x: 0.74, y: 0.38 },
+    olheira_esq:   { x: 0.36, y: 0.33 }, olheira_dir:   { x: 0.64, y: 0.33 },
+    nasolabial_esq:{ x: 0.38, y: 0.52 }, nasolabial_dir:{ x: 0.62, y: 0.52 },
+    marionete_esq: { x: 0.38, y: 0.62 }, marionete_dir: { x: 0.62, y: 0.62 },
+    jowl_esq:      { x: 0.30, y: 0.70 }, jowl_dir:      { x: 0.70, y: 0.70 },
+    queixo:        { x: 0.50, y: 0.78 },
   }
 
   // Helper functions for force vector system
