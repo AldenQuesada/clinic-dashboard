@@ -227,7 +227,7 @@
         '<div style="padding:4px 12px;background:rgba(239,68,68,0.1);display:flex;justify-content:space-between;align-items:center">' +
           '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#EF4444;letter-spacing:0.1em">ANTES</span>' +
           '<div style="display:flex;gap:3px">' +
-            '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" style="font-size:8px;padding:2px 6px">' + FM._icon('cpu', 10) + '</button>' +
+            (FM._activeAngle !== 'lateral' ? '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" style="font-size:8px;padding:2px 6px">' + FM._icon('cpu', 10) + '</button>' : '') +
             '<button class="fm-btn" onclick="FaceMapping._deletePhoto(\'' + (FM._activeAngle || 'front') + '\')" style="font-size:8px;padding:2px 6px;border-color:#EF4444;color:#EF4444" title="Excluir ANTES">' + FM._icon('trash-2', 10) + '</button>' +
           '</div>' +
         '</div>' +
@@ -352,8 +352,8 @@
         '</div>' +
         '<div style="font-size:9px;color:rgba(200,169,126,0.25);margin-top:4px">Arraste as linhas na foto para ajustar</div>'
 
-      // Scanner button if not yet run
-      if (!FM._scanData) {
+      // Scanner button if not yet run (not available for lateral)
+      if (!FM._scanData && FM._activeAngle !== 'lateral') {
         html += '<button class="fm-btn" style="width:100%;margin-top:8px" onclick="FaceMapping._autoAnalyze()">' + FM._icon('cpu', 12) + ' Auto-posicionar (Scanner)</button>'
       }
 
@@ -636,7 +636,7 @@
     // Scan + analyze buttons
     if (!FM._skinAnalysis) {
       html += '<div class="fm-tool-section" style="padding:10px 12px">' +
-        '<button class="fm-btn" style="width:100%;font-size:9px;margin-bottom:4px" onclick="FaceMapping._autoAnalyze()">Scanner 478pts</button>' +
+        (FM._activeAngle !== 'lateral' ? '<button class="fm-btn" style="width:100%;font-size:9px;margin-bottom:4px" onclick="FaceMapping._autoAnalyze()">Scanner 478pts</button>' : '') +
         '<button class="fm-btn" style="width:100%;font-size:9px" onclick="FaceMapping._runSkinAnalysis()">Analisar Pele</button>' +
       '</div>'
     }
