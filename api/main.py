@@ -93,25 +93,25 @@ async def remove_background(req: PhotoRequest):
         img = b64_to_image(req.photo_base64)
         session = get_rembg_session()
 
-        # Remove background — conservative settings to preserve hair
+        # Remove background — smooth edges, preserve hair
         result = remove(
             img,
             session=session,
             alpha_matting=True,
-            alpha_matting_foreground_threshold=220,   # lower = keeps more hair/edges
-            alpha_matting_background_threshold=20,    # higher = less aggressive bg removal
-            alpha_matting_erode_size=5,               # smaller erode = less edge loss on hair
+            alpha_matting_foreground_threshold=230,   # generous foreground
+            alpha_matting_background_threshold=15,    # strict background
+            alpha_matting_erode_size=3,               # minimal erode — prevents pixelated edges
         )
 
-        # Refine alpha mask — preserve hair strands
+        # Refine alpha mask — smooth transitions on hair
         result_np = np.array(result)
         alpha = result_np[:, :, 3].astype(np.float32)
 
-        # Gentle smoothing (preserve fine hair detail)
-        alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.3)
+        # Smooth alpha edges (larger kernel = softer hair boundary)
+        alpha_smooth = cv2.GaussianBlur(alpha, (5, 5), 1.2)
 
-        # Boost semi-transparent areas to keep more hair
-        alpha_boosted = np.clip(alpha_smooth * 1.6, 0, 255).astype(np.uint8)
+        # Gentle boost — keep hair but don't create hard edges
+        alpha_boosted = np.clip(alpha_smooth * 1.3, 0, 255).astype(np.uint8)
         result_np[:, :, 3] = alpha_boosted
 
         result_refined = Image.fromarray(result_np, "RGBA")
