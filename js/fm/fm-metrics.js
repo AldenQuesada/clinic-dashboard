@@ -847,6 +847,11 @@
       },
     }
 
+    // Also set on canvas2 (DEPOIS) — independent copy
+    if (!FM._metric2Angles || !FM._metric2Angles.points) {
+      FM._metric2Angles = JSON.parse(JSON.stringify(FM._metricAngles))
+    }
+
     FM._showToast(
       'AMF: ' + FM._metricAngles.amf + '° (' + classification.label + ') | ' +
       'Jawline: ' + FM._metricAngles.aij_avg + '° (' + jawlineTension.label + ') | ' +
