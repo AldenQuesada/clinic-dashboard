@@ -304,8 +304,8 @@
 
     var tool = FM._metricTool
 
-    // Midline — only when no line/point tool is active
-    if (!tool && FM._metricShowMidline && !FM._metricLocked) {
+    // Midline — only draggable with V tool active
+    if (tool === 'vline' && FM._metricShowMidline && !FM._metricLocked) {
       var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
       if (Math.abs(mx - midX) < 18) {
         FM._pushUndo()
