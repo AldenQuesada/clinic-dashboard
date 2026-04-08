@@ -226,13 +226,14 @@
   }
 
   FM._activeTab = FM._activeTab || 'simetria'
+  FM._analysisSubMode = FM._analysisSubMode || 'metrics'
 
   FM._switchTab = function (tabId) {
     FM._activeTab = tabId
     if (tabId === 'simetria') {
       FM._editorMode = 'analysis'
       if (FM._analysisSubMode !== 'tercos' && FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics') {
-        FM._analysisSubMode = 'tercos'
+        FM._analysisSubMode = 'metrics'
       }
       if (FM._analysisSubMode === 'tercos' && FM._photoUrls['front']) FM._activeAngle = 'front'
       if (FM._analysisSubMode === 'ricketts' && FM._photoUrls['lateral']) FM._activeAngle = 'lateral'
