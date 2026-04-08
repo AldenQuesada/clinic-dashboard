@@ -18,12 +18,11 @@
     FM._annotations = []
     FM._activeAngle = null
     FM._nextId = 1
-    FM._afterPhotoUrl = null
-    FM._simPhotoUrl = null
-    FM._metric2Lines = { h: [], v: [] }
-    FM._metric2Points = []
-    FM._metric2Midline = null
-    FM._metric2Angles = null
+    // Clear all per-angle stores (will be populated by restore)
+    FM._afterPhotoByAngle = {}
+    FM._simPhotoByAngle = {}
+    FM._angleStore = {}
+    FM._scanDataByAngle = {}
 
     FM._restoreSession(leadId)
     FM._cleanupStorage()
@@ -52,8 +51,9 @@
     FM._annotations = []
     FM._activeAngle = null
     FM._nextId = 1
-    FM._afterPhotoUrl = null
-    FM._simPhotoUrl = null
+    FM._afterPhotoByAngle = {}
+    FM._simPhotoByAngle = {}
+    FM._angleStore = {}
 
     if (window.navigateTo) window.navigateTo('facial-analysis')
     setTimeout(function () { FM._render() }, 100)
@@ -164,16 +164,27 @@
     FM._pushUndo()
     FM._annotations = []
     FM._vectors = []
-    FM._simPhotoUrl = null
-    FM._afterPhotoUrl = null
+    // Clear ALL per-angle DEPOIS/SIM photos
+    Object.keys(FM._afterPhotoByAngle).forEach(function (k) {
+      if (FM._afterPhotoByAngle[k]) URL.revokeObjectURL(FM._afterPhotoByAngle[k])
+    })
+    FM._afterPhotoByAngle = {}
+    Object.keys(FM._simPhotoByAngle).forEach(function (k) {
+      if (FM._simPhotoByAngle[k]) URL.revokeObjectURL(FM._simPhotoByAngle[k])
+    })
+    FM._simPhotoByAngle = {}
+    // Clear ANTES photos
     Object.keys(FM._photoUrls).forEach(function (k) {
       if (FM._photoUrls[k]) URL.revokeObjectURL(FM._photoUrls[k])
     })
     FM._photos = {}
     FM._photoUrls = {}
+    // Clear all per-angle state
+    FM._angleStore = {}
+    FM._scanDataByAngle = {}
+    FM._regionState = {}
     FM._activeAngle = null
     FM._clearSession()
-    FM._autoSave()
     FM._render()
   }
 
@@ -205,28 +216,43 @@
   }
 
   FM._deleteAfterPhoto = function (angle) {
-    if (FM._afterPhotoUrls[angle]) {
-      URL.revokeObjectURL(FM._afterPhotoUrls[angle])
-      delete FM._afterPhotoUrls[angle]
+    var ang = angle || FM._activeAngle || 'front'
+    if (FM._afterPhotoByAngle[ang]) {
+      URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
+      delete FM._afterPhotoByAngle[ang]
     }
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
   }
 
   FM._deleteExtraPhoto = function (type) {
-    if (type === 'after') { if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl); FM._afterPhotoUrl = null }
-    if (type === 'sim') { if (FM._simPhotoUrl) URL.revokeObjectURL(FM._simPhotoUrl); FM._simPhotoUrl = null }
+    var ang = FM._activeAngle || 'front'
+    if (type === 'after') {
+      if (FM._afterPhotoByAngle[ang]) URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
+      delete FM._afterPhotoByAngle[ang]
+    }
+    if (type === 'sim') {
+      if (FM._simPhotoByAngle[ang]) URL.revokeObjectURL(FM._simPhotoByAngle[ang])
+      delete FM._simPhotoByAngle[ang]
+    }
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
   }
 
   FM._deletePhoto = function (angle) {
+    // Clear ANTES
     if (FM._photoUrls[angle]) URL.revokeObjectURL(FM._photoUrls[angle])
     delete FM._photos[angle]
     delete FM._photoUrls[angle]
     delete FM._originalFiles[angle]
     FM._annotations = FM._annotations.filter(function (a) { return a.angle !== angle })
-    FM._simPhotoUrl = null
+    // Clear DEPOIS/SIM for this angle
+    if (FM._afterPhotoByAngle[angle]) { URL.revokeObjectURL(FM._afterPhotoByAngle[angle]); delete FM._afterPhotoByAngle[angle] }
+    if (FM._simPhotoByAngle[angle]) { URL.revokeObjectURL(FM._simPhotoByAngle[angle]); delete FM._simPhotoByAngle[angle] }
+    // Clear per-angle state for this angle
+    delete FM._angleStore[angle]
+    delete FM._scanDataByAngle[angle]
+    // Switch to next available angle
     if (FM._activeAngle === angle) {
       FM._activeAngle = FM._photoUrls['front'] ? 'front' : (FM._photoUrls['45'] ? '45' : (FM._photoUrls['lateral'] ? 'lateral' : null))
     }
