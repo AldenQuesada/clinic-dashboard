@@ -61,6 +61,7 @@
         metricPoints: FM._metricPoints,
         metricMidline: FM._metricMidline,
         metricAngles: FM._metricAngles,
+        metricLocked: FM._metricLocked || false,
         editorMode: FM._editorMode,
         analysisSubMode: FM._analysisSubMode,
         nextId: FM._nextId,
@@ -102,6 +103,7 @@
       FM._metricPoints = session.metricPoints || []
       FM._metricMidline = session.metricMidline || null
       FM._metricAngles = session.metricAngles || null
+      FM._metricLocked = session.metricLocked || false
       FM._metricNextPointId = session.metricNextPointId || 1
       FM._metricNextLineId = session.metricNextLineId || 1
       FM._metric2Lines = session.metric2Lines || { h: [], v: [] }

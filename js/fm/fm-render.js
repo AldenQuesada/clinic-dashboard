@@ -353,7 +353,12 @@
 
     // Metric tools
     html += '<div class="fm-tool-section" style="padding:10px 12px">' +
-      '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Ferramentas</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+        '<span style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Ferramentas</span>' +
+        '<button onclick="FaceMapping._toggleMetricLock()" style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.15)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.15)' : 'transparent') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.3)') + ';cursor:pointer;font-size:9px;font-weight:600">' +
+          FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + (FM._metricLocked ? ' Trancado' : ' Aberto') +
+        '</button>' +
+      '</div>' +
       '<div style="display:flex;gap:3px;flex-wrap:wrap">' +
         '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px;min-width:30px">-- H</button>' +
         '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px;min-width:30px">| V</button>' +
@@ -375,7 +380,9 @@
         var pct = Math.round(line.y * 100)
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
           '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + ' — ' + pct + '%</span>' +
-          '<button onclick="FaceMapping._deleteMetricLine(\'h\',' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+          (FM._metricLocked
+            ? '<span style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(245,158,11,0.4)">' + FM._icon('lock', 10) + '</span>'
+            : '<button onclick="FaceMapping._deleteMetricLine(\'h\',' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>') +
         '</div>'
       })
       html += '</div>'
@@ -390,7 +397,9 @@
         var pct = Math.round(line.x * 100)
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
           '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + ' — ' + pct + '%</span>' +
-          '<button onclick="FaceMapping._deleteMetricLine(\'v\',' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+          (FM._metricLocked
+            ? '<span style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(245,158,11,0.4)">' + FM._icon('lock', 10) + '</span>'
+            : '<button onclick="FaceMapping._deleteMetricLine(\'v\',' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>') +
         '</div>'
       })
       html += '</div>'
@@ -404,7 +413,9 @@
         var label = pt.label || ('P' + (i + 1))
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
           '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + '</span>' +
-          '<button onclick="FaceMapping._deleteMetricPoint(' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+          (FM._metricLocked
+            ? '<span style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(245,158,11,0.4)">' + FM._icon('lock', 10) + '</span>'
+            : '<button onclick="FaceMapping._deleteMetricPoint(' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>') +
         '</div>'
       })
       html += '</div>'

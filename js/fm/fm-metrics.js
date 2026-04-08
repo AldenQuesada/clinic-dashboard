@@ -25,6 +25,7 @@
   FM._metricDrag = null  // {type: 'hline'|'vline'|'point'|'midline', index: n}
   FM._metricTool = 'hline'  // active tool: 'hline', 'vline', 'point', 'midline'
   FM._metricShowMidline = true
+  FM._metricLocked = false  // when true, existing lines can't be moved or deleted
 
   // ── Draw all metric overlays ────────────────────────────
 
@@ -309,19 +310,18 @@
     var tool = FM._metricTool
 
     // Midline — FIRST priority, draggable anywhere on the line (wider threshold)
-    if (FM._metricShowMidline) {
+    if (FM._metricShowMidline && !FM._metricLocked) {
       var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
       if (Math.abs(mx - midX) < 18) {
         FM._pushUndo()
         if (!FM._metricMidline) FM._metricMidline = { x: 0.5 }
         FM._metricDrag = { type: 'midline' }
-        console.log('[FM] midline drag started at', mx, midX)
         return true
       }
     }
 
-    // Angle points — always draggable (they're special)
-    if (FM._metricAngles && FM._metricAngles.points) {
+    // Angle points — draggable when unlocked
+    if (FM._metricAngles && FM._metricAngles.points && !FM._metricLocked) {
       var pts = FM._metricAngles.points
       var angleKeys = ['gonial_left', 'gonial_right', 'mento', 'zigoma_left', 'zigoma_right']
       for (var ai = 0; ai < angleKeys.length; ai++) {
@@ -339,13 +339,15 @@
 
     // Only check/add elements matching the selected tool
     if (tool === 'hline') {
-      // Drag existing H line
-      for (var i = 0; i < FM._metricLines.h.length; i++) {
-        var ly = FM._metricLines.h[i].y * h
-        if (Math.abs(my - ly) < threshold && mx < w) {
-          FM._pushUndo()
-          FM._metricDrag = { type: 'hline', index: i }
-          return true
+      // Drag existing H line (only when unlocked)
+      if (!FM._metricLocked) {
+        for (var i = 0; i < FM._metricLines.h.length; i++) {
+          var ly = FM._metricLines.h[i].y * h
+          if (Math.abs(my - ly) < threshold && mx < w) {
+            FM._pushUndo()
+            FM._metricDrag = { type: 'hline', index: i }
+            return true
+          }
         }
       }
       // Add new H line
@@ -358,13 +360,15 @@
         return true
       }
     } else if (tool === 'vline') {
-      // Drag existing V line
-      for (var j = 0; j < FM._metricLines.v.length; j++) {
-        var lx = FM._metricLines.v[j].x * w
-        if (Math.abs(mx - lx) < threshold && my < h) {
-          FM._pushUndo()
-          FM._metricDrag = { type: 'vline', index: j }
-          return true
+      // Drag existing V line (only when unlocked)
+      if (!FM._metricLocked) {
+        for (var j = 0; j < FM._metricLines.v.length; j++) {
+          var lx = FM._metricLines.v[j].x * w
+          if (Math.abs(mx - lx) < threshold && my < h) {
+            FM._pushUndo()
+            FM._metricDrag = { type: 'vline', index: j }
+            return true
+          }
         }
       }
       // Add new V line
@@ -377,14 +381,16 @@
         return true
       }
     } else if (tool === 'point') {
-      // Drag existing point
-      for (var k = 0; k < FM._metricPoints.length; k++) {
-        var ppx = FM._metricPoints[k].x * w
-        var ppy = FM._metricPoints[k].y * h
-        if (Math.sqrt(Math.pow(mx - ppx, 2) + Math.pow(my - ppy, 2)) < threshold) {
-          FM._pushUndo()
-          FM._metricDrag = { type: 'point', index: k }
-          return true
+      // Drag existing point (only when unlocked)
+      if (!FM._metricLocked) {
+        for (var k = 0; k < FM._metricPoints.length; k++) {
+          var ppx = FM._metricPoints[k].x * w
+          var ppy = FM._metricPoints[k].y * h
+          if (Math.sqrt(Math.pow(mx - ppx, 2) + Math.pow(my - ppy, 2)) < threshold) {
+            FM._pushUndo()
+            FM._metricDrag = { type: 'point', index: k }
+            return true
+          }
         }
       }
       // Add new point
@@ -448,6 +454,12 @@
   }
 
   // ── Tool management ─────────────────────────────────────
+
+  FM._toggleMetricLock = function () {
+    FM._metricLocked = !FM._metricLocked
+    FM._refreshToolbar()
+    FM._showToast(FM._metricLocked ? 'Linhas trancadas' : 'Linhas destrancadas', FM._metricLocked ? 'warn' : 'success')
+  }
 
   FM._setMetricTool = function (tool) {
     FM._metricTool = tool

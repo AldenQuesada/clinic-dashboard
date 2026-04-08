@@ -75,6 +75,7 @@
     _toggleWireframe: FM._toggleWireframe,
 
     // Metrification
+    _toggleMetricLock: FM._toggleMetricLock,
     _setMetricTool: FM._setMetricTool,
     _autoMetricLines: FM._autoMetricLines,
     _clearMetricLines: FM._clearMetricLines,
