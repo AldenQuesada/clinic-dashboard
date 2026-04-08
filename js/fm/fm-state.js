@@ -140,7 +140,7 @@
   FM._regionPaths = {}       // cached computed paths per region (recalc on scan)
   FM._regionAnimFrame = null // hover animation
   FM._showRegionLabels = true  // toggle labels on/off
-  FM._scanEnabled = true       // scanner auto-trigger ON by default
+  FM._scanEnabled = false      // scanner OFF by default — user activates manually
   FM._scanDataByAngle = {}     // cached scan results per angle
   FM._canvas2InitTimer = null  // debounce timer for _initCanvas2
 

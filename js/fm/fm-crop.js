@@ -182,64 +182,45 @@
 
     // Primary button: Salvar + Remover Fundo
     document.getElementById('fmCropConfirm').addEventListener('click', function () {
-      // Send ORIGINAL file to API (full quality — same as test-api.html that worked)
-      var origFile = FM._originalFiles[FM._pendingCropAngle]
-      if (!origFile) {
-        var hiRes = _renderHiRes()
-        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
-        FM._showToast('Salvo sem processar', 'warn')
-        return
-      }
+      // Render the CROPPED image (respects zoom/pan), then send to remove-bg API
+      var hiRes = _renderHiRes()
+      var b64 = hiRes.toDataURL('image/jpeg', 0.92).split(',')[1]
+      var apiUrl = FM.FACIAL_API_URL
 
-      var reader = new FileReader()
-      reader.onerror = function () {
-        FM._showToast('Erro ao ler arquivo', 'error')
-      }
-      reader.onload = function () {
-        var b64 = reader.result.split(',')[1]
-        var apiUrl = FM.FACIAL_API_URL
-        console.log('[FM] remove-bg: ' + Math.round(b64.length / 1024) + 'KB → ' + apiUrl)
+      FM._showLoading('Removendo fundo com IA...')
+      var ov = document.getElementById('fmCropOverlay')
+      if (ov) ov.style.display = 'none'
 
-        FM._showLoading('Removendo fundo com IA...')
-        var ov = document.getElementById('fmCropOverlay')
-        if (ov) ov.style.display = 'none'
-
-        var xhr = new XMLHttpRequest()
-        xhr.open('POST', apiUrl + '/remove-bg', true)
-        xhr.setRequestHeader('Content-Type', 'application/json')
-        xhr.timeout = 60000
-        xhr.onload = function () {
-          console.log('[FM] remove-bg response:', xhr.status)
-          try {
-            var d = JSON.parse(xhr.responseText)
-            if (d.success && d.image_b64) {
-              FM._hideLoading()
-              _finishCrop(_b64ToBlob(d.image_b64))
-              FM._showToast('Fundo removido (' + (d.elapsed_s || '?') + 's)', 'success')
-              return
-            }
-            console.warn('[FM] remove-bg result:', d)
-          } catch (e) {
-            console.error('[FM] parse error:', e)
+      var xhr = new XMLHttpRequest()
+      xhr.open('POST', apiUrl + '/remove-bg', true)
+      xhr.setRequestHeader('Content-Type', 'application/json')
+      xhr.timeout = 60000
+      xhr.onload = function () {
+        try {
+          var d = JSON.parse(xhr.responseText)
+          if (d.success && d.image_b64) {
+            FM._hideLoading()
+            _finishCrop(_b64ToBlob(d.image_b64))
+            FM._showToast('Fundo removido (' + (d.elapsed_s || '?') + 's)', 'success')
+            return
           }
-          FM._hideLoading()
-          _finishCrop(origFile)
-          FM._showToast('Falha no bg removal — salvo original', 'warn')
-        }
-        xhr.onerror = function () {
-          console.error('[FM] XHR error')
-          FM._hideLoading()
-          _finishCrop(origFile)
-          FM._showToast('API offline — salvo sem processamento', 'warn')
-        }
-        xhr.ontimeout = function () {
-          FM._hideLoading()
-          _finishCrop(origFile)
-          FM._showToast('API timeout — salvo sem processamento', 'warn')
-        }
-        xhr.send(JSON.stringify({ photo_base64: b64 }))
+        } catch (e) { /* silent */ }
+        // Fallback: save cropped without bg removal
+        FM._hideLoading()
+        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        FM._showToast('Falha no bg removal — salvo crop', 'warn')
       }
-      reader.readAsDataURL(origFile)
+      xhr.onerror = function () {
+        FM._hideLoading()
+        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        FM._showToast('API offline — salvo crop sem processamento', 'warn')
+      }
+      xhr.ontimeout = function () {
+        FM._hideLoading()
+        hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
+        FM._showToast('API timeout — salvo crop', 'warn')
+      }
+      xhr.send(JSON.stringify({ photo_base64: b64 }))
     })
 
     // Secondary button: Sem processar (raw save)
