@@ -31,22 +31,23 @@
       FM._imgH = Math.round(FM._img.height * scale)
       FM._canvas.width = FM._imgW
       FM._canvas.height = FM._imgH
-      // Recompute anatomical region paths when canvas dimensions change
-      if (FM._computeRegionPaths) FM._computeRegionPaths()
-      FM._redraw()
-      // Reinit canvas2 after canvas1 (debounced to prevent flickering)
-      if (FM._viewMode === '2x' && FM._initCanvas2) {
-        clearTimeout(FM._canvas2InitTimer)
-        FM._canvas2InitTimer = setTimeout(FM._initCanvas2, 150)
-      }
-      // Auto-scan: only on frontal, only if enabled, only if no cached data
+      // Restore cached scan data for this angle
       var ang = FM._activeAngle || 'front'
       if (FM._scanDataByAngle && FM._scanDataByAngle[ang]) {
         FM._scanData = FM._scanDataByAngle[ang]
         FM._landmarkData = FM._scanDataByAngle[ang]
-        if (FM._computeRegionPaths) FM._computeRegionPaths()
-        FM._redraw()
-      } else if (FM._scanEnabled && ang === 'front' && FM._autoAnalyze) {
+      }
+      // Recompute region paths with current dimensions + scan data
+      if (FM._computeRegionPaths) FM._computeRegionPaths()
+      // Single redraw (no duplicate)
+      FM._redraw()
+      // Reinit canvas2 (debounced)
+      if (FM._viewMode === '2x' && FM._initCanvas2) {
+        clearTimeout(FM._canvas2InitTimer)
+        FM._canvas2InitTimer = setTimeout(FM._initCanvas2, 150)
+      }
+      // Auto-scan: only on frontal, only if no cached data
+      if (!FM._scanData && FM._scanEnabled && ang === 'front' && FM._autoAnalyze) {
         FM._autoAnalyze()
       }
     }
@@ -186,6 +187,14 @@
       FM._ctx2.fillStyle = '#000000'
       FM._ctx2.fillRect(0, 0, FM._imgW2, FM._imgH2)
       FM._ctx2.drawImage(FM._img2, 0, 0, FM._imgW2, FM._imgH2)
+
+      // Wireframe on canvas2 too
+      if (FM._showWireframe && FM._scanData && FM._scanData.landmarks && FM._drawWireframe) {
+        var saveCtx = FM._ctx, saveW = FM._imgW, saveH = FM._imgH
+        FM._ctx = FM._ctx2; FM._imgW = FM._imgW2; FM._imgH = FM._imgH2
+        FM._drawWireframe()
+        FM._ctx = saveCtx; FM._imgW = saveW; FM._imgH = saveH
+      }
 
       // Draw canvas2's own metrics by temporarily swapping state
       var is2xMetrics = (FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics') ||

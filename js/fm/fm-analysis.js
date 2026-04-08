@@ -817,6 +817,13 @@
     var src = FM._afterPhotoUrl || FM._simPhotoUrl
     if (!src) return
 
+    // If canvas2 is already initialized with same src and same DOM element, just redraw
+    if (FM._canvas2 === canvas2 && FM._img2 && FM._canvas2Src === src) {
+      FM._redraw()
+      return
+    }
+
+    FM._canvas2Src = src
     var ctx2 = canvas2.getContext('2d')
     var img2 = new Image()
     img2.onload = function () {
@@ -836,7 +843,7 @@
       FM._img2 = img2
       FM._imgW2 = w
       FM._imgH2 = h
-      FM._redraw()  // triggers canvas2 redraw with its own metrics
+      FM._redraw()
 
       // Mouse events for independent metrification on canvas2
       canvas2.addEventListener('mousedown', FM._onCanvas2MouseDown)
