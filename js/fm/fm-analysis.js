@@ -756,46 +756,9 @@
   FM._uploadAfterPhoto = function (input) {
     var file = input.files[0]
     if (!file) return
-    // DEPOIS: send original file directly to remove-bg (no crop — better results)
     var targetAngle = FM._activeAngle || 'front'
-    var reader = new FileReader()
-    reader.onload = function () {
-      var b64 = reader.result.split(',')[1]
-      FM._showLoading('Removendo fundo (DEPOIS)...')
-      fetch(FM.FACIAL_API_URL + '/remove-bg', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: b64, skip_crop: false }),
-      })
-      .then(function (r) { return r.json() })
-      .then(function (d) {
-        FM._hideLoading()
-        if (d.success && d.image_b64) {
-          var bin = atob(d.image_b64)
-          var arr = new Uint8Array(bin.length)
-          for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-          if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
-          FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(new Blob([arr], { type: 'image/png' }))
-          FM._showToast('DEPOIS — fundo removido', 'success')
-        } else {
-          if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
-          FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
-          FM._showToast('DEPOIS carregada (sem bg removal)', 'warn')
-        }
-        FM._autoSave()
-        FM._render()
-        setTimeout(function () { FM._initCanvas(); if (FM._initCanvas2) FM._initCanvas2() }, 100)
-      })
-      .catch(function () {
-        FM._hideLoading()
-        if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
-        FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
-        FM._autoSave()
-        FM._render()
-        setTimeout(FM._initCanvas, 100)
-      })
-    }
-    reader.readAsDataURL(file)
+    var tempUrl = URL.createObjectURL(file)
+    FM._openCropModal(tempUrl, targetAngle, 'after')
   }
 
   // ── Init Canvas 2 (after photo in 2x mode) ─────────────
