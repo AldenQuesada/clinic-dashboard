@@ -46,9 +46,9 @@
         clearTimeout(FM._canvas2InitTimer)
         FM._canvas2InitTimer = setTimeout(FM._initCanvas2, 150)
       }
-      // Auto-scan: only on frontal, only if no cached data
+      // Auto-scan: only on frontal, only if no cached data (silent — no overlay/toast)
       if (!FM._scanData && FM._scanEnabled && ang === 'front' && FM._autoAnalyze) {
-        FM._autoAnalyze()
+        FM._autoAnalyze(true)
       }
     }
     FM._img.src = FM._photoUrls[FM._activeAngle]

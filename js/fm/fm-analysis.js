@@ -344,14 +344,14 @@
 
   // ── Auto-analyze via Python API ─────────────────────────────
 
-  FM._autoAnalyze = function () {
+  FM._autoAnalyze = function (silent) {
     var angle = FM._activeAngle || 'front'
     if (!FM._photoUrls[angle]) {
-      FM._showToast('Envie uma foto primeiro.', 'warn')
+      if (!silent) FM._showToast('Envie uma foto primeiro.', 'warn')
       return
     }
 
-    FM._showLoading('Escaneando rosto (478 pontos 3D)...')
+    if (!silent) FM._showLoading('Escaneando rosto (478 pontos 3D)...')
 
     var img = new Image()
     img.onload = function () {
@@ -372,9 +372,9 @@
       })
       .then(function (res) { clearTimeout(timeout); return res.json() })
       .then(function (data) {
-        FM._hideLoading()
+        if (!silent) FM._hideLoading()
         if (!data.success) {
-          FM._showToast('Nenhum rosto detectado na foto.', 'error')
+          if (!silent) FM._showToast('Nenhum rosto detectado na foto.', 'error')
           return
         }
 
@@ -399,15 +399,6 @@
         // Compute anatomical region paths for Estruturacao tab
         if (FM._computeRegionPaths) FM._computeRegionPaths()
 
-        // Build summary toast
-        var parts = [data.landmark_count + ' pontos detectados']
-        if (data.shape) parts.push('Biotipo: ' + data.shape.shape)
-        if (data.symmetry) parts.push('Simetria: ' + data.symmetry.overall + '%')
-        if (data.pose && data.pose.angle_description) parts.push('Angulo: ' + data.pose.angle_description)
-        if (data.measurements && data.measurements.golden_ratio_score) parts.push('Golden Ratio: ' + data.measurements.golden_ratio_score)
-
-        FM._showToast(parts.join(' | '), 'success')
-
         // Cache scan data for this angle
         FM._scanDataByAngle[angle] = data
 
@@ -431,8 +422,8 @@
       })
       .catch(function (err) {
         clearTimeout(timeout)
-        FM._hideLoading()
-        FM._showToast('API offline. Posicione manualmente.', 'warn')
+        if (!silent) FM._hideLoading()
+        if (!silent) FM._showToast('API offline. Posicione manualmente.', 'warn')
       })
     }
     img.src = FM._photoUrls[angle]
