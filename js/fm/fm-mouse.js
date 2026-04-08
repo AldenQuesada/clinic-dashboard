@@ -29,7 +29,9 @@
 
       FM._imgW = Math.round(FM._img.width * scale)
       FM._imgH = Math.round(FM._img.height * scale)
-      FM._canvas.width = FM._imgW
+      // Extra margin for proportions bar outside the image
+      var barMargin = 30
+      FM._canvas.width = FM._imgW + barMargin
       FM._canvas.height = FM._imgH
       // Restore cached scan data for this angle
       var ang = FM._activeAngle || 'front'

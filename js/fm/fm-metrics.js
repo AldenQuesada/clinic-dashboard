@@ -97,7 +97,7 @@
     // ── Dynamic proportions bar (right edge) ──────────────
     // Shows colored segments between H lines with % — updates as you drag
     if (FM._metricLines.h.length >= 2) {
-      var barX = w - 24
+      var barX = w + 6
       var barW = 14
       var hLines = FM._metricLines.h  // already sorted by y
       var firstY = hLines[0].y * h
