@@ -78,7 +78,7 @@ def get_rembg_session():
     if _rembg_session is None:
         from rembg import new_session
         log.info("Loading rembg model (first time)...")
-        _rembg_session = new_session("u2net_human_seg")
+        _rembg_session = new_session("isnet-general-use")
         log.info("rembg model loaded.")
     return _rembg_session
 
