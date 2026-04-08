@@ -32,44 +32,71 @@ let alexa = null
 let alexaReady = false
 
 function initAlexa() {
-  alexa = new Alexa()
+  const fs = require('fs')
+  const cookieFile = process.env.ALEXA_COOKIE_FILE || '.alexa-cookie'
 
-  const config = {
-    cookie: process.env.ALEXA_COOKIE || '',
-    proxyOwnIp: process.env.PROXY_HOST || 'localhost',
-    proxyPort: parseInt(process.env.PROXY_PORT || '3457'),
-    proxyLogLevel: 'warn',
+  // Tentar ler cookie salvo
+  var savedCookie = ''
+  try {
+    savedCookie = fs.readFileSync(cookieFile, 'utf8').trim()
+    if (savedCookie) console.log('[Alexa] Cookie carregado de', cookieFile)
+  } catch (e) {
+    console.log('[Alexa] Cookie file nao encontrado, sera necessario login via proxy')
+  }
+
+  var cookieData = savedCookie || process.env.ALEXA_COOKIE || ''
+
+  // Se nao tem cookie, usar proxy para obter
+  if (!cookieData) {
+    var AlexaCookie = require('alexa-cookie2')
+    console.log('[Alexa] Iniciando proxy de login na porta', process.env.PROXY_PORT || 3457)
+    AlexaCookie.generateAlexaCookie('', {
+      proxyOwnIp: process.env.PROXY_HOST || 'localhost',
+      proxyPort: parseInt(process.env.PROXY_PORT || '3457'),
+      proxyLogLevel: 'info',
+      amazonPage: process.env.AMAZON_PAGE || 'amazon.com.br',
+      acceptLanguage: 'pt-BR',
+      userAgent: 'Mozilla/5.0',
+    }, function (err, result) {
+      if (err) {
+        console.error('[Alexa] Cookie generation falhou:', err)
+        return
+      }
+      console.log('[Alexa] Cookie obtido com sucesso!')
+      if (result && result.cookie) {
+        fs.writeFileSync(cookieFile, result.cookie, 'utf8')
+        console.log('[Alexa] Cookie salvo em', cookieFile)
+        // Agora conectar com o cookie
+        _connectWithCookie(result.cookie)
+      }
+    })
+  } else {
+    _connectWithCookie(cookieData)
+  }
+}
+
+function _connectWithCookie(cookieData) {
+  alexa = new Alexa()
+  alexa.init({
+    cookie: cookieData,
     bluetooth: false,
     logger: console.log,
     amazonPage: process.env.AMAZON_PAGE || 'amazon.com.br',
     acceptLanguage: 'pt-BR',
     userAgent: 'Mozilla/5.0',
-  }
-
-  // Se tem cookie salvo, usar direto
-  if (process.env.ALEXA_COOKIE_FILE) {
-    try {
-      const fs = require('fs')
-      config.cookie = fs.readFileSync(process.env.ALEXA_COOKIE_FILE, 'utf8').trim()
-    } catch (e) {
-      console.log('[Alexa] Cookie file nao encontrado, iniciando proxy de login...')
-    }
-  }
-
-  alexa.init(config, function (err) {
+  }, function (err) {
     if (err) {
-      console.error('[Alexa] Init falhou:', err)
-      console.log('[Alexa] Abra http://localhost:' + config.proxyPort + ' no navegador para fazer login')
+      console.error('[Alexa] Conexao falhou:', err.message || err)
       return
     }
     alexaReady = true
     console.log('[Alexa] Conectado com sucesso!')
 
-    // Salvar cookie para reuso
+    // Atualizar cookie se mudou
     if (alexa.cookie) {
-      const fs = require('fs')
-      fs.writeFileSync('.alexa-cookie', alexa.cookie, 'utf8')
-      console.log('[Alexa] Cookie salvo em .alexa-cookie')
+      var fs = require('fs')
+      fs.writeFileSync(process.env.ALEXA_COOKIE_FILE || '.alexa-cookie', alexa.cookie, 'utf8')
+      console.log('[Alexa] Cookie atualizado')
     }
   })
 }

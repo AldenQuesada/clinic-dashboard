@@ -1,5 +1,5 @@
 {
-  "name": "Alexa — Announce Patient Arrival",
+  "name": "Alexa — Announce (ClinicAI)",
   "nodes": [
     {
       "parameters": {
@@ -10,7 +10,7 @@
         "options": {}
       },
       "id": "webhook-trigger",
-      "name": "Webhook: Patient Arrived",
+      "name": "Webhook: Alexa Announce",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [240, 300],
@@ -18,91 +18,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "check-event",
-              "leftValue": "={{ $json.body.event }}",
-              "rightValue": "patient_arrived",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "validate-event",
-      "name": "Validate Event",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [460, 300]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "patient_name",
-              "name": "patient_name",
-              "value": "={{ $json.body.patient_name }}",
-              "type": "string"
-            },
-            {
-              "id": "professional_name",
-              "name": "professional_name",
-              "value": "={{ $json.body.professional_name }}",
-              "type": "string"
-            },
-            {
-              "id": "reception_device",
-              "name": "reception_device",
-              "value": "={{ $json.body.reception_device }}",
-              "type": "string"
-            },
-            {
-              "id": "room_device",
-              "name": "room_device",
-              "value": "={{ $json.body.room_device }}",
-              "type": "string"
-            },
-            {
-              "id": "welcome_message",
-              "name": "welcome_message",
-              "value": "={{ $json.body.welcome_message }}",
-              "type": "string"
-            },
-            {
-              "id": "room_message",
-              "name": "room_message",
-              "value": "={{ $json.body.room_message }}",
-              "type": "string"
-            },
-            {
-              "id": "room_name",
-              "name": "room_name",
-              "value": "={{ $json.body.room_name }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "extract-data",
-      "name": "Extract Data",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [680, 300]
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "={{ $env.ALEXA_API_URL || 'http://localhost:3456' }}/api/announce",
         "sendHeaders": true,
@@ -120,105 +35,24 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"device\": \"{{ $json.reception_device }}\",\n  \"message\": \"{{ $json.welcome_message }}\",\n  \"type\": \"announce\"\n}",
+        "jsonBody": "={\n  \"device\": \"{{ $json.body.device || $json.body.reception_device || '' }}\",\n  \"message\": \"{{ $json.body.message || $json.body.welcome_message || '' }}\",\n  \"type\": \"{{ $json.body.type || 'announce' }}\"\n}",
         "options": {
           "timeout": 10000,
           "allowUnauthorizedCerts": false
         }
       },
-      "id": "alexa-reception",
-      "name": "Alexa: Boas-vindas Recepcao",
+      "id": "forward-to-bridge",
+      "name": "Forward to Alexa Bridge",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [920, 200],
+      "position": [500, 300],
       "continueOnFail": true
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $env.ALEXA_API_URL || 'http://localhost:3456' }}/api/announce",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "name": "Authorization",
-              "value": "Bearer {{ $env.ALEXA_API_TOKEN || '' }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"device\": \"{{ $json.room_device }}\",\n  \"message\": \"{{ $json.room_message }}\",\n  \"type\": \"announce\"\n}",
-        "options": {
-          "timeout": 10000,
-          "allowUnauthorizedCerts": false
-        }
-      },
-      "id": "alexa-room",
-      "name": "Alexa: Aviso na Sala",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [920, 400],
-      "continueOnFail": true
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": false,
-            "leftValue": "",
-            "typeValidation": "strict"
-          },
-          "conditions": [
-            {
-              "id": "check-room-device",
-              "leftValue": "={{ $json.room_device }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "has-room-device",
-      "name": "Sala tem Alexa?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [920, 400]
     }
   ],
   "connections": {
-    "Webhook: Patient Arrived": {
+    "Webhook: Alexa Announce": {
       "main": [
-        [{ "node": "Validate Event", "type": "main", "index": 0 }]
-      ]
-    },
-    "Validate Event": {
-      "main": [
-        [{ "node": "Extract Data", "type": "main", "index": 0 }],
-        []
-      ]
-    },
-    "Extract Data": {
-      "main": [
-        [
-          { "node": "Alexa: Boas-vindas Recepcao", "type": "main", "index": 0 },
-          { "node": "Sala tem Alexa?", "type": "main", "index": 0 }
-        ]
-      ]
-    },
-    "Sala tem Alexa?": {
-      "main": [
-        [{ "node": "Alexa: Aviso na Sala", "type": "main", "index": 0 }],
-        []
+        [{ "node": "Forward to Alexa Bridge", "type": "main", "index": 0 }]
       ]
     }
   },
@@ -231,30 +65,16 @@
     { "name": "automation" }
   ],
   "_comment": [
-    "SETUP NECESSARIO:",
+    "Workflow simplificado: recebe POST com {device, message, type}",
+    "e encaminha diretamente para o Alexa Bridge.",
     "",
-    "1. ALEXA BRIDGE SERVICE: Instale o alexa-remote-http-bridge (Node.js)",
-    "   no mesmo servidor do n8n ou em container Docker separado.",
-    "   Repo: https://github.com/thorsten-gehrig/alexa-remote-control",
+    "A engine do dashboard ja resolve o device alvo e renderiza a mensagem.",
+    "Cada request = 1 device = 1 announce.",
     "",
-    "   Alternativa rapida com alexa-remote2 (npm):",
-    "   npm install alexa-remote2 express",
-    "   Criar server.js com endpoint POST /api/announce que recebe:",
-    "   { device: 'nome-do-echo', message: 'texto', type: 'announce' }",
+    "VARIAVEIS DE AMBIENTE:",
+    "  ALEXA_API_URL   = http://alexa-bridge:3456 (ou IP local)",
+    "  ALEXA_API_TOKEN = clinicai-alexa-2026",
     "",
-    "2. VARIAVEIS DE AMBIENTE no n8n:",
-    "   ALEXA_API_URL = URL do bridge (ex: http://localhost:3456)",
-    "   ALEXA_API_TOKEN = token de auth (opcional)",
-    "",
-    "3. WEBHOOK URL para configurar no dashboard:",
-    "   https://flows.aldenquesada.site/webhook/alexa-announce",
-    "",
-    "4. NOMES DOS DISPOSITIVOS: usar os mesmos nomes que aparecem",
-    "   no app Alexa (ex: 'Recepcao', 'Sala 1 Echo')",
-    "",
-    "5. ALTERNATIVA SEM BRIDGE:",
-    "   Substituir os nodes HTTP Request por nodes que chamem",
-    "   diretamente a Alexa via alexa-cookie2 ou",
-    "   Virtual Smart Home (skill gratuita na Alexa Store)"
+    "Tambem aceita formato legado (patient_arrived) para compatibilidade."
   ]
 }
