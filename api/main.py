@@ -78,7 +78,7 @@ def get_rembg_session():
     if _rembg_session is None:
         from rembg import new_session
         log.info("Loading rembg model (first time)...")
-        _rembg_session = new_session("u2net")
+        _rembg_session = new_session("u2net_human_seg")
         log.info("rembg model loaded.")
     return _rembg_session
 
@@ -93,26 +93,19 @@ async def remove_background(req: PhotoRequest):
         img = b64_to_image(req.photo_base64)
         session = get_rembg_session()
 
-        # Remove background — smooth edges, preserve hair
+        # Remove background — no alpha matting (causes pixelated edges on dark hair)
         result = remove(
             img,
             session=session,
-            alpha_matting=True,
-            alpha_matting_foreground_threshold=230,   # generous foreground
-            alpha_matting_background_threshold=15,    # strict background
-            alpha_matting_erode_size=3,               # minimal erode — prevents pixelated edges
+            alpha_matting=False,
+            post_process_mask=True,
         )
 
-        # Refine alpha mask — smooth transitions on hair
+        # Smooth the alpha mask edges
         result_np = np.array(result)
         alpha = result_np[:, :, 3].astype(np.float32)
-
-        # Smooth alpha edges (larger kernel = softer hair boundary)
-        alpha_smooth = cv2.GaussianBlur(alpha, (5, 5), 1.2)
-
-        # Gentle boost — keep hair but don't create hard edges
-        alpha_boosted = np.clip(alpha_smooth * 1.3, 0, 255).astype(np.uint8)
-        result_np[:, :, 3] = alpha_boosted
+        alpha_smooth = cv2.GaussianBlur(alpha, (5, 5), 1.5)
+        result_np[:, :, 3] = alpha_smooth.astype(np.uint8)
 
         result_refined = Image.fromarray(result_np, "RGBA")
 
