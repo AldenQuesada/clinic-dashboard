@@ -166,6 +166,49 @@
       ctx.fillText(label, x, h - 16)
     })
 
+    // ── Dynamic proportions bar (bottom edge) for V lines ──────
+    // Horizontal bar at bottom showing % between vertical lines
+    if (FM._metricLines.v.length >= 2) {
+      var barY = h - 24
+      var barH = 14
+      var vLines = FM._metricLines.v  // already sorted by x
+      var firstX = vLines[0].x * w
+      var lastX = vLines[vLines.length - 1].x * w
+      var totalSpanV = lastX - firstX
+
+      if (totalSpanV > 10) {
+        for (var vi = 0; vi < vLines.length - 1; vi++) {
+          var segLeft = vLines[vi].x * w
+          var segRight = vLines[vi + 1].x * w
+          var segW = segRight - segLeft
+          var vSegPct = Math.round((segW / totalSpanV) * 100)
+          var vIdealPct = Math.round(100 / (vLines.length - 1))
+          var vTolerance = vIdealPct * 0.3
+
+          var vSegColor
+          if (Math.abs(vSegPct - vIdealPct) <= vTolerance) vSegColor = '#10B981'
+          else if (Math.abs(vSegPct - vIdealPct) <= vTolerance * 2) vSegColor = '#F59E0B'
+          else vSegColor = '#EF4444'
+
+          ctx.globalAlpha = 0.6
+          ctx.fillStyle = vSegColor
+          ctx.fillRect(segLeft, barY, segW, barH)
+          ctx.globalAlpha = 1.0
+
+          ctx.strokeStyle = vSegColor
+          ctx.lineWidth = 1
+          ctx.strokeRect(segLeft, barY, segW, barH)
+
+          if (segW > 30) {
+            ctx.font = '700 10px Inter, sans-serif'
+            ctx.fillStyle = '#fff'
+            ctx.textAlign = 'center'
+            ctx.fillText(vSegPct + '%', segLeft + segW / 2, barY + barH / 2 + 4)
+          }
+        }
+      }
+    }
+
     // Draw measurement points
     FM._metricPoints.forEach(function (pt, i) {
       var px = pt.x * w
