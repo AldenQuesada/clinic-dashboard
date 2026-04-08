@@ -76,7 +76,10 @@
   }
 
   FM._redraw = function () {
-    if (!FM._ctx || !FM._img) return
+    // Canvas1 (ANTES) — may not exist if ANTES was deleted
+    if (!FM._canvas || !FM._ctx || !FM._img) {
+      // Skip canvas1 drawing, but still draw canvas2 below
+    } else {
     FM._ctx.fillStyle = '#000000'
     FM._ctx.fillRect(0, 0, FM._canvas.width, FM._canvas.height)
 
@@ -183,6 +186,8 @@
       }
       FM._ctx.restore()
     }
+
+    } // end canvas1 guard
 
     // Redraw canvas2 (DEPOIS) with its OWN independent metrics
     if (FM._viewMode === '2x' && FM._ctx2 && FM._img2) {
