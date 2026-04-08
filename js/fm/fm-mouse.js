@@ -34,13 +34,17 @@
       // Recompute anatomical region paths when canvas dimensions change
       if (FM._computeRegionPaths) FM._computeRegionPaths()
       FM._redraw()
-      // Restore cached scan data for this angle (no API call on init)
+      // Auto-scan: only on frontal, only if enabled, only if no cached data
       var ang = FM._activeAngle || 'front'
-      if (FM._scanEnabled && FM._scanDataByAngle && FM._scanDataByAngle[ang]) {
+      if (FM._scanDataByAngle && FM._scanDataByAngle[ang]) {
+        // Restore from cache
         FM._scanData = FM._scanDataByAngle[ang]
         FM._landmarkData = FM._scanDataByAngle[ang]
         if (FM._computeRegionPaths) FM._computeRegionPaths()
         FM._redraw()
+      } else if (FM._scanEnabled && ang === 'front' && FM._autoAnalyze) {
+        // Auto-trigger scan only on frontal
+        FM._autoAnalyze()
       }
     }
     FM._img.src = FM._photoUrls[FM._activeAngle]

@@ -83,7 +83,6 @@
 
       // Right actions — minimal, all champagne
       '<div style="display:flex;gap:3px;align-items:center">' +
-        '<button class="fm-btn" onclick="FaceMapping._toggleScan()" title="' + (FM._scanEnabled ? 'Scanner ON — clique para desativar' : 'Scanner OFF — clique para ativar') + '" style="font-size:9px;padding:4px 8px;border-color:' + (FM._scanEnabled ? 'rgba(16,185,129,0.3)' : 'rgba(200,169,126,0.15)') + ';color:' + (FM._scanEnabled ? '#10B981' : 'rgba(200,169,126,0.3)') + ';font-weight:' + (FM._scanEnabled ? '600' : '400') + '">' + FM._icon('cpu', 11) + (FM._scanEnabled ? ' ON' : ' OFF') + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" title="Comparar" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('eye', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._exportReport()" title="Report" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('download', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._saveToSupabase()" style="font-size:9px;padding:4px 8px;border-color:rgba(200,169,126,0.3);color:#C8A97E;font-weight:600">' + FM._icon('save', 11) + ' Salvar</button>' +
@@ -277,6 +276,27 @@
         '<button class="fm-zone-btn' + (FM._analysisSubMode === 'metrics' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Metrificar</button>' +
         '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Ricketts</button>' +
       '</div>' +
+    '</div>'
+
+    // Scanner toggle (ON/OFF) — only runs on frontal
+    var scanOn = FM._scanEnabled
+    var hasScan = FM._scanData && FM._scanData.landmarks
+    html += '<div class="fm-tool-section">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          FM._icon('cpu', 12) +
+          '<span class="fm-tool-section-title" style="margin:0;font-size:10px">Scanner 478pts</span>' +
+        '</div>' +
+        '<div onclick="FaceMapping._toggleScan()" ' +
+          'style="width:32px;height:16px;border-radius:8px;cursor:pointer;position:relative;' +
+          'background:' + (scanOn ? '#10B981' : 'rgba(200,169,126,0.15)') + ';transition:background .2s">' +
+          '<div style="width:12px;height:12px;border-radius:50%;background:#fff;position:absolute;top:2px;' +
+            'left:' + (scanOn ? '18px' : '2px') + ';transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>' +
+        '</div>' +
+      '</div>' +
+      (hasScan ? '<div style="font-size:8px;color:rgba(16,185,129,0.5);margin-top:3px">' + FM._scanData.landmark_count + ' pontos detectados</div>' : '') +
+      (!scanOn ? '<div style="font-size:8px;color:rgba(200,169,126,0.3);margin-top:3px">Desativado</div>' : '') +
+      (scanOn && !hasScan ? '<div style="font-size:8px;color:rgba(245,158,11,0.5);margin-top:3px">Aguardando scan...</div>' : '') +
     '</div>'
 
     // (Tercos removed — redundant with manual H lines)
