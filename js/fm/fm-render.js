@@ -354,15 +354,7 @@
       html += '</div>'
     }
 
-    // Ricketts info
-    if (FM._analysisSubMode === 'ricketts') {
-      html += '<div class="fm-tool-section">' +
-        '<div class="fm-tool-section-title">Linha de Ricketts</div>' +
-        '<div style="font-size:9px;color:rgba(200,169,126,0.3);line-height:1.5">' +
-          'Arraste os pontos N e M para ajustar ao perfil da paciente.' +
-        '</div>' +
-      '</div>'
-    }
+    // Ricketts info removed — was overflowing into canvas
 
     // Metrificar tools (only in metrics sub-mode)
     if (FM._analysisSubMode === 'metrics') {

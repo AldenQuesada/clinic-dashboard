@@ -175,43 +175,8 @@
     FM._ctx.fillStyle = '#fff'
     FM._ctx.fillText('M', cx, cy + 3)
 
-    // Labels on right panel
-    var lx = FM._imgW + 15
-    FM._ctx.textAlign = 'left'
-
-    FM._ctx.font = '700 14px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = '#F5F0E8'
-    FM._ctx.fillText('Linha de Ricketts', lx, 30)
-
-    FM._ctx.font = '400 10px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = '#C8A97E'
-    FM._ctx.fillText('Linha da beleza do perfil', lx, 48)
-
-    FM._ctx.font = '400 10px Inter, Montserrat, sans-serif'
-    FM._ctx.fillStyle = 'rgba(245,240,232,0.6)'
-    var lines = [
-      'Do ponto mais proeminente',
-      'do nariz (N) ate o mento (M).',
-      '',
-      'Labios devem tocar ou ficar',
-      'ligeiramente atras desta linha',
-      'para um perfil harmonioso.',
-      '',
-      'Arraste os pontos N e M',
-      'para ajustar ao rosto.',
-    ]
-    lines.forEach(function (line, i) {
-      FM._ctx.fillText(line, lx, 75 + i * 15)
-    })
-
+    // Angle label only (no text panel — was overflowing canvas)
     var angleDeg = Math.round(Math.atan2(dy, dx) * 180 / Math.PI)
-    FM._ctx.font = '600 12px Inter, sans-serif'
-    FM._ctx.fillStyle = '#EF4444'
-    FM._ctx.fillText('Angulo: ' + angleDeg + '\u00B0', lx, 230)
-
-    FM._ctx.font = '400 9px Inter, sans-serif'
-    FM._ctx.fillStyle = 'rgba(200,169,126,0.4)'
-    FM._ctx.fillText('Frontal = Tercos | Lateral = Ricketts', lx, FM._imgH - 10)
 
     FM._ctx.restore()
   }
