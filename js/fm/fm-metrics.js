@@ -23,7 +23,7 @@
   FM._metricNextPointId = FM._metricNextPointId || 1
   FM._metricNextLineId = FM._metricNextLineId || 1
   FM._metricDrag = null  // {type: 'hline'|'vline'|'point'|'midline', index: n}
-  FM._metricTool = 'hline'  // active tool: 'hline', 'vline', 'point', 'midline'
+  FM._metricTool = null  // active tool: null (idle), 'hline', 'vline', 'point', 'midline'
   FM._metricShowMidline = true
   // FM._metricLocked is now a getter from fm-state.js granular lock system
 
