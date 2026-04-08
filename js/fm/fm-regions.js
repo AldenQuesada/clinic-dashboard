@@ -31,12 +31,26 @@
     'temporal': {
       label: 'Temporal',
       color: '#9B6FC7',
-      landmarksL: [54, 103, 67, 109, 10],
-      landmarksR: [284, 332, 297, 338, 10],
-      shapeType: 'organic',
-      scale: 0.7,
+      // Anchor landmarks for shape computation (not raw polygon)
+      // L: temple top(54), temple mid(103), brow outer(70), brow peak(63),
+      //    orbital outer(130), zygomatic(93), forehead edge(21), hairline area(71)
+      landmarksL: {
+        templeTop: 54, templeMid: 103, browOuter: 70, browPeak: 63,
+        orbitalOuter: 130, zygomatic: 93, foreheadEdge: 21, browEdge: 71,
+      },
+      landmarksR: {
+        templeTop: 284, templeMid: 332, browOuter: 300, browPeak: 293,
+        orbitalOuter: 359, zygomatic: 323, foreheadEdge: 251, browEdge: 301,
+      },
+      shapeType: 'temporal',
+      tiltAngle: 25,  // degrees posterior
+      heightRatio: 1.6,  // height = 1.6x width
       hasVectors: true,
-      vectorDir: { angle: -60, strength: 0.8 },
+      vectors: [
+        { angle: -50, strength: 0.7, offset: -0.25 },  // lower vector
+        { angle: -45, strength: 0.85, offset: 0 },      // mid vector (main)
+        { angle: -40, strength: 0.6, offset: 0.25 },    // upper vector
+      ],
       defaultIntensity: 65,
       order: 2,
     },
@@ -262,7 +276,16 @@
 
       var paths = []
 
-      if (r.shapeType === 'infraorbital') {
+      if (r.shapeType === 'temporal') {
+        // Advanced temporal shape from anchor landmarks
+        if (r.landmarksL && typeof r.landmarksL === 'object' && !Array.isArray(r.landmarksL)) {
+          paths.push(_computeTemporalShape(lm, r.landmarksL, w, h, 'left', r))
+        }
+        if (r.landmarksR && typeof r.landmarksR === 'object' && !Array.isArray(r.landmarksR)) {
+          paths.push(_computeTemporalShape(lm, r.landmarksR, w, h, 'right', r))
+        }
+      }
+      else if (r.shapeType === 'infraorbital') {
         if (r.landmarksL) paths.push(_lmPoints(lm, r.landmarksL, w, h, 0, r.offsetY || 0))
         if (r.landmarksR) paths.push(_lmPoints(lm, r.landmarksR, w, h, 0, r.offsetY || 0))
       }
@@ -284,7 +307,7 @@
           paths.push(pR)
         }
       }
-      else if (r.landmarksL && r.landmarksR) {
+      else if (r.landmarksL && r.landmarksR && Array.isArray(r.landmarksL)) {
         paths.push(_lmPoints(lm, r.landmarksL, w, h))
         paths.push(_lmPoints(lm, r.landmarksR, w, h))
       }
@@ -370,11 +393,21 @@
         _drawRegionPath(ctx, path, r, intensity, isHovered, isSelected)
       })
 
-      // Draw vectors for lifting regions
-      if (r.hasVectors && r.vectorDir) {
-        paths.forEach(function (path) {
-          _drawRegionVector(ctx, path, r, intensity)
-        })
+      // Draw vectors for lifting regions (single or multiple)
+      if (r.hasVectors) {
+        if (r.vectors && r.vectors.length > 0) {
+          // Multiple vectors
+          paths.forEach(function (path) {
+            r.vectors.forEach(function (vec) {
+              _drawRegionVectorMulti(ctx, path, r, intensity, vec)
+            })
+          })
+        } else if (r.vectorDir) {
+          // Legacy single vector
+          paths.forEach(function (path) {
+            _drawRegionVector(ctx, path, r, intensity)
+          })
+        }
       }
 
       // Labels — only when global toggle is ON
@@ -833,6 +866,149 @@
         p2.x, p2.y
       )
     }
+  }
+
+  // ── Temporal Shape Generator ─────────────────────────────
+
+  function _computeTemporalShape(lm, anchors, w, h, side, region) {
+    // Get anchor positions
+    var p = {}
+    Object.keys(anchors).forEach(function (key) {
+      var idx = anchors[key]
+      if (idx < lm.length) {
+        p[key] = { x: lm[idx].x * w, y: lm[idx].y * h }
+      }
+    })
+
+    if (!p.templeTop || !p.templeMid || !p.browOuter || !p.zygomatic) return []
+
+    var flip = side === 'right' ? -1 : 1
+
+    // Compute the temporal fossa center
+    var cx = (p.templeTop.x + p.templeMid.x + p.browOuter.x) / 3
+    var cy = (p.templeTop.y + p.templeMid.y + p.browOuter.y) / 3
+
+    // Compute dimensions from landmarks
+    var eyeToTemple = Math.abs(p.templeMid.x - p.browOuter.x)
+    var regionWidth = eyeToTemple * 0.85
+    var regionHeight = regionWidth * (region.heightRatio || 1.6)
+
+    // Tilt angle (posterior lean)
+    var tilt = (region.tiltAngle || 25) * Math.PI / 180
+
+    // Build 8 control points forming the anatomical temporal shape
+    // Points go clockwise from top
+    var pts = []
+
+    // 1. TOP — slightly posterior and above lateral eyebrow
+    pts.push({
+      x: cx + flip * regionWidth * 0.05 * Math.cos(tilt) - regionHeight * 0.48 * Math.sin(tilt),
+      y: cy - regionHeight * 0.48 * Math.cos(tilt) - flip * regionWidth * 0.05 * Math.sin(tilt),
+    })
+
+    // 2. UPPER OUTER — convex toward hairline
+    pts.push({
+      x: cx + flip * regionWidth * 0.45 - regionHeight * 0.3 * Math.sin(tilt),
+      y: cy - regionHeight * 0.3 * Math.cos(tilt),
+    })
+
+    // 3. MID OUTER — maximum width point
+    pts.push({
+      x: cx + flip * regionWidth * 0.5,
+      y: cy - regionHeight * 0.05,
+    })
+
+    // 4. LOWER OUTER — slight inward taper
+    pts.push({
+      x: cx + flip * regionWidth * 0.35 + regionHeight * 0.2 * Math.sin(tilt),
+      y: cy + regionHeight * 0.25 * Math.cos(tilt),
+    })
+
+    // 5. BOTTOM — above zygomatic arch (tapered)
+    pts.push({
+      x: cx + flip * regionWidth * 0.1 + regionHeight * 0.35 * Math.sin(tilt),
+      y: cy + regionHeight * 0.45 * Math.cos(tilt),
+    })
+
+    // 6. INNER LOWER — concave following orbital
+    pts.push({
+      x: cx - flip * regionWidth * 0.2 + regionHeight * 0.15 * Math.sin(tilt),
+      y: cy + regionHeight * 0.2 * Math.cos(tilt),
+    })
+
+    // 7. INNER MID — concave curve (key for realism)
+    pts.push({
+      x: cx - flip * regionWidth * 0.3,
+      y: cy + regionHeight * 0.02,
+    })
+
+    // 8. INNER UPPER — returns to top
+    pts.push({
+      x: cx - flip * regionWidth * 0.15 - regionHeight * 0.25 * Math.sin(tilt),
+      y: cy - regionHeight * 0.35 * Math.cos(tilt),
+    })
+
+    return pts
+  }
+
+  // ── Multi-Vector Drawing ──────────────────────────────────
+
+  function _drawRegionVectorMulti(ctx, path, region, intensity, vecDef) {
+    if (intensity < 0.1) return
+
+    ctx.save()
+
+    var rad = vecDef.angle * Math.PI / 180
+    var len = path._radius * 0.5 * vecDef.strength * intensity
+
+    // Offset along the perpendicular to the vector direction
+    var perpRad = rad + Math.PI / 2
+    var offsetDist = (vecDef.offset || 0) * path._radius
+
+    var sx = path._cx + Math.cos(perpRad) * offsetDist
+    var sy = path._cy + Math.sin(perpRad) * offsetDist
+    var ex = sx + Math.cos(rad) * len
+    var ey = sy + Math.sin(rad) * len
+
+    // Thin arrow shaft with gradient
+    var grad = ctx.createLinearGradient(sx, sy, ex, ey)
+    grad.addColorStop(0, _rgba(region.color, 0.08))
+    grad.addColorStop(0.3, _rgba(region.color, 0.3 * intensity))
+    grad.addColorStop(1, _rgba(region.color, 0.6 * intensity))
+
+    ctx.beginPath()
+    ctx.moveTo(sx, sy)
+    ctx.lineTo(ex, ey)
+    ctx.strokeStyle = grad
+    ctx.lineWidth = 1.8
+    ctx.lineCap = 'round'
+    ctx.stroke()
+
+    // Soft glow
+    ctx.shadowColor = region.color
+    ctx.shadowBlur = 6
+    ctx.beginPath()
+    ctx.moveTo(sx, sy)
+    ctx.lineTo(ex, ey)
+    ctx.strokeStyle = _rgba(region.color, 0.15 * intensity)
+    ctx.lineWidth = 4
+    ctx.stroke()
+    ctx.shadowBlur = 0
+
+    // Small arrowhead
+    var headLen = 6
+    var headAngle = 0.4
+    ctx.beginPath()
+    ctx.moveTo(ex, ey)
+    ctx.lineTo(ex - headLen * Math.cos(rad - headAngle), ey - headLen * Math.sin(rad - headAngle))
+    ctx.moveTo(ex, ey)
+    ctx.lineTo(ex - headLen * Math.cos(rad + headAngle), ey - headLen * Math.sin(rad + headAngle))
+    ctx.strokeStyle = _rgba(region.color, 0.7 * intensity)
+    ctx.lineWidth = 1.5
+    ctx.lineCap = 'round'
+    ctx.stroke()
+
+    ctx.restore()
   }
 
   // ── Helpers ────────────────────────────────────────────────
