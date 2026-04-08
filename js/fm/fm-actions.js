@@ -25,6 +25,7 @@
     FM._cleanupStorage()
 
     // Ensure editorMode matches activeTab after restore
+    if (!FM._activeTab || FM._activeTab === 'zones') FM._activeTab = 'simetria'
     if (FM._activeTab === 'simetria') {
       FM._editorMode = 'analysis'
       if (!FM._analysisSubMode || (FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics')) {
@@ -33,7 +34,11 @@
     }
 
     if (window.navigateTo) window.navigateTo('facial-analysis')
-    setTimeout(function () { FM._render() }, 100)
+    setTimeout(function () {
+      FM._render()
+      setTimeout(FM._initCanvas, 50)
+      if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+    }, 100)
   }
 
   FM.openFromModal = function (lead) {
