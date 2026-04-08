@@ -106,15 +106,10 @@
   // ── Actions ───────────────────────────────────────────────
 
   FM._selectAngle = function (angle) {
-    // Save current angle state before switching
-    if (FM._activeAngle && FM._saveAngleState) FM._saveAngleState()
-
+    // Switch angle — per-angle state auto-routes via getter/setter
     FM._activeAngle = angle
     FM._selectedRegion = null
     FM._hoveredRegion = null
-
-    // Restore state for the new angle
-    if (FM._restoreAngleState) FM._restoreAngleState(angle)
 
     // Restore cached scan data for this angle (or clear)
     if (FM._scanDataByAngle && FM._scanDataByAngle[angle]) {

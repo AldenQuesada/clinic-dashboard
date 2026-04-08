@@ -31,71 +31,58 @@
     return FM._afterPhotoUrl || null
   }
 
-  // ── Per-Angle State Store ─────────────────────────────────
-  // Saves/restores metric lines, DEPOIS photo, etc. per angle
-  FM._stateByAngle = {}
+  // ── Per-Angle State Store — AUTOMATIC via getter/setter ──────
+  // Every read/write of FM._metricLines etc. automatically routes
+  // to the correct angle. Zero manual save/restore needed.
+  FM._angleStore = {}  // { front: { metricLines: {...}, ... }, '45': {...}, lateral: {...} }
 
-  FM._saveAngleState = function () {
-    var ang = FM._activeAngle
-    if (!ang) return
-    console.log('[FM] SAVE angle:', ang, 'H:', FM._metricLines.h.length, 'V:', FM._metricLines.v.length, 'pts:', FM._metricPoints.length)
-    FM._stateByAngle[ang] = {
-      metricLines: JSON.parse(JSON.stringify(FM._metricLines || { h: [], v: [] })),
-      metricPoints: JSON.parse(JSON.stringify(FM._metricPoints || [])),
-      metricMidline: FM._metricMidline ? JSON.parse(JSON.stringify(FM._metricMidline)) : null,
-      metricAngles: FM._metricAngles ? JSON.parse(JSON.stringify(FM._metricAngles)) : null,
-      metricNextPointId: FM._metricNextPointId,
-      metricNextLineId: FM._metricNextLineId,
-      tercoLines: JSON.parse(JSON.stringify(FM._tercoLines)),
-      rickettsPoints: JSON.parse(JSON.stringify(FM._rickettsPoints)),
-      metric2Lines: JSON.parse(JSON.stringify(FM._metric2Lines || { h: [], v: [] })),
-      metric2Points: JSON.parse(JSON.stringify(FM._metric2Points || [])),
-      metric2Midline: FM._metric2Midline ? JSON.parse(JSON.stringify(FM._metric2Midline)) : null,
-      metric2Angles: FM._metric2Angles ? JSON.parse(JSON.stringify(FM._metric2Angles)) : null,
-      metric2NextPointId: FM._metric2NextPointId,
-      metric2NextLineId: FM._metric2NextLineId,
-    }
-    // DEPOIS photo: already synced via getter/setter — no extra save needed
+  // Helper: define a per-angle property with automatic routing
+  function _defAngleProp(name, defaultVal) {
+    Object.defineProperty(FM, name, {
+      get: function () {
+        var ang = FM._activeAngle || 'front'
+        if (!FM._angleStore[ang]) FM._angleStore[ang] = {}
+        if (FM._angleStore[ang][name] === undefined) {
+          // Deep copy default to prevent shared references
+          FM._angleStore[ang][name] = typeof defaultVal === 'object' && defaultVal !== null
+            ? JSON.parse(JSON.stringify(defaultVal))
+            : defaultVal
+        }
+        return FM._angleStore[ang][name]
+      },
+      set: function (v) {
+        var ang = FM._activeAngle || 'front'
+        if (!FM._angleStore[ang]) FM._angleStore[ang] = {}
+        FM._angleStore[ang][name] = v
+      },
+      configurable: true,
+    })
   }
 
-  FM._restoreAngleState = function (ang) {
-    var s = FM._stateByAngle[ang]
-    console.log('[FM] RESTORE angle:', ang, 'hasData:', !!s, s ? ('H:' + (s.metricLines.h || []).length + ' V:' + (s.metricLines.v || []).length) : 'EMPTY')
-    if (s) {
-      // Deep copy to prevent mutation of saved state
-      FM._metricLines = JSON.parse(JSON.stringify(s.metricLines || { h: [], v: [] }))
-      FM._metricPoints = JSON.parse(JSON.stringify(s.metricPoints || []))
-      FM._metricMidline = s.metricMidline ? JSON.parse(JSON.stringify(s.metricMidline)) : null
-      FM._metricAngles = s.metricAngles ? JSON.parse(JSON.stringify(s.metricAngles)) : null
-      FM._metricNextPointId = s.metricNextPointId || 1
-      FM._metricNextLineId = s.metricNextLineId || 1
-      FM._tercoLines = JSON.parse(JSON.stringify(s.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }))
-      FM._rickettsPoints = JSON.parse(JSON.stringify(s.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }))
-      FM._metric2Lines = JSON.parse(JSON.stringify(s.metric2Lines || { h: [], v: [] }))
-      FM._metric2Points = JSON.parse(JSON.stringify(s.metric2Points || []))
-      FM._metric2Midline = s.metric2Midline ? JSON.parse(JSON.stringify(s.metric2Midline)) : null
-      FM._metric2Angles = s.metric2Angles ? JSON.parse(JSON.stringify(s.metric2Angles)) : null
-      FM._metric2NextPointId = s.metric2NextPointId || 1
-      FM._metric2NextLineId = s.metric2NextLineId || 1
-    } else {
-      // Fresh state for this angle
-      FM._metricLines = { h: [], v: [] }
-      FM._metricPoints = []
-      FM._metricMidline = null
-      FM._metricAngles = null
-      FM._metricNextPointId = 1
-      FM._metricNextLineId = 1
-      FM._tercoLines = { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
-      FM._rickettsPoints = { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
-      FM._metric2Lines = { h: [], v: [] }
-      FM._metric2Points = []
-      FM._metric2Midline = null
-      FM._metric2Angles = null
-      FM._metric2NextPointId = 1
-      FM._metric2NextLineId = 1
-    }
-    // DEPOIS photo: already synced via getter/setter — just switching angle is enough
-  }
+  // Canvas 1 metrics
+  _defAngleProp('_metricLines', { h: [], v: [] })
+  _defAngleProp('_metricPoints', [])
+  _defAngleProp('_metricMidline', null)
+  _defAngleProp('_metricAngles', null)
+  _defAngleProp('_metricNextPointId', 1)
+  _defAngleProp('_metricNextLineId', 1)
+
+  // Canvas 2 metrics (DEPOIS)
+  _defAngleProp('_metric2Lines', { h: [], v: [] })
+  _defAngleProp('_metric2Points', [])
+  _defAngleProp('_metric2Midline', null)
+  _defAngleProp('_metric2Angles', null)
+  _defAngleProp('_metric2NextPointId', 1)
+  _defAngleProp('_metric2NextLineId', 1)
+
+  // Analysis state
+  _defAngleProp('_tercoLines', { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 })
+  _defAngleProp('_rickettsPoints', { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } })
+
+  // Backward compat stubs (no-ops — save/restore is automatic now)
+  FM._saveAngleState = function () {}
+  FM._restoreAngleState = function () {}
+  FM._stateByAngle = FM._angleStore  // alias for persistence
   FM._activeAngle = null
   FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
   FM._lastAnalysis = null  // GPT analysis result
@@ -107,9 +94,7 @@
   FM._selVec = null      // selected vector for dragging
   FM._vecDragPart = null // 'end' | 'start' | 'curve'
 
-  // Analysis state
-  FM._tercoLines = { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
-  FM._rickettsPoints = { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
+  // Analysis state (_tercoLines and _rickettsPoints are per-angle getter/setters above)
   FM._analysisDrag = null
 
   // Canvas state
@@ -180,15 +165,8 @@
     set: function (v) { FM._locks[FM._lockKey('zones', '1x')] = v },
   })
 
-  // Canvas2 (DEPOIS) independent metric state
-  FM._metric2Lines = { h: [], v: [] }
-  FM._metric2Points = []
-  FM._metric2Midline = null
-  FM._metric2Angles = null
-  FM._metric2NextPointId = 1
-  FM._metric2NextLineId = 1
+  // Canvas2 metric state — per-angle getter/setters defined above
   FM._metric2Drag = null
-  // FM._metric2Locked is now a getter from granular lock system
   FM._activeCanvas = 1  // 1 = ANTES, 2 = DEPOIS
 
   // Undo/Redo history (snapshots of annotations)

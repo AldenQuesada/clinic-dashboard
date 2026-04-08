@@ -57,11 +57,10 @@
     try {
       var photos = photoData || {}
       var afterPhotos = afterByAngle || {}
-      var hasMetrics = FM._metricLines && (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0)
+      var hasAngleData = FM._angleStore && Object.keys(FM._angleStore).length > 0
       var hasRegions = FM._regionState && Object.keys(FM._regionState).some(function (k) { return FM._regionState[k].active })
       var hasAnyData = Object.keys(photos).length > 0 || FM._annotations.length > 0 ||
-                       Object.keys(afterPhotos).length > 0 || hasMetrics || hasRegions ||
-                       (FM._stateByAngle && Object.keys(FM._stateByAngle).length > 0)
+                       Object.keys(afterPhotos).length > 0 || hasAngleData || hasRegions
       if (!hasAnyData) {
         localStorage.removeItem('fm_session_' + id)
         localStorage.removeItem('fm_last_session')
@@ -75,28 +74,13 @@
         viewMode: FM._viewMode || '1x',
         annotations: FM._annotations,
         vectors: FM._vectors,
-        // stateByAngle already saved by _saveSession caller
-        stateByAngle: FM._stateByAngle || {},
-        // Current angle's metric state (backward compat)
-        tercoLines: FM._tercoLines,
-        rickettsPoints: FM._rickettsPoints,
-        metricLines: FM._metricLines,
-        metricPoints: FM._metricPoints,
-        metricMidline: FM._metricMidline,
-        metricAngles: FM._metricAngles,
+        // All per-angle state in one object (automatic via getter/setter)
+        angleStore: JSON.parse(JSON.stringify(FM._angleStore || {})),
         locks: FM._locks || {},
         editorMode: FM._editorMode,
         analysisSubMode: FM._analysisSubMode,
         nextId: FM._nextId,
         nextVecId: FM._nextVecId,
-        metricNextPointId: FM._metricNextPointId,
-        metricNextLineId: FM._metricNextLineId,
-        metric2Lines: FM._metric2Lines,
-        metric2Points: FM._metric2Points,
-        metric2Midline: FM._metric2Midline,
-        metric2Angles: FM._metric2Angles,
-        metric2NextPointId: FM._metric2NextPointId,
-        metric2NextLineId: FM._metric2NextLineId,
         regionState: FM._regionState || {},
         lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
@@ -122,25 +106,39 @@
 
       FM._annotations = session.annotations || []
       FM._vectors = session.vectors || []
-      FM._stateByAngle = session.stateByAngle || {}
-      FM._tercoLines = session.tercoLines || FM._tercoLines
-      FM._rickettsPoints = session.rickettsPoints || FM._rickettsPoints
-      FM._metricLines = session.metricLines || { h: [], v: [] }
-      FM._metricPoints = session.metricPoints || []
-      FM._metricMidline = session.metricMidline || null
-      FM._metricAngles = session.metricAngles || null
-      FM._locks = session.locks || {}
-      if (session.metricLocked && !session.locks) {
-        FM._locks['simetria_1x_front'] = true
+
+      // Restore per-angle state store
+      if (session.angleStore) {
+        FM._angleStore = JSON.parse(JSON.stringify(session.angleStore))
+      } else if (session.stateByAngle && Object.keys(session.stateByAngle).length > 0) {
+        // Migrate old stateByAngle format
+        FM._angleStore = JSON.parse(JSON.stringify(session.stateByAngle))
+      } else {
+        // Migrate oldest format: global metric state → 'front'
+        FM._angleStore = {}
+        var hasOldMetrics = session.metricLines && (session.metricLines.h.length > 0 || session.metricLines.v.length > 0)
+        if (hasOldMetrics || session.metricPoints && session.metricPoints.length > 0) {
+          FM._angleStore['front'] = {
+            _metricLines: session.metricLines || { h: [], v: [] },
+            _metricPoints: session.metricPoints || [],
+            _metricMidline: session.metricMidline || null,
+            _metricAngles: session.metricAngles || null,
+            _metricNextPointId: session.metricNextPointId || 1,
+            _metricNextLineId: session.metricNextLineId || 1,
+            _tercoLines: session.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 },
+            _rickettsPoints: session.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } },
+            _metric2Lines: session.metric2Lines || { h: [], v: [] },
+            _metric2Points: session.metric2Points || [],
+            _metric2Midline: session.metric2Midline || null,
+            _metric2Angles: session.metric2Angles || null,
+            _metric2NextPointId: session.metric2NextPointId || 1,
+            _metric2NextLineId: session.metric2NextLineId || 1,
+          }
+        }
       }
-      FM._metricNextPointId = session.metricNextPointId || 1
-      FM._metricNextLineId = session.metricNextLineId || 1
-      FM._metric2Lines = session.metric2Lines || { h: [], v: [] }
-      FM._metric2Points = session.metric2Points || []
-      FM._metric2Midline = session.metric2Midline || null
-      FM._metric2Angles = session.metric2Angles || null
-      FM._metric2NextPointId = session.metric2NextPointId || 1
-      FM._metric2NextLineId = session.metric2NextLineId || 1
+      FM._stateByAngle = FM._angleStore  // alias
+
+      FM._locks = session.locks || {}
       FM._editorMode = session.editorMode || 'zones'
       FM._activeTab = session.activeTab || 'zones'
       FM._viewMode = session.viewMode || '1x'
@@ -149,7 +147,6 @@
       FM._nextVecId = session.nextVecId || 1
       FM._regionState = session.regionState || {}
       FM._lastAnalysis = session.lastAnalysis || null
-      // Always start on 'front' if frontal photo exists, regardless of last saved angle
       FM._activeAngle = null  // will be set after photos restore
 
       // Restore ANTES photos
@@ -181,34 +178,7 @@
         } catch (e) { /* silent */ }
       })
 
-      // Migrate old global state → always to 'front' (original primary view)
-      if (!FM._stateByAngle || Object.keys(FM._stateByAngle).length === 0) {
-        var hasData = (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0 ||
-                       FM._metricPoints.length > 0 || Object.keys(FM._afterPhotoByAngle).length > 0)
-        if (hasData) {
-          FM._stateByAngle = {}
-          FM._stateByAngle['front'] = {
-            metricLines: FM._metricLines,
-            metricPoints: FM._metricPoints,
-            metricMidline: FM._metricMidline,
-            metricAngles: FM._metricAngles,
-            metricNextPointId: FM._metricNextPointId,
-            metricNextLineId: FM._metricNextLineId,
-            tercoLines: FM._tercoLines,
-            rickettsPoints: FM._rickettsPoints,
-            metric2Lines: FM._metric2Lines,
-            metric2Points: FM._metric2Points,
-            metric2Midline: FM._metric2Midline,
-            metric2Angles: FM._metric2Angles,
-            metric2NextPointId: FM._metric2NextPointId,
-            metric2NextLineId: FM._metric2NextLineId,
-          }
-          if (FM._afterPhotoByAngle['front']) {
-            // already set from afterPhotos restore above
-          }
-        }
-      }
-      // Set active angle: prefer 'front' if photo exists, else first available
+      // Set active angle: prefer 'front' if photo exists
       if (FM._photoUrls['front']) {
         FM._activeAngle = 'front'
       } else if (FM._photoUrls['45']) {
@@ -218,11 +188,7 @@
       } else {
         FM._activeAngle = session.activeAngle || null
       }
-
-      // Restore the active angle's state
-      if (FM._activeAngle && FM._restoreAngleState) {
-        FM._restoreAngleState(FM._activeAngle)
-      }
+      // No need to call _restoreAngleState — getter/setters auto-route to active angle
 
       console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'photos, angle:', FM._activeAngle)
       return true

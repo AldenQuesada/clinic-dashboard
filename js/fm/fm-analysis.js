@@ -236,9 +236,7 @@
         FM._analysisSubMode = 'metrics'
       }
       if (FM._analysisSubMode === 'ricketts' && FM._photoUrls['lateral'] && FM._activeAngle !== 'lateral') {
-        if (FM._saveAngleState) FM._saveAngleState()
-        FM._activeAngle = 'lateral'
-        if (FM._restoreAngleState) FM._restoreAngleState('lateral')
+        FM._activeAngle = 'lateral'  // getter/setter auto-routes state
       }
     } else if (tabId === 'zones') {
       FM._editorMode = 'zones'

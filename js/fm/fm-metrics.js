@@ -16,12 +16,7 @@
 
   var FM = window._FM
 
-  // State
-  FM._metricLines = FM._metricLines || { h: [], v: [] }  // {y: 0.5, label: 'custom'} normalized
-  FM._metricPoints = FM._metricPoints || []  // {x, y, id, label}
-  FM._metricMidline = FM._metricMidline || null  // {x: 0.5} normalized
-  FM._metricNextPointId = FM._metricNextPointId || 1
-  FM._metricNextLineId = FM._metricNextLineId || 1
+  // State — metricLines/Points/Midline/Angles/NextIds are per-angle getter/setters (fm-state.js)
   FM._metricDrag = null  // {type: 'hline'|'vline'|'point'|'midline', index: n}
   FM._metricTool = null  // active tool: null (idle), 'hline', 'vline', 'point', 'midline'
   FM._metricShowMidline = true
