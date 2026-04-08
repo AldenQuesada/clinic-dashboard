@@ -83,6 +83,7 @@
 
       // Right actions — minimal, all champagne
       '<div style="display:flex;gap:3px;align-items:center">' +
+        '<button onclick="FaceMapping._toggleMetricLock()" title="' + (FM._metricLocked ? 'Destravar linhas' : 'Travar linhas') + '" style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:6px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.15)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.15)' : 'transparent') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.3)') + ';cursor:pointer;font-size:9px;font-weight:600;font-family:Montserrat,sans-serif">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="Scanner 478pts" style="font-size:9px;padding:4px 8px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('cpu', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,' + (FM._showWireframe ? '0.8' : '0.3') + ')">' + FM._icon('grid', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" title="Comparar" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('eye', 11) + '</button>' +
@@ -353,12 +354,7 @@
 
     // Metric tools
     html += '<div class="fm-tool-section" style="padding:10px 12px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-        '<span style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700">Ferramentas</span>' +
-        '<button onclick="FaceMapping._toggleMetricLock()" style="display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.15)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.15)' : 'transparent') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.3)') + ';cursor:pointer;font-size:9px;font-weight:600">' +
-          FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + (FM._metricLocked ? ' Trancado' : ' Aberto') +
-        '</button>' +
-      '</div>' +
+      '<div style="font-size:9px;color:#C8A97E;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">Ferramentas</div>' +
       '<div style="display:flex;gap:3px;flex-wrap:wrap">' +
         '<button class="fm-zone-btn' + (FM._metricTool === 'hline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'hline\')" style="flex:1;justify-content:center;font-size:9px;min-width:30px">-- H</button>' +
         '<button class="fm-zone-btn' + (FM._metricTool === 'vline' ? ' active' : '') + '" onclick="FaceMapping._setMetricTool(\'vline\')" style="flex:1;justify-content:center;font-size:9px;min-width:30px">| V</button>' +

@@ -136,6 +136,7 @@
   }
 
   FM._removeAnnotation = function (id) {
+    if (FM._metricLocked) { FM._showToast('Destranque para deletar', 'warn'); return }
     FM._pushUndo()
     FM._annotations = FM._annotations.filter(function (a) { return a.id !== id })
     FM._simPhotoUrl = null

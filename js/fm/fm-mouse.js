@@ -269,7 +269,7 @@
     // VECTOR MODE
     if (FM._editorMode === 'vectors') {
       var hit = FM._hitVector(mx, my)
-      if (hit) {
+      if (hit && !FM._metricLocked) {
         FM._pushUndo()
         FM._selVec = hit.vec
         FM._vecDragPart = hit.part
@@ -282,8 +282,8 @@
       return
     }
 
-    // 1. Check resize handles
-    if (FM._selAnn) {
+    // 1. Check resize handles (locked = no resize)
+    if (FM._selAnn && !FM._metricLocked) {
       var handle = FM._hitHandle(mx, my)
       if (handle) {
         FM._pushUndo()
@@ -293,9 +293,9 @@
       }
     }
 
-    // 2. Hit existing annotation -> move
+    // 2. Hit existing annotation -> move (locked = no move)
     var hit = FM._hitEllipse(mx, my)
-    if (hit) {
+    if (hit && !FM._metricLocked) {
       FM._pushUndo()
       FM._selAnn = hit
       FM._mode = 'move'
