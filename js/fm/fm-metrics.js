@@ -57,10 +57,14 @@
     // Draw horizontal lines (dashed, clean)
     FM._metricLines.h.forEach(function (line, i) {
       var y = line.y * h
+      var isMeasure = line.locked === false
+      var lineColor = isMeasure ? 'rgba(200,169,126,0.7)' : 'rgba(16,185,129,0.6)'
+      var dotColor = isMeasure ? '#C8A97E' : '#10B981'
+
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(16,185,129,0.6)'
-      ctx.lineWidth = 1.5
-      ctx.setLineDash([6, 4])
+      ctx.strokeStyle = lineColor
+      ctx.lineWidth = isMeasure ? 1 : 1.5
+      ctx.setLineDash(isMeasure ? [3, 3] : [6, 4])
       ctx.moveTo(0, y)
       ctx.lineTo(w, y)
       ctx.stroke()
@@ -68,19 +72,19 @@
 
       // Small handle dot
       ctx.beginPath()
-      ctx.fillStyle = '#10B981'
-      ctx.arc(8, y, 4, 0, Math.PI * 2)
+      ctx.fillStyle = dotColor
+      ctx.arc(8, y, isMeasure ? 3 : 4, 0, Math.PI * 2)
       ctx.fill()
 
       // Minimal label
       ctx.font = '500 9px Inter, sans-serif'
-      ctx.fillStyle = 'rgba(16,185,129,0.7)'
+      ctx.fillStyle = lineColor
       ctx.textAlign = 'left'
-      var label = line.label || ('H' + (i + 1))
+      var label = line.label || (isMeasure ? 'M' + line.id : 'H' + (i + 1))
       ctx.fillText(label, 16, y - 4)
 
-      // Distance to previous (small, between lines)
-      if (i > 0) {
+      // Distance to previous (only for structural lines, not measurements)
+      if (!isMeasure && i > 0 && !FM._metricLines.h[i - 1].locked === false) {
         var prevY = FM._metricLines.h[i - 1].y * h
         var distPct = Math.round(Math.abs(line.y - FM._metricLines.h[i - 1].y) * 100)
         ctx.font = '400 8px Inter, sans-serif'
@@ -90,11 +94,12 @@
     })
 
     // ── Dynamic proportions bar (right edge) ──────────────
-    // Shows colored segments between H lines with % — updates as you drag
-    if (FM._metricLines.h.length >= 2) {
+    // Shows colored segments between LOCKED H lines only (tercos, not measurement lines)
+    var lockedH = FM._metricLines.h.filter(function (l) { return l.locked !== false })
+    if (lockedH.length >= 2) {
       var barX = w + 6
       var barW = 14
-      var hLines = FM._metricLines.h  // already sorted by y
+      var hLines = lockedH  // only structural lines, not measurements
       var firstY = hLines[0].y * h
       var lastY = hLines[hLines.length - 1].y * h
       var totalSpan = lastY - firstY
@@ -139,10 +144,14 @@
     // Draw vertical lines (dashed, clean)
     FM._metricLines.v.forEach(function (line, i) {
       var x = line.x * w
+      var isMeasure = line.locked === false
+      var lineColor = isMeasure ? 'rgba(200,169,126,0.7)' : 'rgba(59,130,246,0.6)'
+      var dotColor = isMeasure ? '#C8A97E' : '#3B82F6'
+
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(59,130,246,0.6)'
-      ctx.lineWidth = 1.5
-      ctx.setLineDash([6, 4])
+      ctx.strokeStyle = lineColor
+      ctx.lineWidth = isMeasure ? 1 : 1.5
+      ctx.setLineDash(isMeasure ? [3, 3] : [6, 4])
       ctx.moveTo(x, 0)
       ctx.lineTo(x, h)
       ctx.stroke()
@@ -150,21 +159,21 @@
 
       // Small handle dot
       ctx.beginPath()
-      ctx.fillStyle = '#3B82F6'
-      ctx.arc(x, h - 8, 4, 0, Math.PI * 2)
+      ctx.fillStyle = dotColor
+      ctx.arc(x, h - 8, isMeasure ? 3 : 4, 0, Math.PI * 2)
       ctx.fill()
 
       // Minimal label
-      var label = line.label || ('V' + (i + 1))
+      var label = line.label || (isMeasure ? 'M' + line.id : 'V' + (i + 1))
       ctx.font = '500 9px Inter, sans-serif'
-      ctx.fillStyle = 'rgba(59,130,246,0.7)'
+      ctx.fillStyle = lineColor
       ctx.textAlign = 'center'
       ctx.fillText(label, x, h - 16)
     })
 
     // ── Dynamic proportions bar (bottom edge) for V lines + midline ──
-    // Merge midline into V lines for proportions calculation
-    var allVLines = FM._metricLines.v.slice()
+    // Only structural lines (not measurements)
+    var allVLines = FM._metricLines.v.filter(function (l) { return l.locked !== false })
     if (FM._metricShowMidline) {
       var midX = FM._metricMidline ? FM._metricMidline.x : 0.5
       allVLines.push({ x: midX, label: 'Mid' })
