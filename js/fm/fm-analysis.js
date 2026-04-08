@@ -756,49 +756,10 @@
   FM._uploadAfterPhoto = function (input) {
     var file = input.files[0]
     if (!file) return
-
-    // Capture angle at START — never rely on getter in async callbacks
+    // Use crop modal — same UX as ANTES upload
     var targetAngle = FM._activeAngle || 'front'
-
-    function _setAfterUrl(url) {
-      if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
-      FM._afterPhotoByAngle[targetAngle] = url
-      FM._autoSave()
-      FM._render()
-      setTimeout(function () { FM._initCanvas(); FM._initCanvas2() }, 100)
-    }
-
-    var reader = new FileReader()
-    reader.onload = function () {
-      var b64 = reader.result.split(',')[1]
-      FM._showLoading('Removendo fundo (DEPOIS)...')
-
-      fetch(FM.FACIAL_API_URL + '/remove-bg', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: b64 }),
-      })
-      .then(function (r) { return r.json() })
-      .then(function (d) {
-        FM._hideLoading()
-        if (d.success && d.image_b64) {
-          var bin = atob(d.image_b64)
-          var arr = new Uint8Array(bin.length)
-          for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-          _setAfterUrl(URL.createObjectURL(new Blob([arr], { type: 'image/png' })))
-          FM._showToast('DEPOIS — fundo removido', 'success')
-        } else {
-          _setAfterUrl(URL.createObjectURL(file))
-          FM._showToast('DEPOIS carregada (sem bg removal)', 'warn')
-        }
-      })
-      .catch(function () {
-        FM._hideLoading()
-        _setAfterUrl(URL.createObjectURL(file))
-        FM._showToast('DEPOIS carregada (API offline)', 'warn')
-      })
-    }
-    reader.readAsDataURL(file)
+    var tempUrl = URL.createObjectURL(file)
+    FM._openCropModal(tempUrl, targetAngle, 'after')
   }
 
   // ── Init Canvas 2 (after photo in 2x mode) ─────────────

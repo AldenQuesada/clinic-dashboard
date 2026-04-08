@@ -6,11 +6,16 @@
 
   var FM = window._FM
 
-  FM._openCropModal = function (imgSrc, angle) {
+  // target: 'antes' (default) or 'after' — determines where the cropped photo is saved
+  FM._openCropModal = function (imgSrc, angle, target) {
     FM._pendingCropAngle = angle
+    FM._pendingCropTarget = target || 'antes'
     FM._cropZoom = 1
     FM._cropPanX = 0
     FM._cropPanY = 0
+
+    var isAfter = FM._pendingCropTarget === 'after'
+    var typeLabel = isAfter ? 'DEPOIS' : 'ANTES'
 
     var overlay = document.createElement('div')
     overlay.className = 'fm-export-overlay'
@@ -22,7 +27,7 @@
     overlay.innerHTML =
       '<div class="fm-crop-modal">' +
         '<div class="fm-crop-header">' +
-          '<span class="fm-crop-title">Recortar — ANTES ' + (FM.ANGLES.find(function (a) { return a.id === angle }) || {}).label + '</span>' +
+          '<span class="fm-crop-title">Recortar — ' + typeLabel + ' ' + (FM.ANGLES.find(function (a) { return a.id === angle }) || {}).label + '</span>' +
           '<button class="fm-crop-close" onclick="document.getElementById(\'fmCropOverlay\').remove()">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
           '</button>' +
@@ -162,26 +167,39 @@
 
     function _finishCrop(blob) {
       var ang = FM._pendingCropAngle
-      if (FM._photoUrls[ang]) URL.revokeObjectURL(FM._photoUrls[ang])
-      FM._photoUrls[ang] = URL.createObjectURL(blob)
-      FM._photos[ang] = blob
-      // Clear stale DEPOIS/SIM for this angle — old DEPOIS is no longer valid for new ANTES
-      if (FM._afterPhotoByAngle[ang]) {
-        URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
-        delete FM._afterPhotoByAngle[ang]
+      var isAfter = FM._pendingCropTarget === 'after'
+
+      if (isAfter) {
+        // Save to DEPOIS store
+        if (FM._afterPhotoByAngle[ang]) URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
+        FM._afterPhotoByAngle[ang] = URL.createObjectURL(blob)
+      } else {
+        // Save to ANTES store
+        if (FM._photoUrls[ang]) URL.revokeObjectURL(FM._photoUrls[ang])
+        FM._photoUrls[ang] = URL.createObjectURL(blob)
+        FM._photos[ang] = blob
+        // Clear stale DEPOIS/SIM for this angle — old DEPOIS is no longer valid for new ANTES
+        if (FM._afterPhotoByAngle[ang]) {
+          URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
+          delete FM._afterPhotoByAngle[ang]
+        }
+        if (FM._simPhotoByAngle[ang]) {
+          URL.revokeObjectURL(FM._simPhotoByAngle[ang])
+          delete FM._simPhotoByAngle[ang]
+        }
+        // Clear scan cache — new photo needs fresh scan
+        delete FM._scanDataByAngle[ang]
       }
-      if (FM._simPhotoByAngle[ang]) {
-        URL.revokeObjectURL(FM._simPhotoByAngle[ang])
-        delete FM._simPhotoByAngle[ang]
-      }
-      // Clear scan cache — new photo needs fresh scan
-      delete FM._scanDataByAngle[ang]
+
       if (!FM._activeAngle) FM._activeAngle = ang
       var ov = document.getElementById('fmCropOverlay')
       if (ov) ov.remove()
       FM._render()
       FM._autoSave()
-      if (FM._activeAngle === ang) setTimeout(FM._initCanvas, 50)
+      if (FM._activeAngle === ang) {
+        setTimeout(FM._initCanvas, 50)
+        if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+      }
     }
 
     // Helper: convert b64 to blob and finish
@@ -208,7 +226,9 @@
       xhr.open('POST', apiUrl + '/remove-bg', true)
       xhr.setRequestHeader('Content-Type', 'application/json')
       xhr.timeout = 60000
+      console.log('[FM] XHR sending to:', apiUrl + '/remove-bg', 'payload:', Math.round(b64.length / 1024) + 'KB')
       xhr.onload = function () {
+        console.log('[FM] XHR response:', xhr.status, Math.round(xhr.responseText.length / 1024) + 'KB')
         try {
           var d = JSON.parse(xhr.responseText)
           if (d.success && d.image_b64) {
@@ -224,16 +244,18 @@
         FM._showToast('Falha no bg removal — salvo crop', 'warn')
       }
       xhr.onerror = function () {
+        console.error('[FM] XHR error:', xhr.status, xhr.statusText)
         FM._hideLoading()
         hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
         FM._showToast('API offline — salvo crop sem processamento', 'warn')
       }
       xhr.ontimeout = function () {
+        console.error('[FM] XHR timeout after 60s')
         FM._hideLoading()
         hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
         FM._showToast('API timeout — salvo crop', 'warn')
       }
-      xhr.send(JSON.stringify({ photo_base64: b64 }))
+      xhr.send(JSON.stringify({ photo_base64: b64, skip_crop: true }))
     })
 
     // Secondary button: Sem processar (raw save)

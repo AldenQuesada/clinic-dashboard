@@ -61,6 +61,7 @@ app.include_router(simulate_router)
 class PhotoRequest(BaseModel):
     photo_base64: str
     lead_id: Optional[str] = None
+    skip_crop: bool = True  # Frontend pre-crops via modal — skip API auto-crop by default
 
 class LandmarkRequest(BaseModel):
     photo_base64: str
@@ -92,6 +93,9 @@ async def remove_background(req: PhotoRequest):
         img = b64_to_image(req.photo_base64)
         session = get_rembg_session()
 
+        # Check if frontend already cropped (skip_crop=true means no re-crop needed)
+        skip_crop = getattr(req, 'skip_crop', True)
+
         # Remove background with refined alpha matting for hair detail
         result = remove(
             img,
@@ -120,44 +124,45 @@ async def remove_background(req: PhotoRequest):
         composite = Image.alpha_composite(black_bg, result_refined)
         final = composite.convert("RGB")
 
-        # Auto-crop to face with generous margin (forehead + chin space)
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
 
-        face_cascade = get_face_cascade()
-        gray = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
-        if len(faces) > 0:
-            fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
-            ih, iw = final_bgr.shape[:2]
-            # Face crop: generous hair, chin, ears visible
-            margin_top = int(fh * 0.6)
-            margin_bottom = int(fh * 0.25)
-            margin_side = int(fw * 0.2)
-            x1 = max(0, fx - margin_side)
-            y1 = max(0, fy - margin_top)
-            x2 = min(iw, fx + fw + margin_side)
-            y2 = min(ih, fy + fh + margin_bottom)
-            final_bgr = final_bgr[y1:y2, x1:x2]
-            log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
+        if not skip_crop:
+            # Auto-crop to face — only when image hasn't been pre-cropped by frontend
+            face_cascade = get_face_cascade()
+            gray = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+            if len(faces) > 0:
+                fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
+                ih, iw = final_bgr.shape[:2]
+                margin_top = int(fh * 0.6)
+                margin_bottom = int(fh * 0.25)
+                margin_side = int(fw * 0.2)
+                x1 = max(0, fx - margin_side)
+                y1 = max(0, fy - margin_top)
+                x2 = min(iw, fx + fw + margin_side)
+                y2 = min(ih, fy + fh + margin_bottom)
+                final_bgr = final_bgr[y1:y2, x1:x2]
+                log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
 
-        # Remove excess black border — trim rows/cols that are mostly black
-        gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
-        # Use higher threshold (25) and require at least 15% of row/col to be non-black
-        row_content = np.mean(gray_trim > 25, axis=1)  # % of non-black pixels per row
-        col_content = np.mean(gray_trim > 25, axis=0)  # % of non-black pixels per col
-        rows = row_content > 0.15  # row has content if >15% is non-black
-        cols = col_content > 0.15
-        if np.any(rows) and np.any(cols):
-            rmin, rmax = np.where(rows)[0][[0, -1]]
-            cmin, cmax = np.where(cols)[0][[0, -1]]
-            pad = 8
-            rmin = max(0, rmin - pad)
-            rmax = min(final_bgr.shape[0], rmax + pad)
-            cmin = max(0, cmin - pad)
-            cmax = min(final_bgr.shape[1], cmax + pad)
-            final_bgr = final_bgr[rmin:rmax, cmin:cmax]
-            log.info(f"Trimmed black border: {cmax-cmin}x{rmax-rmin}")
+            # Remove excess black border
+            gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
+            row_content = np.mean(gray_trim > 25, axis=1)
+            col_content = np.mean(gray_trim > 25, axis=0)
+            rows = row_content > 0.15
+            cols = col_content > 0.15
+            if np.any(rows) and np.any(cols):
+                rmin, rmax = np.where(rows)[0][[0, -1]]
+                cmin, cmax = np.where(cols)[0][[0, -1]]
+                pad = 8
+                rmin = max(0, rmin - pad)
+                rmax = min(final_bgr.shape[0], rmax + pad)
+                cmin = max(0, cmin - pad)
+                cmax = min(final_bgr.shape[1], cmax + pad)
+                final_bgr = final_bgr[rmin:rmax, cmin:cmax]
+                log.info(f"Trimmed black border: {cmax-cmin}x{rmax-rmin}")
+        else:
+            log.info("Skip crop — frontend pre-cropped")
 
         # Subtle unsharp mask — restore detail without creating artifacts
         gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
