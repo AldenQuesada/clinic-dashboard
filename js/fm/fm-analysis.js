@@ -783,15 +783,66 @@
 
       canvas2.width = w
       canvas2.height = h
-      ctx2.drawImage(img2, 0, 0, w, h)
 
       FM._canvas2 = canvas2
       FM._ctx2 = ctx2
       FM._img2 = img2
       FM._imgW2 = w
       FM._imgH2 = h
+      FM._redrawCanvas2()
     }
     img2.src = src
+  }
+
+  // Redraw canvas2 with image + all simetria overlays mirrored from canvas1
+  FM._redrawCanvas2 = function () {
+    if (!FM._ctx2 || !FM._img2) return
+    var ctx = FM._ctx2
+    var w = FM._imgW2
+    var h = FM._imgH2
+
+    // Draw base image
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, w, h)
+    ctx.drawImage(FM._img2, 0, 0, w, h)
+
+    // Mirror overlays from canvas1 — scale factor between canvases
+    var sx = FM._imgW ? w / FM._imgW : 1
+    var sy = FM._imgH ? h / FM._imgH : 1
+
+    // Save original canvas refs, temporarily swap to draw on canvas2
+    var origCtx = FM._ctx
+    var origW = FM._imgW
+    var origH = FM._imgH
+    FM._ctx = ctx
+    FM._imgW = w
+    FM._imgH = h
+
+    // Wireframe
+    if (FM._editorMode === 'analysis' && FM._drawWireframe) {
+      FM._drawWireframe()
+    }
+
+    // Metric lines + angles (Metrificar)
+    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+      if (FM._drawMetrics) FM._drawMetrics()
+      if (FM._drawAngles) FM._drawAngles()
+    }
+
+    // Tercos
+    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front' && FM._tercoLines) {
+      FM._drawTercos()
+    }
+
+    // Ricketts
+    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral' && FM._rickettsPoints) {
+      FM._drawRicketts()
+    }
+
+    // Restore original canvas refs
+    FM._ctx = origCtx
+    FM._imgW = origW
+    FM._imgH = origH
   }
 
   FM._toggleFullscreen = function () {
