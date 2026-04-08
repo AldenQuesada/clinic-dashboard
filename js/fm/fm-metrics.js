@@ -93,6 +93,53 @@
       }
     })
 
+    // ── Dynamic proportions bar (right edge) ──────────────
+    // Shows colored segments between H lines with % — updates as you drag
+    if (FM._metricLines.h.length >= 2) {
+      var barX = w - 24
+      var barW = 14
+      var hLines = FM._metricLines.h  // already sorted by y
+      var firstY = hLines[0].y * h
+      var lastY = hLines[hLines.length - 1].y * h
+      var totalSpan = lastY - firstY
+
+      if (totalSpan > 10) {
+        for (var si = 0; si < hLines.length - 1; si++) {
+          var segTop = hLines[si].y * h
+          var segBot = hLines[si + 1].y * h
+          var segH = segBot - segTop
+          var segPct = Math.round((segH / totalSpan) * 100)
+          var idealPct = Math.round(100 / (hLines.length - 1))
+          var tolerance = idealPct * 0.3
+
+          // Color: green if close to ideal, yellow if off, red if way off
+          var segColor
+          if (Math.abs(segPct - idealPct) <= tolerance) segColor = '#10B981'
+          else if (Math.abs(segPct - idealPct) <= tolerance * 2) segColor = '#F59E0B'
+          else segColor = '#EF4444'
+
+          // Colored bar segment
+          ctx.globalAlpha = 0.6
+          ctx.fillStyle = segColor
+          ctx.fillRect(barX, segTop, barW, segH)
+          ctx.globalAlpha = 1.0
+
+          // Border
+          ctx.strokeStyle = segColor
+          ctx.lineWidth = 1
+          ctx.strokeRect(barX, segTop, barW, segH)
+
+          // Percentage label centered in segment
+          if (segH > 18) {
+            ctx.font = '700 10px Inter, sans-serif'
+            ctx.fillStyle = '#fff'
+            ctx.textAlign = 'center'
+            ctx.fillText(segPct + '%', barX + barW / 2, segTop + segH / 2 + 4)
+          }
+        }
+      }
+    }
+
     // Draw vertical lines (dashed, clean)
     FM._metricLines.v.forEach(function (line, i) {
       var x = line.x * w
