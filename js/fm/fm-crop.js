@@ -211,52 +211,93 @@
       return new Blob([arr], { type: 'image/png' })
     }
 
+    // Helper: apply crop framing (zoom/pan) to a bg-removed image
+    function _applyCropToResult(resultImg) {
+      // resultImg has same dimensions as original FM._cropImg
+      // Apply the same zoom/pan the user set, then output visible region
+      var dpr = Math.max(window.devicePixelRatio || 1, 2)
+      var outW = boxW * dpr, outH = boxH * dpr
+      if (resultImg.width > outW) {
+        var s = resultImg.width / (boxW * FM._cropZoom)
+        outW = Math.round(boxW * s); outH = Math.round(boxH * s)
+      }
+      if (outW > 2048) { var r = 2048 / outW; outW = 2048; outH = Math.round(outH * r) }
+
+      var c = document.createElement('canvas')
+      c.width = outW; c.height = outH
+      var ctx = c.getContext('2d')
+      ctx.fillStyle = '#000000'
+      ctx.fillRect(0, 0, outW, outH)
+      var sx = outW / (boxW * dpr)
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(resultImg, FM._cropPanX * sx, FM._cropPanY * sx,
+        resultImg.width * FM._cropZoom * sx, resultImg.height * FM._cropZoom * sx)
+      return c
+    }
+
     // Primary button: Salvar + Remover Fundo
     document.getElementById('fmCropConfirm').addEventListener('click', function () {
-      // Render the CROPPED image (respects zoom/pan), then send to remove-bg API
-      var hiRes = _renderHiRes()
-      var b64 = hiRes.toDataURL('image/png').split(',')[1]  // PNG for better quality
+      // Send ORIGINAL image to remove-bg (not the crop canvas — avoids border artifacts)
+      // Then apply crop framing to the result
+      var origCanvas = document.createElement('canvas')
+      origCanvas.width = FM._cropImg.width
+      origCanvas.height = FM._cropImg.height
+      origCanvas.getContext('2d').drawImage(FM._cropImg, 0, 0)
+      var b64 = origCanvas.toDataURL('image/jpeg', 0.92).split(',')[1]
       var apiUrl = FM.FACIAL_API_URL
-      console.log('[FM] crop remove-bg:', hiRes.width + 'x' + hiRes.height, Math.round(b64.length / 1024) + 'KB')
+      console.log('[FM] remove-bg original:', FM._cropImg.width + 'x' + FM._cropImg.height, Math.round(b64.length / 1024) + 'KB')
 
       FM._showLoading('Removendo fundo com IA...')
       var ov = document.getElementById('fmCropOverlay')
       if (ov) ov.style.display = 'none'
 
+      // Save crop settings before modal closes
+      var savedZoom = FM._cropZoom
+      var savedPanX = FM._cropPanX
+      var savedPanY = FM._cropPanY
+
       var xhr = new XMLHttpRequest()
       xhr.open('POST', apiUrl + '/remove-bg', true)
       xhr.setRequestHeader('Content-Type', 'application/json')
-      xhr.timeout = 60000
-      console.log('[FM] XHR sending to:', apiUrl + '/remove-bg', 'payload:', Math.round(b64.length / 1024) + 'KB')
+      xhr.timeout = 90000
       xhr.onload = function () {
-        console.log('[FM] XHR response:', xhr.status, Math.round(xhr.responseText.length / 1024) + 'KB')
         try {
           var d = JSON.parse(xhr.responseText)
           if (d.success && d.image_b64) {
-            FM._hideLoading()
-            _finishCrop(_b64ToBlob(d.image_b64))
-            FM._showToast('Fundo removido (' + (d.elapsed_s || '?') + 's)', 'success')
+            // Apply crop framing to the bg-removed result
+            var resultImg = new Image()
+            resultImg.onload = function () {
+              var cropped = _applyCropToResult(resultImg)
+              cropped.toBlob(function (blob) {
+                FM._hideLoading()
+                _finishCrop(blob)
+                FM._showToast('Fundo removido (' + (d.elapsed_s || '?') + 's)', 'success')
+              }, 'image/png')
+            }
+            resultImg.src = 'data:image/png;base64,' + d.image_b64
             return
           }
-        } catch (e) { /* silent */ }
-        // Fallback: save cropped without bg removal
+        } catch (e) { console.error('[FM] parse error:', e) }
+        // Fallback: save crop without bg removal
         FM._hideLoading()
+        var hiRes = _renderHiRes()
         hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
         FM._showToast('Falha no bg removal — salvo crop', 'warn')
       }
       xhr.onerror = function () {
-        console.error('[FM] XHR error:', xhr.status, xhr.statusText)
         FM._hideLoading()
+        var hiRes = _renderHiRes()
         hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
         FM._showToast('API offline — salvo crop sem processamento', 'warn')
       }
       xhr.ontimeout = function () {
-        console.error('[FM] XHR timeout after 60s')
         FM._hideLoading()
+        var hiRes = _renderHiRes()
         hiRes.toBlob(function (b) { _finishCrop(b) }, 'image/png')
         FM._showToast('API timeout — salvo crop', 'warn')
       }
-      xhr.send(JSON.stringify({ photo_base64: b64, skip_crop: true }))
+      xhr.send(JSON.stringify({ photo_base64: b64 }))
     })
 
     // Secondary button: Sem processar (raw save)
