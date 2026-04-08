@@ -312,9 +312,45 @@
         var targetAngle = FM._activeAngle || 'front'
 
         if (FM._pendingExtraType === 'after') {
-          // Open crop modal for DEPOIS — same UX as ANTES
-          var tempUrl = URL.createObjectURL(file)
-          FM._openCropModal(tempUrl, targetAngle, 'after')
+          // DEPOIS: send original file directly to remove-bg (no crop — better results)
+          var reader = new FileReader()
+          reader.onload = function () {
+            var b64 = reader.result.split(',')[1]
+            FM._showLoading('Removendo fundo (DEPOIS)...')
+            fetch(FM.FACIAL_API_URL + '/remove-bg', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ photo_base64: b64, skip_crop: false }),
+            })
+            .then(function (r) { return r.json() })
+            .then(function (d) {
+              FM._hideLoading()
+              if (d.success && d.image_b64) {
+                var bin = atob(d.image_b64)
+                var arr = new Uint8Array(bin.length)
+                for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+                if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+                FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(new Blob([arr], { type: 'image/png' }))
+                FM._showToast('Fundo removido (' + (d.elapsed_s || '?') + 's)', 'success')
+              } else {
+                if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+                FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
+              }
+              FM._autoSave()
+              FM._render()
+              if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
+              if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+            })
+            .catch(function () {
+              FM._hideLoading()
+              if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+              FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
+              FM._autoSave()
+              FM._render()
+              if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
+            })
+          }
+          reader.readAsDataURL(file)
         } else {
           var url = URL.createObjectURL(file)
           if (FM._simPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._simPhotoByAngle[targetAngle])
