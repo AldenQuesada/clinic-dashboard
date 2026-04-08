@@ -10,40 +10,31 @@
     if (!FM._lead) return
     var id = FM._lead.id || FM._lead.lead_id || 'unknown'
     try {
-      // Collect all photo URLs (ANTES + DEPOIS)
-      var allUrls = {}
-      Object.keys(FM._photoUrls).forEach(function (k) { allUrls['antes_' + k] = FM._photoUrls[k] })
-      Object.keys(FM._afterPhotoUrls || {}).forEach(function (k) { allUrls['depois_' + k] = FM._afterPhotoUrls[k] })
-
-      var pending = Object.keys(allUrls).length
+      var pending = Object.keys(FM._photoUrls).length
       if (pending === 0) { FM._saveSessionData(id); return }
 
       var photoData = {}
-      var afterData = {}
       var done = 0
-      Object.keys(allUrls).forEach(function (key) {
+      Object.keys(FM._photoUrls).forEach(function (angle) {
         var img = new Image()
         img.onload = function () {
           var c = document.createElement('canvas')
           c.width = img.width; c.height = img.height
           c.getContext('2d').drawImage(img, 0, 0)
-          var b64 = c.toDataURL('image/jpeg', 0.8)
-          if (key.startsWith('depois_')) afterData[key.replace('depois_', '')] = b64
-          else photoData[key.replace('antes_', '')] = b64
+          photoData[angle] = c.toDataURL('image/jpeg', 0.8)
           done++
-          if (done >= pending) FM._saveSessionData(id, photoData, afterData)
+          if (done >= pending) FM._saveSessionData(id, photoData)
         }
-        img.onerror = function () { done++; if (done >= pending) FM._saveSessionData(id, photoData, afterData) }
-        img.src = allUrls[key]
+        img.onerror = function () { done++; if (done >= pending) FM._saveSessionData(id, photoData) }
+        img.src = FM._photoUrls[angle]
       })
     } catch (e) { console.warn('[FaceMapping] Save session failed:', e) }
   }
 
-  FM._saveSessionData = function (id, photoData, afterData) {
+  FM._saveSessionData = function (id, photoData) {
     try {
       var photos = photoData || {}
-      var afterPhotos = afterData || {}
-      if (Object.keys(photos).length === 0 && FM._annotations.length === 0 && Object.keys(afterPhotos).length === 0) {
+      if (Object.keys(photos).length === 0 && FM._annotations.length === 0) {
         localStorage.removeItem('fm_session_' + id)
         localStorage.removeItem('fm_last_session')
         return
@@ -76,7 +67,6 @@
         metric2NextLineId: FM._metric2NextLineId,
         lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
-        afterPhotos: afterPhotos,
         savedAt: new Date().toISOString(),
       }
       localStorage.setItem('fm_session_' + id, JSON.stringify(session))
@@ -133,20 +123,7 @@
         }
       })
 
-      // Restore DEPOIS photos
-      var afterPhotos = session.afterPhotos || {}
-      FM._afterPhotoUrls = {}
-      Object.keys(afterPhotos).forEach(function (angle) {
-        if (afterPhotos[angle]) {
-          var binary = atob(afterPhotos[angle].split(',')[1])
-          var arr = new Uint8Array(binary.length)
-          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
-          var blob = new Blob([arr], { type: 'image/jpeg' })
-          FM._afterPhotoUrls[angle] = URL.createObjectURL(blob)
-        }
-      })
-
-      console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'ANTES,', Object.keys(FM._afterPhotoUrls).length, 'DEPOIS')
+      console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'photos,', FM._annotations.length, 'annotations')
       return true
     } catch (e) {
       console.warn('[FaceMapping] Restore failed:', e)

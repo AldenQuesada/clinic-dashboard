@@ -167,24 +167,20 @@
       }
     })
 
-    // Separator + DEPOIS slots (one per angle)
+    // Separator + single DEPOIS slot
     html += '<div style="border-top:1px solid var(--border);margin:8px 0;padding-top:8px">' +
-      '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.3);text-align:center;margin-bottom:6px">Depois</div>'
+      '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.3);text-align:center;margin-bottom:6px">Report</div>'
 
-    FM.ANGLES.forEach(function (a) {
-      var afterUrl = FM._afterPhotoUrls[a.id]
-      if (afterUrl) {
-        html += '<div class="fm-photo-thumb' + (FM._activeAngle === a.id ? ' active' : '') + '" style="border-color:#10B981" ' +
-          'onclick="FaceMapping._selectAngle(\'' + a.id + '\')">' +
-          '<img src="' + afterUrl + '" alt="Depois ' + a.label + '">' +
-          '<span class="fm-photo-thumb-label" style="background:rgba(16,185,129,0.8)">DEPOIS \u2022 ' + a.label + '</span>' +
-          '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteAfterPhoto(\'' + a.id + '\')" title="Excluir">' + FM._icon('trash-2', 11) + '</button></div>' +
-        '</div>'
-      } else {
-        html += '<div class="fm-photo-upload" onclick="FaceMapping._triggerUploadExtra(\'after_' + a.id + '\')" style="border-color:#10B98140">' +
-          FM._icon('camera', 14) + '<span style="font-size:7px">DEPOIS</span><span style="font-size:8px">' + a.label + '</span></div>'
-      }
-    })
+    if (FM._afterPhotoUrl) {
+      html += '<div class="fm-photo-thumb" style="border-color:#10B981" onclick="FaceMapping._triggerUploadExtra(\'after\')">' +
+        '<img src="' + FM._afterPhotoUrl + '" alt="Depois">' +
+        '<span class="fm-photo-thumb-label" style="background:rgba(16,185,129,0.8)">DEPOIS</span>' +
+        '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteExtraPhoto(\'after\')" title="Excluir">' + FM._icon('trash-2', 11) + '</button></div>' +
+      '</div>'
+    } else {
+      html += '<div class="fm-photo-upload" onclick="FaceMapping._triggerUploadExtra(\'after\')" style="border-color:#10B98140">' +
+        FM._icon('camera', 16) + '<span style="font-size:8px">DEPOIS</span></div>'
+    }
 
     // SIMULADO
     if (FM._simPhotoUrl) {
@@ -248,7 +244,7 @@
           '</label>' +
         '</div>' +
         '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
-          (FM._getAfterUrl() || FM._simPhotoUrl
+          (FM._afterPhotoUrl || FM._simPhotoUrl
             ? '<canvas id="fmCanvas2" style="cursor:crosshair"></canvas>'
             : '<div style="color:rgba(245,240,232,0.2);font-size:12px;text-align:center">Upload foto DEPOIS<br>ou gere uma simulacao</div>') +
         '</div>' +

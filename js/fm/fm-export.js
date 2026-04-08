@@ -62,8 +62,8 @@
               '<span class="fm-report-photo-label">ANTES</span>' +
             '</div>' +
             '<div class="fm-report-photo-cell">' +
-              (FM._getAfterUrl()
-                ? '<img id="fmReportAfterImg" src="' + FM._getAfterUrl() + '" style="width:100%;height:100%;object-fit:cover">'
+              (FM._afterPhotoUrl
+                ? '<img id="fmReportAfterImg" src="' + FM._afterPhotoUrl + '" style="width:100%;height:100%;object-fit:cover">'
                 : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.2);font-size:12px;flex-direction:column"><span style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase">Sem foto</span></div>') +
               '<span class="fm-report-photo-label">DEPOIS<br><span style="font-size:9px;font-weight:400">(seu resultado atual)</span></span>' +
             '</div>' +
