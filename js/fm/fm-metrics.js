@@ -908,45 +908,57 @@
     ctx.arc(mx, my, arcRadius, angleR, angleL)
     ctx.stroke()
 
-    // AMF label
-    ctx.font = '700 12px Inter, sans-serif'
-    ctx.fillStyle = FM._metricAngles.classification.color
-    ctx.textAlign = 'center'
-    ctx.fillText(FM._metricAngles.amf + '°', mx, my + arcRadius + 16)
-    ctx.font = '600 9px Inter, sans-serif'
-    ctx.fillText(FM._metricAngles.classification.label, mx, my + arcRadius + 30)
+    // Helper: draw label with dark background badge
+    function _badge(x, y, text, color, fontSize) {
+      fontSize = fontSize || 11
+      ctx.font = '700 ' + fontSize + 'px Inter, sans-serif'
+      var tw = ctx.measureText(text).width
+      var px = 6, py = 3
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'
+      ctx.beginPath()
+      ctx.roundRect(x - tw / 2 - px, y - fontSize + 1 - py, tw + px * 2, fontSize + py * 2 + 2, [5])
+      ctx.fill()
+      ctx.fillStyle = color
+      ctx.textAlign = 'center'
+      ctx.fillText(text, x, y)
+    }
 
-    // Points with labels
+    // AMF badge at mento (below arc)
+    _badge(mx, my + arcRadius + 18, FM._metricAngles.amf + '°  ' + FM._metricAngles.classification.label, FM._metricAngles.classification.color, 13)
+
+    // Points with labels ABOVE gonial (outside face)
     var anglePoints = [
-      { x: gLx, y: gLy, label: 'Gonial E', color: '#C8A97E' },
-      { x: gRx, y: gRy, label: 'Gonial D', color: '#C8A97E' },
-      { x: mx, y: my, label: 'Mento', color: FM._metricAngles.classification.color },
-      { x: zLx, y: zLy, label: 'Zigoma E', color: 'rgba(200,169,126,0.6)' },
-      { x: zRx, y: zRy, label: 'Zigoma D', color: 'rgba(200,169,126,0.6)' },
+      { x: gLx, y: gLy, label: 'Gonial E', labelY: gLy - 22, color: '#C8A97E' },
+      { x: gRx, y: gRy, label: 'Gonial D', labelY: gRy - 22, color: '#C8A97E' },
+      { x: mx, y: my, label: 'Mento', labelY: my + arcRadius + 38, color: FM._metricAngles.classification.color },
+      { x: zLx, y: zLy, label: 'Zigoma E', labelY: zLy - 22, color: 'rgba(200,169,126,0.8)' },
+      { x: zRx, y: zRy, label: 'Zigoma D', labelY: zRy - 22, color: 'rgba(200,169,126,0.8)' },
     ]
 
     anglePoints.forEach(function (p) {
+      // Dot
       ctx.beginPath()
       ctx.fillStyle = p.color
-      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2)
+      ctx.shadowColor = p.color
+      ctx.shadowBlur = 8
+      ctx.arc(p.x, p.y, 6, 0, Math.PI * 2)
       ctx.fill()
+      ctx.shadowBlur = 0
       ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 1.5
+      ctx.lineWidth = 2
       ctx.stroke()
 
-      ctx.font = '500 9px Inter, sans-serif'
-      ctx.fillStyle = p.color
-      ctx.textAlign = 'center'
-      ctx.fillText(p.label, p.x, p.y - 10)
+      // Label badge above point
+      _badge(p.x, p.labelY, p.label, p.color, 10)
     })
 
-    // AIJ labels on each side
-    ctx.font = '400 10px Inter, sans-serif'
-    ctx.fillStyle = FM._metricAngles.jawline.color
-    ctx.textAlign = 'right'
-    ctx.fillText('AIJ: ' + FM._metricAngles.aij_left + '°', (gLx + mx) / 2 - 5, (gLy + my) / 2 - 5)
-    ctx.textAlign = 'left'
-    ctx.fillText('AIJ: ' + FM._metricAngles.aij_right + '°', (gRx + mx) / 2 + 5, (gRy + my) / 2 - 5)
+    // AIJ badges on jawline — positioned above the line midpoint
+    var aijLx = (gLx + mx) / 2
+    var aijLy = (gLy + my) / 2 - 18
+    var aijRx = (gRx + mx) / 2
+    var aijRy = (gRy + my) / 2 - 18
+    _badge(aijLx, aijLy, 'AIJ: ' + FM._metricAngles.aij_left + '°', FM._metricAngles.jawline.color, 11)
+    _badge(aijRx, aijRy, 'AIJ: ' + FM._metricAngles.aij_right + '°', FM._metricAngles.jawline.color, 11)
 
     ctx.restore()
   }
