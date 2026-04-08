@@ -24,7 +24,7 @@
 
       var is2x = FM._viewMode === '2x'
       var maxW = is2x ? (areaW / 2 - 16) : (areaW - 8)
-      var maxH = areaH - 64  // fill available height with bottom margin
+      var maxH = is2x ? (areaH - 48) : (areaH - 8)  // 1x: fill height, 2x: small margin for header
       var scale = Math.min(maxW / FM._img.width, maxH / FM._img.height)
 
       FM._imgW = Math.round(FM._img.width * scale)
