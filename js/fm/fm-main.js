@@ -95,6 +95,10 @@
     _setRegionTreatment: FM._setRegionTreatment,
     _activateAllRegions: FM._activateAllRegions,
     _deactivateAllRegions: FM._deactivateAllRegions,
+    _toggleRegionLabels: FM._toggleRegionLabels,
+    _toggleRegionLock: FM._toggleRegionLock,
+    _setRegionTransform: FM._setRegionTransform,
+    _resetRegionTransform: FM._resetRegionTransform,
 
     // Sub-mode access
     get _analysisSubMode() { return FM._analysisSubMode },

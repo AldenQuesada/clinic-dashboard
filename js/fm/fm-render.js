@@ -671,14 +671,20 @@
       '</div>'
     }
 
-    // Toggle all / none
+    // Toggle all / none + Labels + Lock
+    var labelsOn = FM._showRegionLabels
+    var locked = FM._regionLocked
     html += '<div class="fm-tool-section">' +
       '<div style="display:flex;justify-content:space-between;align-items:center">' +
         '<div class="fm-tool-section-title" style="margin:0">Regioes Anatomicas</div>' +
-        '<div style="display:flex;gap:4px">' +
-          '<button class="fm-btn" style="font-size:8px;padding:2px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)" ' +
+        '<div style="display:flex;gap:3px">' +
+          '<button class="fm-btn" style="font-size:8px;padding:2px 5px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,' + (labelsOn ? '0.8' : '0.3') + ')" ' +
+            'onclick="FaceMapping._toggleRegionLabels()" title="' + (labelsOn ? 'Ocultar labels' : 'Mostrar labels') + '">' + FM._icon('type', 10) + '</button>' +
+          '<button class="fm-btn" style="font-size:8px;padding:2px 5px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,' + (locked ? '0.8' : '0.3') + ')" ' +
+            'onclick="FaceMapping._toggleRegionLock()" title="' + (locked ? 'Desbloquear edicao' : 'Bloquear edicao') + '">' + FM._icon(locked ? 'lock' : 'unlock', 10) + '</button>' +
+          '<button class="fm-btn" style="font-size:8px;padding:2px 5px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)" ' +
             'onclick="FaceMapping._activateAllRegions()" title="Ativar todas">' + FM._icon('eye', 10) + '</button>' +
-          '<button class="fm-btn" style="font-size:8px;padding:2px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)" ' +
+          '<button class="fm-btn" style="font-size:8px;padding:2px 5px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)" ' +
             'onclick="FaceMapping._deactivateAllRegions()" title="Desativar todas">' + FM._icon('eye-off', 10) + '</button>' +
         '</div>' +
       '</div>' +
@@ -769,7 +775,28 @@
         // Product
         '<input class="fm-input" placeholder="Produto" value="' + FM._esc(selState.product) + '" ' +
           'onchange="FaceMapping._setRegionTreatment(\'' + selId + '\',\'product\',this.value)" ' +
-          'style="font-size:10px;margin-bottom:4px">' +
+          'style="font-size:10px;margin-bottom:6px">' +
+
+        // Transform controls (scaleX, scaleY, rotation)
+        '<div style="display:flex;gap:4px;align-items:center">' +
+          '<div style="flex:1">' +
+            '<label style="font-size:8px;color:rgba(200,169,126,0.35);display:block;margin-bottom:1px">Largura</label>' +
+            '<input class="fm-input" type="number" step="0.05" min="0.3" max="3" value="' + ((selState.scaleX || 1).toFixed(2)) + '" ' +
+              'onchange="FaceMapping._setRegionTransform(\'' + selId + '\',\'scaleX\',parseFloat(this.value))" style="font-size:9px;padding:3px 4px;text-align:center">' +
+          '</div>' +
+          '<div style="flex:1">' +
+            '<label style="font-size:8px;color:rgba(200,169,126,0.35);display:block;margin-bottom:1px">Altura</label>' +
+            '<input class="fm-input" type="number" step="0.05" min="0.3" max="3" value="' + ((selState.scaleY || 1).toFixed(2)) + '" ' +
+              'onchange="FaceMapping._setRegionTransform(\'' + selId + '\',\'scaleY\',parseFloat(this.value))" style="font-size:9px;padding:3px 4px;text-align:center">' +
+          '</div>' +
+          '<div style="flex:1">' +
+            '<label style="font-size:8px;color:rgba(200,169,126,0.35);display:block;margin-bottom:1px">Angulo</label>' +
+            '<input class="fm-input" type="number" step="1" min="-180" max="180" value="' + (selState.rotation || 0) + '" ' +
+              'onchange="FaceMapping._setRegionTransform(\'' + selId + '\',\'rotation\',parseFloat(this.value))" style="font-size:9px;padding:3px 4px;text-align:center">' +
+          '</div>' +
+          '<button class="fm-btn" style="font-size:8px;padding:3px 5px;margin-top:10px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.4)" ' +
+            'onclick="FaceMapping._resetRegionTransform(\'' + selId + '\')" title="Resetar">R</button>' +
+        '</div>' +
       '</div>'
     }
 

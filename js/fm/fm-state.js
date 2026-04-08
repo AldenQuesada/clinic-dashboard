@@ -61,6 +61,8 @@
   FM._selectedRegion = null  // clicked region for editing
   FM._regionPaths = {}       // cached computed paths per region (recalc on scan)
   FM._regionAnimFrame = null // hover animation
+  FM._showRegionLabels = true  // toggle labels on/off
+  FM._regionLocked = false     // lock control points
 
   // Canvas2 (DEPOIS) independent metric state
   FM._metric2Lines = { h: [], v: [] }

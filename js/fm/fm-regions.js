@@ -183,6 +183,9 @@
         ml: '0.5',
         product: '',
         side: 'bilateral',
+        scaleX: 1.0,
+        scaleY: 1.0,
+        rotation: 0,  // degrees
       }
     }
     return FM._regionState[regionId]
@@ -287,18 +290,43 @@
         paths.push(_lmPoints(lm, r.landmarks, w, h))
       }
 
-      // Compute centroids for each path
+      // Compute centroids, then apply transforms (scale, rotation)
       paths.forEach(function (path) {
         var cx = 0, cy = 0
         path.forEach(function (p) { cx += p.x; cy += p.y })
-        path._cx = cx / path.length
-        path._cy = cy / path.length
+        cx /= path.length; cy /= path.length
+
+        // Apply scale + rotation from region state
+        var sx = st.scaleX != null ? st.scaleX : 1
+        var sy = st.scaleY != null ? st.scaleY : 1
+        var rot = (st.rotation || 0) * Math.PI / 180
+
+        if (sx !== 1 || sy !== 1 || rot !== 0) {
+          var cosR = Math.cos(rot), sinR = Math.sin(rot)
+          path.forEach(function (p) {
+            var dx = p.x - cx, dy = p.y - cy
+            // Scale first, then rotate
+            dx *= sx; dy *= sy
+            p.x = cx + dx * cosR - dy * sinR
+            p.y = cy + dx * sinR + dy * cosR
+          })
+        }
+
+        path._cx = cx; path._cy = cy
         var maxR = 0
         path.forEach(function (p) {
-          var d = Math.sqrt((p.x - path._cx) * (p.x - path._cx) + (p.y - path._cy) * (p.y - path._cy))
+          var d = Math.sqrt((p.x - cx) * (p.x - cx) + (p.y - cy) * (p.y - cy))
           if (d > maxR) maxR = d
         })
         path._radius = maxR
+
+        // Compute bounding box for control handles
+        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+        path.forEach(function (p) {
+          if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x
+          if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y
+        })
+        path._bbox = { minX: minX, maxX: maxX, minY: minY, maxY: maxY }
       })
 
       FM._regionPaths[id] = paths
@@ -340,10 +368,17 @@
         })
       }
 
-      // Label (only on selected or hovered)
-      if (isSelected || isHovered) {
+      // Labels — global toggle OR hover/selected
+      if (FM._showRegionLabels || isSelected || isHovered) {
         paths.forEach(function (path) {
           _drawRegionLabel(ctx, path, r, st, isSelected)
+        })
+      }
+
+      // Control handles (only on selected, unlocked)
+      if (isSelected && !FM._regionLocked) {
+        paths.forEach(function (path) {
+          _drawControlHandles(ctx, path, r.color)
         })
       }
     })
@@ -451,49 +486,34 @@
     ctx.save()
 
     var x = path._cx
-    var y = path._cy - path._radius - 12
+    var y = path._cy - path._radius - 10
+
+    // Build label text: name + dose (no treatment name)
+    var zone = FM.ZONES ? FM.ZONES.find(function (z) { return z.id === Object.keys(REGIONS).find(function (k) { return REGIONS[k] === region }) }) : null
+    var unit = zone ? zone.unit : 'mL'
+    var hasDose = state.ml && parseFloat(state.ml) > 0
+    var text = region.label
+    if (hasDose) text += ' | ' + state.ml + unit
+
+    ctx.font = (isSelected ? '600' : '500') + ' 9px Montserrat, sans-serif'
+    var tw = ctx.measureText(text).width + 14
+    var th = 20
 
     // Background pill
-    ctx.font = '600 10px Montserrat, sans-serif'
-    var text = region.label
-    var tw = ctx.measureText(text).width + 16
-    var th = 22
-
-    ctx.fillStyle = _rgba('#0A0A0A', 0.85)
+    ctx.fillStyle = _rgba('#0A0A0A', isSelected ? 0.88 : 0.75)
     ctx.beginPath()
-    _roundRect(ctx, x - tw / 2, y - th / 2, tw, th, 6)
+    _roundRect(ctx, x - tw / 2, y - th / 2, tw, th, 5)
     ctx.fill()
 
     // Color accent bar
     ctx.fillStyle = region.color
-    ctx.fillRect(x - tw / 2, y - th / 2, 3, th)
+    ctx.fillRect(x - tw / 2, y - th / 2, 2.5, th)
 
     // Text
-    ctx.fillStyle = '#F5F0E8'
+    ctx.fillStyle = isSelected ? '#F5F0E8' : _rgba('#F5F0E8', 0.8)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(text, x, y)
-
-    // Dose info below (when selected)
-    if (isSelected && state.ml && state.ml !== '0') {
-      var zone = FM.ZONES ? FM.ZONES.find(function (z) { return z.id === region.label.toLowerCase() }) : null
-      var unit = zone ? zone.unit : 'mL'
-      var treatment = FM.TREATMENTS ? FM.TREATMENTS.find(function (t) { return t.id === state.treatment }) : null
-      var txLabel = treatment ? treatment.label : state.treatment
-
-      ctx.font = '400 9px Montserrat, sans-serif'
-      var detail = state.ml + unit + ' | ' + txLabel
-      var dw = ctx.measureText(detail).width + 14
-
-      ctx.fillStyle = _rgba('#0A0A0A', 0.75)
-      ctx.beginPath()
-      _roundRect(ctx, x - dw / 2, y + th / 2 + 2, dw, 18, 4)
-      ctx.fill()
-
-      ctx.fillStyle = _rgba(region.color, 0.8)
-      ctx.textAlign = 'center'
-      ctx.fillText(detail, x, y + th / 2 + 11)
-    }
 
     ctx.restore()
   }
@@ -543,6 +563,190 @@
       }
     }
     return inside
+  }
+
+  // ── Control Handles Drawing ─────────────────────────────────
+
+  function _drawControlHandles(ctx, path, color) {
+    if (!path._bbox) return
+    var bb = path._bbox
+    var cx = path._cx, cy = path._cy
+
+    var handles = _getRegionHandles(path)
+
+    ctx.save()
+
+    handles.forEach(function (h) {
+      // Handle circle
+      ctx.beginPath()
+      ctx.arc(h.x, h.y, 5, 0, Math.PI * 2)
+      ctx.fillStyle = '#fff'
+      ctx.fill()
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2
+      ctx.stroke()
+    })
+
+    // Rotation handle — above N handle
+    var nHandle = handles.find(function (h) { return h.id === 'n' })
+    if (nHandle) {
+      var rotY = nHandle.y - 22
+      // Dashed line from N to rotation handle
+      ctx.beginPath()
+      ctx.setLineDash([3, 3])
+      ctx.strokeStyle = _rgba(color, 0.4)
+      ctx.lineWidth = 1
+      ctx.moveTo(nHandle.x, nHandle.y)
+      ctx.lineTo(nHandle.x, rotY)
+      ctx.stroke()
+      ctx.setLineDash([])
+
+      // Rotation circle (smaller, different style)
+      ctx.beginPath()
+      ctx.arc(nHandle.x, rotY, 4, 0, Math.PI * 2)
+      ctx.fillStyle = color
+      ctx.fill()
+      ctx.strokeStyle = '#fff'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+    }
+
+    ctx.restore()
+  }
+
+  function _getRegionHandles(path) {
+    if (!path._bbox) return []
+    var bb = path._bbox
+    var cx = path._cx, cy = path._cy
+    return [
+      { id: 'n', x: cx, y: bb.minY },
+      { id: 's', x: cx, y: bb.maxY },
+      { id: 'e', x: bb.maxX, y: cy },
+      { id: 'w', x: bb.minX, y: cy },
+    ]
+  }
+
+  // ── Handle Hit Test ────────────────────────────────────────
+
+  FM._hitTestRegionHandle = function (mx, my) {
+    if (!FM._selectedRegion || FM._regionLocked) return null
+    var paths = FM._regionPaths[FM._selectedRegion]
+    if (!paths) return null
+
+    for (var pi = 0; pi < paths.length; pi++) {
+      var path = paths[pi]
+      var handles = _getRegionHandles(path)
+
+      // Check rotation handle first
+      var nH = handles.find(function (h) { return h.id === 'n' })
+      if (nH) {
+        var rotY = nH.y - 22
+        if (Math.sqrt((mx - nH.x) * (mx - nH.x) + (my - rotY) * (my - rotY)) < 8) {
+          return { type: 'rotation', cx: path._cx, cy: path._cy }
+        }
+      }
+
+      // Check cardinal handles
+      for (var i = 0; i < handles.length; i++) {
+        var h = handles[i]
+        if (Math.sqrt((mx - h.x) * (mx - h.x) + (my - h.y) * (my - h.y)) < 8) {
+          return { type: h.id, cx: path._cx, cy: path._cy, bbox: path._bbox }
+        }
+      }
+    }
+    return null
+  }
+
+  // ── Handle Drag ────────────────────────────────────────────
+
+  FM._regionHandleDrag = null  // { type, regionId, startMouse, startState }
+
+  FM._startRegionHandleDrag = function (handleInfo, mx, my) {
+    var st = FM._getRegionState(FM._selectedRegion)
+    FM._pushUndo()
+    FM._regionHandleDrag = {
+      type: handleInfo.type,
+      regionId: FM._selectedRegion,
+      startX: mx,
+      startY: my,
+      cx: handleInfo.cx,
+      cy: handleInfo.cy,
+      bbox: handleInfo.bbox,
+      origScaleX: st.scaleX || 1,
+      origScaleY: st.scaleY || 1,
+      origRotation: st.rotation || 0,
+    }
+  }
+
+  FM._moveRegionHandle = function (mx, my) {
+    var drag = FM._regionHandleDrag
+    if (!drag) return
+
+    var st = FM._getRegionState(drag.regionId)
+
+    if (drag.type === 'rotation') {
+      // Angle from centroid to current mouse vs start mouse
+      var startAngle = Math.atan2(drag.startY - drag.cy, drag.startX - drag.cx)
+      var curAngle = Math.atan2(my - drag.cy, mx - drag.cx)
+      var delta = (curAngle - startAngle) * 180 / Math.PI
+      st.rotation = Math.round(drag.origRotation + delta)
+    } else if (drag.type === 'e' || drag.type === 'w') {
+      // ScaleX: ratio of current distance to original distance from centroid
+      var origDist = Math.abs(drag.type === 'e' ? drag.bbox.maxX - drag.cx : drag.cx - drag.bbox.minX)
+      var curDist = Math.abs(mx - drag.cx)
+      if (origDist > 5) {
+        st.scaleX = Math.max(0.3, Math.min(3, drag.origScaleX * (curDist / origDist)))
+      }
+    } else if (drag.type === 'n' || drag.type === 's') {
+      var origDist = Math.abs(drag.type === 's' ? drag.bbox.maxY - drag.cy : drag.cy - drag.bbox.minY)
+      var curDist = Math.abs(my - drag.cy)
+      if (origDist > 5) {
+        st.scaleY = Math.max(0.3, Math.min(3, drag.origScaleY * (curDist / origDist)))
+      }
+    }
+
+    FM._computeRegionPaths()
+    FM._redraw()
+  }
+
+  FM._endRegionHandleDrag = function () {
+    FM._regionHandleDrag = null
+    FM._autoSave()
+  }
+
+  // ── Toggle Labels ──────────────────────────────────────────
+
+  FM._setRegionTransform = function (regionId, field, val) {
+    var st = FM._getRegionState(regionId)
+    FM._pushUndo()
+    st[field] = val
+    FM._computeRegionPaths()
+    FM._redraw()
+    FM._autoSave()
+  }
+
+  FM._resetRegionTransform = function (regionId) {
+    var st = FM._getRegionState(regionId)
+    FM._pushUndo()
+    st.scaleX = 1.0
+    st.scaleY = 1.0
+    st.rotation = 0
+    FM._computeRegionPaths()
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+  }
+
+  FM._toggleRegionLabels = function () {
+    FM._showRegionLabels = !FM._showRegionLabels
+    FM._redraw()
+    FM._refreshToolbar()
+  }
+
+  FM._toggleRegionLock = function () {
+    FM._regionLocked = !FM._regionLocked
+    FM._redraw()
+    FM._refreshToolbar()
   }
 
   // ── Annotation Bridge ──────────────────────────────────────

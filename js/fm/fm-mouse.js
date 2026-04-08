@@ -271,14 +271,29 @@
       return
     }
 
-    // ZONES MODE — region click-to-select (when landmarks available)
-    if (FM._editorMode === 'zones' && FM._hitTestRegion && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
-      var regionHit = FM._hitTestRegion(mx, my)
-      if (regionHit) {
-        FM._selectedRegion = regionHit
-        FM._redraw()
-        FM._refreshToolbar()
-        return
+    // ZONES MODE — handle drag or region click-to-select
+    if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+      // 1. Check control handle hit first (selected region only)
+      if (FM._hitTestRegionHandle) {
+        var handleHit = FM._hitTestRegionHandle(mx, my)
+        if (handleHit) {
+          FM._startRegionHandleDrag(handleHit, mx, my)
+          FM._mode = 'move'
+          FM._canvas.style.cursor = handleHit.type === 'rotation' ? 'crosshair' : (
+            handleHit.type === 'n' || handleHit.type === 's' ? 'ns-resize' : 'ew-resize'
+          )
+          return
+        }
+      }
+      // 2. Region click-to-select
+      if (FM._hitTestRegion) {
+        var regionHit = FM._hitTestRegion(mx, my)
+        if (regionHit) {
+          FM._selectedRegion = regionHit
+          FM._redraw()
+          FM._refreshToolbar()
+          return
+        }
       }
     }
 
@@ -417,10 +432,27 @@
       return
     }
 
+    // Region handle drag (zones mode)
+    if (FM._editorMode === 'zones' && FM._regionHandleDrag && FM._mode === 'move') {
+      FM._moveRegionHandle(mx, my)
+      return
+    }
+
     // Region hover detection (zones mode with landmarks)
-    if (FM._editorMode === 'zones' && FM._hitTestRegion && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+    if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+      // Check handle cursor
+      if (FM._hitTestRegionHandle) {
+        var hHandle = FM._hitTestRegionHandle(mx, my)
+        if (hHandle) {
+          FM._canvas.style.cursor = hHandle.type === 'rotation' ? 'crosshair' : (
+            hHandle.type === 'n' || hHandle.type === 's' ? 'ns-resize' : 'ew-resize'
+          )
+          return
+        }
+      }
+
       var prevHover = FM._hoveredRegion
-      FM._hoveredRegion = FM._hitTestRegion(mx, my)
+      FM._hoveredRegion = FM._hitTestRegion ? FM._hitTestRegion(mx, my) : null
       if (FM._hoveredRegion !== prevHover) {
         FM._canvas.style.cursor = FM._hoveredRegion ? 'pointer' : 'default'
         FM._redraw()
@@ -440,6 +472,15 @@
   }
 
   FM._onMouseUp = function () {
+    // Region handle drag end
+    if (FM._regionHandleDrag) {
+      FM._endRegionHandleDrag()
+      FM._mode = 'idle'
+      FM._canvas.style.cursor = 'default'
+      FM._redraw()
+      FM._refreshToolbar()
+      return
+    }
     if (FM._editorMode === 'analysis') {
       if (FM._onMetricMouseUp) FM._onMetricMouseUp()
       FM._mode = 'idle'
