@@ -53,24 +53,31 @@
         }
       }
 
-      // Add 8% margin — generous to never cut nose/chin/ears
+      // Add 10% margin — can EXPAND beyond original image (adds black padding)
       var contentW = right - left + 1
       var contentH = bottom - top + 1
-      var pad = Math.round(Math.max(contentW, contentH) * 0.08)
-      var cx1 = Math.max(0, left - pad)
-      var cy1 = Math.max(0, top - pad)
-      var cx2 = Math.min(w, right + 1 + pad)
-      var cy2 = Math.min(h, bottom + 1 + pad)
+      var pad = Math.round(Math.max(contentW, contentH) * 0.10)
 
-      // Crop
-      var cropW = cx2 - cx1
-      var cropH = cy2 - cy1
+      // Source rect (clamped to image bounds)
+      var sx1 = Math.max(0, left - pad)
+      var sy1 = Math.max(0, top - pad)
+      var sx2 = Math.min(w, right + 1 + pad)
+      var sy2 = Math.min(h, bottom + 1 + pad)
+
+      // Output size = content + guaranteed padding on ALL sides
+      var outW = contentW + pad * 2
+      var outH = contentH + pad * 2
+
+      // Position: center content in output canvas with equal padding
+      var drawX = pad - (left - sx1)
+      var drawY = pad - (top - sy1)
+
       var out = document.createElement('canvas')
-      out.width = cropW; out.height = cropH
+      out.width = outW; out.height = outH
       var octx = out.getContext('2d')
       octx.fillStyle = '#000000'
-      octx.fillRect(0, 0, cropW, cropH)
-      octx.drawImage(c, cx1, cy1, cropW, cropH, 0, 0, cropW, cropH)
+      octx.fillRect(0, 0, outW, outH)
+      octx.drawImage(c, sx1, sy1, sx2 - sx1, sy2 - sy1, drawX, drawY, sx2 - sx1, sy2 - sy1)
 
       out.toBlob(function (blob) {
         var url = URL.createObjectURL(blob)
