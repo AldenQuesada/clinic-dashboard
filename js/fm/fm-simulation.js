@@ -11,6 +11,9 @@
     var srcAngle = FM._photoUrls['45'] ? '45' : (FM._photoUrls['front'] ? 'front' : 'lateral')
     if (!FM._photoUrls[srcAngle]) return
 
+    // Capture target angle at START for async safety
+    var simTargetAngle = srcAngle
+
     var img = new Image()
     img.onload = function () {
       var c = document.createElement('canvas')
@@ -78,8 +81,8 @@
           for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
           var blob = new Blob([arr], { type: 'image/png' })
 
-          if (FM._simPhotoUrl) URL.revokeObjectURL(FM._simPhotoUrl)
-          FM._simPhotoUrl = URL.createObjectURL(blob)
+          if (FM._simPhotoByAngle[simTargetAngle]) URL.revokeObjectURL(FM._simPhotoByAngle[simTargetAngle])
+          FM._simPhotoByAngle[simTargetAngle] = URL.createObjectURL(blob)
 
           FM._showToast(data.zones_applied + ' zonas simuladas em ' + data.elapsed_s + 's', 'success')
           FM._autoSave()
@@ -105,6 +108,9 @@
     var srcAngle = FM._photoUrls['45'] ? '45' : (FM._photoUrls['front'] ? 'front' : 'lateral')
     if (!FM._photoUrls[srcAngle]) return
 
+    // Capture target angle at START for async safety
+    var canvasTargetAngle = srcAngle
+
     var img = new Image()
     img.onload = function () {
       var w = img.width, h = img.height
@@ -113,7 +119,7 @@
       var ctx = c.getContext('2d')
       ctx.drawImage(img, 0, 0, w, h)
 
-      var anns = FM._annotations.filter(function (a) { return a.angle === srcAngle })
+      var anns = FM._annotations.filter(function (a) { return a.angle === canvasTargetAngle })
       anns.forEach(function (ann) {
         var z = FM.ZONES.find(function (x) { return x.id === ann.zone })
         if (!z) return
@@ -137,12 +143,12 @@
       ctx.restore()
 
       c.toBlob(function (blob) {
-        if (FM._simPhotoUrl) URL.revokeObjectURL(FM._simPhotoUrl)
-        FM._simPhotoUrl = URL.createObjectURL(blob)
+        if (FM._simPhotoByAngle[canvasTargetAngle]) URL.revokeObjectURL(FM._simPhotoByAngle[canvasTargetAngle])
+        FM._simPhotoByAngle[canvasTargetAngle] = URL.createObjectURL(blob)
         if (callback) callback()
       }, 'image/jpeg', 0.95)
     }
-    img.src = FM._photoUrls[srcAngle]
+    img.src = FM._photoUrls[canvasTargetAngle]
   }
 
   // ── Helpers ─────────────────────────────────────────────────

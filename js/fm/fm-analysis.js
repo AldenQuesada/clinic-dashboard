@@ -757,9 +757,13 @@
     var file = input.files[0]
     if (!file) return
 
+    // Capture angle at START — never rely on getter in async callbacks
+    var targetAngle = FM._activeAngle || 'front'
+
     function _setAfterUrl(url) {
-      if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-      FM._afterPhotoUrl = url  // setter auto-saves to per-angle store
+      if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+      FM._afterPhotoByAngle[targetAngle] = url
+      FM._autoSave()
       FM._render()
       setTimeout(function () { FM._initCanvas(); FM._initCanvas2() }, 100)
     }

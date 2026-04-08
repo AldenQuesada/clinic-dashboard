@@ -161,15 +161,27 @@
     }
 
     function _finishCrop(blob) {
-      if (FM._photoUrls[FM._pendingCropAngle]) URL.revokeObjectURL(FM._photoUrls[FM._pendingCropAngle])
-      FM._photoUrls[FM._pendingCropAngle] = URL.createObjectURL(blob)
-      FM._photos[FM._pendingCropAngle] = blob
-      if (!FM._activeAngle) FM._activeAngle = FM._pendingCropAngle
+      var ang = FM._pendingCropAngle
+      if (FM._photoUrls[ang]) URL.revokeObjectURL(FM._photoUrls[ang])
+      FM._photoUrls[ang] = URL.createObjectURL(blob)
+      FM._photos[ang] = blob
+      // Clear stale DEPOIS/SIM for this angle — old DEPOIS is no longer valid for new ANTES
+      if (FM._afterPhotoByAngle[ang]) {
+        URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
+        delete FM._afterPhotoByAngle[ang]
+      }
+      if (FM._simPhotoByAngle[ang]) {
+        URL.revokeObjectURL(FM._simPhotoByAngle[ang])
+        delete FM._simPhotoByAngle[ang]
+      }
+      // Clear scan cache — new photo needs fresh scan
+      delete FM._scanDataByAngle[ang]
+      if (!FM._activeAngle) FM._activeAngle = ang
       var ov = document.getElementById('fmCropOverlay')
       if (ov) ov.remove()
       FM._render()
       FM._autoSave()
-      if (FM._activeAngle === FM._pendingCropAngle) setTimeout(FM._initCanvas, 50)
+      if (FM._activeAngle === ang) setTimeout(FM._initCanvas, 50)
     }
 
     // Helper: convert b64 to blob and finish
@@ -242,12 +254,16 @@
   }
 
   FM._recrop = function (angle) {
-    if (!FM._photoUrls[angle]) return
-    var src = FM._photoUrls[angle]
-    if (FM._photos[angle] && FM._photos[angle] instanceof File) {
-      src = URL.createObjectURL(FM._photos[angle])
+    // Prefer original file, then original blob, then processed URL
+    if (FM._originalFiles[angle]) {
+      var src = URL.createObjectURL(FM._originalFiles[angle])
+      FM._openCropModal(src, angle)
+    } else if (FM._photos[angle]) {
+      var src2 = URL.createObjectURL(FM._photos[angle])
+      FM._openCropModal(src2, angle)
+    } else if (FM._photoUrls[angle]) {
+      FM._openCropModal(FM._photoUrls[angle], angle)
     }
-    FM._openCropModal(src, angle)
   }
 
   // ── Auto-zoom to face in crop modal ─────────────────────────

@@ -13,15 +13,12 @@
       // Save current angle state first
       if (FM._saveAngleState) FM._saveAngleState()
 
-      // Collect ANTES + DEPOIS URLs (all angles)
+      // Collect ANTES + DEPOIS URLs (all angles) — read directly, never via getter
       var allUrls = {}
       Object.keys(FM._photoUrls).forEach(function (k) { allUrls['antes_' + k] = FM._photoUrls[k] })
 
-      // Collect DEPOIS for ALL angles
+      // Collect DEPOIS for ALL angles — direct from store, not getter
       var afterAngles = FM._afterPhotoByAngle || {}
-      if (FM._afterPhotoUrl && FM._activeAngle) {
-        afterAngles[FM._activeAngle] = FM._afterPhotoUrl
-      }
       Object.keys(afterAngles).forEach(function (ang) {
         if (afterAngles[ang]) allUrls['depois_' + ang] = afterAngles[ang]
       })

@@ -240,16 +240,24 @@
   }
 
   FM._deletePhoto = function (angle) {
-    // Clear ANTES
+    var hasAfter = !!FM._afterPhotoByAngle[angle]
+    var hasSim = !!FM._simPhotoByAngle[angle]
+    var hasExtra = hasAfter || hasSim
+
+    if (hasExtra) {
+      var extras = []
+      if (hasAfter) extras.push('DEPOIS')
+      if (hasSim) extras.push('SIMULADO')
+      if (!confirm('Excluir foto ANTES (' + angle + ')?\n\nFotos ' + extras.join(' e ') + ' deste angulo serao mantidas.\nPara excluir tudo, use "Limpar tudo".')) return
+    }
+
+    // Clear ANTES only
     if (FM._photoUrls[angle]) URL.revokeObjectURL(FM._photoUrls[angle])
     delete FM._photos[angle]
     delete FM._photoUrls[angle]
     delete FM._originalFiles[angle]
     FM._annotations = FM._annotations.filter(function (a) { return a.angle !== angle })
-    // Clear DEPOIS/SIM for this angle
-    if (FM._afterPhotoByAngle[angle]) { URL.revokeObjectURL(FM._afterPhotoByAngle[angle]); delete FM._afterPhotoByAngle[angle] }
-    if (FM._simPhotoByAngle[angle]) { URL.revokeObjectURL(FM._simPhotoByAngle[angle]); delete FM._simPhotoByAngle[angle] }
-    // Clear per-angle state for this angle
+    // Clear per-angle metrics/state (but NOT DEPOIS/SIM photos)
     delete FM._angleStore[angle]
     delete FM._scanDataByAngle[angle]
     // Switch to next available angle
@@ -300,6 +308,9 @@
         if (!file || !FM._pendingExtraType) return
         if (!_validateFile(file)) { e.target.value = ''; return }
 
+        // Capture angle at operation START — never use FM._activeAngle in async callbacks
+        var targetAngle = FM._activeAngle || 'front'
+
         if (FM._pendingExtraType === 'after') {
           var reader = new FileReader()
           reader.onload = function () {
@@ -317,21 +328,23 @@
                 var bin = atob(d.image_b64)
                 var arr = new Uint8Array(bin.length)
                 for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-                if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-                FM._afterPhotoUrl = URL.createObjectURL(new Blob([arr], { type: 'image/png' }))
+                if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+                FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(new Blob([arr], { type: 'image/png' }))
                 FM._showToast('Fundo removido', 'success')
               } else {
-                if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-                FM._afterPhotoUrl = URL.createObjectURL(file)
+                if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+                FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
               }
+              FM._autoSave()
               FM._render()
               if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
               if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
             })
             .catch(function () {
               FM._hideLoading()
-              if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-              FM._afterPhotoUrl = URL.createObjectURL(file)
+              if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+              FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
+              FM._autoSave()
               FM._render()
               if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
             })
@@ -339,8 +352,9 @@
           reader.readAsDataURL(file)
         } else {
           var url = URL.createObjectURL(file)
-          if (FM._simPhotoUrl) URL.revokeObjectURL(FM._simPhotoUrl)
-          FM._simPhotoUrl = url
+          if (FM._simPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._simPhotoByAngle[targetAngle])
+          FM._simPhotoByAngle[targetAngle] = url
+          FM._autoSave()
           FM._render()
           if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
         }
