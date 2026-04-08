@@ -96,7 +96,7 @@
     // Metric lines overlay — always draw when lines exist in simetria tab
     var hasLines = FM._metricLines && (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0)
     var hasPoints = FM._metricPoints && FM._metricPoints.length > 0
-    var hasAngles = FM._metricAngles && FM._metricAngles.length > 0
+    var hasAngles = FM._metricAngles && FM._metricAngles.points
     var inSimetria = FM._activeTab === 'simetria'
     if (inSimetria && (hasLines || hasPoints || hasAngles)) {
       if (FM._drawMetrics) FM._drawMetrics()
@@ -211,7 +211,7 @@
       // Draw canvas2's own metrics — always when lines exist in simetria
       var has2Lines = FM._metric2Lines && (FM._metric2Lines.h.length > 0 || FM._metric2Lines.v.length > 0)
       var has2Points = FM._metric2Points && FM._metric2Points.length > 0
-      var has2Angles = FM._metric2Angles && FM._metric2Angles.length > 0
+      var has2Angles = FM._metric2Angles && FM._metric2Angles.points
       if (inSimetria && (has2Lines || has2Points || has2Angles)) {
         var save = {
           ctx: FM._ctx, imgW: FM._imgW, imgH: FM._imgH,
