@@ -824,7 +824,8 @@
       var w = Math.round(img2.width * scale)
       var h = Math.round(img2.height * scale)
 
-      canvas2.width = w
+      var barMargin = 30  // same margin as canvas1 for proportions bar
+      canvas2.width = w + barMargin
       canvas2.height = h
 
       FM._canvas2 = canvas2

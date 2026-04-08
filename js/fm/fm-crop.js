@@ -184,8 +184,9 @@
     document.getElementById('fmCropConfirm').addEventListener('click', function () {
       // Render the CROPPED image (respects zoom/pan), then send to remove-bg API
       var hiRes = _renderHiRes()
-      var b64 = hiRes.toDataURL('image/jpeg', 0.92).split(',')[1]
+      var b64 = hiRes.toDataURL('image/png').split(',')[1]  // PNG for better quality
       var apiUrl = FM.FACIAL_API_URL
+      console.log('[FM] crop remove-bg:', hiRes.width + 'x' + hiRes.height, Math.round(b64.length / 1024) + 'KB')
 
       FM._showLoading('Removendo fundo com IA...')
       var ov = document.getElementById('fmCropOverlay')
