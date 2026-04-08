@@ -186,6 +186,8 @@
         scaleX: 1.0,
         scaleY: 1.0,
         rotation: 0,  // degrees
+        offsetX: 0,   // position offset in pixels
+        offsetY: 0,
       }
     }
     return FM._regionState[regionId]
@@ -305,11 +307,18 @@
           var cosR = Math.cos(rot), sinR = Math.sin(rot)
           path.forEach(function (p) {
             var dx = p.x - cx, dy = p.y - cy
-            // Scale first, then rotate
             dx *= sx; dy *= sy
             p.x = cx + dx * cosR - dy * sinR
             p.y = cy + dx * sinR + dy * cosR
           })
+        }
+
+        // Apply position offset
+        var offX = st.offsetX || 0
+        var offY = st.offsetY || 0
+        if (offX !== 0 || offY !== 0) {
+          path.forEach(function (p) { p.x += offX; p.y += offY })
+          cx += offX; cy += offY
         }
 
         path._cx = cx; path._cy = cy
@@ -368,8 +377,8 @@
         })
       }
 
-      // Labels — global toggle OR hover/selected
-      if (FM._showRegionLabels || isSelected || isHovered) {
+      // Labels — only when global toggle is ON
+      if (FM._showRegionLabels) {
         paths.forEach(function (path) {
           _drawRegionLabel(ctx, path, r, st, isSelected)
         })
@@ -662,11 +671,12 @@
   FM._regionHandleDrag = null  // { type, regionId, startMouse, startState }
 
   FM._startRegionHandleDrag = function (handleInfo, mx, my) {
-    var st = FM._getRegionState(FM._selectedRegion)
+    var rid = handleInfo.regionId || FM._selectedRegion
+    var st = FM._getRegionState(rid)
     FM._pushUndo()
     FM._regionHandleDrag = {
       type: handleInfo.type,
-      regionId: FM._selectedRegion,
+      regionId: rid,
       startX: mx,
       startY: my,
       cx: handleInfo.cx,
@@ -675,6 +685,8 @@
       origScaleX: st.scaleX || 1,
       origScaleY: st.scaleY || 1,
       origRotation: st.rotation || 0,
+      origOffsetX: st.offsetX || 0,
+      origOffsetY: st.offsetY || 0,
     }
   }
 
@@ -684,24 +696,26 @@
 
     var st = FM._getRegionState(drag.regionId)
 
-    if (drag.type === 'rotation') {
-      // Angle from centroid to current mouse vs start mouse
+    if (drag.type === 'move') {
+      // Move the entire region
+      st.offsetX = drag.origOffsetX + (mx - drag.startX)
+      st.offsetY = drag.origOffsetY + (my - drag.startY)
+    } else if (drag.type === 'rotation') {
       var startAngle = Math.atan2(drag.startY - drag.cy, drag.startX - drag.cx)
       var curAngle = Math.atan2(my - drag.cy, mx - drag.cx)
       var delta = (curAngle - startAngle) * 180 / Math.PI
       st.rotation = Math.round(drag.origRotation + delta)
     } else if (drag.type === 'e' || drag.type === 'w') {
-      // ScaleX: ratio of current distance to original distance from centroid
-      var origDist = Math.abs(drag.type === 'e' ? drag.bbox.maxX - drag.cx : drag.cx - drag.bbox.minX)
-      var curDist = Math.abs(mx - drag.cx)
-      if (origDist > 5) {
-        st.scaleX = Math.max(0.3, Math.min(3, drag.origScaleX * (curDist / origDist)))
+      var origDistX = Math.abs(drag.type === 'e' ? drag.bbox.maxX - drag.cx : drag.cx - drag.bbox.minX)
+      var curDistX = Math.abs(mx - drag.cx)
+      if (origDistX > 5) {
+        st.scaleX = Math.max(0.3, Math.min(3, drag.origScaleX * (curDistX / origDistX)))
       }
     } else if (drag.type === 'n' || drag.type === 's') {
-      var origDist = Math.abs(drag.type === 's' ? drag.bbox.maxY - drag.cy : drag.cy - drag.bbox.minY)
-      var curDist = Math.abs(my - drag.cy)
-      if (origDist > 5) {
-        st.scaleY = Math.max(0.3, Math.min(3, drag.origScaleY * (curDist / origDist)))
+      var origDistY = Math.abs(drag.type === 's' ? drag.bbox.maxY - drag.cy : drag.cy - drag.bbox.minY)
+      var curDistY = Math.abs(my - drag.cy)
+      if (origDistY > 5) {
+        st.scaleY = Math.max(0.3, Math.min(3, drag.origScaleY * (curDistY / origDistY)))
       }
     }
 
@@ -731,6 +745,8 @@
     st.scaleX = 1.0
     st.scaleY = 1.0
     st.rotation = 0
+    st.offsetX = 0
+    st.offsetY = 0
     FM._computeRegionPaths()
     FM._redraw()
     FM._refreshToolbar()

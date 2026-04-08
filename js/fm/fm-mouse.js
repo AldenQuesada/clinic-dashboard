@@ -271,10 +271,10 @@
       return
     }
 
-    // ZONES MODE — handle drag or region click-to-select
+    // ZONES MODE — handle drag, region move, or click-to-select
     if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
       // 1. Check control handle hit first (selected region only)
-      if (FM._hitTestRegionHandle) {
+      if (FM._hitTestRegionHandle && !FM._regionLocked) {
         var handleHit = FM._hitTestRegionHandle(mx, my)
         if (handleHit) {
           FM._startRegionHandleDrag(handleHit, mx, my)
@@ -285,9 +285,20 @@
           return
         }
       }
-      // 2. Region click-to-select
-      if (FM._hitTestRegion) {
+      // 2. Click on selected region → drag to move it
+      if (FM._hitTestRegion && !FM._regionLocked) {
         var regionHit = FM._hitTestRegion(mx, my)
+        if (regionHit && regionHit === FM._selectedRegion) {
+          // Drag to move the selected region
+          var paths = FM._regionPaths[regionHit]
+          var pcx = paths && paths[0] ? paths[0]._cx : mx
+          var pcy = paths && paths[0] ? paths[0]._cy : my
+          FM._startRegionHandleDrag({ type: 'move', regionId: regionHit, cx: pcx, cy: pcy }, mx, my)
+          FM._mode = 'move'
+          FM._canvas.style.cursor = 'grabbing'
+          return
+        }
+        // 3. Click on different region → select it
         if (regionHit) {
           FM._selectedRegion = regionHit
           FM._redraw()
@@ -295,6 +306,11 @@
           return
         }
       }
+      // 4. Click outside all regions → deselect
+      FM._selectedRegion = null
+      FM._redraw()
+      FM._refreshToolbar()
+      return
     }
 
     // VECTOR MODE
@@ -441,7 +457,7 @@
     // Region hover detection (zones mode with landmarks)
     if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
       // Check handle cursor
-      if (FM._hitTestRegionHandle) {
+      if (FM._hitTestRegionHandle && !FM._regionLocked) {
         var hHandle = FM._hitTestRegionHandle(mx, my)
         if (hHandle) {
           FM._canvas.style.cursor = hHandle.type === 'rotation' ? 'crosshair' : (
@@ -453,9 +469,13 @@
 
       var prevHover = FM._hoveredRegion
       FM._hoveredRegion = FM._hitTestRegion ? FM._hitTestRegion(mx, my) : null
-      if (FM._hoveredRegion !== prevHover) {
-        FM._canvas.style.cursor = FM._hoveredRegion ? 'pointer' : 'default'
-        FM._redraw()
+      if (FM._hoveredRegion !== prevHover || FM._hoveredRegion) {
+        if (FM._hoveredRegion === FM._selectedRegion && FM._hoveredRegion && !FM._regionLocked) {
+          FM._canvas.style.cursor = 'grab'
+        } else {
+          FM._canvas.style.cursor = FM._hoveredRegion ? 'pointer' : 'default'
+        }
+        if (FM._hoveredRegion !== prevHover) FM._redraw()
       }
       return
     }
