@@ -131,7 +131,8 @@
       FM._nextVecId = session.nextVecId || 1
       FM._regionState = session.regionState || {}
       FM._lastAnalysis = session.lastAnalysis || null
-      FM._activeAngle = session.activeAngle || null
+      // Always start on 'front' if frontal photo exists, regardless of last saved angle
+      FM._activeAngle = null  // will be set after photos restore
 
       // Restore ANTES photos
       var photos = session.photos || {}
@@ -183,12 +184,23 @@
           }
         }
       }
-      // Now restore the active angle's state
+      // Set active angle: prefer 'front' if photo exists, else first available
+      if (FM._photoUrls['front']) {
+        FM._activeAngle = 'front'
+      } else if (FM._photoUrls['45']) {
+        FM._activeAngle = '45'
+      } else if (FM._photoUrls['lateral']) {
+        FM._activeAngle = 'lateral'
+      } else {
+        FM._activeAngle = session.activeAngle || null
+      }
+
+      // Restore the active angle's state
       if (FM._activeAngle && FM._restoreAngleState) {
         FM._restoreAngleState(FM._activeAngle)
       }
 
-      console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'photos, after:', !!FM._afterPhotoUrl)
+      console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'photos, angle:', FM._activeAngle)
       return true
     } catch (e) {
       console.warn('[FaceMapping] Restore failed:', e)
