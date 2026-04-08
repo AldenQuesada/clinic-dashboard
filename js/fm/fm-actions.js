@@ -107,6 +107,8 @@
 
   FM._selectAngle = function (angle) {
     FM._activeAngle = angle
+    FM._selectedRegion = null  // clear region selection on angle change
+    FM._hoveredRegion = null
     if (FM._selectedZone) {
       var allowed = FM._zonesForAngle(angle)
       var ids = allowed.map(function (z) { return z.id })

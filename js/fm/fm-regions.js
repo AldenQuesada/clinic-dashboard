@@ -187,10 +187,12 @@
 
   // ── Region State Helpers ───────────────────────────────────
 
-  FM._getRegionState = function (regionId) {
-    if (!FM._regionState[regionId]) {
+  FM._getRegionState = function (regionId, angle) {
+    var ang = angle || FM._activeAngle || 'front'
+    var key = ang + '_' + regionId
+    if (!FM._regionState[key]) {
       var r = REGIONS[regionId]
-      FM._regionState[regionId] = {
+      FM._regionState[key] = {
         active: false,
         intensity: r ? r.defaultIntensity : 60,
         treatment: r && FM.ZONES ? (FM.ZONES.find(function (z) { return z.id === regionId }) || {}).defaultTx || 'ah' : 'ah',
@@ -199,12 +201,12 @@
         side: 'bilateral',
         scaleX: 1.0,
         scaleY: 1.0,
-        rotation: 0,  // degrees
-        offsetX: 0,   // position offset in pixels
+        rotation: 0,
+        offsetX: 0,
         offsetY: 0,
       }
     }
-    return FM._regionState[regionId]
+    return FM._regionState[key]
   }
 
   FM._toggleRegion = function (regionId) {
@@ -801,21 +803,25 @@
 
   FM._regionAnnotations = function () {
     var anns = []
-    Object.keys(FM._regionState).forEach(function (id) {
-      var st = FM._regionState[id]
+    var ang = FM._activeAngle || 'front'
+    var prefix = ang + '_'
+    Object.keys(FM._regionState).forEach(function (key) {
+      if (key.indexOf(prefix) !== 0) return
+      var st = FM._regionState[key]
       if (!st.active || !st.ml || st.ml === '0') return
-      var r = REGIONS[id]
+      var regionId = key.substring(prefix.length)
+      var r = REGIONS[regionId]
       if (!r) return
-      var paths = FM._regionPaths[id]
+      var paths = FM._regionPaths[regionId]
       var cx = 0, cy = 0
       if (paths && paths.length > 0) {
         cx = paths[0]._cx || 0
         cy = paths[0]._cy || 0
       }
       anns.push({
-        id: 'reg_' + id,
-        zone: id,
-        angle: FM._activeAngle,
+        id: 'reg_' + key,
+        zone: regionId,
+        angle: ang,
         treatment: st.treatment,
         ml: st.ml,
         product: st.product,
@@ -830,17 +836,20 @@
 
   FM._calcRegionTotals = function () {
     var totals = {}
-    Object.keys(FM._regionState).forEach(function (id) {
-      var st = FM._regionState[id]
+    var ang = FM._activeAngle || 'front'
+    var prefix = ang + '_'
+    Object.keys(FM._regionState).forEach(function (key) {
+      if (key.indexOf(prefix) !== 0) return
+      var st = FM._regionState[key]
       if (!st.active || !st.ml || parseFloat(st.ml) === 0) return
-      var r = REGIONS[id]
+      var regionId = key.substring(prefix.length)
+      var r = REGIONS[regionId]
       if (!r) return
-      var z = FM.ZONES ? FM.ZONES.find(function (zz) { return zz.id === id }) : null
-      var key = id
-      if (!totals[key]) {
-        totals[key] = { label: r.label, color: r.color, ml: 0, unit: z ? z.unit : 'mL' }
+      var z = FM.ZONES ? FM.ZONES.find(function (zz) { return zz.id === regionId }) : null
+      if (!totals[regionId]) {
+        totals[regionId] = { label: r.label, color: r.color, ml: 0, unit: z ? z.unit : 'mL' }
       }
-      totals[key].ml += parseFloat(st.ml) || 0
+      totals[regionId].ml += parseFloat(st.ml) || 0
     })
     return Object.keys(totals).map(function (k) { return totals[k] })
   }
