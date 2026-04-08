@@ -407,11 +407,11 @@
     if (FM._editorMode === 'analysis' && FM._mode === 'move' && FM._analysisDrag) {
       if (FM._activeAngle === 'lateral') {
         if (FM._analysisDrag === 'nose') {
-          FM._rickettsPoints.nose.x = Math.max(0.05, Math.min(0.95, mx / FM._imgW))
-          FM._rickettsPoints.nose.y = Math.max(0.05, Math.min(0.95, my / FM._imgH))
+          FM._rickettsPoints.nose.x = Math.max(0.01, Math.min(0.99, mx / FM._imgW))
+          FM._rickettsPoints.nose.y = Math.max(0.01, Math.min(0.99, my / FM._imgH))
         } else if (FM._analysisDrag === 'chin') {
-          FM._rickettsPoints.chin.x = Math.max(0.05, Math.min(0.95, mx / FM._imgW))
-          FM._rickettsPoints.chin.y = Math.max(0.05, Math.min(0.95, my / FM._imgH))
+          FM._rickettsPoints.chin.x = Math.max(0.01, Math.min(0.99, mx / FM._imgW))
+          FM._rickettsPoints.chin.y = Math.max(0.01, Math.min(0.99, my / FM._imgH))
         }
         FM._redraw()
         return
