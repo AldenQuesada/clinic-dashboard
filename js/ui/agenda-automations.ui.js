@@ -46,6 +46,8 @@
       task_assignee: 'sdr',
       task_priority: 'normal',
       task_deadline_hours: 24,
+      alexa_message: '',
+      alexa_target: 'sala',
       is_active: true,
       sort_order: 0,
     }
@@ -60,7 +62,9 @@
     if (channel === 'all') return true
     if (channel === 'whatsapp_alert') return type === 'whatsapp' || type === 'alert'
     if (channel === 'whatsapp_task') return type === 'whatsapp' || type === 'task'
+    if (channel === 'whatsapp_alexa') return type === 'whatsapp' || type === 'alexa'
     if (channel === 'alert_task') return type === 'alert' || type === 'task'
+    if (channel === 'alert_alexa') return type === 'alert' || type === 'alexa'
     return false
   }
 
@@ -80,8 +84,8 @@
 
   var CATEGORY_COLORS = { captacao:'#6366F1', before:'#3B82F6', during:'#7C3AED', after:'#10B981', pos:'#0891B2', orcamento:'#F59E0B' }
   var CATEGORY_LABELS = { captacao:'Captacao', before:'Antes', during:'Durante', after:'Depois', pos:'Pos', orcamento:'Orcamento' }
-  var CHANNEL_ICONS   = { whatsapp:'messageCircle', alert:'bell', task:'clipboard', whatsapp_alert:'radio', whatsapp_task:'radio', alert_task:'radio', all:'radio', both:'radio' }
-  var CHANNEL_LABELS  = { whatsapp:'WhatsApp', alert:'Alerta', task:'Tarefa', whatsapp_alert:'WA+Alerta', whatsapp_task:'WA+Tarefa', alert_task:'Alerta+Tarefa', all:'Todos', both:'WA+Alerta' }
+  var CHANNEL_ICONS   = { whatsapp:'messageCircle', alert:'bell', task:'clipboard', alexa:'speaker', whatsapp_alert:'radio', whatsapp_task:'radio', whatsapp_alexa:'radio', alert_task:'radio', alert_alexa:'radio', all:'radio', both:'radio' }
+  var CHANNEL_LABELS  = { whatsapp:'WhatsApp', alert:'Alerta', task:'Tarefa', alexa:'Alexa', whatsapp_alert:'WA+Alerta', whatsapp_task:'WA+Tarefa', whatsapp_alexa:'WA+Alexa', alert_task:'Alerta+Tarefa', alert_alexa:'Alerta+Alexa', all:'Todos', both:'WA+Alerta' }
   var RECIPIENT_ICONS = { patient:'user', professional:'briefcase', both:'users' }
 
   // ── Load ───────────────────────────────────────────────────
@@ -281,6 +285,17 @@
         + '</div>'
     }
 
+    if (_channelIncludes(r.channel, 'alexa') && r.alexa_message) {
+      var alexaMsg = _svc().renderTemplate(r.alexa_message, vars)
+      var targetLabel = r.alexa_target === 'recepcao' ? 'Recepcao' : r.alexa_target === 'todos' ? 'Todos' : r.alexa_target === 'profissional' ? 'Profissional' : 'Sala'
+      html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border-left:4px solid #06B6D4;background:#ECFEFF;font-size:13px">'
+        + '<div style="display:flex;align-items:center;gap:6px;font-weight:600;color:#0891B2">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>'
+        + ' Alexa (' + targetLabel + ')</div>'
+        + '<div style="margin-top:4px;color:#0E7490;font-style:italic">"' + _esc(alexaMsg) + '"</div>'
+        + '</div>'
+    }
+
     return html
   }
 
@@ -433,6 +448,39 @@
         + '</div>'
     }
 
+    // Alexa config (show if channel includes alexa)
+    if (_channelIncludes(f.channel, 'alexa')) {
+      html += '<div class="aa-section-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg> Alexa</div>'
+
+      // Target device
+      html += '<div class="aa-field"><label>Dispositivo Alvo</label><select id="aaAlexaTarget">'
+      svc.ALEXA_TARGETS.forEach(function(t) {
+        var sel = (f.alexa_target||'sala') === t.id ? ' selected' : ''
+        html += '<option value="' + t.id + '"' + sel + '>' + t.label + '</option>'
+      })
+      html += '</select></div>'
+
+      // Message template
+      html += '<div class="aa-field"><label>Mensagem Alexa</label>'
+      html += '<div class="aa-tags-bar">'
+      svc.TEMPLATE_VARS.forEach(function(v) {
+        html += '<button class="aa-tag-btn" data-alexa-var="' + v.id + '">{{' + v.id + '}}</button>'
+      })
+      html += '</div>'
+      html += '<textarea id="aaAlexaMsg" rows="3" placeholder="Ex: Dra {{profissional}}, sua proxima paciente {{nome}} esta na recepcao.">' + _esc(f.alexa_message) + '</textarea>'
+      html += '</div>'
+
+      // Alexa preview
+      var alexaPreviewMsg = _svc().renderTemplate(f.alexa_message || 'Mensagem Alexa...', { nome:'Maria Silva', data:'15/04/2026', hora:'14:30', profissional:'Dra. Mirian', procedimento:'Bioestimulador', clinica:'Clinica' })
+      var alexaTargetLabel = (svc.ALEXA_TARGETS.find(function(t){return t.id===(f.alexa_target||'sala')})||{}).label || 'Sala'
+      html += '<div style="margin-top:8px;padding:12px;border-radius:10px;border-left:4px solid #06B6D4;background:#ECFEFF;font-size:12px">'
+        + '<div style="display:flex;align-items:center;gap:6px;font-weight:700;color:#0891B2;margin-bottom:6px">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>'
+        + ' Preview Alexa (' + _esc(alexaTargetLabel) + ')</div>'
+        + '<div style="color:#0E7490;font-style:italic">"' + _esc(alexaPreviewMsg) + '"</div>'
+        + '</div>'
+    }
+
     return html
   }
 
@@ -491,6 +539,8 @@
     _form.task_assignee = val('aaTaskAssignee') || 'sdr'
     _form.task_priority = val('aaTaskPriority') || 'normal'
     _form.task_deadline_hours = parseInt(val('aaTaskDeadline')) || 24
+    _form.alexa_message = val('aaAlexaMsg')
+    _form.alexa_target = val('aaAlexaTarget') || 'sala'
 
     var cat = document.querySelector('input[name=aaCategory]:checked')
     if (cat) _form.category = cat.value
@@ -562,7 +612,8 @@
             content_template: r.content_template||'', alert_title: r.alert_title||'',
             alert_type: r.alert_type||'info', task_title: r.task_title||'',
             task_assignee: r.task_assignee||'sdr', task_priority: r.task_priority||'normal',
-            task_deadline_hours: r.task_deadline_hours||24, is_active: r.is_active, sort_order: r.sort_order||0,
+            task_deadline_hours: r.task_deadline_hours||24, alexa_message: r.alexa_message||'',
+            alexa_target: r.alexa_target||'sala', is_active: r.is_active, sort_order: r.sort_order||0,
           }
           _panelTab = 'editor'; _render()
         }
@@ -594,6 +645,21 @@
           ta.selectionStart = ta.selectionEnd = start + tag.length
           ta.focus()
           _form.content_template = ta.value
+        }
+        return
+      }
+
+      // Alexa variable insertion
+      var alexaVarBtn = e.target.closest('[data-alexa-var]')
+      if (alexaVarBtn) {
+        var ta3 = document.getElementById('aaAlexaMsg')
+        if (ta3) {
+          var atag = '{{' + alexaVarBtn.dataset.alexaVar + '}}'
+          var astart = ta3.selectionStart
+          ta3.value = ta3.value.slice(0, astart) + atag + ta3.value.slice(ta3.selectionEnd)
+          ta3.selectionStart = ta3.selectionEnd = astart + atag.length
+          ta3.focus()
+          _form.alexa_message = ta3.value
         }
         return
       }
@@ -637,13 +703,21 @@
       if (e.target.id === 'aaContent') {
         _form.content_template = e.target.value
       }
+      if (e.target.id === 'aaAlexaMsg') {
+        _form.alexa_message = e.target.value
+      }
     })
   }
 
   async function _handleSave() {
     _readForm()
     if (!_form.name.trim()) { alert('Nome obrigatorio'); return }
-    if (_form.channel !== 'alert' && !_form.content_template.trim()) { alert('Mensagem obrigatoria'); return }
+    var needsWaContent = _channelIncludes(_form.channel, 'whatsapp')
+    var needsAlexaContent = _channelIncludes(_form.channel, 'alexa')
+    var isAlertOnly = _form.channel === 'alert'
+    var isAlexaOnly = _form.channel === 'alexa'
+    if (!isAlertOnly && !isAlexaOnly && needsWaContent && !_form.content_template.trim()) { alert('Mensagem WhatsApp obrigatoria'); return }
+    if (needsAlexaContent && !_form.alexa_message.trim()) { alert('Mensagem Alexa obrigatoria'); return }
 
     _saving = true; _render()
 

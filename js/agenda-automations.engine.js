@@ -114,6 +114,11 @@
       if (_channelIncludes(rule.channel, 'task') && rule.task_title) {
         _scheduleTask(rule, vars, scheduledAt, appt.id)
       }
+
+      // Alexa: schedule announcement
+      if (_channelIncludes(rule.channel, 'alexa') && rule.alexa_message) {
+        _scheduleAlexa(rule, vars, scheduledAt, appt)
+      }
     })
   }
 
@@ -234,6 +239,12 @@
       var taskTitle = svc.renderTemplate(rule.task_title, vars)
       _createTask(taskTitle, rule.task_assignee, rule.task_priority, rule.task_deadline_hours, appt)
     }
+
+    // Alexa
+    if (_channelIncludes(rule.channel, 'alexa') && rule.alexa_message) {
+      var alexaMsg = svc.renderTemplate(rule.alexa_message, vars)
+      _fireAlexa(alexaMsg, rule.alexa_target, appt, rule.name)
+    }
   }
 
   // ── WhatsApp: enqueue in wa_outbox (server-side) ───────────
@@ -293,6 +304,26 @@
     try { localStorage.setItem('clinic_op_tasks', JSON.stringify(tasks)) } catch (e) { /* quota */ }
   }
 
+  // ── Alexa: scheduled (client-side queue) ────────────────────
+  function _scheduleAlexa(rule, vars, scheduledAt, appt) {
+    var q = JSON.parse(localStorage.getItem('clinicai_automations_queue') || '[]')
+    q.push({
+      id:          'aut_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      apptId:      appt ? appt.id : null,
+      trigger:     rule.trigger_type,
+      type:        'engine_alexa',
+      scheduledAt: scheduledAt.toISOString(),
+      executed:    false,
+      payload:     {
+        message:    _svc().renderTemplate(rule.alexa_message, vars),
+        target:     rule.alexa_target || 'sala',
+        ruleName:   rule.name,
+        appt:       appt ? { pacienteNome: appt.pacienteNome, profissionalNome: appt.profissionalNome, salaIdx: appt.salaIdx, profissionalIdx: appt.profissionalIdx } : null,
+      },
+    })
+    try { localStorage.setItem('clinicai_automations_queue', JSON.stringify(q)) } catch (e) { /* quota */ }
+  }
+
   // ── Task: scheduled (future) ───────────────────────────────
   function _scheduleTask(rule, vars, scheduledAt, apptId) {
     var q = JSON.parse(localStorage.getItem('clinicai_automations_queue') || '[]')
@@ -316,8 +347,101 @@
     if (channel === 'all') return true
     if (channel === 'whatsapp_alert') return type === 'whatsapp' || type === 'alert'
     if (channel === 'whatsapp_task') return type === 'whatsapp' || type === 'task'
+    if (channel === 'whatsapp_alexa') return type === 'whatsapp' || type === 'alexa'
     if (channel === 'alert_task') return type === 'alert' || type === 'task'
+    if (channel === 'alert_alexa') return type === 'alert' || type === 'alexa'
     return false
+  }
+
+  // ── Alexa: announce via webhook ─────────────────────────────
+  async function _fireAlexa(message, target, appt, ruleName) {
+    if (!window.AlexaNotificationService) {
+      console.warn('[Engine] AlexaNotificationService nao disponivel para:', ruleName)
+      return
+    }
+
+    var config = await AlexaNotificationService.getConfig()
+    if (!config || !config.is_active || !config.webhook_url) {
+      console.log('[Engine] Alexa desativada ou sem config')
+      return
+    }
+
+    // Resolve target devices
+    var devices = []
+    if (window.AlexaDevicesRepository) {
+      var res = await AlexaDevicesRepository.getAll()
+      if (res.ok) devices = res.data || []
+    }
+
+    var targetDevices = []
+    var targetType = target || 'sala'
+
+    if (targetType === 'recepcao') {
+      targetDevices = devices.filter(function(d) {
+        var loc = (d.location_label || '').toLowerCase()
+        return d.is_active && (loc.indexOf('recepc') >= 0 || loc.indexOf('recepç') >= 0)
+      })
+      // Fallback: usar reception_device_name da config global
+      if (!targetDevices.length && config.reception_device_name) {
+        targetDevices = [{ device_name: config.reception_device_name }]
+      }
+    } else if (targetType === 'sala') {
+      // Buscar device vinculado a sala do appointment
+      var rooms = typeof getRooms === 'function' ? getRooms() : []
+      var room = null
+      if (appt && appt.salaIdx !== undefined && appt.salaIdx !== null && rooms[appt.salaIdx]) {
+        room = rooms[appt.salaIdx]
+      }
+      if (room) {
+        targetDevices = devices.filter(function(d) { return d.is_active && d.room_id === room.id })
+        // Fallback: usar alexa_device_name da sala
+        if (!targetDevices.length && room.alexa_device_name) {
+          targetDevices = [{ device_name: room.alexa_device_name }]
+        }
+      }
+    } else if (targetType === 'profissional') {
+      // Buscar device vinculado ao profissional
+      var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+      var prof = appt && appt.profissionalIdx !== undefined ? profs[appt.profissionalIdx] : null
+      if (prof) {
+        targetDevices = devices.filter(function(d) { return d.is_active && d.professional_id === prof.id })
+      }
+    } else if (targetType === 'todos') {
+      targetDevices = devices.filter(function(d) { return d.is_active })
+    } else {
+      // UUID de device especifico
+      var specific = devices.find(function(d) { return d.id === targetType })
+      if (specific) targetDevices = [specific]
+    }
+
+    // Enviar para cada device
+    targetDevices.forEach(function(device) {
+      var payload = {
+        event:          'alexa_announce',
+        device:         device.device_name,
+        message:        message,
+        type:           'announce',
+        rule_name:      ruleName,
+        patient_name:   appt ? appt.pacienteNome : '',
+        timestamp:      new Date().toISOString(),
+      }
+
+      fetch(config.webhook_url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).then(function(r) {
+        if (r.ok) console.log('[Engine] Alexa OK:', device.device_name, ruleName)
+        else console.error('[Engine] Alexa falhou:', r.status, device.device_name)
+      }).catch(function(e) {
+        console.error('[Engine] Alexa exception:', e)
+      })
+    })
+
+    // Toast visual
+    if (window._showToast && targetDevices.length) {
+      _showToast('Alexa', 'Anuncio enviado para ' + targetDevices.length + ' device(s)', 'success')
+    }
   }
 
   function _calcScheduledAt(rule, appointmentDate) {

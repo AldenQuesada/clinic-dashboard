@@ -119,10 +119,20 @@
     { id: 'whatsapp',       label: 'WhatsApp' },
     { id: 'alert',          label: 'Alerta Visual' },
     { id: 'task',           label: 'Tarefa' },
+    { id: 'alexa',          label: 'Alexa' },
     { id: 'whatsapp_alert', label: 'WhatsApp + Alerta' },
     { id: 'whatsapp_task',  label: 'WhatsApp + Tarefa' },
+    { id: 'whatsapp_alexa', label: 'WhatsApp + Alexa' },
     { id: 'alert_task',     label: 'Alerta + Tarefa' },
+    { id: 'alert_alexa',    label: 'Alerta + Alexa' },
     { id: 'all',            label: 'Todos' },
+  ]
+
+  var ALEXA_TARGETS = [
+    { id: 'recepcao',     label: 'Recepcao' },
+    { id: 'sala',         label: 'Sala do Profissional' },
+    { id: 'profissional', label: 'Device do Profissional' },
+    { id: 'todos',        label: 'Todos os Dispositivos' },
   ]
 
   var CATEGORIES = [
@@ -166,6 +176,6 @@
     getActive, getByTrigger, getByCategory, getByStatus, getByTag,
     renderTemplate,
     TRIGGER_TYPES, RECIPIENT_TYPES, CHANNELS, CATEGORIES, TEMPLATE_VARS,
-    TASK_ASSIGNEES, TASK_PRIORITIES,
+    TASK_ASSIGNEES, TASK_PRIORITIES, ALEXA_TARGETS,
   })
 })()
