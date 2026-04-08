@@ -116,8 +116,40 @@ async def remove_background(req: PhotoRequest):
 
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
-        # No crop, no trim, no re-center — keep exact same dimensions as input
-        # The frontend crop modal already handles framing
+
+        # Auto-crop to face with generous margins
+        face_cascade = get_face_cascade()
+        gray = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+        if len(faces) > 0:
+            fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
+            ih, iw = final_bgr.shape[:2]
+            margin_top = int(fh * 0.85)
+            margin_bottom = int(fh * 0.45)
+            margin_side = int(fw * 0.55)
+            x1 = max(0, fx - margin_side)
+            y1 = max(0, fy - margin_top)
+            x2 = min(iw, fx + fw + margin_side)
+            y2 = min(ih, fy + fh + margin_bottom)
+            final_bgr = final_bgr[y1:y2, x1:x2]
+            log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
+
+        # Trim excess black border
+        gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
+        row_content = np.mean(gray_trim > 25, axis=1)
+        col_content = np.mean(gray_trim > 25, axis=0)
+        rows = row_content > 0.10
+        cols = col_content > 0.10
+        if np.any(rows) and np.any(cols):
+            rmin, rmax = np.where(rows)[0][[0, -1]]
+            cmin, cmax = np.where(cols)[0][[0, -1]]
+            pad = 12
+            rmin = max(0, rmin - pad)
+            rmax = min(final_bgr.shape[0], rmax + pad)
+            cmin = max(0, cmin - pad)
+            cmax = min(final_bgr.shape[1], cmax + pad)
+            final_bgr = final_bgr[rmin:rmax, cmin:cmax]
+            log.info(f"Trimmed: {cmax-cmin}x{rmax-rmin}")
 
         # Subtle unsharp mask — restore detail without creating artifacts
         gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
