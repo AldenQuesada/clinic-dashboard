@@ -379,6 +379,7 @@
         if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
           FM._render()
           setTimeout(FM._initCanvas, 100)
+          if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 150)
         } else {
           FM._redraw()
         }
