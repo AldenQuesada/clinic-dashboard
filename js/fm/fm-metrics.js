@@ -36,23 +36,26 @@
 
     ctx.save()
 
-    // Draw midline (subtle)
+    // Draw midline (green vertical reference line)
     if (FM._metricShowMidline) {
       var mlx = FM._metricMidline ? FM._metricMidline.x * w : w / 2
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(139,92,246,0.35)'
-      ctx.lineWidth = 1
-      ctx.setLineDash([4, 4])
+      ctx.strokeStyle = 'rgba(16,185,129,0.5)'
+      ctx.lineWidth = 1.5
+      ctx.setLineDash([6, 4])
       ctx.moveTo(mlx, 0)
       ctx.lineTo(mlx, h)
       ctx.stroke()
       ctx.setLineDash([])
 
-      // Small handle
+      // Drag handle at top
       ctx.beginPath()
-      ctx.fillStyle = '#8B5CF6'
-      ctx.arc(mlx, 12, 4, 0, Math.PI * 2)
+      ctx.fillStyle = '#10B981'
+      ctx.arc(mlx, 12, 5, 0, Math.PI * 2)
       ctx.fill()
+      ctx.strokeStyle = '#fff'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
     }
 
     // Draw horizontal lines (dashed, clean)
