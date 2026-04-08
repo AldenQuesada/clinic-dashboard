@@ -225,8 +225,7 @@
           '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#EF4444;letter-spacing:0.1em">ANTES</span>' +
           '<div style="display:flex;gap:3px">' +
             '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" style="font-size:8px;padding:2px 6px">' + FM._icon('cpu', 10) + '</button>' +
-            // auto detect zones desativado
-            // '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" style="font-size:8px;padding:2px 6px;border-color:#10B981;color:#10B981">' + FM._icon('zap', 10) + '</button>' +
+            '<button class="fm-btn" onclick="FaceMapping._deletePhoto(\'' + (FM._activeAngle || 'front') + '\')" style="font-size:8px;padding:2px 6px;border-color:#EF4444;color:#EF4444" title="Excluir ANTES">' + FM._icon('trash-2', 10) + '</button>' +
           '</div>' +
         '</div>' +
         '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">' +
@@ -238,9 +237,12 @@
       '<div style="flex:1;display:flex;flex-direction:column;background:#0A0A0A;border-radius:8px;overflow:hidden;position:relative">' +
         '<div style="padding:4px 12px;background:rgba(16,185,129,0.1);display:flex;justify-content:space-between;align-items:center">' +
           '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#10B981;letter-spacing:0.1em">DEPOIS</span>' +
-          '<label style="font-size:8px;padding:2px 6px;border:1px solid rgba(16,185,129,0.3);border-radius:4px;color:#10B981;cursor:pointer">' +
-            'Upload<input type="file" accept="image/*" onchange="FaceMapping._uploadAfterPhoto(this)" style="display:none">' +
-          '</label>' +
+          '<div style="display:flex;gap:3px">' +
+            '<label style="font-size:8px;padding:2px 6px;border:1px solid rgba(16,185,129,0.3);border-radius:4px;color:#10B981;cursor:pointer">' +
+              'Upload<input type="file" accept="image/*" onchange="FaceMapping._uploadAfterPhoto(this)" style="display:none">' +
+            '</label>' +
+            (FM._afterPhotoUrl ? '<button class="fm-btn" onclick="FaceMapping._deleteAfterPhoto()" style="font-size:8px;padding:2px 6px;border-color:#EF4444;color:#EF4444" title="Excluir DEPOIS">' + FM._icon('trash-2', 10) + '</button>' : '') +
+          '</div>' +
         '</div>' +
         '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">' +
           (FM._afterPhotoUrl || FM._simPhotoUrl
