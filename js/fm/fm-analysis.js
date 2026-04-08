@@ -413,8 +413,9 @@
 
         FM._autoSave()
 
-        // Never call _render() from scan — just redraw canvas overlays
+        // Redraw canvas overlays + reinit canvas2 if in 2x mode
         FM._redraw()
+        if (FM._viewMode === '2x' && FM._initCanvas2) setTimeout(FM._initCanvas2, 50)
         FM._refreshToolbar()
 
         // Auto-trigger skin + collagen + protocol in background

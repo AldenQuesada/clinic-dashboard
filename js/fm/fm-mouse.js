@@ -34,16 +34,16 @@
       // Recompute anatomical region paths when canvas dimensions change
       if (FM._computeRegionPaths) FM._computeRegionPaths()
       FM._redraw()
+      // Always reinit canvas2 after canvas1 (DOM may have been rebuilt)
+      if (FM._viewMode === '2x' && FM._initCanvas2) setTimeout(FM._initCanvas2, 50)
       // Auto-scan: only on frontal, only if enabled, only if no cached data
       var ang = FM._activeAngle || 'front'
       if (FM._scanDataByAngle && FM._scanDataByAngle[ang]) {
-        // Restore from cache
         FM._scanData = FM._scanDataByAngle[ang]
         FM._landmarkData = FM._scanDataByAngle[ang]
         if (FM._computeRegionPaths) FM._computeRegionPaths()
         FM._redraw()
       } else if (FM._scanEnabled && ang === 'front' && FM._autoAnalyze) {
-        // Auto-trigger scan only on frontal
         FM._autoAnalyze()
       }
     }
