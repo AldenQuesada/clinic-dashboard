@@ -38,6 +38,7 @@
     _toggleFullscreen: FM._toggleFullscreen,
     _triggerUploadExtra: FM._triggerUploadExtra,
     _deleteAfterPhoto: FM._deleteAfterPhoto,
+    _setVecAge: FM._setVecAge,
     _deleteExtraPhoto: FM._deleteExtraPhoto,
     _regenSim: function () {
       FM._simPhotoUrl = null

@@ -206,4 +206,70 @@
   // Initialize ZONES
   FM.ZONES = FM._loadZoneRanges()
 
+  // ── Force Vector System — Facial Aging Forces ──────────────
+  // 7 zone groups with young (lifting) and aged (falling) vector directions
+  // Offsets are relative to zone center (normalized 0-1)
+  FM.FORCE_VECTORS = [
+    { id: 'temporal',    label: 'Temporal',        color: '#9b59b6', bilateral: true,  youngDx: -0.06, youngDy: -0.09, agedDx: 0.04, agedDy: 0.09, curve: 0.2 },
+    { id: 'zigoma',      label: 'Zigoma',          color: '#f1c40f', bilateral: true,  youngDx: -0.07, youngDy: -0.07, agedDx: 0.04, agedDy: 0.09, curve: 0.2 },
+    { id: 'olheira',     label: 'Olheira',         color: '#3498db', bilateral: true,  youngDx: -0.03, youngDy: -0.05, agedDx: 0.02, agedDy: 0.05, curve: 0.15 },
+    { id: 'nasolabial',  label: 'Bigode Chines',   color: '#e67e22', bilateral: true,  youngDx: -0.05, youngDy: -0.07, agedDx: 0.01, agedDy: 0.08, curve: 0.2 },
+    { id: 'marionete',   label: 'Marionete',       color: '#e74c3c', bilateral: true,  youngDx: -0.04, youngDy: -0.07, agedDx: -0.01, agedDy: 0.07, curve: 0.2 },
+    { id: 'jowl',        label: 'Mandibula',       color: '#8b5e3c', bilateral: true,  youngDx: -0.06, youngDy: -0.08, agedDx: 0.03, agedDy: 0.08, curve: 0.2 },
+    { id: 'queixo',      label: 'Queixo',          color: '#7f8c8d', bilateral: false, youngDx: 0,     youngDy: -0.08, agedDx: 0,    agedDy: 0.07, curve: 0.1 },
+  ]
+
+  FM.FORCE_REGION_INFO = {
+    temporal:   { youngDesc: 'Superolateral',        agedDesc: 'Colapso lateral',        desc: 'Chave do lifting. Perda de volume causa colapso de todo o sistema vetorial.', chain: ['zigoma', 'nasolabial', 'marionete'] },
+    zigoma:     { youngDesc: 'Projecao + sustentacao', agedDesc: 'Descida + perda projecao', desc: 'Quando desce, cria sulco nasolabial e sombra infraorbital.', chain: ['nasolabial', 'olheira'] },
+    olheira:    { youngDesc: 'Sustentacao orbital',   agedDesc: 'Medial + inferior',       desc: 'Ligamento orbitario perde suporte. Profundidade e aspecto cansado.', chain: [] },
+    nasolabial: { youngDesc: 'Sustentacao zigomatica', agedDesc: 'Descendente',             desc: 'NAO e isolado. Consequencia direta da queda do zigoma.', chain: [] },
+    marionete:  { youngDesc: 'Sustentacao lateral',   agedDesc: 'Vertical descendente',     desc: 'Expressao triste. Reflexo da perda de sustentacao mandibular.', chain: [] },
+    jowl:       { youngDesc: 'Contorno definido',     agedDesc: 'Queda lateral + anterior', desc: 'Perda do contorno facial. Efeito "buldogue".', chain: [] },
+    queixo:     { youngDesc: 'Projecao anterior',     agedDesc: 'Encurtamento + retrusao',  desc: 'Perda de projecao altera proporcoes do terco inferior.', chain: [] },
+  }
+
+  // Default zone centers (normalized) when scanner is not available
+  FM.FORCE_DEFAULT_CENTERS = {
+    temporal_esq:  { x: 0.22, y: 0.20 }, temporal_dir:  { x: 0.78, y: 0.20 },
+    zigoma_esq:    { x: 0.20, y: 0.40 }, zigoma_dir:    { x: 0.80, y: 0.40 },
+    olheira_esq:   { x: 0.32, y: 0.35 }, olheira_dir:   { x: 0.68, y: 0.35 },
+    nasolabial_esq:{ x: 0.35, y: 0.55 }, nasolabial_dir:{ x: 0.65, y: 0.55 },
+    marionete_esq: { x: 0.36, y: 0.65 }, marionete_dir: { x: 0.64, y: 0.65 },
+    jowl_esq:      { x: 0.25, y: 0.72 }, jowl_dir:      { x: 0.75, y: 0.72 },
+    queixo:        { x: 0.50, y: 0.82 },
+  }
+
+  // Helper functions for force vector system
+  FM._vecAgeFactor = function (age) { return Math.max(0, Math.min(1, (age - 25) / 45)) }
+  FM._vecLerp = function (a, b, t) { return a + (b - a) * t }
+
+  FM._vecCollagenPct = function (age) {
+    if (age <= 25) return 100
+    if (age <= 40) return 100 - (age - 25) * 1.2
+    if (age <= 55) return 82 - (age - 40) * 2.0
+    return 52 - (age - 55) * 2.5
+  }
+
+  FM._vecAgeColor = function (t) {
+    if (t < 0.3) return '#00e89d'
+    if (t < 0.65) return '#d4a853'
+    return '#ff4466'
+  }
+
+  FM._vecGravityLabel = function (t) {
+    if (t < 0.2) return { label: 'Baixa', color: '#00e89d' }
+    if (t < 0.5) return { label: 'Moderada', color: '#d4a853' }
+    if (t < 0.75) return { label: 'Alta', color: '#ff8844' }
+    return { label: 'Severa', color: '#ff4466' }
+  }
+
+  FM._vecQuotes = [
+    { maxAge: 30, text: 'Vetores de sustentacao em plena atividade. Estrutura firme e colageno abundante.' },
+    { maxAge: 40, text: 'Inicio da inversao vetorial. Os primeiros sinais de perda de sustentacao aparecem na regiao temporal.' },
+    { maxAge: 50, text: 'Vetores significativamente invertidos. A gravidade domina e os compartimentos de gordura migram.' },
+    { maxAge: 60, text: 'Perda estrutural avancada. Os ligamentos nao sustentam mais os compartimentos na posicao original.' },
+    { maxAge: 999, text: 'Sistema vetorial colapsado. A reconstrucao de vetores e essencial para resultado natural.' },
+  ]
+
 })()

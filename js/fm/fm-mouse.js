@@ -112,19 +112,11 @@
 
     // Draw mode-specific overlays (no label area — everything on the photo)
     if (FM._editorMode === 'vectors') {
-      FM._vectors.forEach(function (vec) { FM._drawVector(vec) })
-      if (FM._selVec) {
-        FM._ctx.save()
-        FM._ctx.fillStyle = '#fff'
-        FM._ctx.strokeStyle = '#C8A97E'
-        FM._ctx.lineWidth = 2
-        FM._ctx.beginPath()
-        FM._ctx.arc(FM._selVec.start.x, FM._selVec.start.y, 6, 0, Math.PI * 2)
-        FM._ctx.fill(); FM._ctx.stroke()
-        FM._ctx.beginPath()
-        FM._ctx.arc(FM._selVec.end.x, FM._selVec.end.y, 6, 0, Math.PI * 2)
-        FM._ctx.fill(); FM._ctx.stroke()
-        FM._ctx.restore()
+      // NEW: Force vector system
+      if (FM._drawAllForceVectors) {
+        FM._drawAllForceVectors(FM._ctx, FM._vecAge || 25, FM._imgW, FM._imgH)
+        // Collagen bar at bottom of canvas
+        if (FM._drawCollagenBar) FM._drawCollagenBar(FM._ctx, 10, FM._imgH - 18, FM._imgW - 20, 8, FM._vecAge || 25)
       }
     } else if (FM._editorMode === 'analysis') {
       // Draw ricketts in its specific sub-mode (tercos removed)
@@ -206,6 +198,12 @@
         FM._ctx = FM._ctx2; FM._imgW = FM._imgW2; FM._imgH = FM._imgH2
         FM._drawWireframe()
         FM._ctx = saveCtx; FM._imgW = saveW; FM._imgH = saveH
+      }
+
+      // Force vectors on canvas2
+      if (FM._editorMode === 'vectors' && FM._drawAllForceVectors) {
+        FM._drawAllForceVectors(FM._ctx2, FM._vecAge || 25, FM._imgW2, FM._imgH2)
+        if (FM._drawCollagenBar) FM._drawCollagenBar(FM._ctx2, 10, FM._imgH2 - 18, FM._imgW2 - 20, 8, FM._vecAge || 25)
       }
 
       // Draw canvas2's own metrics — always when lines exist in simetria

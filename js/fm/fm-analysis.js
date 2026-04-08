@@ -193,6 +193,15 @@
   FM._activeTab = FM._activeTab || 'simetria'
   FM._analysisSubMode = FM._analysisSubMode || 'metrics'
 
+  // ── Force Vector Age Slider ──────────────────────────────
+  FM._setVecAge = function (age) {
+    FM._vecAge = age
+    FM._redraw()
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+  }
+
   FM._switchTab = function (tabId) {
     FM._activeTab = tabId
     if (tabId === 'simetria') {

@@ -887,35 +887,104 @@
   // ── VECTORS PANEL (dedicated for Vetores tab) ──
   FM._renderVectorsPanel = function () {
     var html = '<div class="fm-toolbar">'
+    var age = FM._vecAge || 25
+    var t = FM._vecAgeFactor(age)
+    var colPct = FM._vecCollagenPct(age)
+    var ageColor = FM._vecAgeColor(t)
+    var grav = FM._vecGravityLabel(t)
 
-    html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Vetores Faciais</div>' +
-      '<div style="font-size:9px;color:rgba(200,169,126,0.3);line-height:1.5">' +
-        'Setas que indicam a direcao do tratamento (vetor de lifting).<br>' +
-        'Clique na foto para criar vetores. Arraste para ajustar.' +
+    // ── Age Display ──
+    html += '<div class="fm-tool-section" style="text-align:center;padding:12px">' +
+      '<div style="font-size:48px;font-weight:900;line-height:1;color:' + ageColor + ';transition:color .3s">' + age + '</div>' +
+      '<div style="font-size:9px;text-transform:uppercase;letter-spacing:3px;color:rgba(200,169,126,0.4);margin-top:2px">anos</div>' +
+    '</div>'
+
+    // ── Age Slider ──
+    html += '<div class="fm-tool-section" style="padding:8px 12px">' +
+      '<input type="range" min="25" max="70" step="1" value="' + age + '" ' +
+        'oninput="FaceMapping._setVecAge(parseInt(this.value))" ' +
+        'style="width:100%;height:6px;border-radius:3px;outline:none;cursor:pointer;-webkit-appearance:none;' +
+        'background:linear-gradient(90deg,#00e89d 0%,#d4a853 50%,#ff4466 100%)">' +
+      '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:rgba(200,169,126,0.3)">' +
+        '<span>25</span><span>35</span><span>45</span><span>55</span><span>65</span><span>70</span>' +
       '</div>' +
     '</div>'
 
-    // Auto vectors button
-    html += '<div class="fm-tool-section">' +
-      '<button class="fm-btn" style="width:100%" onclick="FaceMapping._generateVectorsFromAnnotations()">' + FM._icon('trending-up', 12) + ' Gerar Vetores das Zonas</button>' +
+    // ── Collagen Bar ──
+    html += '<div class="fm-tool-section" style="padding:8px 12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+        '<span style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:rgba(200,169,126,0.4);font-weight:600">Colageno</span>' +
+        '<span style="font-size:18px;font-weight:800;color:' + ageColor + '">' + Math.round(colPct) + '%</span>' +
+      '</div>' +
+      '<div style="width:100%;height:6px;background:#1a1a26;border-radius:3px;overflow:hidden">' +
+        '<div style="width:' + Math.max(8, colPct) + '%;height:100%;background:' + ageColor + ';border-radius:3px;transition:all .4s;box-shadow:0 0 8px ' + ageColor + '60"></div>' +
+      '</div>' +
     '</div>'
 
-    // Vector list
-    if (FM._vectors.length > 0) {
-      html += '<div class="fm-tool-section" style="flex:1">' +
-        '<div class="fm-tool-section-title">Vetores (' + FM._vectors.length + ')</div>'
-      FM._vectors.forEach(function (vec) {
-        var zone = FM.ZONES.find(function (z) { return z.id === vec.zone })
-        var label = zone ? zone.label : vec.zone
-        var preset = FM.VECTOR_PRESETS[vec.zone]
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:10px">' +
-          '<span style="color:rgba(200,169,126,0.5)">' + label + '</span>' +
-          '<span style="color:rgba(200,169,126,0.3)">' + (preset ? preset.desc : '') + '</span>' +
-        '</div>'
-      })
-      html += '</div>'
-    }
+    // ── Metrics Cards ──
+    var elasticity = Math.round(100 - t * 65)
+    var structure = Math.round(100 - t * 55)
+    var activeVec = Math.round(100 - t * 70)
+
+    html += '<div class="fm-tool-section" style="padding:4px 12px">' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">'
+
+    var metrics = [
+      { label: 'Elasticidade', value: elasticity },
+      { label: 'Sustentacao', value: structure },
+      { label: 'Vetores', value: activeVec },
+    ]
+    metrics.forEach(function (m) {
+      var mc = m.value >= 70 ? '#00e89d' : (m.value >= 45 ? '#d4a853' : '#ff4466')
+      html += '<div style="background:#12121a;border:1px solid #2a2a3a;border-radius:8px;padding:8px 4px;text-align:center">' +
+        '<div style="font-size:18px;font-weight:800;color:' + mc + '">' + m.value + '%</div>' +
+        '<div style="font-size:7px;text-transform:uppercase;letter-spacing:1px;color:rgba(200,169,126,0.3);margin-top:2px">' + m.label + '</div>' +
+      '</div>'
+    })
+    html += '</div></div>'
+
+    // ── Force Indicators ──
+    html += '<div class="fm-tool-section" style="padding:4px 12px">' +
+      '<div style="display:flex;gap:6px">'
+
+    var forces = [
+      { label: 'Gravidade', info: FM._vecGravityLabel(t) },
+      { label: 'Anteriorizacao', info: t < 0.3 ? { label: 'Minima', color: '#00e89d' } : t < 0.6 ? { label: 'Leve', color: '#d4a853' } : { label: 'Intensa', color: '#ff4466' } },
+      { label: 'Ligamentos', info: t < 0.25 ? { label: 'Firmes', color: '#00e89d' } : t < 0.55 ? { label: 'Frouxos', color: '#d4a853' } : { label: 'Frageis', color: '#ff4466' } },
+    ]
+    forces.forEach(function (f) {
+      html += '<div style="flex:1;background:#12121a;border:1px solid #2a2a3a;border-radius:8px;padding:6px 4px;text-align:center">' +
+        '<div style="font-size:11px;font-weight:700;color:' + f.info.color + '">' + f.info.label + '</div>' +
+        '<div style="font-size:7px;text-transform:uppercase;letter-spacing:0.5px;color:rgba(200,169,126,0.3);margin-top:1px">' + f.label + '</div>' +
+      '</div>'
+    })
+    html += '</div></div>'
+
+    // ── Zone List ──
+    html += '<div class="fm-tool-section" style="padding:4px 12px">' +
+      '<div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(200,169,126,0.4);font-weight:600;margin-bottom:6px">Zonas Vetoriais</div>'
+
+    FM.FORCE_VECTORS.forEach(function (def) {
+      var info = FM.FORCE_REGION_INFO[def.id] || {}
+      var vecDesc = t < 0.3 ? info.youngDesc : info.agedDesc
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03)">' +
+        '<div style="width:8px;height:8px;border-radius:50%;background:' + def.color + ';box-shadow:0 0 6px ' + def.color + '40;flex-shrink:0"></div>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:10px;font-weight:600;color:#F5F0E8">' + def.label + '</div>' +
+          '<div style="font-size:8px;color:rgba(200,169,126,0.3)">' + (vecDesc || '') + '</div>' +
+        '</div>' +
+        '<div style="font-size:9px;color:' + ageColor + ';font-weight:600">' + (t < 0.3 ? 'OK' : t < 0.65 ? 'ALERTA' : 'CRITICO') + '</div>' +
+      '</div>'
+    })
+    html += '</div>'
+
+    // ── Quote ──
+    var quote = FM._vecQuotes.find(function (q) { return age <= q.maxAge }) || FM._vecQuotes[FM._vecQuotes.length - 1]
+    html += '<div class="fm-tool-section" style="padding:12px;text-align:center">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;color:rgba(200,169,126,0.4);line-height:1.6">' +
+        '"' + quote.text + '"' +
+      '</div>' +
+    '</div>'
 
     html += '</div>'
     return html

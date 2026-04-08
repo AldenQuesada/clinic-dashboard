@@ -265,4 +265,142 @@
     ]
   }
 
+  // ── Force Vector Drawing ──────────────────────────────────
+
+  FM._drawForceArrow = function (ctx, x1, y1, x2, y2, color, thickness, glowColor) {
+    var headLen = 12
+    var dx = x2 - x1, dy = y2 - y1
+    var angle = Math.atan2(dy, dx)
+    var len = Math.sqrt(dx * dx + dy * dy)
+    if (len < 5) return
+
+    ctx.save()
+
+    // Glow
+    if (glowColor) {
+      ctx.shadowColor = glowColor
+      ctx.shadowBlur = 12
+    }
+
+    // Shaft
+    ctx.strokeStyle = color
+    ctx.lineWidth = thickness || 2.5
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.moveTo(x1, y1)
+    ctx.lineTo(x2 - Math.cos(angle) * headLen * 0.6, y2 - Math.sin(angle) * headLen * 0.6)
+    ctx.stroke()
+
+    // Arrowhead
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.moveTo(x2, y2)
+    ctx.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4))
+    ctx.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4))
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.restore()
+  }
+
+  FM._drawForceVectorPair = function (ctx, def, center, age, w, h, selected) {
+    var t = FM._vecAgeFactor(age)
+    var cx = center.x * w, cy = center.y * h
+
+    // Compute young and aged endpoints
+    var youngX = cx + def.youngDx * w, youngY = cy + def.youngDy * h
+    var agedX = cx + def.agedDx * w, agedY = cy + def.agedDy * h
+
+    // Lerp to current age position
+    var curX = FM._vecLerp(youngX, agedX, t)
+    var curY = FM._vecLerp(youngY, agedY, t)
+
+    // Color based on age factor
+    var color = FM._vecAgeColor(t)
+    var glow = color + '60'
+
+    // Draw origin dot
+    ctx.save()
+    ctx.fillStyle = def.color
+    ctx.shadowColor = def.color + '80'
+    ctx.shadowBlur = 8
+    ctx.beginPath()
+    ctx.arc(cx, cy, 5, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Pulsing ring
+    ctx.strokeStyle = def.color
+    ctx.lineWidth = 1.5
+    ctx.globalAlpha = 0.4
+    ctx.beginPath()
+    ctx.arc(cx, cy, 10, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.globalAlpha = 1
+    ctx.restore()
+
+    // Draw force arrow
+    FM._drawForceArrow(ctx, cx, cy, curX, curY, color, selected ? 3.5 : 2.5, glow)
+
+    // Label
+    ctx.save()
+    ctx.font = '600 9px Inter, Montserrat, sans-serif'
+    ctx.fillStyle = def.color
+    ctx.globalAlpha = 0.7
+    ctx.textAlign = 'center'
+    ctx.fillText(def.label.toUpperCase(), cx, cy - 14)
+    ctx.restore()
+  }
+
+  FM._drawAllForceVectors = function (ctx, age, w, h, selectedId) {
+    var centers = FM._scanData && FM._scanData.zone_centers ? FM._scanData.zone_centers : FM.FORCE_DEFAULT_CENTERS
+
+    FM.FORCE_VECTORS.forEach(function (def) {
+      if (def.bilateral) {
+        // Left
+        var cL = centers[def.id + '_esq'] || FM.FORCE_DEFAULT_CENTERS[def.id + '_esq']
+        if (cL) FM._drawForceVectorPair(ctx, def, cL, age, w, h, selectedId === def.id)
+
+        // Right (mirror youngDx)
+        var cR = centers[def.id + '_dir'] || FM.FORCE_DEFAULT_CENTERS[def.id + '_dir']
+        if (cR) {
+          var mirrorDef = { label: def.label, color: def.color, youngDx: -def.youngDx, youngDy: def.youngDy, agedDx: -def.agedDx, agedDy: def.agedDy }
+          FM._drawForceVectorPair(ctx, mirrorDef, cR, age, w, h, selectedId === def.id)
+        }
+      } else {
+        var c = centers[def.id] || FM.FORCE_DEFAULT_CENTERS[def.id]
+        if (c) FM._drawForceVectorPair(ctx, def, c, age, w, h, selectedId === def.id)
+      }
+    })
+  }
+
+  FM._drawCollagenBar = function (ctx, x, y, w, h, age) {
+    var pct = FM._vecCollagenPct(age) / 100
+    var t = FM._vecAgeFactor(age)
+    var color = FM._vecAgeColor(t)
+
+    // Track
+    ctx.save()
+    ctx.fillStyle = '#1a1a26'
+    ctx.beginPath()
+    ctx.roundRect(x, y, w, h, [4])
+    ctx.fill()
+
+    // Fill
+    var fillW = Math.max(h, w * Math.max(0.08, pct))
+    ctx.fillStyle = color
+    ctx.shadowColor = color + '60'
+    ctx.shadowBlur = 8
+    ctx.beginPath()
+    ctx.roundRect(x, y, fillW, h, [4])
+    ctx.fill()
+
+    // Label
+    ctx.shadowBlur = 0
+    ctx.font = '700 10px Inter, sans-serif'
+    ctx.fillStyle = '#F5F0E8'
+    ctx.textAlign = 'left'
+    ctx.fillText(Math.round(pct * 100) + '%', x + fillW + 6, y + h - 2)
+    ctx.restore()
+  }
+
 })()
