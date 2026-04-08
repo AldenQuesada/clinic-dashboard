@@ -372,10 +372,17 @@
       FM._showToast('ANTES deletado. DEPOIS mantido.', 'success')
     }
 
+    console.log('[FM] BEFORE render — afterPhotoByAngle:', JSON.stringify(Object.keys(FM._afterPhotoByAngle)), 'url:', FM._afterPhotoByAngle[angle] ? 'EXISTS' : 'GONE')
+
     FM._autoSave()
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
     if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+
+    setTimeout(function () {
+      console.log('[FM] AFTER 1s — afterPhotoByAngle:', JSON.stringify(Object.keys(FM._afterPhotoByAngle)), 'url:', FM._afterPhotoByAngle[angle] ? 'EXISTS' : 'GONE')
+      console.log('[FM] AFTER 1s — photoUrls:', JSON.stringify(Object.keys(FM._photoUrls)), 'activeAngle:', FM._activeAngle)
+    }, 1000)
   }
 
   FM._bindEvents = function () {
