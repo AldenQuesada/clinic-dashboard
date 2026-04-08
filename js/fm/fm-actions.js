@@ -20,6 +20,10 @@
     FM._nextId = 1
     FM._afterPhotoUrl = null
     FM._simPhotoUrl = null
+    FM._metric2Lines = { h: [], v: [] }
+    FM._metric2Points = []
+    FM._metric2Midline = null
+    FM._metric2Angles = null
 
     FM._restoreSession(leadId)
     FM._cleanupStorage()
