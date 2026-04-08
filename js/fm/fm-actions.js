@@ -313,8 +313,10 @@
       URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
       delete FM._afterPhotoByAngle[ang]
     }
+    FM._autoSave()
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
   }
 
   FM._deleteExtraPhoto = function (type) {
@@ -327,8 +329,10 @@
       if (FM._simPhotoByAngle[ang]) URL.revokeObjectURL(FM._simPhotoByAngle[ang])
       delete FM._simPhotoByAngle[ang]
     }
+    FM._autoSave()
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
   }
 
   FM._deletePhoto = function (angle) {
