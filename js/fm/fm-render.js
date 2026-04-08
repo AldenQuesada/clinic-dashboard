@@ -366,6 +366,50 @@
       '</div>' +
     '</div>'
 
+    // List of H lines with individual delete
+    if (FM._metricLines.h.length > 0) {
+      html += '<div class="fm-tool-section" style="padding:8px 12px">' +
+        '<div style="font-size:9px;color:#10B981;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:4px">Linhas H (' + FM._metricLines.h.length + ')</div>'
+      FM._metricLines.h.forEach(function (line, i) {
+        var label = line.label || ('H' + (i + 1))
+        var pct = Math.round(line.y * 100)
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
+          '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + ' — ' + pct + '%</span>' +
+          '<button onclick="FaceMapping._deleteMetricLine(\'h\',' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+        '</div>'
+      })
+      html += '</div>'
+    }
+
+    // List of V lines with individual delete
+    if (FM._metricLines.v.length > 0) {
+      html += '<div class="fm-tool-section" style="padding:8px 12px">' +
+        '<div style="font-size:9px;color:#3B82F6;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:4px">Linhas V (' + FM._metricLines.v.length + ')</div>'
+      FM._metricLines.v.forEach(function (line, i) {
+        var label = line.label || ('V' + (i + 1))
+        var pct = Math.round(line.x * 100)
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
+          '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + ' — ' + pct + '%</span>' +
+          '<button onclick="FaceMapping._deleteMetricLine(\'v\',' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+        '</div>'
+      })
+      html += '</div>'
+    }
+
+    // List of points with individual delete
+    if (FM._metricPoints.length > 0) {
+      html += '<div class="fm-tool-section" style="padding:8px 12px">' +
+        '<div style="font-size:9px;color:#F59E0B;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:4px">Pontos (' + FM._metricPoints.length + ')</div>'
+      FM._metricPoints.forEach(function (pt, i) {
+        var label = pt.label || ('P' + (i + 1))
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
+          '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + '</span>' +
+          '<button onclick="FaceMapping._deleteMetricPoint(' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+        '</div>'
+      })
+      html += '</div>'
+    }
+
     } // end of if metrics sub-mode
 
     // Asymmetry score (shared)

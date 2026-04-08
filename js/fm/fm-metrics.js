@@ -540,6 +540,28 @@
     }
   }
 
+  FM._deleteMetricLine = function (type, index) {
+    FM._pushUndo()
+    if (type === 'h' && index >= 0 && index < FM._metricLines.h.length) {
+      FM._metricLines.h.splice(index, 1)
+    } else if (type === 'v' && index >= 0 && index < FM._metricLines.v.length) {
+      FM._metricLines.v.splice(index, 1)
+    }
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+  }
+
+  FM._deleteMetricPoint = function (index) {
+    FM._pushUndo()
+    if (index >= 0 && index < FM._metricPoints.length) {
+      FM._metricPoints.splice(index, 1)
+    }
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+  }
+
   FM._removeLastMetric = function (type) {
     FM._pushUndo()
     if (type === 'hline' && FM._metricLines.h.length > 0) FM._metricLines.h.pop()
