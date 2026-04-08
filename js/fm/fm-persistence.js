@@ -10,16 +10,27 @@
     if (!FM._lead) return
     var id = FM._lead.id || FM._lead.lead_id || 'unknown'
     try {
-      // Collect ANTES + DEPOIS URLs
+      // Save current angle state first
+      if (FM._saveAngleState) FM._saveAngleState()
+
+      // Collect ANTES + DEPOIS URLs (all angles)
       var allUrls = {}
       Object.keys(FM._photoUrls).forEach(function (k) { allUrls['antes_' + k] = FM._photoUrls[k] })
-      if (FM._afterPhotoUrl) allUrls['depois'] = FM._afterPhotoUrl
+
+      // Collect DEPOIS for ALL angles
+      var afterAngles = FM._afterPhotoByAngle || {}
+      if (FM._afterPhotoUrl && FM._activeAngle) {
+        afterAngles[FM._activeAngle] = FM._afterPhotoUrl
+      }
+      Object.keys(afterAngles).forEach(function (ang) {
+        if (afterAngles[ang]) allUrls['depois_' + ang] = afterAngles[ang]
+      })
 
       var pending = Object.keys(allUrls).length
       if (pending === 0) { FM._saveSessionData(id); return }
 
       var photoData = {}
-      var afterB64 = null
+      var afterByAngle = {}
       var done = 0
       Object.keys(allUrls).forEach(function (key) {
         var img = new Image()
@@ -28,21 +39,25 @@
           c.width = img.width; c.height = img.height
           c.getContext('2d').drawImage(img, 0, 0)
           var b64 = c.toDataURL('image/jpeg', 0.8)
-          if (key === 'depois') afterB64 = b64
-          else photoData[key.replace('antes_', '')] = b64
+          if (key.indexOf('depois_') === 0) {
+            afterByAngle[key.replace('depois_', '')] = b64
+          } else {
+            photoData[key.replace('antes_', '')] = b64
+          }
           done++
-          if (done >= pending) FM._saveSessionData(id, photoData, afterB64)
+          if (done >= pending) FM._saveSessionData(id, photoData, afterByAngle)
         }
-        img.onerror = function () { done++; if (done >= pending) FM._saveSessionData(id, photoData, afterB64) }
+        img.onerror = function () { done++; if (done >= pending) FM._saveSessionData(id, photoData, afterByAngle) }
         img.src = allUrls[key]
       })
     } catch (e) { console.warn('[FaceMapping] Save session failed:', e) }
   }
 
-  FM._saveSessionData = function (id, photoData, afterB64) {
+  FM._saveSessionData = function (id, photoData, afterByAngle) {
     try {
       var photos = photoData || {}
-      if (Object.keys(photos).length === 0 && FM._annotations.length === 0) {
+      var afterPhotos = afterByAngle || {}
+      if (Object.keys(photos).length === 0 && FM._annotations.length === 0 && Object.keys(afterPhotos).length === 0) {
         localStorage.removeItem('fm_session_' + id)
         localStorage.removeItem('fm_last_session')
         return
@@ -83,7 +98,8 @@
         regionState: FM._regionState || {},
         lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
-        afterPhoto: afterB64 || null,
+        afterPhotos: afterPhotos,
+        afterPhoto: afterPhotos['front'] || afterPhotos[Object.keys(afterPhotos)[0]] || null,  // backward compat
         savedAt: new Date().toISOString(),
       }
       localStorage.setItem('fm_session_' + id, JSON.stringify(session))
@@ -147,20 +163,26 @@
         }
       })
 
-      // Restore DEPOIS photo
-      if (session.afterPhoto) {
+      // Restore DEPOIS photos (per angle)
+      var afterPhotos = session.afterPhotos || {}
+      // Migrate old single afterPhoto to 'front'
+      if (!afterPhotos || Object.keys(afterPhotos).length === 0) {
+        if (session.afterPhoto) afterPhotos = { front: session.afterPhoto }
+      }
+      Object.keys(afterPhotos).forEach(function (ang) {
+        if (!afterPhotos[ang]) return
         try {
-          var aBin = atob(session.afterPhoto.split(',')[1])
+          var aBin = atob(afterPhotos[ang].split(',')[1])
           var aArr = new Uint8Array(aBin.length)
           for (var j = 0; j < aBin.length; j++) aArr[j] = aBin.charCodeAt(j)
-          FM._afterPhotoUrl = URL.createObjectURL(new Blob([aArr], { type: 'image/jpeg' }))
+          FM._afterPhotoByAngle[ang] = URL.createObjectURL(new Blob([aArr], { type: 'image/jpeg' }))
         } catch (e) { /* silent */ }
-      }
+      })
 
       // Migrate old global state → always to 'front' (original primary view)
       if (!FM._stateByAngle || Object.keys(FM._stateByAngle).length === 0) {
         var hasData = (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0 ||
-                       FM._metricPoints.length > 0 || FM._afterPhotoUrl)
+                       FM._metricPoints.length > 0 || Object.keys(FM._afterPhotoByAngle).length > 0)
         if (hasData) {
           FM._stateByAngle = {}
           FM._stateByAngle['front'] = {
@@ -179,8 +201,8 @@
             metric2NextPointId: FM._metric2NextPointId,
             metric2NextLineId: FM._metric2NextLineId,
           }
-          if (FM._afterPhotoUrl) {
-            FM._afterPhotoByAngle['front'] = FM._afterPhotoUrl
+          if (FM._afterPhotoByAngle['front']) {
+            // already set from afterPhotos restore above
           }
         }
       }
