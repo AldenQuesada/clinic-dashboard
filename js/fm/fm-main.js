@@ -81,6 +81,8 @@
     _removeLastMetric: FM._removeLastMetric,
     _deleteMetricLine: FM._deleteMetricLine,
     _deleteMetricPoint: FM._deleteMetricPoint,
+    _deleteMetric2Line: FM._deleteMetric2Line,
+    _deleteMetric2Point: FM._deleteMetric2Point,
     _autoAngles: FM._autoAngles,
     _autoAsymmetryPairs: FM._autoAsymmetryPairs,
 

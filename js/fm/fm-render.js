@@ -410,6 +410,46 @@
       html += '</div>'
     }
 
+    // ── Canvas2 (DEPOIS) lines — only in 2x mode ──
+    if (FM._viewMode === '2x') {
+      var has2 = FM._metric2Lines.h.length > 0 || FM._metric2Lines.v.length > 0 || FM._metric2Points.length > 0
+      if (has2) {
+        html += '<div class="fm-tool-section" style="padding:8px 12px;border-top:2px solid rgba(16,185,129,0.3)">' +
+          '<div style="font-size:9px;color:#10B981;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:6px">DEPOIS</div>'
+
+        if (FM._metric2Lines.h.length > 0) {
+          html += '<div style="font-size:8px;color:#10B981;margin-bottom:3px">H (' + FM._metric2Lines.h.length + ')</div>'
+          FM._metric2Lines.h.forEach(function (line, i) {
+            var label = line.label || ('H' + (i + 1))
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 0">' +
+              '<span style="font-size:9px;color:rgba(245,240,232,0.4)">' + label + ' — ' + Math.round(line.y * 100) + '%</span>' +
+              '<button onclick="FaceMapping._deleteMetric2Line(\'h\',' + i + ')" style="width:16px;height:16px;border:none;background:rgba(239,68,68,0.15);border-radius:3px;color:#EF4444;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+            '</div>'
+          })
+        }
+        if (FM._metric2Lines.v.length > 0) {
+          html += '<div style="font-size:8px;color:#3B82F6;margin-top:4px;margin-bottom:3px">V (' + FM._metric2Lines.v.length + ')</div>'
+          FM._metric2Lines.v.forEach(function (line, i) {
+            var label = line.label || ('V' + (i + 1))
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 0">' +
+              '<span style="font-size:9px;color:rgba(245,240,232,0.4)">' + label + ' — ' + Math.round(line.x * 100) + '%</span>' +
+              '<button onclick="FaceMapping._deleteMetric2Line(\'v\',' + i + ')" style="width:16px;height:16px;border:none;background:rgba(239,68,68,0.15);border-radius:3px;color:#EF4444;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+            '</div>'
+          })
+        }
+        if (FM._metric2Points.length > 0) {
+          html += '<div style="font-size:8px;color:#F59E0B;margin-top:4px;margin-bottom:3px">Pt (' + FM._metric2Points.length + ')</div>'
+          FM._metric2Points.forEach(function (pt, i) {
+            html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 0">' +
+              '<span style="font-size:9px;color:rgba(245,240,232,0.4)">' + (pt.label || 'P' + (i+1)) + '</span>' +
+              '<button onclick="FaceMapping._deleteMetric2Point(' + i + ')" style="width:16px;height:16px;border:none;background:rgba(239,68,68,0.15);border-radius:3px;color:#EF4444;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center">&times;</button>' +
+            '</div>'
+          })
+        }
+        html += '</div>'
+      }
+    }
+
     } // end of if metrics sub-mode
 
     // Asymmetry score (shared)

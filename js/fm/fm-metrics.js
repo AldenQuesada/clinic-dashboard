@@ -308,12 +308,14 @@
 
     var tool = FM._metricTool
 
-    // Midline — FIRST priority, always draggable anywhere on the line
+    // Midline — FIRST priority, draggable anywhere on the line (wider threshold)
     if (FM._metricShowMidline) {
       var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
-      if (Math.abs(mx - midX) < threshold) {
+      if (Math.abs(mx - midX) < 18) {
         FM._pushUndo()
+        if (!FM._metricMidline) FM._metricMidline = { x: 0.5 }
         FM._metricDrag = { type: 'midline' }
+        console.log('[FM] midline drag started at', mx, midX)
         return true
       }
     }
@@ -605,6 +607,28 @@
     FM._pushUndo()
     if (index >= 0 && index < FM._metricPoints.length) {
       FM._metricPoints.splice(index, 1)
+    }
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+  }
+
+  FM._deleteMetric2Line = function (type, index) {
+    FM._pushUndo()
+    if (type === 'h' && index >= 0 && index < FM._metric2Lines.h.length) {
+      FM._metric2Lines.h.splice(index, 1)
+    } else if (type === 'v' && index >= 0 && index < FM._metric2Lines.v.length) {
+      FM._metric2Lines.v.splice(index, 1)
+    }
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+  }
+
+  FM._deleteMetric2Point = function (index) {
+    FM._pushUndo()
+    if (index >= 0 && index < FM._metric2Points.length) {
+      FM._metric2Points.splice(index, 1)
     }
     FM._redraw()
     FM._refreshToolbar()

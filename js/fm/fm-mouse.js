@@ -253,8 +253,8 @@
       }
     }
 
-    // ANALYSIS MODE
-    if (FM._editorMode === 'analysis') {
+    // RICKETTS MODE (only when in ricketts sub-mode, not metrics)
+    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'ricketts') {
       if (FM._activeAngle === 'lateral') {
         var nDist = Math.sqrt(Math.pow(mx - FM._rickettsPoints.nose.x * FM._imgW, 2) + Math.pow(my - FM._rickettsPoints.nose.y * FM._imgH, 2))
         if (nDist < 15) { FM._pushUndo(); FM._analysisDrag = 'nose'; FM._mode = 'move'; FM._canvas.style.cursor = 'grab'; return }
