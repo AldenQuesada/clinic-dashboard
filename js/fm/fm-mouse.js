@@ -34,6 +34,8 @@
       // Recompute anatomical region paths when canvas dimensions change
       if (FM._computeRegionPaths) FM._computeRegionPaths()
       FM._redraw()
+      // Auto-trigger scan if enabled and no data yet
+      if (FM._autoScanIfNeeded) FM._autoScanIfNeeded()
     }
     FM._img.src = FM._photoUrls[FM._activeAngle]
 

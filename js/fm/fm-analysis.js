@@ -308,6 +308,40 @@
     })
   }
 
+  // ── Scanner Toggle ─────────────────────────────────────────
+
+  FM._toggleScan = function () {
+    FM._scanEnabled = !FM._scanEnabled
+    if (FM._scanEnabled) {
+      // Auto-trigger scan if we don't have data for this angle
+      FM._autoScanIfNeeded()
+    } else {
+      FM._scanData = null
+      FM._landmarkData = null
+    }
+    FM._redraw()
+    FM._refreshToolbar()
+  }
+
+  // Auto-trigger scan when needed (called from _initCanvas)
+  FM._autoScanIfNeeded = function () {
+    if (!FM._scanEnabled) return
+    var angle = FM._activeAngle || 'front'
+    if (!FM._photoUrls[angle]) return
+
+    // If we have cached scan data for this angle, restore it
+    if (FM._scanDataByAngle[angle]) {
+      FM._scanData = FM._scanDataByAngle[angle]
+      FM._landmarkData = FM._scanDataByAngle[angle]
+      if (FM._computeRegionPaths) FM._computeRegionPaths()
+      FM._redraw()
+      return
+    }
+
+    // No cached data — run the scan
+    FM._autoAnalyze()
+  }
+
   // ── Auto-analyze via Python API ─────────────────────────────
 
   FM._autoAnalyze = function () {
@@ -373,16 +407,15 @@
         if (data.measurements && data.measurements.golden_ratio_score) parts.push('Golden Ratio: ' + data.measurements.golden_ratio_score)
 
         FM._showToast(parts.join(' | '), 'success')
+
+        // Cache scan data for this angle
+        FM._scanDataByAngle[angle] = data
+
         FM._autoSave()
 
-        // Re-render if in metrics mode (needs full re-render for clinical panel)
-        if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
-          FM._render()
-          setTimeout(FM._initCanvas, 100)
-          if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 150)
-        } else {
-          FM._redraw()
-        }
+        // Never call _render() from scan — just redraw canvas overlays
+        FM._redraw()
+        FM._refreshToolbar()
 
         // Auto-trigger skin + collagen + protocol in background
         if (!FM._skinAnalysis) FM._runSkinAnalysis()

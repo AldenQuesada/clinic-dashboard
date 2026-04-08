@@ -83,8 +83,7 @@
 
       // Right actions — minimal, all champagne
       '<div style="display:flex;gap:3px;align-items:center">' +
-        '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="Scanner 478pts" style="font-size:9px;padding:4px 8px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('cpu', 11) + '</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,' + (FM._showWireframe ? '0.8' : '0.3') + ')">' + FM._icon('grid', 11) + '</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggleScan()" title="' + (FM._scanEnabled ? 'Scanner ON — clique para desativar' : 'Scanner OFF — clique para ativar') + '" style="font-size:9px;padding:4px 8px;border-color:' + (FM._scanEnabled ? 'rgba(16,185,129,0.3)' : 'rgba(200,169,126,0.15)') + ';color:' + (FM._scanEnabled ? '#10B981' : 'rgba(200,169,126,0.3)') + ';font-weight:' + (FM._scanEnabled ? '600' : '400') + '">' + FM._icon('cpu', 11) + (FM._scanEnabled ? ' ON' : ' OFF') + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" title="Comparar" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('eye', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._exportReport()" title="Report" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('download', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._saveToSupabase()" style="font-size:9px;padding:4px 8px;border-color:rgba(200,169,126,0.3);color:#C8A97E;font-weight:600">' + FM._icon('save', 11) + ' Salvar</button>' +

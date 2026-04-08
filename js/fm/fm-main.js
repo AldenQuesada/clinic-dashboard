@@ -46,6 +46,7 @@
     _undo: FM._undo,
     _redo: FM._redo,
     _autoAnalyze: FM._autoAnalyze,
+    _toggleScan: FM._toggleScan,
     _printReport: FM._printReport,
     _showHistory: FM._showHistory,
     _showNoteEditor: FM._showNoteEditor,

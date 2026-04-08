@@ -140,6 +140,8 @@
   FM._regionPaths = {}       // cached computed paths per region (recalc on scan)
   FM._regionAnimFrame = null // hover animation
   FM._showRegionLabels = true  // toggle labels on/off
+  FM._scanEnabled = true       // scanner auto-trigger ON by default
+  FM._scanDataByAngle = {}     // cached scan results per angle
 
   // ── Granular Lock System ──────────────────────────────────
   // Key: "tab_canvas_angle" (e.g. "simetria_1x_front", "zones_2x_45")

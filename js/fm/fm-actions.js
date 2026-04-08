@@ -116,6 +116,15 @@
     // Restore state for the new angle
     if (FM._restoreAngleState) FM._restoreAngleState(angle)
 
+    // Restore cached scan data for this angle (or clear)
+    if (FM._scanDataByAngle && FM._scanDataByAngle[angle]) {
+      FM._scanData = FM._scanDataByAngle[angle]
+      FM._landmarkData = FM._scanDataByAngle[angle]
+    } else {
+      FM._scanData = null
+      FM._landmarkData = null
+    }
+
     if (FM._selectedZone) {
       var allowed = FM._zonesForAngle(angle)
       var ids = allowed.map(function (z) { return z.id })
