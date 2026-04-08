@@ -57,7 +57,12 @@
     try {
       var photos = photoData || {}
       var afterPhotos = afterByAngle || {}
-      if (Object.keys(photos).length === 0 && FM._annotations.length === 0 && Object.keys(afterPhotos).length === 0) {
+      var hasMetrics = FM._metricLines && (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0)
+      var hasRegions = FM._regionState && Object.keys(FM._regionState).some(function (k) { return FM._regionState[k].active })
+      var hasAnyData = Object.keys(photos).length > 0 || FM._annotations.length > 0 ||
+                       Object.keys(afterPhotos).length > 0 || hasMetrics || hasRegions ||
+                       (FM._stateByAngle && Object.keys(FM._stateByAngle).length > 0)
+      if (!hasAnyData) {
         localStorage.removeItem('fm_session_' + id)
         localStorage.removeItem('fm_last_session')
         return
@@ -70,11 +75,8 @@
         viewMode: FM._viewMode || '1x',
         annotations: FM._annotations,
         vectors: FM._vectors,
-        // Save current angle state into stateByAngle before persisting
-        stateByAngle: (function () {
-          if (FM._saveAngleState) FM._saveAngleState()
-          return FM._stateByAngle || {}
-        })(),
+        // stateByAngle already saved by _saveSession caller
+        stateByAngle: FM._stateByAngle || {},
         // Current angle's metric state (backward compat)
         tercoLines: FM._tercoLines,
         rickettsPoints: FM._rickettsPoints,
