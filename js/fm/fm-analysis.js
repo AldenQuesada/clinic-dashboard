@@ -238,6 +238,7 @@
       if (FM._analysisSubMode === 'ricketts' && FM._photoUrls['lateral']) FM._activeAngle = 'lateral'
     } else if (tabId === 'zones') {
       FM._editorMode = 'zones'
+      if (FM._computeRegionPaths) FM._computeRegionPaths()
     } else if (tabId === 'vectors') {
       FM._editorMode = 'vectors'
     } else if (tabId === 'analysis') {
@@ -356,6 +357,9 @@
         // Store full scan data (landmarks, symmetry, shape, pose, measurements)
         FM._landmarkData = data
         FM._scanData = data
+
+        // Compute anatomical region paths for Estruturacao tab
+        if (FM._computeRegionPaths) FM._computeRegionPaths()
 
         // Build summary toast
         var parts = [data.landmark_count + ' pontos detectados']

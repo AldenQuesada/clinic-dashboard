@@ -88,6 +88,14 @@
     _autoAngles: FM._autoAngles,
     _autoAsymmetryPairs: FM._autoAsymmetryPairs,
 
+    // Region overlay engine
+    _toggleRegion: FM._toggleRegion,
+    _selectRegion: FM._selectRegion,
+    _setRegionIntensity: FM._setRegionIntensity,
+    _setRegionTreatment: FM._setRegionTreatment,
+    _activateAllRegions: FM._activateAllRegions,
+    _deactivateAllRegions: FM._deactivateAllRegions,
+
     // Sub-mode access
     get _analysisSubMode() { return FM._analysisSubMode },
     set _analysisSubMode(v) { FM._analysisSubMode = v },

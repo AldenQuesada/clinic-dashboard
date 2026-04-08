@@ -74,6 +74,7 @@
         metric2Angles: FM._metric2Angles,
         metric2NextPointId: FM._metric2NextPointId,
         metric2NextLineId: FM._metric2NextLineId,
+        regionState: FM._regionState || {},
         lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
         afterPhoto: afterB64 || null,
@@ -118,6 +119,7 @@
       FM._analysisSubMode = session.analysisSubMode || 'metrics'
       FM._nextId = session.nextId || 1
       FM._nextVecId = session.nextVecId || 1
+      FM._regionState = session.regionState || {}
       FM._lastAnalysis = session.lastAnalysis || null
       FM._activeAngle = session.activeAngle || null
 

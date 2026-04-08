@@ -1211,3 +1211,33 @@
   .fm-crop-modal { width: 95vw; max-width: 420px; }
   .fm-export-modal { width: 95vw; }
 }
+
+/* ── Region overlay intensity slider ─────────────────────── */
+.fm-toolbar input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(200,169,126,0.12);
+  outline: none;
+  cursor: pointer;
+}
+.fm-toolbar input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #C8A97E;
+  border: 2px solid #0A0A0A;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(200,169,126,0.4);
+}
+.fm-toolbar input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #C8A97E;
+  border: 2px solid #0A0A0A;
+  cursor: pointer;
+}

@@ -653,103 +653,189 @@
   // ── ZONES PANEL (dedicated for Estruturacao tab) ──
   FM._renderZonesPanel = function () {
     var html = '<div class="fm-toolbar">'
+    var hasLandmarks = FM._scanData && FM._scanData.landmarks && FM._scanData.landmarks.length >= 468
+    var selId = FM._selectedRegion
+    var selRegion = selId && FM._ANATOMICAL_REGIONS ? FM._ANATOMICAL_REGIONS[selId] : null
+    var selState = selId ? FM._getRegionState(selId) : null
 
-    var allowedZones = FM._zonesForAngle(FM._activeAngle)
-    var allowedIds = allowedZones.map(function (z) { return z.id })
-    var selZone = FM._selectedZone ? FM.ZONES.find(function (z) { return z.id === FM._selectedZone }) : null
-    var curUnit = selZone ? selZone.unit : 'mL'
-    var curStep = curUnit === 'U' ? '1' : '0.1'
+    // Scanner prompt if no landmarks
+    if (!hasLandmarks) {
+      html += '<div class="fm-tool-section">' +
+        '<div style="text-align:center;padding:16px 8px">' +
+          '<div style="font-size:11px;color:rgba(200,169,126,0.5);margin-bottom:12px;line-height:1.5">' +
+            'Execute o scanner facial para ativar as regioes anatomicas automaticas.' +
+          '</div>' +
+          '<button class="fm-btn" style="width:100%;padding:8px;font-weight:600;border-color:rgba(200,169,126,0.3);color:#C8A97E" onclick="FaceMapping._autoAnalyze()">' +
+            FM._icon('cpu', 13) + ' Scanner 478 Pontos</button>' +
+        '</div>' +
+      '</div>'
+    }
 
-    // Auto zonas button (desativado — deteccao automatica nao confiavel)
-    // html += '<div class="fm-tool-section">' +
-    //   '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoDetectZones()">' + FM._icon('zap', 12) + ' Auto Zonas (scanner)</button>' +
-    // '</div>'
-
-    // Preenchimento
-    var fillZones = FM.ZONES.filter(function (z) { return z.cat === 'fill' })
+    // Toggle all / none
     html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Preenchimento (mL)</div>' +
-      '<div class="fm-zone-grid">'
-    fillZones.forEach(function (z) { html += FM._renderZoneBtn(z, allowedIds) })
-    html += '</div></div>'
-
-    // Toxina
-    var toxZones = FM.ZONES.filter(function (z) { return z.cat === 'tox' })
-    html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Rugas / Toxina (U)</div>' +
-      '<div class="fm-zone-grid">'
-    toxZones.forEach(function (z) { html += FM._renderZoneBtn(z, allowedIds) })
-    html += '</div></div>'
-
-    // Treatment
-    html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Tratamento</div>' +
-      '<select class="fm-select" id="fmTreatment" onchange="FaceMapping._onTreatmentChange(this.value)">'
-    FM.TREATMENTS.forEach(function (t) {
-      html += '<option value="' + t.id + '"' + (FM._selectedTreatment === t.id ? ' selected' : '') + '>' + t.label + '</option>'
-    })
-    html += '</select></div>'
-
-    // Details
-    var rangeHint = selZone ? (selZone.min + ' — ' + selZone.max + ' ' + selZone.unit) : ''
-    html += '<div class="fm-tool-section">' +
-      '<div class="fm-tool-section-title">Detalhes</div>' +
-      '<div class="fm-input-row" style="margin-bottom:8px">' +
-        '<label>' + curUnit + '</label>' +
-        '<input class="fm-input" id="fmMl" type="number" step="' + curStep + '" min="0" max="999" value="' + FM._selectedMl + '" onchange="FaceMapping._selectedMl=this.value" style="width:70px">' +
-        (rangeHint ? '<span style="font-size:9px;color:rgba(200,169,126,0.3)">' + rangeHint + '</span>' : '') +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div class="fm-tool-section-title" style="margin:0">Regioes Anatomicas</div>' +
+        '<div style="display:flex;gap:4px">' +
+          '<button class="fm-btn" style="font-size:8px;padding:2px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)" ' +
+            'onclick="FaceMapping._activateAllRegions()" title="Ativar todas">' + FM._icon('eye', 10) + '</button>' +
+          '<button class="fm-btn" style="font-size:8px;padding:2px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)" ' +
+            'onclick="FaceMapping._deactivateAllRegions()" title="Desativar todas">' + FM._icon('eye-off', 10) + '</button>' +
+        '</div>' +
       '</div>' +
-      '<div class="fm-input-row" style="margin-bottom:8px">' +
-        '<label>Lado</label>' +
-        '<select class="fm-select" id="fmSide" onchange="FaceMapping._selectedSide=this.value" style="width:auto;flex:1">' +
-          '<option value="bilateral"' + (FM._selectedSide === 'bilateral' ? ' selected' : '') + '>Bilateral</option>' +
-          '<option value="esquerdo"' + (FM._selectedSide === 'esquerdo' ? ' selected' : '') + '>Esquerdo</option>' +
-          '<option value="direito"' + (FM._selectedSide === 'direito' ? ' selected' : '') + '>Direito</option>' +
-        '</select>' +
-      '</div>' +
-      '<input class="fm-input" id="fmProduct" placeholder="Produto (ex: Juvederm Voluma)" value="' + FM._esc(FM._selectedProduct) + '" onchange="FaceMapping._selectedProduct=this.value">' +
     '</div>'
 
-    // Annotations list
-    html += '<div class="fm-tool-section" style="flex:1">' +
-      '<div class="fm-tool-section-title">Marcacoes (' + FM._annotations.length + ')</div>' +
-      '<div class="fm-annotations-list">'
-    var angleAnnotations = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
-    if (angleAnnotations.length === 0) {
-      html += '<div style="font-size:10px;color:rgba(200,169,126,0.3);text-align:center;padding:12px">Selecione uma zona e desenhe na foto</div>'
-    } else {
-      angleAnnotations.forEach(function (ann) {
-        var t = FM.TREATMENTS.find(function (x) { return x.id === ann.treatment }) || FM.TREATMENTS[0]
-        var z = FM.ZONES.find(function (x) { return x.id === ann.zone })
-        var zColor = z ? z.color : '#999'
-        html += '<div class="fm-annotation-item">' +
-          '<span class="fm-annotation-dot" style="background:' + zColor + '"></span>' +
-          '<div class="fm-annotation-info">' +
-            '<div class="fm-annotation-zone">' + (z ? z.label : ann.zone) + '</div>' +
-            '<div class="fm-annotation-detail">' + t.label + ' \u2022 ' + ann.ml + (z ? z.unit : 'mL') + '</div>' +
-          '</div>' +
-          '<button class="fm-annotation-remove" onclick="FaceMapping._removeAnnotation(' + ann.id + ')">&times;</button>' +
-        '</div>'
-      })
+    // Region list — grouped by category
+    var REGIONS = FM._ANATOMICAL_REGIONS || {}
+    var regionIds = Object.keys(REGIONS).sort(function (a, b) {
+      return (REGIONS[a].order || 99) - (REGIONS[b].order || 99)
+    })
+
+    // Preenchimento regions
+    var fillIds = regionIds.filter(function (id) {
+      var z = FM.ZONES.find(function (zz) { return zz.id === id })
+      return z && z.cat === 'fill'
+    })
+    var toxIds = regionIds.filter(function (id) {
+      var z = FM.ZONES.find(function (zz) { return zz.id === id })
+      return z && z.cat === 'tox'
+    })
+
+    if (fillIds.length > 0) {
+      html += '<div class="fm-tool-section" style="padding-bottom:4px">' +
+        '<div class="fm-tool-section-title" style="font-size:9px;opacity:0.4;margin-bottom:4px">Preenchimento</div>'
+      fillIds.forEach(function (id) { html += _renderRegionRow(id, REGIONS[id], selId, hasLandmarks) })
+      html += '</div>'
     }
-    html += '</div></div>'
+
+    if (toxIds.length > 0) {
+      html += '<div class="fm-tool-section" style="padding-bottom:4px">' +
+        '<div class="fm-tool-section-title" style="font-size:9px;opacity:0.4;margin-bottom:4px">Toxina / Rugas</div>'
+      toxIds.forEach(function (id) { html += _renderRegionRow(id, REGIONS[id], selId, hasLandmarks) })
+      html += '</div>'
+    }
+
+    // Selected region details
+    if (selRegion && selState) {
+      var zone = FM.ZONES.find(function (z) { return z.id === selId })
+      var unit = zone ? zone.unit : 'mL'
+      var step = unit === 'U' ? '1' : '0.1'
+      var rangeHint = zone ? (zone.min + ' — ' + zone.max + ' ' + unit) : ''
+
+      html += '<div class="fm-tool-section" style="border-top:1px solid rgba(200,169,126,0.1);padding-top:10px">' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">' +
+          '<span style="width:8px;height:8px;border-radius:50%;background:' + selRegion.color + ';flex-shrink:0"></span>' +
+          '<span class="fm-tool-section-title" style="margin:0;font-size:11px">' + selRegion.label + '</span>' +
+        '</div>' +
+
+        // Intensity slider
+        '<div style="margin-bottom:8px">' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:2px">' +
+            '<label style="font-size:9px;color:rgba(200,169,126,0.5)">Intensidade</label>' +
+            '<span style="font-size:9px;color:rgba(200,169,126,0.4)">' + selState.intensity + '%</span>' +
+          '</div>' +
+          '<input type="range" min="10" max="100" value="' + selState.intensity + '" ' +
+            'oninput="FaceMapping._setRegionIntensity(\'' + selId + '\',this.value);this.nextElementSibling.textContent=this.value+\'%\'" ' +
+            'style="width:100%;accent-color:' + selRegion.color + ';height:4px">' +
+          '<span style="display:none"></span>' +
+        '</div>' +
+
+        // Treatment select
+        '<div class="fm-input-row" style="margin-bottom:6px">' +
+          '<label style="font-size:9px">Tratamento</label>' +
+          '<select class="fm-select" style="flex:1;font-size:10px" onchange="FaceMapping._setRegionTreatment(\'' + selId + '\',\'treatment\',this.value)">'
+      FM.TREATMENTS.forEach(function (t) {
+        html += '<option value="' + t.id + '"' + (selState.treatment === t.id ? ' selected' : '') + '>' + t.label + '</option>'
+      })
+      html += '</select></div>' +
+
+        // ML / Units
+        '<div class="fm-input-row" style="margin-bottom:6px">' +
+          '<label style="font-size:9px">' + unit + '</label>' +
+          '<input class="fm-input" type="number" step="' + step + '" min="0" max="999" value="' + selState.ml + '" ' +
+            'onchange="FaceMapping._setRegionTreatment(\'' + selId + '\',\'ml\',this.value)" style="width:60px;font-size:10px">' +
+          (rangeHint ? '<span style="font-size:8px;color:rgba(200,169,126,0.25)">' + rangeHint + '</span>' : '') +
+        '</div>' +
+
+        // Side
+        '<div class="fm-input-row" style="margin-bottom:6px">' +
+          '<label style="font-size:9px">Lado</label>' +
+          '<select class="fm-select" style="flex:1;font-size:10px" onchange="FaceMapping._setRegionTreatment(\'' + selId + '\',\'side\',this.value)">' +
+            '<option value="bilateral"' + (selState.side === 'bilateral' ? ' selected' : '') + '>Bilateral</option>' +
+            '<option value="esquerdo"' + (selState.side === 'esquerdo' ? ' selected' : '') + '>Esquerdo</option>' +
+            '<option value="direito"' + (selState.side === 'direito' ? ' selected' : '') + '>Direito</option>' +
+          '</select>' +
+        '</div>' +
+
+        // Product
+        '<input class="fm-input" placeholder="Produto" value="' + FM._esc(selState.product) + '" ' +
+          'onchange="FaceMapping._setRegionTreatment(\'' + selId + '\',\'product\',this.value)" ' +
+          'style="font-size:10px;margin-bottom:4px">' +
+      '</div>'
+    }
 
     // Totals
-    var totals = FM._calcTotals()
+    var totals = FM._calcRegionTotals ? FM._calcRegionTotals() : []
     if (totals.length > 0) {
-      html += '<div class="fm-tool-section">' +
-        '<div class="fm-tool-section-title">Resumo Total</div>'
+      html += '<div class="fm-tool-section" style="border-top:1px solid rgba(200,169,126,0.1);padding-top:8px">' +
+        '<div class="fm-tool-section-title" style="font-size:9px">Resumo</div>'
+      var totalMl = 0
       totals.forEach(function (t) {
-        html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">' +
+        totalMl += t.ml
+        html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">' +
           '<span style="color:' + t.color + '">' + t.label + '</span>' +
-          '<span style="color:rgba(245,240,232,0.85);font-weight:600">' + t.ml.toFixed(1) + ' mL</span>' +
+          '<span style="color:rgba(245,240,232,0.8);font-weight:600">' + t.ml.toFixed(1) + ' ' + t.unit + '</span>' +
         '</div>'
       })
+      if (totalMl > 0) {
+        html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(200,169,126,0.08)">' +
+          '<span style="color:#C8A97E;font-weight:600">Total</span>' +
+          '<span style="color:#C8A97E;font-weight:700">' + totalMl.toFixed(1) + ' mL</span>' +
+        '</div>'
+      }
       html += '</div>'
     }
 
     html += '</div>'
     return html
+  }
+
+  // Region row — toggle + label + color dot
+  function _renderRegionRow(id, region, selectedId, hasLandmarks) {
+    var st = FM._getRegionState(id)
+    var isActive = st.active
+    var isSelected = selectedId === id
+    var disabled = !hasLandmarks
+
+    var bgColor = isSelected ? 'rgba(200,169,126,0.08)' : 'transparent'
+    var opacity = disabled ? '0.3' : '1'
+
+    return '<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;cursor:' + (disabled ? 'default' : 'pointer') + ';' +
+      'background:' + bgColor + ';opacity:' + opacity + ';transition:background .15s" ' +
+      'onmouseenter="this.style.background=\'rgba(200,169,126,0.06)\'" ' +
+      'onmouseleave="this.style.background=\'' + bgColor + '\'">' +
+
+      // Toggle switch
+      '<div onclick="' + (disabled ? '' : 'event.stopPropagation();FaceMapping._toggleRegion(\'' + id + '\')') + '" ' +
+        'style="width:28px;height:14px;border-radius:7px;cursor:pointer;position:relative;flex-shrink:0;' +
+        'background:' + (isActive ? region.color : 'rgba(200,169,126,0.15)') + ';transition:background .2s">' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:#fff;position:absolute;top:2px;' +
+          'left:' + (isActive ? '16px' : '2px') + ';transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>' +
+      '</div>' +
+
+      // Color dot
+      '<span style="width:6px;height:6px;border-radius:50%;background:' + region.color + ';flex-shrink:0;' +
+        'opacity:' + (isActive ? '1' : '0.3') + '"></span>' +
+
+      // Label (clickable to select)
+      '<span onclick="' + (disabled ? '' : 'FaceMapping._selectRegion(\'' + id + '\')') + '" ' +
+        'style="font-size:10px;color:' + (isActive ? 'rgba(245,240,232,0.85)' : 'rgba(200,169,126,0.35)') + ';' +
+        'font-weight:' + (isSelected ? '600' : '400') + ';flex:1;cursor:pointer;' +
+        'font-family:Montserrat,sans-serif;letter-spacing:0.02em">' + region.label + '</span>' +
+
+      // Vector indicator
+      (region.hasVectors ? '<span style="font-size:8px;color:rgba(200,169,126,' + (isActive ? '0.4' : '0.15') + '">&#8599;</span>' : '') +
+
+    '</div>'
   }
 
   // ── VECTORS PANEL (dedicated for Vetores tab) ──

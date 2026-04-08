@@ -54,6 +54,14 @@
   FM._landmarkData = null   // MediaPipe 468 landmarks
   FM._skinAnalysis = null   // OpenCV skin scores
 
+  // ── Region Overlay State ──────────────────────────────────
+  // { regionId: { active, intensity(0-100), treatment, ml, product, side } }
+  FM._regionState = {}
+  FM._hoveredRegion = null   // region under cursor
+  FM._selectedRegion = null  // clicked region for editing
+  FM._regionPaths = {}       // cached computed paths per region (recalc on scan)
+  FM._regionAnimFrame = null // hover animation
+
   // Canvas2 (DEPOIS) independent metric state
   FM._metric2Lines = { h: [], v: [] }
   FM._metric2Points = []
@@ -177,6 +185,7 @@
       metricNextLineId: FM._metricNextLineId,
       tercoLines: FM._tercoLines,
       rickettsPoints: FM._rickettsPoints,
+      regionState: FM._regionState,
     })
   }
 
@@ -193,6 +202,7 @@
     FM._metricNextLineId = s.metricNextLineId || 1
     FM._tercoLines = s.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
     FM._rickettsPoints = s.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
+    FM._regionState = s.regionState || {}
   }
 
   // Push current state to undo stack (call BEFORE making a change)

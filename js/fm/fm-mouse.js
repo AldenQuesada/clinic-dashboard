@@ -31,6 +31,8 @@
       FM._imgH = Math.round(FM._img.height * scale)
       FM._canvas.width = FM._imgW
       FM._canvas.height = FM._imgH
+      // Recompute anatomical region paths when canvas dimensions change
+      if (FM._computeRegionPaths) FM._computeRegionPaths()
       FM._redraw()
     }
     FM._img.src = FM._photoUrls[FM._activeAngle]
@@ -105,14 +107,17 @@
       }
       // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else {
-      // Zones mode — draw anatomical regions (or ellipse fallback)
+      // Zones mode — draw anatomical region overlays from landmarks
+      if (FM._drawAllRegions && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+        FM._drawAllRegions()
+      }
+      // Also draw legacy annotations (manual ellipses) if any exist
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
       anns.forEach(function (ann) {
-        if (FM._drawRegionOrEllipse) {
-          FM._drawRegionOrEllipse(ann)
-        } else {
-          FM._drawEllipseClean(ann)
-        }
+        // Skip if this zone has an active region overlay
+        var st = FM._regionState && FM._regionState[ann.zone]
+        if (st && st.active && FM._regionPaths && FM._regionPaths[ann.zone]) return
+        FM._drawEllipseClean(ann)
       })
     }
 
@@ -266,6 +271,17 @@
       return
     }
 
+    // ZONES MODE — region click-to-select (when landmarks available)
+    if (FM._editorMode === 'zones' && FM._hitTestRegion && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+      var regionHit = FM._hitTestRegion(mx, my)
+      if (regionHit) {
+        FM._selectedRegion = regionHit
+        FM._redraw()
+        FM._refreshToolbar()
+        return
+      }
+    }
+
     // VECTOR MODE
     if (FM._editorMode === 'vectors') {
       var hit = FM._hitVector(mx, my)
@@ -398,6 +414,17 @@
       FM._drawStart.ex = mx
       FM._drawStart.ey = my
       FM._redraw()
+      return
+    }
+
+    // Region hover detection (zones mode with landmarks)
+    if (FM._editorMode === 'zones' && FM._hitTestRegion && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+      var prevHover = FM._hoveredRegion
+      FM._hoveredRegion = FM._hitTestRegion(mx, my)
+      if (FM._hoveredRegion !== prevHover) {
+        FM._canvas.style.cursor = FM._hoveredRegion ? 'pointer' : 'default'
+        FM._redraw()
+      }
       return
     }
 
