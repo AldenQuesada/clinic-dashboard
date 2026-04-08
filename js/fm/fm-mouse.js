@@ -67,8 +67,10 @@
       FM._drawWireframe()
     }
 
-    // Metric lines overlay (if in metrics mode)
-    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+    // Metric lines overlay — draw when in simetria tab OR analysis+metrics mode
+    var isMetrics = (FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics') ||
+                    (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics')
+    if (isMetrics) {
       if (FM._drawMetrics) FM._drawMetrics()
       if (FM._drawAngles) FM._drawAngles()
     }
@@ -239,8 +241,10 @@
     var mx = e.offsetX, my = e.offsetY
     var inLabelArea = mx > FM._imgW
 
-    // ANALYSIS MODE — Metrics sub-mode
-    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+    // METRICS MODE — Simetria tab or analysis+metrics
+    var isMetricsMode = (FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics') ||
+                        (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics')
+    if (isMetricsMode) {
       if (FM._onMetricMouseDown && FM._onMetricMouseDown(mx, my)) {
         FM._mode = 'move'
         return
@@ -320,7 +324,7 @@
     var mx = e.offsetX, my = e.offsetY
 
     // METRICS MODE drag
-    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics' && FM._mode === 'move') {
+    if (((FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics') || (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics')) && FM._mode === 'move') {
       if (FM._onMetricMouseMove && FM._onMetricMouseMove(mx, my)) return
     }
 
