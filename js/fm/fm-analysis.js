@@ -729,7 +729,7 @@
       fetch(FM.FACIAL_API_URL + '/remove-bg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: b64 }),
+        body: JSON.stringify({ photo_base64: b64, angle: targetAngle }),
       })
       .then(function (r) { return r.json() })
       .then(function (d) {
