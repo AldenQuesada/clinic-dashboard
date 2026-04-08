@@ -50,18 +50,19 @@
   FM._restoreAngleState = function (ang) {
     var s = FM._stateByAngle[ang]
     if (s) {
-      FM._metricLines = s.metricLines || { h: [], v: [] }
-      FM._metricPoints = s.metricPoints || []
-      FM._metricMidline = s.metricMidline || null
-      FM._metricAngles = s.metricAngles || null
+      // Deep copy to prevent mutation of saved state
+      FM._metricLines = JSON.parse(JSON.stringify(s.metricLines || { h: [], v: [] }))
+      FM._metricPoints = JSON.parse(JSON.stringify(s.metricPoints || []))
+      FM._metricMidline = s.metricMidline ? JSON.parse(JSON.stringify(s.metricMidline)) : null
+      FM._metricAngles = s.metricAngles ? JSON.parse(JSON.stringify(s.metricAngles)) : null
       FM._metricNextPointId = s.metricNextPointId || 1
       FM._metricNextLineId = s.metricNextLineId || 1
-      FM._tercoLines = s.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
-      FM._rickettsPoints = s.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
-      FM._metric2Lines = s.metric2Lines || { h: [], v: [] }
-      FM._metric2Points = s.metric2Points || []
-      FM._metric2Midline = s.metric2Midline || null
-      FM._metric2Angles = s.metric2Angles || null
+      FM._tercoLines = JSON.parse(JSON.stringify(s.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }))
+      FM._rickettsPoints = JSON.parse(JSON.stringify(s.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }))
+      FM._metric2Lines = JSON.parse(JSON.stringify(s.metric2Lines || { h: [], v: [] }))
+      FM._metric2Points = JSON.parse(JSON.stringify(s.metric2Points || []))
+      FM._metric2Midline = s.metric2Midline ? JSON.parse(JSON.stringify(s.metric2Midline)) : null
+      FM._metric2Angles = s.metric2Angles ? JSON.parse(JSON.stringify(s.metric2Angles)) : null
       FM._metric2NextPointId = s.metric2NextPointId || 1
       FM._metric2NextLineId = s.metric2NextLineId || 1
     } else {
