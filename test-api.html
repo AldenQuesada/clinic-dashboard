@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Remove-BG</title></head>
+<body style="background:#1a1a1a;color:#fff;font-family:sans-serif;padding:40px">
+<h2>Teste direto da API Remove-BG</h2>
+<p>API URL: <code id="url"></code></p>
+<input type="file" id="file" accept="image/*">
+<button id="btn" onclick="testRemoveBg()" style="padding:10px 20px;background:#10B981;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:16px;margin:10px">
+  Testar Remove-BG
+</button>
+<div id="status" style="margin:20px 0;font-size:14px"></div>
+<div style="display:flex;gap:20px">
+  <div><h3>Original</h3><img id="orig" style="max-width:400px"></div>
+  <div><h3>Sem Fundo</h3><img id="result" style="max-width:400px;background:#000"></div>
+</div>
+<script>
+var API = 'http://localhost:8107';
+document.getElementById('url').textContent = API;
+
+// Test health first
+fetch(API + '/health').then(r=>r.json()).then(d=>{
+  document.getElementById('status').innerHTML = '<span style="color:#10B981">API online: ' + JSON.stringify(d.models) + '</span>';
+}).catch(e=>{
+  document.getElementById('status').innerHTML = '<span style="color:#EF4444">API OFFLINE: ' + e.message + '</span>';
+});
+
+function testRemoveBg() {
+  var file = document.getElementById('file').files[0];
+  if (!file) { alert('Selecione uma imagem primeiro'); return; }
+
+  var status = document.getElementById('status');
+  status.innerHTML = 'Lendo arquivo...';
+
+  // Show original
+  document.getElementById('orig').src = URL.createObjectURL(file);
+
+  var reader = new FileReader();
+  reader.onload = function() {
+    var b64 = reader.result.split(',')[1];
+    status.innerHTML = 'Enviando para API... (' + Math.round(b64.length/1024) + 'KB)';
+
+    fetch(API + '/remove-bg', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo_base64: b64 }),
+    })
+    .then(function(r) {
+      status.innerHTML += '<br>Response status: ' + r.status;
+      return r.json();
+    })
+    .then(function(d) {
+      if (d.success && d.image_b64) {
+        document.getElementById('result').src = 'data:image/png;base64,' + d.image_b64;
+        status.innerHTML += '<br><span style="color:#10B981">SUCESSO! Elapsed: ' + d.elapsed_s + 's</span>';
+      } else {
+        status.innerHTML += '<br><span style="color:#EF4444">FALHA: ' + JSON.stringify(d) + '</span>';
+      }
+    })
+    .catch(function(err) {
+      status.innerHTML += '<br><span style="color:#EF4444">ERRO: ' + err.message + '</span>';
+    });
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+</body>
+</html>
