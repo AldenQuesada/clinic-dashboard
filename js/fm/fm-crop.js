@@ -211,16 +211,22 @@
       return new Blob([arr], { type: 'image/png' })
     }
 
-    // Helper: apply crop framing (zoom/pan) to a bg-removed image
-    function _applyCropToResult(resultImg) {
-      // resultImg has same dimensions as original FM._cropImg
-      // Apply the same zoom/pan the user set, then output visible region
-      var dpr = Math.max(window.devicePixelRatio || 1, 2)
-      var outW = boxW * dpr, outH = boxH * dpr
-      if (resultImg.width > outW) {
-        var s = resultImg.width / (boxW * FM._cropZoom)
-        outW = Math.round(boxW * s); outH = Math.round(boxH * s)
-      }
+    // Helper: apply crop framing to a bg-removed image (same dimensions as original)
+    function _applyCropToResult(resultImg, zoom, panX, panY) {
+      // Calculate the visible region of the original in crop box coordinates
+      // Then extract that same region from the bg-removed result
+      var srcX = Math.max(0, -panX / zoom)
+      var srcY = Math.max(0, -panY / zoom)
+      var srcW = boxW / zoom
+      var srcH = boxH / zoom
+
+      // Clamp to image bounds
+      srcW = Math.min(srcW, resultImg.width - srcX)
+      srcH = Math.min(srcH, resultImg.height - srcY)
+
+      // Output at native resolution, capped at 2048
+      var outW = Math.round(srcW)
+      var outH = Math.round(srcH)
       if (outW > 2048) { var r = 2048 / outW; outW = 2048; outH = Math.round(outH * r) }
 
       var c = document.createElement('canvas')
@@ -228,11 +234,9 @@
       var ctx = c.getContext('2d')
       ctx.fillStyle = '#000000'
       ctx.fillRect(0, 0, outW, outH)
-      var sx = outW / (boxW * dpr)
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
-      ctx.drawImage(resultImg, FM._cropPanX * sx, FM._cropPanY * sx,
-        resultImg.width * FM._cropZoom * sx, resultImg.height * FM._cropZoom * sx)
+      ctx.drawImage(resultImg, srcX, srcY, srcW, srcH, 0, 0, outW, outH)
       return c
     }
 
@@ -252,10 +256,11 @@
       var ov = document.getElementById('fmCropOverlay')
       if (ov) ov.style.display = 'none'
 
-      // Save crop settings before modal closes
+      // Save crop settings before modal may close
       var savedZoom = FM._cropZoom
       var savedPanX = FM._cropPanX
       var savedPanY = FM._cropPanY
+      console.log('[FM] crop settings: zoom=' + savedZoom.toFixed(3) + ' pan=' + savedPanX.toFixed(0) + ',' + savedPanY.toFixed(0))
 
       var xhr = new XMLHttpRequest()
       xhr.open('POST', apiUrl + '/remove-bg', true)
@@ -268,7 +273,7 @@
             // Apply crop framing to the bg-removed result
             var resultImg = new Image()
             resultImg.onload = function () {
-              var cropped = _applyCropToResult(resultImg)
+              var cropped = _applyCropToResult(resultImg, savedZoom, savedPanX, savedPanY)
               cropped.toBlob(function (blob) {
                 FM._hideLoading()
                 _finishCrop(blob)
