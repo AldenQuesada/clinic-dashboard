@@ -10,8 +10,14 @@
   FM._lead = null
   FM._photos = {}        // { front: File|Blob, '45': ..., lateral: ... }
   FM._photoUrls = {}     // objectURLs (cropped)
-  FM._afterPhotoUrl = null   // DEPOIS (resultado atual)
+  FM._afterPhotoUrls = {}    // { front: url, '45': url, lateral: url }
+  FM._afterPhotoUrl = null   // DEPRECATED — use _afterPhotoUrls[angle]
   FM._simPhotoUrl = null     // DEPOIS SIMULADO
+
+  // Helper: get DEPOIS url for active angle
+  FM._getAfterUrl = function () {
+    return (FM._afterPhotoUrls && FM._afterPhotoUrls[FM._activeAngle]) || FM._afterPhotoUrl || null
+  }
   FM._activeAngle = null
   FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
   FM._lastAnalysis = null  // GPT analysis result

@@ -38,6 +38,7 @@
     _toggleFullscreen: FM._toggleFullscreen,
     _triggerUploadExtra: FM._triggerUploadExtra,
     _deleteExtraPhoto: FM._deleteExtraPhoto,
+    _deleteAfterPhoto: FM._deleteAfterPhoto,
     _regenSim: function () {
       FM._simPhotoUrl = null
       FM._generateSimulation(function () { FM._render(); if (FM._activeAngle) setTimeout(FM._initCanvas, 50) })

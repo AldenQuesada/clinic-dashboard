@@ -29,7 +29,7 @@
       return
     }
 
-    var afterSrc = FM._afterPhotoUrl || FM._simPhotoUrl || null
+    var afterSrc = FM._getAfterUrl() || FM._simPhotoUrl || null
     if (!afterSrc) {
       // Generate simulation first
       FM._showLoading('Gerando simulacao...')

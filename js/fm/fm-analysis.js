@@ -719,12 +719,20 @@
   FM._uploadAfterPhoto = function (input) {
     var file = input.files[0]
     if (!file) return
+    var angle = FM._activeAngle || 'front'
 
-    // Try remove-bg via API, fallback to raw
+    function _setAfterUrl(url) {
+      if (FM._afterPhotoUrls[angle]) URL.revokeObjectURL(FM._afterPhotoUrls[angle])
+      FM._afterPhotoUrls[angle] = url
+      FM._afterPhotoUrl = url  // compat
+      FM._render()
+      setTimeout(function () { FM._initCanvas(); FM._initCanvas2() }, 100)
+    }
+
     var reader = new FileReader()
     reader.onload = function () {
       var b64 = reader.result.split(',')[1]
-      FM._showLoading('Removendo fundo (DEPOIS)...')
+      FM._showLoading('Removendo fundo (DEPOIS ' + angle + ')...')
 
       fetch(FM.FACIAL_API_URL + '/remove-bg', {
         method: 'POST',
@@ -738,24 +746,17 @@
           var bin = atob(d.image_b64)
           var arr = new Uint8Array(bin.length)
           for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-          if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-          FM._afterPhotoUrl = URL.createObjectURL(new Blob([arr], { type: 'image/png' }))
-          FM._showToast('Foto DEPOIS — fundo removido', 'success')
+          _setAfterUrl(URL.createObjectURL(new Blob([arr], { type: 'image/png' })))
+          FM._showToast('DEPOIS ' + angle + ' — fundo removido', 'success')
         } else {
-          if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-          FM._afterPhotoUrl = URL.createObjectURL(file)
-          FM._showToast('Foto DEPOIS carregada (sem bg removal)', 'warn')
+          _setAfterUrl(URL.createObjectURL(file))
+          FM._showToast('DEPOIS carregada (sem bg removal)', 'warn')
         }
-        FM._render()
-        setTimeout(function () { FM._initCanvas(); FM._initCanvas2() }, 100)
       })
       .catch(function () {
         FM._hideLoading()
-        if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-        FM._afterPhotoUrl = URL.createObjectURL(file)
-        FM._render()
-        setTimeout(function () { FM._initCanvas(); FM._initCanvas2() }, 100)
-        FM._showToast('Foto DEPOIS carregada (API offline)', 'warn')
+        _setAfterUrl(URL.createObjectURL(file))
+        FM._showToast('DEPOIS carregada (API offline)', 'warn')
       })
     }
     reader.readAsDataURL(file)
@@ -767,7 +768,7 @@
     var canvas2 = document.getElementById('fmCanvas2')
     if (!canvas2) return
 
-    var src = FM._afterPhotoUrl || FM._simPhotoUrl
+    var src = FM._getAfterUrl() || FM._simPhotoUrl
     if (!src) return
 
     var ctx2 = canvas2.getContext('2d')
