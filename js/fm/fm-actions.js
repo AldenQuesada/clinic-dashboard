@@ -53,10 +53,10 @@
         }
       }
 
-      // Add 3% margin, clamped to image bounds (no expansion)
+      // Add 2% margin, clamped to image bounds
       var contentW = right - left + 1
       var contentH = bottom - top + 1
-      var pad = Math.round(Math.max(contentW, contentH) * 0.03)
+      var pad = Math.round(Math.max(contentW, contentH) * 0.02)
       var cx1 = Math.max(0, left - pad)
       var cy1 = Math.max(0, top - pad)
       var cx2 = Math.min(w, right + 1 + pad)
