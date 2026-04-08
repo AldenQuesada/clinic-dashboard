@@ -457,8 +457,16 @@
 
   FM._toggleMetricLock = function () {
     FM._metricLocked = !FM._metricLocked
-    FM._refreshToolbar()
-    FM._showToast(FM._metricLocked ? 'Linhas trancadas' : 'Linhas destrancadas', FM._metricLocked ? 'warn' : 'success')
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+  }
+
+  FM._toggleMetric2Lock = function () {
+    FM._metric2Locked = !FM._metric2Locked
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
   }
 
   FM._setMetricTool = function (tool) {

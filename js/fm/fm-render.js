@@ -83,7 +83,6 @@
 
       // Right actions — minimal, all champagne
       '<div style="display:flex;gap:3px;align-items:center">' +
-        '<button onclick="FaceMapping._toggleMetricLock()" title="' + (FM._metricLocked ? 'Destravar linhas' : 'Travar linhas') + '" style="display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:6px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.15)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.15)' : 'transparent') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(200,169,126,0.3)') + ';cursor:pointer;font-size:9px;font-weight:600;font-family:Montserrat,sans-serif">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._autoAnalyze()" title="Scanner 478pts" style="font-size:9px;padding:4px 8px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('cpu', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._toggleWireframe()" title="Wireframe" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,' + (FM._showWireframe ? '0.8' : '0.3') + ')">' + FM._icon('grid', 11) + '</button>' +
         '<button class="fm-btn" onclick="FaceMapping._openCompare()" title="Comparar" style="font-size:9px;padding:4px 6px;border-color:rgba(200,169,126,0.15);color:rgba(200,169,126,0.5)">' + FM._icon('eye', 11) + '</button>' +
@@ -232,8 +231,9 @@
             // '<button class="fm-btn" onclick="FaceMapping._autoDetectZones()" style="font-size:8px;padding:2px 6px;border-color:#10B981;color:#10B981">' + FM._icon('zap', 10) + '</button>' +
           '</div>' +
         '</div>' +
-        '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
+        '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">' +
           '<canvas id="fmCanvas" style="cursor:crosshair"></canvas>' +
+          '<button onclick="FaceMapping._toggleMetricLock()" style="position:absolute;top:6px;left:6px;z-index:10;display:flex;align-items:center;padding:4px 6px;border-radius:5px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.15)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.3)') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.4)') + ';cursor:pointer;backdrop-filter:blur(4px)">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 12) + '</button>' +
         '</div>' +
       '</div>' +
       // RIGHT: DEPOIS
@@ -244,9 +244,10 @@
             'Upload<input type="file" accept="image/*" onchange="FaceMapping._uploadAfterPhoto(this)" style="display:none">' +
           '</label>' +
         '</div>' +
-        '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
+        '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">' +
           (FM._afterPhotoUrl || FM._simPhotoUrl
-            ? '<canvas id="fmCanvas2" style="cursor:crosshair"></canvas>'
+            ? '<canvas id="fmCanvas2" style="cursor:crosshair"></canvas>' +
+              '<button onclick="FaceMapping._toggleMetric2Lock()" style="position:absolute;top:6px;left:6px;z-index:10;display:flex;align-items:center;padding:4px 6px;border-radius:5px;border:1px solid ' + (FM._metric2Locked ? '#F59E0B' : 'rgba(255,255,255,0.15)') + ';background:' + (FM._metric2Locked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.3)') + ';color:' + (FM._metric2Locked ? '#F59E0B' : 'rgba(255,255,255,0.4)') + ';cursor:pointer;backdrop-filter:blur(4px)">' + FM._icon(FM._metric2Locked ? 'lock' : 'unlock', 12) + '</button>'
             : '<div style="color:rgba(245,240,232,0.2);font-size:12px;text-align:center">Upload foto DEPOIS<br>ou gere uma simulacao</div>') +
         '</div>' +
       '</div>' +
@@ -254,9 +255,10 @@
   }
 
   FM._renderCanvasArea1x = function () {
-    return '<div class="fm-canvas-area" id="fmCanvasArea" style="flex-direction:column;align-items:center;justify-content:center">' +
-      '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap">' +
+    return '<div class="fm-canvas-area" id="fmCanvasArea" style="flex-direction:column;align-items:center;justify-content:center;position:relative">' +
+      '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap" style="position:relative">' +
         '<canvas id="fmCanvas"></canvas>' +
+        '<button onclick="FaceMapping._toggleMetricLock()" style="position:absolute;top:6px;left:6px;z-index:10;display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:6px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.2)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.4)') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.5)') + ';cursor:pointer;font-size:9px;font-weight:600;font-family:Montserrat,sans-serif;backdrop-filter:blur(4px)">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + '</button>' +
       '</div>' +
       '<div class="fm-canvas-controls">' +
         '<button onclick="FaceMapping._toggleFullscreen()" title="Tela cheia" class="fm-canvas-ctrl-btn">' + FM._icon('maximize-2', 14) + '</button>' +
@@ -377,7 +379,7 @@
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
           '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + ' — ' + pct + '%</span>' +
           (FM._metricLocked
-            ? '<span style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(245,158,11,0.4)">' + FM._icon('lock', 10) + '</span>'
+            ? '<button onclick="FaceMapping._toggleMetricLock()" style="width:18px;height:18px;border:none;background:rgba(245,158,11,0.1);border-radius:4px;color:rgba(245,158,11,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center">' + FM._icon('lock', 10) + '</button>'
             : '<button onclick="FaceMapping._deleteMetricLine(\'h\',' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>') +
         '</div>'
       })
@@ -410,7 +412,7 @@
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0">' +
           '<span style="font-size:10px;color:rgba(245,240,232,0.5)">' + label + '</span>' +
           (FM._metricLocked
-            ? '<span style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(245,158,11,0.4)">' + FM._icon('lock', 10) + '</span>'
+            ? '<button onclick="FaceMapping._toggleMetricLock()" style="width:18px;height:18px;border:none;background:rgba(245,158,11,0.1);border-radius:4px;color:rgba(245,158,11,0.5);cursor:pointer;display:flex;align-items:center;justify-content:center">' + FM._icon('lock', 10) + '</button>'
             : '<button onclick="FaceMapping._deleteMetricPoint(' + i + ')" style="width:18px;height:18px;border:none;background:rgba(239,68,68,0.15);border-radius:4px;color:#EF4444;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center">&times;</button>') +
         '</div>'
       })

@@ -62,6 +62,7 @@
   FM._metric2NextPointId = 1
   FM._metric2NextLineId = 1
   FM._metric2Drag = null
+  FM._metric2Locked = false
   FM._activeCanvas = 1  // 1 = ANTES, 2 = DEPOIS
 
   // Undo/Redo history (snapshots of annotations)

@@ -834,7 +834,8 @@
       ctx: FM._ctx, imgW: FM._imgW, imgH: FM._imgH,
       lines: FM._metricLines, points: FM._metricPoints,
       midline: FM._metricMidline, angles: FM._metricAngles,
-      drag: FM._metricDrag, nextPt: FM._metricNextPointId, nextLn: FM._metricNextLineId
+      drag: FM._metricDrag, nextPt: FM._metricNextPointId, nextLn: FM._metricNextLineId,
+      locked: FM._metricLocked
     }
     FM._ctx = FM._ctx2
     FM._imgW = FM._imgW2
@@ -846,6 +847,7 @@
     FM._metricDrag = FM._metric2Drag
     FM._metricNextPointId = FM._metric2NextPointId
     FM._metricNextLineId = FM._metric2NextLineId
+    FM._metricLocked = FM._metric2Locked
   }
 
   function _swapToCanvas1() {
@@ -857,6 +859,7 @@
     FM._metric2Drag = FM._metricDrag
     FM._metric2NextPointId = FM._metricNextPointId
     FM._metric2NextLineId = FM._metricNextLineId
+    FM._metric2Locked = FM._metricLocked
     // Restore canvas1 state
     var s = FM._swap1
     FM._ctx = s.ctx
@@ -869,6 +872,7 @@
     FM._metricDrag = s.drag
     FM._metricNextPointId = s.nextPt
     FM._metricNextLineId = s.nextLn
+    FM._metricLocked = s.locked
   }
 
   // (redrawCanvas2 removed — canvas2 now drawn inline in _redraw with independent metrics)
