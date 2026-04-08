@@ -62,12 +62,19 @@ function initAlexa() {
         console.error('[Alexa] Cookie generation falhou:', err)
         return
       }
-      console.log('[Alexa] Cookie obtido com sucesso!')
-      if (result && result.cookie) {
-        fs.writeFileSync(cookieFile, result.cookie, 'utf8')
-        console.log('[Alexa] Cookie salvo em', cookieFile)
-        // Agora conectar com o cookie
-        _connectWithCookie(result.cookie)
+      console.log('[Alexa] Cookie obtido com sucesso! Keys:', Object.keys(result || {}))
+      // alexa-cookie2 pode retornar cookie como string direto ou em result.cookie
+      var cookieStr = typeof result === 'string' ? result : (result && result.cookie ? result.cookie : JSON.stringify(result))
+      if (cookieStr) {
+        try {
+          fs.writeFileSync(cookieFile, cookieStr, 'utf8')
+          console.log('[Alexa] Cookie salvo em', cookieFile, '(' + cookieStr.length + ' bytes)')
+        } catch (writeErr) {
+          console.error('[Alexa] Erro ao salvar cookie:', writeErr.message)
+        }
+        _connectWithCookie(cookieStr)
+      } else {
+        console.error('[Alexa] Cookie vazio no resultado')
       }
     })
   } else {
