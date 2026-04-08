@@ -776,6 +776,10 @@
 
     // If angles already exist, just switch to angle mode (don't recalculate)
     if (FM._metricAngles && FM._metricAngles.points) {
+      // Ensure canvas2 also has angles
+      if (!FM._metric2Angles || !FM._metric2Angles.points) {
+        FM._metric2Angles = JSON.parse(JSON.stringify(FM._metricAngles))
+      }
       FM._refreshToolbar()
       FM._redraw()
       return
