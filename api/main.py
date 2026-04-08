@@ -163,7 +163,7 @@ async def remove_background(req: PhotoRequest):
             final_bgr = final_bgr[y1:y2, x1:x2]
             log.info(f"Auto-cropped [{angle}]: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
 
-        # Trim excess black border
+        # Trim excess black border — lateral gets extra padding
         gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
         row_content = np.mean(gray_trim > 25, axis=1)
         col_content = np.mean(gray_trim > 25, axis=0)
@@ -172,13 +172,21 @@ async def remove_background(req: PhotoRequest):
         if np.any(rows) and np.any(cols):
             rmin, rmax = np.where(rows)[0][[0, -1]]
             cmin, cmax = np.where(cols)[0][[0, -1]]
-            pad = 12
-            rmin = max(0, rmin - pad)
-            rmax = min(final_bgr.shape[0], rmax + pad)
-            cmin = max(0, cmin - pad)
-            cmax = min(final_bgr.shape[1], cmax + pad)
+            content_h = rmax - rmin
+            content_w = cmax - cmin
+            # Lateral: 15% padding (nose/chin), others: fixed 12px
+            if angle == 'lateral':
+                pad_v = max(15, int(content_h * 0.10))
+                pad_h = max(15, int(content_w * 0.15))
+            else:
+                pad_v = 12
+                pad_h = 12
+            rmin = max(0, rmin - pad_v)
+            rmax = min(final_bgr.shape[0], rmax + pad_v)
+            cmin = max(0, cmin - pad_h)
+            cmax = min(final_bgr.shape[1], cmax + pad_h)
             final_bgr = final_bgr[rmin:rmax, cmin:cmax]
-            log.info(f"Trimmed: {cmax-cmin}x{rmax-rmin}")
+            log.info(f"Trimmed [{angle}]: {cmax-cmin}x{rmax-rmin} pad={pad_h},{pad_v}")
 
         # Subtle unsharp mask — restore detail without creating artifacts
         gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
