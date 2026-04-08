@@ -805,19 +805,39 @@
 
   // Canvas2 mouse handlers — swap metric state, delegate to existing handlers, swap back
   FM._onCanvas2MouseDown = function (e) {
-    if (FM._editorMode !== 'analysis' || FM._analysisSubMode !== 'metrics') return
+    if (FM._editorMode !== 'analysis') return
     var mx = e.offsetX, my = e.offsetY
     FM._activeCanvas = 2
-    _swapToCanvas2()
-    if (FM._onMetricMouseDown) FM._onMetricMouseDown(mx, my)
-    _swapToCanvas1()
+
+    if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral') {
+      // Ricketts drag on canvas2 — use independent _ricketts2Points
+      var np2 = FM._ricketts2Points.nose
+      var cp2 = FM._ricketts2Points.chin
+      var nDist = Math.sqrt(Math.pow(mx - np2.x * FM._imgW2, 2) + Math.pow(my - np2.y * FM._imgH2, 2))
+      var cDist = Math.sqrt(Math.pow(mx - cp2.x * FM._imgW2, 2) + Math.pow(my - cp2.y * FM._imgH2, 2))
+      if (nDist < 15) { FM._pushUndo(); FM._analysisDrag = 'nose2'; FM._mode = 'move'; return }
+      if (cDist < 15) { FM._pushUndo(); FM._analysisDrag = 'chin2'; FM._mode = 'move'; return }
+    } else if (FM._analysisSubMode === 'metrics') {
+      _swapToCanvas2()
+      if (FM._onMetricMouseDown) FM._onMetricMouseDown(mx, my)
+      _swapToCanvas1()
+    }
     FM._redraw()
   }
 
   FM._onCanvas2MouseMove = function (e) {
-    if (FM._editorMode !== 'analysis' || FM._analysisSubMode !== 'metrics') return
-    if (FM._activeCanvas !== 2) return
+    if (FM._editorMode !== 'analysis') return
     var mx = e.offsetX, my = e.offsetY
+
+    if (FM._analysisDrag === 'nose2' || FM._analysisDrag === 'chin2') {
+      var key = FM._analysisDrag === 'nose2' ? 'nose' : 'chin'
+      FM._ricketts2Points[key].x = Math.max(0.01, Math.min(0.99, mx / FM._imgW2))
+      FM._ricketts2Points[key].y = Math.max(0.01, Math.min(0.99, my / FM._imgH2))
+      FM._redraw()
+      return
+    }
+
+    if (FM._analysisSubMode !== 'metrics' || FM._activeCanvas !== 2) return
     _swapToCanvas2()
     if (FM._onMetricMouseMove) FM._onMetricMouseMove(mx, my)
     _swapToCanvas1()
@@ -825,6 +845,13 @@
   }
 
   FM._onCanvas2MouseUp = function () {
+    if (FM._analysisDrag === 'nose2' || FM._analysisDrag === 'chin2') {
+      FM._analysisDrag = null
+      FM._mode = 'idle'
+      FM._redraw()
+      FM._autoSave()
+      return
+    }
     if (FM._activeCanvas !== 2) return
     _swapToCanvas2()
     if (FM._onMetricMouseUp) FM._onMetricMouseUp()

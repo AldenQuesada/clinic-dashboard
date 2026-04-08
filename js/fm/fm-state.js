@@ -78,6 +78,7 @@
   // Analysis state
   _defAngleProp('_tercoLines', { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 })
   _defAngleProp('_rickettsPoints', { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } })
+  _defAngleProp('_ricketts2Points', { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } })
 
   // Backward compat stubs (no-ops — save/restore is automatic now)
   FM._saveAngleState = function () {}
