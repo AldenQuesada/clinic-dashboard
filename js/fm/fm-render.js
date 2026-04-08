@@ -12,6 +12,12 @@
     var root = document.getElementById('facialAnalysisRoot')
     if (!root) return
 
+    // Sync DEPOIS photo from per-angle store
+    var ang = FM._activeAngle || 'front'
+    if (FM._afterPhotoByAngle && FM._afterPhotoByAngle[ang] && !FM._afterPhotoUrl) {
+      FM._afterPhotoUrl = FM._afterPhotoByAngle[ang]
+    }
+
     var name = FM._lead.nome || FM._lead.name || 'Paciente'
 
     // Determine which panel to show on the right — based on _activeTab ONLY
