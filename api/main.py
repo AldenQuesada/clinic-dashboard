@@ -177,7 +177,7 @@ async def remove_background(req: PhotoRequest):
             # Lateral: 15% padding (nose/chin), others: fixed 12px
             if angle == 'lateral':
                 pad_v = max(15, int(content_h * 0.10))
-                pad_h = max(15, int(content_w * 0.15))
+                pad_h = max(15, int(content_w * 0.25))
             else:
                 pad_v = 12
                 pad_h = 12
