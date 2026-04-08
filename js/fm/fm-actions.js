@@ -289,10 +289,12 @@
                 for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
                 if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
                 FM._afterPhotoUrl = URL.createObjectURL(new Blob([arr], { type: 'image/png' }))
+                FM._afterPhotoByAngle[FM._activeAngle || 'front'] = FM._afterPhotoUrl
                 FM._showToast('Fundo removido', 'success')
               } else {
                 if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
                 FM._afterPhotoUrl = URL.createObjectURL(file)
+                FM._afterPhotoByAngle[FM._activeAngle || 'front'] = FM._afterPhotoUrl
               }
               FM._render()
               if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
@@ -302,6 +304,7 @@
               FM._hideLoading()
               if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
               FM._afterPhotoUrl = URL.createObjectURL(file)
+              FM._afterPhotoByAngle[FM._activeAngle || 'front'] = FM._afterPhotoUrl
               FM._render()
               if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
             })
