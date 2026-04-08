@@ -818,7 +818,10 @@
       if (nDist < 15) { FM._pushUndo(); FM._analysisDrag = 'nose2'; FM._mode = 'move'; return }
       if (cDist < 15) { FM._pushUndo(); FM._analysisDrag = 'chin2'; FM._mode = 'move'; return }
     } else if (FM._analysisSubMode === 'metrics') {
+      // Block angles on canvas2 — only allow lines/points
+      var savedTool = FM._metricTool
       _swapToCanvas2()
+      FM._metricAngles = null  // prevent angle drag on DEPOIS
       if (FM._onMetricMouseDown) FM._onMetricMouseDown(mx, my)
       _swapToCanvas1()
     }
