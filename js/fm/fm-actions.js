@@ -365,7 +365,13 @@
       }
     }
     FM._selAnn = null
-    console.log('[FM] deletePhoto', angle, '| DEPOIS preserved:', !!FM._afterPhotoByAngle[angle], '| activeAngle:', FM._activeAngle)
+
+    // If DEPOIS exists, switch to 2x so user can SEE it's preserved
+    if (savedAfter || savedSim) {
+      FM._viewMode = '2x'
+      FM._showToast('ANTES deletado. DEPOIS mantido.', 'success')
+    }
+
     FM._autoSave()
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
