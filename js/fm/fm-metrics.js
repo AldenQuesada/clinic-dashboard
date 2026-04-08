@@ -334,64 +334,61 @@
 
     // Only check/add elements matching the selected tool
     if (tool === 'hline') {
-      // Drag existing H line (only when unlocked)
-      if (!FM._metricLocked) {
-        for (var i = 0; i < FM._metricLines.h.length; i++) {
-          var ly = FM._metricLines.h[i].y * h
-          if (Math.abs(my - ly) < threshold && mx < w) {
-            FM._pushUndo()
-            FM._metricDrag = { type: 'hline', index: i }
-            return true
-          }
+      // Drag existing H line (only if that specific line is not locked)
+      for (var i = 0; i < FM._metricLines.h.length; i++) {
+        if (FM._metricLines.h[i].locked) continue
+        var ly = FM._metricLines.h[i].y * h
+        if (Math.abs(my - ly) < threshold && mx < w) {
+          FM._pushUndo()
+          FM._metricDrag = { type: 'hline', index: i }
+          return true
         }
       }
-      // Add new H line
+      // Add new H line (always allowed — new lines are unlocked)
       if (mx > 0 && mx < w && my > 0 && my < h) {
         FM._pushUndo()
-        FM._metricLines.h.push({ y: my / h, id: FM._metricNextLineId++ })
+        FM._metricLines.h.push({ y: my / h, id: FM._metricNextLineId++, locked: false })
         FM._metricLines.h.sort(function (a, b) { return a.y - b.y })
         FM._redraw()
         FM._refreshToolbar()
         return true
       }
     } else if (tool === 'vline') {
-      // Drag existing V line (only when unlocked)
-      if (!FM._metricLocked) {
-        for (var j = 0; j < FM._metricLines.v.length; j++) {
-          var lx = FM._metricLines.v[j].x * w
-          if (Math.abs(mx - lx) < threshold && my < h) {
-            FM._pushUndo()
-            FM._metricDrag = { type: 'vline', index: j }
-            return true
-          }
+      // Drag existing V line (only if not locked)
+      for (var j = 0; j < FM._metricLines.v.length; j++) {
+        if (FM._metricLines.v[j].locked) continue
+        var lx = FM._metricLines.v[j].x * w
+        if (Math.abs(mx - lx) < threshold && my < h) {
+          FM._pushUndo()
+          FM._metricDrag = { type: 'vline', index: j }
+          return true
         }
       }
-      // Add new V line
+      // Add new V line (always allowed)
       if (mx > 0 && mx < w && my > 0 && my < h) {
         FM._pushUndo()
-        FM._metricLines.v.push({ x: mx / w, id: FM._metricNextLineId++ })
+        FM._metricLines.v.push({ x: mx / w, id: FM._metricNextLineId++, locked: false })
         FM._metricLines.v.sort(function (a, b) { return a.x - b.x })
         FM._redraw()
         FM._refreshToolbar()
         return true
       }
     } else if (tool === 'point') {
-      // Drag existing point (only when unlocked)
-      if (!FM._metricLocked) {
-        for (var k = 0; k < FM._metricPoints.length; k++) {
-          var ppx = FM._metricPoints[k].x * w
-          var ppy = FM._metricPoints[k].y * h
-          if (Math.sqrt(Math.pow(mx - ppx, 2) + Math.pow(my - ppy, 2)) < threshold) {
-            FM._pushUndo()
-            FM._metricDrag = { type: 'point', index: k }
-            return true
-          }
+      // Drag existing point (only if not locked)
+      for (var k = 0; k < FM._metricPoints.length; k++) {
+        if (FM._metricPoints[k].locked) continue
+        var ppx = FM._metricPoints[k].x * w
+        var ppy = FM._metricPoints[k].y * h
+        if (Math.sqrt(Math.pow(mx - ppx, 2) + Math.pow(my - ppy, 2)) < threshold) {
+          FM._pushUndo()
+          FM._metricDrag = { type: 'point', index: k }
+          return true
         }
       }
-      // Add new point
+      // Add new point (always allowed)
       if (mx > 0 && mx < w && my > 0 && my < h) {
         FM._pushUndo()
-        FM._metricPoints.push({ x: mx / w, y: my / h, id: FM._metricNextPointId++ })
+        FM._metricPoints.push({ x: mx / w, y: my / h, id: FM._metricNextPointId++, locked: false })
         FM._redraw()
         FM._refreshToolbar()
         return true
@@ -452,10 +449,19 @@
 
   FM._toggleMetricLock = function () {
     FM._toggleLock('simetria', '1x')
+    // Mark all existing lines/points as locked/unlocked
+    var locked = FM._metricLocked
+    FM._metricLines.h.forEach(function (l) { l.locked = locked })
+    FM._metricLines.v.forEach(function (l) { l.locked = locked })
+    FM._metricPoints.forEach(function (p) { p.locked = locked })
   }
 
   FM._toggleMetric2Lock = function () {
     FM._toggleLock('simetria', '2x')
+    var locked = FM._metric2Locked
+    FM._metric2Lines.h.forEach(function (l) { l.locked = locked })
+    FM._metric2Lines.v.forEach(function (l) { l.locked = locked })
+    FM._metric2Points.forEach(function (p) { p.locked = locked })
   }
 
   FM._setMetricTool = function (tool) {
