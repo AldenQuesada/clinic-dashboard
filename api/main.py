@@ -118,13 +118,28 @@ async def remove_background(req: PhotoRequest):
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
 
         # Auto-crop to face — margins vary by angle
+        angle = req.angle or 'front'
         face_cascade = get_face_cascade()
         gray = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
+
+        # Fallback: try profile cascade for lateral views
+        if len(faces) == 0 and angle == 'lateral':
+            profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
+            faces = profile_cascade.detectMultiScale(gray, 1.1, 3, minSize=(60, 60))
+            # Try flipped if still no detection
+            if len(faces) == 0:
+                gray_flip = cv2.flip(gray, 1)
+                faces_flip = profile_cascade.detectMultiScale(gray_flip, 1.1, 3, minSize=(60, 60))
+                if len(faces_flip) > 0:
+                    fx2, fy2, fw2, fh2 = max(faces_flip, key=lambda f: f[2] * f[3])
+                    faces = [(final_bgr.shape[1] - fx2 - fw2, fy2, fw2, fh2)]
+            if len(faces) > 0:
+                log.info("Profile cascade detected face")
+
         if len(faces) > 0:
             fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
             ih, iw = final_bgr.shape[:2]
-            angle = req.angle or 'front'
 
             if angle == 'lateral':
                 # Lateral: very wide margins for nose protrusion
