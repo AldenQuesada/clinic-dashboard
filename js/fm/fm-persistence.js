@@ -156,8 +156,31 @@
         } catch (e) { /* silent */ }
       }
 
-      // If we have per-angle state, restore the active angle's state
-      if (FM._stateByAngle && FM._activeAngle && FM._stateByAngle[FM._activeAngle]) {
+      // Migrate old global state into stateByAngle for the active angle
+      if (FM._activeAngle && (!FM._stateByAngle || Object.keys(FM._stateByAngle).length === 0)) {
+        // Old format: metric data at top level belongs to active angle
+        FM._stateByAngle = {}
+        FM._stateByAngle[FM._activeAngle] = {
+          metricLines: FM._metricLines,
+          metricPoints: FM._metricPoints,
+          metricMidline: FM._metricMidline,
+          metricAngles: FM._metricAngles,
+          metricNextPointId: FM._metricNextPointId,
+          metricNextLineId: FM._metricNextLineId,
+          tercoLines: FM._tercoLines,
+          rickettsPoints: FM._rickettsPoints,
+          metric2Lines: FM._metric2Lines,
+          metric2Points: FM._metric2Points,
+          metric2Midline: FM._metric2Midline,
+          metric2Angles: FM._metric2Angles,
+          metric2NextPointId: FM._metric2NextPointId,
+          metric2NextLineId: FM._metric2NextLineId,
+        }
+        // DEPOIS photo belongs to active angle
+        if (FM._afterPhotoUrl) {
+          FM._afterPhotoByAngle[FM._activeAngle] = FM._afterPhotoUrl
+        }
+      } else if (FM._stateByAngle && FM._activeAngle && FM._stateByAngle[FM._activeAngle]) {
         FM._restoreAngleState(FM._activeAngle)
       }
 
