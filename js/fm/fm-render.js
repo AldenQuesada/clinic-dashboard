@@ -967,16 +967,6 @@
         html += '<div class="fm-tool-section">' +
           '<div style="font-size:11px;color:rgba(200,169,126,0.3)">Arraste as linhas horizontais na foto para posicionar nos pontos anatomicos.</div>' +
         '</div>'
-      } else {
-        html += '<div class="fm-tool-section">' +
-          '<div class="fm-tool-section-title">Linha de Ricketts</div>' +
-          '<div style="font-size:11px;color:rgba(200,169,126,0.5);line-height:1.6">' +
-            'Linha da beleza do perfil.<br><br>' +
-            'Conecta o ponto mais proeminente do <strong>nariz</strong> ao <strong>mento</strong>.<br><br>' +
-            'Os labios devem tocar ou ficar ligeiramente atras desta linha para um perfil harmonioso.<br><br>' +
-            '<strong>Arraste os pontos N e M</strong> para ajustar ao rosto da paciente.' +
-          '</div>' +
-        '</div>'
       }
 
       // ── Metrics toolbar ──
