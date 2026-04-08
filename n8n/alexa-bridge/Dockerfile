@@ -6,7 +6,6 @@ COPY package.json ./
 RUN npm install --production
 
 COPY server.js ./
-COPY .env.example ./.env.example
 
 # Volume para persistir cookie de sessao Amazon
 VOLUME /app/data
