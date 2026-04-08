@@ -308,6 +308,16 @@
 
     var tool = FM._metricTool
 
+    // Midline — FIRST priority, always draggable anywhere on the line
+    if (FM._metricShowMidline) {
+      var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
+      if (Math.abs(mx - midX) < threshold) {
+        FM._pushUndo()
+        FM._metricDrag = { type: 'midline' }
+        return true
+      }
+    }
+
     // Angle points — always draggable (they're special)
     if (FM._metricAngles && FM._metricAngles.points) {
       var pts = FM._metricAngles.points
@@ -381,16 +391,6 @@
         FM._metricPoints.push({ x: mx / w, y: my / h, id: FM._metricNextPointId++ })
         FM._redraw()
         FM._refreshToolbar()
-        return true
-      }
-    }
-
-    // Midline — always draggable
-    if (FM._metricShowMidline) {
-      var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
-      if (Math.abs(mx - midX) < threshold && my < 30) {
-        FM._pushUndo()
-        FM._metricDrag = { type: 'midline' }
         return true
       }
     }
