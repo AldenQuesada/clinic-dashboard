@@ -96,25 +96,25 @@ async def remove_background(req: PhotoRequest):
         # Check if frontend already cropped (skip_crop=true means no re-crop needed)
         skip_crop = getattr(req, 'skip_crop', True)
 
-        # Remove background with refined alpha matting for hair detail
+        # Remove background — conservative settings to preserve hair
         result = remove(
             img,
             session=session,
             alpha_matting=True,
-            alpha_matting_foreground_threshold=240,   # more generous foreground (keeps hair)
-            alpha_matting_background_threshold=10,     # strict background (removes more bg)
-            alpha_matting_erode_size=10,               # smaller erode = less edge loss
+            alpha_matting_foreground_threshold=220,   # lower = keeps more hair/edges
+            alpha_matting_background_threshold=20,    # higher = less aggressive bg removal
+            alpha_matting_erode_size=5,               # smaller erode = less edge loss on hair
         )
 
-        # Refine alpha mask for clean hair edges
+        # Refine alpha mask — preserve hair strands
         result_np = np.array(result)
         alpha = result_np[:, :, 3].astype(np.float32)
 
-        # Minimal alpha smoothing (1px only — preserve hair strands)
-        alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.5)
+        # Gentle smoothing (preserve fine hair detail)
+        alpha_smooth = cv2.GaussianBlur(alpha, (3, 3), 0.3)
 
-        # Boost semi-transparent areas to be more opaque
-        alpha_boosted = np.clip(alpha_smooth * 1.4, 0, 255).astype(np.uint8)
+        # Boost semi-transparent areas to keep more hair
+        alpha_boosted = np.clip(alpha_smooth * 1.6, 0, 255).astype(np.uint8)
         result_np[:, :, 3] = alpha_boosted
 
         result_refined = Image.fromarray(result_np, "RGBA")

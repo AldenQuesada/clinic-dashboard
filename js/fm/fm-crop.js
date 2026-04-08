@@ -340,8 +340,8 @@
       var fw = fr.w / ratio
       var fh = fr.h / ratio
 
-      // Add margin (30% around face for context — forehead, chin)
-      var margin = Math.max(fw, fh) * 0.35
+      // Add generous margin around face — keeps hair, ears, chin, forehead
+      var margin = Math.max(fw, fh) * 0.65
       var cx = fx + fw / 2
       var cy = fy + fh / 2
       var viewW = fw + margin * 2
