@@ -142,6 +142,7 @@
   FM._showRegionLabels = true  // toggle labels on/off
   FM._scanEnabled = true       // scanner auto-trigger ON by default
   FM._scanDataByAngle = {}     // cached scan results per angle
+  FM._canvas2InitTimer = null  // debounce timer for _initCanvas2
 
   // ── Granular Lock System ──────────────────────────────────
   // Key: "tab_canvas_angle" (e.g. "simetria_1x_front", "zones_2x_45")

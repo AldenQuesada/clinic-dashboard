@@ -411,11 +411,17 @@
         // Cache scan data for this angle
         FM._scanDataByAngle[angle] = data
 
+        // Auto-enable wireframe when scan completes
+        FM._showWireframe = true
+
         FM._autoSave()
 
-        // Redraw canvas overlays + reinit canvas2 if in 2x mode
+        // Redraw canvas overlays + reinit canvas2 if in 2x mode (debounced)
         FM._redraw()
-        if (FM._viewMode === '2x' && FM._initCanvas2) setTimeout(FM._initCanvas2, 50)
+        if (FM._viewMode === '2x' && FM._initCanvas2) {
+          clearTimeout(FM._canvas2InitTimer)
+          FM._canvas2InitTimer = setTimeout(FM._initCanvas2, 150)
+        }
         FM._refreshToolbar()
 
         // Auto-trigger skin + collagen + protocol in background
