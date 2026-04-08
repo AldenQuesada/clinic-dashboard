@@ -773,6 +773,14 @@
 
   FM._autoAngles = function () {
     FM._metricTool = null  // deactivate line/point tools
+
+    // If angles already exist, just switch to angle mode (don't recalculate)
+    if (FM._metricAngles && FM._metricAngles.points) {
+      FM._refreshToolbar()
+      FM._redraw()
+      return
+    }
+
     if (!FM._scanData || !FM._scanData.key_points) {
       FM._showToast('Execute Auto Analise primeiro', 'warn')
       return
