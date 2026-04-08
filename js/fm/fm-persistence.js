@@ -10,42 +10,43 @@
     if (!FM._lead) return
     var id = FM._lead.id || FM._lead.lead_id || 'unknown'
     try {
-      var pending = Object.keys(FM._photoUrls).length
+      // Collect all photo URLs (ANTES + DEPOIS)
+      var allUrls = {}
+      Object.keys(FM._photoUrls).forEach(function (k) { allUrls['antes_' + k] = FM._photoUrls[k] })
+      Object.keys(FM._afterPhotoUrls || {}).forEach(function (k) { allUrls['depois_' + k] = FM._afterPhotoUrls[k] })
+
+      var pending = Object.keys(allUrls).length
       if (pending === 0) { FM._saveSessionData(id); return }
 
       var photoData = {}
+      var afterData = {}
       var done = 0
-      Object.keys(FM._photoUrls).forEach(function (angle) {
+      Object.keys(allUrls).forEach(function (key) {
         var img = new Image()
         img.onload = function () {
           var c = document.createElement('canvas')
           c.width = img.width; c.height = img.height
           c.getContext('2d').drawImage(img, 0, 0)
-          photoData[angle] = c.toDataURL('image/jpeg', 0.8)
+          var b64 = c.toDataURL('image/jpeg', 0.8)
+          if (key.startsWith('depois_')) afterData[key.replace('depois_', '')] = b64
+          else photoData[key.replace('antes_', '')] = b64
           done++
-          if (done >= pending) FM._saveSessionData(id, photoData)
+          if (done >= pending) FM._saveSessionData(id, photoData, afterData)
         }
-        img.onerror = function () { done++; if (done >= pending) FM._saveSessionData(id, photoData) }
-        img.src = FM._photoUrls[angle]
+        img.onerror = function () { done++; if (done >= pending) FM._saveSessionData(id, photoData, afterData) }
+        img.src = allUrls[key]
       })
     } catch (e) { console.warn('[FaceMapping] Save session failed:', e) }
   }
 
-  FM._saveSessionData = function (id, photoData) {
+  FM._saveSessionData = function (id, photoData, afterData) {
     try {
       var photos = photoData || {}
-      if (Object.keys(photos).length === 0 && FM._annotations.length === 0) {
+      var afterPhotos = afterData || {}
+      if (Object.keys(photos).length === 0 && FM._annotations.length === 0 && Object.keys(afterPhotos).length === 0) {
         localStorage.removeItem('fm_session_' + id)
         localStorage.removeItem('fm_last_session')
         return
-      }
-      // Capture DEPOIS photo as base64 if present
-      var afterB64 = null
-      if (FM._afterPhotoUrl) {
-        try {
-          var aImg = document.createElement('img')
-          // We'll save it async below; for now set to null
-        } catch (e) {}
       }
 
       var session = {
@@ -75,6 +76,7 @@
         metric2NextLineId: FM._metric2NextLineId,
         lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
+        afterPhotos: afterPhotos,
         savedAt: new Date().toISOString(),
       }
       localStorage.setItem('fm_session_' + id, JSON.stringify(session))
@@ -112,12 +114,13 @@
       FM._editorMode = session.editorMode || 'zones'
       FM._activeTab = session.activeTab || 'zones'
       FM._viewMode = session.viewMode || '1x'
-      FM._analysisSubMode = session.analysisSubMode || 'tercos'
+      FM._analysisSubMode = session.analysisSubMode || 'metrics'
       FM._nextId = session.nextId || 1
       FM._nextVecId = session.nextVecId || 1
       FM._lastAnalysis = session.lastAnalysis || null
       FM._activeAngle = session.activeAngle || null
 
+      // Restore ANTES photos
       var photos = session.photos || {}
       Object.keys(photos).forEach(function (angle) {
         if (photos[angle]) {
@@ -130,7 +133,20 @@
         }
       })
 
-      console.log('[FaceMapping] Session restored for lead:', leadId, '| annotations:', FM._annotations.length, '| photos:', Object.keys(FM._photoUrls).length)
+      // Restore DEPOIS photos
+      var afterPhotos = session.afterPhotos || {}
+      FM._afterPhotoUrls = {}
+      Object.keys(afterPhotos).forEach(function (angle) {
+        if (afterPhotos[angle]) {
+          var binary = atob(afterPhotos[angle].split(',')[1])
+          var arr = new Uint8Array(binary.length)
+          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+          var blob = new Blob([arr], { type: 'image/jpeg' })
+          FM._afterPhotoUrls[angle] = URL.createObjectURL(blob)
+        }
+      })
+
+      console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'ANTES,', Object.keys(FM._afterPhotoUrls).length, 'DEPOIS')
       return true
     } catch (e) {
       console.warn('[FaceMapping] Restore failed:', e)

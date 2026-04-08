@@ -28,7 +28,7 @@
     // Ensure editorMode matches activeTab after restore
     if (FM._activeTab === 'simetria') {
       FM._editorMode = 'analysis'
-      if (!FM._analysisSubMode || (FM._analysisSubMode !== 'tercos' && FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics')) {
+      if (!FM._analysisSubMode || (FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics')) {
         FM._analysisSubMode = 'metrics'
       }
     }
