@@ -38,6 +38,7 @@
   FM._saveAngleState = function () {
     var ang = FM._activeAngle
     if (!ang) return
+    console.log('[FM] SAVE angle:', ang, 'H:', FM._metricLines.h.length, 'V:', FM._metricLines.v.length, 'pts:', FM._metricPoints.length)
     FM._stateByAngle[ang] = {
       metricLines: JSON.parse(JSON.stringify(FM._metricLines || { h: [], v: [] })),
       metricPoints: JSON.parse(JSON.stringify(FM._metricPoints || [])),
@@ -59,6 +60,7 @@
 
   FM._restoreAngleState = function (ang) {
     var s = FM._stateByAngle[ang]
+    console.log('[FM] RESTORE angle:', ang, 'hasData:', !!s, s ? ('H:' + (s.metricLines.h || []).length + ' V:' + (s.metricLines.v || []).length) : 'EMPTY')
     if (s) {
       // Deep copy to prevent mutation of saved state
       FM._metricLines = JSON.parse(JSON.stringify(s.metricLines || { h: [], v: [] }))
