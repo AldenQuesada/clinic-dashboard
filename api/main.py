@@ -93,9 +93,6 @@ async def remove_background(req: PhotoRequest):
         img = b64_to_image(req.photo_base64)
         session = get_rembg_session()
 
-        # Check if frontend already cropped (skip_crop=true means no re-crop needed)
-        skip_crop = getattr(req, 'skip_crop', True)
-
         # Remove background — conservative settings to preserve hair
         result = remove(
             img,
@@ -126,54 +123,8 @@ async def remove_background(req: PhotoRequest):
 
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
-
-        # Always: trim black borders symmetrically and re-center the subject
-        gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
-        row_content = np.mean(gray_trim > 20, axis=1)
-        col_content = np.mean(gray_trim > 20, axis=0)
-        rows = row_content > 0.08
-        cols = col_content > 0.08
-
-        if np.any(rows) and np.any(cols):
-            rmin, rmax = np.where(rows)[0][[0, -1]]
-            cmin, cmax = np.where(cols)[0][[0, -1]]
-
-            # Content dimensions
-            content_h = rmax - rmin + 1
-            content_w = cmax - cmin + 1
-
-            # Add symmetric padding (5% of content size, min 10px)
-            pad_v = max(10, int(content_h * 0.05))
-            pad_h = max(10, int(content_w * 0.05))
-
-            # Crop to content + symmetric padding
-            y1 = max(0, rmin - pad_v)
-            y2 = min(final_bgr.shape[0], rmax + 1 + pad_v)
-            x1 = max(0, cmin - pad_h)
-            x2 = min(final_bgr.shape[1], cmax + 1 + pad_h)
-
-            # If padding was clipped on one side, add it to the other for symmetry
-            actual_pad_top = rmin - y1
-            actual_pad_bot = y2 - (rmax + 1)
-            actual_pad_left = cmin - x1
-            actual_pad_right = x2 - (cmax + 1)
-
-            final_bgr = final_bgr[y1:y2, x1:x2]
-
-            # Re-center with equal padding if asymmetric
-            max_pad_v = max(actual_pad_top, actual_pad_bot)
-            max_pad_h = max(actual_pad_left, actual_pad_right)
-            if actual_pad_top != actual_pad_bot or actual_pad_left != actual_pad_right:
-                centered = np.zeros((content_h + max_pad_v * 2, content_w + max_pad_h * 2, 3), dtype=np.uint8)
-                cy = max_pad_v
-                cx = max_pad_h
-                # Place content centered
-                src_y = rmin - y1
-                src_x = cmin - x1
-                centered[cy:cy+content_h, cx:cx+content_w] = final_bgr[src_y:src_y+content_h, src_x:src_x+content_w]
-                final_bgr = centered
-
-            log.info(f"Centered subject: {final_bgr.shape[1]}x{final_bgr.shape[0]} (content {content_w}x{content_h})")
+        # No crop, no trim, no re-center — keep exact same dimensions as input
+        # The frontend crop modal already handles framing
 
         # Subtle unsharp mask — restore detail without creating artifacts
         gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
