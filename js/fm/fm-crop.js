@@ -138,49 +138,31 @@
       FM._cropRedraw()
     })
 
-    // Shared: render hi-res crop — ONLY image pixels, NO black padding
+    // Shared: render hi-res crop — fixed size, WHITE fill (rembg handles white perfectly)
     function _renderHiRes() {
-      if (!FM._cropImg) {
-        // Fallback: copy crop canvas
-        var fb = document.createElement('canvas')
-        fb.width = FM._cropCanvas.width; fb.height = FM._cropCanvas.height
-        fb.getContext('2d').drawImage(FM._cropCanvas, 0, 0)
-        return fb
+      var dpr = Math.max(window.devicePixelRatio || 1, 2)
+      var outW = boxW * dpr, outH = boxH * dpr
+      if (FM._cropImg && FM._cropImg.width > outW) {
+        var s = FM._cropImg.width / (boxW * FM._cropZoom)
+        outW = Math.round(boxW * s); outH = Math.round(boxH * s)
       }
-
-      // Calculate the visible region of the original image inside the crop box
-      // Image is drawn at (panX, panY) with size (imgW*zoom, imgH*zoom) in crop box coords
-      var imgDrawW = FM._cropImg.width * FM._cropZoom
-      var imgDrawH = FM._cropImg.height * FM._cropZoom
-
-      // Intersection of image rect with crop box (0,0,boxW,boxH)
-      var visLeft = Math.max(0, FM._cropPanX)
-      var visTop = Math.max(0, FM._cropPanY)
-      var visRight = Math.min(boxW, FM._cropPanX + imgDrawW)
-      var visBottom = Math.min(boxH, FM._cropPanY + imgDrawH)
-
-      var visW = Math.max(1, visRight - visLeft)
-      var visH = Math.max(1, visBottom - visTop)
-
-      // Map visible region back to original image coords (source rect)
-      var srcX = (visLeft - FM._cropPanX) / FM._cropZoom
-      var srcY = (visTop - FM._cropPanY) / FM._cropZoom
-      var srcW = visW / FM._cropZoom
-      var srcH = visH / FM._cropZoom
-
-      // Output at original resolution (or capped at 2048)
-      var scale = FM._cropImg.width / imgDrawW  // original px per crop px
-      var outW = Math.round(visW * scale)
-      var outH = Math.round(visH * scale)
       if (outW > 2048) { var r = 2048 / outW; outW = 2048; outH = Math.round(outH * r) }
 
       var c = document.createElement('canvas')
       c.width = outW; c.height = outH
       var ctx = c.getContext('2d')
-      ctx.imageSmoothingEnabled = true
-      ctx.imageSmoothingQuality = 'high'
-      // Draw ONLY the visible portion — no black fill needed
-      ctx.drawImage(FM._cropImg, srcX, srcY, srcW, srcH, 0, 0, outW, outH)
+      // White fill — rembg removes white bg cleanly (black confused it with dark hair)
+      ctx.fillStyle = '#FFFFFF'
+      ctx.fillRect(0, 0, outW, outH)
+      if (FM._cropImg) {
+        var sx = outW / (boxW * dpr)
+        ctx.imageSmoothingEnabled = true
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(FM._cropImg, FM._cropPanX * sx, FM._cropPanY * sx,
+          FM._cropImg.width * FM._cropZoom * sx, FM._cropImg.height * FM._cropZoom * sx)
+      } else {
+        ctx.drawImage(FM._cropCanvas, 0, 0, outW, outH)
+      }
       return c
     }
 
