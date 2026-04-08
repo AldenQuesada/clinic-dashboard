@@ -53,10 +53,10 @@
         }
       }
 
-      // Add 2% margin
+      // Add 8% margin — generous to never cut nose/chin/ears
       var contentW = right - left + 1
       var contentH = bottom - top + 1
-      var pad = Math.round(Math.max(contentW, contentH) * 0.02)
+      var pad = Math.round(Math.max(contentW, contentH) * 0.08)
       var cx1 = Math.max(0, left - pad)
       var cy1 = Math.max(0, top - pad)
       var cx2 = Math.min(w, right + 1 + pad)
