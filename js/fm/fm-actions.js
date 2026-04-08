@@ -294,10 +294,63 @@
         if (!file || !FM._pendingUploadAngle) return
         if (!_validateFile(file)) { e.target.value = ''; return }
 
-        FM._originalFiles[FM._pendingUploadAngle] = file
+        var targetAngle = FM._pendingUploadAngle
+        FM._originalFiles[targetAngle] = file
 
-        var tempUrl = URL.createObjectURL(file)
-        FM._openCropModal(tempUrl, FM._pendingUploadAngle)
+        // Same flow as DEPOIS: send original to remove-bg directly
+        var reader = new FileReader()
+        reader.onload = function () {
+          var b64 = reader.result.split(',')[1]
+          FM._showLoading('Removendo fundo com IA...')
+
+          fetch(FM.FACIAL_API_URL + '/remove-bg', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photo_base64: b64 }),
+          })
+          .then(function (r) { return r.json() })
+          .then(function (d) {
+            FM._hideLoading()
+            if (d.success && d.image_b64) {
+              var bin = atob(d.image_b64)
+              var arr = new Uint8Array(bin.length)
+              for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+              var blob = new Blob([arr], { type: 'image/png' })
+              if (FM._photoUrls[targetAngle]) URL.revokeObjectURL(FM._photoUrls[targetAngle])
+              FM._photoUrls[targetAngle] = URL.createObjectURL(blob)
+              FM._photos[targetAngle] = blob
+              // Clear stale DEPOIS/SIM
+              if (FM._afterPhotoByAngle[targetAngle]) { URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle]); delete FM._afterPhotoByAngle[targetAngle] }
+              if (FM._simPhotoByAngle[targetAngle]) { URL.revokeObjectURL(FM._simPhotoByAngle[targetAngle]); delete FM._simPhotoByAngle[targetAngle] }
+              delete FM._scanDataByAngle[targetAngle]
+              if (!FM._activeAngle) FM._activeAngle = targetAngle
+              FM._showToast('Fundo removido (' + (d.elapsed_s || '?') + 's)', 'success')
+            } else {
+              // Fallback: save without bg removal
+              if (FM._photoUrls[targetAngle]) URL.revokeObjectURL(FM._photoUrls[targetAngle])
+              FM._photoUrls[targetAngle] = URL.createObjectURL(file)
+              FM._photos[targetAngle] = file
+              if (!FM._activeAngle) FM._activeAngle = targetAngle
+              FM._showToast('Foto salva (sem bg removal)', 'warn')
+            }
+            FM._autoSave()
+            FM._render()
+            if (FM._activeAngle === targetAngle) setTimeout(FM._initCanvas, 50)
+            if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+          })
+          .catch(function () {
+            FM._hideLoading()
+            if (FM._photoUrls[targetAngle]) URL.revokeObjectURL(FM._photoUrls[targetAngle])
+            FM._photoUrls[targetAngle] = URL.createObjectURL(file)
+            FM._photos[targetAngle] = file
+            if (!FM._activeAngle) FM._activeAngle = targetAngle
+            FM._autoSave()
+            FM._render()
+            if (FM._activeAngle === targetAngle) setTimeout(FM._initCanvas, 50)
+            FM._showToast('API offline — foto salva sem processamento', 'warn')
+          })
+        }
+        reader.readAsDataURL(file)
       })
     }
 
