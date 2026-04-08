@@ -757,8 +757,39 @@
     var file = input.files[0]
     if (!file) return
     var targetAngle = FM._activeAngle || 'front'
-    var tempUrl = URL.createObjectURL(file)
-    FM._openCropModal(tempUrl, targetAngle, 'after')
+    var reader = new FileReader()
+    reader.onload = function () {
+      var b64 = reader.result.split(',')[1]
+      FM._showLoading('Removendo fundo (DEPOIS)...')
+      fetch(FM.FACIAL_API_URL + '/remove-bg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_base64: b64 }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (d) {
+        FM._hideLoading()
+        if (d.success && d.image_b64) {
+          FM._trimAndSaveResult(d.image_b64, 'after', targetAngle)
+          FM._showToast('DEPOIS — fundo removido', 'success')
+        } else {
+          if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+          FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
+          FM._autoSave()
+          FM._render()
+          setTimeout(function () { FM._initCanvas(); if (FM._initCanvas2) FM._initCanvas2() }, 100)
+        }
+      })
+      .catch(function () {
+        FM._hideLoading()
+        if (FM._afterPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._afterPhotoByAngle[targetAngle])
+        FM._afterPhotoByAngle[targetAngle] = URL.createObjectURL(file)
+        FM._autoSave()
+        FM._render()
+        setTimeout(FM._initCanvas, 100)
+      })
+    }
+    reader.readAsDataURL(file)
   }
 
   // ── Init Canvas 2 (after photo in 2x mode) ─────────────
