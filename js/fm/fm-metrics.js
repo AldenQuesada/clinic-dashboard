@@ -36,11 +36,11 @@
 
     ctx.save()
 
-    // Draw midline (green vertical reference line)
+    // Draw midline (blue vertical reference — draggable)
     if (FM._metricShowMidline) {
       var mlx = FM._metricMidline ? FM._metricMidline.x * w : w / 2
       ctx.beginPath()
-      ctx.strokeStyle = 'rgba(16,185,129,0.5)'
+      ctx.strokeStyle = 'rgba(59,130,246,0.5)'
       ctx.lineWidth = 1.5
       ctx.setLineDash([6, 4])
       ctx.moveTo(mlx, 0)
@@ -50,7 +50,7 @@
 
       // Drag handle at top
       ctx.beginPath()
-      ctx.fillStyle = '#10B981'
+      ctx.fillStyle = '#3B82F6'
       ctx.arc(mlx, 12, 5, 0, Math.PI * 2)
       ctx.fill()
       ctx.strokeStyle = '#fff'

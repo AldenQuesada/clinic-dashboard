@@ -168,7 +168,9 @@
       FM._ctx2.drawImage(FM._img2, 0, 0, FM._imgW2, FM._imgH2)
 
       // Draw canvas2's own metrics by temporarily swapping state
-      if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+      var is2xMetrics = (FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics') ||
+                        (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics')
+      if (is2xMetrics) {
         var save = {
           ctx: FM._ctx, imgW: FM._imgW, imgH: FM._imgH,
           lines: FM._metricLines, points: FM._metricPoints,
