@@ -225,7 +225,7 @@
     }
   }
 
-  FM._activeTab = FM._activeTab || 'zones'
+  FM._activeTab = FM._activeTab || 'simetria'
 
   FM._switchTab = function (tabId) {
     FM._activeTab = tabId

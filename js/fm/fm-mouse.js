@@ -98,7 +98,7 @@
       }
     } else if (FM._editorMode === 'analysis') {
       // Only draw tercos/ricketts in their specific sub-modes
-      if (FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front' && FM._tercoLines && FM._scanData) {
+      if (FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front' && FM._tercoLines) {
         FM._drawTercos()
       }
       if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral' && FM._rickettsPoints) {
@@ -403,6 +403,8 @@
       FM._analysisDrag = null
       FM._canvas.style.cursor = 'default'
       FM._redraw()
+      FM._refreshToolbar()
+      FM._autoSave()
       return
     }
     if (FM._editorMode === 'vectors') {

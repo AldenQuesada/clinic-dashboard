@@ -279,21 +279,57 @@
       '</div>' +
     '</div>'
 
-    // Tercos info (only when in tercos sub-mode and scanner ran)
-    if (FM._analysisSubMode === 'tercos' && FM._scanData && FM._scanData.thirds) {
-      var t = FM._scanData.thirds
-      html += '<div class="fm-tool-section">' +
-        '<div class="fm-tool-section-title">Proporcoes</div>' +
-        '<div style="font-size:9px;color:rgba(200,169,126,0.3);margin-bottom:6px">Ideal: 33% cada terco</div>' +
-        _clinVal('Superior', Math.round(t.superior) + '%', t.superior >= 28 && t.superior <= 38 ? '#10B981' : '#F59E0B') +
-        _clinVal('Medio', Math.round(t.medio) + '%', t.medio >= 28 && t.medio <= 38 ? '#10B981' : '#F59E0B') +
-        _clinVal('Inferior', Math.round(t.inferior) + '%', t.inferior >= 28 && t.inferior <= 38 ? '#10B981' : '#F59E0B') +
-        '<div style="font-size:9px;color:rgba(200,169,126,0.25);margin-top:4px">Arraste as linhas para ajustar</div>' +
-      '</div>'
-    } else if (FM._analysisSubMode === 'tercos' && !FM._scanData) {
-      html += '<div class="fm-tool-section">' +
-        '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoAnalyze()">Scanner (posicionar tercos)</button>' +
-      '</div>'
+    // Tercos info — always show proportions from draggable lines
+    if (FM._analysisSubMode === 'tercos') {
+      var tl = FM._tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
+      var totalH = tl.chin - tl.hairline
+      var pSup = totalH > 0 ? Math.round((tl.brow - tl.hairline) / totalH * 100) : 33
+      var pMed = totalH > 0 ? Math.round((tl.noseBase - tl.brow) / totalH * 100) : 33
+      var pInf = totalH > 0 ? Math.round((tl.chin - tl.noseBase) / totalH * 100) : 33
+
+      function _tercColor(pct) { return (pct >= 28 && pct <= 38) ? '#10B981' : (pct >= 24 && pct <= 42 ? '#F59E0B' : '#EF4444') }
+
+      html += '<div class="fm-tool-section" style="padding:10px 12px">' +
+        '<div class="fm-tool-section-title">Proporcoes Faciais</div>' +
+        '<div style="font-size:9px;color:rgba(200,169,126,0.3);margin-bottom:8px">Ideal: 33% cada terco</div>' +
+        // Superior
+        '<div style="margin-bottom:6px">' +
+          '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">' +
+            '<span style="color:rgba(245,240,232,0.5)">Superior (Trichion → Glabela)</span>' +
+            '<span style="color:' + _tercColor(pSup) + ';font-weight:700">' + pSup + '%</span>' +
+          '</div>' +
+          '<div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06)">' +
+            '<div style="height:100%;width:' + Math.min(pSup, 100) + '%;border-radius:3px;background:' + _tercColor(pSup) + '"></div>' +
+          '</div>' +
+        '</div>' +
+        // Medio
+        '<div style="margin-bottom:6px">' +
+          '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">' +
+            '<span style="color:rgba(245,240,232,0.5)">Medio (Glabela → Subnasal)</span>' +
+            '<span style="color:' + _tercColor(pMed) + ';font-weight:700">' + pMed + '%</span>' +
+          '</div>' +
+          '<div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06)">' +
+            '<div style="height:100%;width:' + Math.min(pMed, 100) + '%;border-radius:3px;background:' + _tercColor(pMed) + '"></div>' +
+          '</div>' +
+        '</div>' +
+        // Inferior
+        '<div style="margin-bottom:6px">' +
+          '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">' +
+            '<span style="color:rgba(245,240,232,0.5)">Inferior (Subnasal → Mento)</span>' +
+            '<span style="color:' + _tercColor(pInf) + ';font-weight:700">' + pInf + '%</span>' +
+          '</div>' +
+          '<div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06)">' +
+            '<div style="height:100%;width:' + Math.min(pInf, 100) + '%;border-radius:3px;background:' + _tercColor(pInf) + '"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="font-size:9px;color:rgba(200,169,126,0.25);margin-top:4px">Arraste as linhas na foto para ajustar</div>'
+
+      // Scanner button if not yet run
+      if (!FM._scanData) {
+        html += '<button class="fm-btn" style="width:100%;margin-top:8px" onclick="FaceMapping._autoAnalyze()">' + FM._icon('cpu', 12) + ' Auto-posicionar (Scanner)</button>'
+      }
+
+      html += '</div>'
     }
 
     // Ricketts info
