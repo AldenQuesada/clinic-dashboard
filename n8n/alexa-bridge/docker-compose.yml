@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  alexa-bridge:
+    build: .
+    container_name: clinicai-alexa-bridge
+    restart: unless-stopped
+    ports:
+      - "3456:3456"
+      - "3457:3457"
+    volumes:
+      - alexa-data:/app/data
+    environment:
+      - PORT=3456
+      - AUTH_TOKEN=clinicai-alexa-2026
+      - AMAZON_PAGE=amazon.com.br
+      - ALEXA_COOKIE_FILE=/app/data/.alexa-cookie
+      - PROXY_HOST=0.0.0.0
+      - PROXY_PORT=3457
+    networks:
+      - n8n_default
+
+volumes:
+  alexa-data:
+
+networks:
+  n8n_default:
+    external: true

@@ -1,72 +1,63 @@
-# Deploy Alexa Bridge — Easypanel
+# Deploy Alexa Bridge — Docker Compose no VPS
 
-## 1. Criar servico no Easypanel
+## 1. Deploy via SSH
 
-No painel Easypanel do projeto `clinicai-dashboard`:
+```bash
+ssh root@181.215.69.124
 
-1. **Add Service > App** (nao Docker)
-2. Nome: `alexa-bridge`
-3. Source: **GitHub** (mesmo repo clinic-dashboard)
-4. Build:
-   - **Dockerfile path:** `n8n/alexa-bridge/Dockerfile`
-   - **Context:** `n8n/alexa-bridge`
-5. Portas:
-   - `3456` (API principal)
-   - `3457` (proxy login Amazon — temporario, desabilitar apos autenticar)
-6. Volumes:
-   - Mount path: `/app/data`
-   - (persistir cookie entre deploys)
-7. Environment variables:
-   ```
-   PORT=3456
-   AUTH_TOKEN=clinicai-alexa-2026
-   AMAZON_PAGE=amazon.com.br
-   ALEXA_COOKIE_FILE=/app/data/.alexa-cookie
-   PROXY_HOST=0.0.0.0
-   PROXY_PORT=3457
-   ```
+# Opcao A: Script automatico
+curl -sL https://raw.githubusercontent.com/AldenQuesada/clinic-dashboard/master/n8n/alexa-bridge/deploy.sh | bash
 
-## 2. Primeiro login Amazon
+# Opcao B: Manual
+mkdir -p /opt/alexa-bridge
+cd /opt/alexa-bridge
+# copiar: Dockerfile, server.js, package.json, docker-compose.yml
+docker compose up -d --build
+```
 
-Apenas na primeira vez (cookie persiste no volume):
+## 2. Verificar
 
-1. Acessar `http://<easypanel-host>:3457` no browser
+```bash
+curl http://localhost:3456/health
+# {"status":"ok","alexa_connected":false}  (normal antes do login)
+
+curl http://localhost:3456/api/login-status \
+  -H "Authorization: Bearer clinicai-alexa-2026"
+# Mostra se cookie existe e se Alexa esta conectada
+```
+
+## 3. Primeiro login Amazon
+
+1. Abrir `http://181.215.69.124:3457` no browser
 2. Fazer login com a conta Amazon vinculada aos Echo devices
-3. Apos sucesso, o cookie sera salvo em `/app/data/.alexa-cookie`
-4. Verificar: `GET http://<easypanel-host>:3456/health`
-   - Deve retornar `{ "status": "ok", "alexa_connected": true }`
-5. **Fechar porta 3457** apos autenticacao (seguranca)
+3. Apos sucesso, verificar health novamente — deve retornar `alexa_connected: true`
+4. Remover porta 3457 do docker-compose e `docker compose up -d`
 
-## 3. Workflow n8n
+## 4. Configurar env vars no n8n
 
-1. No n8n (`flows.aldenquesada.site`), importar `alexa-announce-workflow.json`
-2. Configurar env vars do n8n:
-   - `ALEXA_API_URL` = `http://alexa-bridge:3456` (se no mesmo network)
-   - ou `http://<easypanel-host>:3456` (se externo)
-   - `ALEXA_API_TOKEN` = `clinicai-alexa-2026`
-3. Ativar o workflow
+No painel n8n (flows.aldenquesada.site) > Settings > Variables:
 
-## 4. Configurar no Dashboard
+| Variavel | Valor |
+|----------|-------|
+| `ALEXA_API_URL` | `http://clinicai-alexa-bridge:3456` |
+| `ALEXA_API_TOKEN` | `clinicai-alexa-2026` |
 
-1. Settings > Dados da Clinica > Alexa
-2. Webhook URL: `https://flows.aldenquesada.site/webhook/alexa-announce`
-3. Dispositivo recepcao: nome exato do Echo (ex: "Echo da Recepcao")
-4. Templates de mensagem: ajustar se necessario
-5. Toggle: Ativar
-6. Testar: botao "Testar Notificacao"
+Se nao estao na mesma Docker network, usar:
+- `ALEXA_API_URL` = `http://181.215.69.124:3456`
 
 ## 5. Teste end-to-end
 
-1. Abrir Agenda no dashboard
-2. Marcar um agendamento como "Na Clinica"
-3. Verificar:
-   - Toast aparece no dashboard
-   - Echo da recepcao faz announce de boas-vindas
-   - Echo da sala da profissional faz announce de aviso
+```bash
+# Testar webhook direto
+curl -X POST https://flows.aldenquesada.site/webhook/alexa-announce \
+  -H "Content-Type: application/json" \
+  -d '{"device":"Recepcao","message":"Teste de deploy","type":"announce"}'
 
-## Troubleshooting
+# Ou no dashboard: Agenda > marcar paciente "Na Clinica"
+```
 
-- **Alexa nao conecta:** verificar `GET /health` e `GET /api/login-status`
-- **Cookie expirou:** refazer login via proxy porta 3457
-- **Webhook nao chega:** verificar URL no dashboard e logs do n8n
-- **Announce falha:** verificar nome exato do device em `GET /api/devices`
+## 6. Pos-deploy
+
+- Remover porta 3457 do docker-compose (seguranca)
+- Se cookie expirar: reabrir porta 3457, refazer login
+- Logs: `docker logs clinicai-alexa-bridge -f`
