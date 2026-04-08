@@ -304,8 +304,8 @@
 
     var tool = FM._metricTool
 
-    // Midline — FIRST priority, draggable anywhere on the line (wider threshold)
-    if (FM._metricShowMidline && !FM._metricLocked) {
+    // Midline — only when no line/point tool is active
+    if (!tool && FM._metricShowMidline && !FM._metricLocked) {
       var midX = (FM._metricMidline ? FM._metricMidline.x : 0.5) * w
       if (Math.abs(mx - midX) < 18) {
         FM._pushUndo()
@@ -315,8 +315,8 @@
       }
     }
 
-    // Angle points — draggable when unlocked
-    if (FM._metricAngles && FM._metricAngles.points && !FM._metricLocked) {
+    // Angle points — only when no line/point tool is active
+    if (!tool && FM._metricAngles && FM._metricAngles.points && !FM._metricLocked) {
       var pts = FM._metricAngles.points
       var angleKeys = ['gonial_left', 'gonial_right', 'mento', 'zigoma_left', 'zigoma_right']
       for (var ai = 0; ai < angleKeys.length; ai++) {
@@ -459,7 +459,10 @@
   }
 
   FM._setMetricTool = function (tool) {
-    FM._metricTool = tool
+    // Toggle: click same tool again to deactivate
+    FM._metricTool = (FM._metricTool === tool) ? null : tool
+    // Deactivate angle drag when a metric tool is active
+    if (FM._metricTool) FM._analysisDrag = null
     FM._refreshToolbar()
   }
 
@@ -657,6 +660,7 @@
   // ── Auto-place metric lines from landmarks ──────────────
 
   FM._autoMetricLines = function () {
+    FM._metricTool = null  // deactivate tools — switch to drag mode
     if (!FM._scanData || !FM._scanData.key_points) {
       FM._showToast('Execute Auto Analise primeiro', 'warn')
       return
@@ -768,6 +772,7 @@
   FM._metricAngles = null  // {amf, rmz, aij_left, aij_right, classification}
 
   FM._autoAngles = function () {
+    FM._metricTool = null  // deactivate line/point tools
     if (!FM._scanData || !FM._scanData.key_points) {
       FM._showToast('Execute Auto Analise primeiro', 'warn')
       return
