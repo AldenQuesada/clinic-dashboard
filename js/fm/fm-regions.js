@@ -744,9 +744,7 @@
   }
 
   FM._toggleRegionLock = function () {
-    FM._regionLocked = !FM._regionLocked
-    FM._redraw()
-    FM._refreshToolbar()
+    FM._toggleLock('zones', '1x')
   }
 
   // ── Annotation Bridge ──────────────────────────────────────

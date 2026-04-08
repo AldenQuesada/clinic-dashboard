@@ -62,7 +62,40 @@
   FM._regionPaths = {}       // cached computed paths per region (recalc on scan)
   FM._regionAnimFrame = null // hover animation
   FM._showRegionLabels = true  // toggle labels on/off
-  FM._regionLocked = false     // lock control points
+
+  // ── Granular Lock System ──────────────────────────────────
+  // Key: "tab_canvas_angle" (e.g. "simetria_1x_front", "zones_2x_45")
+  FM._locks = {}
+
+  FM._lockKey = function (tab, canvas, angle) {
+    return (tab || FM._activeTab) + '_' + (canvas || '1x') + '_' + (angle || FM._activeAngle || 'front')
+  }
+
+  FM._isLocked = function (tab, canvas, angle) {
+    return !!FM._locks[FM._lockKey(tab, canvas, angle)]
+  }
+
+  FM._toggleLock = function (tab, canvas, angle) {
+    var key = FM._lockKey(tab, canvas, angle)
+    FM._locks[key] = !FM._locks[key]
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+  }
+
+  // Backward-compat getters (used in many places)
+  Object.defineProperty(FM, '_metricLocked', {
+    get: function () { return FM._isLocked('simetria', '1x') },
+    set: function (v) { FM._locks[FM._lockKey('simetria', '1x')] = v },
+  })
+  Object.defineProperty(FM, '_metric2Locked', {
+    get: function () { return FM._isLocked('simetria', '2x') },
+    set: function (v) { FM._locks[FM._lockKey('simetria', '2x')] = v },
+  })
+  Object.defineProperty(FM, '_regionLocked', {
+    get: function () { return FM._isLocked('zones', '1x') },
+    set: function (v) { FM._locks[FM._lockKey('zones', '1x')] = v },
+  })
 
   // Canvas2 (DEPOIS) independent metric state
   FM._metric2Lines = { h: [], v: [] }
@@ -72,7 +105,7 @@
   FM._metric2NextPointId = 1
   FM._metric2NextLineId = 1
   FM._metric2Drag = null
-  FM._metric2Locked = false
+  // FM._metric2Locked is now a getter from granular lock system
   FM._activeCanvas = 1  // 1 = ANTES, 2 = DEPOIS
 
   // Undo/Redo history (snapshots of annotations)

@@ -25,7 +25,7 @@
   FM._metricDrag = null  // {type: 'hline'|'vline'|'point'|'midline', index: n}
   FM._metricTool = 'hline'  // active tool: 'hline', 'vline', 'point', 'midline'
   FM._metricShowMidline = true
-  FM._metricLocked = false  // when true, existing lines can't be moved or deleted
+  // FM._metricLocked is now a getter from fm-state.js granular lock system
 
   // ── Draw all metric overlays ────────────────────────────
 
@@ -456,17 +456,11 @@
   // ── Tool management ─────────────────────────────────────
 
   FM._toggleMetricLock = function () {
-    FM._metricLocked = !FM._metricLocked
-    FM._render()
-    setTimeout(FM._initCanvas, 50)
-    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+    FM._toggleLock('simetria', '1x')
   }
 
   FM._toggleMetric2Lock = function () {
-    FM._metric2Locked = !FM._metric2Locked
-    FM._render()
-    setTimeout(FM._initCanvas, 50)
-    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+    FM._toggleLock('simetria', '2x')
   }
 
   FM._setMetricTool = function (tool) {
