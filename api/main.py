@@ -93,7 +93,7 @@ async def remove_background(req: PhotoRequest):
         img = b64_to_image(req.photo_base64)
         session = get_rembg_session()
 
-        # Remove background — no alpha matting (causes pixelated edges on dark hair)
+        # Remove background
         result = remove(
             img,
             session=session,
@@ -101,10 +101,23 @@ async def remove_background(req: PhotoRequest):
             post_process_mask=True,
         )
 
-        # Smooth the alpha mask edges
+        # Dilate mask to recover edges (nose tip, chin, ears in profile views)
         result_np = np.array(result)
-        alpha = result_np[:, :, 3].astype(np.float32)
-        alpha_smooth = cv2.GaussianBlur(alpha, (5, 5), 1.5)
+        alpha = result_np[:, :, 3]
+
+        # Dilate: expand foreground by ~8px to recover cut edges
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+        alpha_dilated = cv2.dilate(alpha, kernel, iterations=1)
+
+        # Blend: use dilated mask but only where original image has content
+        # This recovers nose/chin edges without adding background artifacts
+        orig_np = np.array(img)
+        orig_gray = cv2.cvtColor(orig_np, cv2.COLOR_RGB2GRAY)
+        has_content = (orig_gray > 15).astype(np.uint8) * 255
+        alpha_final = cv2.min(alpha_dilated, has_content)
+
+        # Smooth edges for natural transition
+        alpha_smooth = cv2.GaussianBlur(alpha_final.astype(np.float32), (7, 7), 2.0)
         result_np[:, :, 3] = alpha_smooth.astype(np.uint8)
 
         result_refined = Image.fromarray(result_np, "RGBA")
