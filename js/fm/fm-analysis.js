@@ -730,10 +730,7 @@
 
     function _setAfterUrl(url) {
       if (FM._afterPhotoUrl) URL.revokeObjectURL(FM._afterPhotoUrl)
-      FM._afterPhotoUrl = url
-      // Also save to per-angle store immediately
-      var ang = FM._activeAngle || 'front'
-      FM._afterPhotoByAngle[ang] = url
+      FM._afterPhotoUrl = url  // setter auto-saves to per-angle store
       FM._render()
       setTimeout(function () { FM._initCanvas(); FM._initCanvas2() }, 100)
     }

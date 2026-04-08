@@ -10,10 +10,22 @@
   FM._lead = null
   FM._photos = {}        // { front: File|Blob, '45': ..., lateral: ... }
   FM._photoUrls = {}     // objectURLs (cropped)
-  FM._afterPhotoUrl = null   // DEPOIS (current angle)
-  FM._simPhotoUrl = null     // DEPOIS SIMULADO (current angle)
+  // DEPOIS photos per angle — single source of truth
   FM._afterPhotoByAngle = {} // { front: url, '45': url, lateral: url }
   FM._simPhotoByAngle = {}   // { front: url, '45': url, lateral: url }
+
+  // FM._afterPhotoUrl and FM._simPhotoUrl are now getters/setters
+  // that read/write from the per-angle store. No separate variable.
+  Object.defineProperty(FM, '_afterPhotoUrl', {
+    get: function () { return FM._afterPhotoByAngle[FM._activeAngle || 'front'] || null },
+    set: function (v) { FM._afterPhotoByAngle[FM._activeAngle || 'front'] = v },
+    configurable: true,
+  })
+  Object.defineProperty(FM, '_simPhotoUrl', {
+    get: function () { return FM._simPhotoByAngle[FM._activeAngle || 'front'] || null },
+    set: function (v) { FM._simPhotoByAngle[FM._activeAngle || 'front'] = v },
+    configurable: true,
+  })
 
   FM._getAfterUrl = function () {
     return FM._afterPhotoUrl || null
@@ -42,9 +54,7 @@
       metric2NextPointId: FM._metric2NextPointId,
       metric2NextLineId: FM._metric2NextLineId,
     }
-    // Save DEPOIS photo per angle
-    FM._afterPhotoByAngle[ang] = FM._afterPhotoUrl
-    FM._simPhotoByAngle[ang] = FM._simPhotoUrl
+    // DEPOIS photo: already synced via getter/setter — no extra save needed
   }
 
   FM._restoreAngleState = function (ang) {
@@ -82,9 +92,7 @@
       FM._metric2NextPointId = 1
       FM._metric2NextLineId = 1
     }
-    // Restore DEPOIS photo for this angle
-    FM._afterPhotoUrl = FM._afterPhotoByAngle[ang] || null
-    FM._simPhotoUrl = FM._simPhotoByAngle[ang] || null
+    // DEPOIS photo: already synced via getter/setter — just switching angle is enough
   }
   FM._activeAngle = null
   FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
