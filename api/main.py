@@ -127,42 +127,53 @@ async def remove_background(req: PhotoRequest):
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
 
-        if not skip_crop:
-            # Auto-crop to face — only when image hasn't been pre-cropped by frontend
-            face_cascade = get_face_cascade()
-            gray = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
-            if len(faces) > 0:
-                fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
-                ih, iw = final_bgr.shape[:2]
-                margin_top = int(fh * 0.6)
-                margin_bottom = int(fh * 0.25)
-                margin_side = int(fw * 0.2)
-                x1 = max(0, fx - margin_side)
-                y1 = max(0, fy - margin_top)
-                x2 = min(iw, fx + fw + margin_side)
-                y2 = min(ih, fy + fh + margin_bottom)
-                final_bgr = final_bgr[y1:y2, x1:x2]
-                log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
+        # Always: trim black borders symmetrically and re-center the subject
+        gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
+        row_content = np.mean(gray_trim > 20, axis=1)
+        col_content = np.mean(gray_trim > 20, axis=0)
+        rows = row_content > 0.08
+        cols = col_content > 0.08
 
-            # Remove excess black border
-            gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
-            row_content = np.mean(gray_trim > 25, axis=1)
-            col_content = np.mean(gray_trim > 25, axis=0)
-            rows = row_content > 0.15
-            cols = col_content > 0.15
-            if np.any(rows) and np.any(cols):
-                rmin, rmax = np.where(rows)[0][[0, -1]]
-                cmin, cmax = np.where(cols)[0][[0, -1]]
-                pad = 8
-                rmin = max(0, rmin - pad)
-                rmax = min(final_bgr.shape[0], rmax + pad)
-                cmin = max(0, cmin - pad)
-                cmax = min(final_bgr.shape[1], cmax + pad)
-                final_bgr = final_bgr[rmin:rmax, cmin:cmax]
-                log.info(f"Trimmed black border: {cmax-cmin}x{rmax-rmin}")
-        else:
-            log.info("Skip crop — frontend pre-cropped")
+        if np.any(rows) and np.any(cols):
+            rmin, rmax = np.where(rows)[0][[0, -1]]
+            cmin, cmax = np.where(cols)[0][[0, -1]]
+
+            # Content dimensions
+            content_h = rmax - rmin + 1
+            content_w = cmax - cmin + 1
+
+            # Add symmetric padding (5% of content size, min 10px)
+            pad_v = max(10, int(content_h * 0.05))
+            pad_h = max(10, int(content_w * 0.05))
+
+            # Crop to content + symmetric padding
+            y1 = max(0, rmin - pad_v)
+            y2 = min(final_bgr.shape[0], rmax + 1 + pad_v)
+            x1 = max(0, cmin - pad_h)
+            x2 = min(final_bgr.shape[1], cmax + 1 + pad_h)
+
+            # If padding was clipped on one side, add it to the other for symmetry
+            actual_pad_top = rmin - y1
+            actual_pad_bot = y2 - (rmax + 1)
+            actual_pad_left = cmin - x1
+            actual_pad_right = x2 - (cmax + 1)
+
+            final_bgr = final_bgr[y1:y2, x1:x2]
+
+            # Re-center with equal padding if asymmetric
+            max_pad_v = max(actual_pad_top, actual_pad_bot)
+            max_pad_h = max(actual_pad_left, actual_pad_right)
+            if actual_pad_top != actual_pad_bot or actual_pad_left != actual_pad_right:
+                centered = np.zeros((content_h + max_pad_v * 2, content_w + max_pad_h * 2, 3), dtype=np.uint8)
+                cy = max_pad_v
+                cx = max_pad_h
+                # Place content centered
+                src_y = rmin - y1
+                src_x = cmin - x1
+                centered[cy:cy+content_h, cx:cx+content_w] = final_bgr[src_y:src_y+content_h, src_x:src_x+content_w]
+                final_bgr = centered
+
+            log.info(f"Centered subject: {final_bgr.shape[1]}x{final_bgr.shape[0]} (content {content_w}x{content_h})")
 
         # Subtle unsharp mask — restore detail without creating artifacts
         gaussian = cv2.GaussianBlur(final_bgr, (0, 0), 1.5)
