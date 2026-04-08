@@ -10,11 +10,80 @@
   FM._lead = null
   FM._photos = {}        // { front: File|Blob, '45': ..., lateral: ... }
   FM._photoUrls = {}     // objectURLs (cropped)
-  FM._afterPhotoUrl = null   // DEPOIS (single photo)
-  FM._simPhotoUrl = null     // DEPOIS SIMULADO
+  FM._afterPhotoUrl = null   // DEPOIS (current angle)
+  FM._simPhotoUrl = null     // DEPOIS SIMULADO (current angle)
+  FM._afterPhotoByAngle = {} // { front: url, '45': url, lateral: url }
+  FM._simPhotoByAngle = {}   // { front: url, '45': url, lateral: url }
 
   FM._getAfterUrl = function () {
     return FM._afterPhotoUrl || null
+  }
+
+  // ── Per-Angle State Store ─────────────────────────────────
+  // Saves/restores metric lines, DEPOIS photo, etc. per angle
+  FM._stateByAngle = {}
+
+  FM._saveAngleState = function () {
+    var ang = FM._activeAngle
+    if (!ang) return
+    FM._stateByAngle[ang] = {
+      metricLines: JSON.parse(JSON.stringify(FM._metricLines || { h: [], v: [] })),
+      metricPoints: JSON.parse(JSON.stringify(FM._metricPoints || [])),
+      metricMidline: FM._metricMidline ? JSON.parse(JSON.stringify(FM._metricMidline)) : null,
+      metricAngles: FM._metricAngles ? JSON.parse(JSON.stringify(FM._metricAngles)) : null,
+      metricNextPointId: FM._metricNextPointId,
+      metricNextLineId: FM._metricNextLineId,
+      tercoLines: JSON.parse(JSON.stringify(FM._tercoLines)),
+      rickettsPoints: JSON.parse(JSON.stringify(FM._rickettsPoints)),
+      metric2Lines: JSON.parse(JSON.stringify(FM._metric2Lines || { h: [], v: [] })),
+      metric2Points: JSON.parse(JSON.stringify(FM._metric2Points || [])),
+      metric2Midline: FM._metric2Midline ? JSON.parse(JSON.stringify(FM._metric2Midline)) : null,
+      metric2Angles: FM._metric2Angles ? JSON.parse(JSON.stringify(FM._metric2Angles)) : null,
+      metric2NextPointId: FM._metric2NextPointId,
+      metric2NextLineId: FM._metric2NextLineId,
+    }
+    // Save DEPOIS photo per angle
+    FM._afterPhotoByAngle[ang] = FM._afterPhotoUrl
+    FM._simPhotoByAngle[ang] = FM._simPhotoUrl
+  }
+
+  FM._restoreAngleState = function (ang) {
+    var s = FM._stateByAngle[ang]
+    if (s) {
+      FM._metricLines = s.metricLines || { h: [], v: [] }
+      FM._metricPoints = s.metricPoints || []
+      FM._metricMidline = s.metricMidline || null
+      FM._metricAngles = s.metricAngles || null
+      FM._metricNextPointId = s.metricNextPointId || 1
+      FM._metricNextLineId = s.metricNextLineId || 1
+      FM._tercoLines = s.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
+      FM._rickettsPoints = s.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
+      FM._metric2Lines = s.metric2Lines || { h: [], v: [] }
+      FM._metric2Points = s.metric2Points || []
+      FM._metric2Midline = s.metric2Midline || null
+      FM._metric2Angles = s.metric2Angles || null
+      FM._metric2NextPointId = s.metric2NextPointId || 1
+      FM._metric2NextLineId = s.metric2NextLineId || 1
+    } else {
+      // Fresh state for this angle
+      FM._metricLines = { h: [], v: [] }
+      FM._metricPoints = []
+      FM._metricMidline = null
+      FM._metricAngles = null
+      FM._metricNextPointId = 1
+      FM._metricNextLineId = 1
+      FM._tercoLines = { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
+      FM._rickettsPoints = { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
+      FM._metric2Lines = { h: [], v: [] }
+      FM._metric2Points = []
+      FM._metric2Midline = null
+      FM._metric2Angles = null
+      FM._metric2NextPointId = 1
+      FM._metric2NextLineId = 1
+    }
+    // Restore DEPOIS photo for this angle
+    FM._afterPhotoUrl = FM._afterPhotoByAngle[ang] || null
+    FM._simPhotoUrl = FM._simPhotoByAngle[ang] || null
   }
   FM._activeAngle = null
   FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]

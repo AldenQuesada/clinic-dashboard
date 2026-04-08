@@ -106,9 +106,16 @@
   // ── Actions ───────────────────────────────────────────────
 
   FM._selectAngle = function (angle) {
+    // Save current angle state before switching
+    if (FM._activeAngle && FM._saveAngleState) FM._saveAngleState()
+
     FM._activeAngle = angle
-    FM._selectedRegion = null  // clear region selection on angle change
+    FM._selectedRegion = null
     FM._hoveredRegion = null
+
+    // Restore state for the new angle
+    if (FM._restoreAngleState) FM._restoreAngleState(angle)
+
     if (FM._selectedZone) {
       var allowed = FM._zonesForAngle(angle)
       var ids = allowed.map(function (z) { return z.id })
@@ -117,6 +124,7 @@
     FM._selAnn = null
     FM._render()
     setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
   }
 
   FM._selectZone = function (zoneId) {

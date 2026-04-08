@@ -55,6 +55,12 @@
         viewMode: FM._viewMode || '1x',
         annotations: FM._annotations,
         vectors: FM._vectors,
+        // Save current angle state into stateByAngle before persisting
+        stateByAngle: (function () {
+          if (FM._saveAngleState) FM._saveAngleState()
+          return FM._stateByAngle || {}
+        })(),
+        // Current angle's metric state (backward compat)
         tercoLines: FM._tercoLines,
         rickettsPoints: FM._rickettsPoints,
         metricLines: FM._metricLines,
@@ -98,6 +104,7 @@
 
       FM._annotations = session.annotations || []
       FM._vectors = session.vectors || []
+      FM._stateByAngle = session.stateByAngle || {}
       FM._tercoLines = session.tercoLines || FM._tercoLines
       FM._rickettsPoints = session.rickettsPoints || FM._rickettsPoints
       FM._metricLines = session.metricLines || { h: [], v: [] }
@@ -105,7 +112,6 @@
       FM._metricMidline = session.metricMidline || null
       FM._metricAngles = session.metricAngles || null
       FM._locks = session.locks || {}
-      // Migrate old single-lock format
       if (session.metricLocked && !session.locks) {
         FM._locks['simetria_1x_front'] = true
       }
@@ -148,6 +154,11 @@
           for (var j = 0; j < aBin.length; j++) aArr[j] = aBin.charCodeAt(j)
           FM._afterPhotoUrl = URL.createObjectURL(new Blob([aArr], { type: 'image/jpeg' }))
         } catch (e) { /* silent */ }
+      }
+
+      // If we have per-angle state, restore the active angle's state
+      if (FM._stateByAngle && FM._activeAngle && FM._stateByAngle[FM._activeAngle]) {
+        FM._restoreAngleState(FM._activeAngle)
       }
 
       console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'photos, after:', !!FM._afterPhotoUrl)

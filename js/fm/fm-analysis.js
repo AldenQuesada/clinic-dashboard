@@ -235,7 +235,11 @@
       if (FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics') {
         FM._analysisSubMode = 'metrics'
       }
-      if (FM._analysisSubMode === 'ricketts' && FM._photoUrls['lateral']) FM._activeAngle = 'lateral'
+      if (FM._analysisSubMode === 'ricketts' && FM._photoUrls['lateral'] && FM._activeAngle !== 'lateral') {
+        if (FM._saveAngleState) FM._saveAngleState()
+        FM._activeAngle = 'lateral'
+        if (FM._restoreAngleState) FM._restoreAngleState('lateral')
+      }
     } else if (tabId === 'zones') {
       FM._editorMode = 'zones'
       if (FM._computeRegionPaths) FM._computeRegionPaths()
