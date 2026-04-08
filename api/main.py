@@ -61,7 +61,7 @@ app.include_router(simulate_router)
 class PhotoRequest(BaseModel):
     photo_base64: str
     lead_id: Optional[str] = None
-    skip_crop: bool = True  # Frontend pre-crops via modal — skip API auto-crop by default
+    angle: Optional[str] = None  # 'front', '45', 'lateral' — affects crop margins
 
 class LandmarkRequest(BaseModel):
     photo_base64: str
@@ -117,22 +117,36 @@ async def remove_background(req: PhotoRequest):
         final_np = np.array(final)
         final_bgr = cv2.cvtColor(final_np, cv2.COLOR_RGB2BGR)
 
-        # Auto-crop to face with generous margins
+        # Auto-crop to face — margins vary by angle
         face_cascade = get_face_cascade()
         gray = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(60, 60))
         if len(faces) > 0:
             fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
             ih, iw = final_bgr.shape[:2]
-            margin_top = int(fh * 0.85)
-            margin_bottom = int(fh * 0.45)
-            margin_side = int(fw * 0.55)
+            angle = req.angle or 'front'
+
+            if angle == 'lateral':
+                # Lateral: very wide margins for nose protrusion
+                margin_top = int(fh * 0.90)
+                margin_bottom = int(fh * 0.50)
+                margin_side = int(fw * 1.2)
+            elif angle == '45':
+                margin_top = int(fh * 0.85)
+                margin_bottom = int(fh * 0.45)
+                margin_side = int(fw * 0.80)
+            else:
+                # Frontal: standard margins
+                margin_top = int(fh * 0.85)
+                margin_bottom = int(fh * 0.45)
+                margin_side = int(fw * 0.55)
+
             x1 = max(0, fx - margin_side)
             y1 = max(0, fy - margin_top)
             x2 = min(iw, fx + fw + margin_side)
             y2 = min(ih, fy + fh + margin_bottom)
             final_bgr = final_bgr[y1:y2, x1:x2]
-            log.info(f"Auto-cropped to face: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
+            log.info(f"Auto-cropped [{angle}]: ({x1},{y1})-({x2},{y2}) from {iw}x{ih}")
 
         # Trim excess black border
         gray_trim = cv2.cvtColor(final_bgr, cv2.COLOR_BGR2GRAY)
