@@ -301,10 +301,10 @@
 
   FM._deleteAfterPhoto = function (angle) {
     var ang = angle || FM._activeAngle || 'front'
-    if (FM._afterPhotoByAngle[ang]) {
-      URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
-      delete FM._afterPhotoByAngle[ang]
-    }
+    if (!FM._afterPhotoByAngle[ang]) return
+    if (!confirm('Excluir foto DEPOIS (' + ang + ')?')) return
+    URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
+    delete FM._afterPhotoByAngle[ang]
     FM._autoSave()
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
@@ -313,6 +313,8 @@
 
   FM._deleteExtraPhoto = function (type) {
     var ang = FM._activeAngle || 'front'
+    var label = type === 'after' ? 'DEPOIS' : 'SIMULADO'
+    if (!confirm('Excluir ' + label + ' (' + ang + ')?')) return
     if (type === 'after') {
       if (FM._afterPhotoByAngle[ang]) URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
       delete FM._afterPhotoByAngle[ang]

@@ -229,6 +229,14 @@
         FM._metricAngles = save.angles
         FM._metricDrag = save.drag
       }
+
+      // Ricketts on canvas2 (DEPOIS lateral)
+      if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral' && FM._rickettsPoints && FM._drawRicketts) {
+        var saveR = { ctx: FM._ctx, imgW: FM._imgW, imgH: FM._imgH }
+        FM._ctx = FM._ctx2; FM._imgW = FM._imgW2; FM._imgH = FM._imgH2
+        FM._drawRicketts()
+        FM._ctx = saveR.ctx; FM._imgW = saveR.imgW; FM._imgH = saveR.imgH
+      }
     }
   }
 

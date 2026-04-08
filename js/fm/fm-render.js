@@ -276,12 +276,13 @@
   FM._renderSimetriaPanel = function () {
     var html = '<div class="fm-toolbar">'
 
-    // Sub-modes: Ricketts / Metrificar
+    // Sub-modes: Metrificar + Ricketts (only if lateral photo exists)
+    var hasLateral = !!FM._photoUrls['lateral']
     html += '<div class="fm-tool-section">' +
       '<div class="fm-tool-section-title">Modo</div>' +
       '<div style="display:flex;gap:3px">' +
         '<button class="fm-zone-btn' + (FM._analysisSubMode === 'metrics' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Metrificar</button>' +
-        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Ricketts</button>' +
+        (hasLateral ? '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50);if(FaceMapping._viewMode===\'2x\')setTimeout(FaceMapping._initCanvas2,100)" style="flex:1;justify-content:center">Ricketts</button>' : '') +
       '</div>' +
     '</div>'
 
@@ -935,10 +936,9 @@
             'onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" ' +
             'style="flex:1;justify-content:center;min-width:80px"' +
             (FM._photoUrls['front'] ? '' : ' disabled') + '>Tercos</button>' +
-          '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" ' +
-            'onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" ' +
-            'style="flex:1;justify-content:center;min-width:80px"' +
-            (FM._photoUrls['lateral'] ? '' : ' disabled') + '>Ricketts</button>' +
+          (FM._photoUrls['lateral'] ? '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" ' +
+            'onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50);if(FaceMapping._viewMode===\'2x\')setTimeout(FaceMapping._initCanvas2,100)" ' +
+            'style="flex:1;justify-content:center;min-width:80px">Ricketts</button>' : '') +
           '<button class="fm-zone-btn' + (FM._analysisSubMode === 'metrics' ? ' active' : '') + '" ' +
             'onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" ' +
             'style="flex:1;justify-content:center;min-width:80px;border-color:#10B981;color:' + (FM._analysisSubMode === 'metrics' ? '#fff' : '#10B981') + '"' +
