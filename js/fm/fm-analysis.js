@@ -789,61 +789,91 @@
       FM._img2 = img2
       FM._imgW2 = w
       FM._imgH2 = h
-      FM._redrawCanvas2()
+      FM._redraw()  // triggers canvas2 redraw with its own metrics
+
+      // Mouse events for independent metrification on canvas2
+      canvas2.addEventListener('mousedown', FM._onCanvas2MouseDown)
+      canvas2.addEventListener('mousemove', FM._onCanvas2MouseMove)
+      canvas2.addEventListener('mouseup', FM._onCanvas2MouseUp)
     }
     img2.src = src
   }
 
-  // Redraw canvas2 with image + all simetria overlays mirrored from canvas1
-  FM._redrawCanvas2 = function () {
-    if (!FM._ctx2 || !FM._img2) return
-    var ctx = FM._ctx2
-    var w = FM._imgW2
-    var h = FM._imgH2
-
-    // Draw base image
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, w, h)
-    ctx.drawImage(FM._img2, 0, 0, w, h)
-
-    // Mirror overlays from canvas1 — scale factor between canvases
-    var sx = FM._imgW ? w / FM._imgW : 1
-    var sy = FM._imgH ? h / FM._imgH : 1
-
-    // Save original canvas refs, temporarily swap to draw on canvas2
-    var origCtx = FM._ctx
-    var origW = FM._imgW
-    var origH = FM._imgH
-    FM._ctx = ctx
-    FM._imgW = w
-    FM._imgH = h
-
-    // Wireframe
-    if (FM._editorMode === 'analysis' && FM._drawWireframe) {
-      FM._drawWireframe()
-    }
-
-    // Metric lines + angles (Metrificar)
-    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
-      if (FM._drawMetrics) FM._drawMetrics()
-      if (FM._drawAngles) FM._drawAngles()
-    }
-
-    // Tercos
-    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front' && FM._tercoLines) {
-      FM._drawTercos()
-    }
-
-    // Ricketts
-    if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral' && FM._rickettsPoints) {
-      FM._drawRicketts()
-    }
-
-    // Restore original canvas refs
-    FM._ctx = origCtx
-    FM._imgW = origW
-    FM._imgH = origH
+  // Canvas2 mouse handlers — swap metric state, delegate to existing handlers, swap back
+  FM._onCanvas2MouseDown = function (e) {
+    if (FM._editorMode !== 'analysis' || FM._analysisSubMode !== 'metrics') return
+    var mx = e.offsetX, my = e.offsetY
+    FM._activeCanvas = 2
+    _swapToCanvas2()
+    if (FM._onMetricMouseDown) FM._onMetricMouseDown(mx, my)
+    _swapToCanvas1()
+    FM._redraw()
   }
+
+  FM._onCanvas2MouseMove = function (e) {
+    if (FM._editorMode !== 'analysis' || FM._analysisSubMode !== 'metrics') return
+    if (FM._activeCanvas !== 2) return
+    var mx = e.offsetX, my = e.offsetY
+    _swapToCanvas2()
+    if (FM._onMetricMouseMove) FM._onMetricMouseMove(mx, my)
+    _swapToCanvas1()
+    FM._redraw()
+  }
+
+  FM._onCanvas2MouseUp = function () {
+    if (FM._activeCanvas !== 2) return
+    _swapToCanvas2()
+    if (FM._onMetricMouseUp) FM._onMetricMouseUp()
+    _swapToCanvas1()
+    FM._activeCanvas = 1
+    FM._redraw()
+    FM._refreshToolbar()
+    FM._autoSave()
+  }
+
+  function _swapToCanvas2() {
+    FM._swap1 = {
+      ctx: FM._ctx, imgW: FM._imgW, imgH: FM._imgH,
+      lines: FM._metricLines, points: FM._metricPoints,
+      midline: FM._metricMidline, angles: FM._metricAngles,
+      drag: FM._metricDrag, nextPt: FM._metricNextPointId, nextLn: FM._metricNextLineId
+    }
+    FM._ctx = FM._ctx2
+    FM._imgW = FM._imgW2
+    FM._imgH = FM._imgH2
+    FM._metricLines = FM._metric2Lines
+    FM._metricPoints = FM._metric2Points
+    FM._metricMidline = FM._metric2Midline
+    FM._metricAngles = FM._metric2Angles
+    FM._metricDrag = FM._metric2Drag
+    FM._metricNextPointId = FM._metric2NextPointId
+    FM._metricNextLineId = FM._metric2NextLineId
+  }
+
+  function _swapToCanvas1() {
+    // Save canvas2 state back
+    FM._metric2Lines = FM._metricLines
+    FM._metric2Points = FM._metricPoints
+    FM._metric2Midline = FM._metricMidline
+    FM._metric2Angles = FM._metricAngles
+    FM._metric2Drag = FM._metricDrag
+    FM._metric2NextPointId = FM._metricNextPointId
+    FM._metric2NextLineId = FM._metricNextLineId
+    // Restore canvas1 state
+    var s = FM._swap1
+    FM._ctx = s.ctx
+    FM._imgW = s.imgW
+    FM._imgH = s.imgH
+    FM._metricLines = s.lines
+    FM._metricPoints = s.points
+    FM._metricMidline = s.midline
+    FM._metricAngles = s.angles
+    FM._metricDrag = s.drag
+    FM._metricNextPointId = s.nextPt
+    FM._metricNextLineId = s.nextLn
+  }
+
+  // (redrawCanvas2 removed — canvas2 now drawn inline in _redraw with independent metrics)
 
   FM._toggleFullscreen = function () {
     var area = document.getElementById('fmCanvasArea')

@@ -67,6 +67,12 @@
         nextVecId: FM._nextVecId,
         metricNextPointId: FM._metricNextPointId,
         metricNextLineId: FM._metricNextLineId,
+        metric2Lines: FM._metric2Lines,
+        metric2Points: FM._metric2Points,
+        metric2Midline: FM._metric2Midline,
+        metric2Angles: FM._metric2Angles,
+        metric2NextPointId: FM._metric2NextPointId,
+        metric2NextLineId: FM._metric2NextLineId,
         lastAnalysis: FM._lastAnalysis || null,
         photos: photos,
         savedAt: new Date().toISOString(),
@@ -97,6 +103,12 @@
       FM._metricAngles = session.metricAngles || null
       FM._metricNextPointId = session.metricNextPointId || 1
       FM._metricNextLineId = session.metricNextLineId || 1
+      FM._metric2Lines = session.metric2Lines || { h: [], v: [] }
+      FM._metric2Points = session.metric2Points || []
+      FM._metric2Midline = session.metric2Midline || null
+      FM._metric2Angles = session.metric2Angles || null
+      FM._metric2NextPointId = session.metric2NextPointId || 1
+      FM._metric2NextLineId = session.metric2NextLineId || 1
       FM._editorMode = session.editorMode || 'zones'
       FM._activeTab = session.activeTab || 'zones'
       FM._viewMode = session.viewMode || '1x'

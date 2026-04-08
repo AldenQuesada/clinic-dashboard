@@ -50,6 +50,16 @@
   FM._landmarkData = null   // MediaPipe 468 landmarks
   FM._skinAnalysis = null   // OpenCV skin scores
 
+  // Canvas2 (DEPOIS) independent metric state
+  FM._metric2Lines = { h: [], v: [] }
+  FM._metric2Points = []
+  FM._metric2Midline = null
+  FM._metric2Angles = null
+  FM._metric2NextPointId = 1
+  FM._metric2NextLineId = 1
+  FM._metric2Drag = null
+  FM._activeCanvas = 1  // 1 = ANTES, 2 = DEPOIS
+
   // Undo/Redo history (snapshots of annotations)
   FM._undoStack = []
   FM._redoStack = []

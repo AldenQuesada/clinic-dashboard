@@ -269,18 +269,17 @@
   FM._renderSimetriaPanel = function () {
     var html = '<div class="fm-toolbar">'
 
-    // Sub-modes: Tercos / Ricketts / Metrificar
+    // Sub-modes: Ricketts / Metrificar
     html += '<div class="fm-tool-section">' +
       '<div class="fm-tool-section-title">Modo</div>' +
       '<div style="display:flex;gap:3px">' +
-        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'tercos' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'tercos\';FaceMapping._selectAngle(\'front\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Tercos</button>' +
-        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Ricketts</button>' +
         '<button class="fm-zone-btn' + (FM._analysisSubMode === 'metrics' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'metrics\';FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Metrificar</button>' +
+        '<button class="fm-zone-btn' + (FM._analysisSubMode === 'ricketts' ? ' active' : '') + '" onclick="FaceMapping._analysisSubMode=\'ricketts\';FaceMapping._selectAngle(\'lateral\');FaceMapping._render();setTimeout(FaceMapping._initCanvas,50)" style="flex:1;justify-content:center">Ricketts</button>' +
       '</div>' +
     '</div>'
 
-    // Tercos info — always show proportions from draggable lines
-    if (FM._analysisSubMode === 'tercos') {
+    // (Tercos removed — redundant with manual H lines)
+    if (false) {
       var tl = FM._tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
       var totalH = tl.chin - tl.hairline
       var pSup = totalH > 0 ? Math.round((tl.brow - tl.hairline) / totalH * 100) : 33

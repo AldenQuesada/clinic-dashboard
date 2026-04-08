@@ -97,10 +97,7 @@
         FM._ctx.restore()
       }
     } else if (FM._editorMode === 'analysis') {
-      // Only draw tercos/ricketts in their specific sub-modes
-      if (FM._analysisSubMode === 'tercos' && FM._activeAngle === 'front' && FM._tercoLines) {
-        FM._drawTercos()
-      }
+      // Draw ricketts in its specific sub-mode (tercos removed)
       if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral' && FM._rickettsPoints) {
         FM._drawRicketts()
       }
@@ -162,11 +159,41 @@
       FM._ctx.restore()
     }
 
-    // Redraw canvas2 (DEPOIS) clean — no overlays mirrored from ANTES
+    // Redraw canvas2 (DEPOIS) with its OWN independent metrics
     if (FM._viewMode === '2x' && FM._ctx2 && FM._img2) {
       FM._ctx2.fillStyle = '#000000'
       FM._ctx2.fillRect(0, 0, FM._imgW2, FM._imgH2)
       FM._ctx2.drawImage(FM._img2, 0, 0, FM._imgW2, FM._imgH2)
+
+      // Draw canvas2's own metrics by temporarily swapping state
+      if (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics') {
+        var save = {
+          ctx: FM._ctx, imgW: FM._imgW, imgH: FM._imgH,
+          lines: FM._metricLines, points: FM._metricPoints,
+          midline: FM._metricMidline, angles: FM._metricAngles,
+          drag: FM._metricDrag
+        }
+        FM._ctx = FM._ctx2
+        FM._imgW = FM._imgW2
+        FM._imgH = FM._imgH2
+        FM._metricLines = FM._metric2Lines
+        FM._metricPoints = FM._metric2Points
+        FM._metricMidline = FM._metric2Midline
+        FM._metricAngles = FM._metric2Angles
+        FM._metricDrag = FM._metric2Drag
+
+        if (FM._drawMetrics) FM._drawMetrics()
+        if (FM._drawAngles) FM._drawAngles()
+
+        FM._ctx = save.ctx
+        FM._imgW = save.imgW
+        FM._imgH = save.imgH
+        FM._metricLines = save.lines
+        FM._metricPoints = save.points
+        FM._metricMidline = save.midline
+        FM._metricAngles = save.angles
+        FM._metricDrag = save.drag
+      }
     }
   }
 
@@ -222,19 +249,7 @@
 
     // ANALYSIS MODE
     if (FM._editorMode === 'analysis') {
-      if (FM._activeAngle === 'front') {
-        var keys = ['hairline', 'brow', 'noseBase', 'chin']
-        for (var k = 0; k < keys.length; k++) {
-          var ly = FM._tercoLines[keys[k]] * FM._imgH
-          if (Math.abs(my - ly) < 12 && mx < FM._imgW) {
-            FM._pushUndo()
-            FM._analysisDrag = keys[k]
-            FM._mode = 'move'
-            FM._canvas.style.cursor = 'ns-resize'
-            return
-          }
-        }
-      } else if (FM._activeAngle === 'lateral') {
+      if (FM._activeAngle === 'lateral') {
         var nDist = Math.sqrt(Math.pow(mx - FM._rickettsPoints.nose.x * FM._imgW, 2) + Math.pow(my - FM._rickettsPoints.nose.y * FM._imgH, 2))
         if (nDist < 15) { FM._pushUndo(); FM._analysisDrag = 'nose'; FM._mode = 'move'; FM._canvas.style.cursor = 'grab'; return }
         var cDist = Math.sqrt(Math.pow(mx - FM._rickettsPoints.chin.x * FM._imgW, 2) + Math.pow(my - FM._rickettsPoints.chin.y * FM._imgH, 2))
@@ -311,11 +326,6 @@
 
     // ANALYSIS MODE drag
     if (FM._editorMode === 'analysis' && FM._mode === 'move' && FM._analysisDrag) {
-      if (FM._activeAngle === 'front' && FM._analysisDrag) {
-        FM._tercoLines[FM._analysisDrag] = Math.max(0.01, Math.min(0.99, my / FM._imgH))
-        FM._redraw()
-        return
-      }
       if (FM._activeAngle === 'lateral') {
         if (FM._analysisDrag === 'nose') {
           FM._rickettsPoints.nose.x = Math.max(0.05, Math.min(0.95, mx / FM._imgW))
@@ -330,14 +340,7 @@
     }
 
     if (FM._editorMode === 'analysis') {
-      if (FM._activeAngle === 'front') {
-        var nearLine = false
-        var keys = ['hairline', 'brow', 'noseBase', 'chin']
-        for (var ki = 0; ki < keys.length; ki++) {
-          if (Math.abs(my - FM._tercoLines[keys[ki]] * FM._imgH) < 12) { nearLine = true; break }
-        }
-        FM._canvas.style.cursor = nearLine ? 'ns-resize' : 'default'
-      } else {
+      if (FM._activeAngle === 'lateral') {
         var nD = Math.sqrt(Math.pow(mx - FM._rickettsPoints.nose.x * FM._imgW, 2) + Math.pow(my - FM._rickettsPoints.nose.y * FM._imgH, 2))
         var cD = Math.sqrt(Math.pow(mx - FM._rickettsPoints.chin.x * FM._imgW, 2) + Math.pow(my - FM._rickettsPoints.chin.y * FM._imgH, 2))
         FM._canvas.style.cursor = (nD < 15 || cD < 15) ? 'grab' : 'default'
