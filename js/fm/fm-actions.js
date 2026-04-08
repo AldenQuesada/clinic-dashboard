@@ -347,7 +347,10 @@
       if (!confirm('Excluir foto ANTES (' + angle + ')?\n\nFotos ' + extras.join(' e ') + ' deste angulo serao mantidas.\nPara excluir tudo, use "Limpar tudo".')) return
     }
 
-    // Clear ANTES only
+    // Clear ANTES only — explicitly preserve DEPOIS
+    var savedAfter = FM._afterPhotoByAngle[angle] || null
+    var savedSim = FM._simPhotoByAngle[angle] || null
+
     if (FM._photoUrls[angle]) URL.revokeObjectURL(FM._photoUrls[angle])
     delete FM._photos[angle]
     delete FM._photoUrls[angle]
@@ -356,14 +359,23 @@
     // Clear per-angle metrics/state (but NOT DEPOIS/SIM photos)
     delete FM._angleStore[angle]
     delete FM._scanDataByAngle[angle]
-    // Switch to next available angle
+
+    // Restore DEPOIS/SIM in case anything cleared them
+    if (savedAfter) FM._afterPhotoByAngle[angle] = savedAfter
+    if (savedSim) FM._simPhotoByAngle[angle] = savedSim
+
+    // Stay on this angle if DEPOIS exists, otherwise switch
     if (FM._activeAngle === angle) {
-      FM._activeAngle = FM._photoUrls['front'] ? 'front' : (FM._photoUrls['45'] ? '45' : (FM._photoUrls['lateral'] ? 'lateral' : null))
+      if (!savedAfter && !savedSim) {
+        FM._activeAngle = FM._photoUrls['front'] ? 'front' : (FM._photoUrls['45'] ? '45' : (FM._photoUrls['lateral'] ? 'lateral' : null))
+      }
     }
     FM._selAnn = null
+    console.log('[FM] deletePhoto', angle, '| DEPOIS preserved:', !!FM._afterPhotoByAngle[angle], '| activeAngle:', FM._activeAngle)
     FM._autoSave()
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
+    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
   }
 
   FM._bindEvents = function () {
