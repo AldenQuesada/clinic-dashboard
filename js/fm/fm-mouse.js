@@ -125,16 +125,9 @@
       }
       // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else {
-      // Zones mode — draw anatomical region overlays from landmarks
-      if (FM._drawAllRegions && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
-        FM._drawAllRegions()
-      }
-      // Draw annotations (polygons + legacy ellipses)
+      // Zones mode — draw polygon/ellipse annotations (region overlays disabled)
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
       anns.forEach(function (ann) {
-        // Skip if this zone has an active region overlay
-        var st = FM._regionState && FM._regionState[ann.zone]
-        if (st && st.active && FM._regionPaths && FM._regionPaths[ann.zone]) return
         if (ann.shape && ann.shape.type === 'polygon') {
           FM._drawPolygon(ann)
         } else {

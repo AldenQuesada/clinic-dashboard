@@ -20,6 +20,11 @@
     _onTreatmentChange: FM._onTreatmentChange,
     _triggerUpload: FM._triggerUpload,
     _removeAnnotation: FM._removeAnnotation,
+    _selectAnnotation: function (id) {
+      FM._selAnn = FM._annotations.find(function (a) { return a.id === id }) || null
+      FM._redraw()
+      FM._refreshToolbar()
+    },
     _clearAll: FM._clearAll,
     _exportReport: FM._exportReport,
     _exportReportHTML: FM._exportReportHTML,
