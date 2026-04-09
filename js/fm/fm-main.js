@@ -66,6 +66,8 @@
     _scanBeforeAfter: FM._scanBeforeAfter,
     _openCompare: FM._openCompare,
     _closeCompare: FM._closeCompare,
+    _compareUpload: FM._compareUpload,
+    _compareFromUrl: FM._compareFromUrl,
     _exportCompare: FM._exportCompare,
 
     // Skin analysis + heatmaps

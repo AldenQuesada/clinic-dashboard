@@ -93,6 +93,16 @@
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="8" height="18" rx="1"/><rect x="14" y="3" width="8" height="18" rx="1"/></svg>' +
               ' Lado a Lado</button>' +
           '</div>' +
+          '<div class="fmc-uploads" style="display:flex;gap:4px;margin-left:8px">' +
+            '<label style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#EF4444;font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:500">' +
+              FM._icon('upload', 11) + ' ANTES<input type="file" accept="image/*" onchange="FaceMapping._compareUpload(\'before\',this)" style="display:none">' +
+            '</label>' +
+            '<label style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(16,185,129,0.3);border-radius:6px;color:#10B981;font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:500">' +
+              FM._icon('upload', 11) + ' DEPOIS<input type="file" accept="image/*" onchange="FaceMapping._compareUpload(\'after\',this)" style="display:none">' +
+            '</label>' +
+            '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(200,169,126,0.2);border-radius:6px;background:transparent;color:rgba(200,169,126,0.6);font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl()">' +
+              FM._icon('link', 11) + ' URL</button>' +
+          '</div>' +
           '<div class="fmc-actions">' +
             '<button class="fmc-btn-export" onclick="FaceMapping._exportCompare()">' +
               FM._icon('download', 14) + ' Instagram</button>' +
@@ -431,6 +441,66 @@
   FM._closeCompare = function () {
     if (_overlay) { _overlay.remove(); _overlay = null }
     document.body.style.overflow = ''
+  }
+
+  // ── Upload photo directly into comparator ──
+  FM._compareUpload = function (which, input) {
+    var file = input.files[0]
+    if (!file) return
+    var url = URL.createObjectURL(file)
+    var img = new Image()
+    img.onload = function () {
+      if (which === 'before') {
+        _beforeImg = img
+      } else {
+        _afterImg = img
+      }
+      // Update all mode views
+      _updateCompareImages()
+      FM._showToast && FM._showToast((which === 'before' ? 'ANTES' : 'DEPOIS') + ' atualizado', 'success')
+    }
+    img.src = url
+  }
+
+  FM._compareFromUrl = function () {
+    var url = prompt('Cole a URL da imagem (Google Drive, link direto, etc):')
+    if (!url) return
+    // Convert Google Drive share links to direct download
+    var driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/)
+    if (driveMatch) {
+      url = 'https://drive.google.com/uc?export=view&id=' + driveMatch[1]
+    }
+    var which = prompt('Esta imagem e ANTES ou DEPOIS?\n\nDigite: antes ou depois')
+    if (!which) return
+    which = which.toLowerCase().trim()
+    if (which !== 'antes' && which !== 'depois') {
+      FM._showToast && FM._showToast('Digite "antes" ou "depois"', 'warn')
+      return
+    }
+    var img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = function () {
+      if (which === 'antes') _beforeImg = img
+      else _afterImg = img
+      _updateCompareImages()
+      FM._showToast && FM._showToast((which === 'antes' ? 'ANTES' : 'DEPOIS') + ' carregado da URL', 'success')
+    }
+    img.onerror = function () {
+      FM._showToast && FM._showToast('Erro ao carregar imagem. Verifique a URL.', 'error')
+    }
+    img.src = url
+  }
+
+  function _updateCompareImages() {
+    if (!_beforeImg || !_afterImg || !_overlay) return
+    // Update slider mode
+    var beforeImgs = _overlay.querySelectorAll('.fmc-img-before img, .fmc-fade-before, .fmc-side-panel:first-child img')
+    var afterImgs = _overlay.querySelectorAll('.fmc-img-after img, .fmc-fade-after, .fmc-side-panel:last-child img')
+    beforeImgs.forEach(function (el) { el.src = _beforeImg.src })
+    afterImgs.forEach(function (el) { el.src = _afterImg.src })
+    // Also update fmcFadeAfter specifically
+    var fadeAfter = document.getElementById('fmcFadeAfter')
+    if (fadeAfter) fadeAfter.src = _afterImg.src
   }
 
 })()
