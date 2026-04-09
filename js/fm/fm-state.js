@@ -87,6 +87,13 @@
   FM._activeAngle = null
   FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{type:'polygon',points:[{x,y},...]} | {x,y,rx,ry}, side }]
 
+  // Guide lines for Estruturacao (thin H/V for positioning)
+  FM._guideLines = { h: [], v: [] }
+  FM._guideNextId = 1
+  FM._guideTool = null     // null | 'hguide' | 'vguide'
+  FM._guideDrag = null     // {type, index}
+  FM._guideLocked = false
+
   // Polygon drawing state (Estruturacao tab)
   FM._polyPoints = []      // current polygon being drawn (temporary, pixel coords)
   FM._polyDrawing = false  // whether polygon is being drawn

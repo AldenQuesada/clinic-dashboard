@@ -53,6 +53,25 @@
     },
 
     _mirrorPolygon: FM._mirrorPolygon,
+    _setGuideTool: function (tool) {
+      FM._guideTool = (FM._guideTool === tool) ? null : tool
+      FM._selectedZone = null
+      if (FM._polyDrawing) FM._cancelPoly()
+      FM._render()
+      setTimeout(FM._initCanvas, 50)
+    },
+    _toggleGuideLock: function () {
+      FM._guideLocked = !FM._guideLocked
+      FM._guideTool = null
+      FM._render()
+      setTimeout(FM._initCanvas, 50)
+    },
+    _clearGuides: function () {
+      FM._guideLines = { h: [], v: [] }
+      FM._redraw()
+      FM._render()
+      setTimeout(FM._initCanvas, 50)
+    },
     _undo: FM._undo,
     _redo: FM._redo,
     _autoAnalyze: FM._autoAnalyze,

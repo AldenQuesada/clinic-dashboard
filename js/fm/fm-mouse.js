@@ -123,6 +123,32 @@
       }
       // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else if (FM._editorMode === 'zones') {
+      // Guide lines (thin, for positioning)
+      if (FM._guideLines) {
+        FM._ctx.save()
+        FM._guideLines.h.forEach(function (g) {
+          var gy = g.pos * FM._imgH
+          FM._ctx.beginPath()
+          FM._ctx.strokeStyle = 'rgba(200,169,126,0.25)'
+          FM._ctx.lineWidth = 0.5
+          FM._ctx.setLineDash([4, 4])
+          FM._ctx.moveTo(0, gy)
+          FM._ctx.lineTo(FM._imgW, gy)
+          FM._ctx.stroke()
+        })
+        FM._guideLines.v.forEach(function (g) {
+          var gx = g.pos * FM._imgW
+          FM._ctx.beginPath()
+          FM._ctx.strokeStyle = 'rgba(200,169,126,0.25)'
+          FM._ctx.lineWidth = 0.5
+          FM._ctx.setLineDash([4, 4])
+          FM._ctx.moveTo(gx, 0)
+          FM._ctx.lineTo(gx, FM._imgH)
+          FM._ctx.stroke()
+        })
+        FM._ctx.setLineDash([])
+        FM._ctx.restore()
+      }
       // Zones mode ONLY — draw polygon/ellipse annotations
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
       anns.forEach(function (ann) {
@@ -345,6 +371,40 @@
       }
     }
 
+    // GUIDE LINES — add/drag thin guides in zones mode
+    if (FM._editorMode === 'zones' && FM._guideTool && !FM._polyDrawing) {
+      var w = FM._imgW, h = FM._imgH
+      if (FM._guideTool === 'hguide') {
+        // Drag existing guide
+        if (!FM._guideLocked) {
+          for (var gi = 0; gi < FM._guideLines.h.length; gi++) {
+            if (Math.abs(my - FM._guideLines.h[gi].pos * h) < 8) {
+              FM._guideDrag = { type: 'hguide', index: gi }
+              FM._mode = 'move'
+              return
+            }
+          }
+        }
+        // Add new guide
+        FM._guideLines.h.push({ pos: my / h, id: FM._guideNextId++ })
+        FM._redraw()
+        return
+      } else if (FM._guideTool === 'vguide') {
+        if (!FM._guideLocked) {
+          for (var gj = 0; gj < FM._guideLines.v.length; gj++) {
+            if (Math.abs(mx - FM._guideLines.v[gj].pos * w) < 8) {
+              FM._guideDrag = { type: 'vguide', index: gj }
+              FM._mode = 'move'
+              return
+            }
+          }
+        }
+        FM._guideLines.v.push({ pos: mx / w, id: FM._guideNextId++ })
+        FM._redraw()
+        return
+      }
+    }
+
     // ZONES MODE — handle drag, region move, or click-to-select
     // (only intercept if NOT in polygon drawing mode and no zone selected for polygon)
     if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0 && !FM._polyDrawing && !FM._selectedZone) {
@@ -509,6 +569,17 @@
 
   FM._onMouseMove = function (e) {
     var mx = e.offsetX, my = e.offsetY
+
+    // GUIDE LINE drag
+    if (FM._guideDrag && FM._mode === 'move') {
+      if (FM._guideDrag.type === 'hguide') {
+        FM._guideLines.h[FM._guideDrag.index].pos = Math.max(0.01, Math.min(0.99, my / FM._imgH))
+      } else {
+        FM._guideLines.v[FM._guideDrag.index].pos = Math.max(0.01, Math.min(0.99, mx / FM._imgW))
+      }
+      FM._redraw()
+      return
+    }
 
     // VECTORS MODE drag — move/stretch force vectors
     if (FM._editorMode === 'vectors' && FM._vecDrag && FM._mode === 'move') {
@@ -692,6 +763,12 @@
   }
 
   FM._onMouseUp = function () {
+    // Guide line drag end
+    if (FM._guideDrag) {
+      FM._guideDrag = null
+      FM._mode = 'idle'
+      return
+    }
     // Region handle drag end
     if (FM._regionHandleDrag) {
       FM._endRegionHandleDrag()

@@ -663,6 +663,22 @@
   FM._renderZonesPanel = function () {
     var html = '<div class="fm-toolbar">'
 
+    // ── Guide lines tools ──
+    var gLocked = FM._guideLocked
+    var gTool = FM._guideTool
+    html += '<div class="fm-tool-section" style="padding:8px 12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+        '<span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.4);font-weight:600">Linhas Guia</span>' +
+        '<button class="fm-btn" onclick="FaceMapping._toggleGuideLock()" style="font-size:8px;padding:2px 5px;border-color:' + (gLocked ? '#F59E0B' : 'rgba(200,169,126,0.15)') + ';color:' + (gLocked ? '#F59E0B' : 'rgba(200,169,126,0.4)') + '">' + FM._icon(gLocked ? 'lock' : 'unlock', 10) + '</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:4px">' +
+        '<button class="fm-zone-btn' + (gTool === 'hguide' ? ' active' : '') + '" onclick="FaceMapping._setGuideTool(\'hguide\')" style="flex:1;justify-content:center;font-size:8px;padding:3px">-- H</button>' +
+        '<button class="fm-zone-btn' + (gTool === 'vguide' ? ' active' : '') + '" onclick="FaceMapping._setGuideTool(\'vguide\')" style="flex:1;justify-content:center;font-size:8px;padding:3px">| V</button>' +
+        '<button class="fm-btn" onclick="FaceMapping._clearGuides()" style="font-size:7px;padding:2px 5px;border-color:rgba(200,169,126,0.1);color:rgba(200,169,126,0.3)">Limpar</button>' +
+      '</div>' +
+      '<div style="font-size:7px;color:rgba(200,169,126,0.2);margin-top:4px">' + (FM._guideLines.h.length + FM._guideLines.v.length) + ' guias | ' + (gLocked ? 'Travadas' : 'Livres') + '</div>' +
+    '</div>'
+
     // ── Zone selection buttons — grouped by category ──
     var fillZones = FM.ZONES.filter(function (z) { return z.cat === 'fill' })
     var toxZones = FM.ZONES.filter(function (z) { return z.cat === 'tox' })
