@@ -22,6 +22,7 @@
     _removeAnnotation: FM._removeAnnotation,
     _clearAll: FM._clearAll,
     _exportReport: FM._exportReport,
+    _exportReportHTML: FM._exportReportHTML,
     _downloadReport: FM._downloadReport,
     _closeExport: FM._closeExport,
     _saveToSupabase: FM._saveToSupabase,
