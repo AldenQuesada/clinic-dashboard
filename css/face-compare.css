@@ -8,11 +8,11 @@
   position: fixed;
   inset: 0;
   z-index: 99995;
-  background: #111;
+  background: #0A0A0A;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fmcFadeIn 0.3s ease;
+  animation: fmcFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fmcFadeIn {
@@ -27,7 +27,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #1a1a1a;
+  background: #0A0A0A;
   position: relative;
 }
 
@@ -37,11 +37,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  background: linear-gradient(180deg, rgba(44,44,44,0.95), rgba(26,26,26,0.95));
+  background: linear-gradient(180deg, rgba(44,44,44,0.95), rgba(10,10,10,0.95));
   border-bottom: 1px solid rgba(200,169,126,0.12);
   flex-shrink: 0;
   backdrop-filter: blur(12px);
   z-index: 2;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .fmc-brand {
@@ -88,7 +90,7 @@
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fmc-mode-btn:hover {
@@ -105,6 +107,96 @@
 .fmc-mode-btn svg {
   width: 16px;
   height: 16px;
+}
+
+/* ── Auto Timer Button ────────────────────────────────────── */
+.fmc-auto-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 1px solid rgba(200,169,126,0.25);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(200,169,126,0.6);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.05em;
+}
+
+.fmc-auto-btn:hover {
+  background: rgba(200,169,126,0.1);
+  color: #C8A97E;
+  border-color: rgba(200,169,126,0.4);
+}
+
+.fmc-auto-btn.active {
+  background: rgba(200,169,126,0.2);
+  color: #C8A97E;
+  border-color: #C8A97E;
+  box-shadow: 0 0 20px rgba(200,169,126,0.15);
+}
+
+.fmc-auto-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.fmc-auto-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── Angle Tabs ───────────────────────────────────────────── */
+.fmc-angle-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 24px;
+  background: rgba(20,20,20,0.95);
+  border-bottom: 1px solid rgba(200,169,126,0.06);
+  flex-shrink: 0;
+}
+
+.fmc-angle-tab {
+  padding: 5px 20px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(245,240,232,0.35);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.fmc-angle-tab:hover {
+  color: rgba(245,240,232,0.6);
+  background: rgba(255,255,255,0.03);
+}
+
+.fmc-angle-tab.active {
+  color: #C8A97E;
+  background: rgba(200,169,126,0.1);
+}
+
+.fmc-angle-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: #C8A97E;
+  border-radius: 1px;
 }
 
 /* Actions */
@@ -127,7 +219,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 12px rgba(200,169,126,0.3);
 }
 
@@ -147,7 +239,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fmc-btn-close:hover {
@@ -160,7 +252,24 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #000;
+  background: #0A0A0A;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+/* Zoom Container — wraps all mode wraps for synchronized zoom */
+.fmc-zoom-container {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+/* Mode wrap transition */
+.fmc-mode-wrap {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity;
 }
 
 /* ── Slider Mode ───────────────────────────────────────────── */
@@ -183,11 +292,12 @@
   user-select: none;
   -webkit-user-drag: none;
   image-rendering: high-quality;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fmc-img-after {
   clip-path: inset(0 0 0 50%);
-  transition: clip-path 0.02s linear;
+  transition: clip-path 0.02s ease-out;
 }
 
 /* Slider Line */
@@ -209,6 +319,7 @@
   box-shadow:
     0 0 8px rgba(200,169,126,0.4),
     0 0 24px rgba(200,169,126,0.15);
+  transition: left 0.15s ease-out;
 }
 
 /* Handle */
@@ -231,7 +342,7 @@
     0 2px 12px rgba(0,0,0,0.4),
     0 0 30px rgba(200,169,126,0.3),
     inset 0 1px 0 rgba(255,255,255,0.3);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 11;
 }
 
@@ -247,6 +358,11 @@
   display: flex;
   gap: 8px;
   color: #fff;
+}
+
+.fmc-handle-arrows-h {
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* ── Fade Mode ─────────────────────────────────────────────── */
@@ -267,7 +383,7 @@
 
 .fmc-fade-after {
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Side-by-Side Mode ─────────────────────────────────────── */
@@ -282,7 +398,8 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #000;
+  background: #0A0A0A;
+  transition: box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fmc-side-panel img {
@@ -290,8 +407,89 @@
   height: 100%;
   object-fit: contain;
   user-select: none;
-  transition: transform 0.1s ease;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center center;
+}
+
+/* ── Horizontal Split Mode ─────────────────────────────────── */
+.fmc-horiz-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+.fmc-horiz-before,
+.fmc-horiz-after {
+  position: absolute;
+  inset: 0;
+}
+
+.fmc-horiz-before img,
+.fmc-horiz-after img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  image-rendering: high-quality;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmc-horiz-after {
+  clip-path: inset(50% 0 0 0);
+  transition: clip-path 0.02s ease-out;
+}
+
+/* Horizontal Slider Line */
+.fmc-horiz-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  margin-top: -1.5px;
+  background: linear-gradient(90deg,
+    rgba(200,169,126,0.3),
+    #C8A97E 20%,
+    #C8A97E 80%,
+    rgba(200,169,126,0.3)
+  );
+  z-index: 10;
+  pointer-events: none;
+  box-shadow:
+    0 0 8px rgba(200,169,126,0.4),
+    0 0 24px rgba(200,169,126,0.15);
+  transition: top 0.15s ease-out;
+}
+
+.fmc-horiz-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #C8A97E, #DFC5A0);
+  border: 3px solid rgba(255,255,255,0.9);
+  cursor: ns-resize;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 2px 12px rgba(0,0,0,0.4),
+    0 0 30px rgba(200,169,126,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 11;
+}
+
+.fmc-horiz-handle:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow:
+    0 4px 20px rgba(0,0,0,0.5),
+    0 0 40px rgba(200,169,126,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.3);
 }
 
 /* ── Labels ────────────────────────────────────────────────── */
@@ -309,6 +507,7 @@
   pointer-events: none;
   z-index: 5;
   text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fmc-label-before {
@@ -326,10 +525,43 @@
   color: #fff;
 }
 
+/* ── Watermark ─────────────────────────────────────────────── */
+.fmc-watermark {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 10px;
+  font-style: italic;
+  color: rgba(200,169,126,0.15);
+  pointer-events: none;
+  z-index: 6;
+  letter-spacing: 0.03em;
+}
+
+/* ── Zoom Indicator ────────────────────────────────────────── */
+.fmc-zoom-indicator {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 3px 10px;
+  background: rgba(200,169,126,0.15);
+  border: 1px solid rgba(200,169,126,0.25);
+  border-radius: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: #C8A97E;
+  pointer-events: none;
+  z-index: 6;
+  backdrop-filter: blur(8px);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* ── Controls ──────────────────────────────────────────────── */
 .fmc-controls {
   padding: 12px 24px;
-  background: rgba(26,26,26,0.95);
+  background: rgba(10,10,10,0.95);
   border-top: 1px solid rgba(200,169,126,0.08);
   flex-shrink: 0;
 }
@@ -368,6 +600,7 @@
   );
   border-radius: 2px;
   outline: none;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fmc-range::-webkit-slider-thumb {
@@ -377,11 +610,11 @@
   border-radius: 50%;
   background: linear-gradient(135deg, #C8A97E, #DFC5A0);
   cursor: pointer;
-  border: 2px solid #1a1a1a;
+  border: 2px solid #0A0A0A;
   box-shadow:
     0 0 12px rgba(200,169,126,0.4),
     0 2px 6px rgba(0,0,0,0.3);
-  transition: transform 0.15s ease;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .fmc-range::-webkit-slider-thumb:hover {
@@ -394,7 +627,7 @@
   border-radius: 50%;
   background: linear-gradient(135deg, #C8A97E, #DFC5A0);
   cursor: pointer;
-  border: 2px solid #1a1a1a;
+  border: 2px solid #0A0A0A;
 }
 
 /* ── Footer ────────────────────────────────────────────────── */
@@ -428,4 +661,7 @@
   .fmc-mode-btn { padding: 6px 10px; font-size: 10px; }
   .fmc-range { width: 200px; }
   .fmc-label { font-size: 14px; padding: 4px 12px; }
+  .fmc-angle-tabs { padding: 4px 12px; }
+  .fmc-angle-tab { padding: 4px 12px; font-size: 9px; }
+  .fmc-auto-btn { padding: 5px 10px; }
 }

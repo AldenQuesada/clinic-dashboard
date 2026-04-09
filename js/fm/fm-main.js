@@ -69,6 +69,8 @@
     _compareUpload: FM._compareUpload,
     _compareFromUrl: FM._compareFromUrl,
     _exportCompare: FM._exportCompare,
+    _compareToggleAutoTimer: FM._compareToggleAutoTimer,
+    _compareSwitchAngle: FM._compareSwitchAngle,
 
     // Skin analysis + heatmaps
     _runSkinAnalysis: FM._runSkinAnalysis,
