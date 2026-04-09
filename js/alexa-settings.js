@@ -78,32 +78,51 @@
   }
 
   async function testAlexaNotification() {
-    if (!window.AlexaNotificationService) {
-      if (window._showToast) _showToast('Alexa', 'Servico Alexa nao carregado', 'error')
-      return
-    }
-    var config = await AlexaNotificationService.getConfig()
+    var config = await (window.AlexaNotificationService ? AlexaNotificationService.getConfig() : null)
     if (!config || !config.webhook_url) {
       if (window._showToast) _showToast('Alexa', 'Salve a configuracao primeiro', 'warning')
       return
     }
-    // Encontrar sala que tem Alexa configurada
-    var rooms = typeof getRooms === 'function' ? getRooms() : []
-    var salaIdx = 0
-    for (var ri = 0; ri < rooms.length; ri++) {
-      if (rooms[ri].alexa_device_name) { salaIdx = ri; break }
+
+    var headers = { 'Content-Type': 'application/json' }
+    if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
+
+    // Buscar todos os devices cadastrados
+    var devices = []
+    if (window.AlexaDevicesRepository) {
+      var devRes = await AlexaDevicesRepository.getAll()
+      if (devRes.ok && devRes.data) devices = devRes.data.filter(function(d) { return d.is_active && d.device_name })
     }
-    var testAppt = {
-      id:               'test_' + Date.now(),
-      pacienteNome:     'Maria Teste',
-      profissionalNome: 'Dra. Mirian',
-      profissionalIdx:  0,
-      procedimento:     'Avaliacao',
-      horaInicio:       String(new Date().getHours()).padStart(2,'0') + ':' + String(new Date().getMinutes()).padStart(2,'0'),
-      salaIdx:          salaIdx,
+
+    // Fallback: pegar devices das salas
+    if (!devices.length) {
+      var rooms = typeof getRooms === 'function' ? getRooms() : []
+      rooms.forEach(function(r) {
+        if (r.alexa_device_name) devices.push({ device_name: r.alexa_device_name, location_label: r.nome })
+      })
     }
-    await AlexaNotificationService.notifyArrival(testAppt)
-    if (window._showToast) _showToast('Alexa', 'Notificacao de teste enviada', 'info')
+
+    if (!devices.length) {
+      if (window._showToast) _showToast('Alexa', 'Nenhum dispositivo cadastrado', 'warning')
+      return
+    }
+
+    var sent = 0
+    for (var i = 0; i < devices.length; i++) {
+      try {
+        var r = await fetch(config.webhook_url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ device: devices[i].device_name, message: 'Teste ClinicAI. Dispositivo ' + devices[i].device_name + ' funcionando.', type: 'announce' }),
+        })
+        if (r.ok) { sent++; console.log('[Alexa] Teste OK:', devices[i].device_name) }
+        else { console.error('[Alexa] Teste falhou:', devices[i].device_name, r.status) }
+      } catch (e) {
+        console.error('[Alexa] Teste erro:', devices[i].device_name, e)
+      }
+    }
+
+    if (window._showToast) _showToast('Alexa', 'Teste enviado para ' + sent + ' de ' + devices.length + ' dispositivo(s)', sent > 0 ? 'success' : 'error')
   }
 
   // ══════════════════════════════════════════════════════════════
