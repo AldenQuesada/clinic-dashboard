@@ -150,8 +150,8 @@
       + '<div class="ld-card-body">'
       + '<div class="ld-field"><label class="ld-label">Nome completo</label>'
       + '<input class="ld-input" id="ldName" value="' + _esc(_signerName) + '" placeholder="Seu nome completo" /></div>'
-      + '<div class="ld-field"><label class="ld-label">CPF</label>'
-      + '<input class="ld-input" id="ldCpf" value="' + _esc(_signerCpf) + '" placeholder="000.000.000-00" inputmode="numeric" /></div>'
+      + '<div class="ld-field"><label class="ld-label">CPF <span style="font-weight:400;color:#9CA3AF">(opcional)</span></label>'
+      + '<input class="ld-input" id="ldCpf" value="' + _esc(_signerCpf) + '" placeholder="000.000.000-00" inputmode="numeric" oninput="this.value=window._ldFormatCpf(this.value)" maxlength="14" /></div>'
       + '<button class="ld-btn ld-btn-primary" onclick="window._ldNext(1)">Continuar</button>'
       + '</div>'
   }
@@ -246,11 +246,48 @@
   }
 
   // ── Navigation ─────────────────────────────────────────────
+  // CPF validation
+  function _formatCpf(v) {
+    var d = v.replace(/\D/g, '').substring(0, 11)
+    if (d.length > 9) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
+    if (d.length > 6) return d.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3')
+    if (d.length > 3) return d.replace(/(\d{3})(\d{1,3})/, '$1.$2')
+    return d
+  }
+
+  function _validateCpf(cpf) {
+    var d = cpf.replace(/\D/g, '')
+    if (d.length !== 11) return false
+    if (/^(\d)\1{10}$/.test(d)) return false
+    for (var t = 9; t < 11; t++) {
+      var sum = 0
+      for (var i = 0; i < t; i++) sum += parseInt(d[i]) * ((t + 1) - i)
+      var r = ((sum * 10) % 11) % 10
+      if (parseInt(d[t]) !== r) return false
+    }
+    return true
+  }
+
+  function _cpfsMatch(a, b) {
+    if (!a || !b) return true // se um dos dois nao tem, aceita
+    return a.replace(/\D/g, '') === b.replace(/\D/g, '')
+  }
+
   window._ldNext = function (fromStep) {
     if (fromStep === 1) {
       _signerName = (document.getElementById('ldName') || {}).value || ''
       _signerCpf = (document.getElementById('ldCpf') || {}).value || ''
       if (!_signerName.trim()) { alert('Informe seu nome completo.'); return }
+
+      // Validar CPF se preenchido
+      if (_signerCpf.trim()) {
+        if (!_validateCpf(_signerCpf)) { alert('CPF invalido. Verifique os digitos.'); return }
+        // Bater com CPF registrado
+        if (_doc.patient_cpf && !_cpfsMatch(_signerCpf, _doc.patient_cpf)) {
+          alert('O CPF informado nao corresponde ao cadastrado. Verifique.'); return
+        }
+      }
+
       _step = 2
     } else if (fromStep === 2) {
       if (!_scrolledToBottom) return
@@ -453,6 +490,8 @@
     })
     return tmp.innerHTML
   }
+
+  window._ldFormatCpf = _formatCpf
 
   // ── Start ──────────────────────────────────────────────────
   if (document.readyState === 'loading') {

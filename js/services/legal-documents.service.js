@@ -47,6 +47,14 @@
     if (window._getClinicaNome) clinicName = _getClinicaNome()
     else if (window.ClinicEnv && ClinicEnv.CLINIC_NAME) clinicName = ClinicEnv.CLINIC_NAME
 
+    // Dados da clinica
+    var clinicData = {}
+    try { clinicData = JSON.parse(localStorage.getItem('clinicai_clinic_data') || '{}') } catch (e) {}
+
+    // Endereco paciente (se disponivel no lead)
+    var pacienteEndereco = opts.endereco || opts.patient_address || ''
+    if (!pacienteEndereco && opts.data && opts.data.endereco) pacienteEndereco = opts.data.endereco
+
     return {
       nome:                    opts.pacienteNome || opts.patient_name || '',
       cpf:                     opts.pacienteCpf || opts.patient_cpf || '',
@@ -58,6 +66,9 @@
       procedimento:            opts.procedimento || opts.procedure_name || '',
       clinica:                 clinicName,
       hora:                    opts.horaInicio || opts.start_time || '',
+      cnpj:                    clinicData.cnpj || '',
+      endereco_clinica:        clinicData.endereco || '',
+      endereco_paciente:       pacienteEndereco,
     }
   }
 

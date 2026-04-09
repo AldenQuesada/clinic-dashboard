@@ -1860,16 +1860,27 @@
                     <!-- Variables dropdown -->
                     <select onchange="ldeInsertVar(this.value);this.selectedIndex=0" style="padding:4px 8px;border:1px solid #0891B2;border-radius:6px;font-size:11px;background:#ECFEFF;color:#0891B2;font-weight:600;cursor:pointer">
                       <option value="">+ Variavel</option>
-                      <option value="nome">Nome do paciente</option>
-                      <option value="cpf">CPF</option>
-                      <option value="data">Data (dd/mm/aaaa)</option>
-                      <option value="data_extenso">Data por extenso</option>
-                      <option value="profissional">Nome do profissional</option>
-                      <option value="registro_profissional">Registro (CRM/CRO/CREFITO)</option>
-                      <option value="especialidade">Especialidade</option>
-                      <option value="procedimento">Procedimento</option>
-                      <option value="clinica">Nome da clinica</option>
-                      <option value="hora">Horario</option>
+                      <optgroup label="Paciente">
+                        <option value="nome">Nome do paciente</option>
+                        <option value="cpf">CPF</option>
+                        <option value="endereco_paciente">Endereco do paciente</option>
+                      </optgroup>
+                      <optgroup label="Profissional">
+                        <option value="profissional">Nome do profissional</option>
+                        <option value="registro_profissional">Registro (CRM/CRO/CREFITO)</option>
+                        <option value="especialidade">Especialidade</option>
+                      </optgroup>
+                      <optgroup label="Clinica">
+                        <option value="clinica">Nome da clinica</option>
+                        <option value="cnpj">CNPJ</option>
+                        <option value="endereco_clinica">Endereco da clinica</option>
+                      </optgroup>
+                      <optgroup label="Consulta">
+                        <option value="procedimento">Procedimento</option>
+                        <option value="data">Data (dd/mm/aaaa)</option>
+                        <option value="data_extenso">Data por extenso</option>
+                        <option value="hora">Horario</option>
+                      </optgroup>
                     </select>
                   </div>
 
@@ -5022,8 +5033,8 @@
   <script src="js/agenda-module.js?v=20260407p" defer></script>
   <script src="js/agenda-automations.engine.js?v=20260409e" defer></script>
   <script src="js/services/alexa-notification.service.js?v=20260409e" defer></script>
-  <script src="js/services/legal-documents.service.js?v=20260409a" defer></script>
-  <script src="js/legal-doc-templates.js?v=20260409b" defer></script>
+  <script src="js/services/legal-documents.service.js?v=20260409b" defer></script>
+  <script src="js/legal-doc-templates.js?v=20260409c" defer></script>
   <script src="js/agenda-smart.js?v=20260407q" defer></script>
   <script src="js/agenda-day-panel.js?v=20260406a" defer></script>
   <script src="js/agenda-leads.js?v=20260406a" defer></script>

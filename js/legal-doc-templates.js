@@ -40,7 +40,15 @@
   function _setEditorContent(html) {
     var editor = document.getElementById('lde_content')
     if (!editor) return
-    editor.innerHTML = html || ''
+    if (!html) { editor.innerHTML = ''; return }
+    // Se o conteudo e texto plano (sem tags HTML), converter \n em <p>
+    if (html.indexOf('<') === -1) {
+      var paragraphs = html.split(/\n\n+/)
+      html = paragraphs.map(function (p) {
+        return '<p>' + p.replace(/\n/g, '<br>') + '</p>'
+      }).join('')
+    }
+    editor.innerHTML = html
   }
 
   var TYPE_LABELS = {
