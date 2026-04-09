@@ -216,7 +216,9 @@
       if (FM._computeRegionPaths) FM._computeRegionPaths()
     } else if (tabId === 'vectors') {
       FM._editorMode = 'vectors'
+      if (FM._startVecAnimation) setTimeout(FM._startVecAnimation, 200)
     } else if (tabId === 'analysis') {
+      if (FM._stopVecAnimation) FM._stopVecAnimation()
       FM._editorMode = 'analysis'
       FM._analysisSubMode = 'skin'
     }

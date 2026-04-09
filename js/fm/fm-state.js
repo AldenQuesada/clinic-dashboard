@@ -93,6 +93,8 @@
   FM._vectors = []       // [{ id, zone, start:{x,y}, end:{x,y}, curve:0.3 }]
   FM._vecAge = 25        // age slider for force vectors (25-70)
   FM._forceVecGenerated = false
+  FM._vecDrag = null     // { defId, side, part: 'origin'|'tip' }
+  FM._vecCustomOffsets = {} // { 'temporal_esq': {dx, dy}, ... } custom endpoint overrides
   FM._nextVecId = 1
   FM._selVec = null      // selected vector for dragging
   FM._vecDragPart = null // 'end' | 'start' | 'curve'

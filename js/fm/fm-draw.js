@@ -303,9 +303,15 @@
     ctx.restore()
   }
 
-  FM._drawForceVectorPair = function (ctx, def, center, age, w, h, selected) {
+  // Store last drawn positions for hit-testing
+  FM._vecDrawnPositions = []
+
+  FM._drawForceVectorPair = function (ctx, def, center, age, w, h, selected, key) {
     var t = FM._vecAgeFactor(age)
     var cx = center.x * w, cy = center.y * h
+
+    // Check for custom offsets (from user drag)
+    var custom = FM._vecCustomOffsets && FM._vecCustomOffsets[key]
 
     // Compute young and aged endpoints
     var youngX = cx + def.youngDx * w, youngY = cy + def.youngDy * h
@@ -315,31 +321,41 @@
     var curX = FM._vecLerp(youngX, agedX, t)
     var curY = FM._vecLerp(youngY, agedY, t)
 
+    // Apply custom offset if user dragged the tip
+    if (custom) { curX = cx + custom.dx * w; curY = cy + custom.dy * h }
+
+    // Store for hit-testing
+    FM._vecDrawnPositions.push({ key: key, defId: def.id, cx: cx, cy: cy, tipX: curX, tipY: curY })
+
     // Color based on age factor
     var color = FM._vecAgeColor(t)
     var glow = color + '60'
 
-    // Draw origin dot
+    // Animated pulse phase
+    var pulse = (Math.sin(Date.now() / 400 + cx) + 1) / 2  // 0-1 oscillation
+
+    // Draw origin dot with glow
     ctx.save()
     ctx.fillStyle = def.color
-    ctx.shadowColor = def.color + '80'
-    ctx.shadowBlur = 8
+    ctx.shadowColor = def.color + 'A0'
+    ctx.shadowBlur = 10 + pulse * 6
     ctx.beginPath()
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2)
+    ctx.arc(cx, cy, 6, 0, Math.PI * 2)
     ctx.fill()
+    ctx.shadowBlur = 0
 
-    // Pulsing ring
+    // Pulsing ring (animated radius + opacity)
     ctx.strokeStyle = def.color
     ctx.lineWidth = 1.5
-    ctx.globalAlpha = 0.4
+    ctx.globalAlpha = 0.2 + pulse * 0.5
     ctx.beginPath()
-    ctx.arc(cx, cy, 10, 0, Math.PI * 2)
+    ctx.arc(cx, cy, 10 + pulse * 6, 0, Math.PI * 2)
     ctx.stroke()
     ctx.globalAlpha = 1
     ctx.restore()
 
-    // Draw force arrow
-    FM._drawForceArrow(ctx, cx, cy, curX, curY, color, selected ? 7 : 5, glow)
+    // Draw force arrow (wider default)
+    FM._drawForceArrow(ctx, cx, cy, curX, curY, color, selected ? 8 : 6, glow)
 
     // Label
     ctx.save()
@@ -351,24 +367,38 @@
     ctx.restore()
   }
 
+  // Animation loop for pulsing dots
+  FM._vecAnimFrame = null
+  FM._startVecAnimation = function () {
+    if (FM._vecAnimFrame) return
+    function tick() {
+      if (FM._editorMode !== 'vectors' || FM._activeTab !== 'vectors') { FM._vecAnimFrame = null; return }
+      FM._redraw()
+      FM._vecAnimFrame = requestAnimationFrame(tick)
+    }
+    FM._vecAnimFrame = requestAnimationFrame(tick)
+  }
+  FM._stopVecAnimation = function () {
+    if (FM._vecAnimFrame) { cancelAnimationFrame(FM._vecAnimFrame); FM._vecAnimFrame = null }
+  }
+
   FM._drawAllForceVectors = function (ctx, age, w, h, selectedId) {
+    FM._vecDrawnPositions = []
     var centers = FM._scanData && FM._scanData.zone_centers ? FM._scanData.zone_centers : FM.FORCE_DEFAULT_CENTERS
 
     FM.FORCE_VECTORS.forEach(function (def) {
       if (def.bilateral) {
-        // Left
         var cL = centers[def.id + '_esq'] || FM.FORCE_DEFAULT_CENTERS[def.id + '_esq']
-        if (cL) FM._drawForceVectorPair(ctx, def, cL, age, w, h, selectedId === def.id)
+        if (cL) FM._drawForceVectorPair(ctx, def, cL, age, w, h, selectedId === def.id, def.id + '_esq')
 
-        // Right (mirror youngDx)
         var cR = centers[def.id + '_dir'] || FM.FORCE_DEFAULT_CENTERS[def.id + '_dir']
         if (cR) {
-          var mirrorDef = { label: def.label, color: def.color, youngDx: -def.youngDx, youngDy: def.youngDy, agedDx: -def.agedDx, agedDy: def.agedDy }
-          FM._drawForceVectorPair(ctx, mirrorDef, cR, age, w, h, selectedId === def.id)
+          var mirrorDef = { id: def.id, label: def.label, color: def.color, youngDx: -def.youngDx, youngDy: def.youngDy, agedDx: -def.agedDx, agedDy: def.agedDy }
+          FM._drawForceVectorPair(ctx, mirrorDef, cR, age, w, h, selectedId === def.id, def.id + '_dir')
         }
       } else {
         var c = centers[def.id] || FM.FORCE_DEFAULT_CENTERS[def.id]
-        if (c) FM._drawForceVectorPair(ctx, def, c, age, w, h, selectedId === def.id)
+        if (c) FM._drawForceVectorPair(ctx, def, c, age, w, h, selectedId === def.id, def.id)
       }
     })
   }

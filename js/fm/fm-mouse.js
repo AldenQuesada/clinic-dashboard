@@ -316,6 +316,30 @@
       return
     }
 
+    // VECTORS MODE — drag force vector origin or tip
+    if (FM._editorMode === 'vectors' && FM._vecDrawnPositions) {
+      var hitThreshold = 18
+      for (var vi = 0; vi < FM._vecDrawnPositions.length; vi++) {
+        var vp = FM._vecDrawnPositions[vi]
+        // Hit tip (arrowhead) — stretch
+        var tipDist = Math.sqrt(Math.pow(mx - vp.tipX, 2) + Math.pow(my - vp.tipY, 2))
+        if (tipDist < hitThreshold) {
+          FM._vecDrag = { key: vp.key, part: 'tip', defId: vp.defId }
+          FM._mode = 'move'
+          FM._canvas.style.cursor = 'crosshair'
+          return
+        }
+        // Hit origin — move center
+        var originDist = Math.sqrt(Math.pow(mx - vp.cx, 2) + Math.pow(my - vp.cy, 2))
+        if (originDist < hitThreshold) {
+          FM._vecDrag = { key: vp.key, part: 'origin', defId: vp.defId, startCx: vp.cx, startCy: vp.cy }
+          FM._mode = 'move'
+          FM._canvas.style.cursor = 'grab'
+          return
+        }
+      }
+    }
+
     // ZONES MODE — handle drag, region move, or click-to-select
     if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
       // 1. Check control handle hit first (selected region only)
@@ -416,6 +440,30 @@
 
   FM._onMouseMove = function (e) {
     var mx = e.offsetX, my = e.offsetY
+
+    // VECTORS MODE drag — move/stretch force vectors
+    if (FM._editorMode === 'vectors' && FM._vecDrag && FM._mode === 'move') {
+      var w = FM._imgW, h = FM._imgH
+      var key = FM._vecDrag.key
+
+      if (FM._vecDrag.part === 'tip') {
+        // Stretch: update custom offset for this vector
+        // Find center from drawn positions
+        var vp = FM._vecDrawnPositions.find(function (p) { return p.key === key })
+        if (vp) {
+          if (!FM._vecCustomOffsets) FM._vecCustomOffsets = {}
+          FM._vecCustomOffsets[key] = { dx: (mx - vp.cx) / w, dy: (my - vp.cy) / h }
+        }
+      } else if (FM._vecDrag.part === 'origin') {
+        // Move: update center position in default centers
+        var centers = FM.FORCE_DEFAULT_CENTERS
+        if (centers[key]) {
+          centers[key] = { x: mx / w, y: my / h }
+        }
+      }
+      FM._redraw()
+      return
+    }
 
     // METRICS MODE drag
     if (((FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics') || (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics')) && FM._mode === 'move') {
@@ -557,6 +605,7 @@
       return
     }
     if (FM._editorMode === 'vectors') {
+      if (FM._vecDrag) { FM._vecDrag = null; FM._autoSave() }
       FM._mode = 'idle'
       FM._canvas.style.cursor = 'default'
       FM._redraw()
