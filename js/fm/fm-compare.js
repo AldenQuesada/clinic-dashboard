@@ -100,8 +100,10 @@
             '<label style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(16,185,129,0.3);border-radius:6px;color:#10B981;font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:500">' +
               FM._icon('upload', 11) + ' DEPOIS<input type="file" accept="image/*" onchange="FaceMapping._compareUpload(\'after\',this)" style="display:none">' +
             '</label>' +
-            '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(200,169,126,0.2);border-radius:6px;background:transparent;color:rgba(200,169,126,0.6);font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl()">' +
-              FM._icon('link', 11) + ' URL</button>' +
+            '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(239,68,68,0.15);border-radius:6px;background:transparent;color:rgba(239,68,68,0.5);font-size:8px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl(\'before\')">' +
+              FM._icon('link', 9) + ' URL</button>' +
+            '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(16,185,129,0.15);border-radius:6px;background:transparent;color:rgba(16,185,129,0.5);font-size:8px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl(\'after\')">' +
+              FM._icon('link', 9) + ' URL</button>' +
           '</div>' +
           '<div class="fmc-actions">' +
             '<button class="fmc-btn-export" onclick="FaceMapping._exportCompare()">' +
@@ -462,21 +464,15 @@
     img.src = url
   }
 
-  FM._compareFromUrl = function () {
-    var url = prompt('Cole a URL da imagem (Google Drive, link direto, etc):')
+  FM._compareFromUrl = function (which) {
+    var label = which === 'before' ? 'ANTES' : 'DEPOIS'
+    var url = prompt('Cole a URL da imagem ' + label + ' (Google Drive, link direto):')
     if (!url) return
-    // Convert Google Drive share links to direct download
     var driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/)
     if (driveMatch) {
       url = 'https://drive.google.com/uc?export=view&id=' + driveMatch[1]
     }
-    var which = prompt('Esta imagem e ANTES ou DEPOIS?\n\nDigite: antes ou depois')
-    if (!which) return
-    which = which.toLowerCase().trim()
-    if (which !== 'antes' && which !== 'depois') {
-      FM._showToast && FM._showToast('Digite "antes" ou "depois"', 'warn')
-      return
-    }
+    which = which === 'before' ? 'antes' : 'depois'
     var img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = function () {
