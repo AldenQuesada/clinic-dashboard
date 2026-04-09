@@ -51,6 +51,7 @@
       FM._simPhotoUrl = null
       FM._generateSimulation(function () { FM._render(); if (FM._activeAngle) setTimeout(FM._initCanvas, 50) })
     },
+    _generateHybrid: FM._generateHybrid,
 
     _mirrorPolygon: FM._mirrorPolygon,
     _setGuideTool: function (tool) {

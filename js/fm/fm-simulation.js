@@ -201,4 +201,67 @@
     return 3
   }
 
+  // ── Hybrid Simulation (AI) ─────────────────────────────────
+  FM._generateHybrid = function () {
+    var srcAngle = FM._photoUrls['front'] ? 'front' : (FM._photoUrls['45'] ? '45' : 'lateral')
+    if (!FM._photoUrls[srcAngle]) {
+      FM._showToast('Envie uma foto ANTES primeiro', 'warn')
+      return
+    }
+
+    var targetAngle = srcAngle
+
+    // Load image and send to hybrid API
+    var img = new Image()
+    img.onload = function () {
+      var c = document.createElement('canvas')
+      c.width = img.width; c.height = img.height
+      c.getContext('2d').drawImage(img, 0, 0)
+      var b64 = c.toDataURL('image/jpeg', 0.85).split(',')[1]
+
+      // Build zones from annotations
+      var zones = FM._annotations.filter(function (a) { return a.angle === targetAngle }).map(function (a) {
+        return { zone: a.zone, severity: 2, treatment: (a.treatment || 'ah').toUpperCase() }
+      })
+
+      FM._showLoading('Gerando DEPOIS com IA hibrida...')
+
+      fetch(FM.FACIAL_API_URL + '/simulate/hybrid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photo_base64: b64,
+          zones: zones.length > 0 ? zones : null,
+          intensity: 0.7,
+          include_warp: true,
+          include_texture: true,
+        }),
+      })
+      .then(function (r) { return r.json() })
+      .then(function (data) {
+        FM._hideLoading()
+        if (data.success && data.image_b64) {
+          var bin = atob(data.image_b64)
+          var arr = new Uint8Array(bin.length)
+          for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+          var blob = new Blob([arr], { type: 'image/png' })
+          if (FM._simPhotoByAngle[targetAngle]) URL.revokeObjectURL(FM._simPhotoByAngle[targetAngle])
+          FM._simPhotoByAngle[targetAngle] = URL.createObjectURL(blob)
+          FM._showToast('DEPOIS gerado em ' + (data.elapsed_s || '?') + 's', 'success')
+          FM._autoSave()
+          FM._render()
+          if (FM._activeAngle === targetAngle) setTimeout(FM._initCanvas, 50)
+          if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+        } else {
+          FM._showToast('Falha na simulacao: ' + (data.detail || 'erro'), 'error')
+        }
+      })
+      .catch(function (err) {
+        FM._hideLoading()
+        FM._showToast('API offline. Tente novamente.', 'error')
+      })
+    }
+    img.src = FM._photoUrls[srcAngle]
+  }
+
 })()

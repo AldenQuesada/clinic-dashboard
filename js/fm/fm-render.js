@@ -169,18 +169,16 @@
     html += '<div style="border-top:1px solid var(--border);margin:8px 0;padding-top:8px">' +
       '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.3);text-align:center;margin-bottom:6px">Report</div>'
 
-    // SIMULADO
+    // GERAR DEPOIS (IA hibrida)
     if (FM._simPhotoUrl) {
       html += '<div class="fm-photo-thumb" style="border-color:#C9A96E">' +
         '<img src="' + FM._simPhotoUrl + '" alt="Simulado">' +
-        '<span class="fm-photo-thumb-label" style="background:rgba(201,169,110,0.9)">SIMULADO</span>' +
+        '<span class="fm-photo-thumb-label" style="background:rgba(201,169,110,0.9)">DEPOIS IA</span>' +
+        '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteExtraPhoto(\'sim\')" title="Excluir">' + FM._icon('trash-2', 11) + '</button></div>' +
       '</div>'
     } else {
-      var hasAnns = FM._annotations.length > 0
-      html += '<div class="fm-photo-upload" ' +
-        (hasAnns ? 'onclick="FaceMapping._regenSim()"' : '') +
-        ' style="border-color:#C9A96E40;' + (hasAnns ? '' : 'opacity:0.4;cursor:default') + '">' +
-        FM._icon('zap', 16) + '<span style="font-size:7px">AUTO</span><span style="font-size:8px">SIMULADO</span></div>'
+      html += '<div class="fm-photo-upload" onclick="FaceMapping._generateHybrid()" style="border-color:#C9A96E40;cursor:pointer">' +
+        FM._icon('zap', 16) + '<span style="font-size:7px">GERAR</span><span style="font-size:8px">DEPOIS IA</span></div>'
     }
 
     html += '</div>'
