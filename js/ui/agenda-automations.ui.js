@@ -96,11 +96,17 @@
   }
 
   // ── Main render ────────────────────────────────────────────
+  var _root = null
+
   function render(rootId) {
-    var root = document.getElementById(rootId || 'agenda-automations-root')
-    if (!root) return
-    root.innerHTML = _renderPage()
-    _bindEvents(root)
+    var el = document.getElementById(rootId || 'agenda-automations-root')
+    if (!el) return
+    // Se o root mudou (primeira vez ou re-init), rebinda eventos
+    if (_root !== el) {
+      _root = el
+      _bindEvents(_root)
+    }
+    _root.innerHTML = _renderPage()
   }
 
   function _render() { render() }
