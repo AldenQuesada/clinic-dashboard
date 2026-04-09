@@ -89,12 +89,26 @@
 
   FM._polyOpacity = 50  // polygon fill opacity 0-100 (default 50%)
 
-  // Guide lines for Estruturacao (thin H/V for positioning)
-  FM._guideLines = { h: [], v: [] }
+  // Guide lines for Estruturacao — PER ANGLE
+  FM._guideLinesByAngle = { front: { h: [], v: [] }, '45': { h: [], v: [] }, lateral: { h: [], v: [] } }
   FM._guideNextId = 1
-  FM._guideTool = null     // null | 'hguide' | 'vguide'
-  FM._guideDrag = null     // {type, index}
+  FM._guideTool = null
+  FM._guideDrag = null
   FM._guideLocked = false
+
+  // Getter/setter for active angle guide lines
+  Object.defineProperty(FM, '_guideLines', {
+    get: function () {
+      var ang = FM._activeAngle || 'front'
+      if (!FM._guideLinesByAngle[ang]) FM._guideLinesByAngle[ang] = { h: [], v: [] }
+      return FM._guideLinesByAngle[ang]
+    },
+    set: function (v) {
+      var ang = FM._activeAngle || 'front'
+      FM._guideLinesByAngle[ang] = v
+    },
+    configurable: true,
+  })
 
   // Polygon drawing state (Estruturacao tab)
   FM._polyPoints = []      // current polygon being drawn (temporary, pixel coords)
