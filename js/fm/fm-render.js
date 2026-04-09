@@ -47,7 +47,7 @@
   FM._renderHeader = function (name) {
     var tabs = [
       { id: 'simetria',      label: 'Simetria',       icon: 'git-commit' },
-      { id: 'zones',         label: 'Estruturacao',   icon: 'layers' },
+      { id: 'zones',         label: 'Estruturação',   icon: 'layers' },
       { id: 'vectors',       label: 'Vetores',        icon: 'trending-up' },
       { id: 'analysis',      label: 'Analise',        icon: 'activity' },
     ]
@@ -111,7 +111,7 @@
         '<span class="fm-progress-icon">' + statusIcon + '</span>' +
         '<span class="fm-progress-label">' + v.label + '</span>' +
         '<span class="fm-progress-detail">' +
-          (v.hasPhoto ? (v.count > 0 ? v.count + ' marcacao' + (v.count > 1 ? 'es' : '') : 'Sem marcacoes') : 'Sem foto') +
+          (v.hasPhoto ? (v.count > 0 ? v.count + ' marcacao' + (v.count > 1 ? 'es' : '') : 'Sem marcações') : 'Sem foto') +
         '</span>' +
       '</div>'
 
@@ -654,7 +654,7 @@
     return html
   }
 
-  // ── ZONES PANEL (dedicated for Estruturacao tab) ──
+  // ── ZONES PANEL (dedicated for Estruturação tab) ──
   FM._renderZonesPanel = function () {
     var html = '<div class="fm-toolbar">'
 
@@ -790,7 +790,7 @@
 
     // ── Polygon annotations list ──
     html += '<div class="fm-tool-section" style="flex:1">' +
-      '<div class="fm-tool-section-title">Marcacoes (' + FM._annotations.filter(function (a) { return a.angle === FM._activeAngle }).length + ')</div>'
+      '<div class="fm-tool-section-title">Marcações (' + FM._annotations.filter(function (a) { return a.angle === FM._activeAngle }).length + ')</div>'
 
     var angleAnnotations = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
     if (angleAnnotations.length === 0 && !FM._selectedZone) {
@@ -919,7 +919,7 @@
 
     var metrics = [
       { label: 'Elasticidade', value: elasticity },
-      { label: 'Sustentacao', value: structure },
+      { label: 'Sustentação', value: structure },
       { label: 'Vetores', value: activeVec },
     ]
     metrics.forEach(function (m) {
@@ -937,7 +937,7 @@
 
     var forces = [
       { label: 'Gravidade', info: FM._vecGravityLabel(t) },
-      { label: 'Anteriorizacao', info: t < 0.3 ? { label: 'Minima', color: '#00e89d' } : t < 0.6 ? { label: 'Leve', color: '#d4a853' } : { label: 'Intensa', color: '#ff4466' } },
+      { label: 'Anteriorização', info: t < 0.3 ? { label: 'Minima', color: '#00e89d' } : t < 0.6 ? { label: 'Leve', color: '#d4a853' } : { label: 'Intensa', color: '#ff4466' } },
       { label: 'Ligamentos', info: t < 0.25 ? { label: 'Firmes', color: '#00e89d' } : t < 0.55 ? { label: 'Frouxos', color: '#d4a853' } : { label: 'Frageis', color: '#ff4466' } },
     ]
     forces.forEach(function (f) {
@@ -1182,7 +1182,7 @@
         if (sd.measurements && sd.measurements.golden_ratio_score != null) {
           var grColor = sd.measurements.golden_ratio_score >= 70 ? '#10B981' : sd.measurements.golden_ratio_score >= 50 ? '#F59E0B' : '#EF4444'
           html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">' +
-            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Proporcao Aurea</span>' +
+            '<span style="font-size:11px;color:rgba(200,169,126,0.5)">Proporção Aurea</span>' +
             '<span style="font-size:12px;font-weight:600;color:' + grColor + '">' + Math.round(sd.measurements.golden_ratio_score) + '%</span>' +
           '</div>'
         }
@@ -1365,7 +1365,7 @@
 
     // Annotations list
     html += '<div class="fm-tool-section" style="flex:1">' +
-      '<div class="fm-tool-section-title">Marcacoes (' + FM._annotations.length + ')</div>' +
+      '<div class="fm-tool-section-title">Marcações (' + FM._annotations.length + ')</div>' +
       '<div class="fm-annotations-list">'
 
     // Cancel/deselect button when zone is active

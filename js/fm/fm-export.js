@@ -122,7 +122,7 @@
     html += '<div style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
       '<div>' +
         '<div style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">Clinica Mirian de Paula</div>' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.55);margin-top:2px;letter-spacing:0.06em">Harmonia que revela. Precisao que dura.</div>' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.55);margin-top:2px;letter-spacing:0.06em">Harmonia que revela. Precisão que dura.</div>' +
       '</div>' +
       '<div style="text-align:right">' +
         '<div style="font-size:15px;font-weight:600;color:#F5F0E8;letter-spacing:0.02em">' + FM._esc(name) + '</div>' +
@@ -153,7 +153,7 @@
 
     if (finalScore !== null) {
       var hsColor = finalScore >= 80 ? '#10B981' : finalScore >= 60 ? '#F59E0B' : '#EF4444'
-      var hsLabel = finalScore >= 80 ? 'Harmonia Preservada' : finalScore >= 60 ? 'Harmonia em Transicao' : 'Harmonia Comprometida'
+      var hsLabel = finalScore >= 80 ? 'Harmonia Preservada' : finalScore >= 60 ? 'Harmonia em Transição' : 'Harmonia Comprometida'
       html += '<div style="text-align:center;padding:28px 32px 20px 32px">' +
         '<div style="display:inline-flex;align-items:center;justify-content:center;width:100px;height:100px;border-radius:50%;border:4px solid ' + hsColor + ';box-shadow:0 0 30px ' + hsColor + '30">' +
           '<div><div style="font-size:38px;font-weight:800;color:' + hsColor + ';line-height:1">' + finalScore + '</div>' +
@@ -165,10 +165,10 @@
     }
 
     // ═══════════════════════════════════════════
-    // ATO 1: "Onde voce esta",Diagnostico
+    // ATO 1: "Onde você esta",Diagnostico
     // ═══════════════════════════════════════════
     html += '<div style="text-align:center;padding:12px 32px 4px 32px">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Onde voce esta</div>' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Onde você esta</div>' +
       '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Diagnostico facial completo</div>' +
     '</div>'
 
@@ -316,7 +316,7 @@
         }
         if (!rickPts && (!angMetricAngles || angMetricAngles.amf == null)) {
           html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:12px;text-align:center">' +
-            '<div style="font-size:12px;color:rgba(245,240,232,0.3);font-style:italic">Analise lateral disponivel apos marcacao de Ricketts</div>' +
+            '<div style="font-size:12px;color:rgba(245,240,232,0.3);font-style:italic">Análise lateral disponivel apos marcação de Ricketts</div>' +
           '</div>'
         }
       }
@@ -342,7 +342,7 @@
       html += '<div style="flex:0.8;display:flex;flex-direction:column;gap:6px">'
       html += _miniCard(Math.round(FM._vecCollagenPct(FM._vecAge || 25)) + '%', 'Colageno', vc)
       html += _miniCard(Math.round(100 - vt * 65) + '%', 'Elasticidade', vc)
-      html += _miniCard(Math.round(100 - vt * 55) + '%', 'Sustentacao', vc)
+      html += _miniCard(Math.round(100 - vt * 55) + '%', 'Sustentação', vc)
       html += _miniCard(Math.round(100 - vt * 70) + '%', 'Vetores', vc)
       if (FM._vecGravityLabel) { var g = FM._vecGravityLabel(vt); html += _miniCard(g.label, 'Gravidade', g.color) }
       html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:8px">' +
@@ -453,10 +453,10 @@
     html += '<div style="padding:12px 48px 16px 48px">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:16px;font-style:italic;color:rgba(245,240,232,0.55);line-height:1.8;text-align:center">' +
         'O envelhecimento e uma quebra do sistema vetorial do rosto. As forcas que sustentavam cada estrutura se inverteram ' +
-        '— a gravidade, a anteriorizacao e a perda dos ligamentos mudaram a direcao de tudo.' +
+        '— a gravidade, a anteriorização e a perda dos ligamentos mudaram a direcao de tudo.' +
       '</div>' +
       '<div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:600;color:#C8A97E;text-align:center;margin-top:12px;letter-spacing:0.06em">' +
-        'A harmonizacao NAO e preencher rugas. E reconstruir vetores.' +
+        'A harmonização NAO e preencher rugas. E reconstruir vetores.' +
       '</div>' +
     '</div>'
 
@@ -510,18 +510,18 @@
     html += '<div style="margin-bottom:8px">' + _editable('fmPlanASubtitle', 'Lifting vetorial completo + Fotona + manutencao', 'font-size:13px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
     var transformPhrases = {
-      'temporal': 'Reativa o vetor de sustentacao,o rosto inteiro sobe',
-      'zigoma-lateral': 'Devolve a projecao que sustenta todo o terco medio',
+      'temporal': 'Reativa o vetor de sustentação,o rosto inteiro sobe',
+      'zigoma-lateral': 'Devolve a projeção que sustenta todo o terco medio',
       'zigoma-anterior': 'Restaura o volume que define a maca do rosto',
       'olheira': 'Elimina a sombra que comunica cansaco',
       'sulco': 'Suaviza a marca que mais envelhece o rosto',
-      'marionete': 'Remove a expressao de tristeza involuntaria',
+      'marionete': 'Remove a expressão de tristeza involuntaria',
       'mandibula': 'Reconstroi o contorno perdido,adeus efeito buldogue',
-      'pre-jowl': 'Redefine a linha da mandibula com precisao',
-      'mento': 'Restaura a projecao e o equilibrio do perfil',
+      'pre-jowl': 'Redefine a linha da mandibula com precisão',
+      'mento': 'Restaura a projeção e o equilibrio do perfil',
       'labio-sup': 'Devolve volume natural sem aspecto preenchido',
-      'labio-inf': 'Equilibra a proporcao labial com naturalidade',
-      'glabela': 'Suaviza a expressao de seriedade involuntaria',
+      'labio-inf': 'Equilibra a proporção labial com naturalidade',
+      'glabela': 'Suaviza a expressão de seriedade involuntaria',
       'frontal': 'Alivia as linhas horizontais sem perder expressividade',
       'periorbital': 'Abre o olhar e reduz o aspecto cansado',
       'nariz': 'Harmoniza o perfil nasal sem cirurgia',
@@ -617,12 +617,12 @@
     html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,169,126,0.4);font-weight:600;margin-bottom:16px;text-align:center">JORNADA DO PROTOCOLO LIFTING 5D</div>'
 
     var timelineSteps = [
-      { label: 'Dia 1 \u2014 Fotona 4D', timing: 'Primeira sessao', desc: 'Ativacao de colageno profundo nas 4 camadas da pele. O laser Fotona Dynamis NX trabalha de dentro para fora, estimulando regeneracao real desde a mucosa oral ate a superficie. Efeito lifting imediato com melhora progressiva ao longo de 30 dias.', color: '#10B981', products: ['Fotona 4D', 'Intraoral', 'Periorbital'] },
-      { label: 'Semana 2 \u2014 Injetaveis', timing: '14 dias apos Fotona', desc: 'Aplicacao estrategica de Acido Hialuronico para reposicao de volume, Toxina Botulinica para suavizar linhas de expressao, e Bioestimulador para ativar producao de colageno. Cada zona tratada conforme o mapa de estruturacao personalizado.', color: '#3B82F6', products: ['Acido Hialuronico', 'Toxina Botulinica', 'Bioestimulador'] },
-      { label: 'Semana 4 \u2014 Retoques', timing: '30 dias apos inicio', desc: 'Avaliacao do resultado inicial e ajustes finos. Pequenas correcoes de volume, simetria e proporcao. Esta sessao garante a precisao do resultado final.', color: '#C8A97E', products: ['Retoques AH', 'Ajustes'] },
-      { label: 'Mes 2 \u2014 2a Sessao Fotona 4D', timing: '60 dias apos inicio', desc: 'Segunda sessao de laser para potencializar a producao de colageno. A pele ja responde melhor ao estimulo, resultando em firmeza e luminosidade progressivas.', color: '#10B981', products: ['Fotona 4D'] },
-      { label: 'Mes 3 \u2014 3a Sessao Fotona 4D', timing: '90 dias apos inicio', desc: 'Sessao final do ciclo Fotona. O colageno novo ja esta em plena producao. Esta sessao consolida os resultados e prepara a pele para manutencao a longo prazo.', color: '#10B981', products: ['Fotona 4D'] },
-      { label: 'Transformacao', timing: 'Resultado visivel', desc: 'O protocolo completo atingiu seu objetivo. Os vetores faciais foram reconstruidos, o colageno restaurado, e a harmonia facial recuperada. O resultado nao e um rosto diferente \u2014 e o seu rosto de volta.', color: '#C8A97E', products: [] },
+      { label: 'Dia 1 \u2014 Fotona 4D', timing: 'Primeira sessao', desc: 'Ativação de colageno profundo nas 4 camadas da pele. O laser Fotona Dynamis NX trabalha de dentro para fora, estimulando regeneração real desde a mucosa oral ate a superficie. Efeito lifting imediato com melhora progressiva ao longo de 30 dias.', color: '#10B981', products: ['Fotona 4D', 'Intraoral', 'Periorbital'] },
+      { label: 'Semana 2 \u2014 Injetaveis', timing: '14 dias apos Fotona', desc: 'Aplicação estrategica de Acido Hialuronico para reposição de volume, Toxina Botulinica para suavizar linhas de expressão, e Bioestimulador para ativar produção de colageno. Cada zona tratada conforme o mapa de estruturacao personalizado.', color: '#3B82F6', products: ['Acido Hialuronico', 'Toxina Botulinica', 'Bioestimulador'] },
+      { label: 'Semana 4 \u2014 Retoques', timing: '30 dias apos inicio', desc: 'Avaliação do resultado inicial e ajustes finos. Pequenas correcoes de volume, simetria e proporção. Esta sessao garante a precisão do resultado final.', color: '#C8A97E', products: ['Retoques AH', 'Ajustes'] },
+      { label: 'Mes 2 \u2014 2a Sessao Fotona 4D', timing: '60 dias apos inicio', desc: 'Segunda sessao de laser para potencializar a produção de colageno. A pele ja responde melhor ao estimulo, resultando em firmeza e luminosidade progressivas.', color: '#10B981', products: ['Fotona 4D'] },
+      { label: 'Mes 3 \u2014 3a Sessao Fotona 4D', timing: '90 dias apos inicio', desc: 'Sessao final do ciclo Fotona. O colageno novo ja esta em plena produção. Esta sessao consolida os resultados e prepara a pele para manutencao a longo prazo.', color: '#10B981', products: ['Fotona 4D'] },
+      { label: 'Transformação', timing: 'Resultado visivel', desc: 'O protocolo completo atingiu seu objetivo. Os vetores faciais foram reconstruidos, o colageno restaurado, e a harmonia facial recuperada. O resultado não e um rosto diferente \u2014 e o seu rosto de volta.', color: '#C8A97E', products: [] },
     ]
 
     html += '<div style="position:relative">'
@@ -683,7 +683,7 @@
     html += '<div style="margin-top:10px;padding:10px 16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.10);border-radius:8px">'
     html += '<div style="font-size:11px;font-weight:600;color:#10B981;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Beneficios Fotona 4D inclusos</div>'
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:rgba(245,240,232,0.5)">'
-    var beneficios = ['Lifting e firmeza profunda', 'Rejuvenescimento das 4 camadas', 'Producao intensa de colageno', 'Melhora textura e poros', 'Reducao rugas e linhas', 'Resultados naturais com glow']
+    var beneficios = ['Lifting e firmeza profunda', 'Rejuvenescimento das 4 camadas', 'Produção intensa de colageno', 'Melhora textura e poros', 'Redução rugas e linhas', 'Resultados naturais com glow']
     beneficios.forEach(function (b) {
       html += '<div style="display:flex;align-items:center;gap:6px"><span style="color:#10B981;font-size:11px">&#x2713;</span> ' + b + '</div>'
     })
@@ -698,11 +698,11 @@
     html += '<div style="margin-bottom:8px">' + _editable('fmPlanBSubtitle', 'Foco nas areas de maior impacto,sem Fotona', 'font-size:13px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
     html += '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
-      '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
+      '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformação') + '</tr></thead><tbody>'
 
     for (var eb = 0; eb < 4; eb++) {
       html += '<tr style="background:' + (eb % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + '">' +
-        _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Descreva a transformacao...') +
+        _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Descreva a transformação...') +
       '</tr>'
     }
 
@@ -735,8 +735,8 @@
     // ─── Mensagem Lifting 5D ───
     html += '<div style="margin-top:12px;padding:16px 24px;background:rgba(200,169,126,0.04);border-left:3px solid #C8A97E;border-radius:0 8px 8px 0">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;color:rgba(200,169,126,0.6);line-height:1.7">' +
-        'O resultado nao e um rosto transformado. E o seu rosto de volta,com firmeza, leveza e expressao viva.<br>' +
-        'Porque o rejuvenescimento de verdade nao e mudar quem voce e. E fazer o espelho voltar a te reconhecer.' +
+        'O resultado não e um rosto transformado. E o seu rosto de volta,com firmeza, leveza e expressão viva.<br>' +
+        'Porque o rejuvenescimento de verdade não e mudar quem você e. E fazer o espelho voltar a te reconhecer.' +
       '</div>' +
     '</div>'
 
@@ -750,7 +750,7 @@
     html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.12)">'
     html += '<div style="padding:24px 32px 8px 32px;text-align:center">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.65);line-height:1.6;max-width:500px;margin:0 auto">' +
-        'Nos nao preenchemos rugas. Nos reposicionamos as forcas do seu rosto.' +
+        'Nos não preenchemos rugas. Nos reposicionamos as forcas do seu rosto.' +
       '</div>' +
     '</div>'
 
@@ -802,7 +802,7 @@
         '</div>' +
         '<div style="display:flex;gap:4px" id="cmpModes_' + k + '">' +
           '<button onclick="setCmpMode_' + k + '(\'slider\')" class="cmpBtn_' + k + ' active" data-m="slider" style="padding:4px 10px;border:1px solid rgba(200,169,126,0.3);border-radius:6px;background:rgba(200,169,126,0.15);color:#C8A97E;font-size:10px;cursor:pointer;font-family:Montserrat,sans-serif">Slider</button>' +
-          '<button onclick="setCmpMode_' + k + '(\'fade\')" class="cmpBtn_' + k + '" data-m="fade" style="padding:4px 10px;border:1px solid rgba(200,169,126,0.15);border-radius:6px;background:transparent;color:rgba(245,240,232,0.5);font-size:10px;cursor:pointer;font-family:Montserrat,sans-serif">Transicao</button>' +
+          '<button onclick="setCmpMode_' + k + '(\'fade\')" class="cmpBtn_' + k + '" data-m="fade" style="padding:4px 10px;border:1px solid rgba(200,169,126,0.15);border-radius:6px;background:transparent;color:rgba(245,240,232,0.5);font-size:10px;cursor:pointer;font-family:Montserrat,sans-serif">Transição</button>' +
           '<button onclick="setCmpMode_' + k + '(\'side\')" class="cmpBtn_' + k + '" data-m="side" style="padding:4px 10px;border:1px solid rgba(200,169,126,0.15);border-radius:6px;background:transparent;color:rgba(245,240,232,0.5);font-size:10px;cursor:pointer;font-family:Montserrat,sans-serif">Lado a Lado</button>' +
         '</div>' +
       '</div>' +
@@ -918,17 +918,17 @@
       // Resolve editable placeholder styling
       var patientName = FM._lead ? (FM._lead.nome || FM._lead.name || 'Paciente') : 'Paciente'
       var waPhone = localStorage.getItem('fm_wa_phone') || '5511999999999'
-      var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliacao facial. Vi a proposta personalizada.')
+      var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliação facial. Vi a proposta personalizada.')
 
       var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head>' +
         '<meta charset="UTF-8">' +
         '<meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-        '<meta property="og:title" content="Analise Facial \u2014 Clinica Mirian de Paula">' +
-        '<meta property="og:description" content="Proposta personalizada de harmonizacao facial para ' + FM._esc(patientName) + '">' +
+        '<meta property="og:title" content="Análise Facial \u2014 Clinica Mirian de Paula">' +
+        '<meta property="og:description" content="Proposta personalizada de harmonização facial para ' + FM._esc(patientName) + '">' +
         '<meta property="og:type" content="website">' +
         '<link rel="preconnect" href="https://fonts.googleapis.com">' +
         '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">' +
-        '<title>Analise Facial \u2014 ' + FM._esc(patientName) + '</title>' +
+        '<title>Análise Facial \u2014 ' + FM._esc(patientName) + '</title>' +
         '<style>' +
           'body{margin:0;padding:24px 16px;background:#0A0A0A;font-family:Montserrat,sans-serif;color:#F5F0E8}' +
           '#fmReportCard{max-width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;box-shadow:0 32px 100px rgba(0,0,0,0.6)}' +
@@ -962,7 +962,7 @@
         '<div style="text-align:center;padding:32px 16px">' +
           '<a class="fm-cta-btn" href="https://wa.me/' + waPhone + '?text=' + waText + '" target="_blank">' +
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>' +
-            'Agendar Avaliacao' +
+            'Agendar Avaliação' +
           '</a>' +
         '</div>' +
         '</body></html>'
@@ -1096,7 +1096,7 @@
     var report = document.getElementById('fmReportCard')
     if (!report) return
     var win = window.open('', '_blank')
-    win.document.write('<!DOCTYPE html><html><head><title>Analise Facial</title>' +
+    win.document.write('<!DOCTYPE html><html><head><title>Análise Facial</title>' +
       '<style>body{margin:0;background:#2C2C2C;font-family:Montserrat,sans-serif}' +
       '@media print{body{background:#fff}}</style></head><body>' +
       report.outerHTML + '</body></html>')
@@ -1146,7 +1146,7 @@
             number: phone,
             mediatype: 'document',
             mimetype: 'text/html',
-            caption: 'Plano de Harmonia Facial personalizado para ' + patientName + '\n\nClinica Mirian de Paula\nHarmonia que revela. Precisao que dura.',
+            caption: 'Plano de Harmonia Facial personalizado para ' + patientName + '\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
             media: base64,
             fileName: 'proposta-facial-' + patientName.replace(/\s+/g, '-').toLowerCase() + '.html',
           }),
@@ -1220,14 +1220,14 @@
 
       var patientName = FM._lead ? (FM._lead.nome || FM._lead.name || 'Paciente') : 'Paciente'
       var waPhone = localStorage.getItem('fm_wa_phone') || '5511999999999'
-      var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliacao facial.')
+      var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliação facial.')
 
       var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head>' +
         '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-        '<meta property="og:title" content="Analise Facial, Clinica Mirian de Paula">' +
+        '<meta property="og:title" content="Análise Facial, Clinica Mirian de Paula">' +
         '<meta property="og:description" content="Proposta personalizada para ' + FM._esc(patientName) + '">' +
         '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">' +
-        '<title>Analise Facial, ' + FM._esc(patientName) + '</title>' +
+        '<title>Análise Facial, ' + FM._esc(patientName) + '</title>' +
         '<style>body{margin:0;padding:24px 16px;background:#0A0A0A;font-family:Montserrat,sans-serif;color:#F5F0E8}' +
         '#fmReportCard{max-width:794px;margin:0 auto}[contenteditable]{cursor:text}[contenteditable]:focus{border-color:#C8A97E!important;outline:none}' +
         'img{max-width:100%;height:auto}table{width:100%}@media(max-width:600px){#fmReportCard{width:100%!important}}' +
@@ -1253,7 +1253,7 @@
         '<div style="text-align:center;padding:32px 16px">' +
         '<a class="fm-cta-btn" href="https://wa.me/' + waPhone + '?text=' + waText + '" target="_blank">' +
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>' +
-        'Agendar Avaliacao</a></div></body></html>'
+        'Agendar Avaliação</a></div></body></html>'
 
       var blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' })
       callback(blob)

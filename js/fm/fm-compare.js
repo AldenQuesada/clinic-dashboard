@@ -161,7 +161,7 @@
               ' Slider</button>' +
             '<button class="fmc-mode-btn' + (_compareMode === 'fade' ? ' active' : '') + '" data-mode="fade">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20"/></svg>' +
-              ' Transicao</button>' +
+              ' Transição</button>' +
             '<button class="fmc-mode-btn' + (_compareMode === 'sidebyside' ? ' active' : '') + '" data-mode="sidebyside">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="8" height="18" rx="1"/><rect x="14" y="3" width="8" height="18" rx="1"/></svg>' +
               ' Lado a Lado</button>' +

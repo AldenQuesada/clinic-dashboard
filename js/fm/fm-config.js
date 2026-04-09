@@ -74,22 +74,22 @@
 
   FM.ZONES_DEFAULT = [
     // Preenchimento (mL),product, reticulation, defaultQty pre-filled
-    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',            color: '#5B7FC7', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Voluma', reticulation: 'Retrolinear canula', defaultQty: 1.0 },
+    { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projeção',            color: '#5B7FC7', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Voluma', reticulation: 'Retrolinear canula', defaultQty: 1.0 },
     { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',     color: '#6BBF8A', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Voluma', reticulation: 'Retrolinear canula', defaultQty: 0.5 },
     { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',       color: '#9B6FC7', angles: ['front', '45', 'lateral'], cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Voluma', reticulation: 'Bolus profundo', defaultQty: 1.0 },
     { id: 'olheira',         label: 'Olheira',           desc: 'Sombra periorbital',  color: '#7ECF7E', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah', defaultProduct: 'Juvederm Volbella', reticulation: 'Microdroplets canula', defaultQty: 0.3 },
-    { id: 'nariz-dorso',     label: 'Nariz Dorso',       desc: 'Projecao dorsal',     color: '#A8B4C8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.3, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Microbolus agulha', defaultQty: 0.5 },
+    { id: 'nariz-dorso',     label: 'Nariz Dorso',       desc: 'Projeção dorsal',     color: '#A8B4C8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.3, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Microbolus agulha', defaultQty: 0.5 },
     { id: 'nariz-base',      label: 'Nariz Base',        desc: 'Base / asa nasal',    color: '#B8C4D8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Microbolus agulha', defaultQty: 0.3 },
-    { id: 'sulco',           label: 'Sulco Nasogeniano', desc: 'Suavizacao',          color: '#E8A86B', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Volift', reticulation: 'Retrolinear canula', defaultQty: 0.8 },
+    { id: 'sulco',           label: 'Sulco Nasogeniano', desc: 'Suavização',          color: '#E8A86B', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Volift', reticulation: 'Retrolinear canula', defaultQty: 0.8 },
     { id: 'marionete',       label: 'Marionete',         desc: 'Refinamento',         color: '#D98BA3', angles: ['45'],              cat: 'fill', unit: 'mL', min: 0.3, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Volift', reticulation: 'Retrolinear canula', defaultQty: 0.5 },
-    { id: 'pre-jowl',        label: 'Pre-jowl',         desc: 'Transicao',           color: '#E8B8C8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Retrolinear canula', defaultQty: 0.5 },
+    { id: 'pre-jowl',        label: 'Pre-jowl',         desc: 'Transição',           color: '#E8B8C8', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Retrolinear canula', defaultQty: 0.5 },
     { id: 'mandibula',       label: 'Mandibula',         desc: 'Contorno',            color: '#C9A96E', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 1.0, max: 3.0, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Retrolinear canula', defaultQty: 1.5 },
-    { id: 'mento',           label: 'Mento',             desc: 'Projecao',            color: '#D4A857', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Bolus profundo', defaultQty: 1.0 },
+    { id: 'mento',           label: 'Mento',             desc: 'Projeção',            color: '#D4A857', angles: ['45', 'lateral'],   cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Volux', reticulation: 'Bolus profundo', defaultQty: 1.0 },
     { id: 'labio',           label: 'Labios',            desc: 'Volume / contorno',   color: '#E07B7B', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Volbella', reticulation: 'Retrolinear agulha', defaultQty: 0.5 },
     { id: 'cod-barras',     label: 'Codigo de Barras',  desc: 'Labio superior',      color: '#D4788A', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.3, max: 0.5, defaultTx: 'ah', defaultProduct: 'Juvederm Volbella', reticulation: 'Microdroplets agulha', defaultQty: 0.3 },
     { id: 'pescoco',        label: 'Pescoco',           desc: 'Linhas cervicais',    color: '#B8A8D8', angles: ['front', 'lateral'], cat: 'fill', unit: 'mL', min: 1.0, max: 3.0, defaultTx: 'bio', defaultProduct: 'Radiesse', reticulation: 'Retrolinear canula', defaultQty: 1.5 },
     // Rugas / Toxina (U = unidades)
-    { id: 'glabela',         label: 'Glabela',           desc: 'Linhas de expressao', color: '#7BA3CF', angles: ['front'],           cat: 'tox', unit: 'U', min: 10, max: 25, defaultTx: 'botox', defaultProduct: 'Xeomin', reticulation: 'Intramuscular 5 pontos', defaultQty: 20 },
+    { id: 'glabela',         label: 'Glabela',           desc: 'Linhas de expressão', color: '#7BA3CF', angles: ['front'],           cat: 'tox', unit: 'U', min: 10, max: 25, defaultTx: 'botox', defaultProduct: 'Xeomin', reticulation: 'Intramuscular 5 pontos', defaultQty: 20 },
     { id: 'frontal',         label: 'Frontal',           desc: 'Linhas frontais',     color: '#8ECFC4', angles: ['front'],           cat: 'tox', unit: 'U', min: 10, max: 20, defaultTx: 'botox', defaultProduct: 'Xeomin', reticulation: 'Intramuscular 4-6 pontos', defaultQty: 12 },
     { id: 'periorbital',     label: 'Periorbital',       desc: 'Pes de galinha',      color: '#6BAED6', angles: ['front', '45'],     cat: 'tox', unit: 'U', min: 8,  max: 16, defaultTx: 'botox', defaultProduct: 'Xeomin', reticulation: 'Intramuscular 3 pontos', defaultQty: 12 },
     { id: 'gingival',        label: 'Gingival',          desc: 'Sorriso gengival',    color: '#E8879B', angles: ['front'],           cat: 'tox', unit: 'U', min: 2,  max: 4,  defaultTx: 'botox', defaultProduct: 'Xeomin', reticulation: 'Intramuscular 2 pontos', defaultQty: 3 },
@@ -123,26 +123,26 @@
 
   // Vector presets: default start->end direction per zone
   FM.VECTOR_PRESETS = {
-    'zigoma-lateral':  { dx: 0.12, dy: -0.08, curve: 0.25, desc: 'Projecao lateral' },
-    'zigoma-anterior': { dx: 0.08, dy: -0.10, curve: 0.20, desc: 'Elevacao + projecao' },
+    'zigoma-lateral':  { dx: 0.12, dy: -0.08, curve: 0.25, desc: 'Projeção lateral' },
+    'zigoma-anterior': { dx: 0.08, dy: -0.10, curve: 0.20, desc: 'Elevacao + projeção' },
     'temporal':        { dx: 0.06, dy: -0.14, curve: 0.30, desc: 'Vetor lifting' },
-    'mento':           { dx: 0.10, dy: 0.02,  curve: 0.15, desc: 'Projecao anterior' },
+    'mento':           { dx: 0.10, dy: 0.02,  curve: 0.15, desc: 'Projeção anterior' },
     'mandibula':       { dx: 0.08, dy: -0.03, curve: 0.20, desc: 'Definicao contorno' },
-    'nariz-dorso':     { dx: 0.08, dy: -0.04, curve: 0.10, desc: 'Projecao dorsal' },
+    'nariz-dorso':     { dx: 0.08, dy: -0.04, curve: 0.10, desc: 'Projeção dorsal' },
     'nariz-base':      { dx: 0.06, dy: 0.02,  curve: 0.10, desc: 'Refinamento base' },
-    'pre-jowl':        { dx: 0.06, dy: -0.04, curve: 0.20, desc: 'Transicao' },
+    'pre-jowl':        { dx: 0.06, dy: -0.04, curve: 0.20, desc: 'Transição' },
     'labio':           { dx: 0.04, dy: 0.00,  curve: 0.10, desc: 'Volume anterior' },
     'olheira':         { dx: 0.03, dy: -0.03, curve: 0.15, desc: 'Elevacao' },
-    'sulco':           { dx: 0.05, dy: -0.04, curve: 0.20, desc: 'Suavizacao' },
+    'sulco':           { dx: 0.05, dy: -0.04, curve: 0.20, desc: 'Suavização' },
     'marionete':       { dx: 0.04, dy: -0.05, curve: 0.20, desc: 'Elevacao' },
-    'cod-barras':      { dx: 0.04, dy: -0.02, curve: 0.10, desc: 'Suavizacao perioral' },
+    'cod-barras':      { dx: 0.04, dy: -0.02, curve: 0.10, desc: 'Suavização perioral' },
     'pescoco':         { dx: 0.02, dy: -0.08, curve: 0.15, desc: 'Lifting cervical' },
     'glabela':         { dx: 0.00, dy: -0.06, curve: 0.10, desc: 'Relaxamento muscular' },
-    'frontal':         { dx: 0.00, dy: -0.08, curve: 0.10, desc: 'Suavizacao linhas' },
-    'periorbital':     { dx: 0.05, dy: -0.03, curve: 0.15, desc: 'Suavizacao periocular' },
-    'gingival':        { dx: 0.00, dy: -0.03, curve: 0.10, desc: 'Reducao exposicao' },
+    'frontal':         { dx: 0.00, dy: -0.08, curve: 0.10, desc: 'Suavização linhas' },
+    'periorbital':     { dx: 0.05, dy: -0.03, curve: 0.15, desc: 'Suavização periocular' },
+    'gingival':        { dx: 0.00, dy: -0.03, curve: 0.10, desc: 'Redução exposicao' },
     'dao':             { dx: 0.03, dy: -0.04, curve: 0.15, desc: 'Elevacao comissura' },
-    'platisma':        { dx: 0.02, dy: -0.06, curve: 0.20, desc: 'Suavizacao bandas' },
+    'platisma':        { dx: 0.02, dy: -0.06, curve: 0.20, desc: 'Suavização bandas' },
   }
 
   FM.TREATMENTS = [
@@ -378,12 +378,12 @@
 
   FM.FORCE_REGION_INFO = {
     temporal:   { youngDesc: 'Superolateral',        agedDesc: 'Colapso lateral',        desc: 'Chave do lifting. Perda de volume causa colapso de todo o sistema vetorial.', chain: ['zigoma', 'nasolabial', 'marionete'] },
-    zigoma:     { youngDesc: 'Projecao + sustentacao', agedDesc: 'Descida + perda projecao', desc: 'Quando desce, cria sulco nasolabial e sombra infraorbital.', chain: ['nasolabial', 'olheira'] },
-    olheira:    { youngDesc: 'Sustentacao orbital',   agedDesc: 'Medial + inferior',       desc: 'Ligamento orbitario perde suporte. Profundidade e aspecto cansado.', chain: [] },
-    nasolabial: { youngDesc: 'Sustentacao zigomatica', agedDesc: 'Descendente',             desc: 'NAO e isolado. Consequencia direta da queda do zigoma.', chain: [] },
-    marionete:  { youngDesc: 'Sustentacao lateral',   agedDesc: 'Vertical descendente',     desc: 'Expressao triste. Reflexo da perda de sustentacao mandibular.', chain: [] },
+    zigoma:     { youngDesc: 'Projeção + sustentação', agedDesc: 'Descida + perda projeção', desc: 'Quando desce, cria sulco nasolabial e sombra infraorbital.', chain: ['nasolabial', 'olheira'] },
+    olheira:    { youngDesc: 'Sustentação orbital',   agedDesc: 'Medial + inferior',       desc: 'Ligamento orbitario perde suporte. Profundidade e aspecto cansado.', chain: [] },
+    nasolabial: { youngDesc: 'Sustentação zigomatica', agedDesc: 'Descendente',             desc: 'NAO e isolado. Consequencia direta da queda do zigoma.', chain: [] },
+    marionete:  { youngDesc: 'Sustentação lateral',   agedDesc: 'Vertical descendente',     desc: 'Expressão triste. Reflexo da perda de sustentação mandibular.', chain: [] },
     jowl:       { youngDesc: 'Contorno definido',     agedDesc: 'Queda lateral + anterior', desc: 'Perda do contorno facial. Efeito "buldogue".', chain: [] },
-    queixo:     { youngDesc: 'Projecao anterior',     agedDesc: 'Encurtamento + retrusao',  desc: 'Perda de projecao altera proporcoes do terco inferior.', chain: [] },
+    queixo:     { youngDesc: 'Projeção anterior',     agedDesc: 'Encurtamento + retrusao',  desc: 'Perda de projeção altera proporcoes do terco inferior.', chain: [] },
   }
 
   // Default zone centers (normalized) when scanner is not available
@@ -422,8 +422,8 @@
   }
 
   FM._vecQuotes = [
-    { maxAge: 30, text: 'Vetores de sustentacao em plena atividade. Estrutura firme e colageno abundante.' },
-    { maxAge: 40, text: 'Inicio da inversao vetorial. Os primeiros sinais de perda de sustentacao aparecem na regiao temporal.' },
+    { maxAge: 30, text: 'Vetores de sustentação em plena atividade. Estrutura firme e colageno abundante.' },
+    { maxAge: 40, text: 'Inicio da inversao vetorial. Os primeiros sinais de perda de sustentação aparecem na regiao temporal.' },
     { maxAge: 50, text: 'Vetores significativamente invertidos. A gravidade domina e os compartimentos de gordura migram.' },
     { maxAge: 60, text: 'Perda estrutural avancada. Os ligamentos nao sustentam mais os compartimentos na posicao original.' },
     { maxAge: 999, text: 'Sistema vetorial colapsado. A reconstrucao de vetores e essencial para resultado natural.' },

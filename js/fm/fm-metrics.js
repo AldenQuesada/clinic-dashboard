@@ -1202,7 +1202,7 @@
         items.push({ type: 'rx', text: 'Botox masseter (20-30U bilateral) para reduzir volume', color: '#8B5CF6' })
       } else if (inf < 28) {
         items.push({ type: 'text', text: 'Terco inferior curto — indica mento retruido ou mordida profunda.', color: 'rgba(245,240,232,0.6)' })
-        items.push({ type: 'rx', text: 'AH mento 1-2mL para projecao', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mento 1-2mL para projeção', color: '#3B82F6' })
       }
       if (sup < 28) {
         items.push({ type: 'text', text: 'Terco superior curto — linha do cabelo baixa ou testa pequena.', color: 'rgba(245,240,232,0.6)' })
@@ -1254,7 +1254,7 @@
       if (shape.shape === 'redondo') {
         items.push({ type: 'text', text: 'Rosto redondo: focar em angulacao e definicao para criar contorno.' })
         items.push({ type: 'rx', text: 'AH mandibula 2-3mL bilateral', color: '#3B82F6' })
-        items.push({ type: 'rx', text: 'AH mento 1mL projecao', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mento 1mL projeção', color: '#3B82F6' })
         items.push({ type: 'rx', text: 'Botox masseter 25U bilateral', color: '#8B5CF6' })
       } else if (shape.shape === 'quadrado') {
         items.push({ type: 'text', text: 'Rosto quadrado: suavizar angulos e criar curvas femininas.' })
@@ -1316,7 +1316,7 @@
         // Arredondada ou Suave — precisa definir
         items.push({ type: 'text', text: 'Contorno indefinido. Protocolo de definicao mandibular recomendado.' })
         items.push({ type: 'rx', text: 'AH mandibula 2-3mL bilateral', color: '#3B82F6' })
-        items.push({ type: 'rx', text: 'AH mento 1-1.5mL projecao', color: '#3B82F6' })
+        items.push({ type: 'rx', text: 'AH mento 1-1.5mL projeção', color: '#3B82F6' })
         if (ma.aij_avg > 30) {
           items.push({ type: 'rx', text: 'AH pre-jowl 0.5mL bilateral', color: '#3B82F6' })
         }
@@ -1335,7 +1335,7 @@
       // Jawline tension treatment
       if (ma.aij_avg > 30) {
         items.push({ type: 'spacer' })
-        items.push({ type: 'text', text: 'Jawline caida — perda de sustentacao. Vetor de lifting necessario.' })
+        items.push({ type: 'text', text: 'Jawline caida — perda de sustentação. Vetor de lifting necessario.' })
         items.push({ type: 'rx', text: 'AH temporal 1mL vetor lifting', color: '#3B82F6' })
         items.push({ type: 'rx', text: 'Fios PDO 4-6 unidades', color: '#06B6D4' })
       }
