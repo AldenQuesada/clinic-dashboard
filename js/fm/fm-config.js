@@ -33,6 +33,11 @@
   // Production: set via FM.FACIAL_API_URL = 'https://facial-api.easypanel.host'
   FM.FACIAL_API_URL = localStorage.getItem('fm_api_url') || 'http://localhost:8107'
 
+  // ── WhatsApp message captions (editable) ──
+  // Use {nome} as placeholder for patient name
+  FM.WA_IMAGE_CAPTION = 'Resultado do seu Protocolo de Harmonia Facial\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.'
+  FM.WA_REPORT_CAPTION = 'Plano de Harmonia Facial personalizado para {nome}\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.'
+
   // Auto-fix stale localStorage URL (old port references)
   if (FM.FACIAL_API_URL && FM.FACIAL_API_URL.indexOf('localhost') !== -1 && FM.FACIAL_API_URL.indexOf(':8107') === -1) {
     FM.FACIAL_API_URL = 'http://localhost:8107'
