@@ -123,30 +123,80 @@
       }
       // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
     } else if (FM._editorMode === 'zones') {
-      // Guide lines (thin, for positioning)
+      // Guide lines (thin, H=green, V=blue — same as simetria but thinner)
       if (FM._guideLines) {
+        var gW = FM._imgW, gH = FM._imgH
         FM._ctx.save()
-        FM._guideLines.h.forEach(function (g) {
-          var gy = g.pos * FM._imgH
+
+        // H guides (green)
+        FM._guideLines.h.forEach(function (g, i) {
+          var gy = g.pos * gH
           FM._ctx.beginPath()
-          FM._ctx.strokeStyle = 'rgba(200,169,126,0.5)'
+          FM._ctx.strokeStyle = 'rgba(16,185,129,0.45)'
           FM._ctx.lineWidth = 1
-          FM._ctx.setLineDash([4, 4])
+          FM._ctx.setLineDash([6, 4])
           FM._ctx.moveTo(0, gy)
-          FM._ctx.lineTo(FM._imgW, gy)
+          FM._ctx.lineTo(gW, gy)
           FM._ctx.stroke()
-        })
-        FM._guideLines.v.forEach(function (g) {
-          var gx = g.pos * FM._imgW
+          FM._ctx.setLineDash([])
+          // Small dot handle
           FM._ctx.beginPath()
-          FM._ctx.strokeStyle = 'rgba(200,169,126,0.5)'
-          FM._ctx.lineWidth = 1
-          FM._ctx.setLineDash([4, 4])
-          FM._ctx.moveTo(gx, 0)
-          FM._ctx.lineTo(gx, FM._imgH)
-          FM._ctx.stroke()
+          FM._ctx.fillStyle = '#10B981'
+          FM._ctx.arc(6, gy, 3, 0, Math.PI * 2)
+          FM._ctx.fill()
         })
-        FM._ctx.setLineDash([])
+
+        // V guides (blue)
+        FM._guideLines.v.forEach(function (g, i) {
+          var gx = g.pos * gW
+          FM._ctx.beginPath()
+          FM._ctx.strokeStyle = 'rgba(59,130,246,0.45)'
+          FM._ctx.lineWidth = 1
+          FM._ctx.setLineDash([6, 4])
+          FM._ctx.moveTo(gx, 0)
+          FM._ctx.lineTo(gx, gH)
+          FM._ctx.stroke()
+          FM._ctx.setLineDash([])
+          FM._ctx.beginPath()
+          FM._ctx.fillStyle = '#3B82F6'
+          FM._ctx.arc(gx, gH - 6, 3, 0, Math.PI * 2)
+          FM._ctx.fill()
+        })
+
+        // Proportions bar on right edge (H guides only, if >= 2)
+        if (FM._guideLines.h.length >= 2) {
+          var hSorted = FM._guideLines.h.slice().sort(function (a, b) { return a.pos - b.pos })
+          var barX = gW - 18
+          var barW = 12
+          var firstY = hSorted[0].pos * gH
+          var lastY = hSorted[hSorted.length - 1].pos * gH
+          var totalSpan = lastY - firstY
+          if (totalSpan > 10) {
+            for (var si = 0; si < hSorted.length - 1; si++) {
+              var segTop = hSorted[si].pos * gH
+              var segBot = hSorted[si + 1].pos * gH
+              var segH2 = segBot - segTop
+              var segPct = Math.round((segH2 / totalSpan) * 100)
+              var idealPct = Math.round(100 / (hSorted.length - 1))
+              var tol = idealPct * 0.3
+              var segColor = Math.abs(segPct - idealPct) <= tol ? '#10B981' : Math.abs(segPct - idealPct) <= tol * 2 ? '#F59E0B' : '#EF4444'
+              FM._ctx.globalAlpha = 0.5
+              FM._ctx.fillStyle = segColor
+              FM._ctx.fillRect(barX, segTop, barW, segH2)
+              FM._ctx.globalAlpha = 1
+              FM._ctx.strokeStyle = segColor
+              FM._ctx.lineWidth = 0.5
+              FM._ctx.strokeRect(barX, segTop, barW, segH2)
+              if (segH2 > 16) {
+                FM._ctx.font = '700 8px Inter, sans-serif'
+                FM._ctx.fillStyle = '#fff'
+                FM._ctx.textAlign = 'center'
+                FM._ctx.fillText(segPct + '%', barX + barW / 2, segTop + segH2 / 2 + 3)
+              }
+            }
+          }
+        }
+
         FM._ctx.restore()
       }
       // Zones mode ONLY — draw polygon/ellipse annotations
@@ -375,24 +425,25 @@
     if (FM._editorMode === 'zones' && FM._guideTool && !FM._polyDrawing) {
       var w = FM._imgW, h = FM._imgH
       if (FM._guideTool === 'hguide') {
-        // Drag existing guide
         if (!FM._guideLocked) {
           for (var gi = 0; gi < FM._guideLines.h.length; gi++) {
-            if (Math.abs(my - FM._guideLines.h[gi].pos * h) < 8) {
+            if (Math.abs(my - FM._guideLines.h[gi].pos * h) < 10) {
+              // Right-click or double-tap near guide = delete it
+              if (e.detail >= 2) { FM._guideLines.h.splice(gi, 1); FM._redraw(); return }
               FM._guideDrag = { type: 'hguide', index: gi }
               FM._mode = 'move'
               return
             }
           }
         }
-        // Add new guide
         FM._guideLines.h.push({ pos: my / h, id: FM._guideNextId++ })
         FM._redraw()
         return
       } else if (FM._guideTool === 'vguide') {
         if (!FM._guideLocked) {
           for (var gj = 0; gj < FM._guideLines.v.length; gj++) {
-            if (Math.abs(mx - FM._guideLines.v[gj].pos * w) < 8) {
+            if (Math.abs(mx - FM._guideLines.v[gj].pos * w) < 10) {
+              if (e.detail >= 2) { FM._guideLines.v.splice(gj, 1); FM._redraw(); return }
               FM._guideDrag = { type: 'vguide', index: gj }
               FM._mode = 'move'
               return
