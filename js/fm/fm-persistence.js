@@ -83,6 +83,9 @@
         vecAge: FM._vecAge || 25,
         vecCustomOffsets: FM._vecCustomOffsets || {},
         vecCenters: FM.FORCE_DEFAULT_CENTERS,
+        guideLinesByAngle: FM._guideLinesByAngle || {},
+        guideLocked: FM._guideLocked || false,
+        polyOpacity: FM._polyOpacity != null ? FM._polyOpacity : 50,
         photos: photos,
         afterPhotos: afterPhotos,
         afterPhoto: afterPhotos['front'] || afterPhotos[Object.keys(afterPhotos)[0]] || null,  // backward compat
@@ -149,6 +152,9 @@
       FM._lastAnalysis = session.lastAnalysis || null
       FM._vecAge = session.vecAge || 25
       FM._vecCustomOffsets = session.vecCustomOffsets || {}
+      if (session.guideLinesByAngle) FM._guideLinesByAngle = session.guideLinesByAngle
+      if (session.guideLocked != null) FM._guideLocked = session.guideLocked
+      if (session.polyOpacity != null) FM._polyOpacity = session.polyOpacity
       if (session.vecCenters) {
         Object.keys(session.vecCenters).forEach(function (k) {
           FM.FORCE_DEFAULT_CENTERS[k] = session.vecCenters[k]
