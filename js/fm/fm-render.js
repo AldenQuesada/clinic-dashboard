@@ -165,20 +165,9 @@
       }
     })
 
-    // Separator + single DEPOIS slot
+    // Separator + SIMULADO only (DEPOIS removed — visible in 2x canvas)
     html += '<div style="border-top:1px solid var(--border);margin:8px 0;padding-top:8px">' +
       '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.3);text-align:center;margin-bottom:6px">Report</div>'
-
-    if (FM._afterPhotoUrl) {
-      html += '<div class="fm-photo-thumb" style="border-color:#10B981" onclick="FaceMapping._triggerUploadExtra(\'after\')">' +
-        '<img src="' + FM._afterPhotoUrl + '" alt="Depois">' +
-        '<span class="fm-photo-thumb-label" style="background:rgba(16,185,129,0.8)">DEPOIS</span>' +
-        '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteExtraPhoto(\'after\')" title="Excluir">' + FM._icon('trash-2', 11) + '</button></div>' +
-      '</div>'
-    } else {
-      html += '<div class="fm-photo-upload" onclick="FaceMapping._triggerUploadExtra(\'after\')" style="border-color:#10B98140">' +
-        FM._icon('camera', 16) + '<span style="font-size:8px">DEPOIS</span></div>'
-    }
 
     // SIMULADO
     if (FM._simPhotoUrl) {
