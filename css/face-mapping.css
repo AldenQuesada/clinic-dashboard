@@ -436,12 +436,12 @@
 .fm-toolbar {
   width: 280px;
   flex-shrink: 0;
+  flex-grow: 1;
   background: #0A0A0A;
   border-left: 1px solid rgba(200,169,126,0.08);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  height: 100%;
   min-height: 0;
 }
 
