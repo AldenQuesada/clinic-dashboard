@@ -417,33 +417,28 @@
       }
     }
 
-    // GUIDE LINES — add/drag thin guides in zones mode
-    if (FM._editorMode === 'zones' && FM._guideTool && !FM._polyDrawing) {
+    // GUIDE LINES — add/drag ONLY when unlocked and guideTool active
+    if (FM._editorMode === 'zones' && FM._guideTool && !FM._polyDrawing && !FM._guideLocked) {
       var w = FM._imgW, h = FM._imgH
       if (FM._guideTool === 'hguide') {
-        if (!FM._guideLocked) {
-          for (var gi = 0; gi < FM._guideLines.h.length; gi++) {
-            if (Math.abs(my - FM._guideLines.h[gi].pos * h) < 10) {
-              // Right-click or double-tap near guide = delete it
-              if (e.detail >= 2) { FM._guideLines.h.splice(gi, 1); FM._redraw(); return }
-              FM._guideDrag = { type: 'hguide', index: gi }
-              FM._mode = 'move'
-              return
-            }
+        for (var gi = 0; gi < FM._guideLines.h.length; gi++) {
+          if (Math.abs(my - FM._guideLines.h[gi].pos * h) < 10) {
+            if (e.detail >= 2) { FM._guideLines.h.splice(gi, 1); FM._redraw(); return }
+            FM._guideDrag = { type: 'hguide', index: gi }
+            FM._mode = 'move'
+            return
           }
         }
         FM._guideLines.h.push({ pos: my / h, id: FM._guideNextId++ })
         FM._redraw()
         return
       } else if (FM._guideTool === 'vguide') {
-        if (!FM._guideLocked) {
-          for (var gj = 0; gj < FM._guideLines.v.length; gj++) {
-            if (Math.abs(mx - FM._guideLines.v[gj].pos * w) < 10) {
-              if (e.detail >= 2) { FM._guideLines.v.splice(gj, 1); FM._redraw(); return }
-              FM._guideDrag = { type: 'vguide', index: gj }
-              FM._mode = 'move'
-              return
-            }
+        for (var gj = 0; gj < FM._guideLines.v.length; gj++) {
+          if (Math.abs(mx - FM._guideLines.v[gj].pos * w) < 10) {
+            if (e.detail >= 2) { FM._guideLines.v.splice(gj, 1); FM._redraw(); return }
+            FM._guideDrag = { type: 'vguide', index: gj }
+            FM._mode = 'move'
+            return
           }
         }
         FM._guideLines.v.push({ pos: mx / w, id: FM._guideNextId++ })

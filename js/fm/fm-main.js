@@ -163,6 +163,8 @@
     if (!page || !page.classList.contains('active')) return
 
     if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      // Block undo/redo when guide tool is active (prevents accidental polygon undo)
+      if (FM._guideTool) return
       if (e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
         FM._undo()
