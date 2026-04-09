@@ -25,7 +25,7 @@
     // Never committed to git. Set via: localStorage.setItem('clinicai_openai_key', 'sk-...')
     OPENAI_KEY: null,
     // Cache-buster: incrementar a cada deploy para forçar recarga dos scripts
-    ASSET_VERSION: '20260406a',
+    ASSET_VERSION: '20260409a',
   })
 
 })()
