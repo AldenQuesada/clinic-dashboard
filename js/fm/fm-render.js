@@ -726,7 +726,8 @@
           '<span style="font-size:10px;color:#C8A97E;font-weight:600">' + FM._icon('crosshair', 12) + ' ' + (sz ? sz.label : '') + '</span>' +
           '<button class="fm-btn" onclick="FaceMapping._selectZone(null)" style="font-size:8px;padding:2px 8px;border-color:#EF4444;color:#EF4444">' + FM._icon('x', 10) + ' Sair</button>' +
         '</div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.3);line-height:1.4">Clique nos pontos da foto para marcar a area. Enter ou clique no primeiro ponto para fechar.</div>' +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.3);line-height:1.4;margin-bottom:6px">Clique nos pontos da foto para marcar a area. Enter ou clique no primeiro ponto para fechar.</div>' +
+        (FM.ZONE_PRESETS[FM._selectedZone] ? '<button class="fm-btn" onclick="FaceMapping._placePreset(\'' + FM._selectedZone + '\')" style="width:100%;padding:6px;font-size:10px;font-weight:600;border-color:' + (sz ? sz.color : '#C8A97E') + ';color:' + (sz ? sz.color : '#C8A97E') + '">' + FM._icon('copy', 12) + ' Forma Pronta</button>' : '') +
       '</div>'
     }
 
