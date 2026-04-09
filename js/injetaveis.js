@@ -1,6 +1,14 @@
 ;(function () {
 'use strict'
 
+// Fallback: if store not yet loaded, create a simple localStorage wrapper
+if (typeof store === 'undefined') {
+  var store = {
+    set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) {} },
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : (d || null) } catch (e) { return d || null } }
+  }
+}
+
 // ══════════════════════════════════════════════════════════════
 //  INJETÁVEIS — Módulo completo de cadastro e gestão
 // ══════════════════════════════════════════════════════════════
