@@ -221,7 +221,7 @@
         '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">' +
           (FM._photoUrls[FM._activeAngle]
             ? '<canvas id="fmCanvas" style="cursor:crosshair"></canvas>' +
-              '<button onclick="FaceMapping._toggleMetricLock()" style="position:absolute;top:6px;left:6px;z-index:10;display:flex;align-items:center;padding:4px 6px;border-radius:5px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.15)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.3)') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.4)') + ';cursor:pointer;backdrop-filter:blur(4px)">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 12) + '</button>'
+              '<button onclick="FaceMapping._toggleMetricLock()" style="position:absolute;top:36px;left:6px;z-index:10;display:flex;align-items:center;padding:4px 6px;border-radius:5px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.15)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.3)') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.4)') + ';cursor:pointer;backdrop-filter:blur(4px)">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 12) + '</button>'
             : '<div style="color:rgba(245,240,232,0.2);font-size:12px;text-align:center;cursor:pointer" onclick="FaceMapping._triggerUpload(\'' + (FM._activeAngle || 'front') + '\')">' + FM._icon('camera', 24) + '<br>Upload ANTES</div>') +
         '</div>' +
       '</div>' +
@@ -239,7 +239,7 @@
         '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative">' +
           (FM._afterPhotoUrl || FM._simPhotoUrl
             ? '<canvas id="fmCanvas2" style="cursor:crosshair"></canvas>' +
-              '<button onclick="FaceMapping._toggleMetric2Lock()" style="position:absolute;top:6px;left:6px;z-index:10;display:flex;align-items:center;padding:4px 6px;border-radius:5px;border:1px solid ' + (FM._metric2Locked ? '#F59E0B' : 'rgba(255,255,255,0.15)') + ';background:' + (FM._metric2Locked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.3)') + ';color:' + (FM._metric2Locked ? '#F59E0B' : 'rgba(255,255,255,0.4)') + ';cursor:pointer;backdrop-filter:blur(4px)">' + FM._icon(FM._metric2Locked ? 'lock' : 'unlock', 12) + '</button>'
+              '<button onclick="FaceMapping._toggleMetric2Lock()" style="position:absolute;top:36px;left:6px;z-index:10;display:flex;align-items:center;padding:4px 6px;border-radius:5px;border:1px solid ' + (FM._metric2Locked ? '#F59E0B' : 'rgba(255,255,255,0.15)') + ';background:' + (FM._metric2Locked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.3)') + ';color:' + (FM._metric2Locked ? '#F59E0B' : 'rgba(255,255,255,0.4)') + ';cursor:pointer;backdrop-filter:blur(4px)">' + FM._icon(FM._metric2Locked ? 'lock' : 'unlock', 12) + '</button>'
             : '<div style="color:rgba(245,240,232,0.2);font-size:12px;text-align:center">Upload foto DEPOIS<br>ou gere uma simulacao</div>') +
         '</div>' +
       '</div>' +
@@ -250,7 +250,7 @@
     return '<div class="fm-canvas-area" id="fmCanvasArea" style="flex-direction:column;align-items:center;justify-content:center;position:relative">' +
       '<div class="fm-canvas-wrap drawing" id="fmCanvasWrap" style="position:relative">' +
         '<canvas id="fmCanvas"></canvas>' +
-        '<button onclick="FaceMapping._toggleMetricLock()" style="position:absolute;top:6px;left:6px;z-index:10;display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:6px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.2)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.4)') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.5)') + ';cursor:pointer;font-size:9px;font-weight:600;font-family:Montserrat,sans-serif;backdrop-filter:blur(4px)">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + '</button>' +
+        '<button onclick="FaceMapping._toggleMetricLock()" style="position:absolute;top:36px;left:6px;z-index:10;display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:6px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.2)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.4)') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.5)') + ';cursor:pointer;font-size:9px;font-weight:600;font-family:Montserrat,sans-serif;backdrop-filter:blur(4px)">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + '</button>' +
       '</div>' +
       '<div class="fm-canvas-controls">' +
         '<button onclick="FaceMapping._toggle3DView()" title="Vista 3D" class="fm-canvas-ctrl-btn">' + FM._icon('box', 14) + '</button>' +

@@ -24,7 +24,7 @@
 
       var is2x = FM._viewMode === '2x'
       var maxW = is2x ? (areaW / 2 - 16) : (areaW - 8)
-      var maxH = is2x ? (areaH - 48) : (areaH - 8)  // 1x: fill height, 2x: small margin for header
+      var maxH = is2x ? (areaH - 32) : (areaH - 4)  // minimal margins for max image size
       var scale = Math.min(maxW / FM._img.width, maxH / FM._img.height)
 
       FM._imgW = Math.round(FM._img.width * scale)
@@ -132,7 +132,7 @@
         FM._guideLines.h.forEach(function (g, i) {
           var gy = g.pos * gH
           FM._ctx.beginPath()
-          FM._ctx.strokeStyle = 'rgba(16,185,129,0.45)'
+          FM._ctx.strokeStyle = 'rgba(16,185,129,0.7)'
           FM._ctx.lineWidth = 1
           FM._ctx.setLineDash([6, 4])
           FM._ctx.moveTo(0, gy)
@@ -150,7 +150,7 @@
         FM._guideLines.v.forEach(function (g, i) {
           var gx = g.pos * gW
           FM._ctx.beginPath()
-          FM._ctx.strokeStyle = 'rgba(59,130,246,0.45)'
+          FM._ctx.strokeStyle = 'rgba(59,130,246,0.7)'
           FM._ctx.lineWidth = 1
           FM._ctx.setLineDash([6, 4])
           FM._ctx.moveTo(gx, 0)
