@@ -197,9 +197,8 @@
   FM._setVecAge = function (age) {
     FM._vecAge = age
     FM._redraw()
-    FM._render()
-    setTimeout(FM._initCanvas, 50)
-    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
+    FM._refreshToolbar()
+    FM._autoSave()
   }
 
   FM._switchTab = function (tabId) {

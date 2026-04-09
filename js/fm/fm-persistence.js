@@ -80,6 +80,7 @@
         nextVecId: FM._nextVecId,
         regionState: FM._regionState || {},
         lastAnalysis: FM._lastAnalysis || null,
+        vecAge: FM._vecAge || 25,
         photos: photos,
         afterPhotos: afterPhotos,
         afterPhoto: afterPhotos['front'] || afterPhotos[Object.keys(afterPhotos)[0]] || null,  // backward compat
@@ -144,6 +145,7 @@
       FM._nextVecId = session.nextVecId || 1
       FM._regionState = session.regionState || {}
       FM._lastAnalysis = session.lastAnalysis || null
+      FM._vecAge = session.vecAge || 25
       FM._activeAngle = null  // will be set after photos restore
 
       // Restore ANTES photos
