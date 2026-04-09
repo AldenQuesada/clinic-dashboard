@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Termo de Consentimento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config/env.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-family:'Inter',sans-serif;background:#F9FAFB;color:#111827;-webkit-text-size-adjust:100%}
+    body{min-height:100vh;min-height:100dvh}
+
+    .ld-shell{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+
+    /* Header */
+    .ld-header{background:#fff;border-bottom:1px solid #E5E7EB;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+    .ld-header-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0891B2,#06B6D4);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .ld-header-icon svg{color:#fff}
+    .ld-header-info{flex:1;min-width:0}
+    .ld-header-title{font-size:14px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ld-header-sub{font-size:11px;color:#9CA3AF;margin-top:1px}
+
+    /* Progress */
+    .ld-progress{height:4px;background:#E5E7EB}
+    .ld-progress-fill{height:100%;background:linear-gradient(90deg,#0891B2,#06B6D4);transition:width .4s ease;border-radius:0 4px 4px 0}
+
+    /* Content */
+    .ld-content{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px 100px}
+    .ld-card{width:100%;max-width:560px;background:#fff;border-radius:16px;border:1px solid #E5E7EB;overflow:hidden;animation:ldSlide .3s ease}
+    @keyframes ldSlide{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+    .ld-card-header{padding:24px 24px 20px;border-bottom:1px solid #F3F4F6}
+    .ld-step-label{font-size:10px;font-weight:700;color:#0891B2;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+    .ld-step-title{font-size:18px;font-weight:700;color:#111}
+    .ld-step-desc{font-size:12px;color:#6B7280;margin-top:4px;line-height:1.5}
+
+    .ld-card-body{padding:24px}
+
+    /* Form fields */
+    .ld-field{margin-bottom:16px}
+    .ld-label{font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;display:block}
+    .ld-input{width:100%;padding:10px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;font-family:inherit;color:#111;background:#FAFAFA;outline:none;transition:border-color .15s}
+    .ld-input:focus{border-color:#0891B2;background:#fff}
+    .ld-input[readonly]{background:#F3F4F6;color:#6B7280}
+
+    /* Document text */
+    .ld-doc-text{max-height:50vh;overflow-y:auto;padding:20px;background:#FAFAFA;border:1px solid #E5E7EB;border-radius:10px;font-size:13px;line-height:1.8;color:#1F2937;white-space:pre-wrap;word-wrap:break-word}
+    .ld-doc-text::-webkit-scrollbar{width:4px}
+    .ld-doc-text::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:4px}
+    .ld-scroll-hint{text-align:center;padding:8px;font-size:11px;color:#9CA3AF;display:none}
+
+    /* Signature canvas */
+    .ld-sig-container{border:2px dashed #D1D5DB;border-radius:12px;background:#FAFAFA;position:relative;overflow:hidden;touch-action:none}
+    .ld-sig-container.active{border-color:#0891B2;border-style:solid}
+    .ld-sig-canvas{width:100%;display:block;cursor:crosshair}
+    .ld-sig-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9CA3AF;font-size:13px;pointer-events:none;transition:opacity .2s}
+    .ld-sig-actions{display:flex;justify-content:flex-end;margin-top:8px;gap:8px}
+    .ld-sig-clear{padding:6px 14px;background:#FEF2F2;color:#EF4444;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer}
+
+    /* Checkbox */
+    .ld-check{display:flex;align-items:flex-start;gap:10px;margin:16px 0;padding:14px;background:#ECFEFF;border:1px solid #06B6D440;border-radius:10px;cursor:pointer}
+    .ld-check input{width:18px;height:18px;margin-top:1px;accent-color:#0891B2;flex-shrink:0}
+    .ld-check-text{font-size:12px;color:#0E7490;line-height:1.5;font-weight:500}
+
+    /* Buttons */
+    .ld-btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit}
+    .ld-btn-primary{background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff}
+    .ld-btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,.3)}
+    .ld-btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+    .ld-btn-secondary{background:#F3F4F6;color:#374151;margin-top:8px}
+
+    /* States */
+    .ld-loading{text-align:center;padding:60px 24px}
+    .ld-loading-spinner{width:40px;height:40px;border:3px solid #E5E7EB;border-top-color:#0891B2;border-radius:50%;animation:ldSpin .8s linear infinite;margin:0 auto 16px}
+    @keyframes ldSpin{to{transform:rotate(360deg)}}
+    .ld-error{text-align:center;padding:60px 24px;color:#EF4444}
+    .ld-error svg{margin-bottom:12px}
+    .ld-success{text-align:center;padding:60px 24px}
+    .ld-success svg{margin-bottom:12px}
+    .ld-success-title{font-size:20px;font-weight:700;color:#10B981;margin-bottom:8px}
+    .ld-success-text{font-size:13px;color:#6B7280;line-height:1.6}
+    .ld-hash{font-size:10px;color:#9CA3AF;margin-top:16px;word-break:break-all;background:#F9FAFB;padding:8px;border-radius:6px;font-family:monospace}
+
+    /* Footer fixed */
+    .ld-footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E5E7EB;padding:12px 16px;z-index:10;display:flex;gap:8px;justify-content:center}
+    .ld-footer .ld-btn{max-width:560px}
+
+    @media(max-width:400px){
+      .ld-card-body{padding:16px}
+      .ld-doc-text{font-size:12px;padding:14px;max-height:40vh}
+    }
+  </style>
+</head>
+<body>
+  <div class="ld-shell">
+    <div class="ld-header">
+      <div class="ld-header-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <div class="ld-header-info">
+        <div class="ld-header-title" id="ldHeaderTitle">Termo de Consentimento</div>
+        <div class="ld-header-sub" id="ldHeaderSub">Carregando...</div>
+      </div>
+    </div>
+    <div class="ld-progress"><div class="ld-progress-fill" id="ldProgress" style="width:0%"></div></div>
+    <div class="ld-content"><div id="ldRoot"></div></div>
+  </div>
+  <script src="js/legal-document-public.js"></script>
+</body>
+</html>
