@@ -485,68 +485,130 @@
       }
     }
 
-    // Cashback Fotona
-    html += '<div style="margin-top:12px;padding:12px 16px;background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.15);border-radius:8px">'
-    html += '<div style="font-family:Montserrat,sans-serif;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:8px">FOTONA DYNAMIS NX \u2014 INCLUSO NO PROTOCOLO</div>'
-    html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#F5F0E8">'
-    html += _editable('fmFotonaSessions', '3', 'width:30px;text-align:center;') + ' sessoes de '
-    html += '<select id="fmFotonaType" style="background:#1A1A1A;color:#C8A97E;border:1px solid rgba(200,169,126,0.3);border-radius:4px;padding:3px 6px;font-size:11px;font-family:Montserrat,sans-serif;outline:none">'
-    html += '<option value="lifting4d">Lifting 4D</option><option value="smootheyes">Smooth Eyes</option><option value="liplaser">Lip Laser</option>'
-    html += '</select>'
+    // ── Protocolo Lifting 5D — Cashback Fotona ──
+    html += '<div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(200,169,126,0.08),rgba(200,169,126,0.03));border:1px solid rgba(200,169,126,0.18);border-radius:10px">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+      '<div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:700">FOTONA DYNAMIS NX — CASHBACK</div>' +
+      '<span style="font-size:8px;padding:3px 8px;background:rgba(16,185,129,0.15);color:#10B981;border-radius:4px;font-weight:600;letter-spacing:0.1em">INCLUSO NO PROTOCOLO</span>' +
+    '</div>'
+    html += '<div style="font-size:10px;color:rgba(245,240,232,0.55);line-height:1.6;margin-bottom:10px">' +
+      'Ao fechar o Protocolo Lifting 5D, a paciente recebe de cashback <strong style="color:#C8A97E">3 sessoes de Fotona 4D</strong> — ' +
+      'o melhor laser do mundo — atuando em todas as camadas do rosto.' +
+    '</div>'
+
+    // 3 sessions visual
+    html += '<div style="display:flex;gap:8px;margin-bottom:10px">'
+    var fotonaMonths = ['Mes 1', 'Mes 2', 'Mes 3']
+    fotonaMonths.forEach(function (m, i) {
+      html += '<div style="flex:1;padding:10px;background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);border-radius:8px;text-align:center">' +
+        '<div style="font-size:16px;font-weight:800;color:#C8A97E">' + (i + 1) + '</div>' +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">' + m + '</div>' +
+        '<div style="font-size:9px;color:rgba(245,240,232,0.55);margin-top:4px">Fotona 4D</div>' +
+        '<div style="font-size:8px;color:#10B981;margin-top:2px">R$ 5.000</div>' +
+      '</div>'
+    })
     html += '</div>'
-    html += '<div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:rgba(245,240,232,0.7)">'
-    html += '<span>Valor incluso: R$ ' + _editable('fmFotonaValue', '2.500', 'width:60px;') + '</span>'
-    html += '<span>(economia de R$ ' + _editable('fmFotonaEconomy', '1.800', 'width:60px;') + ')</span>'
+
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid rgba(200,169,126,0.10)">' +
+      '<span style="font-size:10px;color:rgba(245,240,232,0.5)">Valor total Fotona (3 sessoes)</span>' +
+      '<span style="font-size:14px;font-weight:700;color:#10B981">R$ 15.000 <span style="font-size:9px;color:rgba(245,240,232,0.3);font-weight:400;text-decoration:line-through">pago pelo cashback</span></span>' +
+    '</div>'
+    html += '</div>'
+
+    // ── Timeline Visual Lifting 5D ──
+    html += '<div style="margin-top:16px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:10px">'
+    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,169,126,0.4);font-weight:600;margin-bottom:12px;text-align:center">JORNADA DO PROTOCOLO LIFTING 5D</div>'
+
+    // Timeline dots
+    var timelineSteps = [
+      { label: 'Sessao 1', sub: 'Dia 0', desc: 'Lifting Vetorial', color: '#C8A97E' },
+      { label: 'Sessao 2', sub: '30 dias', desc: 'Refino + Ajustes', color: '#C8A97E' },
+      { label: 'Fotona 1', sub: '45 dias', desc: '4D Laser', color: '#10B981' },
+      { label: 'Fotona 2', sub: '60 dias', desc: '4D Laser', color: '#10B981' },
+      { label: 'Fotona 3', sub: '75 dias', desc: '4D Laser', color: '#10B981' },
+      { label: 'Retorno', sub: '90 dias', desc: 'Avaliacao Final', color: '#C8A97E' },
+    ]
+    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;position:relative;padding:0 8px">'
+    // Connecting line
+    html += '<div style="position:absolute;top:7px;left:32px;right:32px;height:2px;background:linear-gradient(90deg,#C8A97E,#C8A97E,#10B981,#10B981,#10B981,#C8A97E)"></div>'
+    timelineSteps.forEach(function (step) {
+      html += '<div style="position:relative;z-index:1;text-align:center;width:70px">' +
+        '<div style="width:14px;height:14px;border-radius:50%;border:2px solid ' + step.color + ';background:#0A0A0A;margin:0 auto 4px"></div>' +
+        '<div style="font-size:8px;font-weight:600;color:#F5F0E8">' + step.label + '</div>' +
+        '<div style="font-size:7px;color:rgba(245,240,232,0.3)">' + step.sub + '</div>' +
+        '<div style="font-size:7px;color:' + step.color + ';margin-top:1px">' + step.desc + '</div>' +
+      '</div>'
+    })
+    html += '</div>'
+
+    // Editable dates
+    html += '<div style="display:flex;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap;font-size:9px;color:rgba(245,240,232,0.4)">'
+    html += '<span>Inicio: ' + _editable('fmTimeline1', 'dd/mm/aaaa', 'width:70px;font-size:9px;') + '</span>'
+    html += '<span>Retorno: ' + _editable('fmTimeline2', 'dd/mm/aaaa', 'width:70px;font-size:9px;') + '</span>'
     html += '</div>'
     html += '</div>'
 
-    // Timeline
-    html += '<div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:rgba(245,240,232,0.6)">'
-    html += '<span>Sessao 1: ' + _editable('fmTimeline1', 'dd/mm/aaaa', 'width:80px;') + '</span>'
-    html += '<span>Sessao 2: ' + _editable('fmTimeline2', 'dd/mm/aaaa', 'width:80px;') + '</span>'
-    html += '<span>Manutencao: ' + _editable('fmTimeline3', 'a definir', 'width:80px;') + '</span>'
-    html += '</div>'
+    // ── Beneficios Fotona (collapsed) ──
+    html += '<div style="margin-top:10px;padding:10px 16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.10);border-radius:8px">'
+    html += '<div style="font-size:9px;font-weight:600;color:#10B981;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Beneficios Fotona 4D inclusos</div>'
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;color:rgba(245,240,232,0.5)">'
+    var beneficios = ['Lifting e firmeza profunda', 'Rejuvenescimento das 4 camadas', 'Producao intensa de colageno', 'Melhora textura e poros', 'Reducao rugas e linhas', 'Resultados naturais com glow']
+    beneficios.forEach(function (b) {
+      html += '<div style="display:flex;align-items:center;gap:4px"><span style="color:#10B981;font-size:8px">&#x2713;</span> ' + b + '</div>'
+    })
+    html += '</div></div>'
 
     html += '</div>' // end Plano A padding div
 
-    // ─── SECTION 8: PLANO B — Protocolo Essencial (EDITABLE) ───
-    html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
-    html += _sectionTitle('Plano B \u2014 Prioridades', 'target')
+    // ─── SECTION 8: PLANO B — Essencial ───
+    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+    html += _sectionTitle('Plano B \u2014 Protocolo Essencial', 'target')
     html += '<div style="padding:0 32px 4px 32px">'
-    html += '<div style="margin-bottom:8px">' + _editable('fmPlanBSubtitle', 'Foco nas areas de maior impacto', 'font-size:10px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
+    html += '<div style="margin-bottom:8px">' + _editable('fmPlanBSubtitle', 'Foco nas areas de maior impacto — sem Fotona', 'font-size:10px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
     html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
       '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
 
-    // 3 empty editable rows for Plan B
-    for (var eb = 0; eb < 3; eb++) {
+    // 4 editable rows for Plan B
+    for (var eb = 0; eb < 4; eb++) {
       html += '<tr style="background:' + (eb % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + '">' +
-        _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Transformacao') +
+        _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Descreva a transformacao...') +
       '</tr>'
     }
 
     html += '</tbody></table>'
     html += '</div>'
 
-    // ─── SECTION 9: Investimento (EDITABLE) ───
-    html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+    // ─── SECTION 9: Investimento ───
+    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
     html += _sectionTitle('Investimento', 'credit-card')
     html += '<div style="padding:4px 32px 12px 32px">'
     html += '<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">'
 
     html += '<div style="flex:1;min-width:200px;background:rgba(200,169,126,0.04);border:1px solid rgba(200,169,126,0.12);border-radius:8px;padding:14px 18px">'
-    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:8px">Plano A</div>'
-    html += '<div style="font-size:22px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceA', '0.000', 'font-size:22px;font-weight:700;width:100px;') + '</div>'
+    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Plano A — Protocolo Lifting 5D</div>'
+    html += '<div style="font-size:22px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceA', '12.000 - 15.000', 'font-size:22px;font-weight:700;width:180px;') + '</div>'
+    html += '<div style="font-size:9px;color:#10B981;margin-top:4px">+ Cashback: 3 sessoes Fotona 4D (R$ 15.000)</div>'
     html += '</div>'
 
     html += '<div style="flex:1;min-width:200px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:8px;padding:14px 18px">'
-    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:600;margin-bottom:8px">Plano B</div>'
-    html += '<div style="font-size:22px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceB', '0.000', 'font-size:22px;font-weight:700;width:100px;') + '</div>'
+    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:600;margin-bottom:4px">Plano B — Essencial</div>'
+    html += '<div style="font-size:22px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceB', '5.000 - 8.000', 'font-size:22px;font-weight:700;width:180px;') + '</div>'
+    html += '<div style="font-size:9px;color:rgba(245,240,232,0.3);margin-top:4px">Sem Fotona incluso</div>'
     html += '</div>'
 
     html += '</div>'
-    html += '<div style="margin-top:10px;font-size:11px;color:rgba(245,240,232,0.5)">Condicoes: ' + _editable('fmPaymentConditions', '3x sem juros no cartao', 'width:300px;') + '</div>'
+    html += '<div style="margin-top:10px;font-size:11px;color:rgba(245,240,232,0.5)">Condicoes: ' + _editable('fmPaymentConditions', 'Ate 10x sem juros no cartao', 'width:300px;') + '</div>'
+    html += '<div style="margin-top:6px;font-size:9px;color:rgba(200,169,126,0.4);font-style:italic">Acompanhamento anual: 40% de beneficio exclusivo nas sessoes de Fotona 4D + condicoes especiais em retoques.</div>'
     html += '</div>'
+
+    // ─── Mensagem Lifting 5D ───
+    html += '<div style="margin-top:12px;padding:16px 24px;background:rgba(200,169,126,0.04);border-left:3px solid #C8A97E;border-radius:0 8px 8px 0">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;color:rgba(200,169,126,0.6);line-height:1.7">' +
+        'O resultado nao e um rosto transformado. E o seu rosto de volta — com firmeza, leveza e expressao viva.<br>' +
+        'Porque o rejuvenescimento de verdade nao e mudar quem voce e. E fazer o espelho voltar a te reconhecer.' +
+      '</div>' +
+    '</div>'
 
     // ─── DEPOIMENTO (editavel) ───
     html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 48px;text-align:center">' +
