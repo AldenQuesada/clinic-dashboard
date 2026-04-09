@@ -129,8 +129,8 @@
         FM._guideLines.h.forEach(function (g) {
           var gy = g.pos * FM._imgH
           FM._ctx.beginPath()
-          FM._ctx.strokeStyle = 'rgba(200,169,126,0.25)'
-          FM._ctx.lineWidth = 0.5
+          FM._ctx.strokeStyle = 'rgba(200,169,126,0.5)'
+          FM._ctx.lineWidth = 1
           FM._ctx.setLineDash([4, 4])
           FM._ctx.moveTo(0, gy)
           FM._ctx.lineTo(FM._imgW, gy)
@@ -139,8 +139,8 @@
         FM._guideLines.v.forEach(function (g) {
           var gx = g.pos * FM._imgW
           FM._ctx.beginPath()
-          FM._ctx.strokeStyle = 'rgba(200,169,126,0.25)'
-          FM._ctx.lineWidth = 0.5
+          FM._ctx.strokeStyle = 'rgba(200,169,126,0.5)'
+          FM._ctx.lineWidth = 1
           FM._ctx.setLineDash([4, 4])
           FM._ctx.moveTo(gx, 0)
           FM._ctx.lineTo(gx, FM._imgH)
@@ -372,7 +372,6 @@
     }
 
     // GUIDE LINES — add/drag thin guides in zones mode
-    console.log('[FM] mousedown zones check:', FM._editorMode, FM._guideTool, FM._polyDrawing, FM._activeTab)
     if (FM._editorMode === 'zones' && FM._guideTool && !FM._polyDrawing) {
       var w = FM._imgW, h = FM._imgH
       if (FM._guideTool === 'hguide') {
