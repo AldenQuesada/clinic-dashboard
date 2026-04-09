@@ -3,12 +3,17 @@ ClinicAI — Simulation Router
 Deterministic facial treatment simulation. Zero external API cost.
 
 Endpoints:
-  POST /simulate/preview     — Generate simulated result photo
-  POST /simulate/compare     — Generate before/after side-by-side
+  POST /simulate/preview       — Generate simulated result photo (warp only)
+  POST /simulate/compare       — Generate before/after side-by-side
+  POST /simulate/hybrid        — Hybrid simulation (warp + texture + calibration)
+  POST /simulate/calibrate     — Extract calibration profile from before/after pair
+  GET  /simulate/profiles      — List all calibration profiles
+  DELETE /simulate/profiles/{id} — Delete a calibration profile
 """
 
 import time
 import logging
+import numpy as np
 from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException
@@ -16,6 +21,14 @@ from pydantic import BaseModel, Field
 
 from utils.image_helpers import b64_to_cv2, cv2_to_b64
 from engines.warp_engine import simulate
+from engines.hybrid_engine import simulate_hybrid
+from engines.calibration_engine import (
+    extract_profile,
+    save_profile,
+    load_profile,
+    list_profiles,
+    delete_profile,
+)
 
 log = logging.getLogger("facial-api.simulate")
 router = APIRouter(prefix="/simulate", tags=["Simulation"])
@@ -39,6 +52,21 @@ class CompareRequest(BaseModel):
     zones: List[ZoneInput]
     intensity: float = Field(default=0.7, ge=0.0, le=1.0)
     layout: str = Field(default="side_by_side", description="side_by_side or vertical")
+
+
+class HybridRequest(BaseModel):
+    photo_base64: str
+    zones: Optional[List[ZoneInput]] = None
+    intensity: float = Field(default=0.7, ge=0.0, le=1.0, description="Simulation intensity")
+    profile_id: Optional[str] = Field(default=None, description="Calibration profile ID")
+    include_warp: bool = Field(default=True, description="Apply warp layer")
+    include_texture: bool = Field(default=True, description="Apply texture layer")
+
+
+class CalibrateRequest(BaseModel):
+    before_base64: str
+    after_base64: str
+    profile_name: Optional[str] = Field(default=None, description="Human-readable profile name")
 
 
 # ── Endpoints ───────────────────────────────────────────────
@@ -161,6 +189,130 @@ async def simulate_compare(req: CompareRequest):
         }
     except Exception as e:
         log.error(f"Comparison failed: {e}")
+        raise HTTPException(500, detail=str(e))
+
+
+@router.post("/hybrid")
+async def hybrid_simulate(req: HybridRequest):
+    """
+    Hybrid simulation: Warp + Texture + optional Calibration.
+
+    Combines geometric warping (volume, contour) with texture enhancement
+    (dark circles, wrinkles, pores, smoothing, color). Optionally applies
+    a calibration profile learned from a real before/after pair.
+
+    Deterministic. Zero external API cost. Typically 2-5s.
+    """
+    t0 = time.time()
+    try:
+        img = b64_to_cv2(req.photo_base64)
+        if img is None:
+            raise HTTPException(400, detail="Invalid photo_base64: could not decode image")
+
+        zones_list = []
+        if req.zones:
+            zones_list = [z.model_dump() for z in req.zones]
+
+        result = simulate_hybrid(
+            img,
+            zones=zones_list,
+            intensity=req.intensity,
+            profile_id=req.profile_id,
+            use_warp=req.include_warp,
+            use_texture=req.include_texture,
+        )
+
+        if not result.get("success"):
+            raise HTTPException(500, detail=result.get("error", "Hybrid simulation failed"))
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        elapsed = round(time.time() - t0, 2)
+        log.error(f"Hybrid simulation endpoint failed after {elapsed}s: {e}")
+        raise HTTPException(500, detail=str(e))
+
+
+@router.post("/calibrate")
+async def calibrate(req: CalibrateRequest):
+    """
+    Extract a calibration profile from a real before/after pair.
+
+    The doctor uploads photos of a real treatment result. The system analyzes
+    the geometric and texture differences to learn the doctor's style, which
+    can then be applied to future simulations via profile_id.
+    """
+    t0 = time.time()
+    try:
+        before_img = b64_to_cv2(req.before_base64)
+        after_img = b64_to_cv2(req.after_base64)
+
+        if before_img is None:
+            raise HTTPException(400, detail="Invalid before_base64: could not decode image")
+        if after_img is None:
+            raise HTTPException(400, detail="Invalid after_base64: could not decode image")
+
+        profile = extract_profile(before_img, after_img)
+        profile_id = save_profile(profile, name=req.profile_name)
+
+        elapsed = round(time.time() - t0, 2)
+        log.info(
+            f"Calibration completed in {elapsed}s | "
+            f"profile_id: {profile_id} | name: {req.profile_name}"
+        )
+
+        return {
+            "success": True,
+            "profile_id": profile_id,
+            "profile_name": req.profile_name,
+            "overall_intensity": profile.get("overall_intensity"),
+            "texture_preservation": profile.get("texture_preservation"),
+            "zone_count": len(profile.get("zone_displacements", {})),
+            "elapsed_s": elapsed,
+        }
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(400, detail=str(e))
+    except Exception as e:
+        elapsed = round(time.time() - t0, 2)
+        log.error(f"Calibration endpoint failed after {elapsed}s: {e}")
+        raise HTTPException(500, detail=str(e))
+
+
+@router.get("/profiles")
+async def get_profiles():
+    """List all saved calibration profiles."""
+    try:
+        profiles = list_profiles()
+        return {
+            "success": True,
+            "profiles": profiles,
+            "count": len(profiles),
+        }
+    except Exception as e:
+        log.error(f"List profiles failed: {e}")
+        raise HTTPException(500, detail=str(e))
+
+
+@router.delete("/profiles/{profile_id}")
+async def remove_profile(profile_id: str):
+    """Delete a calibration profile."""
+    try:
+        deleted = delete_profile(profile_id)
+        if not deleted:
+            raise HTTPException(404, detail=f"Profile not found: {profile_id}")
+        return {
+            "success": True,
+            "deleted": profile_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Delete profile failed: {e}")
         raise HTTPException(500, detail=str(e))
 
 
