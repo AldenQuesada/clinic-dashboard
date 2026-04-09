@@ -781,8 +781,10 @@
           'background:' + (isSelected ? 'rgba(200,169,126,0.08)' : 'transparent') + '" ' +
           'onclick="FaceMapping._selectAnnotation(' + ann.id + ')">' +
           '<span style="width:6px;height:6px;border-radius:50%;background:' + color + ';flex-shrink:0"></span>' +
-          '<span style="font-size:10px;color:rgba(245,240,232,0.7);flex:1">' + label + '</span>' +
-          '<span style="font-size:9px;color:rgba(245,240,232,0.4)">' + (ann.ml || 0) + ' ' + (z && z.unit === 'U' ? 'U' : 'mL') + '</span>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="font-size:10px;color:rgba(245,240,232,0.7)">' + label + ' <span style="color:rgba(245,240,232,0.4);font-size:8px">' + (ann.ml || 0) + ' ' + (z && z.unit === 'U' ? 'U' : 'mL') + '</span></div>' +
+            (ann.product ? '<div style="font-size:7px;color:rgba(200,169,126,0.4)">' + FM._esc(ann.product) + (ann.reticulation ? ' | ' + FM._esc(ann.reticulation) : '') + '</div>' : '') +
+          '</div>' +
           '<button onclick="event.stopPropagation();FaceMapping._removeAnnotation(' + ann.id + ')" style="border:none;background:none;color:#EF4444;cursor:pointer;padding:2px">' + FM._icon('trash-2', 10) + '</button>' +
         '</div>'
       })

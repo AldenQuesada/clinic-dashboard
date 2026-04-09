@@ -775,12 +775,11 @@
     var w = FM._imgW, h = FM._imgH
 
     var zDef = FM.ZONES.find(function (x) { return x.id === FM._selectedZone })
-    var qty = parseFloat(mlInput ? mlInput.value : FM._selectedMl) || (zDef ? zDef.min : 0.5)
-
-    if (zDef && qty < zDef.min) {
-      qty = zDef.min
-      if (mlInput) { mlInput.value = qty; mlInput.style.borderColor = '#EF4444'; setTimeout(function () { mlInput.style.borderColor = '' }, 1500) }
-    }
+    // Use zone defaults: product, reticulation, quantity
+    var qty = zDef && zDef.defaultQty ? zDef.defaultQty : (zDef ? zDef.min : 0.5)
+    var product = zDef && zDef.defaultProduct ? zDef.defaultProduct : ''
+    var reticulation = zDef && zDef.reticulation ? zDef.reticulation : ''
+    var treatment = zDef && zDef.defaultTx ? zDef.defaultTx : 'ah'
 
     // Normalize to 0-1 coordinates
     var normPoints = FM._polyPoints.map(function (p) {
@@ -791,10 +790,11 @@
       id: FM._nextId++,
       angle: FM._activeAngle,
       zone: FM._selectedZone,
-      treatment: FM._selectedTreatment,
+      treatment: treatment,
       ml: qty,
-      product: productInput ? productInput.value : FM._selectedProduct,
-      side: sideSelect ? sideSelect.value : FM._selectedSide,
+      product: product,
+      reticulation: reticulation,
+      side: 'bilateral',
       shape: { type: 'polygon', points: normPoints },
     }
     FM._pushUndo()

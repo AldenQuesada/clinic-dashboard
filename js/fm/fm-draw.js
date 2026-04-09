@@ -183,13 +183,26 @@
     pts.forEach(function (p) { cx += p.x * w; cy += p.y * h })
     cx /= pts.length; cy /= pts.length
 
-    ctx.font = '600 10px Inter, Montserrat, sans-serif'
-    ctx.fillStyle = color
-    ctx.textAlign = 'center'
     var z = FM.ZONES.find(function (zz) { return zz.id === ann.zone })
     var label = z ? z.label : ann.zone
     var unit = z && z.unit === 'U' ? 'U' : 'mL'
-    ctx.fillText(label + ' ' + ann.ml + unit, cx, cy + 4)
+    var productShort = ann.product ? ann.product.split(' ').pop() : ''
+    var labelText = label + ' | ' + ann.ml + unit
+
+    ctx.font = '600 9px Inter, Montserrat, sans-serif'
+    var tw = ctx.measureText(labelText).width
+    ctx.fillStyle = 'rgba(0,0,0,0.7)'
+    ctx.beginPath()
+    ctx.rect(cx - tw / 2 - 6, cy - 8, tw + 12, 18)
+    ctx.fill()
+    ctx.fillStyle = '#F5F0E8'
+    ctx.textAlign = 'center'
+    ctx.fillText(labelText, cx, cy + 4)
+    if (productShort || ann.reticulation) {
+      ctx.font = '400 7px Inter, Montserrat, sans-serif'
+      ctx.fillStyle = color
+      ctx.fillText((productShort || '') + (ann.reticulation ? ' | ' + ann.reticulation : ''), cx, cy + 16)
+    }
 
     ctx.restore()
   }
