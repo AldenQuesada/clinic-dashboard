@@ -135,10 +135,10 @@
       ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="#10B981" stroke="none"><circle cx="12" cy="12" r="6"/></svg>'
       : '<svg width="12" height="12" viewBox="0 0 24 24" fill="#9CA3AF" stroke="none"><circle cx="12" cy="12" r="6"/></svg>'
 
-    return '<div data-device-id="' + id + '" style="display:grid;grid-template-columns:1fr 1fr 1fr 140px 60px;gap:10px;padding:10px 12px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;align-items:center;transition:border-color .15s" onmouseenter="this.style.borderColor=\'#06B6D4\'" onmouseleave="this.style.borderColor=\'#E5E7EB\'">' +
+    return '<div data-device-id="' + id + '" style="display:grid;grid-template-columns:1.2fr 1fr 1fr 60px;gap:10px;padding:10px 12px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;align-items:center;transition:border-color .15s" onmouseenter="this.style.borderColor=\'#06B6D4\'" onmouseleave="this.style.borderColor=\'#E5E7EB\'">' +
       '<div style="display:flex;align-items:center;gap:6px">' +
         activeIcon +
-        '<input type="text" value="' + (device.device_name || '') + '" placeholder="Ex: Echo Dot Sala 1" data-field="device_name" onchange="markAlexaDeviceDirty(this)" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;outline:none;box-sizing:border-box;min-width:0"/>' +
+        '<input type="text" value="' + (device.device_name || '') + '" placeholder="Ex: Echo Pop de MyClinic" data-field="device_name" onchange="markAlexaDeviceDirty(this)" style="flex:1;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;outline:none;box-sizing:border-box;min-width:0"/>' +
       '</div>' +
       '<select data-field="room_id" onchange="markAlexaDeviceDirty(this)" style="padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;outline:none;box-sizing:border-box;background:#fff;cursor:pointer">' +
         _buildRoomOptions(device.room_id) +
@@ -146,7 +146,6 @@
       '<select data-field="professional_id" onchange="markAlexaDeviceDirty(this)" style="padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;outline:none;box-sizing:border-box;background:#fff;cursor:pointer">' +
         _buildProfOptions(device.professional_id) +
       '</select>' +
-      '<input type="text" value="' + (device.location_label || '') + '" placeholder="Ex: Recepcao" data-field="location_label" onchange="markAlexaDeviceDirty(this)" style="padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:12px;outline:none;box-sizing:border-box"/>' +
       '<div style="display:flex;gap:4px;justify-content:center">' +
         '<button onclick="saveAlexaDevice(this)" title="Salvar" style="display:none;padding:5px 8px;background:#10B981;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:11px" data-save-btn>' +
           '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
