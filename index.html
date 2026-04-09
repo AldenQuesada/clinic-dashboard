@@ -1707,9 +1707,14 @@
               <!-- Config global -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
                 <div style="grid-column:1/span 2">
-                  <label class="cs-label">Webhook URL (n8n)</label>
-                  <input id="sc_alexa_webhook" type="url" placeholder="https://flows.aldenquesada.site/webhook/alexa-announce" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
-                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">URL do webhook no n8n que recebe os eventos</div>
+                  <label class="cs-label">URL do Alexa Bridge</label>
+                  <input id="sc_alexa_webhook" type="url" placeholder="http://181.215.69.124:3456/api/announce" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
+                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Endpoint do Alexa Bridge no VPS (ex: http://181.215.69.124:3456/api/announce)</div>
+                </div>
+                <div style="grid-column:1/span 2">
+                  <label class="cs-label">Token de Autenticacao</label>
+                  <input id="sc_alexa_auth_token" type="password" placeholder="Bearer token do bridge" class="cs-input" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;box-sizing:border-box" oninput="_alexaConfigDirty=true"/>
+                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Token configurado no Alexa Bridge (AUTH_TOKEN)</div>
                 </div>
               </div>
 

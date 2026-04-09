@@ -30,10 +30,11 @@
     if (!cfg) return
 
     var el = function (id) { return document.getElementById(id) }
-    if (el('sc_alexa_active'))    el('sc_alexa_active').checked = cfg.is_active !== false
-    if (el('sc_alexa_webhook'))   el('sc_alexa_webhook').value  = cfg.webhook_url || ''
-    if (el('sc_alexa_welcome'))   el('sc_alexa_welcome').value  = cfg.welcome_template || ''
-    if (el('sc_alexa_room_msg'))  el('sc_alexa_room_msg').value = cfg.room_template || ''
+    if (el('sc_alexa_active'))     el('sc_alexa_active').checked = cfg.is_active !== false
+    if (el('sc_alexa_webhook'))    el('sc_alexa_webhook').value  = cfg.webhook_url || ''
+    if (el('sc_alexa_auth_token')) el('sc_alexa_auth_token').value = cfg.auth_token || ''
+    if (el('sc_alexa_welcome'))    el('sc_alexa_welcome').value  = cfg.welcome_template || ''
+    if (el('sc_alexa_room_msg'))   el('sc_alexa_room_msg').value = cfg.room_template || ''
     window._alexaConfigDirty = false
   }
 
@@ -44,6 +45,7 @@
     }
 
     var webhookUrl      = (document.getElementById('sc_alexa_webhook')?.value || '').trim()
+    var authToken       = (document.getElementById('sc_alexa_auth_token')?.value || '').trim()
     var welcomeTemplate = (document.getElementById('sc_alexa_welcome')?.value || '').trim()
     var roomTemplate    = (document.getElementById('sc_alexa_room_msg')?.value || '').trim()
     var isActive        = document.getElementById('sc_alexa_active')?.checked !== false
@@ -64,7 +66,7 @@
     }
 
     var res = await AlexaNotificationService.saveConfig(
-      webhookUrl, receptionDevice, welcomeTemplate, roomTemplate, isActive
+      webhookUrl, receptionDevice, welcomeTemplate, roomTemplate, isActive, authToken
     )
 
     if (res.ok) {

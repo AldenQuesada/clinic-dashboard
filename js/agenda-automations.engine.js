@@ -426,9 +426,12 @@
         timestamp:      new Date().toISOString(),
       }
 
+      var headers = { 'Content-Type': 'application/json' }
+      if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
+
       fetch(config.webhook_url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(payload),
       }).then(function(r) {
         if (r.ok) console.log('[Engine] Alexa OK:', device.device_name, ruleName)

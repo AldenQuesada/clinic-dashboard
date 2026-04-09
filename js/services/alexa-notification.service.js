@@ -112,9 +112,12 @@
     }
 
     try {
+      var headers = { 'Content-Type': 'application/json' }
+      if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
+
       var response = await fetch(config.webhook_url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: headers,
         body: JSON.stringify(payload),
       })
 
@@ -138,7 +141,7 @@
   //  CONFIG MANAGEMENT
   // ══════════════════════════════════════════════════════════
 
-  async function saveConfig(webhookUrl, receptionDevice, welcomeTemplate, roomTemplate, isActive) {
+  async function saveConfig(webhookUrl, receptionDevice, welcomeTemplate, roomTemplate, isActive, authToken) {
     if (!window._sbShared) return { ok: false, error: 'Supabase nao disponivel' }
 
     try {
@@ -148,6 +151,7 @@
         p_welcome_template:      welcomeTemplate || null,
         p_room_template:         roomTemplate || null,
         p_is_active:             isActive !== false,
+        p_auth_token:            authToken || null,
       })
 
       if (res.error) return { ok: false, error: res.error.message }
