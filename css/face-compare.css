@@ -654,6 +654,276 @@
   color: rgba(200,169,126,0.4);
 }
 
+/* ── Icon Buttons (Annotate, Metrics) ─────────────────────── */
+.fmc-btn-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(200,169,126,0.2);
+  background: transparent;
+  color: rgba(200,169,126,0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmc-btn-icon:hover {
+  background: rgba(200,169,126,0.1);
+  color: #C8A97E;
+  border-color: rgba(200,169,126,0.4);
+}
+
+.fmc-btn-icon.active {
+  background: rgba(200,169,126,0.2);
+  color: #C8A97E;
+  border-color: #C8A97E;
+  box-shadow: 0 0 12px rgba(200,169,126,0.15);
+}
+
+/* ── GIF Export Button ────────────────────────────────────── */
+.fmc-btn-gif {
+  background: linear-gradient(135deg, #A8895E, #8A7050);
+}
+
+.fmc-btn-gif:hover {
+  background: linear-gradient(135deg, #C8A97E, #A8895E);
+}
+
+/* ── Zone Markers ─────────────────────────────────────────── */
+.fmc-zone-markers {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 24px;
+  background: rgba(15,15,15,0.95);
+  border-bottom: 1px solid rgba(200,169,126,0.06);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.fmc-zone-btn {
+  padding: 3px 10px;
+  border: 1px solid rgba(200,169,126,0.2);
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(245,240,232,0.4);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmc-zone-btn:hover {
+  color: rgba(245,240,232,0.7);
+  border-color: rgba(200,169,126,0.4);
+  background: rgba(200,169,126,0.05);
+}
+
+.fmc-zone-btn.active {
+  background: rgba(200,169,126,0.2);
+  color: #C8A97E;
+  border-color: #C8A97E;
+}
+
+.fmc-zone-reset {
+  color: rgba(239,68,68,0.5);
+  border-color: rgba(239,68,68,0.2);
+}
+
+.fmc-zone-reset:hover {
+  color: #EF4444;
+  border-color: rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.05);
+}
+
+/* ── Annotations Layer ────────────────────────────────────── */
+.fmc-annotations-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.fmc-annotation-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 9;
+}
+
+.fmc-annotation-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(200,169,126,0.85);
+  border: 2px solid #fff;
+  color: #fff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fmc-annotation-marker:hover .fmc-annotation-num {
+  transform: scale(1.15);
+}
+
+.fmc-annotation-tooltip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  padding: 4px 10px;
+  background: rgba(44,44,44,0.95);
+  border: 1px solid rgba(200,169,126,0.25);
+  border-radius: 6px;
+  color: #F5F0E8;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  z-index: 10;
+}
+
+.fmc-annotation-marker:hover .fmc-annotation-tooltip {
+  display: block;
+}
+
+.fmc-annotation-clear {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  background: rgba(239,68,68,0.1);
+  color: rgba(239,68,68,0.7);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  z-index: 9;
+}
+
+.fmc-annotation-clear:hover {
+  background: rgba(239,68,68,0.2);
+  color: #EF4444;
+  border-color: #EF4444;
+}
+
+/* ── Metrics Overlay ──────────────────────────────────────── */
+.fmc-metrics-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 50px;
+}
+
+.fmc-metrics-panel {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(10,10,10,0.75);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(200,169,126,0.1);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.fmc-metrics-before {
+  position: absolute;
+  bottom: 50px;
+  left: 16px;
+}
+
+.fmc-metrics-after {
+  position: absolute;
+  bottom: 50px;
+  right: 16px;
+}
+
+.fmc-metrics-center {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.fmc-metrics-deltas {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(10,10,10,0.85);
+  border-radius: 8px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(200,169,126,0.15);
+}
+
+.fmc-metric-badge {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  color: #C8A97E;
+  white-space: nowrap;
+}
+
+.fmc-metric-delta {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fmc-metric-positive {
+  color: #10B981;
+}
+
+.fmc-metric-negative {
+  color: #EF4444;
+}
+
+.fmc-metric-na {
+  color: rgba(245,240,232,0.3);
+}
+
+.fmc-metrics-sep {
+  color: rgba(200,169,126,0.2);
+  font-size: 9px;
+  line-height: 1;
+}
+
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .fmc-header { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
@@ -664,4 +934,11 @@
   .fmc-angle-tabs { padding: 4px 12px; }
   .fmc-angle-tab { padding: 4px 12px; font-size: 9px; }
   .fmc-auto-btn { padding: 5px 10px; }
+  .fmc-zone-markers { padding: 4px 12px; gap: 3px; }
+  .fmc-zone-btn { padding: 2px 8px; font-size: 7px; }
+  .fmc-btn-icon { width: 30px; height: 30px; }
+  .fmc-metrics-panel { padding: 4px 8px; gap: 4px; }
+  .fmc-metric-badge, .fmc-metric-delta { font-size: 8px; }
+  .fmc-annotation-num { width: 18px; height: 18px; font-size: 8px; }
+  .fmc-btn-gif { padding: 6px 10px; font-size: 10px; }
 }

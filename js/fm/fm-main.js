@@ -71,6 +71,11 @@
     _exportCompare: FM._exportCompare,
     _compareToggleAutoTimer: FM._compareToggleAutoTimer,
     _compareSwitchAngle: FM._compareSwitchAngle,
+    _compareToggleAnnotations: FM._compareToggleAnnotations,
+    _compareToggleMetrics: FM._compareToggleMetrics,
+    _compareExportGif: FM._compareExportGif,
+    _compareClearAnnotations: FM._compareClearAnnotations,
+    _compareZoomToZone: FM._compareZoomToZone,
 
     // Skin analysis + heatmaps
     _runSkinAnalysis: FM._runSkinAnalysis,

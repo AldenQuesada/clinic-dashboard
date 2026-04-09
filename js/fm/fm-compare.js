@@ -31,6 +31,17 @@
   var _autoStartTime = 0
   var _autoCycleDuration = 5000 // full cycle in ms (0 -> 100 -> 0)
 
+  // Annotations state
+  var _annotationMode = false
+  var _compareAnnotations = [] // [{id, x, y, text, color}]
+  var _annotationCounter = 0
+
+  // Metrics overlay state
+  var _metricsVisible = false
+
+  // Active zone
+  var _activeZone = null
+
   // ── Angle helpers ─────────────────────────────────────────
 
   function _getAvailableAngles() {
@@ -176,8 +187,17 @@
               FM._icon('link', 9) + ' URL</button>' +
           '</div>' +
           '<div class="fmc-actions">' +
+            '<button class="fmc-btn-icon' + (_annotationMode ? ' active' : '') + '" id="fmcAnnotateBtn" title="Anotar fotos">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+            '</button>' +
+            '<button class="fmc-btn-icon' + (_metricsVisible ? ' active' : '') + '" id="fmcMetricsBtn" title="Metricas overlay">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' +
+            '</button>' +
             '<button class="fmc-btn-export" onclick="FaceMapping._exportCompare()">' +
               FM._icon('download', 14) + ' Instagram</button>' +
+            '<button class="fmc-btn-export fmc-btn-gif" onclick="FaceMapping._compareExportGif()">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>' +
+              ' GIF</button>' +
             '<button class="fmc-btn-close" onclick="FaceMapping._closeCompare()">' +
               '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
             '</button>' +
@@ -186,6 +206,17 @@
 
         // Angle tabs
         angleTabs +
+
+        // Zone markers
+        '<div class="fmc-zone-markers" id="fmcZoneMarkers">' +
+          '<button class="fmc-zone-btn" data-zone="olheira" data-x="35" data-y="33">Olheira</button>' +
+          '<button class="fmc-zone-btn" data-zone="sulco" data-x="38" data-y="52">Sulco</button>' +
+          '<button class="fmc-zone-btn" data-zone="zigoma" data-x="26" data-y="38">Zigoma</button>' +
+          '<button class="fmc-zone-btn" data-zone="mandibula" data-x="30" data-y="70">Mandibula</button>' +
+          '<button class="fmc-zone-btn" data-zone="temporal" data-x="28" data-y="18">Temporal</button>' +
+          '<button class="fmc-zone-btn" data-zone="labios" data-x="50" data-y="58">Labios</button>' +
+          '<button class="fmc-zone-btn fmc-zone-reset" id="fmcZoneReset" style="display:none">Reset</button>' +
+        '</div>' +
 
         // Viewport
         '<div class="fmc-viewport" id="fmcViewport">' +
@@ -256,6 +287,12 @@
 
           // Zoom indicator
           '<span class="fmc-zoom-indicator" id="fmcZoomIndicator" style="display:none">1.0x</span>' +
+
+          // Annotations overlay
+          '<div class="fmc-annotations-layer" id="fmcAnnotationsLayer"></div>' +
+
+          // Metrics overlay
+          '<div class="fmc-metrics-overlay" id="fmcMetricsOverlay" style="display:none"></div>' +
         '</div>' +
 
         // Controls
@@ -556,10 +593,35 @@
     var autoBtn = document.getElementById('fmcAutoBtn')
     if (autoBtn) autoBtn.addEventListener('click', _toggleAutoTimer)
 
+    // Zone marker buttons
+    document.querySelectorAll('.fmc-zone-btn:not(.fmc-zone-reset)').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var zone = this.getAttribute('data-zone')
+        var x = parseFloat(this.getAttribute('data-x'))
+        var y = parseFloat(this.getAttribute('data-y'))
+        _zoomToZone(zone, x, y)
+      })
+    })
+    var resetBtn = document.getElementById('fmcZoneReset')
+    if (resetBtn) resetBtn.addEventListener('click', _resetZone)
+
+    // Annotation toggle
+    var annotateBtn = document.getElementById('fmcAnnotateBtn')
+    if (annotateBtn) annotateBtn.addEventListener('click', _toggleAnnotations)
+
+    // Metrics toggle
+    var metricsBtn = document.getElementById('fmcMetricsBtn')
+    if (metricsBtn) metricsBtn.addEventListener('click', _toggleMetrics)
+
     // Slider drag on viewport
     var viewport = document.getElementById('fmcViewport')
     if (viewport) {
       viewport.addEventListener('mousedown', function (e) {
+        if (_annotationMode) {
+          _placeAnnotation(e, viewport)
+          e.preventDefault()
+          return
+        }
         if (_zoomLevel > 1.01) {
           // Panning mode when zoomed
           _isPanning = true
@@ -811,6 +873,41 @@
     ctx.textAlign = 'right'
     ctx.fillText('Clinica Mirian de Paula', size - 20, size - 12)
 
+    // Render annotations on exported image
+    if (_compareAnnotations.length > 0) {
+      _compareAnnotations.forEach(function (ann) {
+        var ax = (ann.x / 100) * size
+        var ay = (ann.y / 100) * size
+
+        // Circle
+        ctx.beginPath()
+        ctx.arc(ax, ay, 14, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(200,169,126,0.85)'
+        ctx.fill()
+        ctx.strokeStyle = '#fff'
+        ctx.lineWidth = 2
+        ctx.stroke()
+
+        // Number
+        ctx.font = '600 12px Montserrat, sans-serif'
+        ctx.fillStyle = '#fff'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(String(ann.id), ax, ay)
+
+        // Text label
+        ctx.font = '500 10px Montserrat, sans-serif'
+        ctx.fillStyle = '#C8A97E'
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'top'
+        ctx.shadowColor = 'rgba(0,0,0,0.8)'
+        ctx.shadowBlur = 4
+        ctx.fillText(ann.text, ax + 18, ay - 6)
+        ctx.shadowBlur = 0
+      })
+      ctx.textBaseline = 'alphabetic'
+    }
+
     // Download
     var link = document.createElement('a')
     var pName = (name || 'paciente').replace(/\s+/g, '-').toLowerCase()
@@ -836,10 +933,351 @@
     ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
   }
 
+  // ── Feature 1: Zone Markers (Quick Zoom) ───────────────────
+
+  function _zoomToZone(zone, x, y) {
+    if (_activeZone === zone) {
+      _resetZone()
+      return
+    }
+    _activeZone = zone
+
+    // Set zoom and center
+    _zoomLevel = 2.5
+    _zoomCenter = { x: x, y: y }
+    _panOffset = { x: 0, y: 0 }
+
+    // Smooth transition
+    var container = document.getElementById('fmcZoomContainer')
+    if (container) {
+      container.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      _applySyncZoom()
+      setTimeout(function () {
+        container.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+      }, 550)
+    }
+
+    // Highlight active zone button
+    document.querySelectorAll('.fmc-zone-btn').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-zone') === zone)
+    })
+    var resetBtn = document.getElementById('fmcZoneReset')
+    if (resetBtn) resetBtn.style.display = ''
+  }
+
+  function _resetZone() {
+    _activeZone = null
+    _zoomLevel = 1
+    _panOffset = { x: 0, y: 0 }
+    _zoomCenter = { x: 50, y: 50 }
+
+    var container = document.getElementById('fmcZoomContainer')
+    if (container) {
+      container.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+      _applySyncZoom()
+      setTimeout(function () {
+        container.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+      }, 550)
+    }
+
+    document.querySelectorAll('.fmc-zone-btn').forEach(function (b) {
+      b.classList.remove('active')
+    })
+    var resetBtn = document.getElementById('fmcZoneReset')
+    if (resetBtn) resetBtn.style.display = 'none'
+  }
+
+  // ── Feature 2: Annotations ────────────────────────────────
+
+  function _toggleAnnotations() {
+    _annotationMode = !_annotationMode
+    var btn = document.getElementById('fmcAnnotateBtn')
+    if (btn) btn.classList.toggle('active', _annotationMode)
+
+    var viewport = document.getElementById('fmcViewport')
+    if (viewport) {
+      viewport.style.cursor = _annotationMode ? 'crosshair' : 'default'
+    }
+  }
+
+  function _placeAnnotation(e, viewport) {
+    if (_compareAnnotations.length >= 10) {
+      FM._showToast && FM._showToast('Maximo de 10 anotacoes.', 'warn')
+      return
+    }
+    var rect = viewport.getBoundingClientRect()
+    var x = ((e.clientX - rect.left) / rect.width) * 100
+    var y = ((e.clientY - rect.top) / rect.height) * 100
+
+    _annotationCounter++
+    var id = _annotationCounter
+    var text = 'Anotacao ' + id
+
+    _compareAnnotations.push({ id: id, x: x, y: y, text: text, color: '#C8A97E' })
+    _renderAnnotations()
+
+    // Prompt for text
+    setTimeout(function () {
+      var newText = prompt('Texto da anotacao #' + id + ':', text)
+      if (newText !== null && newText.trim()) {
+        for (var i = 0; i < _compareAnnotations.length; i++) {
+          if (_compareAnnotations[i].id === id) {
+            _compareAnnotations[i].text = newText.trim()
+            break
+          }
+        }
+        _renderAnnotations()
+      }
+    }, 50)
+  }
+
+  function _renderAnnotations() {
+    var layer = document.getElementById('fmcAnnotationsLayer')
+    if (!layer) return
+    layer.innerHTML = ''
+
+    _compareAnnotations.forEach(function (ann) {
+      var marker = document.createElement('div')
+      marker.className = 'fmc-annotation-marker'
+      marker.style.left = ann.x + '%'
+      marker.style.top = ann.y + '%'
+      marker.setAttribute('data-id', ann.id)
+      marker.innerHTML =
+        '<span class="fmc-annotation-num">' + ann.id + '</span>' +
+        '<div class="fmc-annotation-tooltip">' + FM._esc(ann.text) + '</div>'
+
+      // Click to edit
+      marker.addEventListener('click', function (e) {
+        e.stopPropagation()
+        var newText = prompt('Editar anotacao #' + ann.id + ':', ann.text)
+        if (newText !== null && newText.trim()) {
+          ann.text = newText.trim()
+          _renderAnnotations()
+        }
+      })
+      layer.appendChild(marker)
+    })
+
+    // Clear all button if annotations exist
+    if (_compareAnnotations.length > 0) {
+      var clearBtn = document.createElement('button')
+      clearBtn.className = 'fmc-annotation-clear'
+      clearBtn.textContent = 'Limpar Anotacoes'
+      clearBtn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        _clearAnnotations()
+      })
+      layer.appendChild(clearBtn)
+    }
+  }
+
+  function _clearAnnotations() {
+    _compareAnnotations = []
+    _annotationCounter = 0
+    _renderAnnotations()
+  }
+
+  // ── Feature 3: Metrics Overlay ────────────────────────────
+
+  function _toggleMetrics() {
+    _metricsVisible = !_metricsVisible
+    var btn = document.getElementById('fmcMetricsBtn')
+    if (btn) btn.classList.toggle('active', _metricsVisible)
+
+    var overlay = document.getElementById('fmcMetricsOverlay')
+    if (!overlay) return
+
+    if (_metricsVisible) {
+      overlay.style.display = ''
+      _renderMetrics()
+    } else {
+      overlay.style.display = 'none'
+    }
+  }
+
+  function _getMetricValue(path) {
+    try {
+      if (path === 'symmetry') return FM._scanData && FM._scanData.symmetry ? FM._scanData.symmetry.overall : null
+      if (path === 'amf') return FM._metricAngles ? FM._metricAngles.amf : null
+      if (path === 'aij') return FM._metricAngles ? FM._metricAngles.aij_avg : null
+      if (path === 'thirds') return FM._scanData ? FM._scanData.thirds : null
+    } catch (e) { return null }
+    return null
+  }
+
+  function _renderMetrics() {
+    var overlay = document.getElementById('fmcMetricsOverlay')
+    if (!overlay) return
+
+    var symBefore = _getMetricValue('symmetry')
+    var amfBefore = _getMetricValue('amf')
+    var aijBefore = _getMetricValue('aij')
+
+    // For DEPOIS, attempt to read from after scan data if available
+    var symAfter = null
+    var amfAfter = null
+    var aijAfter = null
+
+    // Check if after scan data exists (stored as _afterScanData)
+    if (FM._afterScanData && FM._afterScanData.symmetry) symAfter = FM._afterScanData.symmetry.overall
+    if (FM._afterMetricAngles) {
+      amfAfter = FM._afterMetricAngles.amf || null
+      aijAfter = FM._afterMetricAngles.aij_avg || null
+    }
+
+    var isSideBySide = _compareMode === 'sidebyside'
+
+    var html = ''
+    if (isSideBySide) {
+      // Side by side: badges on each panel
+      html += '<div class="fmc-metrics-panel fmc-metrics-before">'
+      html += _metricBadge('Simetria', symBefore, '%')
+      html += _metricBadge('AMF', amfBefore, String.fromCharCode(176))
+      html += _metricBadge('AIJ', aijBefore, String.fromCharCode(176))
+      html += '</div>'
+
+      html += '<div class="fmc-metrics-panel fmc-metrics-after">'
+      html += _metricBadge('Simetria', symAfter, '%')
+      html += _metricBadge('AMF', amfAfter, String.fromCharCode(176))
+      html += _metricBadge('AIJ', aijAfter, String.fromCharCode(176))
+      html += '</div>'
+
+      // Deltas in the center
+      html += '<div class="fmc-metrics-deltas">'
+      html += _metricDelta('Simetria', symBefore, symAfter, '%')
+      html += _metricDelta('AMF', amfBefore, amfAfter, String.fromCharCode(176))
+      html += _metricDelta('AIJ', aijBefore, aijAfter, String.fromCharCode(176))
+      html += '</div>'
+    } else {
+      // Other modes: single overlay at bottom
+      html += '<div class="fmc-metrics-panel fmc-metrics-center">'
+      html += _metricBadge('Simetria', symBefore, '%')
+      html += _metricBadge('AMF', amfBefore, String.fromCharCode(176))
+      html += _metricBadge('AIJ', aijBefore, String.fromCharCode(176))
+      if (symAfter !== null || amfAfter !== null) {
+        html += '<span class="fmc-metrics-sep">|</span>'
+        html += _metricDelta('Sim', symBefore, symAfter, '%')
+        html += _metricDelta('AMF', amfBefore, amfAfter, String.fromCharCode(176))
+      }
+      html += '</div>'
+    }
+
+    overlay.innerHTML = html
+  }
+
+  function _metricBadge(label, value, unit) {
+    var display = value !== null && value !== undefined ? (typeof value === 'number' ? Math.round(value) : value) + unit : 'N/A'
+    return '<span class="fmc-metric-badge">' + label + ': ' + display + '</span>'
+  }
+
+  function _metricDelta(label, before, after, unit) {
+    if (before === null || after === null || before === undefined || after === undefined) {
+      return '<span class="fmc-metric-delta fmc-metric-na">' + label + ': N/A</span>'
+    }
+    var diff = Math.round(after) - Math.round(before)
+    var sign = diff >= 0 ? '+' : ''
+    var cls = diff >= 0 ? 'fmc-metric-positive' : 'fmc-metric-negative'
+    return '<span class="fmc-metric-delta ' + cls + '">' + sign + diff + unit + '</span>'
+  }
+
+  // ── Feature 4: Export GIF (WebM) ──────────────────────────
+
+  function _exportGif() {
+    if (!_beforeImg || !_afterImg) {
+      FM._showToast && FM._showToast('Carregue ambas as fotos.', 'warn')
+      return
+    }
+
+    FM._showLoading && FM._showLoading('Gerando video...')
+
+    var width = 320
+    var ratio = _beforeImg.height / _beforeImg.width
+    var height = Math.round(width * ratio)
+    // Ensure even dimensions for video codec
+    if (height % 2 !== 0) height++
+
+    var c = document.createElement('canvas')
+    c.width = width
+    c.height = height
+    var ctx = c.getContext('2d')
+
+    var stream = c.captureStream(10)
+    var mimeType = 'video/webm'
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'video/webm;codecs=vp8'
+    }
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      FM._hideLoading && FM._hideLoading()
+      FM._showToast && FM._showToast('Navegador nao suporta gravacao de video.', 'error')
+      return
+    }
+
+    var recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1500000 })
+    var chunks = []
+
+    recorder.ondataavailable = function (e) {
+      if (e.data.size > 0) chunks.push(e.data)
+    }
+
+    recorder.onstop = function () {
+      var blob = new Blob(chunks, { type: 'video/webm' })
+      var url = URL.createObjectURL(blob)
+      var link = document.createElement('a')
+      var name = FM._lead ? (FM._lead.nome || FM._lead.name || 'paciente') : 'paciente'
+      var pName = name.replace(/\s+/g, '-').toLowerCase()
+      link.download = 'comparativo-' + pName + '-' + FM._dateStr() + '.webm'
+      link.href = url
+      link.click()
+      setTimeout(function () { URL.revokeObjectURL(url) }, 5000)
+      FM._hideLoading && FM._hideLoading()
+      FM._showToast && FM._showToast('Video exportado!', 'success')
+    }
+
+    recorder.start()
+
+    // Animate 20 frames: opacity 0% -> 100% -> 0%
+    var totalFrames = 20
+    var frameIndex = 0
+    var frameDelay = 150 // ms per frame = 3s total
+
+    function _drawFrame() {
+      if (frameIndex >= totalFrames) {
+        recorder.stop()
+        return
+      }
+
+      // Triangle wave: 0 -> 1 -> 0
+      var t = frameIndex / (totalFrames - 1)
+      var opacity = t <= 0.5 ? t * 2 : (1 - t) * 2
+
+      ctx.clearRect(0, 0, width, height)
+      ctx.drawImage(_beforeImg, 0, 0, width, height)
+      ctx.globalAlpha = opacity
+      ctx.drawImage(_afterImg, 0, 0, width, height)
+      ctx.globalAlpha = 1.0
+
+      // Watermark
+      ctx.font = 'italic 8px Cormorant Garamond, serif'
+      ctx.fillStyle = 'rgba(200,169,126,0.4)'
+      ctx.textAlign = 'right'
+      ctx.fillText('Clinica Mirian de Paula', width - 6, height - 4)
+
+      frameIndex++
+      setTimeout(_drawFrame, frameDelay)
+    }
+
+    _drawFrame()
+  }
+
   // ── Close ─────────────────────────────────────────────────
 
   FM._closeCompare = function () {
     _stopAutoTimer()
+    _annotationMode = false
+    _metricsVisible = false
+    _activeZone = null
+    _compareAnnotations = []
+    _annotationCounter = 0
     if (_overlay) { _overlay.remove(); _overlay = null }
     document.body.style.overflow = ''
   }
@@ -900,5 +1338,10 @@
   // ── Public API ────────────────────────────────────────────
   FM._compareToggleAutoTimer = _toggleAutoTimer
   FM._compareSwitchAngle = _switchAngle
+  FM._compareToggleAnnotations = _toggleAnnotations
+  FM._compareToggleMetrics = _toggleMetrics
+  FM._compareExportGif = _exportGif
+  FM._compareClearAnnotations = _clearAnnotations
+  FM._compareZoomToZone = _zoomToZone
 
 })()
