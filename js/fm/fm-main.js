@@ -54,6 +54,11 @@
     _generateHybrid: FM._generateHybrid,
 
     _mirrorPolygon: FM._mirrorPolygon,
+    _placePreset: function (zoneId) {
+      FM._placePreset(zoneId)
+      FM._render()
+      setTimeout(FM._initCanvas, 50)
+    },
     _setGuideTool: function (tool) {
       FM._guideTool = (FM._guideTool === tool) ? null : tool
       FM._selectedZone = null

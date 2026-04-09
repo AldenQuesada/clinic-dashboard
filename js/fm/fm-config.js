@@ -204,6 +204,109 @@
     FM.ZONES = FM._loadZoneRanges()
   }
 
+  // ── Preset polygon shapes per zone (offsets from center, normalized) ──
+  FM.ZONE_PRESETS = {
+    'labio': [
+      {x:-0.08,y:-0.01},{x:-0.06,y:-0.02},{x:-0.03,y:-0.025},{x:0,y:-0.03},
+      {x:0.03,y:-0.025},{x:0.06,y:-0.02},{x:0.08,y:-0.01},
+      {x:0.06,y:0.015},{x:0.03,y:0.025},{x:0,y:0.03},
+      {x:-0.03,y:0.025},{x:-0.06,y:0.015}
+    ],
+    'olheira': [
+      {x:-0.04,y:-0.01},{x:-0.02,y:-0.015},{x:0.02,y:-0.015},{x:0.04,y:-0.01},
+      {x:0.04,y:0.01},{x:0.02,y:0.02},{x:-0.02,y:0.02},{x:-0.04,y:0.01}
+    ],
+    'temporal': [
+      {x:-0.03,y:-0.04},{x:0,y:-0.05},{x:0.03,y:-0.04},
+      {x:0.04,y:-0.01},{x:0.03,y:0.03},{x:0,y:0.04},
+      {x:-0.03,y:0.03},{x:-0.04,y:-0.01}
+    ],
+    'zigoma-lateral': [
+      {x:-0.04,y:-0.02},{x:0,y:-0.03},{x:0.04,y:-0.02},
+      {x:0.05,y:0.01},{x:0.03,y:0.03},{x:-0.03,y:0.03},{x:-0.05,y:0.01}
+    ],
+    'zigoma-anterior': [
+      {x:-0.03,y:-0.02},{x:0.03,y:-0.02},{x:0.04,y:0.01},
+      {x:0.02,y:0.025},{x:-0.02,y:0.025},{x:-0.04,y:0.01}
+    ],
+    'sulco': [
+      {x:-0.01,y:-0.05},{x:0.01,y:-0.05},{x:0.02,y:-0.02},
+      {x:0.02,y:0.02},{x:0.01,y:0.05},{x:-0.01,y:0.05},
+      {x:-0.02,y:0.02},{x:-0.02,y:-0.02}
+    ],
+    'marionete': [
+      {x:-0.01,y:-0.03},{x:0.01,y:-0.03},{x:0.015,y:0},
+      {x:0.01,y:0.03},{x:-0.01,y:0.03},{x:-0.015,y:0}
+    ],
+    'mandibula': [
+      {x:-0.08,y:-0.01},{x:-0.04,y:-0.02},{x:0,y:-0.015},{x:0.04,y:-0.02},{x:0.08,y:-0.01},
+      {x:0.08,y:0.01},{x:0.04,y:0.02},{x:0,y:0.015},{x:-0.04,y:0.02},{x:-0.08,y:0.01}
+    ],
+    'mento': [
+      {x:-0.03,y:-0.02},{x:0,y:-0.03},{x:0.03,y:-0.02},
+      {x:0.03,y:0.02},{x:0,y:0.03},{x:-0.03,y:0.02}
+    ],
+    'glabela': [
+      {x:-0.02,y:-0.015},{x:0.02,y:-0.015},{x:0.025,y:0},{x:0.02,y:0.015},
+      {x:-0.02,y:0.015},{x:-0.025,y:0}
+    ],
+    'frontal': [
+      {x:-0.08,y:-0.015},{x:0.08,y:-0.015},{x:0.08,y:0.015},{x:-0.08,y:0.015}
+    ],
+    'periorbital': [
+      {x:-0.03,y:-0.015},{x:0,y:-0.02},{x:0.03,y:-0.015},
+      {x:0.03,y:0.01},{x:0,y:0.02},{x:-0.03,y:0.01}
+    ],
+    'nariz-dorso': [
+      {x:-0.01,y:-0.04},{x:0.01,y:-0.04},{x:0.015,y:0},{x:0.01,y:0.04},
+      {x:-0.01,y:0.04},{x:-0.015,y:0}
+    ],
+    'pre-jowl': [
+      {x:-0.03,y:-0.015},{x:0.03,y:-0.015},{x:0.035,y:0.01},
+      {x:0.02,y:0.025},{x:-0.02,y:0.025},{x:-0.035,y:0.01}
+    ],
+    'pescoco': [
+      {x:-0.06,y:-0.02},{x:0.06,y:-0.02},{x:0.06,y:0.02},{x:-0.06,y:0.02}
+    ],
+  }
+
+  // Place a preset shape on the canvas
+  FM._placePreset = function (zoneId) {
+    var preset = FM.ZONE_PRESETS[zoneId]
+    if (!preset) return false
+
+    // Find center: use scanner zone_centers if available, else defaults
+    var centers = FM._scanData && FM._scanData.zone_centers ? FM._scanData.zone_centers : FM.FORCE_DEFAULT_CENTERS
+    var centerKey = zoneId + '_esq'
+    var center = centers[centerKey] || centers[zoneId] || { x: 0.5, y: 0.5 }
+
+    var zDef = FM.ZONES.find(function (z) { return z.id === zoneId })
+    var points = preset.map(function (p) {
+      return { x: center.x + p.x, y: center.y + p.y }
+    })
+
+    var newAnn = {
+      id: FM._nextId++,
+      angle: FM._activeAngle,
+      zone: zoneId,
+      treatment: zDef && zDef.defaultTx ? zDef.defaultTx : 'ah',
+      ml: zDef && zDef.defaultQty ? zDef.defaultQty : 0.5,
+      product: zDef && zDef.defaultProduct ? zDef.defaultProduct : '',
+      reticulation: zDef && zDef.reticulation ? zDef.reticulation : '',
+      side: 'bilateral',
+      shape: { type: 'polygon', points: points },
+    }
+
+    FM._pushUndo()
+    FM._annotations.push(newAnn)
+    FM._selAnn = newAnn
+    FM._selectedZone = null
+    FM._autoSave()
+    FM._redraw()
+    FM._refreshToolbar()
+    return true
+  }
+
   // Initialize ZONES
   FM.ZONES = FM._loadZoneRanges()
 

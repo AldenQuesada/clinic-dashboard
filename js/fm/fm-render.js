@@ -683,12 +683,18 @@
       '<div style="display:flex;flex-wrap:wrap;gap:3px">'
     fillZones.forEach(function (z) {
       var isActive = FM._selectedZone === z.id
-      html += '<button class="fm-zone-btn' + (isActive ? ' active' : '') + '" ' +
-        'onclick="FaceMapping._selectZone(\'' + z.id + '\')" ' +
-        'style="font-size:8px;padding:3px 6px;border-color:' + z.color + '40;color:' + (isActive ? '#fff' : z.color) + ';' +
-        (isActive ? 'background:' + z.color + '90;' : '') + '">' +
-        '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + z.color + ';margin-right:3px"></span>' +
-        z.label + '</button>'
+      var hasPreset = !!FM.ZONE_PRESETS[z.id]
+      html += '<div style="display:inline-flex;gap:1px">' +
+        '<button class="fm-zone-btn' + (isActive ? ' active' : '') + '" ' +
+          'onclick="FaceMapping._selectZone(\'' + z.id + '\')" ' +
+          'style="font-size:8px;padding:3px 6px;border-color:' + z.color + '40;color:' + (isActive ? '#fff' : z.color) + ';' +
+          (isActive ? 'background:' + z.color + '90;' : '') + 'border-radius:4px 0 0 4px">' +
+          '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + z.color + ';margin-right:3px"></span>' +
+          z.label + '</button>' +
+        (hasPreset ? '<button class="fm-zone-btn" onclick="FaceMapping._placePreset(\'' + z.id + '\')" ' +
+          'style="font-size:7px;padding:3px 4px;border-color:' + z.color + '40;color:' + z.color + ';border-radius:0 4px 4px 0;border-left:0" title="Colocar forma pronta">' +
+          FM._icon('copy', 9) + '</button>' : '') +
+      '</div>'
     })
     html += '</div></div>'
 
@@ -697,12 +703,18 @@
       '<div style="display:flex;flex-wrap:wrap;gap:3px">'
     toxZones.forEach(function (z) {
       var isActive = FM._selectedZone === z.id
-      html += '<button class="fm-zone-btn' + (isActive ? ' active' : '') + '" ' +
-        'onclick="FaceMapping._selectZone(\'' + z.id + '\')" ' +
-        'style="font-size:8px;padding:3px 6px;border-color:' + z.color + '40;color:' + (isActive ? '#fff' : z.color) + ';' +
-        (isActive ? 'background:' + z.color + '90;' : '') + '">' +
-        '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + z.color + ';margin-right:3px"></span>' +
-        z.label + '</button>'
+      var hasPreset = !!FM.ZONE_PRESETS[z.id]
+      html += '<div style="display:inline-flex;gap:1px">' +
+        '<button class="fm-zone-btn' + (isActive ? ' active' : '') + '" ' +
+          'onclick="FaceMapping._selectZone(\'' + z.id + '\')" ' +
+          'style="font-size:8px;padding:3px 6px;border-color:' + z.color + '40;color:' + (isActive ? '#fff' : z.color) + ';' +
+          (isActive ? 'background:' + z.color + '90;' : '') + 'border-radius:4px 0 0 4px">' +
+          '<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:' + z.color + ';margin-right:3px"></span>' +
+          z.label + '</button>' +
+        (hasPreset ? '<button class="fm-zone-btn" onclick="FaceMapping._placePreset(\'' + z.id + '\')" ' +
+          'style="font-size:7px;padding:3px 4px;border-color:' + z.color + '40;color:' + z.color + ';border-radius:0 4px 4px 0;border-left:0" title="Colocar forma pronta">' +
+          FM._icon('copy', 9) + '</button>' : '') +
+      '</div>'
     })
     html += '</div></div>'
 
