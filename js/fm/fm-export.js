@@ -612,27 +612,64 @@
     '</div>'
     html += '</div>'
 
-    // ── Timeline Visual Lifting 5D (VERTICAL) ──
+    // ── Timeline Accordion Lifting 5D (VERTICAL INTERATIVO) ──
     html += '<div style="margin-top:16px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:10px">'
     html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,169,126,0.4);font-weight:600;margin-bottom:16px;text-align:center">JORNADA DO PROTOCOLO LIFTING 5D</div>'
 
     var timelineSteps = [
-      { label: 'Dia 1 \u2014 Fotona 4D', desc: 'Ativacao de colageno profundo nas 4 camadas da pele', color: '#C8A97E' },
-      { label: 'Semana 2 \u2014 Injetaveis', desc: 'Acido Hialuronico, Toxina Botulinica, Bioestimulador', color: '#F5F0E8' },
-      { label: 'Semana 4 \u2014 Retoques', desc: 'Ajustes finos e refinamento do resultado', color: '#F5F0E8' },
-      { label: 'Mes 1 \u2014 2a sessao Fotona 4D', desc: 'Potencializacao do colageno e firmeza', color: '#C8A97E' },
-      { label: 'Mes 3 \u2014 3a sessao Fotona 4D', desc: 'Consolidacao do rejuvenescimento profundo', color: '#C8A97E' },
-      { label: 'Transformacao \u2014 Resultado visivel', desc: 'Harmonia facial completa com naturalidade', color: '#10B981' },
+      { label: 'Dia 1 \u2014 Fotona 4D', timing: 'Primeira sessao', desc: 'Ativacao de colageno profundo nas 4 camadas da pele. O laser Fotona Dynamis NX trabalha de dentro para fora, estimulando regeneracao real desde a mucosa oral ate a superficie. Efeito lifting imediato com melhora progressiva ao longo de 30 dias.', color: '#10B981', products: ['Fotona 4D', 'Intraoral', 'Periorbital'] },
+      { label: 'Semana 2 \u2014 Injetaveis', timing: '14 dias apos Fotona', desc: 'Aplicacao estrategica de Acido Hialuronico para reposicao de volume, Toxina Botulinica para suavizar linhas de expressao, e Bioestimulador para ativar producao de colageno. Cada zona tratada conforme o mapa de estruturacao personalizado.', color: '#3B82F6', products: ['Acido Hialuronico', 'Toxina Botulinica', 'Bioestimulador'] },
+      { label: 'Semana 4 \u2014 Retoques', timing: '30 dias apos inicio', desc: 'Avaliacao do resultado inicial e ajustes finos. Pequenas correcoes de volume, simetria e proporcao. Esta sessao garante a precisao do resultado final.', color: '#C8A97E', products: ['Retoques AH', 'Ajustes'] },
+      { label: 'Mes 2 \u2014 2a Sessao Fotona 4D', timing: '60 dias apos inicio', desc: 'Segunda sessao de laser para potencializar a producao de colageno. A pele ja responde melhor ao estimulo, resultando em firmeza e luminosidade progressivas.', color: '#10B981', products: ['Fotona 4D'] },
+      { label: 'Mes 3 \u2014 3a Sessao Fotona 4D', timing: '90 dias apos inicio', desc: 'Sessao final do ciclo Fotona. O colageno novo ja esta em plena producao. Esta sessao consolida os resultados e prepara a pele para manutencao a longo prazo.', color: '#10B981', products: ['Fotona 4D'] },
+      { label: 'Transformacao', timing: 'Resultado visivel', desc: 'O protocolo completo atingiu seu objetivo. Os vetores faciais foram reconstruidos, o colageno restaurado, e a harmonia facial recuperada. O resultado nao e um rosto diferente \u2014 e o seu rosto de volta.', color: '#C8A97E', products: [] },
     ]
 
-    html += '<div style="position:relative;padding-left:30px">'
-    html += '<div style="position:absolute;left:12px;top:0;bottom:0;width:2px;background:linear-gradient(#C8A97E,#10B981)"></div>'
-    timelineSteps.forEach(function (step) {
-      html += '<div style="position:relative;padding:12px 0">' +
-        '<div style="position:absolute;left:-22px;width:14px;height:14px;border-radius:50%;border:2px solid ' + step.color + ';background:#0A0A0A"></div>' +
-        '<div style="font-size:13px;font-weight:700;color:' + step.color + '">' + step.label + '</div>' +
-        '<div style="font-size:12px;color:rgba(245,240,232,0.5);margin-top:2px">' + step.desc + '</div>' +
-      '</div>'
+    html += '<div style="position:relative">'
+    timelineSteps.forEach(function (step, idx) {
+      var isLast = idx === timelineSteps.length - 1
+      var dotSize = isLast ? 20 : 16
+
+      html += '<div class="fm-timeline-step" style="position:relative;padding-left:36px;margin-bottom:0">'
+
+      // Vertical connecting line
+      if (!isLast) {
+        html += '<div style="position:absolute;left:14px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,#C8A97E,#C8A97E)"></div>'
+      } else {
+        html += '<div style="position:absolute;left:14px;top:0;bottom:50%;width:2px;background:linear-gradient(to bottom,#C8A97E,#C8A97E)"></div>'
+      }
+
+      // Dot
+      html += '<div style="position:absolute;left:' + (isLast ? 5 : 7) + 'px;top:16px;width:' + dotSize + 'px;height:' + dotSize + 'px;border-radius:50%;border:2px solid ' + step.color + ';background:#0A0A0A;z-index:1;cursor:pointer" onclick="this.parentElement.querySelector(\'.fm-tl-content\').style.display=this.parentElement.querySelector(\'.fm-tl-content\').style.display===\'none\'?\'block\':\'none\';this.querySelector(\'span\').textContent=this.parentElement.querySelector(\'.fm-tl-content\').style.display===\'none\'?\'+\':\'\u2212\'">'
+      html += '<span style="color:' + step.color + ';font-size:10px;display:flex;align-items:center;justify-content:center;height:100%">\u2212</span>'
+      html += '</div>'
+
+      // Header (always visible)
+      html += '<div style="padding:12px 0 4px 0;cursor:pointer" onclick="var c=this.nextElementSibling;c.style.display=c.style.display===\'none\'?\'block\':\'none\'">'
+      html += '<div style="font-size:14px;font-weight:700;color:' + step.color + '">' + step.label + '</div>'
+      html += '<div style="font-size:11px;color:rgba(245,240,232,0.4)">' + step.timing + '</div>'
+      html += '</div>'
+
+      // Content (collapsible, open by default)
+      html += '<div class="fm-tl-content" style="display:block;padding-bottom:16px">'
+
+      // Photo placeholder
+      html += '<div contenteditable="false" style="width:100%;height:120px;background:rgba(255,255,255,0.03);border:1px dashed rgba(200,169,126,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;color:rgba(200,169,126,0.3);font-size:11px;cursor:pointer" onclick="/* future: upload photo */">Adicionar foto do procedimento</div>'
+
+      // Procedure description
+      html += '<div contenteditable="true" style="font-size:13px;color:rgba(245,240,232,0.6);line-height:1.6;outline:none;border:none;background:transparent">' + step.desc + '</div>'
+
+      // Product tags
+      if (step.products.length > 0) {
+        html += '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">'
+        step.products.forEach(function (p) {
+          html += '<span style="padding:3px 8px;background:rgba(200,169,126,0.08);border:1px solid rgba(200,169,126,0.15);border-radius:4px;font-size:10px;color:rgba(245,240,232,0.5)">' + p + '</span>'
+        })
+        html += '</div>'
+      }
+
+      html += '</div>' // end fm-tl-content
+      html += '</div>' // end fm-timeline-step
     })
     html += '</div>'
 
