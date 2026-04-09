@@ -93,12 +93,14 @@
       html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;transition:border-color .15s" onmouseenter="this.style.borderColor=\'#0891B2\'" onmouseleave="this.style.borderColor=\'#E5E7EB\'">'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(t.name) + '</div>'
-        + '<div style="display:flex;gap:6px;margin-top:4px">'
+        + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'
         + '<span style="font-size:10px;padding:2px 8px;background:' + typeColor + '15;color:' + typeColor + ';border-radius:4px;font-weight:600">' + typeLabel + '</span>'
         + '<span style="font-size:10px;color:#9CA3AF">v' + t.version + '</span>'
+        + (t.trigger_status ? '<span style="font-size:9px;padding:2px 6px;background:#F0FDF4;color:#10B981;border-radius:4px">Auto: ' + _esc(t.trigger_status) + '</span>' : '')
         + '</div></div>'
-        + '<div style="display:flex;gap:6px">'
+        + '<div style="display:flex;gap:4px">'
         + '<button onclick="editLegalDocTemplate(\'' + t.id + '\')" title="Editar" style="padding:6px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#374151">Editar</button>'
+        + '<button onclick="duplicateLegalDocTemplate(\'' + t.id + '\')" title="Duplicar" style="padding:6px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#374151">Duplicar</button>'
         + '<button onclick="testLegalDocTemplate(\'' + t.id + '\')" title="Testar" style="padding:6px 10px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#0891B2;font-weight:600">Testar</button>'
         + '</div></div>'
     })
@@ -112,6 +114,8 @@
     var el = function (id) { return document.getElementById(id) }
     if (el('lde_name')) el('lde_name').value = ''
     if (el('lde_type')) el('lde_type').value = 'uso_imagem'
+    if (el('lde_trigger_status')) el('lde_trigger_status').value = ''
+    if (el('lde_trigger_procs')) el('lde_trigger_procs').value = ''
     _setEditorContent('')
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Novo Modelo'
     if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
@@ -126,6 +130,8 @@
     var el = function (id) { return document.getElementById(id) }
     if (el('lde_name')) el('lde_name').value = t.name
     if (el('lde_type')) el('lde_type').value = t.doc_type
+    if (el('lde_trigger_status')) el('lde_trigger_status').value = t.trigger_status || ''
+    if (el('lde_trigger_procs')) el('lde_trigger_procs').value = (t.trigger_procedures || []).join(', ')
     _setEditorContent(t.content)
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Editar: ' + t.name
     if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
@@ -145,13 +151,42 @@
     if (!name.trim()) { if (window._showToast) _showToast('Documentos', 'Informe o nome do modelo', 'warning'); return }
     if (!content.trim()) { if (window._showToast) _showToast('Documentos', 'Informe o texto do documento', 'warning'); return }
 
-    var data = { name: name.trim(), doc_type: docType, content: content.trim() }
+    var triggerStatus = (document.getElementById('lde_trigger_status') || {}).value || ''
+    var triggerProcsRaw = (document.getElementById('lde_trigger_procs') || {}).value || ''
+    var triggerProcs = triggerProcsRaw.split(',').map(function (s) { return s.trim() }).filter(Boolean)
+
+    var data = {
+      name: name.trim(), doc_type: docType, content: content.trim(),
+      trigger_status: triggerStatus || null,
+      trigger_procedures: triggerProcs.length ? triggerProcs : null,
+    }
     if (_editingId) data.id = _editingId
 
     var res = await LegalDocumentsService.saveTemplate(data)
     if (res.ok) {
       if (window._showToast) _showToast('Documentos', 'Modelo "' + name + '" salvo', 'success')
       closeLegalDocEditor()
+      await loadLegalDocTemplates()
+    } else {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + (res.error || 'desconhecido'), 'error')
+    }
+  }
+
+  // ── Duplicar ────────────────────────────────────────────────
+  async function duplicateLegalDocTemplate(id) {
+    var templates = LegalDocumentsService.getTemplates()
+    var t = templates.find(function (x) { return x.id === id })
+    if (!t) return
+
+    var res = await LegalDocumentsService.saveTemplate({
+      name: t.name + ' (Copia)',
+      doc_type: t.doc_type,
+      content: t.content,
+      trigger_status: t.trigger_status || null,
+      trigger_procedures: t.trigger_procedures || null,
+    })
+    if (res.ok) {
+      if (window._showToast) _showToast('Documentos', '"' + t.name + '" duplicado', 'success')
       await loadLegalDocTemplates()
     } else {
       if (window._showToast) _showToast('Documentos', 'Erro: ' + (res.error || 'desconhecido'), 'error')
@@ -238,7 +273,8 @@
   window.editLegalDocTemplate   = editLegalDocTemplate
   window.closeLegalDocEditor    = closeLegalDocEditor
   window.saveLegalDocTemplate   = saveLegalDocTemplate
-  window.testLegalDocTemplate   = testLegalDocTemplate
+  window.testLegalDocTemplate    = testLegalDocTemplate
+  window.duplicateLegalDocTemplate = duplicateLegalDocTemplate
   window.ldeCmd                 = ldeCmd
   window.ldeInsertVar           = ldeInsertVar
 })()

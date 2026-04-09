@@ -357,6 +357,11 @@ function apptTransition(id, newStatus, by) {
     AlexaNotificationService.notifyArrival(appt).catch(function(e) { console.warn('[Agenda] Alexa notify falhou:', e) })
   }
 
+  // Documentos legais: auto-gerar por status
+  if (window.LegalDocumentsService) {
+    LegalDocumentsService.autoSendForStatus(newStatus, appt).catch(function(e) { console.warn('[Agenda] Legal docs falhou:', e) })
+  }
+
   // Ações contextuais (checklists + recovery modals only)
   if (newStatus === 'na_clinica') setTimeout(() => _showChecklist(appt, 'na_clinica'), 200)
   if (newStatus === 'em_consulta') setTimeout(() => _showChecklist(appt, 'em_consulta'), 200)

@@ -104,6 +104,8 @@
       p_content: data.content,
       p_variables: data.variables || null,
       p_is_active: data.is_active !== false,
+      p_trigger_status: data.trigger_status || null,
+      p_trigger_procedures: data.trigger_procedures || null,
     })
     if (res.error) return { ok: false, error: res.error.message }
     if (res.data && !res.data.ok) return { ok: false, error: res.data.error || 'Erro desconhecido' }
@@ -190,6 +192,38 @@
     return createRequest(tmpl.id, apptOrOpts)
   }
 
+  // ══════════════════════════════════════════════════════════
+  //  AUTO-SEND: gerar docs automaticamente por status/procedimento
+  // ══════════════════════════════════════════════════════════
+
+  async function autoSendForStatus(status, apptOrOpts) {
+    if (!_templates) await loadTemplates()
+    var matching = (_templates || []).filter(function (t) {
+      if (!t.is_active || !t.trigger_status) return false
+      if (t.trigger_status !== status) return false
+      // Se tem trigger_procedures, verificar match
+      if (t.trigger_procedures && t.trigger_procedures.length > 0) {
+        var proc = (apptOrOpts.procedimento || apptOrOpts.procedure_name || '').toLowerCase()
+        var match = t.trigger_procedures.some(function (p) { return proc.indexOf(p.toLowerCase()) >= 0 })
+        if (!match) return false
+      }
+      return true
+    })
+
+    if (!matching.length) return []
+
+    var results = []
+    for (var i = 0; i < matching.length; i++) {
+      var res = await createRequest(matching[i].id, apptOrOpts)
+      results.push({ template: matching[i].name, ok: res.ok, link: res.link, error: res.error })
+
+      if (res.ok && window._showToast) {
+        _showToast('Documento', matching[i].name + ' gerado para ' + (apptOrOpts.pacienteNome || ''), 'success')
+      }
+    }
+    return results
+  }
+
   // ── Public API ─────────────────────────────────────────────
   window.LegalDocumentsService = Object.freeze({
     loadTemplates:    loadTemplates,
@@ -199,6 +233,7 @@
     listRequests:     listRequests,
     revokeRequest:    revokeRequest,
     generateLink:     generateLink,
+    autoSendForStatus: autoSendForStatus,
     renderTemplate:   renderTemplate,
     buildVars:        buildVars,
   })

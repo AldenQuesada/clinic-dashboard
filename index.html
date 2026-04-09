@@ -1823,6 +1823,28 @@
                     </select>
                   </div>
                 </div>
+
+                <!-- Auto-envio -->
+                <div style="padding:12px;background:#F0FDF4;border:1px solid #10B98130;border-radius:10px;margin-bottom:12px">
+                  <div style="font-size:11px;font-weight:700;color:#10B981;margin-bottom:8px">Envio automatico</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                    <div>
+                      <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Quando status mudar para</label>
+                      <select id="lde_trigger_status" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
+                        <option value="">Desativado (manual)</option>
+                        <option value="na_clinica">Na Clinica (paciente chegou)</option>
+                        <option value="confirmado">Confirmado</option>
+                        <option value="agendado">Agendado</option>
+                        <option value="em_consulta">Em Consulta</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Filtrar por procedimentos <span style="color:#9CA3AF;font-weight:400">(opcional)</span></label>
+                      <input id="lde_trigger_procs" type="text" placeholder="Ex: preenchimento, toxina (separar por virgula)" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box" />
+                      <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Vazio = todos os procedimentos</div>
+                    </div>
+                  </div>
+                </div>
                 <div style="margin-bottom:12px">
                   <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Texto do documento</label>
 
@@ -5033,8 +5055,8 @@
   <script src="js/agenda-module.js?v=20260407p" defer></script>
   <script src="js/agenda-automations.engine.js?v=20260409e" defer></script>
   <script src="js/services/alexa-notification.service.js?v=20260409e" defer></script>
-  <script src="js/services/legal-documents.service.js?v=20260409b" defer></script>
-  <script src="js/legal-doc-templates.js?v=20260409c" defer></script>
+  <script src="js/services/legal-documents.service.js?v=20260409c" defer></script>
+  <script src="js/legal-doc-templates.js?v=20260409d" defer></script>
   <script src="js/agenda-smart.js?v=20260407q" defer></script>
   <script src="js/agenda-day-panel.js?v=20260406a" defer></script>
   <script src="js/agenda-leads.js?v=20260406a" defer></script>
