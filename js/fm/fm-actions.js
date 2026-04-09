@@ -218,7 +218,10 @@
   }
 
   FM._selectZone = function (zoneId) {
-    FM._selectedZone = (FM._selectedZone === zoneId) ? null : zoneId
+    // Cancel any in-progress polygon when switching/deselecting zone
+    if (FM._polyDrawing) FM._cancelPoly()
+
+    FM._selectedZone = (!zoneId || FM._selectedZone === zoneId) ? null : zoneId
 
     if (FM._selectedZone) {
       var z = FM.ZONES.find(function (x) { return x.id === FM._selectedZone })

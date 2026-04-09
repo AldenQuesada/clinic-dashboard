@@ -1381,8 +1381,17 @@
       '<div class="fm-tool-section-title">Marcacoes (' + FM._annotations.length + ')</div>' +
       '<div class="fm-annotations-list">'
 
+    // Cancel/deselect button when zone is active
+    if (FM._selectedZone) {
+      var sz = FM.ZONES.find(function (x) { return x.id === FM._selectedZone })
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:6px;background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);border-radius:6px">' +
+        '<span style="font-size:10px;color:#C8A97E;font-weight:600">' + FM._icon('crosshair', 12) + ' Marcando: ' + (sz ? sz.label : FM._selectedZone) + '</span>' +
+        '<button class="fm-btn" onclick="FaceMapping._selectZone(null)" style="font-size:8px;padding:2px 8px;border-color:#EF4444;color:#EF4444">' + FM._icon('x', 10) + ' Sair</button>' +
+      '</div>'
+    }
+
     var angleAnnotations = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
-    if (angleAnnotations.length === 0) {
+    if (angleAnnotations.length === 0 && !FM._selectedZone) {
       html += '<div style="font-size:12px;color:rgba(200,169,126,0.3);text-align:center;padding:12px">Selecione uma zona e clique nos pontos para marcar a area</div>'
     } else {
       angleAnnotations.forEach(function (ann) {
