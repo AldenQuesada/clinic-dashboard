@@ -91,24 +91,7 @@
       FM._drawWireframe()
     }
 
-    // Metric lines overlay — always draw when lines exist in simetria tab
-    var hasLines = FM._metricLines && (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0)
-    var hasPoints = FM._metricPoints && FM._metricPoints.length > 0
-    var hasAngles = FM._metricAngles && FM._metricAngles.points
-    var inSimetria = FM._activeTab === 'simetria'
-    if (inSimetria && (hasLines || hasPoints || hasAngles)) {
-      if (FM._drawMetrics) FM._drawMetrics()
-      if (FM._drawAngles) FM._drawAngles()
-    }
-
-    // Heatmap overlay (if active)
-    if (FM._activeHeatmap && FM._heatmapImages && FM._heatmapImages[FM._activeHeatmap]) {
-      FM._ctx.globalAlpha = 0.55
-      FM._ctx.drawImage(FM._heatmapImages[FM._activeHeatmap], 0, 0, FM._imgW, FM._imgH)
-      FM._ctx.globalAlpha = 1.0
-    }
-
-    // Draw mode-specific overlays (no label area — everything on the photo)
+    // Draw mode-specific overlays — strictly per editorMode
     if (FM._editorMode === 'vectors') {
       // NEW: Force vector system
       if (FM._drawAllForceVectors) {
@@ -117,11 +100,24 @@
         if (FM._drawCollagenBar) FM._drawCollagenBar(FM._ctx, 10, FM._imgH - 18, FM._imgW - 20, 8, FM._vecAge || 25)
       }
     } else if (FM._editorMode === 'analysis') {
-      // Draw ricketts in its specific sub-mode (tercos removed)
+      // Metrics (H/V lines, angles) — ONLY in analysis mode
+      var hasLines = FM._metricLines && (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0)
+      var hasPoints = FM._metricPoints && FM._metricPoints.length > 0
+      var hasAngles = FM._metricAngles && FM._metricAngles.points
+      if (hasLines || hasPoints || hasAngles) {
+        if (FM._drawMetrics) FM._drawMetrics()
+        if (FM._drawAngles) FM._drawAngles()
+      }
+      // Ricketts
       if (FM._analysisSubMode === 'ricketts' && FM._activeAngle === 'lateral' && FM._rickettsPoints) {
         FM._drawRicketts()
       }
-      // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
+      // Heatmap
+      if (FM._activeHeatmap && FM._heatmapImages && FM._heatmapImages[FM._activeHeatmap]) {
+        FM._ctx.globalAlpha = 0.55
+        FM._ctx.drawImage(FM._heatmapImages[FM._activeHeatmap], 0, 0, FM._imgW, FM._imgH)
+        FM._ctx.globalAlpha = 1.0
+      }
     } else if (FM._editorMode === 'zones') {
       // Guide lines (thin, H=green, V=blue — same as simetria but thinner)
       if (FM._guideLines) {
