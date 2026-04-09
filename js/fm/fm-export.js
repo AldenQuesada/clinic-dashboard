@@ -1107,10 +1107,7 @@
   // ── Modo Apresentacao (fullscreen, sem toolbar) ──
   // ── Generate ANTES/DEPOIS crossfade video ──
   FM._generateCompareVideo = function (callback) {
-    // Check MediaRecorder support
-    if (typeof MediaRecorder === 'undefined') { callback(null); return }
-
-    // Find best ANTES/DEPOIS pair (prefer frontal)
+    // Generate side-by-side ANTES|DEPOIS image (reliable, auto-displays in WhatsApp)
     var angles = ['front', '45', 'lateral']
     var beforeSrc = null
     var afterSrc = null
@@ -1123,87 +1120,73 @@
     }
     if (!beforeSrc || !afterSrc) { callback(null); return }
 
-    // Determine mimeType
-    var mimeType = 'video/webm;codecs=vp8'
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
-      mimeType = 'video/webm'
-      if (!MediaRecorder.isTypeSupported(mimeType)) { callback(null); return }
-    }
-
+    // Generate side-by-side comparison image
     var beforeImg = new Image()
     var afterImg = new Image()
-    beforeImg.crossOrigin = 'anonymous'
-    afterImg.crossOrigin = 'anonymous'
     var loaded = 0
 
     function onLoad() {
       loaded++
       if (loaded < 2) return
 
-      var W = 480
-      var H = Math.round(W * beforeImg.naturalHeight / beforeImg.naturalWidth) || 640
+      // Side-by-side: ANTES | divider | DEPOIS
+      var imgW = 480
+      var imgH = Math.round(imgW * beforeImg.naturalHeight / beforeImg.naturalWidth) || 640
+      var totalW = imgW * 2 + 4  // 4px divider
+      var headerH = 40
+      var footerH = 36
+      var totalH = headerH + imgH + footerH
 
       var canvas = document.createElement('canvas')
-      canvas.width = W
-      canvas.height = H
+      canvas.width = totalW
+      canvas.height = totalH
       var ctx = canvas.getContext('2d')
 
-      var stream = canvas.captureStream(10)
-      var recorder = new MediaRecorder(stream, { mimeType: mimeType })
-      var chunks = []
+      // Background
+      ctx.fillStyle = '#0A0A0A'
+      ctx.fillRect(0, 0, totalW, totalH)
 
-      recorder.ondataavailable = function (e) { if (e.data && e.data.size > 0) chunks.push(e.data) }
-      recorder.onstop = function () {
-        var blob = new Blob(chunks, { type: 'video/webm' })
+      // Header
+      ctx.font = '300 14px serif'
+      ctx.fillStyle = '#C8A97E'
+      ctx.textAlign = 'center'
+      ctx.fillText('Clinica Mirian de Paula', totalW / 2, 26)
+
+      // ANTES photo
+      ctx.drawImage(beforeImg, 0, headerH, imgW, imgH)
+
+      // Divider line (champagne)
+      ctx.fillStyle = '#C8A97E'
+      ctx.fillRect(imgW, headerH, 4, imgH)
+
+      // DEPOIS photo
+      ctx.drawImage(afterImg, imgW + 4, headerH, imgW, imgH)
+
+      // ANTES label
+      ctx.font = '700 16px sans-serif'
+      ctx.textAlign = 'left'
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'
+      ctx.fillRect(8, headerH + imgH - 34, 80, 26)
+      ctx.fillStyle = '#EF4444'
+      ctx.fillText('ANTES', 16, headerH + imgH - 14)
+
+      // DEPOIS label
+      ctx.textAlign = 'right'
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'
+      ctx.fillRect(totalW - 88, headerH + imgH - 34, 80, 26)
+      ctx.fillStyle = '#10B981'
+      ctx.fillText('DEPOIS', totalW - 16, headerH + imgH - 14)
+
+      // Footer
+      ctx.font = '300 11px sans-serif'
+      ctx.fillStyle = 'rgba(200,169,126,0.5)'
+      ctx.textAlign = 'center'
+      ctx.fillText('Harmonia que revela. Precisão que dura.', totalW / 2, totalH - 10)
+
+      // Convert to blob
+      canvas.toBlob(function (blob) {
         callback(blob)
-      }
-      recorder.onerror = function () { callback(null) }
-
-      // Draw first frame before starting recorder
-      ctx.drawImage(beforeImg, 0, 0, W, H)
-
-      // Start recorder with timeslice for reliable chunks
-      recorder.start(100)
-
-      // Use setInterval (not rAF) for reliable frame timing with MediaRecorder
-      var startTime = Date.now()
-      var duration = 3000
-      var frameInterval = setInterval(function () {
-        var elapsed = Date.now() - startTime
-        if (elapsed >= duration) {
-          clearInterval(frameInterval)
-          setTimeout(function () { recorder.stop() }, 200)
-          return
-        }
-
-        var t = elapsed / duration
-        var fadeOpacity = 0.5 + 0.5 * Math.sin(t * Math.PI * 2)
-
-        ctx.clearRect(0, 0, W, H)
-        ctx.globalAlpha = 1
-        ctx.drawImage(beforeImg, 0, 0, W, H)
-        ctx.globalAlpha = fadeOpacity
-        ctx.drawImage(afterImg, 0, 0, W, H)
-        ctx.globalAlpha = 1
-
-        // Labels
-        ctx.font = '600 12px Montserrat, sans-serif'
-        ctx.textAlign = 'left'
-        ctx.fillStyle = 'rgba(239,68,68,0.8)'
-        ctx.fillText('ANTES', 12, H - 12)
-        ctx.textAlign = 'right'
-        ctx.fillStyle = 'rgba(16,185,129,0.8)'
-        ctx.fillText('DEPOIS', W - 12, H - 12)
-        ctx.textAlign = 'left'
-
-        // Watermark
-        ctx.font = '300 10px Montserrat, sans-serif'
-        ctx.fillStyle = 'rgba(200,169,126,0.3)'
-        ctx.textAlign = 'center'
-        ctx.fillText('Clinica Mirian de Paula', W / 2, 16)
-        ctx.textAlign = 'left'
-
-      }, 100) // 10fps interval
+      }, 'image/jpeg', 0.9)
     }
 
     beforeImg.onload = onLoad
@@ -1294,11 +1277,11 @@
           headers: { 'apikey': EVOLUTION_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             number: phone,
-            mediatype: 'video',
-            mimetype: 'video/mp4',
-            caption: 'Resultado do seu Protocolo de Harmonia Facial \u2728\n\nClinica Mirian de Paula',
+            mediatype: 'image',
+            mimetype: 'image/jpeg',
+            caption: 'Resultado do seu Protocolo de Harmonia Facial\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
             media: videoBase64,
-            fileName: 'resultado-' + safeName + '.mp4',
+            fileName: 'resultado-' + safeName + '.jpg',
           }),
         })
         .then(function (r) { return r.json() })
