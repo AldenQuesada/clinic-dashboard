@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClinicAI Face Mapping — Roadmap Premium</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  @page{size:A4;margin:20mm}
+  body{font-family:'Montserrat',sans-serif;background:#0A0A0A;color:#F5F0E8;min-height:100vh}
+  .page{max-width:794px;margin:0 auto;padding:40px 32px}
+  .header{text-align:center;padding-bottom:24px;border-bottom:1px solid rgba(200,169,126,0.2);margin-bottom:32px}
+  .header h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-style:italic;font-size:32px;color:#C8A97E}
+  .header .tagline{font-family:'Cormorant Garamond',serif;font-size:13px;font-style:italic;color:rgba(200,169,126,0.55);margin-top:4px;letter-spacing:0.06em}
+  .header .subtitle{font-size:11px;color:rgba(245,240,232,0.4);letter-spacing:0.15em;text-transform:uppercase;margin-top:16px}
+  .header .doc-title{font-size:20px;font-weight:700;color:#F5F0E8;margin-top:8px;letter-spacing:-0.02em}
+  .sep{height:1px;background:linear-gradient(90deg,transparent,#C8A97E,transparent);margin:28px 0}
+  .section{margin-bottom:28px}
+  .section-title{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:rgba(200,169,126,0.5);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .section-title::after{content:'';flex:1;height:1px;background:rgba(200,169,126,0.1)}
+  h3{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;font-style:italic;color:#C8A97E;margin-bottom:12px}
+  h4{font-size:12px;font-weight:600;color:#F5F0E8;margin-bottom:8px;letter-spacing:0.02em}
+  p,li{font-size:11px;color:rgba(245,240,232,0.65);line-height:1.7}
+  ul{padding-left:16px;margin-bottom:12px}
+  li{margin-bottom:4px}
+  .card{background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.10);border-radius:10px;padding:18px;margin-bottom:12px}
+  .card-title{font-size:11px;font-weight:600;color:#C8A97E;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.08em}
+  .card p{font-size:10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:8px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase}
+  .badge-green{background:rgba(16,185,129,0.15);color:#10B981}
+  .badge-yellow{background:rgba(245,158,11,0.15);color:#F59E0B}
+  .badge-red{background:rgba(239,68,68,0.15);color:#EF4444}
+  .badge-champagne{background:rgba(200,169,126,0.15);color:#C8A97E}
+  .timeline{display:flex;align-items:center;justify-content:space-between;position:relative;padding:20px 0;margin:16px 0}
+  .timeline::before{content:'';position:absolute;top:50%;left:24px;right:24px;height:2px;background:linear-gradient(90deg,#10B981,#C8A97E,#F59E0B,#C8A97E,#10B981);transform:translateY(-50%)}
+  .timeline-dot{position:relative;z-index:1;text-align:center}
+  .timeline-dot .dot{width:14px;height:14px;border-radius:50%;border:2px solid #C8A97E;background:#0A0A0A;margin:0 auto 6px}
+  .timeline-dot .label{font-size:8px;color:rgba(245,240,232,0.5);letter-spacing:0.05em}
+  .timeline-dot .sublabel{font-size:7px;color:rgba(200,169,126,0.4);margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:10px;margin:8px 0}
+  th{text-align:left;padding:6px 8px;color:rgba(245,240,232,0.4);font-weight:500;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid rgba(200,169,126,0.10)}
+  td{padding:5px 8px;color:rgba(245,240,232,0.65);border-bottom:1px solid rgba(200,169,126,0.05)}
+  .impact{font-weight:700}
+  .impact-high{color:#10B981}
+  .impact-medium{color:#F59E0B}
+  .quote{font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:rgba(200,169,126,0.65);text-align:center;line-height:1.6;max-width:500px;margin:24px auto}
+  .footer{text-align:center;padding-top:20px;border-top:1px solid rgba(200,169,126,0.12);margin-top:32px}
+  .footer .brand{font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;color:#C8A97E}
+  .footer .meta{font-size:8px;color:rgba(245,240,232,0.2);margin-top:8px;letter-spacing:0.06em}
+  @media print{body{background:#0A0A0A !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="header">
+  <h1>Clinica Mirian de Paula</h1>
+  <div class="tagline">Harmonia que revela. Precisao que dura.</div>
+  <div class="subtitle">Documento Estrategico de Produto</div>
+  <div class="doc-title">ClinicAI Face Mapping — Roadmap de Experiencia Premium</div>
+</div>
+
+<div class="section">
+  <div class="section-title">1. Score de Harmonia Global</div>
+  <div class="card">
+    <h4>Indice de Harmonia Facial: 0-100</h4>
+    <p>Numero grande exibido no topo do report. Calculado a partir de 5 dimensoes com pesos calibrados:</p>
+    <div class="grid3" style="margin-top:12px">
+      <div class="card"><div class="card-title">Simetria</div><p>Peso: 25%<br>Fonte: Scanner 478pts</p></div>
+      <div class="card"><div class="card-title">Proporcoes</div><p>Peso: 20%<br>Fonte: Tercos faciais</p></div>
+      <div class="card"><div class="card-title">Score Pele</div><p>Peso: 20%<br>Fonte: Skin Analysis v2</p></div>
+      <div class="card"><div class="card-title">Vetores Ativos</div><p>Peso: 20%<br>Fonte: Mapa de Forcas</p></div>
+      <div class="card"><div class="card-title">Golden Ratio</div><p>Peso: 15%<br>Fonte: Medidas faciais</p></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <span class="badge badge-green">80+ Harmonia Preservada</span>
+      <span class="badge badge-yellow">60-80 Harmonia em Transicao</span>
+      <span class="badge badge-red">&lt;60 Harmonia Comprometida</span>
+    </div>
+    <p style="margin-top:10px;font-style:italic;color:rgba(200,169,126,0.4)">A paciente quer saber: "quanto estou?" — um numero responde.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">2. Frases de Transformacao Pre-Escritas</div>
+  <p style="margin-bottom:12px">Cada zona do plano vem com uma frase clinica de impacto. O medico pode editar, mas ja vem pronto.</p>
+  <table>
+    <thead><tr><th>Zona</th><th>Frase de Transformacao</th></tr></thead>
+    <tbody>
+      <tr><td style="color:#9b59b6;font-weight:600">Temporal</td><td style="font-style:italic">Reativa o vetor de sustentacao — o rosto inteiro sobe</td></tr>
+      <tr><td style="color:#f1c40f;font-weight:600">Zigoma</td><td style="font-style:italic">Devolve a projecao que sustenta todo o terco medio</td></tr>
+      <tr><td style="color:#3498db;font-weight:600">Olheira</td><td style="font-style:italic">Elimina a sombra que comunica cansaco</td></tr>
+      <tr><td style="color:#e67e22;font-weight:600">Sulco Nasolabial</td><td style="font-style:italic">Suaviza a marca que mais envelhece o rosto</td></tr>
+      <tr><td style="color:#e74c3c;font-weight:600">Marionete</td><td style="font-style:italic">Remove a expressao de tristeza involuntaria</td></tr>
+      <tr><td style="color:#8b5e3c;font-weight:600">Mandibula</td><td style="font-style:italic">Reconstroi o contorno perdido — adeus efeito buldogue</td></tr>
+      <tr><td style="color:#7f8c8d;font-weight:600">Queixo</td><td style="font-style:italic">Restaura a projecao e o equilibrio do perfil</td></tr>
+      <tr><td style="color:#C8A97E;font-weight:600">Labios</td><td style="font-style:italic">Devolve volume natural sem aspecto preenchido</td></tr>
+    </tbody>
+  </table>
+  <p style="color:rgba(200,169,126,0.4);font-size:9px;margin-top:4px">Tom: nunca "voce precisa de X". Sempre "o protocolo restaura Y".</p>
+</div>
+
+<div class="section">
+  <div class="section-title">3. Comparativo Visual ANTES/DEPOIS por Zona</div>
+  <div class="card">
+    <h4>Mini-Crop por Regiao Anatomica</h4>
+    <p>Na secao de cada zona do plano, mostrar um recorte automatico da regiao especifica:</p>
+    <ul>
+      <li>Crop automatico do rosto na area da zona (temporal, zigoma, olheira, etc)</li>
+      <li>ANTES ao lado do DEPOIS em miniatura</li>
+      <li>Seta mostrando a direcao do tratamento (vetor de lifting)</li>
+      <li>Posicionado pelo scanner — zone_centers define o centro do crop</li>
+    </ul>
+    <div style="display:flex;gap:12px;margin-top:12px;justify-content:center">
+      <div style="width:80px;height:80px;border-radius:8px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);display:flex;align-items:center;justify-content:center;font-size:8px;color:#EF4444;text-transform:uppercase;letter-spacing:0.1em">ANTES</div>
+      <div style="display:flex;align-items:center;color:#C8A97E;font-size:18px">&#x2192;</div>
+      <div style="width:80px;height:80px;border-radius:8px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);display:flex;align-items:center;justify-content:center;font-size:8px;color:#10B981;text-transform:uppercase;letter-spacing:0.1em">DEPOIS</div>
+    </div>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<div class="section">
+  <div class="section-title">4. Timeline Visual de Tratamento</div>
+  <div class="card">
+    <h4>Jornada do Protocolo</h4>
+    <p>Barra horizontal com dots champagne conectados. Visual de jornada, nao texto.</p>
+    <div class="timeline">
+      <div class="timeline-dot"><div class="dot" style="border-color:#10B981"></div><div class="label">Sessao 1</div><div class="sublabel">Dia 0 — Lifting</div></div>
+      <div class="timeline-dot"><div class="dot"></div><div class="label">Sessao 2</div><div class="sublabel">30 dias — Refino</div></div>
+      <div class="timeline-dot"><div class="dot"></div><div class="label">Fotona 1</div><div class="sublabel">45 dias — 4D Laser</div></div>
+      <div class="timeline-dot"><div class="dot"></div><div class="label">Fotona 2</div><div class="sublabel">60 dias — 4D Laser</div></div>
+      <div class="timeline-dot"><div class="dot" style="border-color:#10B981"></div><div class="label">Retorno</div><div class="sublabel">90 dias — Avaliacao</div></div>
+    </div>
+    <p style="font-size:9px;color:rgba(200,169,126,0.4)">Datas editaveis pelo medico. Cashback Fotona visivel na timeline.</p>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">5. Selo de Autenticidade</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Elementos do Selo</div>
+      <ul>
+        <li>QR code SVG apontando para report online</li>
+        <li>"Documento gerado por ClinicAI Face Mapping"</li>
+        <li>Numero unico: HF-XXXXXXX</li>
+        <li>Data + hora de geracao</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Impacto</div>
+      <p>Transmite profissionalismo e exclusividade. A paciente sente que recebeu algo unico, nao um template generico.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">6. Modo Apresentacao (Tablet)</div>
+  <div class="card">
+    <h4>Fullscreen Premium para Consulta</h4>
+    <ul>
+      <li>Scroll suave entre secoes</li>
+      <li>Fontes maiores para leitura a distancia</li>
+      <li>ESC para sair do modo apresentacao</li>
+      <li>Touch-friendly</li>
+    </ul>
+    <span class="badge badge-green">Implementado</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">7. Social Proof — Depoimentos</div>
+  <div class="card" style="text-align:center">
+    <div style="font-family:Cormorant Garamond,serif;font-size:14px;font-style:italic;color:rgba(200,169,126,0.6);line-height:1.6;max-width:400px;margin:0 auto">
+      "Diferente mas ninguem sabe dizer o que mudou. Exatamente o que eu queria."<br>
+      <span style="font-size:11px;color:rgba(245,240,232,0.3)">— M.C., 48 anos</span>
+    </div>
+    <p style="margin-top:10px;font-size:9px;color:rgba(200,169,126,0.3)">Editavel pelo medico. Social proof sutil.</p>
+    <span class="badge badge-green">Implementado</span>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<div class="section">
+  <div class="section-title">8. Versao WhatsApp Otimizada</div>
+  <div class="card">
+    <h4>Experiencia Mobile Premium</h4>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <h4 style="font-size:10px;color:#10B981">Visual</h4>
+        <ul>
+          <li>Hero image ANTES/DEPOIS</li>
+          <li>Scroll snap por secao</li>
+          <li>Fade-in animado</li>
+          <li>Dark mode nativo</li>
+          <li>Tamanho &lt; 2MB</li>
+        </ul>
+      </div>
+      <div>
+        <h4 style="font-size:10px;color:#C8A97E">Conversao</h4>
+        <ul>
+          <li>Botao flutuante "Agendar"</li>
+          <li>Link WhatsApp direto</li>
+          <li>Validade 7 dias</li>
+          <li>Meta tags og:</li>
+        </ul>
+      </div>
+    </div>
+    <span class="badge badge-green">Exportar HTML Implementado</span>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">9. Integracao com Lara (AI Follow-up)</div>
+  <div class="card">
+    <h4>Sequencia Inteligente pos-Report</h4>
+    <table>
+      <thead><tr><th>Trigger</th><th>Acao da Lara</th><th>Timing</th></tr></thead>
+      <tbody>
+        <tr><td>Report enviado</td><td>"Enviei seu plano de harmonia facial."</td><td>Imediato</td></tr>
+        <tr><td>Link aberto</td><td>"Vi que voce abriu seu plano. Tem alguma duvida?"</td><td>+24h</td></tr>
+        <tr><td>Link NAO aberto</td><td>"Preparei um resumo das suas queixas. Posso enviar?"</td><td>+48h</td></tr>
+        <tr><td>Paciente respondeu</td><td>Modo consultivo + agendamento</td><td>Real-time</td></tr>
+        <tr><td>7 dias sem acao</td><td>"Seu plano vence em breve. Reservo horario?"</td><td>+7d</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="sep"></div>
+
+<div class="section">
+  <div class="section-title">10. Matriz de Prioridade</div>
+  <table>
+    <thead><tr><th>#</th><th>Feature</th><th>Impacto</th><th>Esforco</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td style="color:#F5F0E8;font-weight:500">Frases de transformacao</td><td class="impact impact-high">Altissimo</td><td>Baixo</td><td><span class="badge badge-green">Pronto</span></td></tr>
+      <tr><td>2</td><td style="color:#F5F0E8;font-weight:500">Score de Harmonia Global</td><td class="impact impact-high">Alto</td><td>Baixo</td><td><span class="badge badge-green">Pronto</span></td></tr>
+      <tr><td>3</td><td style="color:#F5F0E8;font-weight:500">Modo Apresentacao</td><td class="impact impact-high">Alto</td><td>Baixo</td><td><span class="badge badge-green">Pronto</span></td></tr>
+      <tr><td>4</td><td style="color:#F5F0E8;font-weight:500">Depoimentos editaveis</td><td class="impact impact-medium">Medio</td><td>Baixo</td><td><span class="badge badge-green">Pronto</span></td></tr>
+      <tr><td>5</td><td style="color:#F5F0E8;font-weight:500">Selo + ID unico</td><td class="impact impact-medium">Medio</td><td>Baixo</td><td><span class="badge badge-green">Pronto</span></td></tr>
+      <tr><td>6</td><td style="color:#F5F0E8;font-weight:500">Exportar HTML</td><td class="impact impact-high">Alto</td><td>Medio</td><td><span class="badge badge-green">Pronto</span></td></tr>
+      <tr><td>7</td><td style="color:#F5F0E8;font-weight:500">Timeline visual</td><td class="impact impact-high">Alto</td><td>Medio</td><td><span class="badge badge-yellow">Pendente</span></td></tr>
+      <tr><td>8</td><td style="color:#F5F0E8;font-weight:500">Comparativo por zona</td><td class="impact impact-high">Alto</td><td>Alto</td><td><span class="badge badge-yellow">Pendente</span></td></tr>
+      <tr><td>9</td><td style="color:#F5F0E8;font-weight:500">Scroll snap mobile</td><td class="impact impact-high">Alto</td><td>Medio</td><td><span class="badge badge-yellow">Pendente</span></td></tr>
+      <tr><td>10</td><td style="color:#F5F0E8;font-weight:500">Hero image automatica</td><td class="impact impact-high">Alto</td><td>Medio</td><td><span class="badge badge-yellow">Pendente</span></td></tr>
+      <tr><td>11</td><td style="color:#F5F0E8;font-weight:500">Integracao Lara</td><td class="impact impact-high">Altissimo</td><td>Medio</td><td><span class="badge badge-red">Futuro</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="quote">"Nos nao preenchemos rugas. Nos reposicionamos as forcas do seu rosto."</div>
+
+<div class="footer">
+  <div class="brand">Clinica Mirian de Paula</div>
+  <div class="meta">ClinicAI Face Mapping — Roadmap Premium v1.0 — Abril 2026</div>
+</div>
+
+</div>
+</body>
+</html>

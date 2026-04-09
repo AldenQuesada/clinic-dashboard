@@ -266,6 +266,7 @@
         '<button onclick="FaceMapping._toggleMetricLock()" style="position:absolute;top:6px;left:6px;z-index:10;display:flex;align-items:center;gap:3px;padding:4px 8px;border-radius:6px;border:1px solid ' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.2)') + ';background:' + (FM._metricLocked ? 'rgba(245,158,11,0.25)' : 'rgba(0,0,0,0.4)') + ';color:' + (FM._metricLocked ? '#F59E0B' : 'rgba(255,255,255,0.5)') + ';cursor:pointer;font-size:9px;font-weight:600;font-family:Montserrat,sans-serif;backdrop-filter:blur(4px)">' + FM._icon(FM._metricLocked ? 'lock' : 'unlock', 11) + '</button>' +
       '</div>' +
       '<div class="fm-canvas-controls">' +
+        '<button onclick="FaceMapping._toggle3DView()" title="Vista 3D" class="fm-canvas-ctrl-btn">' + FM._icon('box', 14) + '</button>' +
         '<button onclick="FaceMapping._toggleFullscreen()" title="Tela cheia" class="fm-canvas-ctrl-btn">' + FM._icon('maximize-2', 14) + '</button>' +
       '</div>' +
     '</div>'
