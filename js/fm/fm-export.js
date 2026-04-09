@@ -507,9 +507,6 @@
     html += '<div style="padding:0 32px 4px 32px">'
     html += '<div style="margin-bottom:8px">' + _editable('fmPlanASubtitle', 'Lifting vetorial completo + Fotona + manutencao', 'font-size:10px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
-    html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
-      '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
-
     var transformPhrases = {
       'temporal': 'Reativa o vetor de sustentacao — o rosto inteiro sobe',
       'zigoma-lateral': 'Devolve a projecao que sustenta todo o terco medio',
@@ -529,56 +526,41 @@
       'pescoco': 'Restaura a firmeza e o angulo cervical',
     }
 
-    var zoneTotalsA = {}
+    // Build annotation lookup (zone → total ml)
+    var annLookup = {}
     FM._annotations.forEach(function (a) {
-      var z = (FM.ZONES || []).find(function (x) { return x.id === a.zone })
-      var tr = (FM.TREATMENTS || []).find(function (x) { return x.id === a.treatment })
-      var zLabel = z ? z.label : a.zone
-      var tLabel = tr ? tr.label : (a.treatment || 'Preenchimento')
-      var product = a.product || ''
-      var key = a.zone + '|' + a.treatment
-      if (!zoneTotalsA[key]) {
-        zoneTotalsA[key] = { zoneId: a.zone, zone: zLabel, treatment: tLabel, ml: 0, product: product, unit: z && z.unit === 'U' ? 'U' : 'mL' }
-      }
-      zoneTotalsA[key].ml += (a.ml || 0)
+      if (!annLookup[a.zone]) annLookup[a.zone] = { ml: 0, treatment: a.treatment, product: a.product || '' }
+      annLookup[a.zone].ml += (a.ml || 0)
     })
 
-    if (FM._protocolData && FM._protocolData.protocol && FM._protocolData.protocol.length > 0) {
-      FM._protocolData.protocol.forEach(function (p, i) {
-        var bg = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'
-        var doseColor = p.unit === 'U' ? '#8B5CF6' : '#3B82F6'
-        html += '<tr style="background:' + bg + '">' +
-          _tdCell(FM._esc(p.zone || '') + (p.bilateral ? ' (bi)' : ''), 'color:#F5F0E8') +
-          _tdCell(FM._esc(p.treatment || p.product || '')) +
-          _tdCell('<span style="color:' + doseColor + ';font-weight:600">' + p.dose + ' ' + p.unit + '</span>') +
-          _tdCell(FM._esc(p.product || ''), 'color:rgba(245,240,232,0.45)') +
-          _tdEditable(transformPhrases[p.zone] || 'Descreva a transformacao...', 'font-style:italic;color:rgba(200,169,126,0.5)') +
-        '</tr>'
-      })
-    } else if (Object.keys(zoneTotalsA).length > 0) {
-      var idxA = 0
-      Object.keys(zoneTotalsA).forEach(function (key) {
-        var row = zoneTotalsA[key]
-        var bg = idxA % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'
-        var doseColor = row.unit === 'U' ? '#8B5CF6' : '#3B82F6'
-        html += '<tr style="background:' + bg + '">' +
-          _tdCell(FM._esc(row.zone), 'color:#F5F0E8') +
-          _tdCell(FM._esc(row.treatment)) +
-          _tdCell('<span style="color:' + doseColor + ';font-weight:600">' + row.ml.toFixed(1) + ' ' + row.unit + '</span>') +
-          _tdCell(FM._esc(row.product), 'color:rgba(245,240,232,0.45)') +
-          _tdEditable(transformPhrases[row.zoneId] || 'Descreva a transformacao...', 'font-style:italic;color:rgba(200,169,126,0.5)') +
-        '</tr>'
-        idxA++
-      })
-    } else {
-      for (var er = 0; er < 4; er++) {
-        html += '<tr style="background:' + (er % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + '">' +
-          _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Transformacao') +
-        '</tr>'
-      }
-    }
+    // ALL zones with checkbox, dose, frase — all checked by default
+    html += '<div style="display:flex;flex-direction:column;gap:2px">'
+    var zones = FM.ZONES || []
+    zones.forEach(function (z, i) {
+      var ann = annLookup[z.id]
+      var avgDose = ann ? ann.ml : ((z.min + z.max) / 2)
+      var treatment = ann ? ann.treatment : (z.defaultTx || 'ah')
+      var tr = (FM.TREATMENTS || []).find(function (x) { return x.id === treatment })
+      var tLabel = tr ? tr.label : (z.cat === 'tox' ? 'Toxina' : 'Preenchimento')
+      var doseColor = z.unit === 'U' ? '#8B5CF6' : '#3B82F6'
+      var phrase = transformPhrases[z.id] || ''
 
-    html += '</tbody></table>'
+      html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;background:' + (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + ';border-radius:4px">' +
+        '<input type="checkbox" checked style="margin-top:3px;accent-color:#C8A97E;cursor:pointer;flex-shrink:0">' +
+        '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + z.color + ';margin-top:5px;flex-shrink:0"></span>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<span style="font-size:10px;font-weight:600;color:#F5F0E8">' + FM._esc(z.label) + '</span>' +
+            '<div style="display:flex;align-items:center;gap:6px">' +
+              '<span style="font-size:8px;color:rgba(245,240,232,0.4)">' + FM._esc(tLabel) + '</span>' +
+              '<span style="font-size:10px;font-weight:700;color:' + doseColor + '">' + parseFloat(avgDose).toFixed(1) + ' ' + z.unit + '</span>' +
+            '</div>' +
+          '</div>' +
+          (phrase ? '<div style="font-size:8px;font-style:italic;color:rgba(200,169,126,0.45);margin-top:1px">' + phrase + '</div>' : '') +
+        '</div>' +
+      '</div>'
+    })
+    html += '</div>'
 
     // Totals
     if (FM._protocolData && FM._protocolData.totals) {
