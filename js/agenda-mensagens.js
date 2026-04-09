@@ -11,6 +11,8 @@
     { key: 'boas_vindas',  label: 'Boas-Vindas',             color: '#7C3AED', bg: '#EDE9FE', icon: '👋' },
     { key: 'consent_img',  label: 'Consentimento de Imagem', color: '#DC2626', bg: '#FEE2E2', icon: '📸' },
     { key: 'consent_info', label: 'Consentimento Informado', color: '#374151', bg: '#F3F4F6', icon: '📋' },
+    { key: 'report_imagem', label: 'Report Facial — Imagem', color: '#C8A97E', bg: '#FFF8F0', icon: '📊' },
+    { key: 'report_html',   label: 'Report Facial — HTML',   color: '#C8A97E', bg: '#FFF8F0', icon: '📎' },
   ];
 
   const VARIABLES = [
@@ -48,6 +50,18 @@
       id: 'default_4', type: 'engajamento',
       name: 'Pós-Procedimento', day: 1,
       message: 'Olá, {{nome}}! 💜\n\nEsperamos que esteja se sentindo bem após o *{{procedimento}}*.\n\nLembre-se de seguir os cuidados indicados por *{{profissional}}*.\n\nQualquer dúvida, estamos aqui! 🏥\n\n— *{{clinica}}*',
+      active: true,
+    },
+    {
+      id: 'default_report_img', type: 'report_imagem',
+      name: 'Report Facial — Imagem', day: 0,
+      message: 'Resultado do seu Protocolo de Harmonia Facial\n\n*{{clinica}}*\nHarmonia que revela. Precisão que dura.',
+      active: true,
+    },
+    {
+      id: 'default_report_html', type: 'report_html',
+      name: 'Report Facial — HTML', day: 0,
+      message: 'Plano de Harmonia Facial personalizado para *{{nome}}*\n\n*{{clinica}}*\nHarmonia que revela. Precisão que dura.',
       active: true,
     },
   ];
