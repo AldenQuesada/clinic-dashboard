@@ -157,15 +157,31 @@ app.get('/api/devices', authMiddleware, function (req, res) {
 app.post('/api/announce', authMiddleware, function (req, res) {
   if (!alexaReady) return res.status(503).json({ error: 'Alexa nao conectada' })
 
-  var device = req.body.device
+  var deviceInput = req.body.device
   var message = req.body.message
   var type = req.body.type || 'announce'
 
-  if (!device || !message) {
+  if (!deviceInput || !message) {
     return res.status(400).json({ error: 'device e message sao obrigatorios' })
   }
 
-  console.log('[Alexa] ' + type + ' → ' + device + ': ' + message)
+  // Resolver nome do device para serial number
+  var device = deviceInput
+  function _stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() }
+  if (alexa.serialNumbers) {
+    var inputStripped = _stripAccents(deviceInput)
+    var found = Object.values(alexa.serialNumbers).find(function (d) {
+      if (d.serialNumber === deviceInput) return true
+      if (!d.accountName) return false
+      return _stripAccents(d.accountName) === inputStripped
+    })
+    if (found) {
+      device = found.serialNumber
+      console.log('[Alexa] Device resolvido:', deviceInput, '→', found.serialNumber)
+    }
+  }
+
+  console.log('[Alexa] ' + type + ' → ' + deviceInput + ' (serial: ' + device + '): ' + message)
 
   if (type === 'announce') {
     alexa.sendSequenceCommand(device, 'announcement', message, function (err) {
