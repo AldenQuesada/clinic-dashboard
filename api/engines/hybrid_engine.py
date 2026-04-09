@@ -90,7 +90,21 @@ def simulate_hybrid(
         result = working.copy()
 
         # Step 5: Layer 1 -- Warp Engine
-        if use_warp and zones:
+        # If no zones provided, use default full-face zones
+        if use_warp:
+            if not zones:
+                zones = [
+                    {"zone": "temporal", "severity": 2, "treatment": "AH"},
+                    {"zone": "zigoma_lat", "severity": 2, "treatment": "AH"},
+                    {"zone": "zigoma_ant", "severity": 2, "treatment": "AH"},
+                    {"zone": "olheira", "severity": 2, "treatment": "AH"},
+                    {"zone": "sulco", "severity": 2, "treatment": "AH"},
+                    {"zone": "marionete", "severity": 1, "treatment": "AH"},
+                    {"zone": "mandibula", "severity": 2, "treatment": "AH"},
+                    {"zone": "mento", "severity": 1, "treatment": "AH"},
+                    {"zone": "labio", "severity": 1, "treatment": "AH"},
+                ]
+                log.info("Using default full-face zones (no annotations provided)")
             t5 = time.time()
             result = _apply_warp_layer(result, zones, zone_centers, intensity, warp_calibration)
             layers_applied.append("warp")

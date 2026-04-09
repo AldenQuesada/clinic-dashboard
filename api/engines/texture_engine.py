@@ -23,11 +23,11 @@ log = logging.getLogger("facial-api.texture-engine")
 # -- Clinical Limits (hard-coded, never exceeded) --
 
 CLINICAL_LIMITS = {
-    "sulco_reduction": 0.40,
-    "olheira_lighten": 0.30,
-    "texture_preserve": 0.80,
-    "lip_volume": 0.10,
-    "color_shift_dL": 5,
+    "sulco_reduction": 0.55,
+    "olheira_lighten": 0.45,
+    "texture_preserve": 0.70,
+    "lip_volume": 0.15,
+    "color_shift_dL": 8,
     "color_shift_da": 3,
     "ssim_min": 0.92,
 }

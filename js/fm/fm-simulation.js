@@ -67,7 +67,7 @@
         body: JSON.stringify({
           photo_base64: b64,
           zones: zones,
-          intensity: 0.7,
+          intensity: 0.9,
           use_scanner: true,
         }),
       })
@@ -232,7 +232,7 @@
         body: JSON.stringify({
           photo_base64: b64,
           zones: zones.length > 0 ? zones : null,
-          intensity: 0.7,
+          intensity: 0.9,
           include_warp: true,
           include_texture: true,
         }),
