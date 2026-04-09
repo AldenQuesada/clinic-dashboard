@@ -69,6 +69,7 @@
       cnpj:                    clinicData.cnpj || '',
       endereco_clinica:        clinicData.endereco || '',
       endereco_paciente:       pacienteEndereco,
+      data_nascimento:         opts.dataNascimento || opts.birth_date || (opts.data ? opts.data.nascimento : '') || '',
     }
   }
 
