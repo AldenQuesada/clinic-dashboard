@@ -737,36 +737,50 @@
     var message = _svc().renderTemplate(r.alexa_message, vars)
     var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.auth_token }
 
-    // Resolver devices pelo target
+    // Resolver devices dinamicamente pelo target (sem hardcode)
     var devices = []
     var target = r.alexa_target || 'sala'
 
-    if (target === 'recepcao') {
-      devices.push('GR72J205436604CX')
-    } else if (target === 'sala') {
+    // Buscar devices do AlexaDevicesRepository
+    var allDevices = []
+    if (window.AlexaDevicesRepository) {
+      var devRes = await AlexaDevicesRepository.getAll()
+      if (devRes.ok && devRes.data) allDevices = devRes.data.filter(function(d) { return d.is_active && d.device_name })
+    }
+    // Fallback: devices das salas
+    if (!allDevices.length) {
       var rooms = typeof getRooms === 'function' ? getRooms() : []
-      for (var i = 0; i < rooms.length; i++) {
-        if (rooms[i].alexa_device_name) { devices.push(rooms[i].alexa_device_name); break }
+      rooms.forEach(function(rm) { if (rm.alexa_device_name) allDevices.push({ device_name: rm.alexa_device_name, location_label: rm.nome, room_id: rm.id }) })
+    }
+
+    if (target === 'recepcao') {
+      var rec = allDevices.find(function(d) { var l = (d.location_label||'').toLowerCase(); return l.indexOf('recepc') >= 0 })
+      if (rec) devices.push(rec.device_name)
+      else if (allDevices.length) devices.push(allDevices[0].device_name)
+    } else if (target === 'sala') {
+      var rooms2 = typeof getRooms === 'function' ? getRooms() : []
+      for (var i = 0; i < rooms2.length; i++) {
+        if (rooms2[i].alexa_device_name) { devices.push(rooms2[i].alexa_device_name); break }
+      }
+      if (!devices.length) {
+        var nonRec = allDevices.find(function(d) { var l = (d.location_label||'').toLowerCase(); return l.indexOf('recepc') < 0 })
+        if (nonRec) devices.push(nonRec.device_name)
       }
     } else if (target === 'todos') {
-      devices.push('GR72J205436604CX')
-      var rooms2 = typeof getRooms === 'function' ? getRooms() : []
-      for (var j = 0; j < rooms2.length; j++) {
-        if (rooms2[j].alexa_device_name) devices.push(rooms2[j].alexa_device_name)
-      }
+      allDevices.forEach(function(d) { devices.push(d.device_name) })
     } else if (target === 'profissional') {
       var rooms3 = typeof getRooms === 'function' ? getRooms() : []
-      for (var k = 0; k < rooms3.length; k++) {
-        if (rooms3[k].alexa_device_name) { devices.push(rooms3[k].alexa_device_name); break }
+      for (var j = 0; j < rooms3.length; j++) {
+        if (rooms3[j].alexa_device_name) { devices.push(rooms3[j].alexa_device_name); break }
       }
     }
 
     if (!devices.length) {
-      if (window._showToast) _showToast('Alexa', 'Nenhum dispositivo encontrado para target "' + target + '"', 'warning')
+      if (window._showToast) _showToast('Alexa', 'Nenhum dispositivo encontrado para "' + target + '". Cadastre devices em Settings > Alexa.', 'warning')
       return
     }
 
-    var sent = 0
+    var sent = 0, failed = 0
     for (var d = 0; d < devices.length; d++) {
       try {
         var resp = await fetch(config.webhook_url, {
@@ -774,11 +788,16 @@
           body: JSON.stringify({ device: devices[d], message: message, type: 'announce' })
         })
         if (resp.ok) sent++
-      } catch (e) { /* ignore */ }
+        else { failed++; console.error('[Alexa] Teste falhou:', devices[d], resp.status) }
+      } catch (e) { failed++; console.error('[Alexa] Teste erro:', devices[d], e.message) }
       if (d < devices.length - 1) await new Promise(function(res) { setTimeout(res, 2000) })
     }
 
-    if (window._showToast) _showToast('Alexa', 'Teste enviado para ' + sent + ' dispositivo(s): "' + message.substring(0, 50) + '..."', sent > 0 ? 'success' : 'error')
+    if (window._showToast) {
+      if (sent > 0 && failed === 0) _showToast('Alexa', 'Teste OK: ' + sent + ' device(s) — "' + message.substring(0, 40) + '..."', 'success')
+      else if (sent > 0) _showToast('Alexa', sent + ' OK, ' + failed + ' falhou', 'warning')
+      else _showToast('Alexa', 'Teste falhou em ' + failed + ' device(s)', 'error')
+    }
   }
 
   async function _handleSave() {

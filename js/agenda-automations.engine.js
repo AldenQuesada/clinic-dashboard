@@ -414,36 +414,59 @@
       if (specific) targetDevices = [specific]
     }
 
-    // Enviar para cada device
-    targetDevices.forEach(function(device) {
+    // Enviar sequencialmente com delay (rate limit) e retry
+    var headers = { 'Content-Type': 'application/json' }
+    if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
+
+    var sent = 0, failed = 0, cookieExpired = false
+
+    for (var di = 0; di < targetDevices.length; di++) {
+      var device = targetDevices[di]
       var payload = {
-        event:          'alexa_announce',
-        device:         device.device_name,
-        message:        message,
-        type:           'announce',
-        rule_name:      ruleName,
-        patient_name:   appt ? appt.pacienteNome : '',
-        timestamp:      new Date().toISOString(),
+        device:   device.device_name,
+        message:  message,
+        type:     'announce',
       }
 
-      var headers = { 'Content-Type': 'application/json' }
-      if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
+      // Retry com backoff (3 tentativas)
+      var ok = false
+      for (var attempt = 1; attempt <= 3; attempt++) {
+        try {
+          var r = await fetch(config.webhook_url, {
+            method: 'POST', headers: headers, body: JSON.stringify(payload),
+          })
+          if (r.ok) { ok = true; break }
+          var body = null
+          try { body = await r.json() } catch (e) { /* ignore */ }
+          if (body && body.code === 'COOKIE_EXPIRED') { cookieExpired = true; break }
+          if (r.status === 429 || r.status >= 500) {
+            await new Promise(function(res) { setTimeout(res, attempt * 2000) })
+            continue
+          }
+          break // 4xx — nao retenta
+        } catch (e) {
+          if (attempt < 3) { await new Promise(function(res) { setTimeout(res, attempt * 2000) }); continue }
+        }
+      }
 
-      fetch(config.webhook_url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload),
-      }).then(function(r) {
-        if (r.ok) console.log('[Engine] Alexa OK:', device.device_name, ruleName)
-        else console.error('[Engine] Alexa falhou:', r.status, device.device_name)
-      }).catch(function(e) {
-        console.error('[Engine] Alexa exception:', e)
-      })
-    })
+      if (ok) { sent++; console.log('[Engine] Alexa OK:', device.device_name, ruleName) }
+      else { failed++; console.error('[Engine] Alexa falhou:', device.device_name, ruleName) }
 
-    // Toast visual
-    if (window._showToast && targetDevices.length) {
-      _showToast('Alexa', 'Anuncio enviado para ' + targetDevices.length + ' device(s)', 'success')
+      // Rate limit: 2s entre devices
+      if (di < targetDevices.length - 1) await new Promise(function(res) { setTimeout(res, 2000) })
+    }
+
+    // Toast honesto
+    if (window._showToast) {
+      if (cookieExpired) {
+        _showToast('Alexa', 'Cookie expirado! Re-autenticar no bridge.', 'error')
+      } else if (sent > 0 && failed === 0) {
+        _showToast('Alexa', ruleName + ': ' + sent + ' device(s) OK', 'success')
+      } else if (sent > 0 && failed > 0) {
+        _showToast('Alexa', ruleName + ': ' + sent + ' OK, ' + failed + ' falhou', 'warning')
+      } else if (failed > 0) {
+        _showToast('Alexa', ruleName + ': falhou em ' + failed + ' device(s)', 'error')
+      }
     }
   }
 

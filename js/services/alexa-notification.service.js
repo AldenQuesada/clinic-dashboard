@@ -1,21 +1,11 @@
 /**
  * ClinicAI — Alexa Notification Service
  *
- * Envia notificacoes para dispositivos Alexa quando paciente chega na clinica.
- *
- * Fluxo:
- *   1. Secretaria marca "Na Clinica" → apptTransition('na_clinica')
- *   2. Este servico envia webhook para n8n com dados do appointment
- *   3. n8n faz announce nas Alexas:
- *      - Recepcao: boas-vindas ao paciente
- *      - Sala do profissional: aviso de chegada
+ * Envia notificacoes para dispositivos Alexa quando paciente chega.
+ * Inclui retry com backoff, rate limiting e toast honesto.
  *
  * Config: clinic_alexa_config (Supabase) via get_alexa_config RPC
  * Rooms: clinic_rooms.alexa_device_name
- *
- * Depende de:
- *   window._sbShared  — Supabase client
- *   getRooms()        — rooms cache
  */
 ;(function () {
   'use strict'
@@ -26,59 +16,90 @@
   var _config = null
   var _configLoaded = false
 
-  // ── Load config from Supabase ──────────────────────────────
+  // ── Config ─────────────────────────────────────────────────
   async function _ensureConfig() {
     if (_configLoaded) return _config
     _configLoaded = true
-
     if (!window._sbShared) return null
-
     try {
       var res = await window._sbShared.rpc('get_alexa_config', {})
-      if (res.data && res.data.ok && res.data.data) {
-        _config = res.data.data
-      }
+      if (res.data && res.data.ok && res.data.data) _config = res.data.data
     } catch (e) {
       console.warn('[Alexa] Falha ao carregar config:', e)
     }
     return _config
   }
 
-  // ── Render template with variables ─────────────────────────
+  // ── Template rendering ─────────────────────────────────────
   function _render(template, vars) {
     if (!template) return ''
-    return template.replace(/\{\{(\w+)\}\}/g, function (_, key) {
-      return vars[key] || ''
-    })
+    return template.replace(/\{\{(\w+)\}\}/g, function (_, key) { return vars[key] || '' })
   }
 
-  // ── Get room info for appointment ──────────────────────────
+  // ── Room for appointment ───────────────────────────────────
   function _getRoomForAppt(appt) {
     var rooms = typeof getRooms === 'function' ? getRooms() : []
     if (appt.salaIdx !== null && appt.salaIdx !== undefined && rooms[appt.salaIdx]) {
       return rooms[appt.salaIdx]
     }
-    // Fallback: buscar pela profissional
     var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
     var prof = profs[appt.profissionalIdx]
     if (prof) {
       for (var i = 0; i < rooms.length; i++) {
-        if (prof.sala_id === rooms[i].id || prof.sala === rooms[i].nome) {
-          return rooms[i]
-        }
+        if (prof.sala_id === rooms[i].id) return rooms[i]
       }
     }
     return null
   }
 
+  // ── Fetch with retry (3 attempts, backoff 2s/4s/8s) ───────
+  async function _fetchWithRetry(url, opts, maxRetries) {
+    var retries = maxRetries || 3
+    var delay = 2000
+    for (var attempt = 1; attempt <= retries; attempt++) {
+      try {
+        var r = await fetch(url, opts)
+        if (r.ok) return { ok: true, status: r.status }
+        var body = null
+        try { body = await r.json() } catch (e) { /* ignore */ }
+        // Cookie expirado — nao retenta
+        if (body && body.code === 'COOKIE_EXPIRED') {
+          return { ok: false, status: r.status, code: 'COOKIE_EXPIRED', error: body.error }
+        }
+        // Rate limited — espera e retenta
+        if (r.status === 429 && attempt < retries) {
+          await new Promise(function(res) { setTimeout(res, delay) })
+          delay *= 2
+          continue
+        }
+        if (attempt < retries && r.status >= 500) {
+          await new Promise(function(res) { setTimeout(res, delay) })
+          delay *= 2
+          continue
+        }
+        return { ok: false, status: r.status, error: body ? body.error : 'HTTP ' + r.status }
+      } catch (e) {
+        if (attempt < retries) {
+          await new Promise(function(res) { setTimeout(res, delay) })
+          delay *= 2
+          continue
+        }
+        return { ok: false, status: 0, error: e.message || 'Network error' }
+      }
+    }
+    return { ok: false, status: 0, error: 'Max retries exceeded' }
+  }
+
+  // ── Delay helper ───────────────────────────────────────────
+  function _delay(ms) { return new Promise(function(r) { setTimeout(r, ms) }) }
+
   // ══════════════════════════════════════════════════════════
   //  MAIN: notifyArrival
-  //  Chamado quando paciente chega (status → na_clinica)
   // ══════════════════════════════════════════════════════════
   async function notifyArrival(appt) {
     var config = await _ensureConfig()
     if (!config || !config.is_active || !config.webhook_url) {
-      console.log('[Alexa] Notificacao desativada ou sem config')
+      console.log('[Alexa] Desativada ou sem config')
       return
     }
 
@@ -100,10 +121,9 @@
     var headers = { 'Content-Type': 'application/json' }
     if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
 
-    // Resolver device da recepcao: usa config ou busca no registry por location_label
+    // Resolver device da recepcao
     var receptionDevice = config.reception_device_name || ''
     if (!receptionDevice || receptionDevice === 'Recepcao' || receptionDevice === 'Recepção') {
-      // Buscar no registry de devices
       if (window.AlexaDevicesRepository) {
         var devRes = await AlexaDevicesRepository.getAll()
         if (devRes.ok && devRes.data) {
@@ -114,43 +134,53 @@
               break
             }
           }
-          // Fallback: primeiro device ativo
           if ((!receptionDevice || receptionDevice === 'Recepcao') && devRes.data.length > 0) {
             receptionDevice = devRes.data[0].device_name
           }
         }
       }
     }
-    var sent = 0
 
-    try {
-      // 1. Announce na recepcao (boas-vindas)
-      if (welcomeMsg && receptionDevice) {
-        var r1 = await fetch(config.webhook_url, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify({ device: receptionDevice, message: welcomeMsg, type: 'announce' }),
-        })
-        if (r1.ok) { sent++; console.log('[Alexa] Recepcao OK:', receptionDevice) }
-        else { console.error('[Alexa] Recepcao falhou:', r1.status) }
-      }
+    var results = []
 
-      // 2. Announce na sala do profissional (aviso de chegada)
-      if (roomMsg && roomDeviceName) {
-        var r2 = await fetch(config.webhook_url, {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify({ device: roomDeviceName, message: roomMsg, type: 'announce' }),
-        })
-        if (r2.ok) { sent++; console.log('[Alexa] Sala OK:', roomDeviceName) }
-        else { console.error('[Alexa] Sala falhou:', r2.status) }
-      }
+    // 1. Recepcao
+    if (welcomeMsg && receptionDevice) {
+      var r1 = await _fetchWithRetry(config.webhook_url, {
+        method: 'POST', headers: headers,
+        body: JSON.stringify({ device: receptionDevice, message: welcomeMsg, type: 'announce' }),
+      })
+      results.push({ device: 'Recepcao', ok: r1.ok, error: r1.error, code: r1.code })
+      console.log('[Alexa] Recepcao:', r1.ok ? 'OK' : 'FALHOU — ' + r1.error)
+    }
 
-      if (sent > 0 && window._showToast) {
-        _showToast('Alexa', 'Notificacao enviada para ' + vars.nome + ' (' + sent + ' dispositivo' + (sent > 1 ? 's' : '') + ')', 'success')
+    // Delay entre devices (rate limit)
+    if (welcomeMsg && receptionDevice && roomMsg && roomDeviceName) await _delay(2000)
+
+    // 2. Sala
+    if (roomMsg && roomDeviceName) {
+      var r2 = await _fetchWithRetry(config.webhook_url, {
+        method: 'POST', headers: headers,
+        body: JSON.stringify({ device: roomDeviceName, message: roomMsg, type: 'announce' }),
+      })
+      results.push({ device: roomNome, ok: r2.ok, error: r2.error, code: r2.code })
+      console.log('[Alexa] Sala:', r2.ok ? 'OK' : 'FALHOU — ' + r2.error)
+    }
+
+    // Toast honesto
+    if (window._showToast) {
+      var ok = results.filter(function(r) { return r.ok })
+      var fail = results.filter(function(r) { return !r.ok })
+      var cookieExpired = fail.some(function(r) { return r.code === 'COOKIE_EXPIRED' })
+
+      if (cookieExpired) {
+        _showToast('Alexa', 'Cookie expirado! Necessario re-autenticar no bridge.', 'error')
+      } else if (fail.length === 0 && ok.length > 0) {
+        _showToast('Alexa', 'Enviado para ' + vars.nome + ' (' + ok.length + ' device' + (ok.length > 1 ? 's' : '') + ')', 'success')
+      } else if (ok.length > 0 && fail.length > 0) {
+        _showToast('Alexa', ok.length + ' OK, ' + fail.length + ' falhou: ' + fail.map(function(r) { return r.device }).join(', '), 'warning')
+      } else if (fail.length > 0) {
+        _showToast('Alexa', 'Falhou: ' + fail.map(function(r) { return r.device + ' (' + r.error + ')' }).join(', '), 'error')
       }
-    } catch (e) {
-      console.error('[Alexa] Erro ao enviar:', e)
     }
   }
 
@@ -160,7 +190,6 @@
 
   async function saveConfig(webhookUrl, receptionDevice, welcomeTemplate, roomTemplate, isActive, authToken) {
     if (!window._sbShared) return { ok: false, error: 'Supabase nao disponivel' }
-
     try {
       var res = await window._sbShared.rpc('upsert_alexa_config', {
         p_webhook_url:           webhookUrl,
@@ -170,33 +199,39 @@
         p_is_active:             isActive !== false,
         p_auth_token:            authToken || null,
       })
-
       if (res.error) return { ok: false, error: res.error.message }
-
-      // Refresh cache
       _configLoaded = false
       await _ensureConfig()
-
       return { ok: true }
     } catch (e) {
       return { ok: false, error: e.message }
     }
   }
 
-  async function getConfig() {
-    return _ensureConfig()
-  }
+  async function getConfig() { return _ensureConfig() }
 
-  function invalidateCache() {
-    _configLoaded = false
-    _config = null
+  function invalidateCache() { _configLoaded = false; _config = null }
+
+  // ── Health check do bridge ─────────────────────────────────
+  async function checkBridgeHealth() {
+    var config = await _ensureConfig()
+    if (!config || !config.webhook_url) return { ok: false, error: 'Sem config' }
+    try {
+      var healthUrl = config.webhook_url.replace('/api/announce', '/health')
+      var r = await fetch(healthUrl, { method: 'GET' })
+      if (!r.ok) return { ok: false, error: 'HTTP ' + r.status }
+      return await r.json()
+    } catch (e) {
+      return { ok: false, error: e.message }
+    }
   }
 
   // ── Public API ─────────────────────────────────────────────
   window.AlexaNotificationService = Object.freeze({
-    notifyArrival:   notifyArrival,
-    saveConfig:      saveConfig,
-    getConfig:       getConfig,
-    invalidateCache: invalidateCache,
+    notifyArrival:      notifyArrival,
+    saveConfig:         saveConfig,
+    getConfig:          getConfig,
+    invalidateCache:    invalidateCache,
+    checkBridgeHealth:  checkBridgeHealth,
   })
 })()
