@@ -73,7 +73,7 @@
     '</div>'
 
     // ── Report Card ──
-    var html = '<div id="fmReportCard" style="width:794px;background:#0A0A0A;border-radius:4px;overflow:hidden;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6)">'
+    var html = '<div id="fmReportCard" style="width:794px;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6)">'
 
     // ─── SECTION 1: Header ───
     html += '<div style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
