@@ -14,6 +14,35 @@
 
   var _editingId = null
 
+  // ── Rich editor commands ───────────────────────────────────
+  function ldeCmd(cmd, val) {
+    document.execCommand(cmd, false, val || null)
+    var editor = document.getElementById('lde_content')
+    if (editor) editor.focus()
+  }
+
+  function ldeInsertVar(varName) {
+    if (!varName) return
+    var editor = document.getElementById('lde_content')
+    if (!editor) return
+    editor.focus()
+
+    var tag = '<span class="lde-var" contenteditable="false">{{' + varName + '}}</span>&nbsp;'
+    document.execCommand('insertHTML', false, tag)
+  }
+
+  function _getEditorContent() {
+    var editor = document.getElementById('lde_content')
+    if (!editor) return ''
+    return editor.innerHTML
+  }
+
+  function _setEditorContent(html) {
+    var editor = document.getElementById('lde_content')
+    if (!editor) return
+    editor.innerHTML = html || ''
+  }
+
   var TYPE_LABELS = {
     uso_imagem: 'Uso de Imagem',
     procedimento: 'Procedimento',
@@ -75,7 +104,7 @@
     var el = function (id) { return document.getElementById(id) }
     if (el('lde_name')) el('lde_name').value = ''
     if (el('lde_type')) el('lde_type').value = 'uso_imagem'
-    if (el('lde_content')) el('lde_content').value = ''
+    _setEditorContent('')
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Novo Modelo'
     if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
   }
@@ -89,7 +118,7 @@
     var el = function (id) { return document.getElementById(id) }
     if (el('lde_name')) el('lde_name').value = t.name
     if (el('lde_type')) el('lde_type').value = t.doc_type
-    if (el('lde_content')) el('lde_content').value = t.content
+    _setEditorContent(t.content)
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Editar: ' + t.name
     if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
   }
@@ -103,7 +132,7 @@
   async function saveLegalDocTemplate() {
     var name = (document.getElementById('lde_name') || {}).value || ''
     var docType = (document.getElementById('lde_type') || {}).value || 'custom'
-    var content = (document.getElementById('lde_content') || {}).value || ''
+    var content = _getEditorContent()
 
     if (!name.trim()) { if (window._showToast) _showToast('Documentos', 'Informe o nome do modelo', 'warning'); return }
     if (!content.trim()) { if (window._showToast) _showToast('Documentos', 'Informe o texto do documento', 'warning'); return }
@@ -202,4 +231,6 @@
   window.closeLegalDocEditor    = closeLegalDocEditor
   window.saveLegalDocTemplate   = saveLegalDocTemplate
   window.testLegalDocTemplate   = testLegalDocTemplate
+  window.ldeCmd                 = ldeCmd
+  window.ldeInsertVar           = ldeInsertVar
 })()

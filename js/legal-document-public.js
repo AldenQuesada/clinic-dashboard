@@ -164,7 +164,7 @@
       + '<div class="ld-step-desc">Leia atentamente todo o conteudo. Voce precisara rolar ate o final.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
-      + '<div class="ld-doc-text" id="ldDocText">' + _esc(_doc.content || '') + '</div>'
+      + '<div class="ld-doc-text" id="ldDocText">' + _sanitize(_doc.content || '') + '</div>'
       + '<div class="ld-scroll-hint" id="ldScrollHint">Role ate o final para continuar</div>'
       + '<button class="ld-btn ld-btn-primary" id="ldDocNext" onclick="window._ldNext(2)"'
       + (_scrolledToBottom ? '' : ' disabled') + '>'
@@ -436,6 +436,22 @@
     var div = document.createElement('div')
     div.textContent = s
     return div.innerHTML
+  }
+
+  // Sanitize HTML — permite formatacao basica, bloqueia scripts
+  function _sanitize(html) {
+    if (!html) return ''
+    var tmp = document.createElement('div')
+    tmp.innerHTML = html
+    // Remover scripts, iframes, on* attributes
+    tmp.querySelectorAll('script,iframe,object,embed').forEach(function (el) { el.remove() })
+    tmp.querySelectorAll('*').forEach(function (el) {
+      for (var i = el.attributes.length - 1; i >= 0; i--) {
+        var name = el.attributes[i].name.toLowerCase()
+        if (name.startsWith('on') || name === 'srcdoc') el.removeAttribute(name)
+      }
+    })
+    return tmp.innerHTML
   }
 
   // ── Start ──────────────────────────────────────────────────

@@ -1825,10 +1825,64 @@
                 </div>
                 <div style="margin-bottom:12px">
                   <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Texto do documento</label>
-                  <textarea id="lde_content" rows="12" placeholder="Cole o texto do documento aqui. Use {{nome}}, {{cpf}}, {{data}}, {{profissional}}, {{registro_profissional}}, {{especialidade}}, {{procedimento}}, {{clinica}}" style="width:100%;padding:12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;line-height:1.7;resize:vertical"></textarea>
-                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">
-                    Variaveis: <code>{{nome}}</code> <code>{{cpf}}</code> <code>{{data}}</code> <code>{{data_extenso}}</code> <code>{{profissional}}</code> <code>{{registro_profissional}}</code> <code>{{especialidade}}</code> <code>{{procedimento}}</code> <code>{{clinica}}</code> <code>{{hora}}</code>
+
+                  <!-- Toolbar -->
+                  <div style="display:flex;flex-wrap:wrap;gap:2px;padding:6px 8px;background:#fff;border:1.5px solid #E5E7EB;border-bottom:none;border-radius:8px 8px 0 0;align-items:center">
+                    <!-- Formatting -->
+                    <button onclick="ldeCmd('bold')" title="Negrito" class="lde-tb">B</button>
+                    <button onclick="ldeCmd('italic')" title="Italico" class="lde-tb" style="font-style:italic">I</button>
+                    <button onclick="ldeCmd('underline')" title="Sublinhado" class="lde-tb" style="text-decoration:underline">U</button>
+                    <button onclick="ldeCmd('strikeThrough')" title="Riscado" class="lde-tb" style="text-decoration:line-through">S</button>
+                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                    <!-- Font size -->
+                    <select onchange="ldeCmd('fontSize',this.value);this.value=''" title="Tamanho" style="padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;background:#fff;cursor:pointer">
+                      <option value="">Tam.</option>
+                      <option value="1">Pequeno</option>
+                      <option value="3">Normal</option>
+                      <option value="5">Grande</option>
+                      <option value="7">Muito grande</option>
+                    </select>
+                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                    <!-- Alignment -->
+                    <button onclick="ldeCmd('justifyLeft')" title="Esquerda" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+                    <button onclick="ldeCmd('justifyCenter')" title="Centro" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg></button>
+                    <button onclick="ldeCmd('justifyRight')" title="Direita" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg></button>
+                    <button onclick="ldeCmd('justifyFull')" title="Justificado" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
+                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                    <!-- Lists -->
+                    <button onclick="ldeCmd('insertOrderedList')" title="Lista numerada" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="3" y="7" fill="currentColor" font-size="7" stroke="none">1</text><text x="3" y="13" fill="currentColor" font-size="7" stroke="none">2</text><text x="3" y="19" fill="currentColor" font-size="7" stroke="none">3</text></svg></button>
+                    <button onclick="ldeCmd('insertUnorderedList')" title="Lista" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg></button>
+                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                    <!-- Undo/Redo -->
+                    <button onclick="ldeCmd('undo')" title="Desfazer" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+                    <button onclick="ldeCmd('redo')" title="Refazer" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg></button>
+                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                    <!-- Variables dropdown -->
+                    <select onchange="ldeInsertVar(this.value);this.selectedIndex=0" style="padding:4px 8px;border:1px solid #0891B2;border-radius:6px;font-size:11px;background:#ECFEFF;color:#0891B2;font-weight:600;cursor:pointer">
+                      <option value="">+ Variavel</option>
+                      <option value="nome">Nome do paciente</option>
+                      <option value="cpf">CPF</option>
+                      <option value="data">Data (dd/mm/aaaa)</option>
+                      <option value="data_extenso">Data por extenso</option>
+                      <option value="profissional">Nome do profissional</option>
+                      <option value="registro_profissional">Registro (CRM/CRO/CREFITO)</option>
+                      <option value="especialidade">Especialidade</option>
+                      <option value="procedimento">Procedimento</option>
+                      <option value="clinica">Nome da clinica</option>
+                      <option value="hora">Horario</option>
+                    </select>
                   </div>
+
+                  <!-- Editor contenteditable -->
+                  <div id="lde_content" contenteditable="true" style="min-height:300px;max-height:500px;overflow-y:auto;padding:16px;border:1.5px solid #E5E7EB;border-top:none;border-radius:0 0 8px 8px;font-size:13px;font-family:'Inter',sans-serif;line-height:1.8;color:#1F2937;background:#fff;outline:none" data-placeholder="Comece a digitar o texto do documento..."></div>
+
+                  <style>
+                    .lde-tb{padding:4px 7px;background:none;border:1px solid transparent;border-radius:4px;cursor:pointer;color:#374151;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;transition:all .1s}
+                    .lde-tb:hover{background:#F3F4F6;border-color:#E5E7EB}
+                    .lde-tb:active{background:#E5E7EB}
+                    #lde_content:empty::before{content:attr(data-placeholder);color:#D1D5DB;pointer-events:none}
+                    #lde_content .lde-var{display:inline;padding:1px 6px;background:#ECFEFF;color:#0891B2;border-radius:4px;font-weight:600;font-size:12px;border:1px solid #06B6D440}
+                  </style>
                 </div>
                 <div style="display:flex;justify-content:flex-end;gap:8px">
                   <button onclick="closeLegalDocEditor()" style="padding:9px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
@@ -4969,7 +5023,7 @@
   <script src="js/agenda-automations.engine.js?v=20260409e" defer></script>
   <script src="js/services/alexa-notification.service.js?v=20260409e" defer></script>
   <script src="js/services/legal-documents.service.js?v=20260409a" defer></script>
-  <script src="js/legal-doc-templates.js?v=20260409a" defer></script>
+  <script src="js/legal-doc-templates.js?v=20260409b" defer></script>
   <script src="js/agenda-smart.js?v=20260407q" defer></script>
   <script src="js/agenda-day-panel.js?v=20260406a" defer></script>
   <script src="js/agenda-leads.js?v=20260406a" defer></script>
