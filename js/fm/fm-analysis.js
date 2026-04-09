@@ -181,8 +181,12 @@
     FM._ctx.restore()
   }
 
+  // View mode per tab — isolated
+  FM._viewModeByTab = FM._viewModeByTab || {}
+
   FM._setViewMode = function (mode) {
     FM._viewMode = mode
+    FM._viewModeByTab[FM._activeTab || 'simetria'] = mode
     FM._render()
     setTimeout(FM._initCanvas, 50)
     if (mode === '2x') {
@@ -205,6 +209,8 @@
     // Cancel any in-progress polygon on tab switch
     if (FM._polyDrawing) FM._cancelPoly()
     FM._activeTab = tabId
+    // Restore view mode for this tab (isolated per tab)
+    FM._viewMode = FM._viewModeByTab[tabId] || '1x'
     if (tabId === 'simetria') {
       FM._editorMode = 'analysis'
       if (FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics') {
