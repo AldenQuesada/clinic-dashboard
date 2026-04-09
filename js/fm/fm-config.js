@@ -1,5 +1,5 @@
 /**
- * fm-config.js — Zone definitions, treatments, angles, presets, icons
+ * fm-config.js,Zone definitions, treatments, angles, presets, icons
  * Creates window._FM shared state object
  */
 ;(function () {
@@ -73,7 +73,7 @@
   // min/max: default ranges (editable, saved to localStorage)
 
   FM.ZONES_DEFAULT = [
-    // Preenchimento (mL) — product, reticulation, defaultQty pre-filled
+    // Preenchimento (mL),product, reticulation, defaultQty pre-filled
     { id: 'zigoma-lateral',  label: 'Zigoma Lateral',    desc: 'Projecao',            color: '#5B7FC7', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Voluma', reticulation: 'Retrolinear canula', defaultQty: 1.0 },
     { id: 'zigoma-anterior', label: 'Zigoma Anterior',   desc: 'Preenche sombra',     color: '#6BBF8A', angles: ['front', '45'],     cat: 'fill', unit: 'mL', min: 0.5, max: 1.0, defaultTx: 'ah', defaultProduct: 'Juvederm Voluma', reticulation: 'Retrolinear canula', defaultQty: 0.5 },
     { id: 'temporal',        label: 'Temporal',           desc: 'Vetor lifting',       color: '#9B6FC7', angles: ['front', '45', 'lateral'], cat: 'fill', unit: 'mL', min: 0.5, max: 1.5, defaultTx: 'ah', defaultProduct: 'Juvederm Voluma', reticulation: 'Bolus profundo', defaultQty: 1.0 },
@@ -363,7 +363,7 @@
     })
   }
 
-  // ── Force Vector System — Facial Aging Forces ──────────────
+  // ── Force Vector System,Facial Aging Forces ──────────────
   // 7 zone groups with young (lifting) and aged (falling) vector directions
   // Offsets are relative to zone center (normalized 0-1)
   FM.FORCE_VECTORS = [
