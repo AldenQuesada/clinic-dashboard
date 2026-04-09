@@ -343,9 +343,9 @@
 
     // Only check/add elements matching the selected tool
     if (tool === 'hline') {
-      // Drag existing H line (only if that specific line is not locked)
+      // Drag existing H line (only if not locked=true)
       for (var i = 0; i < FM._metricLines.h.length; i++) {
-        if (FM._metricLines.h[i].locked) continue
+        if (FM._metricLines.h[i].locked === true) continue
         var ly = FM._metricLines.h[i].y * h
         if (Math.abs(my - ly) < threshold && mx < w) {
           FM._pushUndo()
@@ -363,9 +363,9 @@
         return true
       }
     } else if (tool === 'vline') {
-      // Drag existing V line (only if not locked)
+      // Drag existing V line (only if not locked=true)
       for (var j = 0; j < FM._metricLines.v.length; j++) {
-        if (FM._metricLines.v[j].locked) continue
+        if (FM._metricLines.v[j].locked === true) continue
         var lx = FM._metricLines.v[j].x * w
         if (Math.abs(mx - lx) < threshold && my < h) {
           FM._pushUndo()
@@ -383,9 +383,9 @@
         return true
       }
     } else if (tool === 'point') {
-      // Drag existing point (only if not locked)
+      // Drag existing point (only if not locked=true)
       for (var k = 0; k < FM._metricPoints.length; k++) {
-        if (FM._metricPoints[k].locked) continue
+        if (FM._metricPoints[k].locked === true) continue
         var ppx = FM._metricPoints[k].x * w
         var ppy = FM._metricPoints[k].y * h
         if (Math.sqrt(Math.pow(mx - ppx, 2) + Math.pow(my - ppy, 2)) < threshold) {
@@ -458,19 +458,20 @@
 
   FM._toggleMetricLock = function () {
     FM._toggleLock('simetria', '1x')
-    // Mark all existing lines/points as locked/unlocked
     var locked = FM._metricLocked
-    FM._metricLines.h.forEach(function (l) { l.locked = locked })
-    FM._metricLines.v.forEach(function (l) { l.locked = locked })
-    FM._metricPoints.forEach(function (p) { p.locked = locked })
+    // Lock: mark structural lines as locked=true
+    // Unlock: delete locked prop (revert to structural — locked=false means measurement)
+    FM._metricLines.h.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
+    FM._metricLines.v.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
+    FM._metricPoints.forEach(function (p) { if (p.locked !== false) { if (locked) p.locked = true; else delete p.locked } })
   }
 
   FM._toggleMetric2Lock = function () {
     FM._toggleLock('simetria', '2x')
     var locked = FM._metric2Locked
-    FM._metric2Lines.h.forEach(function (l) { l.locked = locked })
-    FM._metric2Lines.v.forEach(function (l) { l.locked = locked })
-    FM._metric2Points.forEach(function (p) { p.locked = locked })
+    FM._metric2Lines.h.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
+    FM._metric2Lines.v.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
+    FM._metric2Points.forEach(function (p) { if (p.locked !== false) { if (locked) p.locked = true; else delete p.locked } })
   }
 
   FM._setMetricTool = function (tool) {
