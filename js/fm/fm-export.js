@@ -239,10 +239,39 @@
       html += '</div>'
     })
 
-    // ─── SECTION 3: Queixas da Paciente (EDITABLE) ───
+    // ─── SECTION 3: Queixas da Paciente (auto-preenchido da anamnese) ───
     html += _sectionTitle('Queixas da Paciente', 'message-circle')
     html += '<div style="padding:4px 32px 12px 32px">'
-    html += _editableBlock('fmReportQueixas', 'Clique para adicionar as queixas da paciente...')
+
+    // Pull queixas from lead data (anamnese)
+    var lead = FM._lead || {}
+    var queixas = lead.queixas_faciais || (lead.customFields || {}).queixas_faciais || (lead.data || {}).queixas_faciais || []
+    if (typeof queixas === 'string') queixas = [queixas]
+    var queixaPrincipal = lead.queixa_principal || lead.chief_complaint || (queixas.length > 0 ? queixas[0] : '')
+
+    if (queixas.length > 0) {
+      // Queixa principal destacada
+      if (queixaPrincipal) {
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+          '<span style="font-size:8px;padding:2px 8px;background:rgba(239,68,68,0.12);color:#EF4444;border-radius:4px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0">Maior impacto</span>' +
+          '<span style="font-size:12px;font-weight:600;color:#F5F0E8">' + FM._esc(queixaPrincipal) + '</span>' +
+        '</div>'
+      }
+      // Lista de queixas
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+      queixas.forEach(function (q) {
+        if (!q) return
+        var isMain = q === queixaPrincipal
+        html += '<span style="padding:4px 10px;border-radius:6px;font-size:10px;' +
+          (isMain ? 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#EF4444;font-weight:600' :
+                    'background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);color:rgba(245,240,232,0.6)') +
+          '">' + FM._esc(q) + '</span>'
+      })
+      html += '</div>'
+    }
+
+    // Editable notes (doctor can add more)
+    html += _editableBlock('fmReportQueixas', queixas.length > 0 ? 'Observacoes adicionais da anamnese...' : 'Clique para adicionar as queixas da paciente...')
     html += '</div>'
 
     // ─── SECTION 4: Analise de Simetria ───
