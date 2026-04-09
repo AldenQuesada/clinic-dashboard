@@ -29,10 +29,8 @@
 
       FM._imgW = Math.round(FM._img.width * scale)
       FM._imgH = Math.round(FM._img.height * scale)
-      // Extra margin for proportions bar — only when tercos/metrics are active
-      var needsBar = FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics'
-      var barMargin = needsBar ? 30 : 0
-      FM._canvas.width = FM._imgW + barMargin
+      // No extra margin — proportions bar draws inside the image area
+      FM._canvas.width = FM._imgW
       FM._canvas.height = FM._imgH
       // Restore cached scan data for this angle
       var ang = FM._activeAngle || 'front'

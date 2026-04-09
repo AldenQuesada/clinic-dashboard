@@ -97,7 +97,7 @@
     // Shows colored segments between LOCKED H lines only (tercos, not measurement lines)
     var lockedH = FM._metricLines.h.filter(function (l) { return l.locked !== false })
     if (lockedH.length >= 2) {
-      var barX = w + 6
+      var barX = w - 22
       var barW = 14
       var hLines = lockedH  // only structural lines, not measurements
       var firstY = hLines[0].y * h
