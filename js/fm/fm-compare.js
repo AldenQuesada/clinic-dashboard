@@ -29,7 +29,7 @@
   var _autoPlaying = false
   var _autoRAF = null
   var _autoStartTime = 0
-  var _autoCycleDuration = 5000 // full cycle in ms (0 -> 100 -> 0)
+  var _autoCycleDuration = 6000 // full cycle in ms, slow and smooth
 
   // Annotations state
   var _annotationMode = false
@@ -472,6 +472,9 @@
       cancelAnimationFrame(_autoRAF)
       _autoRAF = null
     }
+    // Restore CSS transitions
+    var line = document.getElementById('fmcSliderLine')
+    if (line) line.style.transition = 'left 0.15s ease-out'
     _updateAutoButton()
   }
 
@@ -500,12 +503,14 @@
     if (!_autoPlaying) return
 
     var elapsed = performance.now() - _autoStartTime
-    // Sinusoidal easing: pos = 50 + 50 * sin(t)
-    // Full cycle = _autoCycleDuration ms
+    // Sinusoidal easing: pos oscillates between 15 and 85 (never fully one side)
     var t = (elapsed / _autoCycleDuration) * Math.PI * 2
-    var pos = 50 + 50 * Math.sin(t)
+    var pos = 50 + 35 * Math.sin(t)
 
     if (_compareMode === 'slider') {
+      // Disable CSS transition during auto (rAF handles smoothness)
+      var line = document.getElementById('fmcSliderLine')
+      if (line) line.style.transition = 'none'
       _updateSlider(pos)
       var range = document.getElementById('fmcRange')
       if (range) range.value = pos
