@@ -233,6 +233,17 @@
 
     ctx.save()
 
+    // Semi-transparent fill preview when >= 3 points
+    if (pts.length >= 3) {
+      ctx.beginPath()
+      ctx.moveTo(pts[0].x, pts[0].y)
+      for (var fi = 1; fi < pts.length; fi++) ctx.lineTo(pts[fi].x, pts[fi].y)
+      if (FM._polyMousePos) ctx.lineTo(FM._polyMousePos.x, FM._polyMousePos.y)
+      ctx.closePath()
+      ctx.fillStyle = color + '26'  // 15% opacity
+      ctx.fill()
+    }
+
     // Draw connected lines between placed points
     ctx.beginPath()
     ctx.moveTo(pts[0].x, pts[0].y)
@@ -348,12 +359,54 @@
     return -1
   }
 
+  // Hit test polygon edge — returns { index } if click is within 8px of edge between points[i] and points[i+1]
+  FM._hitPolygonEdge = function (x, y, ann) {
+    if (!ann || !ann.shape || ann.shape.type !== 'polygon') return null
+    var w = FM._imgW, h = FM._imgH
+    var pts = ann.shape.points
+    for (var i = 0; i < pts.length; i++) {
+      var j = (i + 1) % pts.length
+      var ax = pts[i].x * w, ay = pts[i].y * h
+      var bx = pts[j].x * w, by = pts[j].y * h
+      var dx = bx - ax, dy = by - ay
+      var lenSq = dx * dx + dy * dy
+      if (lenSq < 1) continue
+      var t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / lenSq))
+      var px = ax + t * dx, py = ay + t * dy
+      var dist = Math.sqrt(Math.pow(x - px, 2) + Math.pow(y - py, 2))
+      if (dist < 8) return { index: i }
+    }
+    return null
+  }
+
   // Cancel in-progress polygon
   FM._cancelPoly = function () {
     FM._polyPoints = []
     FM._polyDrawing = false
     FM._polyMousePos = null
     FM._redraw()
+  }
+
+  // ── Mirror polygon horizontally (bilateral) ──────────────
+  FM._mirrorPolygon = function () {
+    if (!FM._selAnn || !FM._selAnn.shape || FM._selAnn.shape.type !== 'polygon') return
+    FM._pushUndo()
+    var orig = FM._selAnn
+    var mirroredPoints = orig.shape.points.map(function (p) { return { x: 1 - p.x, y: p.y } })
+    var newAnn = {
+      id: FM._nextId++,
+      angle: orig.angle,
+      zone: orig.zone,
+      treatment: orig.treatment,
+      ml: orig.ml,
+      product: orig.product,
+      side: orig.side === 'esquerdo' ? 'direito' : (orig.side === 'direito' ? 'esquerdo' : orig.side),
+      shape: { type: 'polygon', points: mirroredPoints }
+    }
+    FM._annotations.push(newAnn)
+    FM._autoSave()
+    FM._redraw()
+    FM._refreshToolbar()
   }
 
   FM._drawVector = function (vec) {

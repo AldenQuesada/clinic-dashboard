@@ -718,6 +718,63 @@
       '</div>'
     }
 
+    // ── Selected polygon editor ──
+    if (FM._selAnn && FM._selAnn.shape && FM._selAnn.shape.type === 'polygon') {
+      var selZ = FM.ZONES.find(function (x) { return x.id === FM._selAnn.zone })
+      var selColor = selZ ? selZ.color : '#999'
+      var selUnit = selZ && selZ.unit === 'U' ? 'U' : 'mL'
+      var selStep = selUnit === 'U' ? '1' : '0.1'
+      var selId = FM._selAnn.id
+
+      html += '<div class="fm-tool-section" style="padding:8px;background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);border-radius:6px">' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">' +
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + selColor + '"></span>' +
+          '<span style="font-size:11px;font-weight:600;color:#F5F0E8">' + (selZ ? selZ.label : FM._selAnn.zone) + '</span>' +
+          (selZ ? '<span style="font-size:8px;color:rgba(200,169,126,0.4)">(' + selZ.min + '-' + selZ.max + selUnit + ')</span>' : '') +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">' +
+          // Dose
+          '<div>' +
+            '<label style="font-size:7px;text-transform:uppercase;letter-spacing:1px;color:rgba(200,169,126,0.4)">Dose (' + selUnit + ')</label>' +
+            '<input type="number" step="' + selStep + '" min="0" value="' + FM._selAnn.ml + '" ' +
+              'onchange="var a=window._FM._annotations.find(function(x){return x.id===' + selId + '});if(a){a.ml=parseFloat(this.value)||0;window._FM._autoSave();window._FM._redraw();window._FM._refreshToolbar()}" ' +
+              'style="width:100%;padding:3px 5px;font-size:10px;background:#12121a;border:1px solid #2a2a3a;border-radius:4px;color:#F5F0E8;outline:none">' +
+          '</div>' +
+          // Side
+          '<div>' +
+            '<label style="font-size:7px;text-transform:uppercase;letter-spacing:1px;color:rgba(200,169,126,0.4)">Lado</label>' +
+            '<select onchange="var a=window._FM._annotations.find(function(x){return x.id===' + selId + '});if(a){a.side=this.value;window._FM._autoSave();window._FM._refreshToolbar()}" ' +
+              'style="width:100%;padding:3px 5px;font-size:10px;background:#12121a;border:1px solid #2a2a3a;border-radius:4px;color:#F5F0E8;outline:none">' +
+              '<option value="bilateral"' + (FM._selAnn.side === 'bilateral' ? ' selected' : '') + '>Bilateral</option>' +
+              '<option value="esquerdo"' + (FM._selAnn.side === 'esquerdo' ? ' selected' : '') + '>Esquerdo</option>' +
+              '<option value="direito"' + (FM._selAnn.side === 'direito' ? ' selected' : '') + '>Direito</option>' +
+            '</select>' +
+          '</div>' +
+          // Treatment
+          '<div>' +
+            '<label style="font-size:7px;text-transform:uppercase;letter-spacing:1px;color:rgba(200,169,126,0.4)">Tratamento</label>' +
+            '<select onchange="var a=window._FM._annotations.find(function(x){return x.id===' + selId + '});if(a){a.treatment=this.value;window._FM._autoSave();window._FM._redraw();window._FM._refreshToolbar()}" ' +
+              'style="width:100%;padding:3px 5px;font-size:10px;background:#12121a;border:1px solid #2a2a3a;border-radius:4px;color:#F5F0E8;outline:none">'
+      FM.TREATMENTS.forEach(function (t) {
+        html += '<option value="' + t.id + '"' + (FM._selAnn.treatment === t.id ? ' selected' : '') + '>' + t.label + '</option>'
+      })
+      html += '</select>' +
+          '</div>' +
+          // Product
+          '<div>' +
+            '<label style="font-size:7px;text-transform:uppercase;letter-spacing:1px;color:rgba(200,169,126,0.4)">Produto</label>' +
+            '<input type="text" value="' + FM._esc(FM._selAnn.product || '') + '" placeholder="Ex: Juvederm" ' +
+              'onchange="var a=window._FM._annotations.find(function(x){return x.id===' + selId + '});if(a){a.product=this.value;window._FM._autoSave()}" ' +
+              'style="width:100%;padding:3px 5px;font-size:10px;background:#12121a;border:1px solid #2a2a3a;border-radius:4px;color:#F5F0E8;outline:none">' +
+          '</div>' +
+        '</div>' +
+        // Mirror button
+        '<button onclick="FaceMapping._mirrorPolygon()" ' +
+          'style="margin-top:6px;width:100%;padding:4px 8px;font-size:9px;font-weight:600;border:1px solid rgba(200,169,126,0.2);border-radius:4px;background:rgba(200,169,126,0.06);color:#C8A97E;cursor:pointer">' +
+          FM._icon('copy', 10) + ' Espelhar Bilateral</button>' +
+      '</div>'
+    }
+
     // ── Polygon annotations list ──
     html += '<div class="fm-tool-section" style="flex:1">' +
       '<div class="fm-tool-section-title">Marcacoes (' + FM._annotations.filter(function (a) { return a.angle === FM._activeAngle }).length + ')</div>'

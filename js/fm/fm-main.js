@@ -52,6 +52,7 @@
       FM._generateSimulation(function () { FM._render(); if (FM._activeAngle) setTimeout(FM._initCanvas, 50) })
     },
 
+    _mirrorPolygon: FM._mirrorPolygon,
     _undo: FM._undo,
     _redo: FM._redo,
     _autoAnalyze: FM._autoAnalyze,
@@ -160,6 +161,15 @@
       } else if (e.key === 'Escape' && FM._polyDrawing) {
         e.preventDefault()
         FM._cancelPoly()
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && FM._polyDrawing && FM._polyPoints) {
+        // Undo last point while drawing
+        e.preventDefault()
+        if (FM._polyPoints.length > 1) {
+          FM._polyPoints.pop()
+          FM._redraw()
+        } else {
+          FM._cancelPoly()
+        }
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && FM._selAnn && !FM._polyDrawing) {
         e.preventDefault()
         FM._removeAnnotation(FM._selAnn.id)

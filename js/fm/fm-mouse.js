@@ -416,9 +416,33 @@
         FM._canvas.style.cursor = 'grabbing'
         return
       }
+      // 1a. Check edge hit → insert new point on edge
+      var edgeHit = FM._hitPolygonEdge(mx, my, FM._selAnn)
+      if (edgeHit) {
+        FM._pushUndo()
+        FM._selAnn.shape.points.splice(edgeHit.index + 1, 0, { x: mx / FM._imgW, y: my / FM._imgH })
+        FM._dragPolyPoint = { annId: FM._selAnn.id, pointIndex: edgeHit.index + 1 }
+        FM._mode = 'move'
+        FM._canvas.style.cursor = 'grabbing'
+        FM._redraw()
+        return
+      }
+      // 1b. Click inside selected polygon (not on point/edge) → drag whole polygon
+      if (FM._pointInPolygon(mx, my, FM._selAnn.shape.points, FM._imgW, FM._imgH)) {
+        FM._pushUndo()
+        FM._dragPolyWhole = {
+          annId: FM._selAnn.id,
+          startX: mx,
+          startY: my,
+          origPoints: FM._selAnn.shape.points.map(function (p) { return { x: p.x, y: p.y } })
+        }
+        FM._mode = 'move'
+        FM._canvas.style.cursor = 'grabbing'
+        return
+      }
     }
 
-    // 1b. Check resize handles for legacy ellipses (locked = no resize)
+    // 1c. Check resize handles for legacy ellipses (locked = no resize)
     if (FM._selAnn && FM._selAnn.shape && !FM._selAnn.shape.type && !FM._metricLocked) {
       var handle = FM._hitHandle(mx, my)
       if (handle) {
@@ -572,6 +596,20 @@
       return
     }
 
+    // Whole polygon drag
+    if (FM._mode === 'move' && FM._dragPolyWhole) {
+      var wAnn = FM._annotations.find(function (a) { return a.id === FM._dragPolyWhole.annId })
+      if (wAnn && wAnn.shape && wAnn.shape.type === 'polygon') {
+        var dxN = (mx - FM._dragPolyWhole.startX) / FM._imgW
+        var dyN = (my - FM._dragPolyWhole.startY) / FM._imgH
+        wAnn.shape.points = FM._dragPolyWhole.origPoints.map(function (p) {
+          return { x: p.x + dxN, y: p.y + dyN }
+        })
+        FM._redraw()
+      }
+      return
+    }
+
     // Legacy ellipse move
     if (FM._mode === 'move' && FM._selAnn && FM._selAnn.shape && !FM._selAnn.shape.type) {
       FM._selAnn.shape.x = mx - FM._moveStart.x
@@ -635,7 +673,8 @@
     // Cursor hint
     if (FM._selAnn && FM._selAnn.shape && FM._selAnn.shape.type === 'polygon') {
       var pHit = FM._hitPolygonPoint(mx, my, FM._selAnn)
-      FM._canvas.style.cursor = pHit >= 0 ? 'grab' : (FM._hitPolygon(mx, my) ? 'grab' : (FM._selectedZone ? 'crosshair' : 'default'))
+      var eHit = pHit < 0 ? FM._hitPolygonEdge(mx, my, FM._selAnn) : null
+      FM._canvas.style.cursor = pHit >= 0 ? 'grab' : (eHit ? 'copy' : (FM._pointInPolygon(mx, my, FM._selAnn.shape.points, FM._imgW, FM._imgH) ? 'grab' : (FM._hitPolygon(mx, my) ? 'grab' : (FM._selectedZone ? 'crosshair' : 'default'))))
     } else if (FM._selAnn && FM._selAnn.shape && !FM._selAnn.shape.type && FM._hitHandle(mx, my)) {
       var h = FM._hitHandle(mx, my)
       FM._canvas.style.cursor = (h === 'n' || h === 's') ? 'ns-resize' : 'ew-resize'
@@ -643,6 +682,14 @@
       FM._canvas.style.cursor = 'grab'
     } else {
       FM._canvas.style.cursor = FM._selectedZone ? 'crosshair' : 'default'
+    }
+
+    // Tooltip on hover (zones mode, not drawing)
+    if (FM._editorMode === 'zones' && !FM._polyDrawing) {
+      var hoverAnn = FM._hitPolygon(mx, my)
+      FM._showPolyTooltip(hoverAnn, mx, my)
+    } else {
+      FM._showPolyTooltip(null)
     }
   }
 
@@ -678,6 +725,10 @@
       if (FM._dragPolyPoint) {
         FM._dragPolyPoint = null
       }
+      // End whole polygon drag
+      if (FM._dragPolyWhole) {
+        FM._dragPolyWhole = null
+      }
       FM._mode = 'idle'
       FM._canvas.style.cursor = FM._selectedZone ? 'crosshair' : 'default'
       FM._autoSave()
@@ -685,6 +736,32 @@
       FM._refreshToolbar()
       return
     }
+  }
+
+  // ── Polygon tooltip on hover ──────────────────────────────
+  FM._showPolyTooltip = function (ann, mx, my) {
+    var tip = document.getElementById('fmPolyTooltip')
+    if (!ann) {
+      if (tip) tip.style.display = 'none'
+      return
+    }
+    if (!tip) {
+      tip = document.createElement('div')
+      tip.id = 'fmPolyTooltip'
+      tip.style.cssText = 'position:absolute;z-index:99999;pointer-events:none;padding:4px 8px;border-radius:6px;' +
+        'background:rgba(0,0,0,0.85);border:1px solid rgba(200,169,126,0.3);font-size:10px;color:#F5F0E8;' +
+        'font-family:Inter,Montserrat,sans-serif;white-space:nowrap;display:none'
+      document.body.appendChild(tip)
+    }
+    var z = FM.ZONES.find(function (x) { return x.id === ann.zone })
+    var label = z ? z.label : ann.zone
+    var unit = z && z.unit === 'U' ? 'U' : 'mL'
+    tip.innerHTML = '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' +
+      FM._zoneColor(ann.zone) + ';margin-right:4px"></span>' + label + ' &middot; ' + ann.ml + unit
+    var rect = FM._canvas.getBoundingClientRect()
+    tip.style.left = (rect.left + mx + 14) + 'px'
+    tip.style.top = (rect.top + my - 10 + window.scrollY) + 'px'
+    tip.style.display = 'block'
   }
 
   // ── Close polygon and create annotation ──────────────────

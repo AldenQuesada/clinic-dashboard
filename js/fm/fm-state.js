@@ -92,6 +92,7 @@
   FM._polyDrawing = false  // whether polygon is being drawn
   FM._polyHover = -1       // index of hovered point during editing
   FM._dragPolyPoint = null // {annId, pointIndex} for dragging existing polygon points
+  FM._dragPolyWhole = null // {annId, startX, startY, origPoints} for dragging entire polygon
   FM._polyMousePos = null  // {x,y} current mouse pos for preview line
   FM._lastAnalysis = null  // GPT analysis result
   FM._editorMode = 'zones' // 'zones' | 'vectors' | 'analysis'
