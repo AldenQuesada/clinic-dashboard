@@ -1220,8 +1220,11 @@
             <button onclick="clinicSection('alexa')" id="csn_alexa" class="csn">
               <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:4px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>Alexa
             </button>
+            <button onclick="clinicSection('documentos')" id="csn_documentos" class="csn">
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Documentos
+            </button>
             <button onclick="clinicSection('observacoes')" id="csn_observacoes" class="csn">
-              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Observações
+              <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Observacoes
             </button>
           </div>
 
@@ -1773,6 +1776,71 @@
                 <!-- Contador -->
                 <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
                   <div id="alexa_devices_count" style="font-size:11px;color:#9CA3AF">0 dispositivos registrados</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════
+                 PANEL: DOCUMENTOS LEGAIS
+            ═══════════════════════════════════════════════════════ -->
+            <div id="cs_panel_documentos" style="display:none">
+              <div class="cs-subsection-hdr">Documentos Legais — Termos de Consentimento</div>
+              <div style="background:#ECFEFF;border:1px solid #06B6D440;border-radius:10px;padding:14px 16px;margin-bottom:18px;font-size:12px;color:#0891B2;line-height:1.6">
+                <strong>Como funciona:</strong> Cadastre modelos de documentos (uso de imagem, consentimento de procedimento). Quando a paciente chega, o sistema envia o link por WhatsApp. Ela le, assina no celular, e o consentimento fica registrado com validade juridica.
+              </div>
+
+              <!-- Templates -->
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:13px;font-weight:700;color:#374151">Modelos de Documentos</div>
+                <button onclick="addLegalDocTemplate()" style="padding:7px 14px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Novo Modelo
+                </button>
+              </div>
+
+              <div id="legal_doc_templates_list" style="display:flex;flex-direction:column;gap:8px">
+                <div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando modelos...</div>
+              </div>
+
+              <!-- Editor modal (hidden by default) -->
+              <div id="legal_doc_editor" style="display:none;margin-top:18px;padding:18px;background:#F9FAFB;border-radius:12px;border:1px solid #E5E7EB">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                  <div style="font-size:13px;font-weight:700;color:#374151" id="legal_doc_editor_title">Novo Modelo</div>
+                  <button onclick="closeLegalDocEditor()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:18px">&times;</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                  <div>
+                    <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Nome do modelo</label>
+                    <input id="lde_name" type="text" placeholder="Ex: Consentimento Uso de Imagem" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box" />
+                  </div>
+                  <div>
+                    <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Tipo</label>
+                    <select id="lde_type" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
+                      <option value="uso_imagem">Uso de Imagem</option>
+                      <option value="procedimento">Consentimento de Procedimento</option>
+                      <option value="anestesia">Consentimento Anestesia</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="margin-bottom:12px">
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Texto do documento</label>
+                  <textarea id="lde_content" rows="12" placeholder="Cole o texto do documento aqui. Use {{nome}}, {{cpf}}, {{data}}, {{profissional}}, {{registro_profissional}}, {{especialidade}}, {{procedimento}}, {{clinica}}" style="width:100%;padding:12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;line-height:1.7;resize:vertical"></textarea>
+                  <div style="font-size:10px;color:#9CA3AF;margin-top:3px">
+                    Variaveis: <code>{{nome}}</code> <code>{{cpf}}</code> <code>{{data}}</code> <code>{{data_extenso}}</code> <code>{{profissional}}</code> <code>{{registro_profissional}}</code> <code>{{especialidade}}</code> <code>{{procedimento}}</code> <code>{{clinica}}</code> <code>{{hora}}</code>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:8px">
+                  <button onclick="closeLegalDocEditor()" style="padding:9px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
+                  <button onclick="saveLegalDocTemplate()" style="padding:9px 20px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Salvar Modelo</button>
+                </div>
+              </div>
+
+              <!-- Documentos recentes -->
+              <div style="margin-top:24px;padding-top:18px;border-top:1px solid #F3F4F6">
+                <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px">Documentos Recentes</div>
+                <div id="legal_doc_requests_list" style="display:flex;flex-direction:column;gap:6px">
+                  <div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Nenhum documento gerado ainda.</div>
                 </div>
               </div>
             </div>
@@ -4900,6 +4968,8 @@
   <script src="js/agenda-module.js?v=20260407p" defer></script>
   <script src="js/agenda-automations.engine.js?v=20260409e" defer></script>
   <script src="js/services/alexa-notification.service.js?v=20260409e" defer></script>
+  <script src="js/services/legal-documents.service.js?v=20260409a" defer></script>
+  <script src="js/legal-doc-templates.js?v=20260409a" defer></script>
   <script src="js/agenda-smart.js?v=20260407q" defer></script>
   <script src="js/agenda-day-panel.js?v=20260406a" defer></script>
   <script src="js/agenda-leads.js?v=20260406a" defer></script>

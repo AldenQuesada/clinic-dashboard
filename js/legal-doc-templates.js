@@ -1,0 +1,205 @@
+/**
+ * ClinicAI — Legal Document Templates UI (Settings > Documentos)
+ *
+ * CRUD de modelos de documentos legais.
+ * Lista documentos recentes com status.
+ *
+ * Depende de: LegalDocumentsService
+ */
+;(function () {
+  'use strict'
+
+  if (window._clinicaiLegalDocTemplatesLoaded) return
+  window._clinicaiLegalDocTemplatesLoaded = true
+
+  var _editingId = null
+
+  var TYPE_LABELS = {
+    uso_imagem: 'Uso de Imagem',
+    procedimento: 'Procedimento',
+    anestesia: 'Anestesia',
+    custom: 'Personalizado',
+  }
+
+  var STATUS_LABELS = {
+    pending: 'Pendente',
+    viewed: 'Visualizado',
+    signed: 'Assinado',
+    expired: 'Expirado',
+    revoked: 'Revogado',
+  }
+
+  var STATUS_COLORS = {
+    pending: '#F59E0B',
+    viewed: '#3B82F6',
+    signed: '#10B981',
+    expired: '#6B7280',
+    revoked: '#EF4444',
+  }
+
+  // ── Load templates ─────────────────────────────────────────
+  async function loadLegalDocTemplates() {
+    var list = document.getElementById('legal_doc_templates_list')
+    if (!list || !window.LegalDocumentsService) return
+
+    var templates = await LegalDocumentsService.loadTemplates()
+    if (!templates.length) {
+      list.innerHTML = '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px;background:#F9FAFB;border-radius:10px">Nenhum modelo cadastrado. Clique em "Novo Modelo" para comecar.</div>'
+      return
+    }
+
+    var html = ''
+    templates.forEach(function (t) {
+      var typeLabel = TYPE_LABELS[t.doc_type] || t.doc_type
+      var typeColor = t.doc_type === 'uso_imagem' ? '#7C3AED' : t.doc_type === 'procedimento' ? '#0891B2' : '#6B7280'
+
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;transition:border-color .15s" onmouseenter="this.style.borderColor=\'#0891B2\'" onmouseleave="this.style.borderColor=\'#E5E7EB\'">'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(t.name) + '</div>'
+        + '<div style="display:flex;gap:6px;margin-top:4px">'
+        + '<span style="font-size:10px;padding:2px 8px;background:' + typeColor + '15;color:' + typeColor + ';border-radius:4px;font-weight:600">' + typeLabel + '</span>'
+        + '<span style="font-size:10px;color:#9CA3AF">v' + t.version + '</span>'
+        + '</div></div>'
+        + '<div style="display:flex;gap:6px">'
+        + '<button onclick="editLegalDocTemplate(\'' + t.id + '\')" title="Editar" style="padding:6px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#374151">Editar</button>'
+        + '<button onclick="testLegalDocTemplate(\'' + t.id + '\')" title="Testar" style="padding:6px 10px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#0891B2;font-weight:600">Testar</button>'
+        + '</div></div>'
+    })
+
+    list.innerHTML = html
+  }
+
+  // ── Editor ─────────────────────────────────────────────────
+  function addLegalDocTemplate() {
+    _editingId = null
+    var el = function (id) { return document.getElementById(id) }
+    if (el('lde_name')) el('lde_name').value = ''
+    if (el('lde_type')) el('lde_type').value = 'uso_imagem'
+    if (el('lde_content')) el('lde_content').value = ''
+    if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Novo Modelo'
+    if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
+  }
+
+  function editLegalDocTemplate(id) {
+    var templates = LegalDocumentsService.getTemplates()
+    var t = templates.find(function (x) { return x.id === id })
+    if (!t) return
+
+    _editingId = id
+    var el = function (id) { return document.getElementById(id) }
+    if (el('lde_name')) el('lde_name').value = t.name
+    if (el('lde_type')) el('lde_type').value = t.doc_type
+    if (el('lde_content')) el('lde_content').value = t.content
+    if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Editar: ' + t.name
+    if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
+  }
+
+  function closeLegalDocEditor() {
+    _editingId = null
+    var editor = document.getElementById('legal_doc_editor')
+    if (editor) editor.style.display = 'none'
+  }
+
+  async function saveLegalDocTemplate() {
+    var name = (document.getElementById('lde_name') || {}).value || ''
+    var docType = (document.getElementById('lde_type') || {}).value || 'custom'
+    var content = (document.getElementById('lde_content') || {}).value || ''
+
+    if (!name.trim()) { if (window._showToast) _showToast('Documentos', 'Informe o nome do modelo', 'warning'); return }
+    if (!content.trim()) { if (window._showToast) _showToast('Documentos', 'Informe o texto do documento', 'warning'); return }
+
+    var data = { name: name.trim(), doc_type: docType, content: content.trim() }
+    if (_editingId) data.id = _editingId
+
+    var res = await LegalDocumentsService.saveTemplate(data)
+    if (res.ok) {
+      if (window._showToast) _showToast('Documentos', 'Modelo "' + name + '" salvo', 'success')
+      closeLegalDocEditor()
+      await loadLegalDocTemplates()
+    } else {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + (res.error || 'desconhecido'), 'error')
+    }
+  }
+
+  // ── Testar (gerar link de exemplo) ─────────────────────────
+  async function testLegalDocTemplate(id) {
+    var testData = {
+      pacienteNome: 'Maria Silva Teste',
+      pacienteCpf: '000.000.000-00',
+      profissionalIdx: 0,
+      procedimento: 'Avaliacao',
+      horaInicio: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
+    }
+
+    var res = await LegalDocumentsService.createRequest(id, testData)
+    if (res.ok) {
+      if (window._showToast) _showToast('Documentos', 'Link gerado! Abrindo...', 'success')
+      window.open(res.link, '_blank')
+      loadLegalDocRequests()
+    } else {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + (res.error || 'desconhecido'), 'error')
+    }
+  }
+
+  // ── Requests recentes ──────────────────────────────────────
+  async function loadLegalDocRequests() {
+    var list = document.getElementById('legal_doc_requests_list')
+    if (!list || !window.LegalDocumentsService) return
+
+    var res = await LegalDocumentsService.listRequests({ limit: 20 })
+    if (!res.ok || !res.data || !res.data.length) {
+      list.innerHTML = '<div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Nenhum documento gerado ainda.</div>'
+      return
+    }
+
+    var html = ''
+    res.data.forEach(function (r) {
+      var statusLabel = STATUS_LABELS[r.status] || r.status
+      var statusColor = STATUS_COLORS[r.status] || '#6B7280'
+      var date = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : ''
+      var signedDate = r.signed_at ? new Date(r.signed_at).toLocaleString('pt-BR') : ''
+
+      html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border:1px solid #F3F4F6;border-radius:8px">'
+        + '<div style="width:8px;height:8px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:12px;font-weight:600;color:#111">' + _esc(r.patient_name) + '</div>'
+        + '<div style="font-size:10px;color:#9CA3AF">' + date + (r.professional_name ? ' | ' + _esc(r.professional_name) : '') + '</div>'
+        + '</div>'
+        + '<div style="text-align:right">'
+        + '<span style="font-size:10px;padding:2px 8px;background:' + statusColor + '15;color:' + statusColor + ';border-radius:4px;font-weight:600">' + statusLabel + '</span>'
+        + (signedDate ? '<div style="font-size:9px;color:#9CA3AF;margin-top:2px">' + signedDate + '</div>' : '')
+        + '</div></div>'
+    })
+
+    list.innerHTML = html
+  }
+
+  // ── Auto-load when section opens ───────────────────────────
+  var _origClinicSection2 = window.clinicSection
+  if (_origClinicSection2) {
+    window.clinicSection = function (sec) {
+      _origClinicSection2(sec)
+      if (sec === 'documentos') {
+        loadLegalDocTemplates()
+        loadLegalDocRequests()
+      }
+    }
+  }
+
+  // ── Utils ──────────────────────────────────────────────────
+  function _esc(s) {
+    if (!s) return ''
+    var div = document.createElement('div')
+    div.textContent = s
+    return div.innerHTML
+  }
+
+  // ── Expose ─────────────────────────────────────────────────
+  window.loadLegalDocTemplates  = loadLegalDocTemplates
+  window.loadLegalDocRequests   = loadLegalDocRequests
+  window.addLegalDocTemplate    = addLegalDocTemplate
+  window.editLegalDocTemplate   = editLegalDocTemplate
+  window.closeLegalDocEditor    = closeLegalDocEditor
+  window.saveLegalDocTemplate   = saveLegalDocTemplate
+  window.testLegalDocTemplate   = testLegalDocTemplate
+})()
