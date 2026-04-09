@@ -87,6 +87,12 @@
       if (window._showToast) _showToast('Alexa', 'Salve a configuracao primeiro', 'warning')
       return
     }
+    // Encontrar sala que tem Alexa configurada
+    var rooms = typeof getRooms === 'function' ? getRooms() : []
+    var salaIdx = 0
+    for (var ri = 0; ri < rooms.length; ri++) {
+      if (rooms[ri].alexa_device_name) { salaIdx = ri; break }
+    }
     var testAppt = {
       id:               'test_' + Date.now(),
       pacienteNome:     'Maria Teste',
@@ -94,7 +100,7 @@
       profissionalIdx:  0,
       procedimento:     'Avaliacao',
       horaInicio:       String(new Date().getHours()).padStart(2,'0') + ':' + String(new Date().getMinutes()).padStart(2,'0'),
-      salaIdx:          0,
+      salaIdx:          salaIdx,
     }
     await AlexaNotificationService.notifyArrival(testAppt)
     if (window._showToast) _showToast('Alexa', 'Notificacao de teste enviada', 'info')

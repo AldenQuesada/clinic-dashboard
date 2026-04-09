@@ -167,7 +167,7 @@ app.post('/api/announce', authMiddleware, function (req, res) {
 
   // Resolver nome do device para serial number
   var device = deviceInput
-  function _stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() }
+  function _stripAccents(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase() }
   if (alexa.serialNumbers) {
     var inputStripped = _stripAccents(deviceInput)
     var found = Object.values(alexa.serialNumbers).find(function (d) {
