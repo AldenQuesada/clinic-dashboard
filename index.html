@@ -1821,10 +1821,10 @@
         <div id="spage_injectables" style="display:none">
           <!-- Sub-abas: Cadastro / Config. Precificação -->
           <div style="display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid #F3F4F6;padding-bottom:0">
-            <button id="injtab_cadastro" onclick="injSettingsTab('cadastro')" style="padding:7px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;margin-bottom:-2px">
+            <button id="injtab_cadastro" onclick="if(window.injSettingsTab)injSettingsTab('cadastro')" style="padding:7px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;margin-bottom:-2px">
               <i data-feather="droplet" style="width:12px;height:12px;vertical-align:-1px;margin-right:4px"></i>Injetáveis
             </button>
-            <button id="injtab_prec" onclick="injSettingsTab('prec')" style="padding:7px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;cursor:pointer;background:none;color:#6B7280;margin-bottom:-2px">
+            <button id="injtab_prec" onclick="if(window.injSettingsTab)injSettingsTab('prec')" style="padding:7px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:600;cursor:pointer;background:none;color:#6B7280;margin-bottom:-2px">
               <i data-feather="sliders" style="width:12px;height:12px;vertical-align:-1px;margin-right:4px"></i>Config. Precificação
             </button>
           </div>

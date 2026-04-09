@@ -90,8 +90,8 @@ function settingsTab(tab) {
   if (tab === 'professionals') renderProfessionalsList()
   if (tab === 'rooms')         renderRoomsList()
   if (tab === 'technologies')  renderTechnologiesList()
-  if (tab === 'injectables')   { injSettingsTab('cadastro'); if (window.renderInjetaveis) renderInjetaveis() }
-  if (tab === 'procedures')    { if (window.renderProcedimentos) renderProcedimentos() }
+  if (tab === 'injectables')   { if (window.injSettingsTab) { injSettingsTab('cadastro'); if (window.renderInjetaveis) renderInjetaveis() } else { console.warn('injetaveis.js nao carregou') } }
+  if (tab === 'procedures')    { if (window.renderProcedimentos) renderProcedimentos() else console.warn('procedimentos.js nao carregou') }
   if (tab === 'clinic')        loadClinicSettings()
   if (tab === 'users')         { if (window.loadUsersAdmin) { loadUsersAdmin(); loadPendingInvites() } }
 }
