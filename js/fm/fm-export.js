@@ -1259,46 +1259,39 @@
 
     FM._showLoading('Gerando video e report...')
 
-    // Step 1: Generate ANTES/DEPOIS video
-    FM._generateCompareVideo(function (videoBlob) {
-      if (!videoBlob) {
-        // Fallback: skip video, send only HTML report
-        _sendHTMLReport()
-        return
-      }
+    // Step 1: Send HTML report first
+    _sendHTMLReport()
 
-      // Step 2: Send video first (auto-play in WhatsApp)
-      var videoReader = new FileReader()
-      videoReader.onload = function () {
-        var videoBase64 = videoReader.result.split(',')[1]
+    // Step 2: Generate and send ANTES/DEPOIS image after (appears below in chat)
+    setTimeout(function () {
+      FM._generateCompareVideo(function (imgBlob) {
+        if (!imgBlob) return
 
-        fetch(EVOLUTION_URL + '/message/sendMedia/' + EVOLUTION_INSTANCE, {
-          method: 'POST',
-          headers: { 'apikey': EVOLUTION_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            number: phone,
-            mediatype: 'image',
-            mimetype: 'image/jpeg',
-            caption: 'Resultado do seu Protocolo de Harmonia Facial\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
-            media: videoBase64,
-            fileName: 'resultado-' + safeName + '.jpg',
-          }),
-        })
-        .then(function (r) { return r.json() })
-        .then(function () {
-          // Step 3: Send HTML report (delay for message ordering)
-          setTimeout(function () {
-            _sendHTMLReport()
-          }, 1500)
-        })
-        .catch(function () {
-          // Fallback: send HTML only
-          _sendHTMLReport()
-        })
-      }
-      videoReader.onerror = function () { _sendHTMLReport() }
-      videoReader.readAsDataURL(videoBlob)
-    })
+        var imgReader = new FileReader()
+        imgReader.onload = function () {
+          var imgBase64 = imgReader.result.split(',')[1]
+
+          fetch(EVOLUTION_URL + '/message/sendMedia/' + EVOLUTION_INSTANCE, {
+            method: 'POST',
+            headers: { 'apikey': EVOLUTION_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              number: phone,
+              mediatype: 'image',
+              mimetype: 'image/jpeg',
+              caption: 'Resultado do seu Protocolo de Harmonia Facial\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
+              media: imgBase64,
+              fileName: 'resultado-' + safeName + '.jpg',
+            }),
+          })
+          .then(function (r) { return r.json() })
+          .then(function () {
+            FM._showToast('Imagem ANTES/DEPOIS enviada!', 'success')
+          })
+          .catch(function () { /* silent */ })
+        }
+        imgReader.readAsDataURL(imgBlob)
+      })
+    }, 2000)
   }
 
   // Generate HTML blob (reusable by both download and WhatsApp send)
