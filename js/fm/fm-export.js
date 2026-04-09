@@ -399,7 +399,7 @@
           html += '<tr style="background:' + bg + '">' +
             '<td style="padding:5px 8px;color:#F5F0E8"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + zm.color + ';margin-right:6px;vertical-align:middle"></span>' + FM._esc(zm.label) + sideStr + '</td>' +
             '<td style="padding:5px 8px;color:rgba(245,240,232,0.65)">' + FM._esc(it.treatment) + '</td>' +
-            '<td style="padding:5px 8px;color:' + (it.unit === 'U' ? '#8B5CF6' : '#3B82F6') + ';font-weight:600">' + (it.ml ? it.ml.toFixed(1) + ' ' + it.unit : '-') + '</td>' +
+            '<td style="padding:5px 8px;color:' + (it.unit === 'U' ? '#8B5CF6' : '#3B82F6') + ';font-weight:600">' + (it.ml ? parseFloat(it.ml).toFixed(1) + ' ' + it.unit : '-') + '</td>' +
             '<td style="padding:5px 8px;color:rgba(245,240,232,0.45)">' + FM._esc(it.product) + '</td>' +
           '</tr>'
           zIdx++
