@@ -289,9 +289,13 @@
       var alexaMsg = _svc().renderTemplate(r.alexa_message, vars)
       var targetLabel = r.alexa_target === 'recepcao' ? 'Recepcao' : r.alexa_target === 'todos' ? 'Todos' : r.alexa_target === 'profissional' ? 'Profissional' : 'Sala'
       html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border-left:4px solid #06B6D4;background:#ECFEFF;font-size:13px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between">'
         + '<div style="display:flex;align-items:center;gap:6px;font-weight:600;color:#0891B2">'
         + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>'
         + ' Alexa (' + targetLabel + ')</div>'
+        + '<button data-test-alexa="' + r.id + '" style="padding:4px 10px;background:#0891B2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">'
+        + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Testar</button>'
+        + '</div>'
         + '<div style="margin-top:4px;color:#0E7490;font-style:italic">"' + _esc(alexaMsg) + '"</div>'
         + '</div>'
     }
@@ -630,6 +634,10 @@
       var cancelDel = e.target.closest('[data-cancel-delete]')
       if (cancelDel) { _deleteConfirm = null; _render(); return }
 
+      // Test Alexa
+      var testAlexa = e.target.closest('[data-test-alexa]')
+      if (testAlexa) { _testAlexaRule(testAlexa.dataset.testAlexa); return }
+
       // Category filter tabs
       var tab = e.target.closest('[data-cat]')
       if (tab) { _filterCategory = tab.dataset.cat; _render(); return }
@@ -707,6 +715,64 @@
         _form.alexa_message = e.target.value
       }
     })
+  }
+
+  async function _testAlexaRule(ruleId) {
+    var r = _rules.find(function(x) { return x.id === ruleId })
+    if (!r || !r.alexa_message) return
+
+    var config = window.AlexaNotificationService ? await AlexaNotificationService.getConfig() : null
+    if (!config || !config.webhook_url || !config.auth_token) {
+      if (window._showToast) _showToast('Alexa', 'Configure URL e Token em Settings > Alexa', 'warning')
+      return
+    }
+
+    var vars = { nome: 'Maria Silva', data: '15/04/2026', hora: '14:30', profissional: 'Dra. Mirian', procedimento: 'Bioestimulador', clinica: 'Clinica', sala: 'Consultorio 02' }
+    var message = _svc().renderTemplate(r.alexa_message, vars)
+    var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.auth_token }
+
+    // Resolver devices pelo target
+    var devices = []
+    var target = r.alexa_target || 'sala'
+
+    if (target === 'recepcao') {
+      devices.push('GR72J205436604CX')
+    } else if (target === 'sala') {
+      var rooms = typeof getRooms === 'function' ? getRooms() : []
+      for (var i = 0; i < rooms.length; i++) {
+        if (rooms[i].alexa_device_name) { devices.push(rooms[i].alexa_device_name); break }
+      }
+    } else if (target === 'todos') {
+      devices.push('GR72J205436604CX')
+      var rooms2 = typeof getRooms === 'function' ? getRooms() : []
+      for (var j = 0; j < rooms2.length; j++) {
+        if (rooms2[j].alexa_device_name) devices.push(rooms2[j].alexa_device_name)
+      }
+    } else if (target === 'profissional') {
+      var rooms3 = typeof getRooms === 'function' ? getRooms() : []
+      for (var k = 0; k < rooms3.length; k++) {
+        if (rooms3[k].alexa_device_name) { devices.push(rooms3[k].alexa_device_name); break }
+      }
+    }
+
+    if (!devices.length) {
+      if (window._showToast) _showToast('Alexa', 'Nenhum dispositivo encontrado para target "' + target + '"', 'warning')
+      return
+    }
+
+    var sent = 0
+    for (var d = 0; d < devices.length; d++) {
+      try {
+        var resp = await fetch(config.webhook_url, {
+          method: 'POST', headers: headers,
+          body: JSON.stringify({ device: devices[d], message: message, type: 'announce' })
+        })
+        if (resp.ok) sent++
+      } catch (e) { /* ignore */ }
+      if (d < devices.length - 1) await new Promise(function(res) { setTimeout(res, 2000) })
+    }
+
+    if (window._showToast) _showToast('Alexa', 'Teste enviado para ' + sent + ' dispositivo(s): "' + message.substring(0, 50) + '..."', sent > 0 ? 'success' : 'error')
   }
 
   async function _handleSave() {
