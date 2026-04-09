@@ -1159,15 +1159,20 @@
       }
       recorder.onerror = function () { callback(null) }
 
-      recorder.start()
+      // Draw first frame before starting recorder
+      ctx.drawImage(beforeImg, 0, 0, W, H)
 
-      var startTime = performance.now()
+      // Start recorder with timeslice for reliable chunks
+      recorder.start(100)
+
+      // Use setInterval (not rAF) for reliable frame timing with MediaRecorder
+      var startTime = Date.now()
       var duration = 3000
-
-      function drawFrame() {
-        var elapsed = performance.now() - startTime
+      var frameInterval = setInterval(function () {
+        var elapsed = Date.now() - startTime
         if (elapsed >= duration) {
-          recorder.stop()
+          clearInterval(frameInterval)
+          setTimeout(function () { recorder.stop() }, 200)
           return
         }
 
@@ -1198,10 +1203,7 @@
         ctx.fillText('Clinica Mirian de Paula', W / 2, 16)
         ctx.textAlign = 'left'
 
-        requestAnimationFrame(drawFrame)
-      }
-
-      requestAnimationFrame(drawFrame)
+      }, 100) // 10fps interval
     }
 
     beforeImg.onload = onLoad
