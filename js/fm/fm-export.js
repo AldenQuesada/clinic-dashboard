@@ -1105,6 +1105,113 @@
   }
 
   // ── Modo Apresentacao (fullscreen, sem toolbar) ──
+  // ── Generate ANTES/DEPOIS crossfade video ──
+  FM._generateCompareVideo = function (callback) {
+    // Check MediaRecorder support
+    if (typeof MediaRecorder === 'undefined') { callback(null); return }
+
+    // Find best ANTES/DEPOIS pair (prefer frontal)
+    var angles = ['front', '45', 'lateral']
+    var beforeSrc = null
+    var afterSrc = null
+    for (var i = 0; i < angles.length; i++) {
+      if (FM._photoUrls && FM._photoUrls[angles[i]] && FM._afterPhotoByAngle && FM._afterPhotoByAngle[angles[i]]) {
+        beforeSrc = FM._photoUrls[angles[i]]
+        afterSrc = FM._afterPhotoByAngle[angles[i]]
+        break
+      }
+    }
+    if (!beforeSrc || !afterSrc) { callback(null); return }
+
+    // Determine mimeType
+    var mimeType = 'video/webm;codecs=vp8'
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'video/webm'
+      if (!MediaRecorder.isTypeSupported(mimeType)) { callback(null); return }
+    }
+
+    var beforeImg = new Image()
+    var afterImg = new Image()
+    beforeImg.crossOrigin = 'anonymous'
+    afterImg.crossOrigin = 'anonymous'
+    var loaded = 0
+
+    function onLoad() {
+      loaded++
+      if (loaded < 2) return
+
+      var W = 480
+      var H = Math.round(W * beforeImg.naturalHeight / beforeImg.naturalWidth) || 640
+
+      var canvas = document.createElement('canvas')
+      canvas.width = W
+      canvas.height = H
+      var ctx = canvas.getContext('2d')
+
+      var stream = canvas.captureStream(10)
+      var recorder = new MediaRecorder(stream, { mimeType: mimeType })
+      var chunks = []
+
+      recorder.ondataavailable = function (e) { if (e.data && e.data.size > 0) chunks.push(e.data) }
+      recorder.onstop = function () {
+        var blob = new Blob(chunks, { type: 'video/webm' })
+        callback(blob)
+      }
+      recorder.onerror = function () { callback(null) }
+
+      recorder.start()
+
+      var startTime = performance.now()
+      var duration = 3000
+
+      function drawFrame() {
+        var elapsed = performance.now() - startTime
+        if (elapsed >= duration) {
+          recorder.stop()
+          return
+        }
+
+        var t = elapsed / duration
+        var fadeOpacity = 0.5 + 0.5 * Math.sin(t * Math.PI * 2)
+
+        ctx.clearRect(0, 0, W, H)
+        ctx.globalAlpha = 1
+        ctx.drawImage(beforeImg, 0, 0, W, H)
+        ctx.globalAlpha = fadeOpacity
+        ctx.drawImage(afterImg, 0, 0, W, H)
+        ctx.globalAlpha = 1
+
+        // Labels
+        ctx.font = '600 12px Montserrat, sans-serif'
+        ctx.textAlign = 'left'
+        ctx.fillStyle = 'rgba(239,68,68,0.8)'
+        ctx.fillText('ANTES', 12, H - 12)
+        ctx.textAlign = 'right'
+        ctx.fillStyle = 'rgba(16,185,129,0.8)'
+        ctx.fillText('DEPOIS', W - 12, H - 12)
+        ctx.textAlign = 'left'
+
+        // Watermark
+        ctx.font = '300 10px Montserrat, sans-serif'
+        ctx.fillStyle = 'rgba(200,169,126,0.3)'
+        ctx.textAlign = 'center'
+        ctx.fillText('Clinica Mirian de Paula', W / 2, 16)
+        ctx.textAlign = 'left'
+
+        requestAnimationFrame(drawFrame)
+      }
+
+      requestAnimationFrame(drawFrame)
+    }
+
+    beforeImg.onload = onLoad
+    afterImg.onload = onLoad
+    beforeImg.onerror = function () { callback(null) }
+    afterImg.onerror = function () { callback(null) }
+    beforeImg.src = beforeSrc
+    afterImg.src = afterSrc
+  }
+
   // ── Send Report via WhatsApp (Evolution API) ──
   FM._sendReportWhatsApp = function () {
     var lead = FM._lead
@@ -1122,51 +1229,92 @@
     if (phone.length === 10) phone = '55' + phone
 
     var patientName = lead.nome || lead.name || 'Paciente'
+    var safeName = patientName.replace(/\s+/g, '-').toLowerCase()
 
-    FM._showLoading('Gerando e enviando report via WhatsApp...')
+    var EVOLUTION_URL = 'https://evolution.aldenquesada.site'
+    var EVOLUTION_KEY = '429683C4C977415CAAFCCE10F7D57E11'
+    var EVOLUTION_INSTANCE = 'Mih'
 
-    // First generate the HTML
-    FM._exportReportHTMLBlob(function (htmlBlob) {
-      if (!htmlBlob) { FM._hideLoading(); FM._showToast('Erro ao gerar HTML', 'error'); return }
+    function _sendHTMLReport() {
+      FM._exportReportHTMLBlob(function (htmlBlob) {
+        if (!htmlBlob) { FM._hideLoading(); FM._showToast('Erro ao gerar HTML', 'error'); return }
 
-      // Convert blob to base64
-      var reader = new FileReader()
-      reader.onload = function () {
-        var base64 = reader.result.split(',')[1]
+        var reader = new FileReader()
+        reader.onload = function () {
+          var base64 = reader.result.split(',')[1]
 
-        // Send via Evolution API as document
-        var EVOLUTION_URL = 'https://evolution.aldenquesada.site'
-        var EVOLUTION_KEY = '429683C4C977415CAAFCCE10F7D57E11'
-        var EVOLUTION_INSTANCE = 'Mih'
+          fetch(EVOLUTION_URL + '/message/sendMedia/' + EVOLUTION_INSTANCE, {
+            method: 'POST',
+            headers: { 'apikey': EVOLUTION_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              number: phone,
+              mediatype: 'document',
+              mimetype: 'text/html',
+              caption: 'Plano de Harmonia Facial personalizado para ' + patientName + '\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
+              media: base64,
+              fileName: 'proposta-facial-' + safeName + '.html',
+            }),
+          })
+          .then(function (r) { return r.json() })
+          .then(function (data) {
+            FM._hideLoading()
+            if (data.key || data.status === 'PENDING' || data.messageId) {
+              FM._showToast('Report enviado para ' + phone + ' via WhatsApp!', 'success')
+            } else {
+              console.warn('[FM] WhatsApp send response:', data)
+              FM._showToast('Enviado (verifique no WhatsApp)', 'success')
+            }
+          })
+          .catch(function (err) {
+            FM._hideLoading()
+            FM._showToast('Erro ao enviar: ' + (err.message || 'verifique a conexao'), 'error')
+          })
+        }
+        reader.readAsDataURL(htmlBlob)
+      })
+    }
+
+    FM._showLoading('Gerando video e report...')
+
+    // Step 1: Generate ANTES/DEPOIS video
+    FM._generateCompareVideo(function (videoBlob) {
+      if (!videoBlob) {
+        // Fallback: skip video, send only HTML report
+        _sendHTMLReport()
+        return
+      }
+
+      // Step 2: Send video first (auto-play in WhatsApp)
+      var videoReader = new FileReader()
+      videoReader.onload = function () {
+        var videoBase64 = videoReader.result.split(',')[1]
 
         fetch(EVOLUTION_URL + '/message/sendMedia/' + EVOLUTION_INSTANCE, {
           method: 'POST',
           headers: { 'apikey': EVOLUTION_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             number: phone,
-            mediatype: 'document',
-            mimetype: 'text/html',
-            caption: 'Plano de Harmonia Facial personalizado para ' + patientName + '\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
-            media: base64,
-            fileName: 'proposta-facial-' + patientName.replace(/\s+/g, '-').toLowerCase() + '.html',
+            mediatype: 'video',
+            mimetype: 'video/mp4',
+            caption: 'Resultado do seu Protocolo de Harmonia Facial \u2728\n\nClinica Mirian de Paula',
+            media: videoBase64,
+            fileName: 'resultado-' + safeName + '.mp4',
           }),
         })
         .then(function (r) { return r.json() })
-        .then(function (data) {
-          FM._hideLoading()
-          if (data.key || data.status === 'PENDING' || data.messageId) {
-            FM._showToast('Report enviado para ' + phone + ' via WhatsApp!', 'success')
-          } else {
-            console.warn('[FM] WhatsApp send response:', data)
-            FM._showToast('Enviado (verifique no WhatsApp)', 'success')
-          }
+        .then(function () {
+          // Step 3: Send HTML report (delay for message ordering)
+          setTimeout(function () {
+            _sendHTMLReport()
+          }, 1500)
         })
-        .catch(function (err) {
-          FM._hideLoading()
-          FM._showToast('Erro ao enviar: ' + (err.message || 'verifique a conexao'), 'error')
+        .catch(function () {
+          // Fallback: send HTML only
+          _sendHTMLReport()
         })
       }
-      reader.readAsDataURL(htmlBlob)
+      videoReader.onerror = function () { _sendHTMLReport() }
+      videoReader.readAsDataURL(videoBlob)
     })
   }
 
