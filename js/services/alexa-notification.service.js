@@ -150,6 +150,7 @@
         body: JSON.stringify({ device: receptionDevice, message: welcomeMsg, type: 'announce' }),
       })
       results.push({ device: 'Recepcao', ok: r1.ok, error: r1.error, code: r1.code })
+      _logAnnounce(receptionDevice, welcomeMsg, 'notifyArrival:recepcao', vars.nome, r1.ok ? 'sent' : 'failed', r1.error)
       console.log('[Alexa] Recepcao:', r1.ok ? 'OK' : 'FALHOU — ' + r1.error)
     }
 
@@ -163,6 +164,7 @@
         body: JSON.stringify({ device: roomDeviceName, message: roomMsg, type: 'announce' }),
       })
       results.push({ device: roomNome, ok: r2.ok, error: r2.error, code: r2.code })
+      _logAnnounce(roomDeviceName, roomMsg, 'notifyArrival:sala', vars.nome, r2.ok ? 'sent' : (r2.code === 'COOKIE_EXPIRED' ? 'failed' : 'pending'), r2.error)
       console.log('[Alexa] Sala:', r2.ok ? 'OK' : 'FALHOU — ' + r2.error)
     }
 
@@ -226,6 +228,58 @@
     }
   }
 
+  // ── Audit log ───────────────────────────────────────────────
+  function _logAnnounce(device, message, ruleName, patient, status, error) {
+    if (!window._sbShared) return
+    window._sbShared.rpc('alexa_log_announce', {
+      p_device: device, p_message: message,
+      p_rule_name: ruleName || null, p_patient: patient || null,
+      p_status: status, p_error: error || null,
+    }).catch(function() {})
+  }
+
+  // ── Fila offline — retry pendentes ─────────────────────────
+  async function retryPending() {
+    if (!window._sbShared) return { processed: 0 }
+    var config = await _ensureConfig()
+    if (!config || !config.webhook_url || !config.auth_token) return { processed: 0 }
+
+    var res = await window._sbShared.rpc('alexa_pending_queue', {})
+    var items = (res.data && res.data.ok) ? res.data.data : []
+    if (!items || !items.length) return { processed: 0 }
+
+    var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + config.auth_token }
+    var sent = 0
+
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i]
+      try {
+        var r = await fetch(config.webhook_url, {
+          method: 'POST', headers: headers,
+          body: JSON.stringify({ device: item.device, message: item.message, type: 'announce' }),
+        })
+        if (r.ok) {
+          await window._sbShared.rpc('alexa_log_update', { p_id: item.id, p_status: 'sent' })
+          sent++
+        } else {
+          var body = null; try { body = await r.json() } catch (e) {}
+          await window._sbShared.rpc('alexa_log_update', { p_id: item.id, p_status: r.status >= 500 ? 'pending' : 'failed', p_error: body ? body.error : 'HTTP ' + r.status })
+        }
+      } catch (e) {
+        await window._sbShared.rpc('alexa_log_update', { p_id: item.id, p_status: 'pending', p_error: e.message })
+      }
+      await _delay(2000)
+    }
+    return { processed: items.length, sent: sent }
+  }
+
+  // ── Metricas ───────────────────────────────────────────────
+  async function getMetrics(days) {
+    if (!window._sbShared) return null
+    var res = await window._sbShared.rpc('alexa_metrics', { p_days: days || 7 })
+    return res.data
+  }
+
   // ── Public API ─────────────────────────────────────────────
   window.AlexaNotificationService = Object.freeze({
     notifyArrival:      notifyArrival,
@@ -233,5 +287,8 @@
     getConfig:          getConfig,
     invalidateCache:    invalidateCache,
     checkBridgeHealth:  checkBridgeHealth,
+    retryPending:       retryPending,
+    getMetrics:         getMetrics,
+    _logAnnounce:       _logAnnounce,
   })
 })()

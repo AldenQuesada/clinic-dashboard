@@ -36,6 +36,87 @@
     if (el('sc_alexa_welcome'))    el('sc_alexa_welcome').value  = cfg.welcome_template || ''
     if (el('sc_alexa_room_msg'))   el('sc_alexa_room_msg').value = cfg.room_template || ''
     window._alexaConfigDirty = false
+
+    // Health check + metricas
+    _loadHealthStatus()
+    _loadMetrics()
+  }
+
+  async function _loadHealthStatus() {
+    var panel = document.getElementById('alexa_health_panel')
+    if (!panel || !window.AlexaNotificationService) return
+
+    try {
+      var health = await AlexaNotificationService.checkBridgeHealth()
+      var connected = health && health.alexa_connected
+      var cookieWarning = health && health.cookie_warning
+      var cookieDays = health && health.cookie_age_days
+
+      var statusColor = connected ? '#10B981' : '#EF4444'
+      var statusText = connected ? 'Online' : 'Offline'
+      var cookieHtml = ''
+
+      if (cookieWarning) {
+        cookieHtml = '<div style="margin-top:6px;padding:6px 10px;background:#FEF3C7;border-radius:6px;font-size:11px;color:#92400E">'
+          + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#92400E" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+          + 'Cookie com ' + cookieDays + ' dias. Renove em breve.</div>'
+      }
+
+      var metricsHtml = ''
+      if (health && health.metrics) {
+        var m = health.metrics
+        metricsHtml = '<div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:#6B7280">'
+          + '<span>Enviados: <b style="color:#10B981">' + (m.sent || 0) + '</b></span>'
+          + '<span>Falhos: <b style="color:#EF4444">' + (m.failed || 0) + '</b></span>'
+          + (m.lastSentAt ? '<span>Ultimo: ' + new Date(m.lastSentAt).toLocaleTimeString('pt-BR') + '</span>' : '')
+          + '</div>'
+      }
+
+      panel.innerHTML = '<div style="display:flex;align-items:center;gap:8px">'
+        + '<div style="width:8px;height:8px;border-radius:50%;background:' + statusColor + '"></div>'
+        + '<span style="font-size:12px;font-weight:600;color:' + statusColor + '">' + statusText + '</span>'
+        + '</div>'
+        + cookieHtml + metricsHtml
+    } catch (e) {
+      panel.innerHTML = '<div style="display:flex;align-items:center;gap:8px">'
+        + '<div style="width:8px;height:8px;border-radius:50%;background:#EF4444"></div>'
+        + '<span style="font-size:12px;font-weight:600;color:#EF4444">Bridge inacessivel</span>'
+        + '</div>'
+    }
+  }
+
+  async function _loadMetrics() {
+    var panel = document.getElementById('alexa_metrics_panel')
+    if (!panel || !window.AlexaNotificationService) return
+
+    try {
+      var data = await AlexaNotificationService.getMetrics(7)
+      if (!data || !data.ok) { panel.innerHTML = ''; return }
+
+      var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'
+        + '<div style="text-align:center;padding:10px;background:#F0FDF4;border-radius:8px"><div style="font-size:20px;font-weight:700;color:#10B981">' + (data.sent || 0) + '</div><div style="font-size:10px;color:#6B7280">Enviados (7d)</div></div>'
+        + '<div style="text-align:center;padding:10px;background:#FEF2F2;border-radius:8px"><div style="font-size:20px;font-weight:700;color:#EF4444">' + (data.failed || 0) + '</div><div style="font-size:10px;color:#6B7280">Falhos (7d)</div></div>'
+        + '<div style="text-align:center;padding:10px;background:#ECFEFF;border-radius:8px"><div style="font-size:20px;font-weight:700;color:#06B6D4">' + (data.total || 0) + '</div><div style="font-size:10px;color:#6B7280">Total (7d)</div></div>'
+        + '</div>'
+
+      if (data.pending && data.pending > 0) {
+        html += '<div style="margin-top:8px;padding:8px 12px;background:#FEF3C7;border-radius:8px;font-size:11px;color:#92400E;display:flex;align-items:center;justify-content:space-between">'
+          + '<span>' + data.pending + ' announce(s) pendente(s)</span>'
+          + '<button onclick="retryAlexaPending()" style="padding:4px 10px;background:#F59E0B;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">Retentar</button>'
+          + '</div>'
+      }
+
+      panel.innerHTML = html
+    } catch (e) {
+      panel.innerHTML = ''
+    }
+  }
+
+  async function retryAlexaPending() {
+    if (!window.AlexaNotificationService) return
+    var res = await AlexaNotificationService.retryPending()
+    if (window._showToast) _showToast('Alexa', 'Retry: ' + (res.sent || 0) + ' de ' + (res.processed || 0) + ' enviados', res.sent > 0 ? 'success' : 'warning')
+    _loadMetrics()
   }
 
   async function saveAlexaConfig() {
@@ -334,4 +415,5 @@
   window.saveAlexaDevice        = saveAlexaDevice
   window.removeAlexaDevice      = removeAlexaDevice
   window.markAlexaDeviceDirty   = markAlexaDeviceDirty
+  window.retryAlexaPending      = retryAlexaPending
 })()
