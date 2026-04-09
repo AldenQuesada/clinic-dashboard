@@ -85,7 +85,14 @@
   FM._restoreAngleState = function () {}
   FM._stateByAngle = FM._angleStore  // alias for persistence
   FM._activeAngle = null
-  FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{x,y,rx,ry}, side }]
+  FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{type:'polygon',points:[{x,y},...]} | {x,y,rx,ry}, side }]
+
+  // Polygon drawing state (Estruturacao tab)
+  FM._polyPoints = []      // current polygon being drawn (temporary, pixel coords)
+  FM._polyDrawing = false  // whether polygon is being drawn
+  FM._polyHover = -1       // index of hovered point during editing
+  FM._dragPolyPoint = null // {annId, pointIndex} for dragging existing polygon points
+  FM._polyMousePos = null  // {x,y} current mouse pos for preview line
   FM._lastAnalysis = null  // GPT analysis result
   FM._editorMode = 'zones' // 'zones' | 'vectors' | 'analysis'
   FM._activeTab = 'zones'  // 'simetria' | 'zones' | 'vectors' | 'analysis'

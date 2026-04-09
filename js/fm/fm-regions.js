@@ -1081,6 +1081,8 @@
           _drawRegionPath(ctx, path, region, 0.6, false, false)
         })
       }
+    } else if (ann.shape && ann.shape.type === 'polygon') {
+      FM._drawPolygon(ann)
     } else {
       FM._drawEllipseClean(ann)
     }

@@ -202,6 +202,8 @@
   }
 
   FM._switchTab = function (tabId) {
+    // Cancel any in-progress polygon on tab switch
+    if (FM._polyDrawing) FM._cancelPoly()
     FM._activeTab = tabId
     if (tabId === 'simetria') {
       FM._editorMode = 'analysis'

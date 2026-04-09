@@ -129,40 +129,52 @@
       if (FM._drawAllRegions && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
         FM._drawAllRegions()
       }
-      // Also draw legacy annotations (manual ellipses) if any exist
+      // Draw annotations (polygons + legacy ellipses)
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
       anns.forEach(function (ann) {
         // Skip if this zone has an active region overlay
         var st = FM._regionState && FM._regionState[ann.zone]
         if (st && st.active && FM._regionPaths && FM._regionPaths[ann.zone]) return
-        FM._drawEllipseClean(ann)
+        if (ann.shape && ann.shape.type === 'polygon') {
+          FM._drawPolygon(ann)
+        } else {
+          FM._drawEllipseClean(ann)
+        }
       })
+      // Draw in-progress polygon preview
+      if (FM._polyDrawing && FM._polyPoints.length > 0) {
+        FM._drawPolyPreview()
+      }
     }
 
     // Selection handles
     if (FM._selAnn) {
-      var s = FM._selAnn.shape
-      var color = FM._zoneColor(FM._selAnn.zone)
-      FM._ctx.save()
-      FM._ctx.strokeStyle = '#fff'
-      FM._ctx.lineWidth = 1.5
-      FM._ctx.setLineDash([5, 3])
-      FM._ctx.beginPath()
-      FM._ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
-      FM._ctx.stroke()
-      FM._ctx.setLineDash([])
-
-      var handles = FM._getHandles(s)
-      handles.forEach(function (h) {
-        FM._ctx.fillStyle = '#fff'
-        FM._ctx.strokeStyle = color
-        FM._ctx.lineWidth = 2
+      if (FM._selAnn.shape && FM._selAnn.shape.type === 'polygon') {
+        FM._drawPolygonHandles(FM._selAnn)
+      } else {
+        var s = FM._selAnn.shape
+        var color = FM._zoneColor(FM._selAnn.zone)
+        FM._ctx.save()
+        FM._ctx.strokeStyle = '#fff'
+        FM._ctx.lineWidth = 1.5
+        FM._ctx.setLineDash([5, 3])
         FM._ctx.beginPath()
-        FM._ctx.arc(h.x, h.y, 5, 0, Math.PI * 2)
-        FM._ctx.fill()
+        FM._ctx.ellipse(s.x, s.y, s.rx, s.ry, 0, 0, Math.PI * 2)
         FM._ctx.stroke()
-      })
-      FM._ctx.restore()
+        FM._ctx.setLineDash([])
+
+        var handles = FM._getHandles(s)
+        handles.forEach(function (h) {
+          FM._ctx.fillStyle = '#fff'
+          FM._ctx.strokeStyle = color
+          FM._ctx.lineWidth = 2
+          FM._ctx.beginPath()
+          FM._ctx.arc(h.x, h.y, 5, 0, Math.PI * 2)
+          FM._ctx.fill()
+          FM._ctx.stroke()
+        })
+        FM._ctx.restore()
+      }
     }
 
     // Draw current shape being drawn
@@ -262,7 +274,9 @@
   }
 
   FM._hitEllipse = function (x, y) {
-    var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
+    var anns = FM._annotations.filter(function (a) {
+      return a.angle === FM._activeAngle && (!a.shape.type)  // only legacy ellipses
+    })
     for (var i = anns.length - 1; i >= 0; i--) {
       var s = anns[i].shape
       var dx = (x - s.x) / s.rx
@@ -341,7 +355,8 @@
     }
 
     // ZONES MODE — handle drag, region move, or click-to-select
-    if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+    // (only intercept if NOT in polygon drawing mode and no zone selected for polygon)
+    if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0 && !FM._polyDrawing && !FM._selectedZone) {
       // 1. Check control handle hit first (selected region only)
       if (FM._hitTestRegionHandle && !FM._regionLocked) {
         var handleHit = FM._hitTestRegionHandle(mx, my)
@@ -398,8 +413,20 @@
       return
     }
 
-    // 1. Check resize handles (locked = no resize)
-    if (FM._selAnn && !FM._metricLocked) {
+    // 1. If dragging a polygon point on selected annotation
+    if (FM._selAnn && FM._selAnn.shape && FM._selAnn.shape.type === 'polygon' && !FM._metricLocked) {
+      var ptIdx = FM._hitPolygonPoint(mx, my, FM._selAnn)
+      if (ptIdx >= 0) {
+        FM._pushUndo()
+        FM._dragPolyPoint = { annId: FM._selAnn.id, pointIndex: ptIdx }
+        FM._mode = 'move'
+        FM._canvas.style.cursor = 'grabbing'
+        return
+      }
+    }
+
+    // 1b. Check resize handles for legacy ellipses (locked = no resize)
+    if (FM._selAnn && FM._selAnn.shape && !FM._selAnn.shape.type && !FM._metricLocked) {
       var handle = FM._hitHandle(mx, my)
       if (handle) {
         FM._pushUndo()
@@ -409,32 +436,59 @@
       }
     }
 
-    // 2. Hit existing annotation -> move (locked = no move)
-    var hit = FM._hitEllipse(mx, my)
-    if (hit && !FM._metricLocked) {
+    // 2. Hit existing polygon annotation -> select it
+    var polyHit = FM._hitPolygon(mx, my)
+    if (polyHit && !FM._metricLocked) {
+      if (FM._polyDrawing) { FM._cancelPoly() }
+      FM._selAnn = polyHit
+      FM._mode = 'idle'
+      FM._canvas.style.cursor = 'grab'
+      FM._redraw()
+      FM._refreshToolbar()
+      return
+    }
+
+    // 2b. Hit existing ellipse annotation -> move (legacy)
+    var ellipseHit = FM._hitEllipse(mx, my)
+    if (ellipseHit && !FM._metricLocked) {
+      if (FM._polyDrawing) { FM._cancelPoly() }
       FM._pushUndo()
-      FM._selAnn = hit
+      FM._selAnn = ellipseHit
       FM._mode = 'move'
-      FM._moveStart = { x: mx - hit.shape.x, y: my - hit.shape.y }
+      FM._moveStart = { x: mx - ellipseHit.shape.x, y: my - ellipseHit.shape.y }
       FM._canvas.style.cursor = 'grabbing'
       FM._redraw()
       return
     }
 
-    // 3. Click on empty -> deselect
-    if (FM._selAnn && !FM._selectedZone) {
+    // 3. Polygon drawing mode (zones + selected zone + on canvas)
+    if (FM._selectedZone && !inLabelArea && FM._editorMode === 'zones') {
       FM._selAnn = null
-      FM._mode = 'idle'
+      if (!FM._polyDrawing) {
+        // Start new polygon
+        FM._polyPoints = [{ x: mx, y: my }]
+        FM._polyDrawing = true
+      } else {
+        // Check if closing (click near first point)
+        var first = FM._polyPoints[0]
+        var dist = Math.sqrt(Math.pow(mx - first.x, 2) + Math.pow(my - first.y, 2))
+        if (dist < 15 && FM._polyPoints.length >= 3) {
+          FM._closePolygon()
+        } else {
+          FM._polyPoints.push({ x: mx, y: my })
+        }
+      }
       FM._redraw()
       return
     }
 
-    // 4. Draw new ellipse
-    if (FM._selectedZone && !inLabelArea) {
+    // 4. Click on empty -> deselect
+    if (FM._selAnn) {
       FM._selAnn = null
-      FM._mode = 'draw'
-      FM._drawing = true
-      FM._drawStart = { x: mx, y: my, ex: mx, ey: my }
+      FM._mode = 'idle'
+      FM._redraw()
+      FM._refreshToolbar()
+      return
     }
   }
 
@@ -515,13 +569,25 @@
       return
     }
 
-    if (FM._mode === 'move' && FM._selAnn) {
+    // Polygon point drag
+    if (FM._mode === 'move' && FM._dragPolyPoint) {
+      var ann = FM._annotations.find(function (a) { return a.id === FM._dragPolyPoint.annId })
+      if (ann && ann.shape && ann.shape.type === 'polygon') {
+        ann.shape.points[FM._dragPolyPoint.pointIndex] = { x: mx / FM._imgW, y: my / FM._imgH }
+        FM._redraw()
+      }
+      return
+    }
+
+    // Legacy ellipse move
+    if (FM._mode === 'move' && FM._selAnn && FM._selAnn.shape && !FM._selAnn.shape.type) {
       FM._selAnn.shape.x = mx - FM._moveStart.x
       FM._selAnn.shape.y = my - FM._moveStart.y
       FM._redraw()
       return
     }
 
+    // Legacy ellipse resize
     if (FM._mode === 'resize' && FM._selAnn && FM._resizeHandle) {
       var s = FM._selAnn.shape
       switch (FM._resizeHandle) {
@@ -534,9 +600,9 @@
       return
     }
 
-    if (FM._mode === 'draw' && FM._drawStart) {
-      FM._drawStart.ex = mx
-      FM._drawStart.ey = my
+    // Polygon drawing preview (update mouse position for dashed line)
+    if (FM._polyDrawing) {
+      FM._polyMousePos = { x: mx, y: my }
       FM._redraw()
       return
     }
@@ -547,8 +613,8 @@
       return
     }
 
-    // Region hover detection (zones mode with landmarks)
-    if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0) {
+    // Region hover detection (zones mode with landmarks, skip when drawing polygon or zone selected)
+    if (FM._editorMode === 'zones' && FM._regionPaths && Object.keys(FM._regionPaths).length > 0 && !FM._polyDrawing && !FM._selectedZone) {
       // Check handle cursor
       if (FM._hitTestRegionHandle && !FM._regionLocked) {
         var hHandle = FM._hitTestRegionHandle(mx, my)
@@ -574,10 +640,13 @@
     }
 
     // Cursor hint
-    if (FM._selAnn && FM._hitHandle(mx, my)) {
+    if (FM._selAnn && FM._selAnn.shape && FM._selAnn.shape.type === 'polygon') {
+      var pHit = FM._hitPolygonPoint(mx, my, FM._selAnn)
+      FM._canvas.style.cursor = pHit >= 0 ? 'grab' : (FM._hitPolygon(mx, my) ? 'grab' : (FM._selectedZone ? 'crosshair' : 'default'))
+    } else if (FM._selAnn && FM._selAnn.shape && !FM._selAnn.shape.type && FM._hitHandle(mx, my)) {
       var h = FM._hitHandle(mx, my)
       FM._canvas.style.cursor = (h === 'n' || h === 's') ? 'ns-resize' : 'ew-resize'
-    } else if (FM._hitEllipse(mx, my)) {
+    } else if (FM._hitPolygon(mx, my) || FM._hitEllipse(mx, my)) {
       FM._canvas.style.cursor = 'grab'
     } else {
       FM._canvas.style.cursor = FM._selectedZone ? 'crosshair' : 'default'
@@ -612,60 +681,67 @@
       return
     }
     if (FM._mode === 'move' || FM._mode === 'resize') {
+      // End polygon point drag
+      if (FM._dragPolyPoint) {
+        FM._dragPolyPoint = null
+      }
       FM._mode = 'idle'
       FM._canvas.style.cursor = FM._selectedZone ? 'crosshair' : 'default'
       FM._autoSave()
       FM._redraw()
+      FM._refreshToolbar()
+      return
+    }
+  }
+
+  // ── Close polygon and create annotation ──────────────────
+  FM._closePolygon = function () {
+    if (!FM._polyPoints || FM._polyPoints.length < 3) {
+      FM._cancelPoly()
       return
     }
 
-    if (FM._mode === 'draw' && FM._drawStart) {
-      FM._drawing = false
-      FM._mode = 'idle'
+    var mlInput = document.getElementById('fmMl')
+    var productInput = document.getElementById('fmProduct')
+    var sideSelect = document.getElementById('fmSide')
+    var w = FM._imgW, h = FM._imgH
 
-      var cx = (FM._drawStart.x + FM._drawStart.ex) / 2
-      var cy = (FM._drawStart.y + FM._drawStart.ey) / 2
-      var rx = Math.abs(FM._drawStart.ex - FM._drawStart.x) / 2
-      var ry = Math.abs(FM._drawStart.ey - FM._drawStart.y) / 2
+    var zDef = FM.ZONES.find(function (x) { return x.id === FM._selectedZone })
+    var qty = parseFloat(mlInput ? mlInput.value : FM._selectedMl) || (zDef ? zDef.min : 0.5)
 
-      if (rx < 8 || ry < 8) {
-        FM._drawStart = null
-        FM._redraw()
-        return
-      }
-
-      var mlInput = document.getElementById('fmMl')
-      var productInput = document.getElementById('fmProduct')
-      var sideSelect = document.getElementById('fmSide')
-
-      var zDef = FM.ZONES.find(function (x) { return x.id === FM._selectedZone })
-      var qty = parseFloat(mlInput ? mlInput.value : FM._selectedMl) || (zDef ? zDef.min : 0.5)
-
-      if (zDef && qty < zDef.min) {
-        qty = zDef.min
-        if (mlInput) { mlInput.value = qty; mlInput.style.borderColor = '#EF4444'; setTimeout(function () { mlInput.style.borderColor = '' }, 1500) }
-      }
-
-      var newAnn = {
-        id: FM._nextId++,
-        angle: FM._activeAngle,
-        zone: FM._selectedZone,
-        treatment: FM._selectedTreatment,
-        ml: qty,
-        product: productInput ? productInput.value : FM._selectedProduct,
-        side: sideSelect ? sideSelect.value : FM._selectedSide,
-        shape: { x: cx, y: cy, rx: rx, ry: ry },
-      }
-      FM._pushUndo()
-      FM._annotations.push(newAnn)
-      FM._selAnn = newAnn
-      FM._simPhotoUrl = null
-      FM._autoSave()
-
-      FM._drawStart = null
-      FM._redraw()
-      FM._refreshToolbar()
+    if (zDef && qty < zDef.min) {
+      qty = zDef.min
+      if (mlInput) { mlInput.value = qty; mlInput.style.borderColor = '#EF4444'; setTimeout(function () { mlInput.style.borderColor = '' }, 1500) }
     }
+
+    // Normalize to 0-1 coordinates
+    var normPoints = FM._polyPoints.map(function (p) {
+      return { x: p.x / w, y: p.y / h }
+    })
+
+    var newAnn = {
+      id: FM._nextId++,
+      angle: FM._activeAngle,
+      zone: FM._selectedZone,
+      treatment: FM._selectedTreatment,
+      ml: qty,
+      product: productInput ? productInput.value : FM._selectedProduct,
+      side: sideSelect ? sideSelect.value : FM._selectedSide,
+      shape: { type: 'polygon', points: normPoints },
+    }
+    FM._pushUndo()
+    FM._annotations.push(newAnn)
+    FM._selAnn = newAnn
+    FM._simPhotoUrl = null
+
+    // Reset poly state
+    FM._polyPoints = []
+    FM._polyDrawing = false
+    FM._polyMousePos = null
+
+    FM._autoSave()
+    FM._redraw()
+    FM._refreshToolbar()
   }
 
 })()

@@ -141,11 +141,219 @@
   }
 
   FM._scaleAnn = function (ann, s) {
+    var shape
+    if (ann.shape && ann.shape.type === 'polygon') {
+      shape = { type: 'polygon', points: ann.shape.points.map(function (p) { return { x: p.x * s, y: p.y * s } }) }
+    } else {
+      shape = { x: ann.shape.x * s, y: ann.shape.y * s, rx: ann.shape.rx * s, ry: ann.shape.ry * s }
+    }
     return {
       id: ann.id, angle: ann.angle, zone: ann.zone, treatment: ann.treatment,
       ml: ann.ml, product: ann.product, side: ann.side,
-      shape: { x: ann.shape.x * s, y: ann.shape.y * s, rx: ann.shape.rx * s, ry: ann.shape.ry * s }
+      shape: shape
     }
+  }
+
+  // ── Polygon Drawing ──────────────────────────────────────
+
+  FM._drawPolygon = function (ann) {
+    var ctx = FM._ctx
+    var pts = ann.shape.points
+    if (!pts || pts.length < 3) return
+    var color = FM._zoneColor(ann.zone)
+    var w = FM._imgW, h = FM._imgH
+
+    ctx.save()
+
+    // Fill
+    ctx.beginPath()
+    ctx.moveTo(pts[0].x * w, pts[0].y * h)
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * w, pts[i].y * h)
+    ctx.closePath()
+    ctx.fillStyle = color + '33'  // 20% opacity
+    ctx.fill()
+
+    // Border
+    ctx.strokeStyle = color + '99'  // 60% opacity
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    // Label at centroid
+    var cx = 0, cy = 0
+    pts.forEach(function (p) { cx += p.x * w; cy += p.y * h })
+    cx /= pts.length; cy /= pts.length
+
+    ctx.font = '600 10px Inter, Montserrat, sans-serif'
+    ctx.fillStyle = color
+    ctx.textAlign = 'center'
+    var z = FM.ZONES.find(function (zz) { return zz.id === ann.zone })
+    var label = z ? z.label : ann.zone
+    var unit = z && z.unit === 'U' ? 'U' : 'mL'
+    ctx.fillText(label + ' ' + ann.ml + unit, cx, cy + 4)
+
+    ctx.restore()
+  }
+
+  FM._drawPolygonOn = function (ctx, ann, w, h) {
+    var pts = ann.shape.points
+    if (!pts || pts.length < 3) return
+    var color = FM._zoneColor(ann.zone)
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(pts[0].x * w, pts[0].y * h)
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * w, pts[i].y * h)
+    ctx.closePath()
+    ctx.fillStyle = color + '33'
+    ctx.fill()
+    ctx.strokeStyle = color + '99'
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    var cx = 0, cy = 0
+    pts.forEach(function (p) { cx += p.x * w; cy += p.y * h })
+    cx /= pts.length; cy /= pts.length
+
+    var z = FM.ZONES.find(function (zz) { return zz.id === ann.zone })
+    var label = z ? z.label : ann.zone
+    var unit = z && z.unit === 'U' ? 'U' : 'mL'
+    ctx.font = '600 10px Inter, Montserrat, sans-serif'
+    ctx.fillStyle = color
+    ctx.textAlign = 'center'
+    ctx.fillText(label + ' ' + ann.ml + unit, cx, cy + 4)
+    ctx.restore()
+  }
+
+  FM._drawPolyPreview = function () {
+    var ctx = FM._ctx
+    var pts = FM._polyPoints
+    if (!pts || pts.length === 0) return
+    var color = FM._zoneColor(FM._selectedZone)
+    var w = FM._imgW, h = FM._imgH
+
+    ctx.save()
+
+    // Draw connected lines between placed points
+    ctx.beginPath()
+    ctx.moveTo(pts[0].x, pts[0].y)
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y)
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2
+    ctx.stroke()
+
+    // Dashed preview line from last point to cursor
+    if (FM._polyMousePos && pts.length > 0) {
+      ctx.beginPath()
+      ctx.moveTo(pts[pts.length - 1].x, pts[pts.length - 1].y)
+      ctx.lineTo(FM._polyMousePos.x, FM._polyMousePos.y)
+      ctx.setLineDash([6, 4])
+      ctx.strokeStyle = color + 'AA'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+      ctx.setLineDash([])
+    }
+
+    // Draw points
+    for (var j = 0; j < pts.length; j++) {
+      var isFirst = j === 0
+      var radius = isFirst ? 8 : 5
+      ctx.beginPath()
+      ctx.arc(pts[j].x, pts[j].y, radius, 0, Math.PI * 2)
+      ctx.fillStyle = color
+      ctx.fill()
+      ctx.strokeStyle = '#fff'
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      // First point: extra ring to indicate "close here"
+      if (isFirst && pts.length >= 3) {
+        ctx.beginPath()
+        ctx.arc(pts[0].x, pts[0].y, 15, 0, Math.PI * 2)
+        ctx.strokeStyle = color + '55'
+        ctx.lineWidth = 1.5
+        ctx.setLineDash([4, 3])
+        ctx.stroke()
+        ctx.setLineDash([])
+      }
+    }
+
+    ctx.restore()
+  }
+
+  FM._drawPolygonHandles = function (ann) {
+    if (!ann || !ann.shape || ann.shape.type !== 'polygon') return
+    var ctx = FM._ctx
+    var pts = ann.shape.points
+    var w = FM._imgW, h = FM._imgH
+    var color = FM._zoneColor(ann.zone)
+
+    ctx.save()
+
+    // Dashed border
+    ctx.beginPath()
+    ctx.moveTo(pts[0].x * w, pts[0].y * h)
+    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * w, pts[i].y * h)
+    ctx.closePath()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 1.5
+    ctx.setLineDash([5, 3])
+    ctx.stroke()
+    ctx.setLineDash([])
+
+    // Point handles
+    for (var j = 0; j < pts.length; j++) {
+      ctx.beginPath()
+      ctx.arc(pts[j].x * w, pts[j].y * h, 5, 0, Math.PI * 2)
+      ctx.fillStyle = '#fff'
+      ctx.fill()
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2
+      ctx.stroke()
+    }
+
+    ctx.restore()
+  }
+
+  // Point-in-polygon ray casting
+  FM._pointInPolygon = function (px, py, points, w, h) {
+    var inside = false
+    for (var i = 0, j = points.length - 1; i < points.length; j = i++) {
+      var xi = points[i].x * w, yi = points[i].y * h
+      var xj = points[j].x * w, yj = points[j].y * h
+      var intersect = ((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+      if (intersect) inside = !inside
+    }
+    return inside
+  }
+
+  FM._hitPolygon = function (x, y) {
+    var w = FM._imgW, h = FM._imgH
+    var anns = FM._annotations.filter(function (a) {
+      return a.angle === FM._activeAngle && a.shape && a.shape.type === 'polygon'
+    })
+    for (var i = anns.length - 1; i >= 0; i--) {
+      if (FM._pointInPolygon(x, y, anns[i].shape.points, w, h)) return anns[i]
+    }
+    return null
+  }
+
+  FM._hitPolygonPoint = function (x, y, ann) {
+    if (!ann || !ann.shape || ann.shape.type !== 'polygon') return -1
+    var w = FM._imgW, h = FM._imgH
+    for (var i = 0; i < ann.shape.points.length; i++) {
+      var dx = x - ann.shape.points[i].x * w
+      var dy = y - ann.shape.points[i].y * h
+      if (dx * dx + dy * dy <= 100) return i  // 10px radius
+    }
+    return -1
+  }
+
+  // Cancel in-progress polygon
+  FM._cancelPoly = function () {
+    FM._polyPoints = []
+    FM._polyDrawing = false
+    FM._polyMousePos = null
+    FM._redraw()
   }
 
   FM._drawVector = function (vec) {

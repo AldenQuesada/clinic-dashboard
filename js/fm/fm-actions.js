@@ -190,6 +190,8 @@
   // ── Actions ───────────────────────────────────────────────
 
   FM._selectAngle = function (angle) {
+    // Cancel any in-progress polygon on angle switch
+    if (FM._polyDrawing) FM._cancelPoly()
     // Switch angle — per-angle state auto-routes via getter/setter
     FM._activeAngle = angle
     FM._selectedRegion = null

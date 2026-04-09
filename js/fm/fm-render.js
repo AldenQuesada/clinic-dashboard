@@ -1383,7 +1383,7 @@
 
     var angleAnnotations = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
     if (angleAnnotations.length === 0) {
-      html += '<div style="font-size:12px;color:rgba(200,169,126,0.3);text-align:center;padding:12px">Selecione uma zona e desenhe na foto</div>'
+      html += '<div style="font-size:12px;color:rgba(200,169,126,0.3);text-align:center;padding:12px">Selecione uma zona e clique nos pontos para marcar a area</div>'
     } else {
       angleAnnotations.forEach(function (ann) {
         var t = FM.TREATMENTS.find(function (x) { return x.id === ann.treatment }) || FM.TREATMENTS[0]

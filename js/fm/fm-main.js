@@ -130,7 +130,7 @@
     set _selectedProduct(v) { FM._selectedProduct = v },
   }
 
-  // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Shift+Z / Ctrl+Y = redo
+  // Keyboard shortcuts: Ctrl+Z = undo, Ctrl+Shift+Z / Ctrl+Y = redo, Enter/Escape/Delete for polygons
   document.addEventListener('keydown', function (e) {
     // Only when facial analysis page is active
     var page = document.getElementById('page-facial-analysis')
@@ -143,6 +143,22 @@
       } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
         e.preventDefault()
         FM._redo()
+      }
+      return
+    }
+
+    // Polygon keyboard shortcuts (zones mode only)
+    if (FM._editorMode === 'zones') {
+      if (e.key === 'Enter' && FM._polyDrawing && FM._polyPoints && FM._polyPoints.length >= 3) {
+        e.preventDefault()
+        FM._closePolygon()
+      } else if (e.key === 'Escape' && FM._polyDrawing) {
+        e.preventDefault()
+        FM._cancelPoly()
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && FM._selAnn && !FM._polyDrawing) {
+        e.preventDefault()
+        FM._removeAnnotation(FM._selAnn.id)
+        FM._selAnn = null
       }
     }
   })
