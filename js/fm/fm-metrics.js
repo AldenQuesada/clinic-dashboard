@@ -356,7 +356,9 @@
       // Add new H line (always allowed — new lines are unlocked)
       if (mx > 0 && mx < w && my > 0 && my < h) {
         FM._pushUndo()
-        FM._metricLines.h.push({ y: my / h, id: FM._metricNextLineId++, locked: false })
+        var newH = { y: my / h, id: FM._metricNextLineId++ }
+        if (FM._metricLocked) newH.locked = false
+        FM._metricLines.h.push(newH)
         FM._metricLines.h.sort(function (a, b) { return a.y - b.y })
         FM._redraw()
         FM._refreshToolbar()
@@ -376,7 +378,9 @@
       // Add new V line (always allowed)
       if (mx > 0 && mx < w && my > 0 && my < h) {
         FM._pushUndo()
-        FM._metricLines.v.push({ x: mx / w, id: FM._metricNextLineId++, locked: false })
+        var newV = { x: mx / w, id: FM._metricNextLineId++ }
+        if (FM._metricLocked) newV.locked = false
+        FM._metricLines.v.push(newV)
         FM._metricLines.v.sort(function (a, b) { return a.x - b.x })
         FM._redraw()
         FM._refreshToolbar()
@@ -397,7 +401,9 @@
       // Add new point (always allowed)
       if (mx > 0 && mx < w && my > 0 && my < h) {
         FM._pushUndo()
-        FM._metricPoints.push({ x: mx / w, y: my / h, id: FM._metricNextPointId++, locked: false })
+        var newP = { x: mx / w, y: my / h, id: FM._metricNextPointId++ }
+        if (FM._metricLocked) newP.locked = false
+        FM._metricPoints.push(newP)
         FM._redraw()
         FM._refreshToolbar()
         return true
