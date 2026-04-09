@@ -237,7 +237,108 @@
       }
 
       html += '</div>'
+
+      // ── Per-angle analysis (below photos) ──
+      var angStore = FM._angleStore && FM._angleStore[ang.id]
+
+      if (ang.id === 'front' || ang.id === '45') {
+        // Simetria metrics for this angle
+        var angMetricAngles = angStore && angStore._metricAngles
+        var cards = []
+
+        if (FM._scanData && FM._scanData.thirds && ang.id === 'front') {
+          var t = FM._scanData.thirds
+          if (t.superior != null) cards.push({ v: Math.round(t.superior) + '%', l: 'T.Sup', c: (t.superior >= 28 && t.superior <= 38) ? '#10B981' : '#F59E0B' })
+          if (t.medio != null) cards.push({ v: Math.round(t.medio) + '%', l: 'T.Med', c: (t.medio >= 28 && t.medio <= 38) ? '#10B981' : '#F59E0B' })
+          if (t.inferior != null) cards.push({ v: Math.round(t.inferior) + '%', l: 'T.Inf', c: (t.inferior >= 28 && t.inferior <= 38) ? '#10B981' : '#F59E0B' })
+        }
+        if (FM._scanData && FM._scanData.symmetry && FM._scanData.symmetry.overall != null && ang.id === 'front') {
+          cards.push({ v: FM._scanData.symmetry.overall + '%', l: 'Simetria', c: _scoreColor(FM._scanData.symmetry.overall, 85, 70) })
+        }
+        if (angMetricAngles && angMetricAngles.amf != null) {
+          var cl = angMetricAngles.classification || {}
+          cards.push({ v: angMetricAngles.amf + '\u00B0', l: 'AMF', c: cl.color || '#C8A97E', s: cl.label || '' })
+        }
+        if (angMetricAngles && angMetricAngles.aij_avg != null) {
+          var jl = angMetricAngles.jawline || {}
+          cards.push({ v: angMetricAngles.aij_avg + '\u00B0', l: 'Jawline', c: jl.color || '#C8A97E', s: jl.label || '' })
+        }
+        if (FM._scanData && FM._scanData.measurements && FM._scanData.measurements.golden_ratio != null && ang.id === 'front') {
+          var gr = FM._scanData.measurements.golden_ratio
+          cards.push({ v: gr.toFixed(3), l: 'Golden', c: Math.abs(gr - 1.618) < 0.08 ? '#10B981' : '#F59E0B' })
+        }
+        if (FM._scanData && FM._scanData.shape && FM._scanData.shape.shape && ang.id === 'front') {
+          cards.push({ v: FM._scanData.shape.shape, l: 'Biotipo', c: '#C8A97E' })
+        }
+
+        if (cards.length > 0) {
+          html += '<div style="display:flex;gap:6px;padding:0 32px 8px 32px;flex-wrap:wrap">'
+          cards.forEach(function (card) {
+            html += '<div style="flex:1;min-width:70px;max-width:120px;background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.08);border-radius:8px;padding:8px 6px;text-align:center">' +
+              '<div style="font-size:16px;font-weight:700;color:' + card.c + '">' + card.v + '</div>' +
+              '<div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4);margin-top:2px">' + card.l + '</div>' +
+              (card.s ? '<div style="font-size:7px;color:' + card.c + '">' + card.s + '</div>' : '') +
+            '</div>'
+          })
+          html += '</div>'
+        }
+
+        // Skin analysis (frontal only)
+        if (ang.id === 'front' && FM._skinAnalysis) {
+          var sk = FM._skinAnalysis
+          html += '<div style="display:flex;gap:8px;padding:0 32px 8px 32px;align-items:center">'
+          html += '<div style="text-align:center;flex-shrink:0">' +
+            '<div style="width:50px;height:50px;border-radius:50%;border:2px solid ' + _scoreColor(sk.overall || 0) + ';display:flex;align-items:center;justify-content:center">' +
+              '<span style="font-size:18px;font-weight:700;color:' + _scoreColor(sk.overall || 0) + '">' + Math.round(sk.overall || 0) + '</span>' +
+            '</div>' +
+            '<div style="font-size:7px;color:rgba(245,240,232,0.3);margin-top:2px">PELE</div>' +
+          '</div>'
+          var skinMetrics = [
+            { l: 'Rugas', v: sk.wrinkles }, { l: 'Manchas', v: sk.spots }, { l: 'Poros', v: sk.pores },
+            { l: 'Firmeza', v: sk.firmness }
+          ]
+          html += '<div style="flex:1;display:flex;gap:4px">'
+          skinMetrics.forEach(function (m) {
+            if (m.v == null) return
+            var c = _scoreColor(m.v)
+            html += '<div style="flex:1;text-align:center;background:rgba(255,255,255,0.02);border-radius:6px;padding:4px">' +
+              '<div style="font-size:13px;font-weight:700;color:' + c + '">' + Math.round(m.v) + '</div>' +
+              '<div style="font-size:6px;color:rgba(245,240,232,0.3);letter-spacing:0.08em;text-transform:uppercase">' + m.l + '</div>' +
+            '</div>'
+          })
+          html += '</div></div>'
+        }
+      }
+
+      if (ang.id === 'lateral') {
+        // Ricketts for lateral
+        var rickPts = angStore && angStore._rickettsPoints
+        if (rickPts && rickPts.nose && rickPts.chin) {
+          html += '<div style="display:flex;gap:6px;padding:0 32px 8px 32px">' +
+            _metricCard('Lateral', 'Ricketts', '#C8A97E', 'Linha E avaliada') +
+          '</div>'
+        }
+      }
     })
+
+    // ─── Mapa de Forcas Faciais (canvas capture) ───
+    if (FM._vecAge && FM._drawAllForceVectors) {
+      html += '<div style="margin-top:4px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+      html += _sectionTitle('Mapa de Forcas Faciais  |  Idade: ' + (FM._vecAge || 25), 'trending-up')
+      html += '<div style="padding:0 32px 8px 32px;text-align:center">' +
+        '<canvas id="fmReportVecCanvas" style="max-width:360px;width:100%;display:inline-block;border-radius:8px"></canvas>' +
+      '</div>'
+      // Metrics row
+      var vt = FM._vecAgeFactor(FM._vecAge || 25)
+      var vc = FM._vecAgeColor(vt)
+      html += '<div style="display:flex;gap:6px;padding:0 32px 8px 32px;flex-wrap:wrap;justify-content:center">'
+      html += _metricCard(Math.round(FM._vecCollagenPct(FM._vecAge || 25)) + '%', 'Colageno', vc)
+      html += _metricCard(Math.round(100 - vt * 65) + '%', 'Elasticidade', vc)
+      html += _metricCard(Math.round(100 - vt * 55) + '%', 'Sustentacao', vc)
+      html += _metricCard(Math.round(100 - vt * 70) + '%', 'Vetores', vc)
+      if (FM._vecGravityLabel) { var g = FM._vecGravityLabel(vt); html += _metricCard(g.label, 'Gravidade', g.color) }
+      html += '</div>'
+    }
 
     // ─── SECTION 3: Queixas da Paciente (auto-preenchido da anamnese) ───
     html += _sectionTitle('Queixas da Paciente', 'message-circle')
@@ -274,137 +375,7 @@
     html += _editableBlock('fmReportQueixas', queixas.length > 0 ? 'Observacoes adicionais da anamnese...' : 'Clique para adicionar as queixas da paciente...')
     html += '</div>'
 
-    // ─── SECTION 4: Analise de Simetria ───
-    var hasScan = FM._scanData
-    var hasAngles = FM._metricAngles
-    if (hasScan || hasAngles) {
-      html += _sectionTitle('Analise de Simetria', 'grid')
-      html += '<div style="display:flex;gap:8px;padding:0 32px 4px 32px;flex-wrap:wrap">'
-
-      if (hasScan && hasScan.thirds) {
-        var t = hasScan.thirds
-        var thirds = [
-          { l: 'Sup.', v: t.superior },
-          { l: 'Medio', v: t.medio },
-          { l: 'Inf.', v: t.inferior },
-        ]
-        thirds.forEach(function (tc) {
-          if (tc.v == null) return
-          var c = (tc.v >= 28 && tc.v <= 38) ? '#10B981' : tc.v < 28 ? '#EF4444' : '#F59E0B'
-          html += _metricCard(Math.round(tc.v) + '%', 'Terco ' + tc.l, c)
-        })
-      }
-
-      if (hasAngles && hasAngles.amf != null) {
-        var cl = hasAngles.classification || {}
-        html += _metricCard(hasAngles.amf + '\u00B0', 'AMF', cl.color || '#C8A97E', cl.label || '')
-      }
-
-      if (hasScan && hasScan.measurements) {
-        var meas = hasScan.measurements
-        if (meas.golden_ratio != null) {
-          var grColor = Math.abs(meas.golden_ratio - 1.618) < 0.08 ? '#10B981' : '#F59E0B'
-          html += _metricCard(meas.golden_ratio.toFixed(3), 'Proporcao Aurea', grColor, '1.618 ideal')
-        }
-      }
-
-      if (hasScan && hasScan.symmetry && hasScan.symmetry.overall != null) {
-        var so = hasScan.symmetry.overall
-        html += _metricCard(so + '%', 'Simetria', _scoreColor(so, 85, 70))
-      }
-
-      if (hasAngles && hasAngles.aij_avg != null) {
-        var jl = hasAngles.jawline || {}
-        html += _metricCard(hasAngles.aij_avg + '\u00B0', 'Jawline', jl.color || '#C8A97E', jl.label || '')
-      }
-
-      if (hasAngles && hasAngles.rmz != null) {
-        var rmzOk = hasAngles.rmz >= 0.85 && hasAngles.rmz <= 0.95
-        html += _metricCard(hasAngles.rmz, 'Ratio M/Z', rmzOk ? '#10B981' : '#F59E0B')
-      }
-
-      if (FM._rickettsPoints && FM._rickettsPoints.nose && FM._rickettsPoints.chin) {
-        html += _metricCard('Lateral', 'Ricketts', '#C8A97E', 'Linha E avaliada')
-      }
-
-      if (hasScan && hasScan.shape && hasScan.shape.shape) {
-        html += _metricCard(hasScan.shape.shape, 'Biotipo', '#C8A97E')
-      }
-
-      html += '</div>'
-    }
-
-    // ─── SECTION 5: Analise de Pele ───
-    if (FM._skinAnalysis) {
-      var sk = FM._skinAnalysis
-      html += _sectionTitle('Analise da Pele', 'activity')
-
-      html += '<div style="display:flex;gap:16px;padding:0 32px 4px 32px;align-items:flex-start">'
-
-      html += '<div style="flex-shrink:0;width:90px;text-align:center">' +
-        '<div style="width:72px;height:72px;border-radius:50%;border:3px solid ' + _scoreColor(sk.overall || 0) + ';display:flex;align-items:center;justify-content:center;margin:0 auto">' +
-          '<span style="font-size:26px;font-weight:700;color:' + _scoreColor(sk.overall || 0) + '">' + Math.round(sk.overall || 0) + '</span>' +
-        '</div>' +
-        '<div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.45);margin-top:6px">Score Geral</div>'
-      if (FM._skinAge && FM._skinAge.estimated_age) {
-        var saColor = FM._skinAge.estimated_age <= 35 ? '#10B981' : FM._skinAge.estimated_age <= 45 ? '#F59E0B' : '#EF4444'
-        html += '<div style="font-size:18px;font-weight:700;color:' + saColor + ';margin-top:8px">' + Math.round(FM._skinAge.estimated_age) + '</div>' +
-          '<div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.45)">Idade Pele</div>'
-      }
-      html += '</div>'
-
-      html += '<div style="flex:1">'
-      html += _skinBar('Rugas', sk.wrinkles)
-      html += _skinBar('Manchas', sk.spots)
-      html += _skinBar('Poros', sk.pores)
-      html += _skinBar('Vermelhidao', sk.redness)
-      html += _skinBar('Pigmentacao', sk.pigmentation)
-      html += _skinBar('Firmeza', sk.firmness)
-      html += '</div>'
-
-      html += '</div>'
-
-      if (FM._skinAge && FM._skinAge.description) {
-        html += '<div style="padding:4px 32px 8px 32px;text-align:center;font-size:10px;color:rgba(245,240,232,0.45);font-style:italic">' + FM._esc(FM._skinAge.description) + '</div>'
-      }
-    }
-
-    // ─── ATO 2: "O que aconteceu" ───
-    html += '<div style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">O que aconteceu</div>' +
-      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Evolucao vetorial e perda estrutural</div>' +
-    '</div>'
-
-    // ─── SECTION 6: Mapa de Forcas ───
-    var age = FM._vecAge || 25
-    if (FM._vecAgeFactor && FM._vecCollagenPct) {
-      var t = FM._vecAgeFactor(age)
-      var colPct = FM._vecCollagenPct(age)
-      var ageColor = FM._vecAgeColor ? FM._vecAgeColor(t) : '#C8A97E'
-      var elastPct = Math.max(0, 100 - Math.round(t * 65))
-      var sustPct = Math.max(0, 100 - Math.round(t * 55))
-      var activeVecPct = Math.max(0, 100 - Math.round(t * 70))
-
-      html += _sectionTitle('Vetores de Forca  |  Idade Simulada: ' + age, 'trending-up')
-      html += '<div style="display:flex;gap:8px;padding:0 32px 4px 32px;flex-wrap:wrap">'
-      html += _metricCard(Math.round(colPct) + '%', 'Colageno', ageColor)
-      html += _metricCard(elastPct + '%', 'Elasticidade', ageColor)
-      html += _metricCard(sustPct + '%', 'Sustentacao', ageColor)
-      html += _metricCard(activeVecPct + '%', 'Vetores Ativos', ageColor)
-
-      if (FM._vecGravityLabel) {
-        var grav = FM._vecGravityLabel(t)
-        html += _metricCard(grav.label, 'Gravidade', grav.color)
-      }
-      var antLabel = t < 0.3 ? 'Minima' : t < 0.6 ? 'Moderada' : 'Acentuada'
-      var antColor = t < 0.3 ? '#10B981' : t < 0.6 ? '#F59E0B' : '#EF4444'
-      html += _metricCard(antLabel, 'Anteriorizacao', antColor)
-      var ligLabel = t < 0.25 ? 'Firmes' : t < 0.55 ? 'Estirados' : 'Alongados'
-      var ligColor = t < 0.25 ? '#10B981' : t < 0.55 ? '#F59E0B' : '#EF4444'
-      html += _metricCard(ligLabel, 'Ligamentos', ligColor)
-
-      html += '</div>'
-    }
+    // (Simetria, Pele e Vetores ja incluidos inline por angulo acima)
 
     // ─── ATO 3: "Para onde vamos" ───
     html += '<div style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
@@ -834,6 +805,23 @@
       depoisEl.height = FM._canvas2.height
       var dctx = depoisEl.getContext('2d')
       dctx.drawImage(FM._canvas2, 0, 0)
+    }
+
+    // VETORES canvas — render force vectors on the active angle photo
+    var vecEl = document.getElementById('fmReportVecCanvas')
+    if (vecEl && FM._drawAllForceVectors && FM._photoUrls) {
+      var srcAngle = FM._photoUrls['front'] ? 'front' : (FM._photoUrls['45'] ? '45' : 'lateral')
+      var vecImg = new Image()
+      vecImg.onload = function () {
+        var maxW = 360, scale = Math.min(maxW / vecImg.width, 500 / vecImg.height)
+        var w = Math.round(vecImg.width * scale), h = Math.round(vecImg.height * scale)
+        vecEl.width = w; vecEl.height = h
+        var vctx = vecEl.getContext('2d')
+        vctx.drawImage(vecImg, 0, 0, w, h)
+        FM._drawAllForceVectors(vctx, FM._vecAge || 25, w, h)
+        if (FM._drawCollagenBar) FM._drawCollagenBar(vctx, 10, h - 16, w - 20, 6, FM._vecAge || 25)
+      }
+      vecImg.src = FM._photoUrls[srcAngle]
     }
   }
 
