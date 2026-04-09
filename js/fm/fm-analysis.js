@@ -796,7 +796,7 @@
     img2.onload = function () {
       var area = document.getElementById('fmCanvasArea')
       var maxW = area ? (area.clientWidth / 2 - 16) : 400
-      var maxH = area ? (area.clientHeight - 64) : 600
+      var maxH = area ? area.clientHeight : 600
 
       var scale = Math.min(maxW / img2.width, maxH / img2.height)
       var w = Math.round(img2.width * scale)
