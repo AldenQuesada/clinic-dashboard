@@ -372,6 +372,7 @@
     }
 
     // GUIDE LINES — add/drag thin guides in zones mode
+    console.log('[FM] mousedown zones check:', FM._editorMode, FM._guideTool, FM._polyDrawing, FM._activeTab)
     if (FM._editorMode === 'zones' && FM._guideTool && !FM._polyDrawing) {
       var w = FM._imgW, h = FM._imgH
       if (FM._guideTool === 'hguide') {
