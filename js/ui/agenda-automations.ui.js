@@ -723,6 +723,8 @@
 
     var data = Object.assign({}, _form)
     if (_editingRule) data.id = _editingRule.id
+    // Alexa-only nao usa content_template, mas coluna e NOT NULL
+    if (!data.content_template || !data.content_template.trim()) data.content_template = data.alexa_message || '-'
 
     var res = await _svc().save(data)
     _saving = false
