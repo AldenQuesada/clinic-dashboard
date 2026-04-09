@@ -169,16 +169,13 @@
     html += '<div style="border-top:1px solid var(--border);margin:8px 0;padding-top:8px">' +
       '<div style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(200,169,126,0.3);text-align:center;margin-bottom:6px">Report</div>'
 
-    // GERAR DEPOIS (IA hibrida)
+    // Slot reservado (simulacao removida)
     if (FM._simPhotoUrl) {
       html += '<div class="fm-photo-thumb" style="border-color:#C9A96E">' +
         '<img src="' + FM._simPhotoUrl + '" alt="Simulado">' +
-        '<span class="fm-photo-thumb-label" style="background:rgba(201,169,110,0.9)">DEPOIS IA</span>' +
+        '<span class="fm-photo-thumb-label" style="background:rgba(201,169,110,0.9)">SIMULADO</span>' +
         '<div class="fm-photo-actions"><button class="fm-photo-action-btn fm-photo-delete-btn" onclick="event.stopPropagation();FaceMapping._deleteExtraPhoto(\'sim\')" title="Excluir">' + FM._icon('trash-2', 11) + '</button></div>' +
       '</div>'
-    } else {
-      html += '<div class="fm-photo-upload" onclick="FaceMapping._generateHybrid()" style="border-color:#C9A96E40;cursor:pointer">' +
-        FM._icon('zap', 16) + '<span style="font-size:7px">GERAR</span><span style="font-size:8px">DEPOIS IA</span></div>'
     }
 
     html += '</div>'
