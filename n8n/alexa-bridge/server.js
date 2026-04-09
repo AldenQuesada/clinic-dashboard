@@ -123,12 +123,8 @@ function _connectWithCookie(cookieData) {
     alexaReady = true
     console.log('[Alexa] Conectado com sucesso!')
 
-    // Atualizar cookie se mudou
-    if (alexa.cookie) {
-      var fs = require('fs')
-      fs.writeFileSync(process.env.ALEXA_COOKIE_FILE || '.alexa-cookie', alexa.cookie, 'utf8')
-      console.log('[Alexa] Cookie atualizado')
-    }
+    // NAO sobrescrever cookie — o arquivo JSON original deve ser preservado
+    console.log('[Alexa] Cookie preservado (sem sobrescrever)')
   })
 }
 
