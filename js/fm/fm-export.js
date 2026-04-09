@@ -55,10 +55,10 @@
 
     var overlay = document.createElement('div')
     overlay.id = 'fmExportOverlay'
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:24px 0;backdrop-filter:blur(8px)'
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);overflow-y:auto;padding:24px 0;backdrop-filter:blur(8px)'
 
     // ── Toolbar ──
-    var toolbar = '<div style="width:100%;max-width:820px;display:flex;justify-content:space-between;align-items:center;padding:0 0 16px 0;flex-shrink:0">' +
+    var toolbar = '<div style="width:794px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 0 16px 0">' +
       '<div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:600;color:#F5F0E8;letter-spacing:0.04em">Harmonia Facial</div>' +
       '<div style="display:flex;gap:8px">' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:none;border-radius:10px;background:#C8A97E;color:#0A0A0A;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._downloadReport()">' +
@@ -73,7 +73,7 @@
     '</div>'
 
     // ── Report Card ──
-    var html = '<div id="fmReportCard" style="width:794px;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6)">'
+    var html = '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6);padding-bottom:24px">'
 
     // ─── SECTION 1: Header ───
     html += '<div style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
