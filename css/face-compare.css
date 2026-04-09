@@ -391,7 +391,9 @@
   position: absolute;
   inset: 0;
   display: flex;
-  gap: 4px;
+  gap: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .fmc-side-panel {
@@ -405,10 +407,18 @@
 .fmc-side-panel img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center 15%;
   user-select: none;
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center center;
+}
+
+.fmc-side-divider {
+  width: 2px;
+  flex-shrink: 0;
+  background: #C8A97E;
+  z-index: 2;
 }
 
 /* ── Horizontal Split Mode ─────────────────────────────────── */
@@ -941,4 +951,16 @@
   .fmc-metric-badge, .fmc-metric-delta { font-size: 8px; }
   .fmc-annotation-num { width: 18px; height: 18px; font-size: 8px; }
   .fmc-btn-gif { padding: 6px 10px; font-size: 10px; }
+}
+
+@media (max-width: 600px) {
+  .fmc-side-wrap {
+    flex-direction: column;
+  }
+  .fmc-side-divider {
+    width: 100%;
+    height: 2px;
+  }
+  .fmc-side-panel .fmc-label-before { left: 10px; bottom: 10px; }
+  .fmc-side-panel .fmc-label-after { right: 10px; bottom: 10px; }
 }

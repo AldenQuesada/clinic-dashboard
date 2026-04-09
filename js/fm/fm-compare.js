@@ -255,6 +255,7 @@
                 '<img src="' + _beforeImg.src + '" draggable="false">' +
                 '<span class="fmc-label fmc-label-before">ANTES</span>' +
               '</div>' +
+              '<div class="fmc-side-divider"></div>' +
               '<div class="fmc-side-panel fmc-side-panel-after">' +
                 '<img src="' + _afterImg.src + '" draggable="false">' +
                 '<span class="fmc-label fmc-label-after">DEPOIS</span>' +
@@ -817,10 +818,13 @@
         ctx.stroke()
       }
     } else if (_compareMode === 'sidebyside') {
-      var gap = 8
+      var gap = 2
       var pw = (size - gap) / 2
       _drawImageCover(ctx, _beforeImg, 0, 80, pw, size - 160)
       _drawImageCover(ctx, _afterImg, pw + gap, 80, pw, size - 160)
+      // Champagne divider line
+      ctx.fillStyle = '#C8A97E'
+      ctx.fillRect(pw, 80, gap, size - 160)
     } else {
       _drawImageCover(ctx, _afterImg, 0, 80, size, size - 160)
     }
