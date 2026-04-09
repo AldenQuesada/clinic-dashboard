@@ -122,8 +122,8 @@
         FM._drawRicketts()
       }
       // metrics sub-mode: drawn by _drawMetrics/_drawAngles (earlier in redraw)
-    } else {
-      // Zones mode — draw polygon/ellipse annotations (region overlays disabled)
+    } else if (FM._editorMode === 'zones') {
+      // Zones mode ONLY — draw polygon/ellipse annotations
       var anns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
       anns.forEach(function (ann) {
         if (ann.shape && ann.shape.type === 'polygon') {
