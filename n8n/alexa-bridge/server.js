@@ -46,6 +46,20 @@ function initAlexa() {
 
   var cookieData = savedCookie || process.env.ALEXA_COOKIE || ''
 
+  // Tentar parsear JSON (formato alexa-cookie2)
+  if (cookieData) {
+    try {
+      var parsed = JSON.parse(cookieData)
+      if (parsed && typeof parsed === 'object') {
+        cookieData = parsed
+        console.log('[Alexa] Cookie parseado como JSON, keys:', Object.keys(parsed))
+      }
+    } catch (e) {
+      // Nao e JSON, usar como string (cookie HTTP raw)
+      console.log('[Alexa] Cookie em formato string raw')
+    }
+  }
+
   // Se nao tem cookie, usar proxy para obter
   if (!cookieData) {
     var AlexaCookie = require('alexa-cookie2')
