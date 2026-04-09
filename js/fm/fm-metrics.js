@@ -459,19 +459,31 @@
   FM._toggleMetricLock = function () {
     FM._toggleLock('simetria', '1x')
     var locked = FM._metricLocked
-    // Lock: mark structural lines as locked=true
-    // Unlock: delete locked prop (revert to structural — locked=false means measurement)
-    FM._metricLines.h.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
-    FM._metricLines.v.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
-    FM._metricPoints.forEach(function (p) { if (p.locked !== false) { if (locked) p.locked = true; else delete p.locked } })
+    if (locked) {
+      // Lock: mark all as locked=true
+      FM._metricLines.h.forEach(function (l) { l.locked = true })
+      FM._metricLines.v.forEach(function (l) { l.locked = true })
+      FM._metricPoints.forEach(function (p) { p.locked = true })
+    } else {
+      // Unlock: remove ALL locked flags — everything becomes structural again
+      FM._metricLines.h.forEach(function (l) { delete l.locked })
+      FM._metricLines.v.forEach(function (l) { delete l.locked })
+      FM._metricPoints.forEach(function (p) { delete p.locked })
+    }
   }
 
   FM._toggleMetric2Lock = function () {
     FM._toggleLock('simetria', '2x')
     var locked = FM._metric2Locked
-    FM._metric2Lines.h.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
-    FM._metric2Lines.v.forEach(function (l) { if (l.locked !== false) { if (locked) l.locked = true; else delete l.locked } })
-    FM._metric2Points.forEach(function (p) { if (p.locked !== false) { if (locked) p.locked = true; else delete p.locked } })
+    if (locked) {
+      FM._metric2Lines.h.forEach(function (l) { l.locked = true })
+      FM._metric2Lines.v.forEach(function (l) { l.locked = true })
+      FM._metric2Points.forEach(function (p) { p.locked = true })
+    } else {
+      FM._metric2Lines.h.forEach(function (l) { delete l.locked })
+      FM._metric2Lines.v.forEach(function (l) { delete l.locked })
+      FM._metric2Points.forEach(function (p) { delete p.locked })
+    }
   }
 
   FM._setMetricTool = function (tool) {
