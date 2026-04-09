@@ -1217,11 +1217,9 @@
     var lead = FM._lead
     if (!lead) { FM._showToast('Nenhum paciente selecionado', 'warn'); return }
 
-    var phone = lead.phone || lead.whatsapp || lead.telefone || ''
-    if (!phone) {
-      phone = prompt('Digite o numero do WhatsApp da paciente (com DDD):')
-      if (!phone) return
-    }
+    var phoneDefault = lead.phone || lead.whatsapp || lead.telefone || ''
+    var phone = prompt('Enviar report para qual WhatsApp? (com DDD)', phoneDefault)
+    if (!phone) return
 
     // Normalize phone
     phone = phone.replace(/\D/g, '')
