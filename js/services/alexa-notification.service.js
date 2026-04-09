@@ -100,7 +100,27 @@
     var headers = { 'Content-Type': 'application/json' }
     if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
 
-    var receptionDevice = config.reception_device_name || 'Echo Spot Recepção'
+    // Resolver device da recepcao: usa config ou busca no registry por location_label
+    var receptionDevice = config.reception_device_name || ''
+    if (!receptionDevice || receptionDevice === 'Recepcao' || receptionDevice === 'Recepção') {
+      // Buscar no registry de devices
+      if (window.AlexaDevicesRepository) {
+        var devRes = await AlexaDevicesRepository.getAll()
+        if (devRes.ok && devRes.data) {
+          for (var di = 0; di < devRes.data.length; di++) {
+            var loc = (devRes.data[di].location_label || '').toLowerCase()
+            if (loc.indexOf('recepc') >= 0 || loc.indexOf('recepç') >= 0) {
+              receptionDevice = devRes.data[di].device_name
+              break
+            }
+          }
+          // Fallback: primeiro device ativo
+          if ((!receptionDevice || receptionDevice === 'Recepcao') && devRes.data.length > 0) {
+            receptionDevice = devRes.data[0].device_name
+          }
+        }
+      }
+    }
     var sent = 0
 
     try {
