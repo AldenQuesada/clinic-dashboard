@@ -28,6 +28,7 @@
     _clearAll: FM._clearAll,
     _exportReport: FM._exportReport,
     _exportReportHTML: FM._exportReportHTML,
+    _sendReportWhatsApp: FM._sendReportWhatsApp,
     _presentReport: FM._presentReport,
     _downloadReport: FM._downloadReport,
     _closeExport: FM._closeExport,

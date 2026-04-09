@@ -106,6 +106,8 @@
           FM._icon('printer', 13) + ' Imprimir</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._shareReport()">' +
           FM._icon('share-2', 13) + ' Compartilhar</button>' +
+        '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._sendReportWhatsApp()">' +
+          FM._icon('send', 13) + ' WhatsApp</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._presentReport()">' +
           FM._icon('maximize', 13) + ' Apresentar</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:transparent;color:rgba(245,240,232,0.6);font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._closeExport()">' +
@@ -1053,6 +1055,146 @@
   }
 
   // ── Modo Apresentacao (fullscreen, sem toolbar) ──
+  // ── Send Report via WhatsApp (Evolution API) ──
+  FM._sendReportWhatsApp = function () {
+    var lead = FM._lead
+    if (!lead) { FM._showToast('Nenhum paciente selecionado', 'warn'); return }
+
+    var phone = lead.phone || lead.whatsapp || lead.telefone || ''
+    if (!phone) {
+      phone = prompt('Digite o numero do WhatsApp da paciente (com DDD):')
+      if (!phone) return
+    }
+
+    // Normalize phone
+    phone = phone.replace(/\D/g, '')
+    if (phone.length === 11) phone = '55' + phone
+    if (phone.length === 10) phone = '55' + phone
+
+    var patientName = lead.nome || lead.name || 'Paciente'
+
+    FM._showLoading('Gerando e enviando report via WhatsApp...')
+
+    // First generate the HTML
+    FM._exportReportHTMLBlob(function (htmlBlob) {
+      if (!htmlBlob) { FM._hideLoading(); FM._showToast('Erro ao gerar HTML', 'error'); return }
+
+      // Convert blob to base64
+      var reader = new FileReader()
+      reader.onload = function () {
+        var base64 = reader.result.split(',')[1]
+
+        // Send via Evolution API as document
+        var EVOLUTION_URL = 'https://evolution.aldenquesada.site'
+        var EVOLUTION_KEY = '429683C4C977415CAAFCCE10F7D57E11'
+        var EVOLUTION_INSTANCE = 'Mih'
+
+        fetch(EVOLUTION_URL + '/message/sendMedia/' + EVOLUTION_INSTANCE, {
+          method: 'POST',
+          headers: { 'apikey': EVOLUTION_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            number: phone,
+            mediatype: 'document',
+            mimetype: 'text/html',
+            caption: 'Plano de Harmonia Facial personalizado para ' + patientName + '\n\nClinica Mirian de Paula\nHarmonia que revela. Precisao que dura.',
+            media: base64,
+            fileName: 'proposta-facial-' + patientName.replace(/\s+/g, '-').toLowerCase() + '.html',
+          }),
+        })
+        .then(function (r) { return r.json() })
+        .then(function (data) {
+          FM._hideLoading()
+          if (data.key || data.status === 'PENDING' || data.messageId) {
+            FM._showToast('Report enviado para ' + phone + ' via WhatsApp!', 'success')
+          } else {
+            console.warn('[FM] WhatsApp send response:', data)
+            FM._showToast('Enviado (verifique no WhatsApp)', 'success')
+          }
+        })
+        .catch(function (err) {
+          FM._hideLoading()
+          FM._showToast('Erro ao enviar: ' + (err.message || 'verifique a conexao'), 'error')
+        })
+      }
+      reader.readAsDataURL(htmlBlob)
+    })
+  }
+
+  // Generate HTML blob (reusable by both download and WhatsApp send)
+  FM._exportReportHTMLBlob = function (callback) {
+    var report = document.getElementById('fmReportCard')
+    if (!report) { callback(null); return }
+
+    var canvases = report.querySelectorAll('canvas')
+    var replacements = []
+    canvases.forEach(function (c) {
+      try {
+        var dataUrl = c.toDataURL('image/png')
+        var img = document.createElement('img')
+        img.src = dataUrl
+        img.style.cssText = c.style.cssText
+        img.style.width = '100%'
+        img.style.display = 'block'
+        replacements.push({ canvas: c, img: img })
+      } catch (e) {}
+    })
+
+    var imgs = report.querySelectorAll('img')
+    var blobImgs = []
+    imgs.forEach(function (img) {
+      if (img.src && (img.src.startsWith('blob:') || img.src.startsWith('data:'))) blobImgs.push(img)
+    })
+
+    var pending = blobImgs.length
+    if (pending === 0) { _finalizeSend(); return }
+
+    blobImgs.forEach(function (img) {
+      var c2 = document.createElement('canvas')
+      var tempImg = new Image()
+      tempImg.crossOrigin = 'anonymous'
+      tempImg.onload = function () {
+        c2.width = tempImg.width; c2.height = tempImg.height
+        c2.getContext('2d').drawImage(tempImg, 0, 0)
+        try { img.src = c2.toDataURL('image/jpeg', 0.8) } catch (e) {}
+        pending--
+        if (pending <= 0) _finalizeSend()
+      }
+      tempImg.onerror = function () { pending--; if (pending <= 0) _finalizeSend() }
+      tempImg.src = img.src
+    })
+
+    function _finalizeSend() {
+      replacements.forEach(function (r) { r.canvas.parentNode.replaceChild(r.img, r.canvas) })
+      var content = report.innerHTML
+      replacements.forEach(function (r) { if (r.img.parentNode) r.img.parentNode.replaceChild(r.canvas, r.img) })
+
+      var patientName = FM._lead ? (FM._lead.nome || FM._lead.name || 'Paciente') : 'Paciente'
+      var waPhone = localStorage.getItem('fm_wa_phone') || '5511999999999'
+      var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliacao facial.')
+
+      var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head>' +
+        '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
+        '<meta property="og:title" content="Analise Facial, Clinica Mirian de Paula">' +
+        '<meta property="og:description" content="Proposta personalizada para ' + FM._esc(patientName) + '">' +
+        '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">' +
+        '<title>Analise Facial, ' + FM._esc(patientName) + '</title>' +
+        '<style>body{margin:0;padding:24px 16px;background:#0A0A0A;font-family:Montserrat,sans-serif;color:#F5F0E8}' +
+        '#fmReportCard{max-width:794px;margin:0 auto}[contenteditable]{cursor:text}[contenteditable]:focus{border-color:#C8A97E!important;outline:none}' +
+        'img{max-width:100%;height:auto}table{width:100%}@media(max-width:600px){#fmReportCard{width:100%!important}}' +
+        '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s}' +
+        '.fm-cta-btn:hover{transform:scale(1.04)}</style></head><body>' +
+        '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;padding-bottom:24px">' +
+        content + '</div>' +
+        '<div style="text-align:center;padding:32px 16px">' +
+        '<a class="fm-cta-btn" href="https://wa.me/' + waPhone + '?text=' + waText + '" target="_blank">' +
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>' +
+        'Agendar Avaliacao</a></div></body></html>'
+
+      var blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' })
+      callback(blob)
+    }
+  }
+
   FM._presentReport = function () {
     var overlay = document.getElementById('fmExportOverlay')
     if (!overlay) return
