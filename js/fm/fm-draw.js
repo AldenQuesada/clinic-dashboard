@@ -170,11 +170,14 @@
     ctx.moveTo(pts[0].x * w, pts[0].y * h)
     for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * w, pts[i].y * h)
     ctx.closePath()
-    ctx.fillStyle = color + '33'  // 20% opacity
+    var opac = FM._polyOpacity != null ? FM._polyOpacity / 100 : 0.5
+    ctx.globalAlpha = opac
+    ctx.fillStyle = color
     ctx.fill()
+    ctx.globalAlpha = 1
 
     // Border
-    ctx.strokeStyle = color + '99'  // 60% opacity
+    ctx.strokeStyle = color + '99'
     ctx.lineWidth = 2
     ctx.stroke()
 

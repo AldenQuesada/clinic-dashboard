@@ -805,18 +805,50 @@
     }
     html += '</div>'
 
-    // ── Totals ──
-    var totals = FM._calcTotals ? FM._calcTotals() : []
-    if (totals.length > 0) {
+    // ── Opacidade ──
+    html += '<div class="fm-tool-section" style="padding:6px 12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">' +
+        '<span style="font-size:8px;color:rgba(200,169,126,0.4);text-transform:uppercase;letter-spacing:0.1em">Opacidade</span>' +
+        '<span style="font-size:8px;color:rgba(200,169,126,0.5)">' + (FM._polyOpacity || 50) + '%</span>' +
+      '</div>' +
+      '<input type="range" min="0" max="100" value="' + (FM._polyOpacity || 50) + '" ' +
+        'oninput="window._FM._polyOpacity=parseInt(this.value);this.previousElementSibling.lastChild.textContent=this.value+\'%\';window._FM._redraw()" ' +
+        'style="width:100%;height:4px;accent-color:#C8A97E">' +
+    '</div>'
+
+    // ── Totals + Custo Estimado ──
+    var angleAnns = FM._annotations.filter(function (a) { return a.angle === FM._activeAngle })
+    if (angleAnns.length > 0) {
+      var costMap = {}
+      var totalCost = 0
+      angleAnns.forEach(function (a) {
+        var tr = FM.TREATMENTS.find(function (x) { return x.id === a.treatment })
+        var key = a.treatment || 'ah'
+        if (!costMap[key]) costMap[key] = { label: tr ? tr.label : key, color: tr ? tr.color : '#999', qty: 0, unit: tr ? tr.priceUnit : 'mL', unitPrice: tr ? tr.unitPrice : 0 }
+        costMap[key].qty += (parseFloat(a.ml) || 0)
+      })
+
       html += '<div class="fm-tool-section" style="border-top:1px solid rgba(200,169,126,0.1);padding-top:8px">' +
-        '<div class="fm-tool-section-title" style="font-size:9px">Resumo</div>'
-      totals.forEach(function (t) {
-        html += '<div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">' +
-          '<span style="color:' + t.color + '">' + t.label + '</span>' +
-          '<span style="color:rgba(245,240,232,0.8);font-weight:600">' + t.ml.toFixed(1) + '</span>' +
+        '<div class="fm-tool-section-title" style="font-size:9px">Resumo + Custo</div>'
+
+      Object.keys(costMap).forEach(function (key) {
+        var c = costMap[key]
+        var cost = c.qty * c.unitPrice
+        totalCost += cost
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:9px;margin-bottom:4px">' +
+          '<span style="color:' + c.color + '">' + c.label + '</span>' +
+          '<div style="text-align:right">' +
+            '<span style="color:rgba(245,240,232,0.7);font-weight:600">' + c.qty.toFixed(1) + ' ' + c.unit + '</span>' +
+            '<span style="color:rgba(200,169,126,0.4);margin-left:6px">R$ ' + cost.toFixed(0) + '</span>' +
+          '</div>' +
         '</div>'
       })
-      html += '</div>'
+
+      html += '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(200,169,126,0.08)">' +
+        '<span style="color:#C8A97E;font-weight:600">Custo Total Produto</span>' +
+        '<span style="color:#C8A97E;font-weight:700">R$ ' + totalCost.toFixed(0) + '</span>' +
+      '</div>' +
+      '</div>'
     }
 
     html += '</div>'

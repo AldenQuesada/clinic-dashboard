@@ -87,6 +87,8 @@
   FM._activeAngle = null
   FM._annotations = []   // [{ id, angle, zone, treatment, ml, product, shape:{type:'polygon',points:[{x,y},...]} | {x,y,rx,ry}, side }]
 
+  FM._polyOpacity = 50  // polygon fill opacity 0-100 (default 50%)
+
   // Guide lines for Estruturacao (thin H/V for positioning)
   FM._guideLines = { h: [], v: [] }
   FM._guideNextId = 1

@@ -146,12 +146,13 @@
   }
 
   FM.TREATMENTS = [
-    { id: 'ah',       label: 'Acido Hialuronico',  color: '#3B82F6' },
-    { id: 'bio',      label: 'Bioestimulador',     color: '#10B981' },
-    { id: 'laser',    label: 'Laser / Fotona',     color: '#F59E0B' },
-    { id: 'botox',    label: 'Toxina Botulinica',  color: '#8B5CF6' },
-    { id: 'peel',     label: 'Peeling',            color: '#EC4899' },
-    { id: 'fio',      label: 'Fios de PDO',        color: '#06B6D4' },
+    { id: 'ah',       label: 'Acido Hialuronico',  color: '#3B82F6', unitPrice: 800,  priceUnit: 'mL' },
+    { id: 'bio',      label: 'Bioestimulador',     color: '#10B981', unitPrice: 1200, priceUnit: 'mL' },
+    { id: 'bioremod', label: 'Bioremodelador',     color: '#14B8A6', unitPrice: 900,  priceUnit: 'mL' },
+    { id: 'botox',    label: 'Toxina Botulinica',  color: '#8B5CF6', unitPrice: 25,   priceUnit: 'U' },
+    { id: 'laser',    label: 'Laser / Fotona',     color: '#F59E0B', unitPrice: 5000, priceUnit: 'sessao' },
+    { id: 'peel',     label: 'Peeling',            color: '#EC4899', unitPrice: 500,  priceUnit: 'sessao' },
+    { id: 'fio',      label: 'Fios de PDO',        color: '#06B6D4', unitPrice: 150,  priceUnit: 'fio' },
   ]
 
   FM.ANGLES = [
