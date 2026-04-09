@@ -81,8 +81,9 @@
   }
 
   FM._exportReport = function () {
-    if (FM._annotations.length === 0 && !FM._metricAngles && !FM._scanData && !FM._skinAnalysis) {
-      alert('Adicione marcacoes ou execute Auto Analise antes de exportar.')
+    // Allow export even without analysis (doctor can edit inline)
+    if (!FM._photoUrls || Object.keys(FM._photoUrls).length === 0) {
+      alert('Envie pelo menos uma foto para gerar o report.')
       return
     }
 
