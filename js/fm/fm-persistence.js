@@ -81,6 +81,8 @@
         regionState: FM._regionState || {},
         lastAnalysis: FM._lastAnalysis || null,
         vecAge: FM._vecAge || 25,
+        vecCustomOffsets: FM._vecCustomOffsets || {},
+        vecCenters: FM.FORCE_DEFAULT_CENTERS,
         photos: photos,
         afterPhotos: afterPhotos,
         afterPhoto: afterPhotos['front'] || afterPhotos[Object.keys(afterPhotos)[0]] || null,  // backward compat
@@ -146,6 +148,12 @@
       FM._regionState = session.regionState || {}
       FM._lastAnalysis = session.lastAnalysis || null
       FM._vecAge = session.vecAge || 25
+      FM._vecCustomOffsets = session.vecCustomOffsets || {}
+      if (session.vecCenters) {
+        Object.keys(session.vecCenters).forEach(function (k) {
+          FM.FORCE_DEFAULT_CENTERS[k] = session.vecCenters[k]
+        })
+      }
       FM._activeAngle = null  // will be set after photos restore
 
       // Restore ANTES photos
