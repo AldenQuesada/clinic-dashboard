@@ -23,6 +23,7 @@
     _clearAll: FM._clearAll,
     _exportReport: FM._exportReport,
     _exportReportHTML: FM._exportReportHTML,
+    _presentReport: FM._presentReport,
     _downloadReport: FM._downloadReport,
     _closeExport: FM._closeExport,
     _saveToSupabase: FM._saveToSupabase,

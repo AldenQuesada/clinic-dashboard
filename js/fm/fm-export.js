@@ -105,6 +105,8 @@
           FM._icon('printer', 13) + ' Imprimir</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._shareReport()">' +
           FM._icon('share-2', 13) + ' Compartilhar</button>' +
+        '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._presentReport()">' +
+          FM._icon('maximize', 13) + ' Apresentar</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(255,255,255,0.1);border-radius:10px;background:transparent;color:rgba(245,240,232,0.6);font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._closeExport()">' +
           FM._icon('x', 13) + ' Fechar</button>' +
       '</div>' +
@@ -125,6 +127,45 @@
       '</div>' +
     '</div>' +
     '<div style="height:1px;background:linear-gradient(90deg,transparent,#C8A97E,transparent);margin:0 32px"></div>'
+
+    // ─── SCORE DE HARMONIA GLOBAL ───
+    var harmonyScore = 0, harmonyParts = 0
+    if (FM._scanData && FM._scanData.symmetry && FM._scanData.symmetry.overall != null) { harmonyScore += FM._scanData.symmetry.overall * 0.25; harmonyParts += 0.25 }
+    if (FM._scanData && FM._scanData.thirds) {
+      var tS = FM._scanData.thirds
+      var tercoScore = 100 - (Math.abs(tS.superior - 33) + Math.abs(tS.medio - 33) + Math.abs(tS.inferior - 33))
+      harmonyScore += Math.max(0, tercoScore) * 0.20; harmonyParts += 0.20
+    }
+    if (FM._skinAnalysis && FM._skinAnalysis.overall != null) { harmonyScore += FM._skinAnalysis.overall * 0.20; harmonyParts += 0.20 }
+    if (FM._vecAgeFactor) {
+      var vecScore = 100 - Math.round(FM._vecAgeFactor(FM._vecAge || 25) * 70)
+      harmonyScore += vecScore * 0.20; harmonyParts += 0.20
+    }
+    if (FM._scanData && FM._scanData.measurements && FM._scanData.measurements.golden_ratio != null) {
+      var grDiff = Math.abs(FM._scanData.measurements.golden_ratio - 1.618)
+      var grScore = Math.max(0, 100 - grDiff * 200)
+      harmonyScore += grScore * 0.15; harmonyParts += 0.15
+    }
+    var finalScore = harmonyParts > 0 ? Math.round(harmonyScore / harmonyParts) : null
+
+    if (finalScore !== null) {
+      var hsColor = finalScore >= 80 ? '#10B981' : finalScore >= 60 ? '#F59E0B' : '#EF4444'
+      var hsLabel = finalScore >= 80 ? 'Harmonia Preservada' : finalScore >= 60 ? 'Harmonia em Transicao' : 'Harmonia Comprometida'
+      html += '<div style="text-align:center;padding:28px 32px 20px 32px">' +
+        '<div style="display:inline-flex;align-items:center;justify-content:center;width:100px;height:100px;border-radius:50%;border:4px solid ' + hsColor + ';box-shadow:0 0 30px ' + hsColor + '30">' +
+          '<div><div style="font-size:38px;font-weight:800;color:' + hsColor + ';line-height:1">' + finalScore + '</div>' +
+          '<div style="font-size:8px;color:rgba(245,240,232,0.4);letter-spacing:0.1em">/100</div></div>' +
+        '</div>' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:15px;font-style:italic;color:' + hsColor + ';margin-top:10px">' + hsLabel + '</div>' +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.25);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase">Indice de Harmonia Facial</div>' +
+      '</div>'
+    }
+
+    // ─── ATO 1: "Onde voce esta" ───
+    html += '<div style="text-align:center;padding:12px 32px 4px 32px">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Onde voce esta</div>' +
+      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Diagnostico facial completo</div>' +
+    '</div>'
 
     // ─── SECTION 2: ALL 3 Angles — Fotos Metrificadas ───
     var angleConfig = [
@@ -299,6 +340,12 @@
       }
     }
 
+    // ─── ATO 2: "O que aconteceu" ───
+    html += '<div style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">O que aconteceu</div>' +
+      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Evolucao vetorial e perda estrutural</div>' +
+    '</div>'
+
     // ─── SECTION 6: Mapa de Forcas ───
     var age = FM._vecAge || 25
     if (FM._vecAgeFactor && FM._vecCollagenPct) {
@@ -330,8 +377,13 @@
       html += '</div>'
     }
 
+    // ─── ATO 3: "Para onde vamos" ───
+    html += '<div style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Para onde vamos</div>' +
+      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Plano de reconstrucao vetorial</div>' +
+    '</div>'
+
     // ─── SECTION 7: PLANO A — Protocolo Completo (EDITABLE) ───
-    html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
     html += _sectionTitle('Plano A \u2014 Protocolo Integrado de Harmonia', 'clipboard')
     html += '<div style="padding:0 32px 4px 32px">'
     html += '<div style="margin-bottom:8px">' + _editable('fmPlanASubtitle', 'Lifting vetorial completo + Fotona + manutencao', 'font-size:10px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
@@ -339,6 +391,26 @@
     // Protocol table Plano A
     html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
       '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
+
+    // Pre-written transformation phrases per zone
+    var transformPhrases = {
+      'temporal': 'Reativa o vetor de sustentacao — o rosto inteiro sobe',
+      'zigoma-lateral': 'Devolve a projecao que sustenta todo o terco medio',
+      'zigoma-anterior': 'Restaura o volume que define a maca do rosto',
+      'olheira': 'Elimina a sombra que comunica cansaco',
+      'sulco': 'Suaviza a marca que mais envelhece o rosto',
+      'marionete': 'Remove a expressao de tristeza involuntaria',
+      'mandibula': 'Reconstroi o contorno perdido — adeus efeito buldogue',
+      'pre-jowl': 'Redefine a linha da mandibula com precisao',
+      'mento': 'Restaura a projecao e o equilibrio do perfil',
+      'labio-sup': 'Devolve volume natural sem aspecto preenchido',
+      'labio-inf': 'Equilibra a proporcao labial com naturalidade',
+      'glabela': 'Suaviza a expressao de seriedade involuntaria',
+      'frontal': 'Alivia as linhas horizontais sem perder expressividade',
+      'periorbital': 'Abre o olhar e reduz o aspecto cansado',
+      'nariz': 'Harmoniza o perfil nasal sem cirurgia',
+      'pescoco': 'Restaura a firmeza e o angulo cervical',
+    }
 
     // Pre-fill from annotations
     var zoneTotalsA = {}
@@ -350,7 +422,7 @@
       var product = a.product || ''
       var key = a.zone + '|' + a.treatment
       if (!zoneTotalsA[key]) {
-        zoneTotalsA[key] = { zone: zLabel, treatment: tLabel, ml: 0, product: product, unit: z && z.unit === 'U' ? 'U' : 'mL' }
+        zoneTotalsA[key] = { zoneId: a.zone, zone: zLabel, treatment: tLabel, ml: 0, product: product, unit: z && z.unit === 'U' ? 'U' : 'mL' }
       }
       zoneTotalsA[key].ml += (a.ml || 0)
     })
@@ -365,7 +437,7 @@
           _tdCell(FM._esc(p.treatment || p.product || '')) +
           _tdCell('<span style="color:' + doseColor + ';font-weight:600">' + p.dose + ' ' + p.unit + '</span>') +
           _tdCell(FM._esc(p.product || ''), 'color:rgba(245,240,232,0.45)') +
-          _tdEditable('Descreva a transformacao...') +
+          _tdEditable(transformPhrases[p.zone] || 'Descreva a transformacao...', 'font-style:italic;color:rgba(200,169,126,0.5)') +
         '</tr>'
       })
     } else if (Object.keys(zoneTotalsA).length > 0) {
@@ -379,7 +451,7 @@
           _tdCell(FM._esc(row.treatment)) +
           _tdCell('<span style="color:' + doseColor + ';font-weight:600">' + row.ml.toFixed(1) + ' ' + row.unit + '</span>') +
           _tdCell(FM._esc(row.product), 'color:rgba(245,240,232,0.45)') +
-          _tdEditable('Descreva a transformacao...') +
+          _tdEditable(transformPhrases[row.zoneId] || 'Descreva a transformacao...', 'font-style:italic;color:rgba(200,169,126,0.5)') +
         '</tr>'
         idxA++
       })
@@ -476,8 +548,14 @@
     html += '<div style="margin-top:10px;font-size:11px;color:rgba(245,240,232,0.5)">Condicoes: ' + _editable('fmPaymentConditions', '3x sem juros no cartao', 'width:300px;') + '</div>'
     html += '</div>'
 
+    // ─── DEPOIMENTO (editavel) ───
+    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 48px;text-align:center">' +
+      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px">O que outras pacientes dizem</div>' +
+      _editableBlock('fmReportTestimonial', '"Diferente mas ninguem sabe dizer o que mudou. Exatamente o que eu queria." — M.C., 48 anos', 'font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;text-align:center;border-color:rgba(200,169,126,0.10);') +
+    '</div>'
+
     // ─── SECTION 10: Footer ───
-    html += '<div style="margin-top:16px;border-top:1px solid rgba(200,169,126,0.12)">'
+    html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.12)">'
     html += '<div style="padding:24px 32px 8px 32px;text-align:center">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:14px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.65);line-height:1.6;max-width:500px;margin:0 auto">' +
         'Nos nao preenchemos rugas. Nos reposicionamos as forcas do seu rosto.' +
@@ -486,14 +564,19 @@
 
     var profName = localStorage.getItem('fm_professional_name') || 'Dra. Mirian de Paula'
     var profCRM = localStorage.getItem('fm_professional_crm') || 'CRM/SP 000000'
-    html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;padding:12px 32px 16px 32px">' +
-      '<div style="font-size:8px;color:rgba(245,240,232,0.20);letter-spacing:0.06em">Gerado por ClinicAI Face Mapping</div>' +
+    var reportId = 'HF-' + Date.now().toString(36).toUpperCase()
+
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;padding:12px 32px 10px 32px">' +
+      '<div>' +
+        '<div style="font-size:8px;color:rgba(245,240,232,0.20);letter-spacing:0.06em">Gerado por ClinicAI Face Mapping</div>' +
+        '<div style="font-size:7px;color:rgba(245,240,232,0.12);margin-top:2px;font-family:monospace">' + reportId + '</div>' +
+      '</div>' +
       '<div style="text-align:right">' +
         '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">' + FM._esc(profName) + '</div>' +
         '<div style="font-size:8px;color:rgba(245,240,232,0.35);letter-spacing:0.1em;margin-top:2px">' + FM._esc(profCRM) + '</div>' +
       '</div>' +
     '</div>'
-    html += '<div style="text-align:center;padding:0 32px 24px 32px;font-size:9px;color:rgba(245,240,232,0.25);letter-spacing:0.06em">Valido por 7 dias</div>'
+    html += '<div style="text-align:center;padding:0 32px 20px 32px;font-size:9px;color:rgba(245,240,232,0.25);letter-spacing:0.06em">Valido por 7 dias</div>'
     html += '</div>'
 
     // Close report card
@@ -704,6 +787,43 @@
       report.outerHTML + '</body></html>')
     win.document.close()
     setTimeout(function () { win.print() }, 500)
+  }
+
+  // ── Modo Apresentacao (fullscreen, sem toolbar) ──
+  FM._presentReport = function () {
+    var overlay = document.getElementById('fmExportOverlay')
+    if (!overlay) return
+    // Hide toolbar, go fullscreen
+    var toolbar = overlay.firstElementChild
+    if (toolbar && toolbar.querySelector) {
+      toolbar.style.display = 'none'
+    }
+    overlay.style.padding = '0'
+    overlay.style.background = '#0A0A0A'
+    overlay.style.backdropFilter = 'none'
+    var card = document.getElementById('fmReportCard')
+    if (card) {
+      card.style.maxWidth = '100%'
+      card.style.width = '100%'
+      card.style.borderRadius = '0'
+      card.style.boxShadow = 'none'
+    }
+    // ESC to exit
+    var exitHandler = function (e) {
+      if (e.key === 'Escape') {
+        document.removeEventListener('keydown', exitHandler)
+        if (toolbar) toolbar.style.display = ''
+        overlay.style.padding = '24px 0'
+        overlay.style.background = 'rgba(0,0,0,0.85)'
+        overlay.style.backdropFilter = 'blur(8px)'
+        if (card) { card.style.maxWidth = ''; card.style.width = '794px'; card.style.borderRadius = '4px'; card.style.boxShadow = '0 32px 100px rgba(0,0,0,0.6)' }
+      }
+    }
+    document.addEventListener('keydown', exitHandler)
+    // Try native fullscreen
+    if (overlay.requestFullscreen) overlay.requestFullscreen()
+    else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen()
+    FM._showToast('Modo apresentacao. ESC para sair.', 'success')
   }
 
   FM._closeExport = function () {
