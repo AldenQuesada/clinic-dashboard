@@ -15,9 +15,9 @@
   // ── Helper: build a metric card (dark bg, colored value, uppercase label) ──
   function _metricCard(value, label, color, sub) {
     return '<div style="flex:1;min-width:100px;background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.10);border-radius:10px;padding:14px 10px;text-align:center">' +
-      '<div contenteditable="true" style="font-family:Montserrat,sans-serif;font-size:22px;font-weight:700;color:' + (color || '#F5F0E8') + ';line-height:1.1;outline:none;border:none;background:transparent">' + value + '</div>' +
-      '<div contenteditable="true" style="font-family:Montserrat,sans-serif;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.50);margin-top:6px;outline:none;border:none;background:transparent">' + label + '</div>' +
-      (sub ? '<div contenteditable="true" style="font-size:8px;color:' + (color || 'rgba(245,240,232,0.4)') + ';margin-top:3px;outline:none;border:none;background:transparent">' + sub + '</div>' : '') +
+      '<div contenteditable="true" style="font-family:Montserrat,sans-serif;font-size:28px;font-weight:700;color:' + (color || '#F5F0E8') + ';line-height:1.1;outline:none;border:none;background:transparent">' + value + '</div>' +
+      '<div contenteditable="true" style="font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.50);margin-top:6px;outline:none;border:none;background:transparent">' + label + '</div>' +
+      (sub ? '<div contenteditable="true" style="font-size:10px;color:' + (color || 'rgba(245,240,232,0.4)') + ';margin-top:3px;outline:none;border:none;background:transparent">' + sub + '</div>' : '') +
     '</div>'
   }
 
@@ -25,7 +25,7 @@
   function _sectionTitle(text, icon) {
     return '<div style="display:flex;align-items:center;gap:8px;padding:18px 32px 8px 32px">' +
       (icon ? '<span style="color:#C8A97E;opacity:0.7">' + FM._icon(icon, 13) + '</span>' : '') +
-      '<span contenteditable="true" style="font-family:Montserrat,sans-serif;font-size:8px;letter-spacing:0.18em;text-transform:uppercase;color:#C8A97E;border:none;outline:none;background:transparent">' + text + '</span>' +
+      '<span contenteditable="true" style="font-family:Montserrat,sans-serif;font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#C8A97E;border:none;outline:none;background:transparent">' + text + '</span>' +
       '<span style="flex:1;height:1px;background:linear-gradient(90deg,rgba(200,169,126,0.18),transparent)"></span>' +
     '</div>'
   }
@@ -36,17 +36,17 @@
     var c = _scoreColor(val)
     var pct = Math.min(100, Math.max(0, val))
     return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">' +
-      '<span style="font-size:9px;color:rgba(245,240,232,0.55);width:72px;text-align:right;flex-shrink:0">' + label + '</span>' +
+      '<span style="font-size:12px;color:rgba(245,240,232,0.55);width:80px;text-align:right;flex-shrink:0">' + label + '</span>' +
       '<div style="flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">' +
         '<div style="width:' + pct + '%;height:100%;background:' + c + ';border-radius:3px;transition:width .3s"></div>' +
       '</div>' +
-      '<span style="font-size:10px;font-weight:600;color:' + c + ';width:28px;text-align:right">' + Math.round(val) + '</span>' +
+      '<span style="font-size:13px;font-weight:600;color:' + c + ';width:32px;text-align:right">' + Math.round(val) + '</span>' +
     '</div>'
   }
 
   // ── Helper: editable field with placeholder ──
   function _editable(id, placeholder, style) {
-    var base = 'color:#F5F0E8;background:transparent;border:none;border-bottom:1px dashed rgba(200,169,126,0.25);outline:none;font-family:Montserrat,sans-serif;font-size:11px;padding:4px 2px;'
+    var base = 'color:#F5F0E8;background:transparent;border:none;border-bottom:1px dashed rgba(200,169,126,0.25);outline:none;font-family:Montserrat,sans-serif;font-size:14px;padding:4px 2px;'
     return '<span contenteditable="true" id="' + id + '" style="' + base + (style || '') + '" ' +
       'onfocus="if(this.dataset.placeholder&&this.textContent===this.dataset.placeholder){this.textContent=\'\';this.style.color=\'#F5F0E8\'}" ' +
       'onblur="if(!this.textContent.trim()){this.textContent=this.dataset.placeholder;this.style.color=\'rgba(245,240,232,0.3)\'}" ' +
@@ -55,7 +55,7 @@
 
   // ── Helper: editable block (multi-line) ──
   function _editableBlock(id, placeholder, style) {
-    var base = 'color:rgba(245,240,232,0.3);background:transparent;border:1px dashed rgba(200,169,126,0.18);border-radius:6px;outline:none;font-family:Montserrat,sans-serif;font-size:11px;padding:10px 14px;min-height:40px;line-height:1.6;display:block;width:100%;box-sizing:border-box;'
+    var base = 'color:rgba(245,240,232,0.3);background:transparent;border:1px dashed rgba(200,169,126,0.18);border-radius:6px;outline:none;font-family:Montserrat,sans-serif;font-size:14px;padding:10px 14px;min-height:40px;line-height:1.6;display:block;width:100%;box-sizing:border-box;'
     return '<div contenteditable="true" id="' + id + '" style="' + base + (style || '') + '" ' +
       'onfocus="if(this.dataset.placeholder&&this.textContent===this.dataset.placeholder){this.textContent=\'\';this.style.color=\'#F5F0E8\'}" ' +
       'onblur="if(!this.textContent.trim()){this.textContent=this.dataset.placeholder;this.style.color=\'rgba(245,240,232,0.3)\'}" ' +
@@ -64,17 +64,17 @@
 
   // ── Helper: protocol table header cell ──
   function _thCell(text) {
-    return '<th style="text-align:left;padding:6px 8px;color:rgba(245,240,232,0.4);font-weight:500;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid rgba(200,169,126,0.10)">' + text + '</th>'
+    return '<th style="text-align:left;padding:6px 8px;color:rgba(245,240,232,0.4);font-weight:500;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid rgba(200,169,126,0.10)">' + text + '</th>'
   }
 
   // ── Helper: protocol table data cell ──
   function _tdCell(text, style) {
-    return '<td style="padding:5px 8px;' + (style || 'color:rgba(245,240,232,0.65)') + '">' + text + '</td>'
+    return '<td style="padding:5px 8px;font-size:13px;' + (style || 'color:rgba(245,240,232,0.65)') + '">' + text + '</td>'
   }
 
   // ── Helper: editable table cell ──
   function _tdEditable(placeholder, style) {
-    return '<td contenteditable="true" style="padding:5px 8px;color:rgba(245,240,232,0.3);border-bottom:1px dashed rgba(200,169,126,0.10);outline:none;font-size:10px;' + (style || '') + '" ' +
+    return '<td contenteditable="true" style="padding:5px 8px;color:rgba(245,240,232,0.3);border-bottom:1px dashed rgba(200,169,126,0.10);outline:none;font-size:13px;' + (style || '') + '" ' +
       'onfocus="if(this.dataset.placeholder&&this.textContent===this.dataset.placeholder){this.textContent=\'\';this.style.color=\'#F5F0E8\'}" ' +
       'onblur="if(!this.textContent.trim()){this.textContent=this.dataset.placeholder;this.style.color=\'rgba(245,240,232,0.3)\'}" ' +
       'data-placeholder="' + FM._esc(placeholder) + '">' + FM._esc(placeholder) + '</td>'
@@ -121,12 +121,12 @@
     // ─── HEADER ───
     html += '<div style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
       '<div>' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">Clinica Mirian de Paula</div>' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:11px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.55);margin-top:2px;letter-spacing:0.06em">Harmonia que revela. Precisao que dura.</div>' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">Clinica Mirian de Paula</div>' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.55);margin-top:2px;letter-spacing:0.06em">Harmonia que revela. Precisao que dura.</div>' +
       '</div>' +
       '<div style="text-align:right">' +
-        '<div style="font-size:13px;font-weight:600;color:#F5F0E8;letter-spacing:0.02em">' + FM._esc(name) + '</div>' +
-        '<div style="font-size:9px;color:rgba(245,240,232,0.4);margin-top:2px;letter-spacing:0.06em">' + dateStr + '</div>' +
+        '<div style="font-size:15px;font-weight:600;color:#F5F0E8;letter-spacing:0.02em">' + FM._esc(name) + '</div>' +
+        '<div style="font-size:11px;color:rgba(245,240,232,0.4);margin-top:2px;letter-spacing:0.06em">' + dateStr + '</div>' +
       '</div>' +
     '</div>' +
     '<div style="height:1px;background:linear-gradient(90deg,transparent,#C8A97E,transparent);margin:0 32px"></div>'
@@ -157,10 +157,10 @@
       html += '<div style="text-align:center;padding:28px 32px 20px 32px">' +
         '<div style="display:inline-flex;align-items:center;justify-content:center;width:100px;height:100px;border-radius:50%;border:4px solid ' + hsColor + ';box-shadow:0 0 30px ' + hsColor + '30">' +
           '<div><div style="font-size:38px;font-weight:800;color:' + hsColor + ';line-height:1">' + finalScore + '</div>' +
-          '<div style="font-size:8px;color:rgba(245,240,232,0.4);letter-spacing:0.1em">/100</div></div>' +
+          '<div style="font-size:10px;color:rgba(245,240,232,0.4);letter-spacing:0.1em">/100</div></div>' +
         '</div>' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:15px;font-style:italic;color:' + hsColor + ';margin-top:10px">' + hsLabel + '</div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.25);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase">Indice de Harmonia Facial</div>' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;color:' + hsColor + ';margin-top:10px">' + hsLabel + '</div>' +
+        '<div style="font-size:10px;color:rgba(245,240,232,0.25);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase">Indice de Harmonia Facial</div>' +
       '</div>'
     }
 
@@ -168,16 +168,16 @@
     // ATO 1: "Onde voce esta",Diagnostico
     // ═══════════════════════════════════════════
     html += '<div style="text-align:center;padding:12px 32px 4px 32px">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Onde voce esta</div>' +
-      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Diagnostico facial completo</div>' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Onde voce esta</div>' +
+      '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Diagnostico facial completo</div>' +
     '</div>'
 
     // Helper: small metric card for analysis panel
     function _miniCard(value, label, color, sub) {
-      return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:6px 8px;text-align:center">' +
-        '<div style="font-size:14px;font-weight:700;color:' + (color || '#F5F0E8') + ';line-height:1.1">' + value + '</div>' +
-        '<div style="font-size:6px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4);margin-top:2px">' + label + '</div>' +
-        (sub ? '<div style="font-size:6px;color:' + (color || 'rgba(245,240,232,0.4)') + ';margin-top:1px">' + sub + '</div>' : '') +
+      return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:8px 10px;text-align:center">' +
+        '<div style="font-size:18px;font-weight:700;color:' + (color || '#F5F0E8') + ';line-height:1.1">' + value + '</div>' +
+        '<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4);margin-top:2px">' + label + '</div>' +
+        (sub ? '<div style="font-size:10px;color:' + (color || 'rgba(245,240,232,0.4)') + ';margin-top:1px">' + sub + '</div>' : '') +
       '</div>'
     }
 
@@ -213,7 +213,7 @@
       }
       html += '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
         '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF4444"></span>' +
-        '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">ANTES</span>' +
+        '<span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">ANTES</span>' +
       '</div>'
       html += '</div>'
 
@@ -267,8 +267,8 @@
             '<span style="font-size:14px;font-weight:700;color:' + _scoreColor(sk.overall || 0) + '">' + Math.round(sk.overall || 0) + '</span>' +
           '</div>'
           html += '<div style="flex:1">' +
-            '<div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4)">Saude da Pele</div>' +
-            (FM._skinAge ? '<div style="font-size:8px;color:rgba(245,240,232,0.5);margin-top:1px">Idade estimada: <strong style="color:#F5F0E8">' + FM._skinAge + ' anos</strong></div>' : '') +
+            '<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4)">Saude da Pele</div>' +
+            (FM._skinAge ? '<div style="font-size:11px;color:rgba(245,240,232,0.5);margin-top:1px">Idade estimada: <strong style="color:#F5F0E8">' + FM._skinAge + ' anos</strong></div>' : '') +
           '</div>'
           html += '</div>'
           html += _skinBar('Rugas', sk.wrinkles)
@@ -292,7 +292,7 @@
         // If no metrics, show placeholder
         if (!angMetricAngles || (angMetricAngles.amf == null && angMetricAngles.aij_avg == null)) {
           html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:12px;text-align:center">' +
-            '<div style="font-size:9px;color:rgba(245,240,232,0.3);font-style:italic">Metricas do angulo 45\u00B0 disponiveis apos analise</div>' +
+            '<div style="font-size:12px;color:rgba(245,240,232,0.3);font-style:italic">Metricas do angulo 45\u00B0 disponiveis apos analise</div>' +
           '</div>'
         }
       }
@@ -302,8 +302,8 @@
         var rickPts = angStore && angStore._rickettsPoints
         if (rickPts && rickPts.nose && rickPts.chin) {
           html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:10px">'
-          html += '<div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Linha de Ricketts</div>'
-          html += '<div style="font-size:9px;color:rgba(245,240,232,0.55);line-height:1.5">' +
+          html += '<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Linha de Ricketts</div>'
+          html += '<div style="font-size:12px;color:rgba(245,240,232,0.55);line-height:1.5">' +
             'A Linha E (Estetica) conecta a ponta do nariz ao mento. ' +
             'Os labios devem estar ligeiramente atras dessa linha para um perfil harmonico.' +
           '</div>'
@@ -316,7 +316,7 @@
         }
         if (!rickPts && (!angMetricAngles || angMetricAngles.amf == null)) {
           html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:12px;text-align:center">' +
-            '<div style="font-size:9px;color:rgba(245,240,232,0.3);font-style:italic">Analise lateral disponivel apos marcacao de Ricketts</div>' +
+            '<div style="font-size:12px;color:rgba(245,240,232,0.3);font-style:italic">Analise lateral disponivel apos marcacao de Ricketts</div>' +
           '</div>'
         }
       }
@@ -346,8 +346,8 @@
       html += _miniCard(Math.round(100 - vt * 70) + '%', 'Vetores', vc)
       if (FM._vecGravityLabel) { var g = FM._vecGravityLabel(vt); html += _miniCard(g.label, 'Gravidade', g.color) }
       html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:8px">' +
-        '<div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.3);margin-bottom:2px">Ligamentos</div>' +
-        '<div style="font-size:9px;color:rgba(245,240,232,0.5);line-height:1.4">Retencao dos ligamentos diminui com a idade, acelerando a ptose facial.</div>' +
+        '<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.3);margin-bottom:2px">Ligamentos</div>' +
+        '<div style="font-size:12px;color:rgba(245,240,232,0.5);line-height:1.4">Retencao dos ligamentos diminui com a idade, acelerando a ptose facial.</div>' +
       '</div>'
       html += '</div>'
       html += '</div>'
@@ -390,7 +390,7 @@
         }
       })
 
-      html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
+      html += '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
         '<thead><tr>' + _thCell('Zona') + _thCell('Tratamento') + _thCell('Dose') + _thCell('Produto') + '</tr></thead><tbody>'
       var zIdx = 0
       Object.keys(zoneMap).forEach(function (key) {
@@ -423,15 +423,15 @@
     if (queixas.length > 0) {
       if (queixaPrincipal) {
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-          '<span style="font-size:8px;padding:2px 8px;background:rgba(239,68,68,0.12);color:#EF4444;border-radius:4px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0">Maior impacto</span>' +
-          '<span style="font-size:12px;font-weight:600;color:#F5F0E8">' + FM._esc(queixaPrincipal) + '</span>' +
+          '<span style="font-size:10px;padding:3px 10px;background:rgba(239,68,68,0.12);color:#EF4444;border-radius:4px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0">Maior impacto</span>' +
+          '<span style="font-size:14px;font-weight:600;color:#F5F0E8">' + FM._esc(queixaPrincipal) + '</span>' +
         '</div>'
       }
       html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
       queixas.forEach(function (q) {
         if (!q) return
         var isMain = q === queixaPrincipal
-        html += '<span style="padding:4px 10px;border-radius:6px;font-size:10px;' +
+        html += '<span style="padding:5px 12px;border-radius:6px;font-size:13px;' +
           (isMain ? 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#EF4444;font-weight:600' :
                     'background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);color:rgba(245,240,232,0.6)') +
           '">' + FM._esc(q) + '</span>'
@@ -446,16 +446,16 @@
     // ATO 2: "O que aconteceu",Explicacao
     // ═══════════════════════════════════════════
     html += '<div style="text-align:center;padding:20px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">O que aconteceu</div>' +
-      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">A ciencia por tras do envelhecimento</div>' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">O que aconteceu</div>' +
+      '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">A ciencia por tras do envelhecimento</div>' +
     '</div>'
 
     html += '<div style="padding:12px 48px 16px 48px">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;color:rgba(245,240,232,0.55);line-height:1.8;text-align:center">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:16px;font-style:italic;color:rgba(245,240,232,0.55);line-height:1.8;text-align:center">' +
         'O envelhecimento e uma quebra do sistema vetorial do rosto. As forcas que sustentavam cada estrutura se inverteram ' +
         '— a gravidade, a anteriorizacao e a perda dos ligamentos mudaram a direcao de tudo.' +
       '</div>' +
-      '<div style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;color:#C8A97E;text-align:center;margin-top:12px;letter-spacing:0.06em">' +
+      '<div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:600;color:#C8A97E;text-align:center;margin-top:12px;letter-spacing:0.06em">' +
         'A harmonizacao NAO e preencher rugas. E reconstruir vetores.' +
       '</div>' +
     '</div>'
@@ -464,8 +464,8 @@
     // ATO 3: "Para onde vamos",Solucao
     // ═══════════════════════════════════════════
     html += '<div style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Para onde vamos</div>' +
-      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Plano de reconstrucao vetorial</div>' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Para onde vamos</div>' +
+      '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Plano de reconstrucao vetorial</div>' +
     '</div>'
 
     // ─── DEPOIS photos (2-column: photo + expected results) ───
@@ -491,14 +491,14 @@
       }
       html += '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
         '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10B981"></span>' +
-        '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">DEPOIS</span>' +
+        '<span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">DEPOIS</span>' +
       '</div>'
       html += '</div>'
 
       // RIGHT: Expected results panel (editable)
       html += '<div style="flex:0.8;display:flex;flex-direction:column;gap:6px">'
-      html += '<div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(200,169,126,0.5);font-weight:600">Resultados esperados</div>'
-      html += _editableBlock('fmDepoisResults_' + ang.id, 'Descreva as mudancas esperadas para ' + ang.label.toLowerCase() + '...', 'min-height:120px;font-size:10px;')
+      html += '<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(200,169,126,0.5);font-weight:600">Resultados esperados</div>'
+      html += _editableBlock('fmDepoisResults_' + ang.id, 'Descreva as mudancas esperadas para ' + ang.label.toLowerCase() + '...', 'min-height:120px;font-size:13px;')
       html += '</div>'
 
       html += '</div>'
@@ -507,7 +507,7 @@
     // ─── PLANO A,Protocolo Completo (EDITABLE) ───
     html += _sectionTitle('Plano A \u2014 Protocolo Integrado de Harmonia', 'clipboard')
     html += '<div style="padding:0 32px 4px 32px">'
-    html += '<div style="margin-bottom:8px">' + _editable('fmPlanASubtitle', 'Lifting vetorial completo + Fotona + manutencao', 'font-size:10px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
+    html += '<div style="margin-bottom:8px">' + _editable('fmPlanASubtitle', 'Lifting vetorial completo + Fotona + manutencao', 'font-size:13px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
     var transformPhrases = {
       'temporal': 'Reativa o vetor de sustentacao,o rosto inteiro sobe',
@@ -552,13 +552,13 @@
         '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + z.color + ';margin-top:5px;flex-shrink:0"></span>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;justify-content:space-between;align-items:center">' +
-            '<span style="font-size:10px;font-weight:600;color:#F5F0E8">' + FM._esc(z.label) + '</span>' +
+            '<span style="font-size:13px;font-weight:600;color:#F5F0E8">' + FM._esc(z.label) + '</span>' +
             '<div style="display:flex;align-items:center;gap:6px">' +
-              '<span style="font-size:8px;color:rgba(245,240,232,0.4)">' + FM._esc(tLabel) + '</span>' +
-              '<span style="font-size:10px;font-weight:700;color:' + doseColor + '">' + parseFloat(avgDose).toFixed(1) + ' ' + z.unit + '</span>' +
+              '<span style="font-size:11px;color:rgba(245,240,232,0.4)">' + FM._esc(tLabel) + '</span>' +
+              '<span style="font-size:13px;font-weight:700;color:' + doseColor + '">' + parseFloat(avgDose).toFixed(1) + ' ' + z.unit + '</span>' +
             '</div>' +
           '</div>' +
-          (phrase ? '<div style="font-size:8px;font-style:italic;color:rgba(200,169,126,0.45);margin-top:1px">' + phrase + '</div>' : '') +
+          (phrase ? '<div style="font-size:10px;font-style:italic;color:rgba(200,169,126,0.45);margin-top:1px">' + phrase + '</div>' : '') +
         '</div>' +
       '</div>'
     })
@@ -568,16 +568,16 @@
     if (FM._protocolData && FM._protocolData.totals) {
       var pt = FM._protocolData.totals
       html += '<div style="display:flex;gap:16px;margin-top:8px;padding:8px 0;border-top:1px solid rgba(200,169,126,0.10);justify-content:flex-end">'
-      if (pt.ah_ml) html += '<span style="font-size:10px;color:#3B82F6;font-weight:600">' + FM._icon('droplet', 10) + ' ' + pt.ah_ml + ' mL AH</span>'
-      if (pt.botox_units) html += '<span style="font-size:10px;color:#8B5CF6;font-weight:600">' + FM._icon('zap', 10) + ' ' + pt.botox_units + ' U Botox</span>'
-      if (pt.bio_sessions) html += '<span style="font-size:10px;color:#10B981;font-weight:600">' + FM._icon('refresh-cw', 10) + ' ' + pt.bio_sessions + ' Sessoes Bio</span>'
+      if (pt.ah_ml) html += '<span style="font-size:13px;color:#3B82F6;font-weight:600">' + FM._icon('droplet', 12) + ' ' + pt.ah_ml + ' mL AH</span>'
+      if (pt.botox_units) html += '<span style="font-size:13px;color:#8B5CF6;font-weight:600">' + FM._icon('zap', 12) + ' ' + pt.botox_units + ' U Botox</span>'
+      if (pt.bio_sessions) html += '<span style="font-size:13px;color:#10B981;font-weight:600">' + FM._icon('refresh-cw', 12) + ' ' + pt.bio_sessions + ' Sessoes Bio</span>'
       html += '</div>'
     } else if (FM._annotations.length > 0) {
       var totals = FM._calcTotals ? FM._calcTotals() : []
       if (totals.length > 0) {
         html += '<div style="display:flex;gap:16px;margin-top:8px;padding:8px 0;border-top:1px solid rgba(200,169,126,0.10);justify-content:flex-end">'
         totals.forEach(function (tt) {
-          html += '<span style="font-size:10px;color:' + tt.color + ';font-weight:600">' + tt.ml.toFixed(1) + ' ' + FM._esc(tt.label) + '</span>'
+          html += '<span style="font-size:13px;color:' + tt.color + ';font-weight:600">' + tt.ml.toFixed(1) + ' ' + FM._esc(tt.label) + '</span>'
         })
         html += '</div>'
       }
@@ -586,10 +586,10 @@
     // ── Protocolo Lifting 5D,Cashback Fotona ──
     html += '<div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(200,169,126,0.08),rgba(200,169,126,0.03));border:1px solid rgba(200,169,126,0.18);border-radius:10px">'
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
-      '<div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:700">FOTONA DYNAMIS NX,CASHBACK</div>' +
-      '<span style="font-size:8px;padding:3px 8px;background:rgba(16,185,129,0.15);color:#10B981;border-radius:4px;font-weight:600;letter-spacing:0.1em">INCLUSO NO PROTOCOLO</span>' +
+      '<div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:700">FOTONA DYNAMIS NX,CASHBACK</div>' +
+      '<span style="font-size:10px;padding:3px 8px;background:rgba(16,185,129,0.15);color:#10B981;border-radius:4px;font-weight:600;letter-spacing:0.1em">INCLUSO NO PROTOCOLO</span>' +
     '</div>'
-    html += '<div style="font-size:10px;color:rgba(245,240,232,0.55);line-height:1.6;margin-bottom:10px">' +
+    html += '<div style="font-size:13px;color:rgba(245,240,232,0.55);line-height:1.6;margin-bottom:10px">' +
       'Ao fechar o Protocolo Lifting 5D, a paciente recebe de cashback <strong style="color:#C8A97E">3 sessoes de Fotona 4D</strong>,' +
       'o melhor laser do mundo,atuando em todas as camadas do rosto.' +
     '</div>'
@@ -599,56 +599,56 @@
     fotonaMonths.forEach(function (m, i) {
       html += '<div style="flex:1;padding:10px;background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);border-radius:8px;text-align:center">' +
         '<div style="font-size:16px;font-weight:800;color:#C8A97E">' + (i + 1) + '</div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">' + m + '</div>' +
-        '<div style="font-size:9px;color:rgba(245,240,232,0.55);margin-top:4px">Fotona 4D</div>' +
-        '<div style="font-size:8px;color:#10B981;margin-top:2px">R$ 5.000</div>' +
+        '<div style="font-size:10px;color:rgba(245,240,232,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">' + m + '</div>' +
+        '<div style="font-size:12px;color:rgba(245,240,232,0.55);margin-top:4px">Fotona 4D</div>' +
+        '<div style="font-size:10px;color:#10B981;margin-top:2px">R$ 5.000</div>' +
       '</div>'
     })
     html += '</div>'
 
     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid rgba(200,169,126,0.10)">' +
-      '<span style="font-size:10px;color:rgba(245,240,232,0.5)">Valor total Fotona (3 sessoes)</span>' +
-      '<span style="font-size:14px;font-weight:700;color:#10B981">R$ 15.000 <span style="font-size:9px;color:rgba(245,240,232,0.3);font-weight:400;text-decoration:line-through">pago pelo cashback</span></span>' +
+      '<span style="font-size:13px;color:rgba(245,240,232,0.5)">Valor total Fotona (3 sessoes)</span>' +
+      '<span style="font-size:16px;font-weight:700;color:#10B981">R$ 15.000 <span style="font-size:11px;color:rgba(245,240,232,0.3);font-weight:400;text-decoration:line-through">pago pelo cashback</span></span>' +
     '</div>'
     html += '</div>'
 
-    // ── Timeline Visual Lifting 5D ──
+    // ── Timeline Visual Lifting 5D (VERTICAL) ──
     html += '<div style="margin-top:16px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:10px">'
-    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,169,126,0.4);font-weight:600;margin-bottom:12px;text-align:center">JORNADA DO PROTOCOLO LIFTING 5D</div>'
+    html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,169,126,0.4);font-weight:600;margin-bottom:16px;text-align:center">JORNADA DO PROTOCOLO LIFTING 5D</div>'
 
     var timelineSteps = [
-      { label: 'Sessao 1', sub: 'Dia 0', desc: 'Lifting Vetorial', color: '#C8A97E' },
-      { label: 'Sessao 2', sub: '30 dias', desc: 'Refino + Ajustes', color: '#C8A97E' },
-      { label: 'Fotona 1', sub: '45 dias', desc: '4D Laser', color: '#10B981' },
-      { label: 'Fotona 2', sub: '60 dias', desc: '4D Laser', color: '#10B981' },
-      { label: 'Fotona 3', sub: '75 dias', desc: '4D Laser', color: '#10B981' },
-      { label: 'Retorno', sub: '90 dias', desc: 'Avaliacao Final', color: '#C8A97E' },
+      { label: 'Dia 1 \u2014 Fotona 4D', desc: 'Ativacao de colageno profundo nas 4 camadas da pele', color: '#C8A97E' },
+      { label: 'Semana 2 \u2014 Injetaveis', desc: 'Acido Hialuronico, Toxina Botulinica, Bioestimulador', color: '#F5F0E8' },
+      { label: 'Semana 4 \u2014 Retoques', desc: 'Ajustes finos e refinamento do resultado', color: '#F5F0E8' },
+      { label: 'Mes 1 \u2014 2a sessao Fotona 4D', desc: 'Potencializacao do colageno e firmeza', color: '#C8A97E' },
+      { label: 'Mes 3 \u2014 3a sessao Fotona 4D', desc: 'Consolidacao do rejuvenescimento profundo', color: '#C8A97E' },
+      { label: 'Transformacao \u2014 Resultado visivel', desc: 'Harmonia facial completa com naturalidade', color: '#10B981' },
     ]
-    html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;position:relative;padding:0 8px">'
-    html += '<div style="position:absolute;top:7px;left:32px;right:32px;height:2px;background:linear-gradient(90deg,#C8A97E,#C8A97E,#10B981,#10B981,#10B981,#C8A97E)"></div>'
+
+    html += '<div style="position:relative;padding-left:30px">'
+    html += '<div style="position:absolute;left:12px;top:0;bottom:0;width:2px;background:linear-gradient(#C8A97E,#10B981)"></div>'
     timelineSteps.forEach(function (step) {
-      html += '<div style="position:relative;z-index:1;text-align:center;width:70px">' +
-        '<div style="width:14px;height:14px;border-radius:50%;border:2px solid ' + step.color + ';background:#0A0A0A;margin:0 auto 4px"></div>' +
-        '<div style="font-size:8px;font-weight:600;color:#F5F0E8">' + step.label + '</div>' +
-        '<div style="font-size:7px;color:rgba(245,240,232,0.3)">' + step.sub + '</div>' +
-        '<div style="font-size:7px;color:' + step.color + ';margin-top:1px">' + step.desc + '</div>' +
+      html += '<div style="position:relative;padding:12px 0">' +
+        '<div style="position:absolute;left:-22px;width:14px;height:14px;border-radius:50%;border:2px solid ' + step.color + ';background:#0A0A0A"></div>' +
+        '<div style="font-size:13px;font-weight:700;color:' + step.color + '">' + step.label + '</div>' +
+        '<div style="font-size:12px;color:rgba(245,240,232,0.5);margin-top:2px">' + step.desc + '</div>' +
       '</div>'
     })
     html += '</div>'
 
-    html += '<div style="display:flex;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap;font-size:9px;color:rgba(245,240,232,0.4)">'
-    html += '<span>Inicio: ' + _editable('fmTimeline1', 'dd/mm/aaaa', 'width:70px;font-size:9px;') + '</span>'
-    html += '<span>Retorno: ' + _editable('fmTimeline2', 'dd/mm/aaaa', 'width:70px;font-size:9px;') + '</span>'
+    html += '<div style="display:flex;gap:12px;margin-top:14px;justify-content:center;flex-wrap:wrap;font-size:12px;color:rgba(245,240,232,0.4)">'
+    html += '<span>Inicio: ' + _editable('fmTimeline1', 'dd/mm/aaaa', 'width:80px;font-size:12px;') + '</span>'
+    html += '<span>Retorno: ' + _editable('fmTimeline2', 'dd/mm/aaaa', 'width:80px;font-size:12px;') + '</span>'
     html += '</div>'
     html += '</div>'
 
     // ── Beneficios Fotona ──
     html += '<div style="margin-top:10px;padding:10px 16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.10);border-radius:8px">'
-    html += '<div style="font-size:9px;font-weight:600;color:#10B981;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Beneficios Fotona 4D inclusos</div>'
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;color:rgba(245,240,232,0.5)">'
+    html += '<div style="font-size:11px;font-weight:600;color:#10B981;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Beneficios Fotona 4D inclusos</div>'
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;color:rgba(245,240,232,0.5)">'
     var beneficios = ['Lifting e firmeza profunda', 'Rejuvenescimento das 4 camadas', 'Producao intensa de colageno', 'Melhora textura e poros', 'Reducao rugas e linhas', 'Resultados naturais com glow']
     beneficios.forEach(function (b) {
-      html += '<div style="display:flex;align-items:center;gap:4px"><span style="color:#10B981;font-size:8px">&#x2713;</span> ' + b + '</div>'
+      html += '<div style="display:flex;align-items:center;gap:6px"><span style="color:#10B981;font-size:11px">&#x2713;</span> ' + b + '</div>'
     })
     html += '</div></div>'
 
@@ -658,9 +658,9 @@
     html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
     html += _sectionTitle('Plano B \u2014 Protocolo Essencial', 'target')
     html += '<div style="padding:0 32px 4px 32px">'
-    html += '<div style="margin-bottom:8px">' + _editable('fmPlanBSubtitle', 'Foco nas areas de maior impacto,sem Fotona', 'font-size:10px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
+    html += '<div style="margin-bottom:8px">' + _editable('fmPlanBSubtitle', 'Foco nas areas de maior impacto,sem Fotona', 'font-size:13px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
-    html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
       '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
 
     for (var eb = 0; eb < 4; eb++) {
@@ -679,25 +679,25 @@
     html += '<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">'
 
     html += '<div style="flex:1;min-width:200px;background:rgba(200,169,126,0.04);border:1px solid rgba(200,169,126,0.12);border-radius:8px;padding:14px 18px">'
-    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Plano A,Protocolo Lifting 5D</div>'
-    html += '<div style="font-size:22px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceA', '12.000 - 15.000', 'font-size:22px;font-weight:700;width:180px;') + '</div>'
-    html += '<div style="font-size:9px;color:#10B981;margin-top:4px">+ Cashback: 3 sessoes Fotona 4D (R$ 15.000)</div>'
+    html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Plano A,Protocolo Lifting 5D</div>'
+    html += '<div style="font-size:28px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceA', '12.000 - 15.000', 'font-size:28px;font-weight:700;width:200px;') + '</div>'
+    html += '<div style="font-size:11px;color:#10B981;margin-top:4px">+ Cashback: 3 sessoes Fotona 4D (R$ 15.000)</div>'
     html += '</div>'
 
     html += '<div style="flex:1;min-width:200px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:8px;padding:14px 18px">'
-    html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:600;margin-bottom:4px">Plano B,Essencial</div>'
-    html += '<div style="font-size:22px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceB', '5.000 - 8.000', 'font-size:22px;font-weight:700;width:180px;') + '</div>'
-    html += '<div style="font-size:9px;color:rgba(245,240,232,0.3);margin-top:4px">Sem Fotona incluso</div>'
+    html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:600;margin-bottom:4px">Plano B,Essencial</div>'
+    html += '<div style="font-size:28px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceB', '5.000 - 8.000', 'font-size:28px;font-weight:700;width:200px;') + '</div>'
+    html += '<div style="font-size:11px;color:rgba(245,240,232,0.3);margin-top:4px">Sem Fotona incluso</div>'
     html += '</div>'
 
     html += '</div>'
-    html += '<div style="margin-top:10px;font-size:11px;color:rgba(245,240,232,0.5)">Condicoes: ' + _editable('fmPaymentConditions', 'Ate 10x sem juros no cartao', 'width:300px;') + '</div>'
-    html += '<div style="margin-top:6px;font-size:9px;color:rgba(200,169,126,0.4);font-style:italic">Acompanhamento anual: 40% de beneficio exclusivo nas sessoes de Fotona 4D + condicoes especiais em retoques.</div>'
+    html += '<div style="margin-top:10px;font-size:14px;color:rgba(245,240,232,0.5)">Condicoes: ' + _editable('fmPaymentConditions', 'Ate 10x sem juros no cartao', 'width:300px;') + '</div>'
+    html += '<div style="margin-top:6px;font-size:12px;color:rgba(200,169,126,0.4);font-style:italic">Acompanhamento anual: 40% de beneficio exclusivo nas sessoes de Fotona 4D + condicoes especiais em retoques.</div>'
     html += '</div>'
 
     // ─── Mensagem Lifting 5D ───
     html += '<div style="margin-top:12px;padding:16px 24px;background:rgba(200,169,126,0.04);border-left:3px solid #C8A97E;border-radius:0 8px 8px 0">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;color:rgba(200,169,126,0.6);line-height:1.7">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;color:rgba(200,169,126,0.6);line-height:1.7">' +
         'O resultado nao e um rosto transformado. E o seu rosto de volta,com firmeza, leveza e expressao viva.<br>' +
         'Porque o rejuvenescimento de verdade nao e mudar quem voce e. E fazer o espelho voltar a te reconhecer.' +
       '</div>' +
@@ -705,14 +705,14 @@
 
     // ─── DEPOIMENTO ───
     html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 48px;text-align:center">' +
-      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px">O que outras pacientes dizem</div>' +
-      _editableBlock('fmReportTestimonial', '"Diferente mas ninguem sabe dizer o que mudou. Exatamente o que eu queria.",M.C., 48 anos', 'font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;text-align:center;border-color:rgba(200,169,126,0.10);') +
+      '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px">O que outras pacientes dizem</div>' +
+      _editableBlock('fmReportTestimonial', '"Diferente mas ninguem sabe dizer o que mudou. Exatamente o que eu queria.",M.C., 48 anos', 'font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;text-align:center;border-color:rgba(200,169,126,0.10);') +
     '</div>'
 
     // ─── FOOTER ───
     html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.12)">'
     html += '<div style="padding:24px 32px 8px 32px;text-align:center">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:14px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.65);line-height:1.6;max-width:500px;margin:0 auto">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.65);line-height:1.6;max-width:500px;margin:0 auto">' +
         'Nos nao preenchemos rugas. Nos reposicionamos as forcas do seu rosto.' +
       '</div>' +
     '</div>'
@@ -723,15 +723,15 @@
 
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;padding:12px 32px 10px 32px">' +
       '<div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.20);letter-spacing:0.06em">Gerado por ClinicAI Face Mapping</div>' +
-        '<div style="font-size:7px;color:rgba(245,240,232,0.12);margin-top:2px;font-family:monospace">' + reportId + '</div>' +
+        '<div style="font-size:10px;color:rgba(245,240,232,0.20);letter-spacing:0.06em">Gerado por ClinicAI Face Mapping</div>' +
+        '<div style="font-size:9px;color:rgba(245,240,232,0.12);margin-top:2px;font-family:monospace">' + reportId + '</div>' +
       '</div>' +
       '<div style="text-align:right">' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">' + FM._esc(profName) + '</div>' +
-        '<div style="font-size:8px;color:rgba(245,240,232,0.35);letter-spacing:0.1em;margin-top:2px">' + FM._esc(profCRM) + '</div>' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">' + FM._esc(profName) + '</div>' +
+        '<div style="font-size:10px;color:rgba(245,240,232,0.35);letter-spacing:0.1em;margin-top:2px">' + FM._esc(profCRM) + '</div>' +
       '</div>' +
     '</div>'
-    html += '<div style="text-align:center;padding:0 32px 20px 32px;font-size:9px;color:rgba(245,240,232,0.25);letter-spacing:0.06em">Valido por 7 dias</div>'
+    html += '<div style="text-align:center;padding:0 32px 20px 32px;font-size:11px;color:rgba(245,240,232,0.25);letter-spacing:0.06em">Valido por 7 dias</div>'
     html += '</div>'
 
     // Close report card
