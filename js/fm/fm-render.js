@@ -824,7 +824,14 @@
       angleAnns.forEach(function (a) {
         var tr = FM.TREATMENTS.find(function (x) { return x.id === a.treatment })
         var key = a.treatment || 'ah'
-        if (!costMap[key]) costMap[key] = { label: tr ? tr.label : key, color: tr ? tr.color : '#999', qty: 0, unit: tr ? tr.priceUnit : 'mL', unitPrice: tr ? tr.unitPrice : 0 }
+        // Try real price from Supabase, fallback to config
+        var realPrice = 0
+        if (FM._productPrices && a.product) {
+          var pk = a.product.toLowerCase()
+          if (FM._productPrices[pk]) realPrice = FM._productPrices[pk].custo
+        }
+        if (!realPrice && tr) realPrice = tr.unitPrice || 0
+        if (!costMap[key]) costMap[key] = { label: tr ? tr.label : key, color: tr ? tr.color : '#999', qty: 0, unit: tr ? tr.priceUnit : 'mL', unitPrice: realPrice, product: a.product }
         costMap[key].qty += (parseFloat(a.ml) || 0)
       })
 

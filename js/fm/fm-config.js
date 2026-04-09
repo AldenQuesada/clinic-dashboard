@@ -207,6 +207,59 @@
   // Initialize ZONES
   FM.ZONES = FM._loadZoneRanges()
 
+  // ── Load real product prices from Injetaveis (Supabase) ──
+  FM._loadProductPrices = function () {
+    if (!window.InjetaveisRepository) return
+    window.InjetaveisRepository.getAll(true).then(function (r) {
+      if (!r.ok || !r.data) return
+      var products = r.data
+      // Build price lookup: product name → custo_unit
+      FM._productPrices = {}
+      products.forEach(function (p) {
+        if (p.nome && p.preco_custo) {
+          FM._productPrices[p.nome.toLowerCase()] = {
+            custo: parseFloat(p.preco_custo) || 0,
+            nome: p.nome,
+            marca: p.marca || '',
+            unidade: p.unidade || 'mL',
+            estoque: p.estoque || 0,
+            id: p.id
+          }
+        }
+      })
+      // Update TREATMENTS unitPrice from real data
+      FM.TREATMENTS.forEach(function (t) {
+        FM.ZONES.forEach(function (z) {
+          if (z.defaultTx === t.id && z.defaultProduct) {
+            var key = z.defaultProduct.toLowerCase()
+            if (FM._productPrices[key]) {
+              // Use real cost per unit from Supabase
+              z._realCost = FM._productPrices[key].custo
+            }
+          }
+        })
+      })
+      console.log('[FM] Product prices loaded:', Object.keys(FM._productPrices).length, 'products')
+    }).catch(function () { /* silent */ })
+  }
+
+  // Auto-load on init
+  setTimeout(FM._loadProductPrices, 1000)
+
+  // ── Update product price back to Supabase ──
+  FM._updateProductPrice = function (productName, newPrice) {
+    if (!FM._productPrices || !window.InjetaveisRepository) return
+    var key = productName.toLowerCase()
+    var prod = FM._productPrices[key]
+    if (!prod || !prod.id) return
+    prod.custo = newPrice
+    window.InjetaveisRepository.upsert({ id: prod.id, preco_custo: newPrice }).then(function (r) {
+      if (r.ok) {
+        FM._showToast && FM._showToast('Preco atualizado: ' + productName + ' → R$ ' + newPrice.toFixed(2), 'success')
+      }
+    })
+  }
+
   // ── Force Vector System — Facial Aging Forces ──────────────
   // 7 zone groups with young (lifting) and aged (falling) vector directions
   // Offsets are relative to zone center (normalized 0-1)
