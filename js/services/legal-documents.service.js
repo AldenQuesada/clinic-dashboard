@@ -127,8 +127,8 @@
     // Construir variaveis
     var vars = buildVars(apptOrOpts)
 
-    // Renderizar snapshot
-    var snapshot = renderTemplate(tmpl.content, vars)
+    // Renderizar snapshot (ou usar override se fornecido)
+    var snapshot = apptOrOpts._contentOverride || renderTemplate(tmpl.content, vars)
 
     var res = await window._sbShared.rpc('legal_doc_create_request', {
       p_template_id: templateId,
@@ -196,6 +196,53 @@
   //  AUTO-SEND: gerar docs automaticamente por status/procedimento
   // ══════════════════════════════════════════════════════════
 
+  // ── Montar bloco de procedimentos + riscos para TCLE ─────
+  function buildProcedureBlock(procedimentos) {
+    if (!procedimentos || !procedimentos.length) return { lista: '', riscos: '' }
+
+    var lista = ''
+    var riscos = ''
+    procedimentos.forEach(function (p, i) {
+      lista += (i + 1) + '. ' + (p.nome || p) + '\n'
+      if (p.riscos_complicacoes && p.riscos_complicacoes.length) {
+        riscos += '\n' + (p.nome || p).toUpperCase() + ':\n'
+        p.riscos_complicacoes.forEach(function (r) {
+          riscos += '  - ' + r + '\n'
+        })
+      }
+      if (p.cuidados_pos && p.cuidados_pos.length) {
+        riscos += '\nCuidados pos-procedimento (' + (p.nome || p) + '):\n'
+        p.cuidados_pos.forEach(function (c) {
+          riscos += '  - ' + c + '\n'
+        })
+      }
+    })
+
+    return { lista: lista.trim(), riscos: riscos.trim() }
+  }
+
+  // ── Criar TCLE composto para multiplos procedimentos ──────
+  async function createCompositeTCLE(templateId, apptOrOpts, procedimentos) {
+    if (!window._sbShared) return { ok: false, error: 'Supabase nao disponivel' }
+
+    if (!_templates) await loadTemplates()
+    var tmpl = (_templates || []).find(function (t) { return t.id === templateId || t.slug === templateId })
+    if (!tmpl) return { ok: false, error: 'Template nao encontrado' }
+
+    var vars = buildVars(apptOrOpts)
+    var blocks = buildProcedureBlock(procedimentos)
+    vars.lista_procedimentos = blocks.lista
+    vars.bloco_riscos = blocks.riscos
+    vars.procedimento = procedimentos.map(function (p) { return p.nome || p }).join(', ')
+
+    var snapshot = renderTemplate(tmpl.content, vars)
+
+    return createRequest(tmpl.id, Object.assign({}, apptOrOpts, {
+      procedimento: vars.procedimento,
+      _contentOverride: snapshot,
+    }))
+  }
+
   async function autoSendForStatus(status, apptOrOpts) {
     if (!_templates) await loadTemplates()
     var matching = (_templates || []).filter(function (t) {
@@ -233,7 +280,9 @@
     listRequests:     listRequests,
     revokeRequest:    revokeRequest,
     generateLink:     generateLink,
-    autoSendForStatus: autoSendForStatus,
+    autoSendForStatus:  autoSendForStatus,
+    createCompositeTCLE: createCompositeTCLE,
+    buildProcedureBlock: buildProcedureBlock,
     renderTemplate:   renderTemplate,
     buildVars:        buildVars,
   })
