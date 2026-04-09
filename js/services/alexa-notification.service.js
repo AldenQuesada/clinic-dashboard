@@ -97,43 +97,40 @@
     var welcomeMsg = _render(config.welcome_template, vars)
     var roomMsg = _render(config.room_template, vars)
 
-    var payload = {
-      event:                'patient_arrived',
-      patient_name:         vars.nome,
-      professional_name:    vars.profissional,
-      procedure:            vars.procedimento,
-      room_name:            roomNome,
-      appointment_time:     vars.hora,
-      reception_device:     config.reception_device_name || 'Recepcao',
-      room_device:          roomDeviceName,
-      welcome_message:      welcomeMsg,
-      room_message:         roomMsg,
-      timestamp:            new Date().toISOString(),
-    }
+    var headers = { 'Content-Type': 'application/json' }
+    if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
+
+    var receptionDevice = config.reception_device_name || 'Echo Spot Recepção'
+    var sent = 0
 
     try {
-      var headers = { 'Content-Type': 'application/json' }
-      if (config.auth_token) headers['Authorization'] = 'Bearer ' + config.auth_token
-
-      var response = await fetch(config.webhook_url, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        console.error('[Alexa] Webhook falhou:', response.status, response.statusText)
-        return
+      // 1. Announce na recepcao (boas-vindas)
+      if (welcomeMsg && receptionDevice) {
+        var r1 = await fetch(config.webhook_url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ device: receptionDevice, message: welcomeMsg, type: 'announce' }),
+        })
+        if (r1.ok) { sent++; console.log('[Alexa] Recepcao OK:', receptionDevice) }
+        else { console.error('[Alexa] Recepcao falhou:', r1.status) }
       }
 
-      console.log('[Alexa] Notificacao enviada:', vars.nome, '→', roomNome)
+      // 2. Announce na sala do profissional (aviso de chegada)
+      if (roomMsg && roomDeviceName) {
+        var r2 = await fetch(config.webhook_url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({ device: roomDeviceName, message: roomMsg, type: 'announce' }),
+        })
+        if (r2.ok) { sent++; console.log('[Alexa] Sala OK:', roomDeviceName) }
+        else { console.error('[Alexa] Sala falhou:', r2.status) }
+      }
 
-      // Toast visual no dashboard
-      if (window._showToast) {
-        _showToast('Alexa', 'Boas-vindas enviada para ' + vars.nome, 'success')
+      if (sent > 0 && window._showToast) {
+        _showToast('Alexa', 'Notificacao enviada para ' + vars.nome + ' (' + sent + ' dispositivo' + (sent > 1 ? 's' : '') + ')', 'success')
       }
     } catch (e) {
-      console.error('[Alexa] Erro ao enviar webhook:', e)
+      console.error('[Alexa] Erro ao enviar:', e)
     }
   }
 
