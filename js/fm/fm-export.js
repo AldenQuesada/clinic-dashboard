@@ -115,7 +115,7 @@
     // ── Report Card ──
     var html = '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6);padding-bottom:24px">'
 
-    // ─── SECTION 1: Header ───
+    // ─── HEADER ───
     html += '<div style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
       '<div>' +
         '<div style="font-family:Cormorant Garamond,serif;font-size:26px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">Clinica Mirian de Paula</div>' +
@@ -161,13 +161,23 @@
       '</div>'
     }
 
-    // ─── ATO 1: "Onde voce esta" ───
+    // ═══════════════════════════════════════════
+    // ATO 1: "Onde voce esta" — Diagnostico
+    // ═══════════════════════════════════════════
     html += '<div style="text-align:center;padding:12px 32px 4px 32px">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Onde voce esta</div>' +
       '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Diagnostico facial completo</div>' +
     '</div>'
 
-    // ─── SECTION 2: ALL 3 Angles — Fotos Metrificadas ───
+    // Helper: small metric card for analysis panel
+    function _miniCard(value, label, color, sub) {
+      return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:6px 8px;text-align:center">' +
+        '<div style="font-size:14px;font-weight:700;color:' + (color || '#F5F0E8') + ';line-height:1.1">' + value + '</div>' +
+        '<div style="font-size:6px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4);margin-top:2px">' + label + '</div>' +
+        (sub ? '<div style="font-size:6px;color:' + (color || 'rgba(245,240,232,0.4)') + ';margin-top:1px">' + sub + '</div>' : '') +
+      '</div>'
+    }
+
     var angleConfig = [
       { id: 'front', label: 'Vista Frontal' },
       { id: '45', label: 'Vista 45\u00B0' },
@@ -178,187 +188,242 @@
 
     angleConfig.forEach(function (ang) {
       var hasAntes = false
-      var hasDepois = false
-
       if (ang.id === activeAngle) {
         hasAntes = FM._canvas && FM._canvas.width > 0
-        hasDepois = FM._canvas2 && FM._canvas2.width > 0
       } else {
         hasAntes = FM._photoUrls && FM._photoUrls[ang.id]
-        hasDepois = FM._afterPhotoByAngle && FM._afterPhotoByAngle[ang.id]
       }
-
-      if (!hasAntes && !hasDepois) return
+      if (!hasAntes) return
       hasAnyPhoto = true
 
       html += _sectionTitle(ang.label, 'camera')
-      html += '<div style="display:flex;gap:12px;padding:4px 32px 12px 32px;justify-content:center">'
 
-      if (hasAntes) {
-        if (ang.id === activeAngle) {
-          // Active angle: use canvas with overlays
-          html += '<div style="flex:1;max-width:360px;position:relative;border-radius:8px;overflow:hidden;background:#111">' +
-            '<canvas id="fmReportCanvas_antes_' + ang.id + '" style="width:100%;display:block"></canvas>' +
-            '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
-              '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF4444"></span>' +
-              '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">ANTES</span>' +
-            '</div>' +
-          '</div>'
-        } else {
-          // Other angles: use img with blob URL
-          html += '<div style="flex:1;max-width:360px;position:relative;border-radius:8px;overflow:hidden;background:#111">' +
-            '<img src="' + FM._esc(FM._photoUrls[ang.id]) + '" style="width:100%;display:block" crossorigin="anonymous">' +
-            '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
-              '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF4444"></span>' +
-              '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">ANTES</span>' +
-            '</div>' +
-          '</div>'
-        }
+      // 2-column layout: photo left (~55%), analysis right (~45%)
+      html += '<div style="display:flex;gap:16px;padding:4px 32px 12px 32px">'
+
+      // LEFT: ANTES photo
+      html += '<div style="flex:1.2;position:relative;border-radius:8px;overflow:hidden;background:#111">'
+      if (ang.id === activeAngle) {
+        html += '<canvas id="fmReportCanvas_antes_' + ang.id + '" style="width:100%;display:block"></canvas>'
+      } else {
+        html += '<img src="' + FM._esc(FM._photoUrls[ang.id]) + '" style="width:100%;display:block" crossorigin="anonymous">'
       }
-
-      if (hasDepois) {
-        if (ang.id === activeAngle) {
-          html += '<div style="flex:1;max-width:360px;position:relative;border-radius:8px;overflow:hidden;background:#111">' +
-            '<canvas id="fmReportCanvas_depois_' + ang.id + '" style="width:100%;display:block"></canvas>' +
-            '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
-              '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10B981"></span>' +
-              '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">DEPOIS</span>' +
-            '</div>' +
-          '</div>'
-        } else {
-          html += '<div style="flex:1;max-width:360px;position:relative;border-radius:8px;overflow:hidden;background:#111">' +
-            '<img src="' + FM._esc(FM._afterPhotoByAngle[ang.id]) + '" style="width:100%;display:block" crossorigin="anonymous">' +
-            '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
-              '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10B981"></span>' +
-              '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">DEPOIS</span>' +
-            '</div>' +
-          '</div>'
-        }
-      }
-
+      html += '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
+        '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF4444"></span>' +
+        '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">ANTES</span>' +
+      '</div>'
       html += '</div>'
 
-      // ── Per-angle analysis (below photos) ──
+      // RIGHT: Analysis panel
+      html += '<div style="flex:0.8;display:flex;flex-direction:column;gap:6px">'
+
       var angStore = FM._angleStore && FM._angleStore[ang.id]
+      var angMetricAngles = angStore && angStore._metricAngles
 
-      if (ang.id === 'front' || ang.id === '45') {
-        // Simetria metrics for this angle
-        var angMetricAngles = angStore && angStore._metricAngles
-        var cards = []
-
-        if (FM._scanData && FM._scanData.thirds && ang.id === 'front') {
+      if (ang.id === 'front') {
+        // Tercos
+        if (FM._scanData && FM._scanData.thirds) {
           var t = FM._scanData.thirds
-          if (t.superior != null) cards.push({ v: Math.round(t.superior) + '%', l: 'T.Sup', c: (t.superior >= 28 && t.superior <= 38) ? '#10B981' : '#F59E0B' })
-          if (t.medio != null) cards.push({ v: Math.round(t.medio) + '%', l: 'T.Med', c: (t.medio >= 28 && t.medio <= 38) ? '#10B981' : '#F59E0B' })
-          if (t.inferior != null) cards.push({ v: Math.round(t.inferior) + '%', l: 'T.Inf', c: (t.inferior >= 28 && t.inferior <= 38) ? '#10B981' : '#F59E0B' })
-        }
-        if (FM._scanData && FM._scanData.symmetry && FM._scanData.symmetry.overall != null && ang.id === 'front') {
-          cards.push({ v: FM._scanData.symmetry.overall + '%', l: 'Simetria', c: _scoreColor(FM._scanData.symmetry.overall, 85, 70) })
-        }
-        if (angMetricAngles && angMetricAngles.amf != null) {
-          var cl = angMetricAngles.classification || {}
-          cards.push({ v: angMetricAngles.amf + '\u00B0', l: 'AMF', c: cl.color || '#C8A97E', s: cl.label || '' })
-        }
-        if (angMetricAngles && angMetricAngles.aij_avg != null) {
-          var jl = angMetricAngles.jawline || {}
-          cards.push({ v: angMetricAngles.aij_avg + '\u00B0', l: 'Jawline', c: jl.color || '#C8A97E', s: jl.label || '' })
-        }
-        if (FM._scanData && FM._scanData.measurements && FM._scanData.measurements.golden_ratio != null && ang.id === 'front') {
-          var gr = FM._scanData.measurements.golden_ratio
-          cards.push({ v: gr.toFixed(3), l: 'Golden', c: Math.abs(gr - 1.618) < 0.08 ? '#10B981' : '#F59E0B' })
-        }
-        if (FM._scanData && FM._scanData.shape && FM._scanData.shape.shape && ang.id === 'front') {
-          cards.push({ v: FM._scanData.shape.shape, l: 'Biotipo', c: '#C8A97E' })
-        }
-
-        if (cards.length > 0) {
-          html += '<div style="display:flex;gap:6px;padding:0 32px 8px 32px;flex-wrap:wrap">'
-          cards.forEach(function (card) {
-            html += '<div style="flex:1;min-width:70px;max-width:120px;background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.08);border-radius:8px;padding:8px 6px;text-align:center">' +
-              '<div style="font-size:16px;font-weight:700;color:' + card.c + '">' + card.v + '</div>' +
-              '<div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4);margin-top:2px">' + card.l + '</div>' +
-              (card.s ? '<div style="font-size:7px;color:' + card.c + '">' + card.s + '</div>' : '') +
-            '</div>'
-          })
+          html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">'
+          if (t.superior != null) html += _miniCard(Math.round(t.superior) + '%', 'T.Sup', (t.superior >= 28 && t.superior <= 38) ? '#10B981' : '#F59E0B')
+          if (t.medio != null) html += _miniCard(Math.round(t.medio) + '%', 'T.Med', (t.medio >= 28 && t.medio <= 38) ? '#10B981' : '#F59E0B')
+          if (t.inferior != null) html += _miniCard(Math.round(t.inferior) + '%', 'T.Inf', (t.inferior >= 28 && t.inferior <= 38) ? '#10B981' : '#F59E0B')
           html += '</div>'
         }
-
-        // Skin analysis (frontal only)
-        if (ang.id === 'front' && FM._skinAnalysis) {
+        // Simetria
+        if (FM._scanData && FM._scanData.symmetry && FM._scanData.symmetry.overall != null) {
+          html += _miniCard(FM._scanData.symmetry.overall + '%', 'Simetria', _scoreColor(FM._scanData.symmetry.overall, 85, 70))
+        }
+        // AMF + Jawline
+        if (angMetricAngles) {
+          html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">'
+          if (angMetricAngles.amf != null) {
+            var cl = angMetricAngles.classification || {}
+            html += _miniCard(angMetricAngles.amf + '\u00B0', 'AMF', cl.color || '#C8A97E', cl.label || '')
+          }
+          if (angMetricAngles.aij_avg != null) {
+            var jl = angMetricAngles.jawline || {}
+            html += _miniCard(angMetricAngles.aij_avg + '\u00B0', 'Jawline', jl.color || '#C8A97E', jl.label || '')
+          }
+          html += '</div>'
+        }
+        // Golden Ratio + Biotipo
+        if (FM._scanData && FM._scanData.measurements && FM._scanData.measurements.golden_ratio != null) {
+          var gr = FM._scanData.measurements.golden_ratio
+          html += _miniCard(gr.toFixed(3), 'Golden Ratio', Math.abs(gr - 1.618) < 0.08 ? '#10B981' : '#F59E0B')
+        }
+        if (FM._scanData && FM._scanData.shape && FM._scanData.shape.shape) {
+          html += _miniCard(FM._scanData.shape.shape, 'Biotipo', '#C8A97E')
+        }
+        // Skin
+        if (FM._skinAnalysis) {
           var sk = FM._skinAnalysis
-          html += '<div style="display:flex;gap:8px;padding:0 32px 8px 32px;align-items:center">'
-          html += '<div style="text-align:center;flex-shrink:0">' +
-            '<div style="width:50px;height:50px;border-radius:50%;border:2px solid ' + _scoreColor(sk.overall || 0) + ';display:flex;align-items:center;justify-content:center">' +
-              '<span style="font-size:18px;font-weight:700;color:' + _scoreColor(sk.overall || 0) + '">' + Math.round(sk.overall || 0) + '</span>' +
-            '</div>' +
-            '<div style="font-size:7px;color:rgba(245,240,232,0.3);margin-top:2px">PELE</div>' +
+          html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:8px">'
+          html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+          html += '<div style="width:36px;height:36px;border-radius:50%;border:2px solid ' + _scoreColor(sk.overall || 0) + ';display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+            '<span style="font-size:14px;font-weight:700;color:' + _scoreColor(sk.overall || 0) + '">' + Math.round(sk.overall || 0) + '</span>' +
           '</div>'
-          var skinMetrics = [
-            { l: 'Rugas', v: sk.wrinkles }, { l: 'Manchas', v: sk.spots }, { l: 'Poros', v: sk.pores },
-            { l: 'Firmeza', v: sk.firmness }
-          ]
-          html += '<div style="flex:1;display:flex;gap:4px">'
-          skinMetrics.forEach(function (m) {
-            if (m.v == null) return
-            var c = _scoreColor(m.v)
-            html += '<div style="flex:1;text-align:center;background:rgba(255,255,255,0.02);border-radius:6px;padding:4px">' +
-              '<div style="font-size:13px;font-weight:700;color:' + c + '">' + Math.round(m.v) + '</div>' +
-              '<div style="font-size:6px;color:rgba(245,240,232,0.3);letter-spacing:0.08em;text-transform:uppercase">' + m.l + '</div>' +
-            '</div>'
-          })
-          html += '</div></div>'
+          html += '<div style="flex:1">' +
+            '<div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4)">Saude da Pele</div>' +
+            (FM._skinAge ? '<div style="font-size:8px;color:rgba(245,240,232,0.5);margin-top:1px">Idade estimada: <strong style="color:#F5F0E8">' + FM._skinAge + ' anos</strong></div>' : '') +
+          '</div>'
+          html += '</div>'
+          html += _skinBar('Rugas', sk.wrinkles)
+          html += _skinBar('Manchas', sk.spots)
+          html += _skinBar('Poros', sk.pores)
+          html += _skinBar('Firmeza', sk.firmness)
+          html += '</div>'
+        }
+      }
+
+      if (ang.id === '45') {
+        // AMF for 45 angle
+        if (angMetricAngles && angMetricAngles.amf != null) {
+          var cl45 = angMetricAngles.classification || {}
+          html += _miniCard(angMetricAngles.amf + '\u00B0', 'AMF 45\u00B0', cl45.color || '#C8A97E', cl45.label || '')
+        }
+        if (angMetricAngles && angMetricAngles.aij_avg != null) {
+          var jl45 = angMetricAngles.jawline || {}
+          html += _miniCard(angMetricAngles.aij_avg + '\u00B0', 'Jawline', jl45.color || '#C8A97E', jl45.label || '')
+        }
+        // If no metrics, show placeholder
+        if (!angMetricAngles || (angMetricAngles.amf == null && angMetricAngles.aij_avg == null)) {
+          html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:12px;text-align:center">' +
+            '<div style="font-size:9px;color:rgba(245,240,232,0.3);font-style:italic">Metricas do angulo 45\u00B0 disponiveis apos analise</div>' +
+          '</div>'
         }
       }
 
       if (ang.id === 'lateral') {
-        // Ricketts for lateral
+        // Ricketts
         var rickPts = angStore && angStore._rickettsPoints
         if (rickPts && rickPts.nose && rickPts.chin) {
-          html += '<div style="display:flex;gap:6px;padding:0 32px 8px 32px">' +
-            _metricCard('Lateral', 'Ricketts', '#C8A97E', 'Linha E avaliada') +
+          html += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:10px">'
+          html += '<div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Linha de Ricketts</div>'
+          html += '<div style="font-size:9px;color:rgba(245,240,232,0.55);line-height:1.5">' +
+            'A Linha E (Estetica) conecta a ponta do nariz ao mento. ' +
+            'Os labios devem estar ligeiramente atras dessa linha para um perfil harmonico.' +
+          '</div>'
+          html += '</div>'
+          html += _miniCard('Lateral', 'Ricketts', '#C8A97E', 'Linha E avaliada')
+        }
+        // Nose-to-chin angle if available
+        if (angMetricAngles && angMetricAngles.amf != null) {
+          html += _miniCard(angMetricAngles.amf + '\u00B0', 'Perfil', angMetricAngles.classification ? angMetricAngles.classification.color : '#C8A97E')
+        }
+        if (!rickPts && (!angMetricAngles || angMetricAngles.amf == null)) {
+          html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:12px;text-align:center">' +
+            '<div style="font-size:9px;color:rgba(245,240,232,0.3);font-style:italic">Analise lateral disponivel apos marcacao de Ricketts</div>' +
           '</div>'
         }
       }
+
+      html += '</div>' // end analysis panel
+      html += '</div>' // end 2-column flex
     })
 
-    // ─── Mapa de Forcas Faciais (canvas capture) ───
+    // ─── Mapa de Forcas Faciais (2-column: canvas + metrics) ───
     if (FM._vecAge && FM._drawAllForceVectors) {
       html += '<div style="margin-top:4px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
       html += _sectionTitle('Mapa de Forcas Faciais  |  Idade: ' + (FM._vecAge || 25), 'trending-up')
-      html += '<div style="padding:0 32px 8px 32px;text-align:center">' +
-        '<canvas id="fmReportVecCanvas" style="max-width:360px;width:100%;display:inline-block;border-radius:8px"></canvas>' +
-      '</div>'
-      // Metrics row
+
       var vt = FM._vecAgeFactor(FM._vecAge || 25)
       var vc = FM._vecAgeColor(vt)
-      html += '<div style="display:flex;gap:6px;padding:0 32px 8px 32px;flex-wrap:wrap;justify-content:center">'
-      html += _metricCard(Math.round(FM._vecCollagenPct(FM._vecAge || 25)) + '%', 'Colageno', vc)
-      html += _metricCard(Math.round(100 - vt * 65) + '%', 'Elasticidade', vc)
-      html += _metricCard(Math.round(100 - vt * 55) + '%', 'Sustentacao', vc)
-      html += _metricCard(Math.round(100 - vt * 70) + '%', 'Vetores', vc)
-      if (FM._vecGravityLabel) { var g = FM._vecGravityLabel(vt); html += _metricCard(g.label, 'Gravidade', g.color) }
+
+      html += '<div style="display:flex;gap:16px;padding:4px 32px 12px 32px">'
+      // Left: canvas
+      html += '<div style="flex:1.2;position:relative;border-radius:8px;overflow:hidden;background:#111;text-align:center">' +
+        '<canvas id="fmReportVecCanvas" style="width:100%;display:block;border-radius:8px"></canvas>' +
+      '</div>'
+      // Right: metrics
+      html += '<div style="flex:0.8;display:flex;flex-direction:column;gap:6px">'
+      html += _miniCard(Math.round(FM._vecCollagenPct(FM._vecAge || 25)) + '%', 'Colageno', vc)
+      html += _miniCard(Math.round(100 - vt * 65) + '%', 'Elasticidade', vc)
+      html += _miniCard(Math.round(100 - vt * 55) + '%', 'Sustentacao', vc)
+      html += _miniCard(Math.round(100 - vt * 70) + '%', 'Vetores', vc)
+      if (FM._vecGravityLabel) { var g = FM._vecGravityLabel(vt); html += _miniCard(g.label, 'Gravidade', g.color) }
+      html += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:6px;padding:8px">' +
+        '<div style="font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.3);margin-bottom:2px">Ligamentos</div>' +
+        '<div style="font-size:9px;color:rgba(245,240,232,0.5);line-height:1.4">Retencao dos ligamentos diminui com a idade, acelerando a ptose facial.</div>' +
+      '</div>'
+      html += '</div>'
       html += '</div>'
     }
 
-    // ─── SECTION 3: Queixas da Paciente (auto-preenchido da anamnese) ───
+    // ─── Mapa de Estruturacao (zone annotations) ───
+    var annots = FM._annotations || []
+    var regionSt = FM._regionState || {}
+    var hasAnnotations = annots.length > 0 || Object.keys(regionSt).some(function (k) { return regionSt[k] && regionSt[k].active })
+    if (hasAnnotations) {
+      html += '<div style="margin-top:4px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+      html += _sectionTitle('Mapa de Estruturacao', 'map-pin')
+      html += '<div style="padding:4px 32px 12px 32px">'
+
+      // Group annotations by zone
+      var zoneMap = {}
+      annots.forEach(function (a) {
+        var z = (FM.ZONES || []).find(function (x) { return x.id === a.zone })
+        var tr = (FM.TREATMENTS || []).find(function (x) { return x.id === a.treatment })
+        var zLabel = z ? z.label : a.zone
+        var tLabel = tr ? tr.label : (a.treatment || 'Preenchimento')
+        var key = a.zone || 'other'
+        if (!zoneMap[key]) zoneMap[key] = { label: zLabel, items: [], color: z ? z.color : '#C8A97E' }
+        zoneMap[key].items.push({ treatment: tLabel, ml: a.ml || 0, product: a.product || '', side: a.side || '', unit: z && z.unit === 'U' ? 'U' : 'mL' })
+      })
+
+      // Active regions from regionState
+      Object.keys(regionSt).forEach(function (rId) {
+        var rs = regionSt[rId]
+        if (!rs || !rs.active) return
+        if (!zoneMap[rId]) {
+          var zDef = (FM.ZONES || []).find(function (x) { return x.id === rId })
+          zoneMap[rId] = { label: zDef ? zDef.label : rId, items: [], color: zDef ? zDef.color : '#C8A97E' }
+        }
+        if (rs.treatment || rs.ml) {
+          var already = zoneMap[rId].items.some(function (it) { return it.treatment === (rs.treatment || '') })
+          if (!already) {
+            zoneMap[rId].items.push({ treatment: rs.treatment || '', ml: rs.ml || 0, product: rs.product || '', side: '', unit: 'mL' })
+          }
+        }
+      })
+
+      html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
+        '<thead><tr>' + _thCell('Zona') + _thCell('Tratamento') + _thCell('Dose') + _thCell('Produto') + '</tr></thead><tbody>'
+      var zIdx = 0
+      Object.keys(zoneMap).forEach(function (key) {
+        var zm = zoneMap[key]
+        zm.items.forEach(function (it) {
+          var bg = zIdx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'
+          var sideStr = it.side ? ' (' + it.side + ')' : ''
+          html += '<tr style="background:' + bg + '">' +
+            '<td style="padding:5px 8px;color:#F5F0E8"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + zm.color + ';margin-right:6px;vertical-align:middle"></span>' + FM._esc(zm.label) + sideStr + '</td>' +
+            '<td style="padding:5px 8px;color:rgba(245,240,232,0.65)">' + FM._esc(it.treatment) + '</td>' +
+            '<td style="padding:5px 8px;color:' + (it.unit === 'U' ? '#8B5CF6' : '#3B82F6') + ';font-weight:600">' + (it.ml ? it.ml.toFixed(1) + ' ' + it.unit : '-') + '</td>' +
+            '<td style="padding:5px 8px;color:rgba(245,240,232,0.45)">' + FM._esc(it.product) + '</td>' +
+          '</tr>'
+          zIdx++
+        })
+      })
+      html += '</tbody></table>'
+      html += '</div>'
+    }
+
+    // ─── Queixas da Paciente (auto-preenchido da anamnese) ───
     html += _sectionTitle('Queixas da Paciente', 'message-circle')
     html += '<div style="padding:4px 32px 12px 32px">'
 
-    // Pull queixas from lead data (anamnese)
     var lead = FM._lead || {}
     var queixas = lead.queixas_faciais || (lead.customFields || {}).queixas_faciais || (lead.data || {}).queixas_faciais || []
     if (typeof queixas === 'string') queixas = [queixas]
     var queixaPrincipal = lead.queixa_principal || lead.chief_complaint || (queixas.length > 0 ? queixas[0] : '')
 
     if (queixas.length > 0) {
-      // Queixa principal destacada
       if (queixaPrincipal) {
         html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
           '<span style="font-size:8px;padding:2px 8px;background:rgba(239,68,68,0.12);color:#EF4444;border-radius:4px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0">Maior impacto</span>' +
           '<span style="font-size:12px;font-weight:600;color:#F5F0E8">' + FM._esc(queixaPrincipal) + '</span>' +
         '</div>'
       }
-      // Lista de queixas
       html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
       queixas.forEach(function (q) {
         if (!q) return
@@ -371,28 +436,79 @@
       html += '</div>'
     }
 
-    // Editable notes (doctor can add more)
     html += _editableBlock('fmReportQueixas', queixas.length > 0 ? 'Observacoes adicionais da anamnese...' : 'Clique para adicionar as queixas da paciente...')
     html += '</div>'
 
-    // (Simetria, Pele e Vetores ja incluidos inline por angulo acima)
+    // ═══════════════════════════════════════════
+    // ATO 2: "O que aconteceu" — Explicacao
+    // ═══════════════════════════════════════════
+    html += '<div style="text-align:center;padding:20px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">O que aconteceu</div>' +
+      '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">A ciencia por tras do envelhecimento</div>' +
+    '</div>'
 
-    // ─── ATO 3: "Para onde vamos" ───
+    html += '<div style="padding:12px 48px 16px 48px">' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;color:rgba(245,240,232,0.55);line-height:1.8;text-align:center">' +
+        'O envelhecimento e uma quebra do sistema vetorial do rosto. As forcas que sustentavam cada estrutura se inverteram ' +
+        '— a gravidade, a anteriorizacao e a perda dos ligamentos mudaram a direcao de tudo.' +
+      '</div>' +
+      '<div style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;color:#C8A97E;text-align:center;margin-top:12px;letter-spacing:0.06em">' +
+        'A harmonizacao NAO e preencher rugas. E reconstruir vetores.' +
+      '</div>' +
+    '</div>'
+
+    // ═══════════════════════════════════════════
+    // ATO 3: "Para onde vamos" — Solucao
+    // ═══════════════════════════════════════════
     html += '<div style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Para onde vamos</div>' +
       '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Plano de reconstrucao vetorial</div>' +
     '</div>'
 
-    // ─── SECTION 7: PLANO A — Protocolo Completo (EDITABLE) ───
+    // ─── DEPOIS photos (2-column: photo + expected results) ───
+    angleConfig.forEach(function (ang) {
+      var hasDepois = false
+      if (ang.id === activeAngle) {
+        hasDepois = FM._canvas2 && FM._canvas2.width > 0
+      } else {
+        hasDepois = FM._afterPhotoByAngle && FM._afterPhotoByAngle[ang.id]
+      }
+      if (!hasDepois) return
+
+      html += _sectionTitle(ang.label + ' — Resultado Esperado', 'eye')
+
+      html += '<div style="display:flex;gap:16px;padding:4px 32px 12px 32px">'
+
+      // LEFT: DEPOIS photo
+      html += '<div style="flex:1.2;position:relative;border-radius:8px;overflow:hidden;background:#111">'
+      if (ang.id === activeAngle) {
+        html += '<canvas id="fmReportCanvas_depois_' + ang.id + '" style="width:100%;display:block"></canvas>'
+      } else {
+        html += '<img src="' + FM._esc(FM._afterPhotoByAngle[ang.id]) + '" style="width:100%;display:block" crossorigin="anonymous">'
+      }
+      html += '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
+        '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#10B981"></span>' +
+        '<span style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">DEPOIS</span>' +
+      '</div>'
+      html += '</div>'
+
+      // RIGHT: Expected results panel (editable)
+      html += '<div style="flex:0.8;display:flex;flex-direction:column;gap:6px">'
+      html += '<div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(200,169,126,0.5);font-weight:600">Resultados esperados</div>'
+      html += _editableBlock('fmDepoisResults_' + ang.id, 'Descreva as mudancas esperadas para ' + ang.label.toLowerCase() + '...', 'min-height:120px;font-size:10px;')
+      html += '</div>'
+
+      html += '</div>'
+    })
+
+    // ─── PLANO A — Protocolo Completo (EDITABLE) ───
     html += _sectionTitle('Plano A \u2014 Protocolo Integrado de Harmonia', 'clipboard')
     html += '<div style="padding:0 32px 4px 32px">'
     html += '<div style="margin-bottom:8px">' + _editable('fmPlanASubtitle', 'Lifting vetorial completo + Fotona + manutencao', 'font-size:10px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
-    // Protocol table Plano A
     html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
       '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
 
-    // Pre-written transformation phrases per zone
     var transformPhrases = {
       'temporal': 'Reativa o vetor de sustentacao — o rosto inteiro sobe',
       'zigoma-lateral': 'Devolve a projecao que sustenta todo o terco medio',
@@ -412,7 +528,6 @@
       'pescoco': 'Restaura a firmeza e o angulo cervical',
     }
 
-    // Pre-fill from annotations
     var zoneTotalsA = {}
     FM._annotations.forEach(function (a) {
       var z = (FM.ZONES || []).find(function (x) { return x.id === a.zone })
@@ -427,7 +542,6 @@
       zoneTotalsA[key].ml += (a.ml || 0)
     })
 
-    // Use protocolData if available
     if (FM._protocolData && FM._protocolData.protocol && FM._protocolData.protocol.length > 0) {
       FM._protocolData.protocol.forEach(function (p, i) {
         var bg = i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'
@@ -456,7 +570,6 @@
         idxA++
       })
     } else {
-      // Empty rows for manual fill
       for (var er = 0; er < 4; er++) {
         html += '<tr style="background:' + (er % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + '">' +
           _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Transformacao') +
@@ -496,7 +609,6 @@
       'o melhor laser do mundo — atuando em todas as camadas do rosto.' +
     '</div>'
 
-    // 3 sessions visual
     html += '<div style="display:flex;gap:8px;margin-bottom:10px">'
     var fotonaMonths = ['Mes 1', 'Mes 2', 'Mes 3']
     fotonaMonths.forEach(function (m, i) {
@@ -519,7 +631,6 @@
     html += '<div style="margin-top:16px;padding:16px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:10px">'
     html += '<div style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(200,169,126,0.4);font-weight:600;margin-bottom:12px;text-align:center">JORNADA DO PROTOCOLO LIFTING 5D</div>'
 
-    // Timeline dots
     var timelineSteps = [
       { label: 'Sessao 1', sub: 'Dia 0', desc: 'Lifting Vetorial', color: '#C8A97E' },
       { label: 'Sessao 2', sub: '30 dias', desc: 'Refino + Ajustes', color: '#C8A97E' },
@@ -529,7 +640,6 @@
       { label: 'Retorno', sub: '90 dias', desc: 'Avaliacao Final', color: '#C8A97E' },
     ]
     html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;position:relative;padding:0 8px">'
-    // Connecting line
     html += '<div style="position:absolute;top:7px;left:32px;right:32px;height:2px;background:linear-gradient(90deg,#C8A97E,#C8A97E,#10B981,#10B981,#10B981,#C8A97E)"></div>'
     timelineSteps.forEach(function (step) {
       html += '<div style="position:relative;z-index:1;text-align:center;width:70px">' +
@@ -541,14 +651,13 @@
     })
     html += '</div>'
 
-    // Editable dates
     html += '<div style="display:flex;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap;font-size:9px;color:rgba(245,240,232,0.4)">'
     html += '<span>Inicio: ' + _editable('fmTimeline1', 'dd/mm/aaaa', 'width:70px;font-size:9px;') + '</span>'
     html += '<span>Retorno: ' + _editable('fmTimeline2', 'dd/mm/aaaa', 'width:70px;font-size:9px;') + '</span>'
     html += '</div>'
     html += '</div>'
 
-    // ── Beneficios Fotona (collapsed) ──
+    // ── Beneficios Fotona ──
     html += '<div style="margin-top:10px;padding:10px 16px;background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.10);border-radius:8px">'
     html += '<div style="font-size:9px;font-weight:600;color:#10B981;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px">Beneficios Fotona 4D inclusos</div>'
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:9px;color:rgba(245,240,232,0.5)">'
@@ -560,7 +669,7 @@
 
     html += '</div>' // end Plano A padding div
 
-    // ─── SECTION 8: PLANO B — Essencial ───
+    // ─── PLANO B — Essencial ───
     html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
     html += _sectionTitle('Plano B \u2014 Protocolo Essencial', 'target')
     html += '<div style="padding:0 32px 4px 32px">'
@@ -569,7 +678,6 @@
     html += '<table style="width:100%;border-collapse:collapse;font-size:10px">' +
       '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
 
-    // 4 editable rows for Plan B
     for (var eb = 0; eb < 4; eb++) {
       html += '<tr style="background:' + (eb % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + '">' +
         _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Descreva a transformacao...') +
@@ -579,7 +687,7 @@
     html += '</tbody></table>'
     html += '</div>'
 
-    // ─── SECTION 9: Investimento ───
+    // ─── Investimento ───
     html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
     html += _sectionTitle('Investimento', 'credit-card')
     html += '<div style="padding:4px 32px 12px 32px">'
@@ -610,13 +718,13 @@
       '</div>' +
     '</div>'
 
-    // ─── DEPOIMENTO (editavel) ───
+    // ─── DEPOIMENTO ───
     html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 48px;text-align:center">' +
       '<div style="font-size:8px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px">O que outras pacientes dizem</div>' +
       _editableBlock('fmReportTestimonial', '"Diferente mas ninguem sabe dizer o que mudou. Exatamente o que eu queria." — M.C., 48 anos', 'font-family:Cormorant Garamond,serif;font-size:13px;font-style:italic;text-align:center;border-color:rgba(200,169,126,0.10);') +
     '</div>'
 
-    // ─── SECTION 10: Footer ───
+    // ─── FOOTER ───
     html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.12)">'
     html += '<div style="padding:24px 32px 8px 32px;text-align:center">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:14px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.65);line-height:1.6;max-width:500px;margin:0 auto">' +
