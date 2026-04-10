@@ -226,9 +226,23 @@
 
     var slug = res.data.slug
     var token = res.data.token
-    var link = _getBaseUrl() + 'legal-document.html#slug=' + slug + '&token=' + token
+    var fullLink = _getBaseUrl() + 'legal-document.html#slug=' + slug + '&token=' + token
 
-    return { ok: true, id: res.data.id, slug: slug, token: token, link: link }
+    // Criar short link automaticamente
+    var shortLink = fullLink
+    try {
+      var shortCode = 'tc-' + slug.replace('ld-', '')
+      var slRes = await window._sbShared.rpc('short_link_create', {
+        p_code: shortCode,
+        p_url: fullLink,
+        p_title: 'TCLE ' + (apptOrOpts.pacienteNome || apptOrOpts.patient_name || '').split(' ')[0]
+      })
+      if (slRes.data && slRes.data.ok) {
+        shortLink = _getBaseUrl() + 'r.html?c=' + shortCode
+      }
+    } catch (e) { /* fallback para link completo */ }
+
+    return { ok: true, id: res.data.id, slug: slug, token: token, link: shortLink }
   }
 
   // ── Listar requests ────────────────────────────────────────
