@@ -804,80 +804,70 @@ function _renderSendAnamnesePanel(lead) {
 }
 
 async function _lmSendAnamnese(leadId, method) {
-  if (!window._sbShared) return
-
   var lead = _currentLead
   if (!lead) return
 
-  // Buscar template ativo
-  var tmplRes = await window._sbShared.from('anamnesis_templates')
-    .select('id,name')
-    .eq('is_active', true)
-    .limit(1)
-    .single()
+  // Usar o mesmo fluxo que ja funciona: anamnese-core
+  // Preparar o mapa de leads para _upsertLeadAsPatient
+  if (!window._anmLeadMap) window._anmLeadMap = {}
+  if (!window._anmPatientMap) window._anmPatientMap = {}
+  window._anmLeadMap[leadId] = lead
+  window._anmPatientMap[lead.name || lead.nome || ''] = leadId
 
-  if (!tmplRes.data) {
-    if (window._showToast) _showToast('Anamnese', 'Nenhum modelo de anamnese ativo', 'warning')
-    return
-  }
-
-  // Upsert lead como patient via REST direto (com Prefer merge-duplicates)
-  var patientId = leadId
+  // Setar o template ID
   try {
-    var fullName = (lead.name || lead.nome || 'Paciente').trim()
-    var phone = lead.phone || lead.whatsapp || lead.telefone || '0'
-
-    var sbUrl = window.ClinicEnv ? ClinicEnv.SUPABASE_URL : 'https://oqboitkpcvuaudouwvkl.supabase.co'
+    var sbUrl = (window.ClinicEnv ? ClinicEnv.SUPABASE_URL : '') + '/rest/v1'
     var sbKey = window.ClinicEnv ? ClinicEnv.SUPABASE_KEY : ''
-    var sess = await window._sbShared.auth.getSession()
-    var tok = sess?.data?.session?.access_token || ''
+    var hdrs = { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json' }
 
-    // Buscar tenantId
-    var tenantRes = await fetch(sbUrl + '/rest/v1/tenants?select=id&limit=1', { headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + tok } })
-    var tenants = await tenantRes.json()
-    var tenantId = (tenants && tenants[0]) ? tenants[0].id : 'kktstp8hrf7x3pef0rvrp930'
-
-    var now = new Date().toISOString()
-    var upsRes = await fetch(sbUrl + '/rest/v1/patients', {
-      method: 'POST',
-      headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify([{ id: leadId, clinic_id: '00000000-0000-0000-0000-000000000001', tenantId: tenantId, leadId: leadId, name: fullName, phone: phone, updatedAt: now }]),
-    })
-    if (!upsRes.ok) console.warn('[Anamnese] Patient upsert failed:', await upsRes.text())
-  } catch (e) { console.warn('[Anamnese] Patient upsert error:', e.message) }
-
-  // Criar request
-  try {
-    // Pegar user ID do auth para p_created_by
-    var userId = null
-    try {
-      var sess = await window._sbShared.auth.getSession()
-      userId = sess?.data?.session?.user?.id || null
-    } catch (e) {}
-
-    // Usar assinatura com 6 params (text patient_id) para desambiguar overload
-    var rpcParams = {
-      p_clinic_id: '00000000-0000-0000-0000-000000000001',
-      p_patient_id: String(patientId),
-      p_template_id: tmplRes.data.id,
-      p_created_by: userId,
-      p_appointment_id: null,
-      p_expires_at: new Date(Date.now() + 30 * 24 * 3600000).toISOString(),
+    var tmplRes = await fetch(sbUrl + '/anamnesis_templates?is_active=eq.true&limit=1', { headers: hdrs })
+    var tmpls = await tmplRes.json()
+    if (!tmpls || !tmpls.length) {
+      if (window._showToast) _showToast('Anamnese', 'Nenhum modelo ativo', 'warning')
+      return
     }
-    // Fetch direto para desambiguar overload (supabase client nao resolve)
-    var sbUrl = window.ClinicEnv ? ClinicEnv.SUPABASE_URL : 'https://oqboitkpcvuaudouwvkl.supabase.co'
-    var sbKey = window.ClinicEnv ? ClinicEnv.SUPABASE_KEY : ''
-    var sess = await window._sbShared.auth.getSession()
-    var accessToken = sess?.data?.session?.access_token || ''
 
-    var result = await fetch(sbUrl + '/rest/v1/rpc/create_anamnesis_request', {
+    // Upsert patient (mesmo pattern do anamnese-core)
+    var patientId = leadId
+    var fullName = (lead.name || lead.nome || 'Paciente').trim()
+    var spaceIdx = fullName.indexOf(' ')
+    var firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
+    var lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1).trim() : null
+
+    await fetch(sbUrl + '/patients', {
       method: 'POST',
-      headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-      body: JSON.stringify(rpcParams),
-    }).then(function (r) { return r.json() }).then(function (d) { return { data: d, error: null } })
-    .catch(function (e) { return { data: null, error: { message: e.message } } })
+      headers: Object.assign({}, hdrs, { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify([{
+        id: leadId,
+        clinic_id: '00000000-0000-0000-0000-000000000001',
+        first_name: firstName,
+        last_name: lastName,
+        phone: lead.phone || lead.whatsapp || lead.telefone || null,
+        email: lead.email || null,
+      }]),
+    })
 
-    var r = Array.isArray(result.data) ? result.data[0] : result.data
+    // Criar request via RPC (ja sem overload ambiguo)
+    var rpcRes = await fetch((window.ClinicEnv ? ClinicEnv.SUPABASE_URL : '') + '/rest/v1/rpc/create_anamnesis_request', {
+      method: 'POST',
+      headers: hdrs,
+      body: JSON.stringify({
+        p_clinic_id: '00000000-0000-0000-0000-000000000001',
+        p_patient_id: patientId,
+        p_template_id: tmpls[0].id,
+        p_created_by: null,
+        p_appointment_id: null,
+        p_expires_at: new Date(Date.now() + 30 * 24 * 3600000).toISOString(),
+      }),
+    })
+    var rpcData = await rpcRes.json()
+
+    if (rpcData.code || rpcData.message) {
+      if (window._showToast) _showToast('Anamnese', rpcData.message || 'Erro', 'error')
+      return
+    }
+
+    var r = Array.isArray(rpcData) ? rpcData[0] : rpcData
     if (!r || !r.public_slug) {
       if (window._showToast) _showToast('Anamnese', 'Erro ao criar solicitacao', 'error')
       return
@@ -886,25 +876,19 @@ async function _lmSendAnamnese(leadId, method) {
     var link = location.origin + '/form-render.html?slug=' + r.public_slug + '#token=' + r.raw_token
 
     if (method === 'copy') {
-      navigator.clipboard.writeText(link).then(function () {
-        if (window._showToast) _showToast('Anamnese', 'Link copiado!', 'success')
-      })
+      try { await navigator.clipboard.writeText(link) } catch (e) {}
+      if (window._showToast) _showToast('Anamnese', 'Link copiado!', 'success')
     } else {
-      // WhatsApp
       if (window._sendAnamneseWhatsApp) {
         _sendAnamneseWhatsApp(leadId, link)
       } else if (window.InboxService && InboxService.sendText) {
-        var lead = _currentLead
-        var phone = (lead.phone || lead.whatsapp || lead.telefone || '').replace(/\D/g, '')
-        if (!phone.startsWith('55')) phone = '55' + phone
-        var firstName = (lead.name || lead.nome || '').split(' ')[0]
-        var msg = 'Ola ' + firstName + '! Para agilizar seu atendimento, preencha sua ficha de anamnese:\n\n' + link + '\n\nLeva poucos minutos. Obrigado!'
-        InboxService.sendText(phone, msg)
+        var ph = (lead.phone || lead.whatsapp || lead.telefone || '').replace(/\D/g, '')
+        if (!ph.startsWith('55')) ph = '55' + ph
+        InboxService.sendText(ph, 'Ola ' + firstName + '! Preencha sua ficha de anamnese:\n\n' + link + '\n\nObrigado!')
       }
-      if (window._showToast) _showToast('Anamnese', 'Formulario enviado via WhatsApp!', 'success')
+      if (window._showToast) _showToast('Anamnese', 'Enviado via WhatsApp!', 'success')
     }
 
-    // Atualizar tab
     setTimeout(function () { _lmLoadFichas(_currentLead) }, 1000)
   } catch (e) {
     if (window._showToast) _showToast('Anamnese', 'Erro: ' + (e.message || 'desconhecido'), 'error')
