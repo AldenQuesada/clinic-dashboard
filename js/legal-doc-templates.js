@@ -52,11 +52,26 @@
   }
 
   var TYPE_LABELS = {
+    injetavel: 'Injetaveis',
+    tecnologia: 'Tecnologias',
+    manual: 'Manuais',
     uso_imagem: 'Uso de Imagem',
     procedimento: 'Procedimento',
     anestesia: 'Anestesia',
     custom: 'Personalizado',
   }
+
+  var TYPE_COLORS = {
+    injetavel: '#7C3AED',
+    tecnologia: '#0891B2',
+    manual: '#F59E0B',
+    uso_imagem: '#8B5CF6',
+    procedimento: '#6B7280',
+    anestesia: '#EF4444',
+    custom: '#6B7280',
+  }
+
+  var TYPE_ORDER = ['injetavel', 'tecnologia', 'manual', 'uso_imagem', 'procedimento', 'anestesia', 'custom']
 
   var STATUS_LABELS = {
     pending: 'Pendente',
@@ -85,24 +100,48 @@
       return
     }
 
-    var html = ''
+    // Agrupar por doc_type
+    var groups = {}
     templates.forEach(function (t) {
-      var typeLabel = TYPE_LABELS[t.doc_type] || t.doc_type
-      var typeColor = t.doc_type === 'uso_imagem' ? '#7C3AED' : t.doc_type === 'procedimento' ? '#0891B2' : '#6B7280'
+      var type = t.doc_type || 'custom'
+      if (!groups[type]) groups[type] = []
+      groups[type].push(t)
+    })
 
-      html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;transition:border-color .15s" onmouseenter="this.style.borderColor=\'#0891B2\'" onmouseleave="this.style.borderColor=\'#E5E7EB\'">'
-        + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:13px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(t.name) + '</div>'
-        + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'
-        + '<span style="font-size:10px;padding:2px 8px;background:' + typeColor + '15;color:' + typeColor + ';border-radius:4px;font-weight:600">' + typeLabel + '</span>'
-        + '<span style="font-size:10px;color:#9CA3AF">v' + t.version + '</span>'
-        + (t.trigger_status ? '<span style="font-size:9px;padding:2px 6px;background:#F0FDF4;color:#10B981;border-radius:4px">Auto: ' + _esc(t.trigger_status) + '</span>' : '')
-        + '</div></div>'
-        + '<div style="display:flex;gap:4px">'
-        + '<button onclick="editLegalDocTemplate(\'' + t.id + '\')" title="Editar" style="padding:6px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#374151">Editar</button>'
-        + '<button onclick="duplicateLegalDocTemplate(\'' + t.id + '\')" title="Duplicar" style="padding:6px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#374151">Duplicar</button>'
-        + '<button onclick="testLegalDocTemplate(\'' + t.id + '\')" title="Testar" style="padding:6px 10px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:11px;color:#0891B2;font-weight:600">Testar</button>'
-        + '</div></div>'
+    var html = ''
+    TYPE_ORDER.forEach(function (type) {
+      if (!groups[type] || !groups[type].length) return
+      var groupLabel = TYPE_LABELS[type] || type
+      var groupColor = TYPE_COLORS[type] || '#6B7280'
+      var count = groups[type].length
+
+      html += '<div style="margin-bottom:20px">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ' + groupColor + '20">'
+        + '<span style="font-size:13px;font-weight:700;color:' + groupColor + '">' + groupLabel + '</span>'
+        + '<span style="font-size:10px;padding:2px 8px;background:' + groupColor + '15;color:' + groupColor + ';border-radius:10px;font-weight:600">' + count + '</span>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:6px">'
+
+      groups[type].forEach(function (t) {
+        var typeColor = TYPE_COLORS[t.doc_type] || '#6B7280'
+        // Remover prefixo "TCLE - " para nome mais limpo
+        var displayName = t.name.replace(/^TCLE\s*-\s*/i, '')
+
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;transition:border-color .15s" onmouseenter="this.style.borderColor=\'' + typeColor + '\'" onmouseleave="this.style.borderColor=\'#E5E7EB\'">'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:12px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(displayName) + '</div>'
+          + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">'
+          + '<span style="font-size:9px;color:#9CA3AF">v' + t.version + '</span>'
+          + (t.trigger_status ? '<span style="font-size:9px;padding:1px 6px;background:#F0FDF4;color:#10B981;border-radius:4px">Auto: ' + _esc(t.trigger_status) + '</span>' : '')
+          + '</div></div>'
+          + '<div style="display:flex;gap:4px">'
+          + '<button onclick="editLegalDocTemplate(\'' + t.id + '\')" title="Editar" style="padding:5px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Editar</button>'
+          + '<button onclick="duplicateLegalDocTemplate(\'' + t.id + '\')" title="Duplicar" style="padding:5px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Duplicar</button>'
+          + '<button onclick="testLegalDocTemplate(\'' + t.id + '\')" title="Testar" style="padding:5px 10px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#0891B2;font-weight:600">Testar</button>'
+          + '</div></div>'
+      })
+
+      html += '</div></div>'
     })
 
     list.innerHTML = html
