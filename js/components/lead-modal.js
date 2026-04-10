@@ -796,20 +796,16 @@ async function _lmLoadFichas(lead) {
 }
 
 function _renderSendAnamnesePanel(lead) {
-  var phone = lead.phone || lead.whatsapp || lead.telefone || ''
-  var name = lead.name || lead.nome || ''
   var leadId = lead.id || ''
 
-  return '<div style="padding:14px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:10px;margin-bottom:14px">'
-    + '<div style="font-size:11px;font-weight:700;color:#C9A96E;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Enviar formulario de pre-atendimento</div>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + '<button onclick="_lmSendAnamnese(\'' + _lmEsc(leadId) + '\',\'whatsapp\')" style="flex:1;padding:10px 14px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;min-width:140px">'
-    + '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>'
-    + 'WhatsApp</button>'
-    + '<button onclick="_lmSendAnamnese(\'' + _lmEsc(leadId) + '\',\'copy\')" style="flex:1;padding:10px 14px;background:rgba(255,255,255,.1);color:#E5E7EB;border:1px solid rgba(255,255,255,.2);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;min-width:120px">'
-    + '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>'
+  return '<div style="display:flex;gap:6px;margin:12px 0">'
+    + '<button onclick="_lmSendAnamnese(\'' + _lmEsc(leadId) + '\',\'whatsapp\')" style="padding:7px 14px;background:#25D366;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">'
+    + '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>'
+    + 'Enviar Anamnese</button>'
+    + '<button onclick="_lmSendAnamnese(\'' + _lmEsc(leadId) + '\',\'copy\')" style="padding:7px 14px;background:#F3F4F6;color:#374151;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">'
+    + '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>'
     + 'Copiar link</button>'
-    + '</div></div>'
+    + '</div>'
 }
 
 async function _lmSendAnamnese(leadId, method) {
@@ -837,8 +833,10 @@ async function _lmSendAnamnese(leadId, method) {
   try {
     var result = await window._sbShared.rpc('create_anamnesis_request', {
       p_clinic_id: '00000000-0000-0000-0000-000000000001',
-      p_patient_id: patientId,
+      p_patient_id: String(patientId),
       p_template_id: tmplRes.data.id,
+      p_created_by: null,
+      p_appointment_id: null,
       p_expires_at: new Date(Date.now() + 30 * 24 * 3600000).toISOString(),
     })
 
