@@ -498,8 +498,10 @@
       return
     }
 
+    // So buscar fields/options do banco se NAO usou snapshot (Branch A ja carregou do snapshot)
+    var usedSnapshot = !!(snapshot && snapshot.sessions && snapshot.sessions.length)
     const realSessIds = sessions.filter(function(s) { return !s._isGeneral }).map(function(s) { return s.id })
-    if (realSessIds.length > 0) {
+    if (realSessIds.length > 0 && !usedSnapshot) {
       const fields = await _get('/anamnesis_fields', {
         'session_id': 'in.(' + realSessIds.join(',') + ')',
         'deleted_at': 'is.null',
