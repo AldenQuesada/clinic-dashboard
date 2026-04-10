@@ -208,6 +208,7 @@
 
   // ── Editor ─────────────────────────────────────────────────
   function addLegalDocTemplate() {
+    console.log('[LegalDocs] addLegalDocTemplate called')
     _editingId = null
     var el = function (id) { return document.getElementById(id) }
     if (el('lde_name')) el('lde_name').value = ''
