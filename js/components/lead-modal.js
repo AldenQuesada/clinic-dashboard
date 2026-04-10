@@ -816,47 +816,46 @@ async function _lmSendAnamnese(leadId, method) {
 
   // Setar o template ID
   try {
-    var sbUrl = (window.ClinicEnv ? ClinicEnv.SUPABASE_URL : '') + '/rest/v1'
+    var sbUrl = window.ClinicEnv ? ClinicEnv.SUPABASE_URL : 'https://oqboitkpcvuaudouwvkl.supabase.co'
     var sbKey = window.ClinicEnv ? ClinicEnv.SUPABASE_KEY : ''
-    var hdrs = { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': 'application/json' }
+    var sess = await window._sbShared.auth.getSession()
+    var tok = sess?.data?.session?.access_token || sbKey
+    var hdrs = { 'apikey': sbKey, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' }
 
-    var tmplRes = await fetch(sbUrl + '/anamnesis_templates?is_active=eq.true&limit=1', { headers: hdrs })
+    var tmplRes = await fetch(sbUrl + '/rest/v1/anamnesis_templates?is_active=eq.true&limit=1', { headers: hdrs })
     var tmpls = await tmplRes.json()
     if (!tmpls || !tmpls.length) {
       if (window._showToast) _showToast('Anamnese', 'Nenhum modelo ativo', 'warning')
       return
     }
 
-    // Upsert patient (mesmo pattern do anamnese-core)
+    // Upsert patient com colunas reais da tabela
     var patientId = leadId
     var fullName = (lead.name || lead.nome || 'Paciente').trim()
-    var spaceIdx = fullName.indexOf(' ')
-    var firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
-    var lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1).trim() : null
+    var phone = lead.phone || lead.whatsapp || lead.telefone || '0'
 
-    await fetch(sbUrl + '/patients', {
+    await fetch(sbUrl + '/rest/v1/patients', {
       method: 'POST',
-      headers: Object.assign({}, hdrs, { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      headers: Object.assign({}, hdrs, { 'Prefer': 'resolution=merge-duplicates' }),
       body: JSON.stringify([{
         id: leadId,
         clinic_id: '00000000-0000-0000-0000-000000000001',
-        first_name: firstName,
-        last_name: lastName,
-        phone: lead.phone || lead.whatsapp || lead.telefone || null,
-        email: lead.email || null,
+        leadId: leadId,
+        tenantId: 'kktstp8hrf7x3pef0rvrp930',
+        name: fullName,
+        phone: phone,
+        updatedAt: new Date().toISOString(),
       }]),
     })
 
-    // Criar request via RPC (ja sem overload ambiguo)
-    var rpcRes = await fetch((window.ClinicEnv ? ClinicEnv.SUPABASE_URL : '') + '/rest/v1/rpc/create_anamnesis_request', {
+    // Criar request via RPC
+    var rpcRes = await fetch(sbUrl + '/rest/v1/rpc/create_anamnesis_request', {
       method: 'POST',
       headers: hdrs,
       body: JSON.stringify({
         p_clinic_id: '00000000-0000-0000-0000-000000000001',
         p_patient_id: patientId,
         p_template_id: tmpls[0].id,
-        p_created_by: null,
-        p_appointment_id: null,
         p_expires_at: new Date(Date.now() + 30 * 24 * 3600000).toISOString(),
       }),
     })
