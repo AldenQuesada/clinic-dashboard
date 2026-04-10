@@ -394,37 +394,39 @@
   }
 
   // ── Auto-load when page opens ───────────────────────────────
-  var _ldLoaded = false
   function _initLegalDocsPage() {
-    if (_ldLoaded) return
-    _ldLoaded = true
     loadLegalDocMetrics()
     loadLegalDocTemplates()
     loadLegalDocRequests()
     loadLegalDocAdvancedConfig()
   }
 
-  // Hook via navigateTo
-  var _origNavigateTo = window.navigateTo
-  if (_origNavigateTo) {
-    window.navigateTo = function (pageId) {
-      _origNavigateTo(pageId)
-      if (pageId === 'settings-documentos') {
-        _ldLoaded = false
+  // Hook via MutationObserver — detecta quando a pagina fica visivel
+  function _watchPageActive() {
+    var page = document.getElementById('page-settings-documentos')
+    if (!page) return
+
+    var observer = new MutationObserver(function () {
+      if (page.classList.contains('active')) {
         _initLegalDocsPage()
       }
-    }
+    })
+    observer.observe(page, { attributes: true, attributeFilter: ['class'] })
   }
 
-  // Fallback: hook antigo para settings panel (caso ainda use)
+  // Inicializar quando DOM pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _watchPageActive)
+  } else {
+    _watchPageActive()
+  }
+
+  // Fallback: hook antigo para settings panel
   var _origClinicSection2 = window.clinicSection
   if (_origClinicSection2) {
     window.clinicSection = function (sec) {
       _origClinicSection2(sec)
-      if (sec === 'documentos') {
-        _ldLoaded = false
-        _initLegalDocsPage()
-      }
+      if (sec === 'documentos') _initLegalDocsPage()
     }
   }
 
