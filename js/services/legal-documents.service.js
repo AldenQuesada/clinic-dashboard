@@ -143,20 +143,21 @@
 
   async function saveTemplate(data) {
     if (!window._sbShared) return { ok: false, error: 'Supabase nao disponivel' }
-    var res = await window._sbShared.rpc('legal_doc_upsert_template', {
-      p_id: data.id || null,
-      p_slug: data.slug || null,
-      p_name: data.name,
-      p_doc_type: data.doc_type || 'custom',
-      p_content: data.content,
-      p_variables: data.variables || null,
-      p_is_active: data.is_active !== false,
-      p_trigger_status: data.trigger_status || null,
-      p_trigger_procedures: data.trigger_procedures || null,
-      p_professional_id: data.professional_id || null,
-      p_tracking_scripts: data.tracking_scripts || null,
-      p_redirect_url: data.redirect_url || null,
-    })
+
+    // Construir params — so enviar campos com valor para evitar problemas de default no RPC
+    var params = { p_name: data.name, p_content: data.content }
+    if (data.id) params.p_id = data.id
+    if (data.slug) params.p_slug = data.slug
+    if (data.doc_type) params.p_doc_type = data.doc_type
+    if (data.variables) params.p_variables = data.variables
+    params.p_is_active = data.is_active !== false
+    if (data.trigger_status) params.p_trigger_status = data.trigger_status
+    if (data.trigger_procedures && data.trigger_procedures.length) params.p_trigger_procedures = data.trigger_procedures
+    if (data.professional_id) params.p_professional_id = data.professional_id
+    if (data.tracking_scripts) params.p_tracking_scripts = data.tracking_scripts
+    if (data.redirect_url) params.p_redirect_url = data.redirect_url
+
+    var res = await window._sbShared.rpc('legal_doc_upsert_template', params)
     if (res.error) return { ok: false, error: res.error.message }
     if (res.data && !res.data.ok) return { ok: false, error: res.data.error || 'Erro desconhecido' }
     return { ok: true, id: res.data ? res.data.id : null }
