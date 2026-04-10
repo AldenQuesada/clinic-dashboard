@@ -1831,6 +1831,28 @@
                   </div>
                 </div>
 
+                <!-- Profissional responsavel -->
+                <div style="margin-bottom:12px">
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Profissional responsavel</label>
+                  <select id="lde_professional_id" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
+                    <option value="">Usar do agendamento</option>
+                  </select>
+                  <div style="font-size:9px;color:#9CA3AF;margin-top:3px">Define quem assina como profissional neste documento. "Usar do agendamento" = vem da agenda automaticamente.</div>
+                </div>
+
+                <!-- Pixels e redirect por template -->
+                <div style="padding:12px;background:#FFF7ED;border:1px solid #F59E0B30;border-radius:10px;margin-bottom:12px">
+                  <div style="font-size:11px;font-weight:700;color:#D97706;margin-bottom:8px">Rastreamento e Redirect</div>
+                  <div style="margin-bottom:10px">
+                    <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">URL apos assinar</label>
+                    <input id="lde_redirect_url" type="url" placeholder="https://... (vazio = config global)" style="width:100%;padding:8px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box" />
+                  </div>
+                  <div>
+                    <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Pixels de rastreamento</label>
+                    <textarea id="lde_tracking_scripts" rows="3" placeholder="Cole scripts (Facebook Pixel, Google Ads, etc). Vazio = config global." style="width:100%;padding:8px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+                  </div>
+                </div>
+
                 <!-- Auto-envio -->
                 <div style="padding:12px;background:#F0FDF4;border:1px solid #10B98130;border-radius:10px;margin-bottom:12px">
                   <div style="font-size:11px;font-weight:700;color:#10B981;margin-bottom:8px">Envio automatico</div>

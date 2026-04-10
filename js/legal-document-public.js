@@ -111,36 +111,51 @@
     _validateToken()
   }
 
-  // ── Carregar config de redirect + pixels da clinica ────────
+  // ── Carregar config de redirect + pixels ────────────────────
+  // Prioridade: template > clinica global
+  var _templateConfig = null
+
   async function _loadClinicConfig() {
     try {
-      var res = await _sb.from('clinics').select('settings,website').limit(1).single()
-      if (!res.data) return
-      var s = res.data.settings || {}
+      // 1. Buscar config do template especifico (via request -> template)
+      var reqRes = await _sb.from('legal_doc_requests').select('template_id').eq('public_slug', _slug).single()
+      if (reqRes.data && reqRes.data.template_id) {
+        var tmplRes = await _sb.from('legal_doc_templates').select('tracking_scripts,redirect_url,professional_id').eq('id', reqRes.data.template_id).single()
+        if (tmplRes.data) _templateConfig = tmplRes.data
+      }
 
-      // URL de redirect apos assinar (configuravel em settings.consent_redirect_url)
-      window._ldRedirectUrl = s.consent_redirect_url || res.data.website || ''
+      // 2. Buscar config global da clinica como fallback
+      var clinicRes = await _sb.from('clinics').select('settings,website').limit(1).single()
+      var globalSettings = clinicRes.data ? (clinicRes.data.settings || {}) : {}
 
-      // Injetar pixels de rastreamento (configuravel em settings.consent_tracking_scripts)
-      // Aceita HTML bruto com <script> tags — admin tem controle total
-      var scripts = s.consent_tracking_scripts || ''
+      // Redirect: template > clinica > website
+      window._ldRedirectUrl = (_templateConfig && _templateConfig.redirect_url)
+        || globalSettings.consent_redirect_url
+        || (clinicRes.data && clinicRes.data.website) || ''
+
+      // Pixels: template > clinica global
+      var scripts = (_templateConfig && _templateConfig.tracking_scripts)
+        || globalSettings.consent_tracking_scripts || ''
+
       if (scripts) {
-        var div = document.createElement('div')
-        div.innerHTML = scripts
-        var scriptEls = div.querySelectorAll('script')
-        scriptEls.forEach(function (el) {
-          var s = document.createElement('script')
-          if (el.src) s.src = el.src
-          else s.textContent = el.textContent
-          if (el.async) s.async = true
-          document.head.appendChild(s)
-        })
-        // Elementos nao-script (noscript, img pixels)
-        div.querySelectorAll('noscript,img').forEach(function (el) {
-          document.body.appendChild(el.cloneNode(true))
-        })
+        _injectScripts(scripts)
       }
     } catch (e) { /* silencioso */ }
+  }
+
+  function _injectScripts(html) {
+    var div = document.createElement('div')
+    div.innerHTML = html
+    div.querySelectorAll('script').forEach(function (el) {
+      var s = document.createElement('script')
+      if (el.src) s.src = el.src
+      else s.textContent = el.textContent
+      if (el.async) s.async = true
+      document.head.appendChild(s)
+    })
+    div.querySelectorAll('noscript,img').forEach(function (el) {
+      document.body.appendChild(el.cloneNode(true))
+    })
   }
 
   // ── Validate token ─────────────────────────────────────────

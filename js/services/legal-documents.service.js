@@ -150,6 +150,9 @@
       p_is_active: data.is_active !== false,
       p_trigger_status: data.trigger_status || null,
       p_trigger_procedures: data.trigger_procedures || null,
+      p_professional_id: data.professional_id || null,
+      p_tracking_scripts: data.tracking_scripts || null,
+      p_redirect_url: data.redirect_url || null,
     })
     if (res.error) return { ok: false, error: res.error.message }
     if (res.data && !res.data.ok) return { ok: false, error: res.data.error || 'Erro desconhecido' }
@@ -171,7 +174,16 @@
     // Garantir dados da clinica carregados
     await _loadClinicData()
 
-    // Construir variaveis (profissional vem do agendamento)
+    // Se template tem profissional definido, usar ele; senao, do agendamento
+    if (tmpl.professional_id && !apptOrOpts.professional_id && apptOrOpts.profissionalIdx === undefined) {
+      var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+      var tProf = profs.find(function (p) { return p.id === tmpl.professional_id })
+      if (tProf) {
+        apptOrOpts = Object.assign({}, apptOrOpts, { professional_id: tProf.id })
+      }
+    }
+
+    // Construir variaveis (profissional vem do agendamento ou do template)
     var vars = buildVars(apptOrOpts)
 
     // Renderizar snapshot (ou usar override se fornecido)

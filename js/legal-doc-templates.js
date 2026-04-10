@@ -161,6 +161,7 @@
           + '<div style="font-size:12px;font-weight:600;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(displayName) + '</div>'
           + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">'
           + '<span style="font-size:9px;color:#9CA3AF">v' + t.version + '</span>'
+          + (t.professional_name ? '<span style="font-size:9px;padding:1px 6px;background:#EDE9FE;color:#7C3AED;border-radius:4px">' + _esc(t.professional_name.split(' ')[0]) + '</span>' : '')
           + (t.trigger_status ? '<span style="font-size:9px;padding:1px 6px;background:#F0FDF4;color:#10B981;border-radius:4px">Auto: ' + _esc(t.trigger_status) + '</span>' : '')
           + '</div></div>'
           + '<div style="display:flex;gap:4px">'
@@ -176,6 +177,22 @@
     list.innerHTML = html
   }
 
+  // ── Populate professional dropdown ─────────────────────────
+  function _populateProfDropdown(selectedId) {
+    var sel = document.getElementById('lde_professional_id')
+    if (!sel) return
+    var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+    sel.innerHTML = '<option value="">Usar do agendamento</option>'
+    profs.forEach(function (p) {
+      if (!p.is_active) return
+      var opt = document.createElement('option')
+      opt.value = p.id
+      opt.textContent = p.display_name + (p.specialty ? ' — ' + p.specialty : '')
+      if (p.id === selectedId) opt.selected = true
+      sel.appendChild(opt)
+    })
+  }
+
   // ── Editor ─────────────────────────────────────────────────
   function addLegalDocTemplate() {
     _editingId = null
@@ -184,6 +201,9 @@
     if (el('lde_type')) el('lde_type').value = 'uso_imagem'
     if (el('lde_trigger_status')) el('lde_trigger_status').value = ''
     if (el('lde_trigger_procs')) el('lde_trigger_procs').value = ''
+    if (el('lde_redirect_url')) el('lde_redirect_url').value = ''
+    if (el('lde_tracking_scripts')) el('lde_tracking_scripts').value = ''
+    _populateProfDropdown(null)
     _setEditorContent('')
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Novo Modelo'
     if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
@@ -200,6 +220,9 @@
     if (el('lde_type')) el('lde_type').value = t.doc_type
     if (el('lde_trigger_status')) el('lde_trigger_status').value = t.trigger_status || ''
     if (el('lde_trigger_procs')) el('lde_trigger_procs').value = (t.trigger_procedures || []).join(', ')
+    if (el('lde_redirect_url')) el('lde_redirect_url').value = t.redirect_url || ''
+    if (el('lde_tracking_scripts')) el('lde_tracking_scripts').value = t.tracking_scripts || ''
+    _populateProfDropdown(t.professional_id)
     _setEditorContent(t.content)
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Editar: ' + t.name
     if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
@@ -223,10 +246,17 @@
     var triggerProcsRaw = (document.getElementById('lde_trigger_procs') || {}).value || ''
     var triggerProcs = triggerProcsRaw.split(',').map(function (s) { return s.trim() }).filter(Boolean)
 
+    var profId = (document.getElementById('lde_professional_id') || {}).value || ''
+    var redirectUrl = (document.getElementById('lde_redirect_url') || {}).value || ''
+    var trackingScripts = (document.getElementById('lde_tracking_scripts') || {}).value || ''
+
     var data = {
       name: name.trim(), doc_type: docType, content: content.trim(),
       trigger_status: triggerStatus || null,
       trigger_procedures: triggerProcs.length ? triggerProcs : null,
+      professional_id: profId || null,
+      redirect_url: redirectUrl.trim() || null,
+      tracking_scripts: trackingScripts.trim() || null,
     }
     if (_editingId) data.id = _editingId
 
