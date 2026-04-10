@@ -68,21 +68,12 @@
   }
 
   // ── Construir variaveis a partir de appointment + profissional
-  function buildVars(opts, resolvedProf) {
+  function buildVars(opts) {
     var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
     var prof = null
 
-    // 1. Tentar profissional resolvido automaticamente pelo procedimento
-    if (resolvedProf && resolvedProf.ok) {
-      prof = {
-        display_name: resolvedProf.display_name,
-        crm: resolvedProf.crm,
-        specialty: resolvedProf.specialty,
-        id: resolvedProf.professional_id,
-      }
-    }
-    // 2. Fallback: profissional do agendamento
-    if (!prof && opts.profissionalIdx !== undefined && profs[opts.profissionalIdx]) {
+    // Profissional vem do agendamento (quem agendou = quem assina o TCLE)
+    if (opts.profissionalIdx !== undefined && profs[opts.profissionalIdx]) {
       prof = profs[opts.profissionalIdx]
     }
     if (!prof && opts.professional_id) {
@@ -180,12 +171,8 @@
     // Garantir dados da clinica carregados
     await _loadClinicData()
 
-    // Resolver profissional automaticamente pelo procedimento
-    var procedimento = apptOrOpts.procedimento || apptOrOpts.procedure_name || ''
-    var resolvedProf = procedimento ? await resolveProfessionalForProcedure(procedimento) : null
-
-    // Construir variaveis
-    var vars = buildVars(apptOrOpts, resolvedProf)
+    // Construir variaveis (profissional vem do agendamento)
+    var vars = buildVars(apptOrOpts)
 
     // Renderizar snapshot (ou usar override se fornecido)
     var snapshot = apptOrOpts._contentOverride || renderTemplate(tmpl.content, vars)

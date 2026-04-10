@@ -290,34 +290,57 @@
 
   function _renderSuccess() {
     var sigDate = new Date().toLocaleString('pt-BR')
-    var hashShort = (_doc.document_hash || '').substring(0, 12)
+    var hashFull = _doc.document_hash || ''
+    var hashShort = hashFull.substring(0, 12)
 
     return '<div class="ld-card"><div class="ld-success">'
       + '<div class="ld-success-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="30" stroke-dashoffset="0"><polyline points="20 6 9 17 4 12"/></svg></div>'
       + '<div class="ld-success-title">Documento Assinado</div>'
-      + '<div class="ld-success-text">Obrigado, <strong>' + _esc(_signerName.split(' ')[0]) + '</strong>!<br>Sua assinatura foi registrada com sucesso e tem validade juridica.</div>'
+      + '<div class="ld-success-text">Obrigado, <strong>' + _esc(_signerName.split(' ')[0]) + '</strong>!<br>Sua assinatura foi registrada com sucesso e tem validade juridica conforme a Lei 14.063/2020.</div>'
+
       + '<div class="ld-success-seal">'
       + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
       + 'ASSINADO DIGITALMENTE</div>'
+
+      // Comprovante
       + '<div class="ld-success-card">'
       + '<div class="ld-success-card-title">Comprovante de Assinatura</div>'
       + '<div class="ld-success-card-row"><span class="ld-success-card-label">Signatario</span><span class="ld-success-card-value">' + _esc(_signerName) + '</span></div>'
       + '<div class="ld-success-card-row"><span class="ld-success-card-label">CPF</span><span class="ld-success-card-value">' + _esc(_signerCpf) + '</span></div>'
       + '<div class="ld-success-card-row"><span class="ld-success-card-label">Profissional</span><span class="ld-success-card-value">' + _esc(_doc.professional_name || '-') + '</span></div>'
       + '<div class="ld-success-card-row"><span class="ld-success-card-label">Data/Hora</span><span class="ld-success-card-value">' + sigDate + '</span></div>'
-      + '<div class="ld-success-card-row"><span class="ld-success-card-label">Hash</span><span class="ld-success-card-value" style="font-family:monospace;font-size:10px">' + hashShort + '...</span></div>'
       + '</div>'
+
+      // Botao PDF
       + '<div class="ld-success-btns">'
       + '<button class="ld-btn" onclick="window._ldDownloadPdf()" style="background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;font-size:12px;padding:12px">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
-      + 'Baixar PDF</button>'
+      + 'Baixar Comprovante em PDF</button>'
       + '</div>'
-      + '<div class="ld-hash">'
-      + '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:#6B7280;margin-bottom:4px;font-weight:600">Hash de integridade (SHA-256)</div>'
-      + _esc(_doc.document_hash || '') + '</div>'
+
+      // Bloco autenticidade + hash explicado
+      + '<div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,#F0FDF4,#ECFDF5);border:1px solid #10B98130;border-radius:14px;text-align:left">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+      + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+      + '<span style="font-size:12px;font-weight:700;color:#065F46">Autenticidade Garantida</span></div>'
+      + '<p style="font-size:11px;color:#374151;line-height:1.7;margin:0 0 10px">'
+      + 'Este documento possui um <strong>codigo de autenticidade exclusivo</strong> (hash SHA-256), gerado automaticamente a partir do conteudo integral do documento. '
+      + 'Esse codigo funciona como uma "impressao digital": se qualquer caractere do documento for alterado, o codigo muda completamente.'
+      + '</p>'
+      + '<p style="font-size:11px;color:#374151;line-height:1.7;margin:0 0 10px">'
+      + 'Isso significa que <strong>ninguem pode modificar</strong> este documento apos a assinatura sem que a alteracao seja detectada. '
+      + 'Seu consentimento esta protegido e pode ser verificado a qualquer momento.'
+      + '</p>'
+      + '<div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid #D1FAE5;margin-top:8px">'
+      + '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.8px;color:#6B7280;font-weight:700;margin-bottom:4px">Codigo de Autenticidade (SHA-256)</div>'
+      + '<div style="font-size:9px;font-family:monospace;color:#1F2937;word-break:break-all;line-height:1.6">' + _esc(hashFull) + '</div>'
+      + '</div></div>'
+
+      // LGPD
       + '<div class="ld-lgpd">'
       + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>'
       + 'Seus dados estao protegidos pela LGPD (Lei 13.709/2018)</div>'
+
       + '</div></div>'
   }
 
