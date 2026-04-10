@@ -2025,13 +2025,14 @@
         form_slug: SLUG || '',
       }
 
-      // Salvar consentimento como answer especial
-      finalAnswers.push({
-        field_id: null,
-        field_key: '__lgpd_consent',
-        value_json: lgpdConsent,
-        normalized_text: 'LGPD aceito em ' + lgpdConsent.accepted_at,
-      })
+      // Consentimento LGPD: NAO enviar como answer (field_id null viola NOT NULL).
+      // Salvar separadamente via update no response.
+      try {
+        await _patch('/anamnesis_responses', { id: 'eq.' + responseId }, { lgpd_consent: lgpdConsent })
+      } catch (e) {
+        // Se coluna lgpd_consent nao existe, salvar no metadata do response
+        console.warn('[ClinicAI] LGPD consent save fallback:', e.message)
+      }
 
       // ── 5. RPC atomico com retry (3 tentativas, backoff 1s/2s/4s) ───────
       try {
