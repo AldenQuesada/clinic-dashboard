@@ -263,11 +263,40 @@
 
   // ── Testar (gerar link de exemplo) ─────────────────────────
   async function testLegalDocTemplate(id) {
+    var templates = LegalDocumentsService.getTemplates()
+    var tmpl = templates.find(function (x) { return x.id === id })
+
+    // Resolver profissional pelo nome do template (extrair procedimento)
+    var procName = ''
+    if (tmpl) {
+      procName = (tmpl.name || '').replace(/^TCLE\s*-\s*/i, '').trim()
+      // Tentar trigger_procedures primeiro
+      if (tmpl.trigger_procedures && tmpl.trigger_procedures.length) {
+        procName = tmpl.trigger_procedures[0]
+      }
+    }
+
+    // Buscar profissional responsavel
+    var profIdx = 0
+    var profId = null
+    if (procName && window.LegalDocumentsService.resolveProfessionalForProcedure) {
+      var resolved = await LegalDocumentsService.resolveProfessionalForProcedure(procName)
+      if (resolved && resolved.ok && resolved.professional_id) {
+        profId = resolved.professional_id
+        // Encontrar idx no array de profissionais
+        var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+        for (var pi = 0; pi < profs.length; pi++) {
+          if (profs[pi].id === profId) { profIdx = pi; break }
+        }
+      }
+    }
+
     var testData = {
       pacienteNome: 'Maria Silva Teste',
       pacienteCpf: '529.982.247-25',
-      profissionalIdx: 0,
-      procedimento: 'Avaliacao',
+      profissionalIdx: profIdx,
+      professional_id: profId,
+      procedimento: procName || 'Avaliacao',
       horaInicio: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
     }
 
