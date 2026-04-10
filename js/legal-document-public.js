@@ -162,7 +162,7 @@
     if (_step === -1) { root.innerHTML = _renderError(); return }
     if (_step === 5) {
       root.innerHTML = _renderSuccess()
-      _showConfetti()
+      _fireConversionEvents()
       var stepperEl = document.getElementById('ldStepper')
       if (stepperEl) stepperEl.style.display = 'none'
       return
@@ -336,6 +336,13 @@
       + '<div style="font-size:9px;font-family:monospace;color:#1F2937;word-break:break-all;line-height:1.6">' + _esc(hashFull) + '</div>'
       + '</div></div>'
 
+      // Botao Finalizar
+      + '<div style="margin-top:16px">'
+      + '<button class="ld-btn ld-btn-primary" onclick="window._ldFinish()" style="background:linear-gradient(135deg,#10B981,#059669);color:#fff">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align:-2px;margin-right:6px"><polyline points="20 6 9 17 4 12"/></svg>'
+      + 'Finalizar</button>'
+      + '</div>'
+
       // LGPD
       + '<div class="ld-lgpd">'
       + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>'
@@ -344,26 +351,42 @@
       + '</div></div>'
   }
 
-  // ── Confetti ──────────────────────────────────────────────
-  function _showConfetti() {
-    var container = document.createElement('div')
-    container.className = 'ld-confetti'
-    document.body.appendChild(container)
-
-    var colors = ['#C9A96E', '#D4B978', '#10B981', '#3B82F6', '#F59E0B', '#8B5CF6']
-    for (var i = 0; i < 40; i++) {
-      var piece = document.createElement('div')
-      piece.className = 'ld-confetti-piece'
-      piece.style.left = Math.random() * 100 + '%'
-      piece.style.background = colors[Math.floor(Math.random() * colors.length)]
-      piece.style.animationDelay = Math.random() * 1.5 + 's'
-      piece.style.animationDuration = (2 + Math.random() * 2) + 's'
-      piece.style.width = (6 + Math.random() * 6) + 'px'
-      piece.style.height = (6 + Math.random() * 6) + 'px'
-      piece.style.borderRadius = Math.random() > .5 ? '50%' : '2px'
-      container.appendChild(piece)
+  // ── Conversion tracking (pixels + WhatsApp) ────────────────
+  function _fireConversionEvents() {
+    var eventData = {
+      event: 'consent_signed',
+      patient_name: _signerName,
+      professional: _doc.professional_name || '',
+      document_hash: (_doc.document_hash || '').substring(0, 16),
+      timestamp: new Date().toISOString(),
     }
-    setTimeout(function () { container.remove() }, 4000)
+
+    // Facebook Pixel
+    if (window.fbq) {
+      try { fbq('track', 'CompleteRegistration', { content_name: 'consent_signed', status: 'signed' }) } catch (e) {}
+    }
+
+    // Google Ads / gtag
+    if (window.gtag) {
+      try { gtag('event', 'conversion', { event_category: 'legal_docs', event_label: 'consent_signed' }) } catch (e) {}
+    }
+
+    // Google Analytics 4
+    if (window.gtag) {
+      try { gtag('event', 'consent_signed', eventData) } catch (e) {}
+    }
+
+    // TikTok Pixel
+    if (window.ttq) {
+      try { ttq.track('CompleteRegistration', { content_name: 'consent_signed' }) } catch (e) {}
+    }
+
+    // Generic dataLayer (GTM)
+    if (window.dataLayer) {
+      try { dataLayer.push(Object.assign({ event: 'consent_signed' }, eventData)) } catch (e) {}
+    }
+
+    console.log('[LegalDocs] Conversion event fired:', eventData)
   }
 
   // ── Navigation ─────────────────────────────────────────────
@@ -605,6 +628,12 @@
   }
 
   window._ldFormatCpf = _formatCpf
+
+  // ── Finalizar (redirect) ──────────────────────────────────
+  window._ldFinish = function () {
+    // Redirecionar para o site da clinica
+    window.location.href = 'https://miriandpaula.br'
+  }
 
   // ── Download PDF (premium layout) ─────────────────────────
   window._ldDownloadPdf = function () {
