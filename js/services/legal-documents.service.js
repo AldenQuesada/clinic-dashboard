@@ -226,7 +226,22 @@
 
     var slug = res.data.slug
     var token = res.data.token
-    var link = _getBaseUrl() + 'legal-document.html#slug=' + slug + '&token=' + token
+    var fullLink = _getBaseUrl() + 'legal-document.html#slug=' + slug + '&token=' + token
+
+    // Criar short link (sem tracking — so para encurtar)
+    var link = fullLink
+    try {
+      var shortCode = 'tc-' + slug.replace('ld-', '')
+      var slRes = await window._sbShared.from('short_links').insert({
+        code: shortCode,
+        url: fullLink,
+        title: 'Consentimento',
+        clicks: 0,
+      }).select('code').single()
+      if (slRes.data) {
+        link = _getBaseUrl() + 'r.html?c=' + shortCode
+      }
+    } catch (e) { /* fallback para link completo */ }
 
     return { ok: true, id: res.data.id, slug: slug, token: token, link: link }
   }
