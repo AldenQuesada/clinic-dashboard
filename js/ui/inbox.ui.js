@@ -516,8 +516,19 @@
 
     var contentHtml = ''
     if (msg.content_type === 'image' && msg.media_url) {
-      contentHtml = '<img src="' + _esc(msg.media_url) + '" class="ibx-msg-image" alt="' + _esc(msg.content || '') + '" loading="lazy">'
-      if (msg.content) contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
+      contentHtml = '<img src="' + _esc(msg.media_url) + '" class="ibx-msg-image" alt="' + _esc(msg.content || '') + '" loading="lazy" onclick="window.open(this.src,\'_blank\')">'
+      if (msg.content && msg.content !== '[imagem recebida]') contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
+    } else if (msg.content_type === 'audio' && msg.media_url) {
+      contentHtml = '<audio controls preload="none" style="max-width:240px;height:36px"><source src="' + _esc(msg.media_url) + '"></audio>'
+      if (msg.content && msg.content !== '[audio recebido]') contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
+    } else if (msg.content_type === 'video' && msg.media_url) {
+      contentHtml = '<video controls preload="none" style="max-width:280px;border-radius:8px"><source src="' + _esc(msg.media_url) + '"></video>'
+      if (msg.content && msg.content !== '[video recebido]') contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
+    } else if (msg.content_type === 'document' && msg.media_url) {
+      contentHtml = '<a href="' + _esc(msg.media_url) + '" target="_blank" class="ibx-msg-doc">' +
+        '<span style="font-size:18px">📎</span> ' + _esc(msg.content || 'Documento') + '</a>'
+    } else if (msg.content_type === 'sticker' && msg.media_url) {
+      contentHtml = '<img src="' + _esc(msg.media_url) + '" style="max-width:120px;max-height:120px" alt="sticker">'
     } else {
       contentHtml = _esc(msg.content || '').replace(/\n/g, '<br>')
     }

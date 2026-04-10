@@ -419,6 +419,27 @@
   color: #EF4444;
 }
 
+.ibx-msg-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(0,0,0,0.05);
+  border-radius: 8px;
+  color: #2563EB;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ibx-msg-doc:hover {
+  background: rgba(0,0,0,0.08);
+}
+
+.ibx-msg-image {
+  cursor: pointer;
+}
+
 .ibx-msg-sender {
   font-size: 10px;
   font-weight: 700;
