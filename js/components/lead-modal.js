@@ -847,14 +847,34 @@ async function _lmSendAnamnese(leadId, method) {
 
   // Criar request
   try {
-    var result = await window._sbShared.rpc('create_anamnesis_request', {
+    // Pegar user ID do auth para p_created_by
+    var userId = null
+    try {
+      var sess = await window._sbShared.auth.getSession()
+      userId = sess?.data?.session?.user?.id || null
+    } catch (e) {}
+
+    // Usar assinatura com 6 params (text patient_id) para desambiguar overload
+    var rpcParams = {
       p_clinic_id: '00000000-0000-0000-0000-000000000001',
       p_patient_id: String(patientId),
       p_template_id: tmplRes.data.id,
-      p_created_by: null,
+      p_created_by: userId,
       p_appointment_id: null,
       p_expires_at: new Date(Date.now() + 30 * 24 * 3600000).toISOString(),
-    })
+    }
+    // Fetch direto para desambiguar overload (supabase client nao resolve)
+    var sbUrl = window.ClinicEnv ? ClinicEnv.SUPABASE_URL : 'https://oqboitkpcvuaudouwvkl.supabase.co'
+    var sbKey = window.ClinicEnv ? ClinicEnv.SUPABASE_KEY : ''
+    var sess = await window._sbShared.auth.getSession()
+    var accessToken = sess?.data?.session?.access_token || ''
+
+    var result = await fetch(sbUrl + '/rest/v1/rpc/create_anamnesis_request', {
+      method: 'POST',
+      headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(rpcParams),
+    }).then(function (r) { return r.json() }).then(function (d) { return { data: d, error: null } })
+    .catch(function (e) { return { data: null, error: { message: e.message } } })
 
     var r = Array.isArray(result.data) ? result.data[0] : result.data
     if (!r || !r.public_slug) {
