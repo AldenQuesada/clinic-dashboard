@@ -94,11 +94,30 @@
     var dash = document.getElementById('legal_doc_metrics_dash')
     if (!dash || !window._sbShared) return
 
-    var res = await window._sbShared.rpc('legal_doc_metrics', {})
-    if (!res.data || !res.data.ok) { dash.innerHTML = ''; return }
+    // Buscar metricas filtrando purged
+    var allRes = await window._sbShared.from('legal_doc_requests')
+      .select('status,template_id,signed_at,created_at')
+      .neq('status', 'purged')
+    var templates = LegalDocumentsService.getTemplates() || []
+    var imgIds = templates.filter(function (t) { return t.doc_type === 'uso_imagem' }).map(function (t) { return t.id })
 
-    var t = res.data.tcle || {}
-    var img = res.data.imagem || {}
+    var allData = (allRes.data || [])
+    var tcleData = allData.filter(function (r) { return imgIds.indexOf(r.template_id) === -1 })
+    var imgData = allData.filter(function (r) { return imgIds.indexOf(r.template_id) >= 0 })
+
+    function calc(arr) {
+      var total = arr.length
+      var signed = arr.filter(function (r) { return r.status === 'signed' }).length
+      var pending = arr.filter(function (r) { return r.status === 'pending' || r.status === 'viewed' }).length
+      var expired = arr.filter(function (r) { return r.status === 'expired' }).length
+      var now = Date.now()
+      var week = arr.filter(function (r) { return (now - new Date(r.created_at).getTime()) < 7 * 86400000 })
+      var signed7 = week.filter(function (r) { return r.status === 'signed' }).length
+      return { total: total, signed: signed, pending: pending, expired: expired, sign_rate: total > 0 ? Math.round(signed / total * 1000) / 10 : 0, last_7: week.length, signed_7: signed7 }
+    }
+
+    var t = calc(tcleData)
+    var img = calc(imgData)
 
     function _row(label, cards, accent) {
       var h = '<div style="margin-bottom:14px">'
@@ -387,14 +406,15 @@
     var list = document.getElementById('legal_doc_requests_list')
     if (!list || !window.LegalDocumentsService) return
 
-    var res = await LegalDocumentsService.listRequests({ limit: 20 })
-    if (!res.ok || !res.data || !res.data.length) {
+    var res = await LegalDocumentsService.listRequests({ limit: 50 })
+    var data = (res.ok && res.data) ? res.data.filter(function (r) { return r.status !== 'purged' }) : []
+    if (!data.length) {
       list.innerHTML = '<div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Nenhum documento gerado ainda.</div>'
       return
     }
 
     var html = ''
-    res.data.forEach(function (r) {
+    data.forEach(function (r) {
       var statusLabel = STATUS_LABELS[r.status] || r.status
       var statusColor = STATUS_COLORS[r.status] || '#6B7280'
       var date = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : ''
@@ -593,11 +613,17 @@
     }
 
     try {
-      var res = await window._sbShared.rpc('legal_doc_purge_all', {})
-      if (res.error) {
-        if (window._showToast) _showToast('Documentos', 'Erro: ' + res.error.message, 'error')
+      // Marcar todos como purged (RLS permite update)
+      var upd = await window._sbShared.from('legal_doc_requests')
+        .update({ status: 'purged' })
+        .neq('status', 'purged')
+      if (upd.error) {
+        if (window._showToast) _showToast('Documentos', 'Erro: ' + upd.error.message, 'error')
         return
       }
+      // Limpar short links de consentimento
+      await window._sbShared.from('short_links').delete().like('code', 'tc-%')
+
       if (window._showToast) _showToast('Documentos', 'Registros limpos. Metricas resetadas.', 'success')
       loadLegalDocRequests()
       loadLegalDocMetrics()
