@@ -450,7 +450,7 @@
       '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">A ciencia por tras do envelhecimento</div>' +
     '</div>'
 
-    html += '<div style="padding:12px 48px 16px 48px">' +
+    html += '<div style="padding:12px 32px 16px 32px">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:16px;font-style:italic;color:rgba(245,240,232,0.55);line-height:1.8;text-align:center">' +
         'O envelhecimento e uma quebra do sistema vetorial do rosto. As forcas que sustentavam cada estrutura se inverteram ' +
         '— a gravidade, a anteriorização e a perda dos ligamentos mudaram a direcao de tudo.' +
@@ -741,7 +741,7 @@
     '</div>'
 
     // ─── DEPOIMENTO ───
-    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 48px;text-align:center">' +
+    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 32px;text-align:center">' +
       '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px">O que outras pacientes dizem</div>' +
       _editableBlock('fmReportTestimonial', '"Diferente mas ninguem sabe dizer o que mudou. Exatamente o que eu queria.",M.C., 48 anos', 'font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;text-align:center;border-color:rgba(200,169,126,0.10);') +
     '</div>'
@@ -809,8 +809,8 @@
       // Slider mode
       '<div id="cmpSlider_' + k + '" style="position:relative;overflow:hidden;cursor:col-resize;touch-action:none">' +
         '<img id="cmpBefore_' + k + '" src="' + beforeSrc + '" style="width:100%;display:block" draggable="false">' +
-        '<div id="cmpAfterWrap_' + k + '" style="position:absolute;top:0;right:0;bottom:0;left:50%;overflow:hidden">' +
-          '<img id="cmpAfter_' + k + '" src="' + afterSrc + '" style="width:100%;display:block;position:absolute;top:0;right:0" draggable="false">' +
+        '<div id="cmpAfterWrap_' + k + '" style="position:absolute;top:0;bottom:0;left:50%;width:50%;overflow:hidden">' +
+          '<img id="cmpAfter_' + k + '" src="' + afterSrc + '" style="display:block;position:absolute;top:0;left:0" draggable="false">' +
         '</div>' +
         '<div id="cmpLine_' + k + '" style="position:absolute;top:0;bottom:0;left:50%;width:3px;background:#C8A97E;box-shadow:0 0 8px rgba(200,169,126,0.5);z-index:2">' +
           '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:#0A0A0A;border:2px solid #C8A97E;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(200,169,126,0.4)">' +
@@ -856,16 +856,27 @@
       'window["setCmpMode_"+k]=setCmpMode;' +
       'function updateCmp(v){' +
         'if(cmpMode==="slider"){' +
-          'document.getElementById("cmpAfterWrap_"+k).style.left=v+"%";' +
-          'document.getElementById("cmpAfter_"+k).style.marginLeft="-"+v+"vw";' +
-          'document.getElementById("cmpAfter_"+k).style.width=(100/(100-v)*100)+"%";' +
-          'document.getElementById("cmpLine_"+k).style.left=v+"%";' +
+          'var wrap=document.getElementById("cmpAfterWrap_"+k);' +
+          'var afterImg=document.getElementById("cmpAfter_"+k);' +
+          'var line=document.getElementById("cmpLine_"+k);' +
+          'var container=document.getElementById("cmpSlider_"+k);' +
+          'var cW=container.offsetWidth;' +
+          'wrap.style.left=v+"%";' +
+          'wrap.style.width=(100-v)+"%";' +
+          'afterImg.style.width=cW+"px";' +
+          'afterImg.style.marginLeft="-"+(cW*v/100)+"px";' +
+          'line.style.left=v+"%";' +
         '}else if(cmpMode==="fade"){' +
           'document.getElementById("cmpFadeAfter_"+k).style.opacity=v/100;' +
         '}' +
       '}' +
       'document.getElementById("cmpRange_"+k).addEventListener("input",function(){updateCmp(parseInt(this.value))});' +
       'var sl=document.getElementById("cmpSlider_"+k);' +
+      'var beforeImg=document.getElementById("cmpBefore_"+k);' +
+      'function initSize(){if(sl.offsetWidth>0){updateCmp(50)}}' +
+      'beforeImg.addEventListener("load",initSize);' +
+      'if(beforeImg.complete)setTimeout(initSize,50);' +
+      'window.addEventListener("resize",function(){updateCmp(parseInt(document.getElementById("cmpRange_"+k).value))});' +
       'function onDrag(e){var r=sl.getBoundingClientRect();var x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;var p=Math.max(0,Math.min(100,x/r.width*100));document.getElementById("cmpRange_"+k).value=p;updateCmp(p)}' +
       'sl.addEventListener("mousedown",function(){var m=function(e){onDrag(e)};var u=function(){document.removeEventListener("mousemove",m);document.removeEventListener("mouseup",u)};document.addEventListener("mousemove",m);document.addEventListener("mouseup",u);});' +
       'sl.addEventListener("touchmove",function(e){e.preventDefault();onDrag(e)},{passive:false});' +
