@@ -86,6 +86,10 @@
       'settings-procedimentos':['js/procedimentos.js?v=' + v],
       'financeiro':            ['js/financeiro.js?v=' + v, 'js/financeiro-reports.js?v=' + v],
     }
+    // Qualquer pagina fin-* tambem carrega o modulo financeiro
+    if (/^fin-/.test(pageId)) {
+      map[pageId] = ['js/financeiro.js?v=' + v, 'js/financeiro-reports.js?v=' + v]
+    }
     var scripts = map[pageId]
     if (!scripts) return
     scripts.forEach(function(src) {
