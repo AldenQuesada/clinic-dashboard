@@ -713,6 +713,7 @@
       attachGeneralDataListeners()
     } else {
       const sFields = fieldsBySess[sess.id] || []
+      console.log('[ClinicAI] renderSession:', sess.id?.substring(0,8), 'fields:', sFields.length, sFields.map(function(f){return f.field_key}).join(', '))
       document.getElementById('fields-list').innerHTML =
         sFields.map(function(f) { return renderField(f) }).filter(Boolean).join('')
 
