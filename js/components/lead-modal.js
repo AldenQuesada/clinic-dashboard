@@ -608,6 +608,8 @@ function _lmNav(activeTab) {
     { id:'evolucao',   label:'Evolução',   icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
     { id:'financeiro', label:'Financeiro', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
     { id:'timeline',   label:'Linha do Tempo', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
+    { id:'documentos', label:'Documentos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+    { id:'fichas',     label:'Fichas',     icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>' },
     { id:'interacoes', label:'Interacoes', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' },
     { id:'protocolos', label:'Protocolos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
   ]
@@ -622,7 +624,7 @@ function _lmNav(activeTab) {
 
 function _lmSwitchTab(tabId) {
   _activeModalTab = tabId
-  ;['geral','clinico','anamnese','evolucao','financeiro','timeline','interacoes','protocolos'].forEach(function(t) {
+  ;['geral','clinico','anamnese','evolucao','financeiro','timeline','documentos','fichas','interacoes','protocolos'].forEach(function(t) {
     var btn = document.getElementById('lmNav_' + t)
     if (!btn) return
     var a = t === tabId
@@ -648,10 +650,149 @@ function _renderModalTab(tabId, lead) {
     case 'evolucao':   return _lmTabEvolucao(lead)
     case 'financeiro': return _lmTabFinanceiro(lead)
     case 'timeline':   return _lmTabTimeline(lead)
+    case 'documentos': return _lmTabDocumentos(lead)
+    case 'fichas':     return _lmTabFichas(lead)
     case 'interacoes': return _lmTabInteracoes(lead)
     case 'protocolos': return _lmTabProtocolos(lead)
     default:           return ''
   }
+}
+
+// ── Tab: Documentos (Consentimentos TCLE) ───────────────────
+
+function _lmTabDocumentos(lead) {
+  var container = '<div id="lmDocumentosContent"><div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Carregando documentos...</div></div>'
+  setTimeout(function () { _lmLoadDocumentos(lead) }, 50)
+  return container
+}
+
+async function _lmLoadDocumentos(lead) {
+  var el = document.getElementById('lmDocumentosContent')
+  if (!el || !window._sbShared) return
+
+  var patientName = (lead.name || lead.nome || '').trim()
+  var res = await window._sbShared.from('legal_doc_requests')
+    .select('id,patient_name,professional_name,status,created_at,signed_at,public_slug,template_id')
+    .or('patient_name.ilike.%' + patientName + '%,patient_id.eq.' + (lead.id || ''))
+    .neq('status', 'purged')
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  var docs = res.data || []
+  var STATUS_MAP = { pending:['Pendente','#F59E0B'], viewed:['Visualizado','#3B82F6'], signed:['Assinado','#10B981'], expired:['Expirado','#6B7280'], revoked:['Revogado','#EF4444'] }
+
+  if (!docs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#9CA3AF;font-size:13px">Nenhum consentimento registrado.</div>'
+      + '<div style="text-align:center;margin-top:12px"><button onclick="if(window._sendManualConsent&&_currentLead){var a={pacienteNome:_currentLead.name||_currentLead.nome,pacienteTelefone:_currentLead.phone||_currentLead.whatsapp};window.LegalDocumentsService&&LegalDocumentsService.sendManualConsent&&LegalDocumentsService.sendManualConsent(null)}" style="padding:8px 18px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Enviar Consentimento</button></div>'
+    return
+  }
+
+  var html = '<div style="display:flex;flex-direction:column;gap:8px">'
+  docs.forEach(function (d) {
+    var s = STATUS_MAP[d.status] || [d.status, '#6B7280']
+    var date = d.created_at ? new Date(d.created_at).toLocaleDateString('pt-BR') : ''
+    var signedDate = d.signed_at ? new Date(d.signed_at).toLocaleString('pt-BR') : ''
+
+    html += '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px">'
+      + '<div style="width:10px;height:10px;border-radius:50%;background:' + s[1] + ';flex-shrink:0"></div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:12px;font-weight:600;color:#111">' + _lmEsc(d.professional_name || '') + '</div>'
+      + '<div style="font-size:10px;color:#9CA3AF">' + date + (signedDate ? ' | Assinado: ' + signedDate : '') + '</div>'
+      + '</div>'
+      + '<span style="font-size:10px;padding:3px 10px;background:' + s[1] + '15;color:' + s[1] + ';border-radius:20px;font-weight:600">' + s[0] + '</span>'
+      + '</div>'
+  })
+  html += '</div>'
+
+  // Contadores
+  var signed = docs.filter(function (d) { return d.status === 'signed' }).length
+  var pending = docs.filter(function (d) { return d.status === 'pending' || d.status === 'viewed' }).length
+
+  var summary = '<div style="display:flex;gap:12px;margin-bottom:14px">'
+    + '<div style="flex:1;padding:10px;background:#F0FDF4;border-radius:8px;text-align:center"><div style="font-size:18px;font-weight:800;color:#10B981">' + signed + '</div><div style="font-size:9px;color:#6B7280;text-transform:uppercase;font-weight:600">Assinados</div></div>'
+    + '<div style="flex:1;padding:10px;background:#FFF7ED;border-radius:8px;text-align:center"><div style="font-size:18px;font-weight:800;color:#F59E0B">' + pending + '</div><div style="font-size:9px;color:#6B7280;text-transform:uppercase;font-weight:600">Pendentes</div></div>'
+    + '<div style="flex:1;padding:10px;background:#F9FAFB;border-radius:8px;text-align:center"><div style="font-size:18px;font-weight:800;color:#374151">' + docs.length + '</div><div style="font-size:9px;color:#6B7280;text-transform:uppercase;font-weight:600">Total</div></div>'
+    + '</div>'
+
+  el.innerHTML = summary + html
+}
+
+// ── Tab: Fichas de Anamnese ─────────────────────────────────
+
+function _lmTabFichas(lead) {
+  var container = '<div id="lmFichasContent"><div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Carregando fichas...</div></div>'
+  setTimeout(function () { _lmLoadFichas(lead) }, 50)
+  return container
+}
+
+async function _lmLoadFichas(lead) {
+  var el = document.getElementById('lmFichasContent')
+  if (!el || !window._sbShared) return
+
+  // Buscar respostas de anamnese deste paciente
+  var patientName = (lead.name || lead.nome || '').trim()
+  var res = await window._sbShared.from('anamnesis_responses')
+    .select('id,form_id,patient_name,professional_name,created_at,data')
+    .or('patient_name.ilike.%' + patientName + '%,patient_id.eq.' + (lead.id || ''))
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  var fichas = res.data || []
+
+  if (!fichas.length) {
+    // Fallback: checar localStorage
+    var localAnamnese = null
+    try {
+      var leads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+      var l = leads.find(function (x) { return x.id === lead.id })
+      if (l && l.anamnese) localAnamnese = l.anamnese
+    } catch (e) {}
+
+    if (localAnamnese) {
+      el.innerHTML = '<div style="padding:16px;background:#F0FDF4;border:1px solid #10B98130;border-radius:10px">'
+        + '<div style="font-size:12px;font-weight:600;color:#10B981;margin-bottom:8px">Anamnese preenchida (local)</div>'
+        + '<div style="font-size:12px;color:#374151;line-height:1.6;white-space:pre-wrap">' + _lmEsc(typeof localAnamnese === 'string' ? localAnamnese : JSON.stringify(localAnamnese, null, 2)) + '</div>'
+        + '</div>'
+      return
+    }
+
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#9CA3AF;font-size:13px">Nenhuma ficha de anamnese preenchida.</div>'
+      + '<div style="text-align:center;margin-top:12px"><button onclick="_lmSwitchTab(\'anamnese\')" style="padding:8px 18px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Preencher Anamnese</button></div>'
+    return
+  }
+
+  var html = '<div style="display:flex;flex-direction:column;gap:10px">'
+  fichas.forEach(function (f) {
+    var date = f.created_at ? new Date(f.created_at).toLocaleString('pt-BR') : ''
+    var dataObj = f.data || {}
+    var fieldCount = typeof dataObj === 'object' ? Object.keys(dataObj).length : 0
+
+    html += '<div style="padding:14px 16px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;cursor:pointer" onclick="this.querySelector(\'.lm-ficha-detail\').style.display=this.querySelector(\'.lm-ficha-detail\').style.display===\'none\'?\'block\':\'none\'">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<div>'
+      + '<div style="font-size:13px;font-weight:600;color:#111">' + _lmEsc(f.patient_name || patientName) + '</div>'
+      + '<div style="font-size:10px;color:#9CA3AF">' + date + ' | ' + _lmEsc(f.professional_name || '') + ' | ' + fieldCount + ' campos</div>'
+      + '</div>'
+      + '<svg width="14" height="14" fill="none" stroke="#9CA3AF" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'
+      + '</div>'
+      + '<div class="lm-ficha-detail" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">'
+
+    // Renderizar campos da ficha
+    if (typeof dataObj === 'object') {
+      Object.keys(dataObj).forEach(function (key) {
+        var val = dataObj[key]
+        if (val === null || val === undefined || val === '') return
+        html += '<div style="margin-bottom:8px">'
+          + '<div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.03em">' + _lmEsc(key.replace(/_/g, ' ')) + '</div>'
+          + '<div style="font-size:12px;color:#374151;line-height:1.5">' + _lmEsc(String(val)) + '</div>'
+          + '</div>'
+      })
+    }
+    html += '</div></div>'
+  })
+  html += '</div>'
+
+  el.innerHTML = html
 }
 
 // ── Tab: Linha do Tempo ─────────────────────────────────────
