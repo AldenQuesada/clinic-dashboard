@@ -1697,6 +1697,21 @@ function confirmFinalize(id) {
 
   const apptFinal = appts[idx]
 
+  // Consentimentos: verificar se procedimento realizado tem TCLE pendente
+  if (window.LegalDocumentsService && procs.length) {
+    var _procNames = procs.map(function(p) { return p.nome || p }).filter(Boolean)
+    _procNames.forEach(function(procName) {
+      LegalDocumentsService.autoSendForStatus('na_clinica', {
+        pacienteNome: apptFinal.pacienteNome || apptFinal.patient_name || '',
+        pacienteTelefone: _getPhone(apptFinal),
+        procedimento: procName,
+        profissionalIdx: apptFinal.profissionalIdx,
+        professional_id: apptFinal.professional_id,
+        appointmentId: apptFinal.id,
+      }).catch(function(e) { console.warn('[Agenda] Consent on finalize falhou:', e) })
+    })
+  }
+
   // Bloco 3: Fluxos pos
   if (waPos)     sendWATemplate(id, 'pos_atendimento')
   if (avalGoogle) {
