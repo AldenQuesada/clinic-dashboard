@@ -80,18 +80,21 @@
       prof = profs.find(function (p) { return p.id === opts.professional_id })
     }
 
-    var clinicName = ''
-    if (window._getClinicaNome) clinicName = _getClinicaNome()
-    else if (window.ClinicEnv && ClinicEnv.CLINIC_NAME) clinicName = ClinicEnv.CLINIC_NAME
+    // Nome da clinica: banco > localStorage > fallback
+    var clinicName = (_clinicDataFromDb && _clinicDataFromDb.name) ? _clinicDataFromDb.name : ''
+    if (!clinicName && window._getClinicaNome) {
+      var n = _getClinicaNome()
+      if (n && n !== 'nossa cl\u00ednica' && n !== 'nossa clinica') clinicName = n
+    }
+    if (!clinicName && window.ClinicEnv && ClinicEnv.CLINIC_NAME) clinicName = ClinicEnv.CLINIC_NAME
+    if (!clinicName) clinicName = 'Clinica Mirian de Paula'
 
-    // Dados da clinica (localStorage + cache do banco)
+    // Dados da clinica (banco > localStorage)
     var clinicData = {}
     try { clinicData = JSON.parse(localStorage.getItem('clinicai_clinic_data') || '{}') } catch (e) {}
-    // Complementar com dados do banco se disponiveis
     if (_clinicDataFromDb) {
-      if (!clinicData.cnpj && _clinicDataFromDb.cnpj) clinicData.cnpj = _clinicDataFromDb.cnpj
-      if (!clinicData.endereco && _clinicDataFromDb.endereco) clinicData.endereco = _clinicDataFromDb.endereco
-      if (!clinicName && _clinicDataFromDb.name) clinicName = _clinicDataFromDb.name
+      if (_clinicDataFromDb.cnpj) clinicData.cnpj = _clinicDataFromDb.cnpj
+      if (_clinicDataFromDb.endereco) clinicData.endereco = _clinicDataFromDb.endereco
     }
 
     // Endereco paciente (se disponivel no lead)
