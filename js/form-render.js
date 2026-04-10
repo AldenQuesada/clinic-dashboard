@@ -112,8 +112,9 @@
   }
 
   // ── _saveSessionAnswers ─────────────────────────────────────────────────────
+  var _formCompleted = false
   async function _saveSessionAnswers(sessId) {
-    if (!responseId || IS_TEST) return
+    if (!responseId || IS_TEST || _formCompleted) return
     try {
       const fields = sessId === GENERAL_SESSION_ID ? [] : (fieldsBySess[sessId] || [])
       if (!fields.length) return
@@ -136,12 +137,14 @@
         else if (typeof raw === 'object') normalizedText = JSON.stringify(raw)
         else                              normalizedText = String(raw)
 
+        // Redatar PII (CPF/RG) tambem no value_json
+        var isPII = f.field_key === 'cpf' || f.field_key === '__gd_cpf' || f.field_key === 'rg' || f.field_key === '__gd_rg'
         answersPayload.push({
           response_id:     responseId,
           clinic_id:       clinicId,
           field_id:        f.id,
           field_key:       f.field_key,
-          value_json:      Array.isArray(raw) ? raw : (typeof raw === 'object' ? raw : String(raw)),
+          value_json:      isPII ? '[REDACTED]' : (Array.isArray(raw) ? raw : (typeof raw === 'object' ? raw : String(raw))),
           normalized_text: normalizedText.slice(0, 1000),
         })
       }
@@ -267,14 +270,16 @@
   let   TMPL_ID  = params.get('id')
   const IS_TEST  = params.get('mode') === 'test'
   const SLUG     = params.get('slug')
-  // Token lido do fragment (#token=) para não vazar em logs/Referer.
-  // Fallback: recuperar do localStorage se paciente fechou e reabriu a aba.
-  var _rawToken = new URLSearchParams(location.hash.substring(1)).get('token') || params.get('token')
+  // Token lido APENAS do fragment (#token=) — nunca do query string (previne vazamento em logs/Referer).
+  // Fallback: sessionStorage (mesma aba, nao persiste entre sessoes).
+  var _rawToken = new URLSearchParams(location.hash.substring(1)).get('token')
   if (!_rawToken && SLUG) {
-    try { _rawToken = localStorage.getItem('anm_token_' + SLUG) } catch(e) {}
+    try { _rawToken = sessionStorage.getItem('anm_token_' + SLUG) } catch(e) {}
   }
   if (_rawToken && SLUG) {
-    try { localStorage.setItem('anm_token_' + SLUG, _rawToken) } catch(e) {}
+    try { sessionStorage.setItem('anm_token_' + SLUG, _rawToken) } catch(e) {}
+    // Limpar fragment do URL para nao ficar visivel no historico
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search)
   }
   const TOKEN = _rawToken
 
@@ -1973,10 +1978,11 @@
           } else if (Array.isArray(raw))       normText = raw.join(', ')
           else if (typeof raw === 'object')     normText = JSON.stringify(raw)
           else                                  normText = String(raw)
+          var isPII2 = f.field_key === 'cpf' || f.field_key === '__gd_cpf' || f.field_key === 'rg' || f.field_key === '__gd_rg'
           finalAnswers.push({
             field_id:        f.id,
             field_key:       f.field_key,
-            value_json:      Array.isArray(raw) ? raw : (typeof raw === 'object' ? raw : String(raw)),
+            value_json:      isPII2 ? '[REDACTED]' : (Array.isArray(raw) ? raw : (typeof raw === 'object' ? raw : String(raw))),
             normalized_text: normText.slice(0, 1000),
           })
         }
@@ -2055,8 +2061,10 @@
         return
       }
 
-      // Limpar token do localStorage apos completar (nao precisa mais)
-      if (SLUG) { try { localStorage.removeItem('anm_token_' + SLUG) } catch(e) {} }
+      // Marcar como completado — bloqueia auto-save
+      _formCompleted = true
+      // Limpar token do sessionStorage apos completar
+      if (SLUG) { try { sessionStorage.removeItem('anm_token_' + SLUG) } catch(e) {} }
 
       showSuccessScreen()
     },

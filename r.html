@@ -39,6 +39,17 @@ body{background:#0A0A0A;color:#F5F5F5;font-family:-apple-system,'SF Pro Display'
   .then(function(r) { return r.json() })
   .then(function(data) {
     if (data && data.ok && data.url) {
+      // Validar dominio: so redirecionar para o proprio dominio
+      try {
+        var target = new URL(data.url, window.location.origin);
+        if (target.origin !== window.location.origin) {
+          console.warn('[Redirect] Dominio externo bloqueado:', target.origin);
+          showError();
+          return;
+        }
+      } catch (e) {
+        // URL relativa — ok
+      }
       window.location.replace(data.url);
     } else {
       showError();
