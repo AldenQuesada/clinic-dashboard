@@ -883,7 +883,19 @@ async function _lmSendAnamnese(leadId, method) {
       return
     }
 
-    var link = location.origin + '/form-render.html?slug=' + r.public_slug + '#token=' + r.raw_token
+    var fullLink = location.origin + '/form-render.html?slug=' + r.public_slug + '#token=' + r.raw_token
+
+    // Encurtar via short_links
+    var link = fullLink
+    try {
+      var shortCode = 'an-' + r.public_slug.substring(0, 8)
+      var slRes = await fetch(sbUrl + '/rest/v1/short_links', {
+        method: 'POST',
+        headers: Object.assign({}, hdrs, { 'Prefer': 'resolution=merge-duplicates' }),
+        body: JSON.stringify([{ code: shortCode, url: fullLink, title: 'Anamnese ' + fullName.split(' ')[0], clicks: 0, clinic_id: '00000000-0000-0000-0000-000000000001' }]),
+      })
+      if (slRes.ok) link = location.origin + '/r.html?c=' + shortCode
+    } catch (e) { /* fallback link completo */ }
 
     if (method === 'copy') {
       try { await navigator.clipboard.writeText(link) } catch (e) {}
