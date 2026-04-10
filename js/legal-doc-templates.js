@@ -582,6 +582,38 @@
     }
   }
 
+  // ── Limpar registros de teste ────────────────────────────────
+  async function purgeTestDocRequests() {
+    if (!window._sbShared) return
+
+    var typed = window.prompt('Isso vai apagar TODOS os registros de documentos (assinaturas, requests).\n\nDigite CONFIRMAR para continuar:')
+    if (!typed || typed.trim() !== 'CONFIRMAR') {
+      if (window._showToast) _showToast('Documentos', 'Cancelado', 'warning')
+      return
+    }
+
+    try {
+      // 1. Deletar assinaturas
+      var sigs = await window._sbShared.from('legal_doc_signatures').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      console.log('[LegalDocs] Signatures deleted:', sigs)
+
+      // 2. Deletar requests
+      var reqs = await window._sbShared.from('legal_doc_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+      console.log('[LegalDocs] Requests deleted:', reqs)
+
+      // 3. Deletar short links de consentimento (tc-*)
+      var links = await window._sbShared.from('short_links').delete().like('code', 'tc-%')
+      console.log('[LegalDocs] Short links deleted:', links)
+
+      if (window._showToast) _showToast('Documentos', 'Registros limpos. Metricas resetadas.', 'success')
+      loadLegalDocRequests()
+      loadLegalDocMetrics()
+    } catch (e) {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + e.message, 'error')
+    }
+  }
+
+  window.purgeTestDocRequests = purgeTestDocRequests
   window.deleteLegalDocTemplate = deleteLegalDocTemplate
   window.resendLegalDocWhatsApp  = resendLegalDocWhatsApp
   window.saveLegalDocAdvancedConfig = saveLegalDocAdvancedConfig
