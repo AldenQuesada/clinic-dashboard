@@ -132,7 +132,9 @@
 
       _doc = data.data
       _signerName = _doc.patient_name || ''
-      _signerCpf = _doc.patient_cpf || ''
+      // So pre-preencher CPF se for valido (evita 000.000.000-00)
+      var rawCpf = (_doc.patient_cpf || '').replace(/\D/g, '')
+      _signerCpf = (rawCpf && rawCpf.length === 11 && !/^(\d)\1{10}$/.test(rawCpf)) ? _formatCpf(rawCpf) : ''
 
       document.getElementById('ldHeaderSub').textContent = _doc.professional_name ? 'Dr(a). ' + _doc.professional_name : 'Consentimento Digital'
 
