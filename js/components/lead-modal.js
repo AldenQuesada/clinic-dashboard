@@ -808,6 +808,9 @@ function _renderSendAnamnesePanel(lead) {
 async function _lmSendAnamnese(leadId, method) {
   if (!window._sbShared) return
 
+  var lead = _currentLead
+  if (!lead) return
+
   // Buscar template ativo
   var tmplRes = await window._sbShared.from('anamnesis_templates')
     .select('id,name')
@@ -820,11 +823,29 @@ async function _lmSendAnamnese(leadId, method) {
     return
   }
 
-  // Upsert lead como patient
+  // Upsert lead como patient no banco
   var patientId = leadId
-  if (window._upsertLeadAsPatient) {
-    try { patientId = await _upsertLeadAsPatient(leadId) } catch (e) {}
-  }
+  try {
+    // Verificar se ja existe
+    var existing = await window._sbShared.from('patients').select('id').eq('id', leadId).limit(1)
+    if (!existing.data || !existing.data.length) {
+      // Criar patient
+      var fullName = (lead.name || lead.nome || 'Paciente').trim()
+      var spaceIdx = fullName.indexOf(' ')
+      var firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
+      var lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1).trim() : null
+
+      var upsRes = await window._sbShared.from('patients').upsert({
+        id: leadId,
+        first_name: firstName,
+        last_name: lastName,
+        phone: lead.phone || lead.whatsapp || lead.telefone || null,
+        email: lead.email || null,
+      }, { onConflict: 'id' })
+      if (upsRes.error) console.warn('[Anamnese] Patient upsert:', upsRes.error.message)
+    }
+    patientId = leadId
+  } catch (e) { console.warn('[Anamnese] Patient upsert error:', e.message) }
 
   // Criar request
   try {
