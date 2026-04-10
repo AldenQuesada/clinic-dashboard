@@ -515,20 +515,23 @@
     }
 
     var contentHtml = ''
-    if (msg.content_type === 'image' && msg.media_url) {
+    var isMedia = msg.content_type && msg.content_type !== 'text'
+    var hasUrl = msg.media_url && msg.media_url.startsWith('data:')
+    var mediaId = 'ibx-media-' + (msg.id || Math.random().toString(36).substr(2, 6))
+
+    if (msg.content_type === 'image' && hasUrl) {
       contentHtml = '<img src="' + _esc(msg.media_url) + '" class="ibx-msg-image" alt="' + _esc(msg.content || '') + '" loading="lazy" onclick="window.open(this.src,\'_blank\')">'
       if (msg.content && msg.content !== '[imagem recebida]') contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
-    } else if (msg.content_type === 'audio' && msg.media_url) {
+    } else if (msg.content_type === 'audio' && hasUrl) {
       contentHtml = '<audio controls preload="none" style="max-width:240px;height:36px"><source src="' + _esc(msg.media_url) + '"></audio>'
-      if (msg.content && msg.content !== '[audio recebido]') contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
-    } else if (msg.content_type === 'video' && msg.media_url) {
+    } else if (msg.content_type === 'video' && hasUrl) {
       contentHtml = '<video controls preload="none" style="max-width:280px;border-radius:8px"><source src="' + _esc(msg.media_url) + '"></video>'
-      if (msg.content && msg.content !== '[video recebido]') contentHtml += '<div class="ibx-msg-caption">' + _esc(msg.content) + '</div>'
-    } else if (msg.content_type === 'document' && msg.media_url) {
-      contentHtml = '<a href="' + _esc(msg.media_url) + '" target="_blank" class="ibx-msg-doc">' +
-        '<span style="font-size:18px">📎</span> ' + _esc(msg.content || 'Documento') + '</a>'
-    } else if (msg.content_type === 'sticker' && msg.media_url) {
-      contentHtml = '<img src="' + _esc(msg.media_url) + '" style="max-width:120px;max-height:120px" alt="sticker">'
+    } else if (isMedia && !hasUrl) {
+      // Media sem URL acessivel — mostrar tipo com indicador
+      var typeLabel = msg.content_type === 'audio' ? 'Audio' : msg.content_type === 'image' ? 'Imagem' : msg.content_type === 'video' ? 'Video' : msg.content_type === 'sticker' ? 'Sticker' : 'Arquivo'
+      var typeIcon = msg.content_type === 'audio' ? '🎙' : msg.content_type === 'image' ? '📷' : msg.content_type === 'video' ? '🎬' : msg.content_type === 'sticker' ? '😀' : '📎'
+      contentHtml = '<div class="ibx-msg-media-tag">' + typeIcon + ' ' + typeLabel + '</div>'
+      if (msg.content && !msg.content.startsWith('[')) contentHtml += '<div>' + _esc(msg.content).replace(/\n/g, '<br>') + '</div>'
     } else {
       contentHtml = _esc(msg.content || '').replace(/\n/g, '<br>')
     }

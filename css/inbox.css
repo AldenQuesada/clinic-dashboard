@@ -440,6 +440,18 @@
   cursor: pointer;
 }
 
+.ibx-msg-media-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
 .ibx-msg-sender {
   font-size: 10px;
   font-weight: 700;
