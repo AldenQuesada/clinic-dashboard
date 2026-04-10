@@ -95,26 +95,39 @@
     if (!dash || !window._sbShared) return
 
     var res = await window._sbShared.rpc('legal_doc_metrics', {})
-    var m = (res.data && res.data.ok) ? res.data : { total: 0, signed: 0, pending: 0, viewed: 0, expired: 0, sign_rate: 0, avg_hours_to_sign: 0, last_7_days: 0, signed_7_days: 0 }
+    if (!res.data || !res.data.ok) { dash.innerHTML = ''; return }
 
-    var cards = [
-      { label: 'Total Enviados', value: m.total, color: '#374151', icon: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z' },
-      { label: 'Assinados', value: m.signed, color: '#10B981', icon: 'M20 6L9 17l-5-5' },
-      { label: 'Pendentes', value: (m.pending || 0) + (m.viewed || 0), color: '#F59E0B', icon: 'M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83' },
-      { label: 'Taxa Assinatura', value: m.sign_rate + '%', color: '#0891B2', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' },
-      { label: 'Tempo Medio', value: m.avg_hours_to_sign + 'h', color: '#7C3AED', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 6v4l3 3' },
-      { label: 'Ultimos 7 dias', value: m.signed_7_days + '/' + m.last_7_days, color: '#3B82F6', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-    ]
+    var t = res.data.tcle || {}
+    var img = res.data.imagem || {}
 
-    var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
-    cards.forEach(function (c) {
-      html += '<div style="padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:10px;text-align:center">'
-        + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + c.color + '" stroke-width="2" stroke-linecap="round" style="margin-bottom:4px"><path d="' + c.icon + '"/></svg>'
-        + '<div style="font-size:18px;font-weight:800;color:' + c.color + '">' + c.value + '</div>'
-        + '<div style="font-size:9px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.3px">' + c.label + '</div>'
-        + '</div>'
-    })
-    html += '</div>'
+    function _row(label, cards, accent) {
+      var h = '<div style="margin-bottom:14px">'
+        + '<div style="font-size:11px;font-weight:700;color:' + accent + ';margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">' + label + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'
+      cards.forEach(function (c) {
+        h += '<div style="padding:10px 8px;background:#fff;border:1px solid #E5E7EB;border-radius:10px;text-align:center">'
+          + '<div style="font-size:20px;font-weight:800;color:' + c.color + '">' + c.value + '</div>'
+          + '<div style="font-size:8px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-top:2px">' + c.label + '</div>'
+          + '</div>'
+      })
+      h += '</div></div>'
+      return h
+    }
+
+    var html = _row('Consentimentos (TCLE)', [
+      { label: 'Enviados', value: t.total || 0, color: '#374151' },
+      { label: 'Assinados', value: t.signed || 0, color: '#10B981' },
+      { label: 'Taxa', value: (t.sign_rate || 0) + '%', color: '#0891B2' },
+      { label: '7 dias', value: (t.signed_7 || 0) + '/' + (t.last_7 || 0), color: '#3B82F6' },
+    ], '#10B981')
+
+    html += _row('Uso de Imagem', [
+      { label: 'Enviados', value: img.total || 0, color: '#374151' },
+      { label: 'Assinados', value: img.signed || 0, color: '#10B981' },
+      { label: 'Recusados', value: (img.expired || 0) + (img.pending || 0), color: '#EF4444' },
+      { label: 'Taxa', value: (img.sign_rate || 0) + '%', color: img.sign_rate >= 50 ? '#10B981' : '#EF4444' },
+    ], '#7C3AED')
+
     dash.innerHTML = html
   }
 
