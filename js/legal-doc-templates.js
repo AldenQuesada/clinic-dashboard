@@ -225,7 +225,10 @@
     _populateProfDropdown(null)
     _setEditorContent('')
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Novo Modelo'
-    if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
+    if (el('legal_doc_editor')) {
+      el('legal_doc_editor').style.display = 'block'
+      setTimeout(function () { el('legal_doc_editor').scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 100)
+    }
   }
 
   function editLegalDocTemplate(id) {
@@ -250,7 +253,10 @@
     _populateProfDropdown(t.professional_id)
     _setEditorContent(t.content)
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Editar: ' + t.name
-    if (el('legal_doc_editor')) el('legal_doc_editor').style.display = 'block'
+    if (el('legal_doc_editor')) {
+      el('legal_doc_editor').style.display = 'block'
+      setTimeout(function () { el('legal_doc_editor').scrollIntoView({ behavior: 'smooth', block: 'start' }) }, 100)
+    }
   }
 
   function closeLegalDocEditor() {
