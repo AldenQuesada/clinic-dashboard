@@ -327,7 +327,7 @@
 
     // ─── Mapa de Forcas Faciais (2-column: canvas + metrics) ───
     if (FM._vecAge && FM._drawAllForceVectors) {
-      html += '<div style="margin-top:4px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+      html += '<div class="fm-section" style="margin-top:4px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
       html += _sectionTitle('Mapa de Forcas Faciais  |  Idade: ' + (FM._vecAge || 25), 'trending-up')
 
       var vt = FM._vecAgeFactor(FM._vecAge || 25)
@@ -358,7 +358,7 @@
     var regionSt = FM._regionState || {}
     var hasAnnotations = annots.length > 0 || Object.keys(regionSt).some(function (k) { return regionSt[k] && regionSt[k].active })
     if (hasAnnotations) {
-      html += '<div style="margin-top:4px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+      html += '<div class="fm-section" style="margin-top:4px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
       html += _sectionTitle('Mapa de Estruturacao', 'map-pin')
       html += '<div style="padding:4px 32px 12px 32px">'
 
@@ -445,7 +445,7 @@
     // ═══════════════════════════════════════════
     // ATO 2: "O que aconteceu",Explicacao
     // ═══════════════════════════════════════════
-    html += '<div style="text-align:center;padding:20px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
+    html += '<div class="fm-section" style="text-align:center;padding:20px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">O que aconteceu</div>' +
       '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">A ciencia por tras do envelhecimento</div>' +
     '</div>'
@@ -463,7 +463,7 @@
     // ═══════════════════════════════════════════
     // ATO 3: "Para onde vamos",Solucao
     // ═══════════════════════════════════════════
-    html += '<div style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
+    html += '<div class="fm-section" style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Para onde vamos</div>' +
       '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Plano de reconstrucao vetorial</div>' +
     '</div>'
@@ -692,7 +692,7 @@
     html += '</div>' // end Plano A padding div
 
     // ─── PLANO B,Essencial ───
-    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+    html += '<div class="fm-section" style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
     html += _sectionTitle('Plano B \u2014 Protocolo Essencial', 'target')
     html += '<div style="padding:0 32px 4px 32px">'
     html += '<div style="margin-bottom:8px">' + _editable('fmPlanBSubtitle', 'Foco nas areas de maior impacto,sem Fotona', 'font-size:13px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
@@ -710,7 +710,7 @@
     html += '</div>'
 
     // ─── Investimento ───
-    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
+    html += '<div class="fm-section" style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08)"></div>'
     html += _sectionTitle('Investimento', 'credit-card')
     html += '<div style="padding:4px 32px 12px 32px">'
     html += '<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">'
@@ -741,13 +741,13 @@
     '</div>'
 
     // ─── DEPOIMENTO ───
-    html += '<div style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 32px;text-align:center">' +
+    html += '<div class="fm-section" style="margin-top:12px;border-top:1px solid rgba(200,169,126,0.08);padding:20px 32px;text-align:center">' +
       '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px">O que outras pacientes dizem</div>' +
       _editableBlock('fmReportTestimonial', '"Diferente mas ninguem sabe dizer o que mudou. Exatamente o que eu queria.",M.C., 48 anos', 'font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;text-align:center;border-color:rgba(200,169,126,0.10);') +
     '</div>'
 
     // ─── FOOTER ───
-    html += '<div style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.12)">'
+    html += '<div class="fm-section" style="margin-top:8px;border-top:1px solid rgba(200,169,126,0.12)">'
     html += '<div style="padding:24px 32px 8px 32px;text-align:center">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.65);line-height:1.6;max-width:500px;margin:0 auto">' +
         'Nos não preenchemos rugas. Nos reposicionamos as forcas do seu rosto.' +
@@ -979,7 +979,24 @@
           '[contenteditable]:focus{border-color:#C8A97E !important;outline:none}' +
           'img{max-width:100%;height:auto}' +
           'table{width:100%}' +
-          '@media(max-width:600px){html,body{overflow-x:hidden!important}body{padding:8px 0!important}#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important}#fmReportCard [style*="padding"][style*="32px"]{padding-left:14px!important;padding-right:14px!important}#fmReportCard .fm-sep{margin-left:14px!important;margin-right:14px!important}.fm-header{flex-direction:column!important;gap:8px!important;align-items:flex-start!important}.fm-clinic-name{font-size:24px!important}.fm-row{flex-direction:column!important}#fmReportCard [style*="border-top:1px"]{margin-top:20px!important}#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}table{font-size:11px!important}}' +
+          '@media(max-width:600px){' +
+          'html,body{overflow-x:hidden!important}' +
+          'body{padding:4px 0!important}' +
+          '#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important;font-size:15px!important}' +
+          '#fmReportCard [style*="padding"][style*="32px"]{padding-left:16px!important;padding-right:16px!important}' +
+          '#fmReportCard .fm-sep{margin-left:16px!important;margin-right:16px!important}' +
+          '.fm-header{flex-direction:column!important;gap:10px!important;align-items:flex-start!important}' +
+          '.fm-clinic-name{font-size:26px!important}' +
+          '.fm-row{flex-direction:column!important}' +
+          '.fm-section{margin-top:36px!important;padding-top:24px!important}' +
+          '#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}' +
+          '#fmReportCard [style*="font-size:24px"]{font-size:22px!important}' +
+          '#fmReportCard [style*="font-size:13px"]{font-size:14px!important}' +
+          '#fmReportCard [style*="font-size:12px"]{font-size:13px!important}' +
+          '#fmReportCard [style*="font-size:10px"]{font-size:11px!important}' +
+          '#fmReportCard [style*="font-size:11px"]{font-size:12px!important}' +
+          'table{font-size:13px!important}' +
+          '}' +
           '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s}' +
           '.fm-cta-btn:hover{transform:scale(1.04)}' +
         '</style>' +
@@ -1426,7 +1443,7 @@
         '<title>Análise Facial, ' + FM._esc(patientName) + '</title>' +
         '<style>body{margin:0;padding:24px 16px;background:#0A0A0A;font-family:Montserrat,sans-serif;color:#F5F0E8}' +
         '#fmReportCard{max-width:794px;margin:0 auto}[contenteditable]{cursor:text}[contenteditable]:focus{border-color:#C8A97E!important;outline:none}' +
-        'img{max-width:100%;height:auto}table{width:100%}@media(max-width:600px){html,body{overflow-x:hidden!important}body{padding:8px 0!important}#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important}#fmReportCard [style*="padding"][style*="32px"]{padding-left:14px!important;padding-right:14px!important}#fmReportCard .fm-sep{margin-left:14px!important;margin-right:14px!important}.fm-header{flex-direction:column!important;gap:8px!important;align-items:flex-start!important}.fm-clinic-name{font-size:24px!important}.fm-row{flex-direction:column!important}#fmReportCard [style*="border-top:1px"]{margin-top:20px!important}#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}table{font-size:11px!important}}' +
+        'img{max-width:100%;height:auto}table{width:100%}@media(max-width:600px){html,body{overflow-x:hidden!important}body{padding:4px 0!important}#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important;font-size:15px!important}#fmReportCard [style*="padding"][style*="32px"]{padding-left:16px!important;padding-right:16px!important}#fmReportCard .fm-sep{margin-left:16px!important;margin-right:16px!important}.fm-header{flex-direction:column!important;gap:10px!important;align-items:flex-start!important}.fm-clinic-name{font-size:26px!important}.fm-row{flex-direction:column!important}.fm-section{margin-top:36px!important;padding-top:24px!important}#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}#fmReportCard [style*="font-size:13px"]{font-size:14px!important}#fmReportCard [style*="font-size:12px"]{font-size:13px!important}#fmReportCard [style*="font-size:10px"]{font-size:11px!important}#fmReportCard [style*="font-size:11px"]{font-size:12px!important}table{font-size:13px!important}}' +
         '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s}' +
         '.fm-cta-btn:hover{transform:scale(1.04)}</style></head><body>' +
         '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;padding-bottom:24px">' +
