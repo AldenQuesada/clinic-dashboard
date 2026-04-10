@@ -1784,205 +1784,11 @@
                  PANEL: DOCUMENTOS LEGAIS
             ═══════════════════════════════════════════════════════ -->
             <div id="cs_panel_documentos" style="display:none">
-              <div class="cs-subsection-hdr">Documentos Legais — Termos de Consentimento</div>
-
-              <!-- Dashboard metricas -->
-              <div id="legal_doc_metrics_dash" style="margin-bottom:16px"></div>
-
-              <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:16px 18px;margin-bottom:18px;font-size:12px;color:#C9A96E;line-height:1.6">
-                <strong style="color:#D4B978">Como funciona:</strong> <span style="color:#E5E7EB">Cadastre modelos de documentos. Quando a paciente chega, o link e enviado por WhatsApp automaticamente. Ela le, assina no celular, e o consentimento fica registrado com validade juridica (Lei 14.063/2020).</span>
-              </div>
-
-              <!-- Templates -->
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div style="font-size:13px;font-weight:700;color:#374151">Modelos de Documentos</div>
-                <button onclick="addLegalDocTemplate()" style="padding:7px 14px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
-                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  Novo Modelo
-                </button>
-              </div>
-
-              <div id="legal_doc_templates_list" style="display:flex;flex-direction:column;gap:8px">
-                <div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando modelos...</div>
-              </div>
-
-              <!-- Editor modal (hidden by default) -->
-              <div id="legal_doc_editor" style="display:none;margin-top:18px;padding:18px;background:#F9FAFB;border-radius:12px;border:1px solid #E5E7EB">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                  <div style="font-size:13px;font-weight:700;color:#374151" id="legal_doc_editor_title">Novo Modelo</div>
-                  <button onclick="closeLegalDocEditor()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:18px">&times;</button>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-                  <div>
-                    <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Nome do modelo</label>
-                    <input id="lde_name" type="text" placeholder="Ex: Consentimento Uso de Imagem" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box" />
-                  </div>
-                  <div>
-                    <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Tipo</label>
-                    <select id="lde_type" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
-                      <option value="injetavel">Injetaveis</option>
-                      <option value="tecnologia">Tecnologias</option>
-                      <option value="manual">Manuais</option>
-                      <option value="uso_imagem">Uso de Imagem</option>
-                      <option value="procedimento">Procedimento</option>
-                      <option value="anestesia">Anestesia</option>
-                      <option value="custom">Personalizado</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Profissional responsavel -->
-                <div style="margin-bottom:12px">
-                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Profissional responsavel</label>
-                  <select id="lde_professional_id" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
-                    <option value="">Usar do agendamento</option>
-                  </select>
-                  <div style="font-size:9px;color:#9CA3AF;margin-top:3px">Define quem assina como profissional neste documento. "Usar do agendamento" = vem da agenda automaticamente.</div>
-                </div>
-
-                <!-- Pixels e redirect por template -->
-                <div style="padding:12px;background:#FFF7ED;border:1px solid #F59E0B30;border-radius:10px;margin-bottom:12px">
-                  <div style="font-size:11px;font-weight:700;color:#D97706;margin-bottom:8px">Rastreamento e Redirect</div>
-                  <div style="margin-bottom:10px">
-                    <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">URL apos assinar</label>
-                    <input id="lde_redirect_url" type="url" placeholder="https://... (vazio = config global)" style="width:100%;padding:8px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box" />
-                  </div>
-                  <div>
-                    <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Pixels de rastreamento</label>
-                    <textarea id="lde_tracking_scripts" rows="3" placeholder="Cole scripts (Facebook Pixel, Google Ads, etc). Vazio = config global." style="width:100%;padding:8px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
-                  </div>
-                </div>
-
-                <!-- Auto-envio -->
-                <div style="padding:12px;background:#F0FDF4;border:1px solid #10B98130;border-radius:10px;margin-bottom:12px">
-                  <div style="font-size:11px;font-weight:700;color:#10B981;margin-bottom:8px">Envio automatico</div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                    <div>
-                      <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Quando status mudar para</label>
-                      <select id="lde_trigger_status" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
-                        <option value="">Desativado (manual)</option>
-                        <option value="na_clinica">Na Clinica (paciente chegou)</option>
-                        <option value="confirmado">Confirmado</option>
-                        <option value="agendado">Agendado</option>
-                        <option value="em_consulta">Em Consulta</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Filtrar por procedimentos <span style="color:#9CA3AF;font-weight:400">(opcional)</span></label>
-                      <input id="lde_trigger_procs" type="text" placeholder="Ex: preenchimento, toxina (separar por virgula)" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box" />
-                      <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Vazio = todos os procedimentos</div>
-                    </div>
-                  </div>
-                </div>
-                <div style="margin-bottom:12px">
-                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Texto do documento</label>
-
-                  <!-- Toolbar -->
-                  <div style="display:flex;flex-wrap:wrap;gap:2px;padding:6px 8px;background:#fff;border:1.5px solid #E5E7EB;border-bottom:none;border-radius:8px 8px 0 0;align-items:center">
-                    <!-- Formatting -->
-                    <button onclick="ldeCmd('bold')" title="Negrito" class="lde-tb">B</button>
-                    <button onclick="ldeCmd('italic')" title="Italico" class="lde-tb" style="font-style:italic">I</button>
-                    <button onclick="ldeCmd('underline')" title="Sublinhado" class="lde-tb" style="text-decoration:underline">U</button>
-                    <button onclick="ldeCmd('strikeThrough')" title="Riscado" class="lde-tb" style="text-decoration:line-through">S</button>
-                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
-                    <!-- Font size -->
-                    <select onchange="ldeCmd('fontSize',this.value);this.value=''" title="Tamanho" style="padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;background:#fff;cursor:pointer">
-                      <option value="">Tam.</option>
-                      <option value="1">Pequeno</option>
-                      <option value="3">Normal</option>
-                      <option value="5">Grande</option>
-                      <option value="7">Muito grande</option>
-                    </select>
-                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
-                    <!-- Alignment -->
-                    <button onclick="ldeCmd('justifyLeft')" title="Esquerda" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
-                    <button onclick="ldeCmd('justifyCenter')" title="Centro" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg></button>
-                    <button onclick="ldeCmd('justifyRight')" title="Direita" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg></button>
-                    <button onclick="ldeCmd('justifyFull')" title="Justificado" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/></svg></button>
-                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
-                    <!-- Lists -->
-                    <button onclick="ldeCmd('insertOrderedList')" title="Lista numerada" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="3" y="7" fill="currentColor" font-size="7" stroke="none">1</text><text x="3" y="13" fill="currentColor" font-size="7" stroke="none">2</text><text x="3" y="19" fill="currentColor" font-size="7" stroke="none">3</text></svg></button>
-                    <button onclick="ldeCmd('insertUnorderedList')" title="Lista" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg></button>
-                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
-                    <!-- Undo/Redo -->
-                    <button onclick="ldeCmd('undo')" title="Desfazer" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
-                    <button onclick="ldeCmd('redo')" title="Refazer" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg></button>
-                    <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
-                    <!-- Variables dropdown -->
-                    <select onchange="ldeInsertVar(this.value);this.selectedIndex=0" style="padding:4px 8px;border:1px solid #0891B2;border-radius:6px;font-size:11px;background:#ECFEFF;color:#0891B2;font-weight:600;cursor:pointer">
-                      <option value="">+ Variavel</option>
-                      <optgroup label="Paciente">
-                        <option value="nome">Nome do paciente</option>
-                        <option value="cpf">CPF</option>
-                        <option value="endereco_paciente">Endereco do paciente</option>
-                        <option value="data_nascimento">Data de nascimento</option>
-                      </optgroup>
-                      <optgroup label="Profissional">
-                        <option value="profissional">Nome do profissional</option>
-                        <option value="registro_profissional">Registro (CRM/CRO/CREFITO)</option>
-                        <option value="especialidade">Especialidade</option>
-                      </optgroup>
-                      <optgroup label="Clinica">
-                        <option value="clinica">Nome da clinica</option>
-                        <option value="cnpj">CNPJ</option>
-                        <option value="endereco_clinica">Endereco da clinica</option>
-                      </optgroup>
-                      <optgroup label="Consulta">
-                        <option value="procedimento">Procedimento</option>
-                        <option value="data">Data (dd/mm/aaaa)</option>
-                        <option value="data_extenso">Data por extenso</option>
-                        <option value="hora">Horario</option>
-                      </optgroup>
-                      <optgroup label="TCLE Dinamico">
-                        <option value="lista_procedimentos">Lista de procedimentos</option>
-                        <option value="blocos_procedimentos">Blocos completos (riscos, cuidados, etc)</option>
-                      </optgroup>
-                    </select>
-                  </div>
-
-                  <!-- Editor contenteditable -->
-                  <div id="lde_content" contenteditable="true" style="min-height:300px;max-height:500px;overflow-y:auto;padding:16px;border:1.5px solid #E5E7EB;border-top:none;border-radius:0 0 8px 8px;font-size:13px;font-family:'Inter',sans-serif;line-height:1.8;color:#1F2937;background:#fff;outline:none" data-placeholder="Comece a digitar o texto do documento..."></div>
-
-                  <style>
-                    .lde-tb{padding:4px 7px;background:none;border:1px solid transparent;border-radius:4px;cursor:pointer;color:#374151;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;transition:all .1s}
-                    .lde-tb:hover{background:#F3F4F6;border-color:#E5E7EB}
-                    .lde-tb:active{background:#E5E7EB}
-                    #lde_content:empty::before{content:attr(data-placeholder);color:#D1D5DB;pointer-events:none}
-                    #lde_content .lde-var{display:inline;padding:1px 6px;background:#ECFEFF;color:#0891B2;border-radius:4px;font-weight:600;font-size:12px;border:1px solid #06B6D440}
-                  </style>
-                </div>
-                <div style="display:flex;justify-content:flex-end;gap:8px">
-                  <button onclick="closeLegalDocEditor()" style="padding:9px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
-                  <button onclick="saveLegalDocTemplate()" style="padding:9px 20px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">Salvar Modelo</button>
-                </div>
-              </div>
-
-              <!-- Documentos recentes -->
-              <div style="margin-top:24px;padding-top:18px;border-top:1px solid #F3F4F6">
-                <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px">Documentos Recentes</div>
-                <div id="legal_doc_requests_list" style="display:flex;flex-direction:column;gap:6px">
-                  <div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Nenhum documento gerado ainda.</div>
-                </div>
-              </div>
-
-              <!-- Configuracoes de rastreamento e redirect -->
-              <div style="margin-top:24px;padding-top:18px;border-top:1px solid #F3F4F6">
-                <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:4px">Configuracoes Avancadas</div>
-                <div style="font-size:10px;color:#9CA3AF;margin-bottom:14px">Controle o que acontece apos a assinatura do documento.</div>
-
-                <div style="margin-bottom:14px">
-                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">URL de redirecionamento apos assinar</label>
-                  <input id="ld_consent_redirect_url" type="url" placeholder="https://miriandpaula.br (deixe vazio para fechar a pagina)" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box" />
-                  <div style="font-size:9px;color:#9CA3AF;margin-top:3px">A paciente sera redirecionada para este link ao clicar "Finalizar".</div>
-                </div>
-
-                <div style="margin-bottom:14px">
-                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Scripts de rastreamento (pixels)</label>
-                  <textarea id="ld_consent_tracking_scripts" rows="5" placeholder="Cole aqui os scripts do Facebook Pixel, Google Analytics, TikTok Pixel, etc." style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
-                  <div style="font-size:9px;color:#9CA3AF;margin-top:3px">HTML com &lt;script&gt; tags. Serao injetados na pagina de assinatura publica. Ex: Facebook Pixel, Google Ads, GTM.</div>
-                </div>
-
-                <button onclick="saveLegalDocAdvancedConfig()" style="padding:8px 18px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Salvar Configuracoes</button>
+              <div style="text-align:center;padding:40px 20px;color:#6B7280">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="1.5" style="margin-bottom:12px"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div style="font-size:14px;font-weight:700;color:#374151;margin-bottom:6px">Documentos Legais</div>
+                <div style="font-size:12px;margin-bottom:16px">Os documentos legais agora tem pagina dedicada com layout completo.</div>
+                <button onclick="if(window.navigateTo)navigateTo('settings-documentos')" style="padding:11px 28px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">Abrir Documentos Legais</button>
               </div>
             </div>
 
@@ -3024,6 +2830,161 @@
           </div>
           <h2 style="font-size:18px;font-weight:700;margin:0 0 8px">Gestão de Orçamentos em desenvolvimento</h2>
           <p style="color:var(--text-muted);font-size:13px;max-width:400px;margin:0 auto">O módulo completo de orçamentos com criação, envio, assinatura digital e acompanhamento estará disponível em breve.</p>
+        </div>
+      </div>
+
+      <!-- ==================== DOCUMENTOS LEGAIS ==================== -->
+      <div class="page" id="page-settings-documentos">
+        <div class="page-title-row">
+          <div class="page-title-left">
+            <h1 class="page-title">Documentos Legais</h1>
+            <p class="page-subtitle">Termos de consentimento com assinatura digital — Lei 14.063/2020</p>
+          </div>
+          <button onclick="addLegalDocTemplate()" style="padding:9px 18px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo Modelo
+          </button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;margin-top:16px">
+          <!-- Coluna principal -->
+          <div>
+            <!-- Dashboard metricas -->
+            <div id="legal_doc_metrics_dash" style="margin-bottom:16px"></div>
+
+            <!-- Templates agrupados -->
+            <div id="legal_doc_templates_list" style="display:flex;flex-direction:column;gap:8px">
+              <div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando modelos...</div>
+            </div>
+
+            <!-- Editor modal -->
+            <div id="legal_doc_editor" style="display:none;margin-top:18px;padding:18px;background:#F9FAFB;border-radius:12px;border:1px solid #E5E7EB">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <div style="font-size:13px;font-weight:700;color:#374151" id="legal_doc_editor_title">Novo Modelo</div>
+                <button onclick="closeLegalDocEditor()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:18px">&times;</button>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Nome do modelo</label>
+                  <input id="lde_name" type="text" placeholder="Ex: Consentimento Uso de Imagem" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box" />
+                </div>
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Tipo</label>
+                  <select id="lde_type" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
+                    <option value="injetavel">Injetaveis</option>
+                    <option value="tecnologia">Tecnologias</option>
+                    <option value="manual">Manuais</option>
+                    <option value="uso_imagem">Uso de Imagem</option>
+                    <option value="procedimento">Procedimento</option>
+                    <option value="anestesia">Anestesia</option>
+                    <option value="custom">Personalizado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-bottom:12px">
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Profissional responsavel</label>
+                <select id="lde_professional_id" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">
+                  <option value="">Usar do agendamento</option>
+                </select>
+                <div style="font-size:9px;color:#9CA3AF;margin-top:3px">Define quem assina como profissional. "Usar do agendamento" = vem da agenda.</div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div style="padding:12px;background:#FFF7ED;border:1px solid #F59E0B30;border-radius:10px">
+                  <div style="font-size:10px;font-weight:700;color:#D97706;margin-bottom:6px">Rastreamento</div>
+                  <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">URL apos assinar</label>
+                  <input id="lde_redirect_url" type="url" placeholder="https://... (vazio = global)" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box;margin-bottom:8px" />
+                  <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Pixels</label>
+                  <textarea id="lde_tracking_scripts" rows="2" placeholder="Scripts FB/Google/TikTok" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:9px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+                </div>
+                <div style="padding:12px;background:#F0FDF4;border:1px solid #10B98130;border-radius:10px">
+                  <div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:6px">Envio automatico</div>
+                  <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Quando status mudar para</label>
+                  <select id="lde_trigger_status" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box;background:#fff;margin-bottom:8px">
+                    <option value="">Desativado</option>
+                    <option value="na_clinica">Na Clinica</option>
+                    <option value="confirmado">Confirmado</option>
+                    <option value="agendado">Agendado</option>
+                    <option value="em_consulta">Em Consulta</option>
+                  </select>
+                  <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Procedimentos</label>
+                  <input id="lde_trigger_procs" type="text" placeholder="Todos (ou separar por virgula)" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box" />
+                </div>
+              </div>
+
+              <div style="margin-bottom:12px">
+                <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Texto do documento</label>
+                <div style="display:flex;flex-wrap:wrap;gap:2px;padding:6px 8px;background:#fff;border:1.5px solid #E5E7EB;border-bottom:none;border-radius:8px 8px 0 0;align-items:center">
+                  <button onclick="ldeCmd('bold')" title="Negrito" class="lde-tb">B</button>
+                  <button onclick="ldeCmd('italic')" title="Italico" class="lde-tb" style="font-style:italic">I</button>
+                  <button onclick="ldeCmd('underline')" title="Sublinhado" class="lde-tb" style="text-decoration:underline">U</button>
+                  <button onclick="ldeCmd('strikeThrough')" title="Riscado" class="lde-tb" style="text-decoration:line-through">S</button>
+                  <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                  <select onchange="ldeCmd('fontSize',this.value);this.value=''" title="Tamanho" style="padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;background:#fff;cursor:pointer">
+                    <option value="">Tam.</option><option value="1">Pequeno</option><option value="3">Normal</option><option value="5">Grande</option><option value="7">Muito grande</option>
+                  </select>
+                  <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                  <button onclick="ldeCmd('justifyLeft')" title="Esquerda" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg></button>
+                  <button onclick="ldeCmd('justifyCenter')" title="Centro" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/></svg></button>
+                  <button onclick="ldeCmd('justifyRight')" title="Direita" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/></svg></button>
+                  <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                  <button onclick="ldeCmd('insertOrderedList')" title="Lista numerada" class="lde-tb">1.</button>
+                  <button onclick="ldeCmd('insertUnorderedList')" title="Lista" class="lde-tb">&bull;</button>
+                  <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                  <button onclick="ldeCmd('undo')" title="Desfazer" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+                  <button onclick="ldeCmd('redo')" title="Refazer" class="lde-tb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg></button>
+                  <div style="width:1px;height:20px;background:#E5E7EB;margin:0 4px"></div>
+                  <select onchange="ldeInsertVar(this.value);this.selectedIndex=0" style="padding:4px 8px;border:1px solid #0891B2;border-radius:6px;font-size:11px;background:#ECFEFF;color:#0891B2;font-weight:600;cursor:pointer">
+                    <option value="">+ Variavel</option>
+                    <optgroup label="Paciente"><option value="nome">Nome</option><option value="cpf">CPF</option><option value="endereco_paciente">Endereco</option><option value="data_nascimento">Nascimento</option></optgroup>
+                    <optgroup label="Profissional"><option value="profissional">Nome</option><option value="registro_profissional">Registro</option><option value="especialidade">Especialidade</option></optgroup>
+                    <optgroup label="Clinica"><option value="clinica">Nome</option><option value="cnpj">CNPJ</option><option value="endereco_clinica">Endereco</option></optgroup>
+                    <optgroup label="Consulta"><option value="procedimento">Procedimento</option><option value="data">Data</option><option value="data_extenso">Data extenso</option><option value="hora">Horario</option></optgroup>
+                    <optgroup label="TCLE Dinamico"><option value="lista_procedimentos">Lista procedimentos</option><option value="blocos_procedimentos">Blocos completos</option></optgroup>
+                  </select>
+                </div>
+                <div id="lde_content" contenteditable="true" style="min-height:300px;max-height:500px;overflow-y:auto;padding:16px;border:1.5px solid #E5E7EB;border-top:none;border-radius:0 0 8px 8px;font-size:13px;font-family:'Inter',sans-serif;line-height:1.8;color:#1F2937;background:#fff;outline:none" data-placeholder="Comece a digitar o texto do documento..."></div>
+                <style>
+                  .lde-tb{padding:4px 7px;background:none;border:1px solid transparent;border-radius:4px;cursor:pointer;color:#374151;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;transition:all .1s}
+                  .lde-tb:hover{background:#F3F4F6;border-color:#E5E7EB}
+                  .lde-tb:active{background:#E5E7EB}
+                  #lde_content:empty::before{content:attr(data-placeholder);color:#D1D5DB;pointer-events:none}
+                  #lde_content .lde-var{display:inline;padding:1px 6px;background:#ECFEFF;color:#0891B2;border-radius:4px;font-weight:600;font-size:12px;border:1px solid #06B6D440}
+                </style>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                <button onclick="closeLegalDocEditor()" style="padding:9px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
+                <button onclick="saveLegalDocTemplate()" style="padding:9px 20px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer">Salvar Modelo</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Coluna lateral -->
+          <div>
+            <!-- Documentos recentes -->
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px">Documentos Recentes</div>
+              <div id="legal_doc_requests_list" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto">
+                <div style="text-align:center;padding:24px;color:#9CA3AF;font-size:11px">Nenhum documento gerado ainda.</div>
+              </div>
+            </div>
+
+            <!-- Config global -->
+            <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px">
+              <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:4px">Configuracoes Globais</div>
+              <div style="font-size:9px;color:#9CA3AF;margin-bottom:10px">Fallback quando o template nao tem config propria.</div>
+              <div style="margin-bottom:10px">
+                <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">URL redirect padrao</label>
+                <input id="ld_consent_redirect_url" type="url" placeholder="https://..." style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box" />
+              </div>
+              <div style="margin-bottom:10px">
+                <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Pixels globais</label>
+                <textarea id="ld_consent_tracking_scripts" rows="3" placeholder="Scripts FB/Google/TikTok" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:9px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+              </div>
+              <button onclick="saveLegalDocAdvancedConfig()" style="width:100%;padding:8px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Salvar</button>
+            </div>
+          </div>
         </div>
       </div>
 

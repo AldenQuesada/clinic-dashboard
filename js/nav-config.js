@@ -297,6 +297,7 @@
         { page: 'settings-backups',      label: 'Backups',                breadcrumb: 'Configurações > Backups' },
         { page: 'settings-logs',         label: 'Logs do Sistema',        breadcrumb: 'Configurações > Logs do Sistema' },
         { page: 'settings-anamnese',     label: 'Fichas de Anamnese',     breadcrumb: 'Configurações > Fichas de Anamnese' },
+        { page: 'settings-documentos',   label: 'Documentos Legais',      breadcrumb: 'Configurações > Documentos Legais' },
       ],
     },
 

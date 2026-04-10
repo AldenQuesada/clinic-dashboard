@@ -393,16 +393,37 @@
     list.innerHTML = html
   }
 
-  // ── Auto-load when section opens ───────────────────────────
+  // ── Auto-load when page opens ───────────────────────────────
+  var _ldLoaded = false
+  function _initLegalDocsPage() {
+    if (_ldLoaded) return
+    _ldLoaded = true
+    loadLegalDocMetrics()
+    loadLegalDocTemplates()
+    loadLegalDocRequests()
+    loadLegalDocAdvancedConfig()
+  }
+
+  // Hook via navigateTo
+  var _origNavigateTo = window.navigateTo
+  if (_origNavigateTo) {
+    window.navigateTo = function (pageId) {
+      _origNavigateTo(pageId)
+      if (pageId === 'settings-documentos') {
+        _ldLoaded = false
+        _initLegalDocsPage()
+      }
+    }
+  }
+
+  // Fallback: hook antigo para settings panel (caso ainda use)
   var _origClinicSection2 = window.clinicSection
   if (_origClinicSection2) {
     window.clinicSection = function (sec) {
       _origClinicSection2(sec)
       if (sec === 'documentos') {
-        loadLegalDocMetrics()
-        loadLegalDocTemplates()
-        loadLegalDocRequests()
-        loadLegalDocAdvancedConfig()
+        _ldLoaded = false
+        _initLegalDocsPage()
       }
     }
   }
