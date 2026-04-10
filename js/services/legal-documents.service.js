@@ -197,44 +197,90 @@
   //  AUTO-SEND: gerar docs automaticamente por status/procedimento
   // ══════════════════════════════════════════════════════════
 
-  // ── Montar bloco de procedimentos + riscos para TCLE ─────
-  function buildProcedureBlock(procedimentos) {
-    if (!procedimentos || !procedimentos.length) return { lista: '', riscos: '' }
+  // ── Carregar blocos de procedimentos do banco ───────────────
+  var _procedureBlocks = null
 
-    var lista = ''
-    var riscos = ''
-    procedimentos.forEach(function (p, i) {
-      lista += (i + 1) + '. ' + (p.nome || p) + '\n'
-      if (p.riscos_complicacoes && p.riscos_complicacoes.length) {
-        riscos += '\n' + (p.nome || p).toUpperCase() + ':\n'
-        p.riscos_complicacoes.forEach(function (r) {
-          riscos += '  - ' + r + '\n'
-        })
-      }
-      if (p.cuidados_pos && p.cuidados_pos.length) {
-        riscos += '\nCuidados pos-procedimento (' + (p.nome || p) + '):\n'
-        p.cuidados_pos.forEach(function (c) {
-          riscos += '  - ' + c + '\n'
-        })
-      }
+  async function loadProcedureBlocks() {
+    if (!window._sbShared) return []
+    var res = await window._sbShared.rpc('legal_doc_list_procedure_blocks', {})
+    if (res.data && res.data.ok) {
+      _procedureBlocks = res.data.data || []
+      return _procedureBlocks
+    }
+    return []
+  }
+
+  // ── Resolver quais blocos correspondem aos procedimentos ───
+  function matchProcedureBlocks(procedureNames) {
+    if (!_procedureBlocks || !procedureNames || !procedureNames.length) return []
+
+    var matched = []
+    procedureNames.forEach(function (name) {
+      var nameLower = (typeof name === 'string' ? name : name.nome || '').toLowerCase()
+      var found = _procedureBlocks.find(function (block) {
+        // Match por nome exato
+        if (block.procedure_name.toLowerCase() === nameLower) return true
+        // Match por keywords
+        if (block.procedure_keys && block.procedure_keys.length) {
+          return block.procedure_keys.some(function (key) {
+            return nameLower.indexOf(key.toLowerCase()) >= 0
+          })
+        }
+        return false
+      })
+      if (found && matched.indexOf(found) === -1) matched.push(found)
+    })
+    return matched
+  }
+
+  // ── Montar HTML dos blocos empilhados ──────────────────────
+  function buildStackedBlocks(blocks) {
+    if (!blocks || !blocks.length) return { blocos_procedimentos: '', lista_procedimentos: '' }
+
+    var lista = blocks.map(function (b, i) { return (i + 1) + '. ' + b.procedure_name }).join(', ')
+
+    var html = ''
+    blocks.forEach(function (block, idx) {
+      if (idx > 0) html += '<hr style="margin:24px 0;border:none;border-top:1px solid #E5E7EB">'
+
+      html += '<h3>PROCEDIMENTO ' + (idx + 1) + ': ' + block.procedure_name.toUpperCase() + '</h3>'
+
+      if (block.finalidade) html += '<h4>Finalidade</h4><p>' + block.finalidade + '</p>'
+      if (block.descricao) html += '<h4>Descricao do Procedimento</h4>' + block.descricao
+      if (block.alternativas) html += '<h4>Alternativas</h4>' + block.alternativas
+      if (block.beneficios) html += '<h4>Beneficios Esperados</h4>' + block.beneficios
+      if (block.riscos) html += '<h4>Riscos e Complicacoes</h4>' + block.riscos
+        + '<p><em>Todas essas reacoes sao geralmente transitorias e reversiveis. Comprometo-me a comunicar sintomas anormais e comparecer as consultas de evolucao.</em></p>'
+      if (block.contraindicacoes) html += '<h4>Contraindicacoes</h4>' + block.contraindicacoes
+      if (block.resultados) html += '<h4>Resultados e Duracao</h4>' + block.resultados
+      if (block.cuidados_pre) html += '<h4>Cuidados Pre-Procedimento</h4>' + block.cuidados_pre
+      if (block.cuidados_pos) html += '<h4>Cuidados Pos-Procedimento</h4>' + block.cuidados_pos
+      if (block.conforto) html += '<h4>Tecnicas de Conforto</h4>' + block.conforto
     })
 
-    return { lista: lista.trim(), riscos: riscos.trim() }
+    return { blocos_procedimentos: html, lista_procedimentos: lista }
   }
 
   // ── Criar TCLE composto para multiplos procedimentos ──────
-  async function createCompositeTCLE(templateId, apptOrOpts, procedimentos) {
+  async function createCompositeTCLE(templateSlugOrId, apptOrOpts, procedureNames) {
     if (!window._sbShared) return { ok: false, error: 'Supabase nao disponivel' }
 
     if (!_templates) await loadTemplates()
-    var tmpl = (_templates || []).find(function (t) { return t.id === templateId || t.slug === templateId })
-    if (!tmpl) return { ok: false, error: 'Template nao encontrado' }
+    if (!_procedureBlocks) await loadProcedureBlocks()
 
+    var tmpl = (_templates || []).find(function (t) { return t.id === templateSlugOrId || t.slug === templateSlugOrId })
+    if (!tmpl) return { ok: false, error: 'Template TCLE nao encontrado' }
+
+    // Resolver blocos
+    var blocks = matchProcedureBlocks(procedureNames)
+    if (!blocks.length) return { ok: false, error: 'Nenhum bloco de procedimento encontrado para: ' + procedureNames.join(', ') }
+
+    // Construir variaveis + blocos
     var vars = buildVars(apptOrOpts)
-    var blocks = buildProcedureBlock(procedimentos)
-    vars.lista_procedimentos = blocks.lista
-    vars.bloco_riscos = blocks.riscos
-    vars.procedimento = procedimentos.map(function (p) { return p.nome || p }).join(', ')
+    var stacked = buildStackedBlocks(blocks)
+    vars.blocos_procedimentos = stacked.blocos_procedimentos
+    vars.lista_procedimentos = stacked.lista_procedimentos
+    vars.procedimento = stacked.lista_procedimentos
 
     var snapshot = renderTemplate(tmpl.content, vars)
 
@@ -282,8 +328,10 @@
     revokeRequest:    revokeRequest,
     generateLink:     generateLink,
     autoSendForStatus:  autoSendForStatus,
-    createCompositeTCLE: createCompositeTCLE,
-    buildProcedureBlock: buildProcedureBlock,
+    createCompositeTCLE:  createCompositeTCLE,
+    loadProcedureBlocks:  loadProcedureBlocks,
+    matchProcedureBlocks: matchProcedureBlocks,
+    buildStackedBlocks:   buildStackedBlocks,
     renderTemplate:   renderTemplate,
     buildVars:        buildVars,
   })
