@@ -359,6 +359,7 @@
         loadLegalDocMetrics()
         loadLegalDocTemplates()
         loadLegalDocRequests()
+        loadLegalDocAdvancedConfig()
       }
     }
   }
@@ -405,6 +406,44 @@
   }
 
   // ── Expose ─────────────────────────────────────────────────
+  // ── Config avancada (redirect + pixels) ────────────────────
+  async function loadLegalDocAdvancedConfig() {
+    if (!window._sbShared) return
+    try {
+      var res = await window._sbShared.from('clinics').select('settings,website').limit(1).single()
+      if (!res.data) return
+      var s = res.data.settings || {}
+      var el1 = document.getElementById('ld_consent_redirect_url')
+      var el2 = document.getElementById('ld_consent_tracking_scripts')
+      if (el1) el1.value = s.consent_redirect_url || res.data.website || ''
+      if (el2) el2.value = s.consent_tracking_scripts || ''
+    } catch (e) {}
+  }
+
+  async function saveLegalDocAdvancedConfig() {
+    if (!window._sbShared) return
+    var redirectUrl = (document.getElementById('ld_consent_redirect_url') || {}).value || ''
+    var scripts = (document.getElementById('ld_consent_tracking_scripts') || {}).value || ''
+
+    try {
+      // Ler settings atuais
+      var res = await window._sbShared.from('clinics').select('id,settings').limit(1).single()
+      if (!res.data) return
+      var settings = res.data.settings || {}
+      settings.consent_redirect_url = redirectUrl.trim() || null
+      settings.consent_tracking_scripts = scripts.trim() || null
+
+      var upd = await window._sbShared.from('clinics').update({ settings: settings }).eq('id', res.data.id)
+      if (upd.error) {
+        if (window._showToast) _showToast('Documentos', 'Erro: ' + upd.error.message, 'error')
+      } else {
+        if (window._showToast) _showToast('Documentos', 'Configuracoes salvas', 'success')
+      }
+    } catch (e) {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + e.message, 'error')
+    }
+  }
+
   window.loadLegalDocMetrics    = loadLegalDocMetrics
   window.loadLegalDocTemplates  = loadLegalDocTemplates
   window.loadLegalDocRequests   = loadLegalDocRequests
@@ -415,6 +454,8 @@
   window.testLegalDocTemplate    = testLegalDocTemplate
   window.duplicateLegalDocTemplate = duplicateLegalDocTemplate
   window.resendLegalDocWhatsApp  = resendLegalDocWhatsApp
+  window.saveLegalDocAdvancedConfig = saveLegalDocAdvancedConfig
+  window.loadLegalDocAdvancedConfig = loadLegalDocAdvancedConfig
   window.ldeCmd                 = ldeCmd
   window.ldeInsertVar           = ldeInsertVar
 })()

@@ -1942,6 +1942,26 @@
                   <div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Nenhum documento gerado ainda.</div>
                 </div>
               </div>
+
+              <!-- Configuracoes de rastreamento e redirect -->
+              <div style="margin-top:24px;padding-top:18px;border-top:1px solid #F3F4F6">
+                <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:4px">Configuracoes Avancadas</div>
+                <div style="font-size:10px;color:#9CA3AF;margin-bottom:14px">Controle o que acontece apos a assinatura do documento.</div>
+
+                <div style="margin-bottom:14px">
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">URL de redirecionamento apos assinar</label>
+                  <input id="ld_consent_redirect_url" type="url" placeholder="https://miriandpaula.br (deixe vazio para fechar a pagina)" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box" />
+                  <div style="font-size:9px;color:#9CA3AF;margin-top:3px">A paciente sera redirecionada para este link ao clicar "Finalizar".</div>
+                </div>
+
+                <div style="margin-bottom:14px">
+                  <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px">Scripts de rastreamento (pixels)</label>
+                  <textarea id="ld_consent_tracking_scripts" rows="5" placeholder="Cole aqui os scripts do Facebook Pixel, Google Analytics, TikTok Pixel, etc." style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:11px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+                  <div style="font-size:9px;color:#9CA3AF;margin-top:3px">HTML com &lt;script&gt; tags. Serao injetados na pagina de assinatura publica. Ex: Facebook Pixel, Google Ads, GTM.</div>
+                </div>
+
+                <button onclick="saveLegalDocAdvancedConfig()" style="padding:8px 18px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Salvar Configuracoes</button>
+              </div>
             </div>
 
             <!-- ═══════════════════════════════════════════════════════

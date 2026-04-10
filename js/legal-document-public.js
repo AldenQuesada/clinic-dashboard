@@ -107,7 +107,40 @@
 
     _step = 0
     _render()
+    _loadClinicConfig()
     _validateToken()
+  }
+
+  // ── Carregar config de redirect + pixels da clinica ────────
+  async function _loadClinicConfig() {
+    try {
+      var res = await _sb.from('clinics').select('settings,website').limit(1).single()
+      if (!res.data) return
+      var s = res.data.settings || {}
+
+      // URL de redirect apos assinar (configuravel em settings.consent_redirect_url)
+      window._ldRedirectUrl = s.consent_redirect_url || res.data.website || ''
+
+      // Injetar pixels de rastreamento (configuravel em settings.consent_tracking_scripts)
+      // Aceita HTML bruto com <script> tags — admin tem controle total
+      var scripts = s.consent_tracking_scripts || ''
+      if (scripts) {
+        var div = document.createElement('div')
+        div.innerHTML = scripts
+        var scriptEls = div.querySelectorAll('script')
+        scriptEls.forEach(function (el) {
+          var s = document.createElement('script')
+          if (el.src) s.src = el.src
+          else s.textContent = el.textContent
+          if (el.async) s.async = true
+          document.head.appendChild(s)
+        })
+        // Elementos nao-script (noscript, img pixels)
+        div.querySelectorAll('noscript,img').forEach(function (el) {
+          document.body.appendChild(el.cloneNode(true))
+        })
+      }
+    } catch (e) { /* silencioso */ }
   }
 
   // ── Validate token ─────────────────────────────────────────
@@ -629,10 +662,22 @@
 
   window._ldFormatCpf = _formatCpf
 
-  // ── Finalizar (redirect) ──────────────────────────────────
+  // ── Finalizar (redirect configuravel via clinics.settings) ─
   window._ldFinish = function () {
-    // Redirecionar para o site da clinica
-    window.location.href = 'https://miriandpaula.br'
+    var url = (window._ldRedirectUrl || '').trim()
+    if (url) {
+      window.location.href = url
+    } else {
+      // Fallback: fecha a aba ou vai pro site
+      window.close()
+      // Se nao conseguiu fechar (restricao do browser), mostra mensagem
+      setTimeout(function () {
+        var root = document.getElementById('ldRoot')
+        if (root) root.innerHTML = '<div class="ld-card"><div class="ld-success" style="padding:60px 28px">'
+          + '<div class="ld-success-title" style="color:#10B981">Tudo certo!</div>'
+          + '<div class="ld-success-text">Voce ja pode fechar esta pagina.</div></div></div>'
+      }, 500)
+    }
   }
 
   // ── Download PDF (premium layout) ─────────────────────────
