@@ -33,13 +33,41 @@
     })
   }
 
+  // ── Resolver profissional responsavel por procedimento ─────
+  var _resolvedProfCache = {}
+
+  async function resolveProfessionalForProcedure(procedureName) {
+    if (!procedureName || !window._sbShared) return null
+    var key = procedureName.toLowerCase().trim()
+    if (_resolvedProfCache[key]) return _resolvedProfCache[key]
+
+    var res = await window._sbShared.rpc('resolve_professional_for_procedure', { p_procedure: procedureName })
+    if (res.data && res.data.ok) {
+      _resolvedProfCache[key] = res.data
+      return res.data
+    }
+    return null
+  }
+
   // ── Construir variaveis a partir de appointment + profissional
-  function buildVars(opts) {
+  function buildVars(opts, resolvedProf) {
     var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
     var prof = null
-    if (opts.profissionalIdx !== undefined && profs[opts.profissionalIdx]) {
+
+    // 1. Tentar profissional resolvido automaticamente pelo procedimento
+    if (resolvedProf && resolvedProf.ok) {
+      prof = {
+        display_name: resolvedProf.display_name,
+        crm: resolvedProf.crm,
+        specialty: resolvedProf.specialty,
+        id: resolvedProf.professional_id,
+      }
+    }
+    // 2. Fallback: profissional do agendamento
+    if (!prof && opts.profissionalIdx !== undefined && profs[opts.profissionalIdx]) {
       prof = profs[opts.profissionalIdx]
-    } else if (opts.professional_id) {
+    }
+    if (!prof && opts.professional_id) {
       prof = profs.find(function (p) { return p.id === opts.professional_id })
     }
 
@@ -125,8 +153,12 @@
     var tmpl = (_templates || []).find(function (t) { return t.id === templateId })
     if (!tmpl) return { ok: false, error: 'Template nao encontrado' }
 
+    // Resolver profissional automaticamente pelo procedimento
+    var procedimento = apptOrOpts.procedimento || apptOrOpts.procedure_name || ''
+    var resolvedProf = procedimento ? await resolveProfessionalForProcedure(procedimento) : null
+
     // Construir variaveis
-    var vars = buildVars(apptOrOpts)
+    var vars = buildVars(apptOrOpts, resolvedProf)
 
     // Renderizar snapshot (ou usar override se fornecido)
     var snapshot = apptOrOpts._contentOverride || renderTemplate(tmpl.content, vars)
@@ -379,5 +411,6 @@
     buildStackedBlocks:   buildStackedBlocks,
     renderTemplate:   renderTemplate,
     buildVars:        buildVars,
+    resolveProfessionalForProcedure: resolveProfessionalForProcedure,
   })
 })()
