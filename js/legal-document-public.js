@@ -135,7 +135,13 @@
       }
 
       // 2. Config global da clinica
-      var clinicRes = await _sb.from('clinics').select('settings,website').limit(1).single()
+      var clinicRes = await _sb.from('clinics').select('settings,website,whatsapp,phone').limit(1).single()
+      // WhatsApp da clinica para tela de erro
+      if (clinicRes.data) {
+        var waNum = (clinicRes.data.whatsapp || clinicRes.data.phone || '').replace(/\D/g, '')
+        if (waNum && !waNum.startsWith('55')) waNum = '55' + waNum
+        if (waNum) window._ldClinicWhatsApp = waNum
+      }
       var gs = clinicRes.data ? (clinicRes.data.settings || {}) : {}
       var globalPixels = null
       try { globalPixels = gs.consent_pixels ? (typeof gs.consent_pixels === 'string' ? JSON.parse(gs.consent_pixels) : gs.consent_pixels) : null } catch (e) {}
@@ -388,11 +394,17 @@
   }
 
   function _renderError() {
+    var waNumber = window._ldClinicWhatsApp || '5544991622986'
+    var waMsg = encodeURIComponent('Ol\u00e1, tive dificuldade para acessar meu documento de consentimento. Pode me ajudar?')
+    var waLink = 'https://wa.me/' + waNumber + '?text=' + waMsg
+
     return '<div class="ld-card"><div class="ld-error">'
       + '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
       + '<div style="font-size:18px;font-weight:700;margin-bottom:8px;color:#111">Documento Indispon&#237;vel</div>'
       + '<div style="font-size:13px;color:#6B7280;line-height:1.6;max-width:300px;margin:0 auto">' + _esc(_errorMsg) + '</div>'
-      + '<div style="margin-top:20px;font-size:11px;color:#9CA3AF">Se persistir, entre em contato com a cl&#237;nica.</div>'
+      + '<a href="' + waLink + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:12px 24px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;text-decoration:none;font-family:inherit">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.387 0-4.597-.838-6.326-2.234l-.151-.121-3.297 1.105 1.105-3.297-.121-.151A9.96 9.96 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>'
+      + 'Falar com a cl&#237;nica</a>'
       + '</div></div>'
   }
 
