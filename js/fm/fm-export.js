@@ -1369,88 +1369,54 @@
       if (img.src && (img.src.startsWith('blob:') || img.src.startsWith('data:'))) blobImgs.push(img)
     })
 
-    // Pre-convert comparator images
-    var cmpAnglesB = [
-      { key: 'front', label: 'Frontal' },
-      { key: '45', label: '45\u00B0' },
-      { key: 'lateral', label: 'Lateral' }
-    ]
-    var cmpB64B = {}
-    var cmpToConvertB = []
-    cmpAnglesB.forEach(function (a) {
-      var bs = FM._photoUrls && FM._photoUrls[a.key]
-      var as2 = FM._afterPhotoByAngle && FM._afterPhotoByAngle[a.key]
-      if (bs && as2) {
-        cmpB64B[a.key] = { before: null, after: null }
-        cmpToConvertB.push({ key: a.key, prop: 'before', src: bs })
-        cmpToConvertB.push({ key: a.key, prop: 'after', src: as2 })
-      }
-    })
-
-    function _cvtUrl(src, cb) {
-      if (!src) { cb(null); return }
-      if (src.startsWith('data:')) { cb(src); return }
-      var cv = document.createElement('canvas')
-      var ti = new Image()
-      ti.crossOrigin = 'anonymous'
-      ti.onload = function () {
-        cv.width = ti.naturalWidth; cv.height = ti.naturalHeight
-        cv.getContext('2d').drawImage(ti, 0, 0)
-        try { cb(cv.toDataURL('image/jpeg', 0.85)) } catch (e) { cb(null) }
-      }
-      ti.onerror = function () { cb(null) }
-      ti.src = src
-    }
-
-    var totalPendingB = blobImgs.length + cmpToConvertB.length
-    if (totalPendingB === 0) { _finalizeSend(); return }
-
-    var pendingB = totalPendingB
-    function _decPending() { pendingB--; if (pendingB <= 0) _finalizeSend() }
+    var pendingB = blobImgs.length
+    if (pendingB === 0) { _finalizeSend(); return }
 
     blobImgs.forEach(function (img) {
+      if (img.src.startsWith('data:')) {
+        pendingB--
+        if (pendingB <= 0) _finalizeSend()
+        return
+      }
       var c2 = document.createElement('canvas')
       var tempImg = new Image()
       tempImg.crossOrigin = 'anonymous'
       tempImg.onload = function () {
-        c2.width = tempImg.width; c2.height = tempImg.height
+        c2.width = tempImg.naturalWidth; c2.height = tempImg.naturalHeight
         c2.getContext('2d').drawImage(tempImg, 0, 0)
         try { img.src = c2.toDataURL('image/jpeg', 0.8) } catch (e) {}
-        _decPending()
+        pendingB--
+        if (pendingB <= 0) _finalizeSend()
       }
-      tempImg.onerror = _decPending
+      tempImg.onerror = function () {
+        pendingB--
+        if (pendingB <= 0) _finalizeSend()
+      }
       tempImg.src = img.src
     })
 
-    cmpToConvertB.forEach(function (item) {
-      _cvtUrl(item.src, function (b64) {
-        if (b64) cmpB64B[item.key][item.prop] = b64
-        _decPending()
-      })
-    })
-
-    setTimeout(_finalizeSend, 8000)
+    setTimeout(function () { _finalizeSend() }, 6000)
 
     function _finalizeSend() {
       if (_finalizeSend._done) return
       _finalizeSend._done = true
 
-      replacements.forEach(function (r) { r.canvas.parentNode.replaceChild(r.img, r.canvas) })
-      var content = report.innerHTML
-      replacements.forEach(function (r) { if (r.img.parentNode) r.img.parentNode.replaceChild(r.canvas, r.img) })
+      try {
+        replacements.forEach(function (r) {
+          if (r.canvas.parentNode) r.canvas.parentNode.replaceChild(r.img, r.canvas)
+        })
+        var content = report.innerHTML
+        replacements.forEach(function (r) {
+          if (r.img.parentNode) r.img.parentNode.replaceChild(r.canvas, r.img)
+        })
+      } catch (e) {
+        console.error('[FM] _finalizeSend canvas swap error:', e)
+        var content = report.innerHTML
+      }
 
       var patientName = FM._lead ? (FM._lead.nome || FM._lead.name || 'Paciente') : 'Paciente'
       var waPhone = localStorage.getItem('fm_wa_phone') || '5511999999999'
       var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliação facial.')
-
-      // Build comparator with base64
-      var comparatorHtmlB = ''
-      cmpAnglesB.forEach(function (a) {
-        var b = cmpB64B[a.key]
-        if (b && b.before && b.after) {
-          comparatorHtmlB += _buildHTMLComparator(a.key, a.label, b.before, b.after)
-        }
-      })
 
       var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head>' +
         '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
@@ -1465,7 +1431,6 @@
         '.fm-cta-btn:hover{transform:scale(1.04)}</style></head><body>' +
         '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;padding-bottom:24px">' +
         content + '</div>' +
-        comparatorHtmlB +
         '<div style="text-align:center;padding:32px 16px">' +
         '<a class="fm-cta-btn" href="https://wa.me/' + waPhone + '?text=' + waText + '" target="_blank">' +
         '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>' +
