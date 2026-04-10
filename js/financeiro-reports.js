@@ -29,6 +29,14 @@ window.FinReports = (() => {
   const CATALOG = [
     // ── Grupo 1: Fluxo de Caixa ────────────────────────────────
     {
+      id: 'fin-cashflow',
+      group: 'fluxo',
+      label: 'Fluxo de Caixa',
+      desc: 'Movimentos financeiros do periodo (entradas e saidas), vinculados a agendamentos.',
+      icon: _ico('dollar-sign'),
+      accent: '#10b981',
+    },
+    {
       id: 'fin-billing',
       group: 'fluxo',
       label: 'Faturamento',
@@ -242,6 +250,16 @@ window.FinReports = (() => {
   // o shell será substituído pelo componente real.
 
   const _subRenderers = {
+
+    'fin-cashflow': function() {
+      // Delega para CashflowUI — modulo proprio em js/ui/cashflow.ui.js
+      setTimeout(function() {
+        if (window.CashflowUI && window.CashflowUI.init) {
+          window.CashflowUI.init()
+        }
+      }, 0)
+      return '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">Carregando Fluxo de Caixa...</div>'
+    },
 
     'fin-billing': function() {
       return _subShell('Faturamento', 'trending-up', '#10b981', [

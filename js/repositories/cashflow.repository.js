@@ -1,0 +1,98 @@
+/**
+ * ClinicAI — Cashflow Repository
+ * Camada de acesso ao Supabase via RPCs cashflow_*
+ */
+;(function () {
+  'use strict'
+  if (window._clinicaiCashflowRepoLoaded) return
+  window._clinicaiCashflowRepoLoaded = true
+
+  function _sb() { return window.supabaseClient || null }
+  function _ok(data) { return { ok: true, data, error: null } }
+  function _err(e)   { return { ok: false, data: null, error: String(e || 'erro desconhecido') } }
+
+  async function create(entry) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_create_entry', { p_data: entry })
+      if (error) return _err(error.message || error)
+      return _ok(data)
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function update(id, patch) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_update_entry', { p_id: id, p_data: patch })
+      if (error) return _err(error.message || error)
+      return _ok(data)
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function remove(id) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_delete_entry', { p_id: id })
+      if (error) return _err(error.message || error)
+      return _ok(data)
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function list(filters) {
+    filters = filters || {}
+    try {
+      const { data, error } = await _sb().rpc('cashflow_list_entries', {
+        p_start_date:        filters.startDate || null,
+        p_end_date:          filters.endDate   || null,
+        p_direction:         filters.direction || null,
+        p_method:            filters.method    || null,
+        p_only_unreconciled: !!filters.onlyUnreconciled,
+        p_limit:             filters.limit     || 500,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || [])
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function summary(startDate, endDate) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_summary', {
+        p_start_date: startDate,
+        p_end_date:   endDate,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function linkAppointment(entryId, appointmentId, patientId) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_link_appointment', {
+        p_entry_id:       entryId,
+        p_appointment_id: appointmentId,
+        p_patient_id:     patientId || null,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data)
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function searchAppointments(amount, date, toleranceDays) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_search_appointments', {
+        p_amount:         amount,
+        p_date:           date,
+        p_tolerance_days: toleranceDays || 2,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || [])
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  window.CashflowRepository = Object.freeze({
+    create,
+    update,
+    remove,
+    list,
+    summary,
+    linkAppointment,
+    searchAppointments,
+  })
+})()

@@ -3930,6 +3930,7 @@
       <div class="page" id="page-fin-by-procedure"><div id="finByProcedureRoot"></div></div>
       <div class="page" id="page-fin-by-patient"><div id="finByPatientRoot"></div></div>
       <div class="page" id="page-fin-by-campaign"><div id="finByCampaignRoot"></div></div>
+      <div class="page" id="page-fin-cashflow"><div id="finCashflowRoot"></div></div>
 
     </main>
     <!-- END CONTENT AREA -->
@@ -4936,6 +4937,11 @@
   <!-- Financeiro (repository + service — migra localStorage → Supabase) -->
   <script src="js/repositories/financeiro.repository.js?v=20260407p" defer></script>
   <script src="js/services/financeiro.service.js?v=20260407p" defer></script>
+
+  <!-- Cashflow / Fluxo de Caixa -->
+  <script src="js/repositories/cashflow.repository.js?v=20260410a" defer></script>
+  <script src="js/services/cashflow.service.js?v=20260410a" defer></script>
+  <script src="js/ui/cashflow.ui.js?v=20260410a" defer></script>
 
   <!-- Dashboard Analytics — Supabase KPIs (Sprint 6-C) -->
   <script src="js/repositories/dashboard.repository.js?v=20260407p" defer></script>

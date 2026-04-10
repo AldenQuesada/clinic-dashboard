@@ -1705,6 +1705,20 @@ function confirmFinalize(id) {
 
   const apptFinal = appts[idx]
 
+  // Cashflow: cria entrada(s) automaticamente se houve pagamento
+  if (window.CashflowService && pago > 0) {
+    window.CashflowService.createFromAppointment({
+      id:             apptFinal.id,
+      date:           apptFinal.date || apptFinal.dataAgendamento,
+      patient_id:     apptFinal.pacienteId || apptFinal.patient_id,
+      pacienteName:   apptFinal.pacienteNome || apptFinal.patient_name,
+      procedimento:   (procs[0] && (procs[0].nome || procs[0])) || 'Atendimento',
+      valorPago:      pago,
+      formaPagamento: forma,
+      pagamentoDetalhes: pagDetalhes,
+    }).catch(function(e) { console.warn('[Agenda] Cashflow create falhou:', e) })
+  }
+
   // Consentimentos: verificar se procedimento realizado tem TCLE pendente
   if (window.LegalDocumentsService && procs.length) {
     var _procNames = procs.map(function(p) { return p.nome || p }).filter(Boolean)

@@ -576,7 +576,7 @@
     if (window.FinReports) {
       if (pageId === 'fin-reports') {
         window.FinReports.render()
-      } else if (/^fin-(billing|receipts|default|ticket|conversion|commissions|by-procedure|by-patient|by-campaign)$/.test(pageId)) {
+      } else if (/^fin-(cashflow|billing|receipts|default|ticket|conversion|commissions|by-procedure|by-patient|by-campaign)$/.test(pageId)) {
         window.FinReports.renderPage(pageId)
       }
     }
