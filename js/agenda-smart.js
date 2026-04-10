@@ -771,6 +771,7 @@ function _tabResumo(a) {
         ${_docRow('Consentimento de Procedimento', a.consentimentoProcedimento === 'assinado', 'Assinado', 'Pendente')}
         ${(a.formaPagamento==='boleto'||a.formaPagamento==='parcelado'||a.formaPagamento==='entrada_saldo') ? _docRow('Consentimento de Pagamento', a.consentimentoPagamento === 'assinado', 'Assinado', 'Pendente') : ''}
       </div>
+      <button onclick="window._sendManualConsent('${a.id}')" style="width:100%;margin-top:8px;padding:7px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer">Enviar Consentimento Manual</button>
     </div>
 
     ${procs.length?`

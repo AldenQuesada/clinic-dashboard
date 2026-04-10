@@ -351,21 +351,78 @@
     }))
   }
 
+  // ── Verificar se paciente e Novo (nunca fez checking) ──────
+  async function _isPatientNew(patientName) {
+    if (!patientName || !window._sbShared) return true
+    var res = await window._sbShared.from('appointments')
+      .select('id')
+      .ilike('patient_name', patientName.trim())
+      .in('status', ['finalizado', 'em_consulta'])
+      .limit(1)
+    return !res.data || res.data.length === 0
+  }
+
+  // ── Verificar se paciente ja fez este procedimento antes ───
+  async function _hasCompletedProcedure(patientName, procedureName) {
+    if (!patientName || !procedureName || !window._sbShared) return false
+    var res = await window._sbShared.from('appointments')
+      .select('id')
+      .ilike('patient_name', patientName.trim())
+      .ilike('procedure_name', '%' + procedureName.trim() + '%')
+      .in('status', ['finalizado', 'em_consulta'])
+      .limit(1)
+    return res.data && res.data.length > 0
+  }
+
   async function autoSendForStatus(status, apptOrOpts) {
     if (!_templates) await loadTemplates()
+
+    var patientName = apptOrOpts.pacienteNome || apptOrOpts.patient_name || ''
+    var procedimento = (apptOrOpts.procedimento || apptOrOpts.procedure_name || '').toLowerCase()
+
+    // Determinar se paciente e Novo ou Retorno
+    var isNew = await _isPatientNew(patientName)
+    // Determinar se ja fez este procedimento antes (sessao de protocolo)
+    var alreadyDidProcedure = !isNew && procedimento ? await _hasCompletedProcedure(patientName, apptOrOpts.procedimento || apptOrOpts.procedure_name || '') : false
+
+    console.log('[LegalDocs] Auto-send:', { patientName: patientName, isNew: isNew, procedimento: procedimento, alreadyDidProcedure: alreadyDidProcedure })
+
     var matching = (_templates || []).filter(function (t) {
       if (!t.is_active || !t.trigger_status) return false
       if (t.trigger_status !== status) return false
-      // Se tem trigger_procedures, verificar match
-      if (t.trigger_procedures && t.trigger_procedures.length > 0) {
-        var proc = (apptOrOpts.procedimento || apptOrOpts.procedure_name || '').toLowerCase()
-        var match = t.trigger_procedures.some(function (p) { return proc.indexOf(p.toLowerCase()) >= 0 })
-        if (!match) return false
+
+      var isImageDoc = t.doc_type === 'uso_imagem'
+
+      // USO DE IMAGEM: so automatico para paciente Novo
+      if (isImageDoc && !isNew) {
+        console.log('[LegalDocs] Imagem bloqueado para retorno:', t.name)
+        return false
       }
+
+      // TCLE com procedimento especifico
+      if (t.trigger_procedures && t.trigger_procedures.length > 0) {
+        var match = t.trigger_procedures.some(function (p) { return procedimento.indexOf(p.toLowerCase()) >= 0 })
+        if (!match) return false
+
+        // Se e retorno e ja fez este procedimento -> sessao de protocolo, nao envia
+        if (!isNew && alreadyDidProcedure) {
+          console.log('[LegalDocs] Sessao de protocolo, bloqueado:', t.name)
+          return false
+        }
+      }
+
+      // TCLE generico (sem trigger_procedures) — so para Novo
+      if (!isImageDoc && (!t.trigger_procedures || !t.trigger_procedures.length)) {
+        if (!isNew) return false
+      }
+
       return true
     })
 
-    if (!matching.length) return []
+    if (!matching.length) {
+      console.log('[LegalDocs] Nenhum template matched')
+      return []
+    }
 
     var results = []
     for (var i = 0; i < matching.length; i++) {
@@ -376,7 +433,6 @@
         if (window._showToast) {
           _showToast('Documento', matching[i].name + ' gerado para ' + (apptOrOpts.pacienteNome || ''), 'success')
         }
-        // Enviar link via WhatsApp ao paciente
         var phone = apptOrOpts.pacienteTelefone || apptOrOpts.patient_phone || ''
         if (phone && res.link) {
           _sendDocLinkWhatsApp(phone, apptOrOpts.pacienteNome || apptOrOpts.patient_name || '', matching[i].name, res.link)
@@ -422,6 +478,59 @@
   async function sendDocLink(phone, patientName, templateName, link) {
     return _sendDocLinkWhatsApp(phone, patientName, templateName, link)
   }
+
+  // ── Envio manual de consentimento (seletor de templates) ──
+  async function sendManualConsent(apptId) {
+    if (!window.getAppointments || !window._sbShared) return
+
+    var appt = getAppointments().find(function (a) { return a.id === apptId })
+    if (!appt) { if (window._showToast) _showToast('Documentos', 'Agendamento n\u00e3o encontrado', 'error'); return }
+
+    if (!_templates) await loadTemplates()
+    var activeTemplates = (_templates || []).filter(function (t) { return t.is_active })
+    if (!activeTemplates.length) { if (window._showToast) _showToast('Documentos', 'Nenhum modelo ativo', 'warning'); return }
+
+    // Montar lista de opcoes
+    var opts = activeTemplates.map(function (t, i) {
+      var label = t.name.replace(/^TCLE\s*-\s*/i, '')
+      return (i + 1) + '. ' + label
+    }).join('\n')
+
+    var choice = window.prompt('Selecione o documento para enviar:\n\n' + opts + '\n\nDigite o n\u00famero:')
+    if (!choice) return
+
+    var idx = parseInt(choice, 10) - 1
+    if (isNaN(idx) || idx < 0 || idx >= activeTemplates.length) {
+      if (window._showToast) _showToast('Documentos', 'Op\u00e7\u00e3o inv\u00e1lida', 'warning')
+      return
+    }
+
+    var tmpl = activeTemplates[idx]
+    var apptData = {
+      pacienteNome: appt.pacienteNome || appt.patient_name || '',
+      pacienteCpf: appt.pacienteCpf || '',
+      pacienteTelefone: appt.pacienteTelefone || appt.patient_phone || '',
+      profissionalIdx: appt.profissionalIdx,
+      professional_id: appt.professional_id,
+      procedimento: appt.procedimento || appt.procedure_name || '',
+      horaInicio: appt.horaInicio || appt.start_time || '',
+      appointmentId: appt.id,
+    }
+
+    var res = await createRequest(tmpl.id, apptData)
+    if (res.ok) {
+      if (window._showToast) _showToast('Documentos', tmpl.name.replace(/^TCLE\s*-\s*/i, '') + ' enviado!', 'success')
+      var phone = apptData.pacienteTelefone
+      if (phone && res.link) {
+        _sendDocLinkWhatsApp(phone, apptData.pacienteNome, tmpl.name, res.link)
+      }
+    } else {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + (res.error || 'desconhecido'), 'error')
+    }
+  }
+
+  // Expor para uso no agenda-smart
+  window._sendManualConsent = sendManualConsent
 
   // ── Public API ─────────────────────────────────────────────
   window.LegalDocumentsService = Object.freeze({
