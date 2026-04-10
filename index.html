@@ -2089,6 +2089,27 @@
         </div>
       </div>
 
+      <!-- ==================== PAGE: DOCUMENTOS DO PACIENTE ==================== -->
+      <div class="page" id="page-patients-docs">
+        <div class="page-title-row">
+          <div class="page-title-left">
+            <h1 class="page-title">Documentos do Paciente</h1>
+            <p class="page-subtitle">Consentimentos assinados, termos e documentos legais por paciente</p>
+          </div>
+        </div>
+        <div style="max-width:600px;margin:0 auto">
+          <div style="position:relative;margin-bottom:16px">
+            <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#9CA3AF;pointer-events:none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="patdocs-search" type="text" placeholder="Buscar paciente por nome..."
+              style="width:100%;padding:12px 14px 12px 38px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--surface);color:var(--text-primary);outline:none;box-sizing:border-box"
+              oninput="window._searchPatientDocs&&_searchPatientDocs(this.value)" />
+          </div>
+          <div id="patdocs-results" style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;min-height:60px;padding:16px;text-align:center;color:var(--text-muted);font-size:13px">
+            Digite o nome do paciente para ver seus documentos.
+          </div>
+        </div>
+      </div>
+
       <!-- ==================== PAGE: ANALYTICS WHATSAPP ==================== -->
       <div class="page" id="page-analytics-wa">
         <div id="analytics-root"></div>
@@ -5095,6 +5116,7 @@
   <script src="js/services/alexa-notification.service.js?v=20260409e" defer></script>
   <script src="js/services/legal-documents.service.js?v=20260410c" defer></script>
   <script src="js/legal-doc-templates.js?v=20260410c" defer></script>
+  <script src="js/patients-docs.js?v=20260410" defer></script>
   <script src="js/agenda-smart.js?v=20260407q" defer></script>
   <script src="js/agenda-day-panel.js?v=20260406a" defer></script>
   <script src="js/agenda-leads.js?v=20260406a" defer></script>

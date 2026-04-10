@@ -292,20 +292,202 @@
     return `<div style="display:flex;flex-direction:column;gap:10px">${items}</div>${loadMore}`
   }
 
+  // ── Render: Tabs ───────────────────────────────────────────────
+  const TABS = [
+    { id: 'registros', label: 'Registros', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+    { id: 'documentos', label: 'Documentos', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+    { id: 'procedimentos', label: 'Procedimentos', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
+    { id: 'fotos', label: 'Fotos', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' },
+  ]
+
+  function _renderTabs(state, containerId) {
+    var activeTab = state.activeTab || 'registros'
+    return '<div style="display:flex;gap:2px;margin-bottom:16px;border-bottom:2px solid var(--border,#E5E7EB);padding-bottom:0">'
+      + TABS.map(function (t) {
+        var active = t.id === activeTab
+        return '<button data-tab="' + t.id + '" onclick="MedicalRecordEditorUI._switchTab(\'' + _esc(containerId) + '\',\'' + t.id + '\')"'
+          + ' style="display:flex;align-items:center;gap:6px;padding:10px 16px;border:none;background:none;cursor:pointer;font-size:12px;font-weight:' + (active ? '700' : '500')
+          + ';color:' + (active ? 'var(--accent-gold,#C9A96E)' : 'var(--text-muted,#9CA3AF)')
+          + ';border-bottom:2px solid ' + (active ? 'var(--accent-gold,#C9A96E)' : 'transparent')
+          + ';margin-bottom:-2px;transition:all .15s">'
+          + t.icon + ' ' + t.label + '</button>'
+      }).join('') + '</div>'
+  }
+
+  // ── Tab: Documentos (Legal Docs assinados) ────────────────────
+  async function _renderDocumentosTab(state, containerId) {
+    if (!window._sbShared) return '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px">Supabase indisponivel</div>'
+
+    var patientName = state.patientName || ''
+    var res = await window._sbShared.from('legal_doc_requests')
+      .select('id,patient_name,professional_name,status,created_at,signed_at,public_slug')
+      .or('patient_name.ilike.%' + patientName.trim() + '%,patient_id.eq.' + (state.patientId || ''))
+      .neq('status', 'purged')
+      .order('created_at', { ascending: false })
+      .limit(30)
+
+    var docs = (res.data || [])
+    if (!docs.length) return '<div style="padding:30px;text-align:center;color:var(--text-muted);font-size:13px">Nenhum consentimento registrado para este paciente.</div>'
+
+    var statusMap = { pending: ['Pendente','#F59E0B'], viewed: ['Visualizado','#3B82F6'], signed: ['Assinado','#10B981'], expired: ['Expirado','#6B7280'], revoked: ['Revogado','#EF4444'] }
+
+    return '<div style="display:flex;flex-direction:column;gap:8px">' + docs.map(function (d) {
+      var s = statusMap[d.status] || [d.status, '#6B7280']
+      var date = d.created_at ? new Date(d.created_at).toLocaleDateString('pt-BR') : ''
+      var signedDate = d.signed_at ? new Date(d.signed_at).toLocaleString('pt-BR') : ''
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface,#fff);border:1.5px solid var(--border,#E5E7EB);border-radius:10px">'
+        + '<div style="width:8px;height:8px;border-radius:50%;background:' + s[1] + ';flex-shrink:0"></div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:12px;font-weight:600;color:var(--text-primary,#111)">' + _esc(d.professional_name || '') + '</div>'
+        + '<div style="font-size:10px;color:var(--text-muted,#9CA3AF)">' + date + (signedDate ? ' | Assinado: ' + signedDate : '') + '</div>'
+        + '</div>'
+        + '<span style="font-size:10px;padding:3px 10px;background:' + s[1] + '15;color:' + s[1] + ';border-radius:20px;font-weight:600">' + s[0] + '</span>'
+        + '</div>'
+    }).join('') + '</div>'
+  }
+
+  // ── Tab: Procedimentos (historico de agendamentos finalizados) ─
+  function _renderProcedimentosTab(state) {
+    var appts = []
+    try { appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch (e) {}
+
+    var patientName = (state.patientName || '').toLowerCase().trim()
+    var patientProcs = appts.filter(function (a) {
+      return (a.status === 'finalizado' || a.status === 'em_consulta')
+        && ((a.pacienteNome || a.patient_name || '').toLowerCase().trim() === patientName
+          || a.pacienteId === state.patientId || a.patient_id === state.patientId)
+    }).sort(function (a, b) { return (b.data || b.scheduled_date || '').localeCompare(a.data || a.scheduled_date || '') })
+
+    if (!patientProcs.length) return '<div style="padding:30px;text-align:center;color:var(--text-muted);font-size:13px">Nenhum procedimento realizado registrado.</div>'
+
+    return '<div style="display:flex;flex-direction:column;gap:8px">' + patientProcs.map(function (a) {
+      var proc = a.procedimento || a.procedure_name || 'Consulta'
+      var prof = a.profissionalNome || a.professional_name || ''
+      var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR') : ''
+      var valor = a.valor ? 'R$ ' + Number(a.valor).toFixed(2).replace('.', ',') : ''
+      var procs = a.procedimentosRealizados || []
+
+      var html = '<div style="padding:14px 16px;background:var(--surface,#fff);border:1.5px solid var(--border,#E5E7EB);border-radius:10px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        + '<div style="font-size:13px;font-weight:600;color:var(--text-primary,#111)">' + _esc(proc) + '</div>'
+        + '<div style="font-size:11px;color:var(--text-muted,#9CA3AF)">' + date + '</div>'
+        + '</div>'
+        + '<div style="font-size:11px;color:var(--text-muted,#9CA3AF)">' + _esc(prof) + (valor ? ' | ' + valor : '') + '</div>'
+
+      if (procs.length) {
+        html += '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">'
+        procs.forEach(function (p) {
+          html += '<span style="font-size:10px;padding:2px 8px;background:#06B6D41A;color:#06B6D4;border-radius:4px">' + _esc(p.nome || p) + (p.qtd > 1 ? ' x' + p.qtd : '') + '</span>'
+        })
+        html += '</div>'
+      }
+      html += '</div>'
+      return html
+    }).join('') + '</div>'
+  }
+
+  // ── Tab: Fotos (Face Mapping links) ───────────────────────────
+  function _renderFotosTab(state) {
+    // Verificar se tem dados de face mapping para este paciente
+    var fmKey = null
+    try {
+      var keys = Object.keys(localStorage)
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].startsWith('clinicai_fm_') && keys[i].includes(state.patientId)) {
+          fmKey = keys[i]
+          break
+        }
+      }
+    } catch (e) {}
+
+    var html = '<div style="padding:20px">'
+
+    if (fmKey) {
+      html += '<div style="padding:16px;background:#F0FDF4;border:1px solid #10B98130;border-radius:10px;text-align:center">'
+        + '<div style="font-size:13px;font-weight:600;color:#10B981;margin-bottom:8px">Face Mapping disponivel</div>'
+        + '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Este paciente tem analise facial registrada.</div>'
+        + '<button onclick="if(window.navigateTo)navigateTo(\'face-mapping\')" style="padding:9px 20px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Abrir Face Mapping</button>'
+        + '</div>'
+    } else {
+      html += '<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px">'
+        + '<div style="font-size:13px;font-weight:600;margin-bottom:6px">Nenhuma foto ou analise facial</div>'
+        + '<div style="font-size:12px;margin-bottom:12px">Use o Face Mapping para registrar fotos e analise deste paciente.</div>'
+        + '<button onclick="if(window.navigateTo)navigateTo(\'face-mapping\')" style="padding:9px 20px;background:var(--accent-gold,#C9A96E);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Ir para Face Mapping</button>'
+        + '</div>'
+    }
+
+    html += '</div>'
+    return html
+  }
+
+  // ── Templates de registro rapido ──────────────────────────────
+  const RECORD_TEMPLATES = [
+    { type: 'nota_clinica', title: 'Consulta inicial', content: 'Queixa principal:\nHistoria:\nExame:\nConduta:' },
+    { type: 'evolucao', title: 'Retorno', content: 'Evolucao desde ultima consulta:\nMelhora:\nPendencias:\nProxima etapa:' },
+    { type: 'procedimento', title: 'Procedimento realizado', content: 'Procedimento:\nArea:\nProduto/Dose:\nIntercorrencias:\nOrientacoes pos:' },
+    { type: 'prescricao', title: 'Prescricao', content: 'Medicamento:\nDose:\nPosologia:\nDuracao:\nOrientacoes:' },
+    { type: 'alerta', title: 'Alerta clinico', content: 'Alergia/Contraindicacao:\nDetalhes:\nConduta recomendada:' },
+  ]
+
+  function _renderTemplateButtons(containerId) {
+    return '<div style="margin-bottom:14px">'
+      + '<div style="font-size:10px;font-weight:700;color:var(--text-muted,#9CA3AF);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Templates rapidos</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:4px">'
+      + RECORD_TEMPLATES.map(function (t, i) {
+        var color = TYPE_COLORS[t.type] || '#6B7280'
+        return '<button data-tmpl="' + i + '" onclick="MedicalRecordEditorUI._applyTemplate(\'' + _esc(containerId) + '\',' + i + ')"'
+          + ' style="padding:4px 10px;border:1px solid ' + color + '30;border-radius:6px;background:' + color + '0A;color:' + color + ';font-size:10px;font-weight:600;cursor:pointer">'
+          + _esc(t.title) + '</button>'
+      }).join('')
+      + '</div></div>'
+  }
+
+  // ── Busca no conteudo dos registros ────────────────────────────
+  function _renderSearchBar(state, containerId) {
+    return '<div style="margin-bottom:12px">'
+      + '<input id="mr-search-' + _esc(containerId) + '" type="text" placeholder="Buscar nos registros..." '
+      + 'oninput="MedicalRecordEditorUI._onSearchRecords(\'' + _esc(containerId) + '\',this.value)" '
+      + 'style="width:100%;padding:8px 12px;border:1.5px solid var(--border,#E5E7EB);border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:var(--surface,#fff);color:var(--text-primary,#111)" />'
+      + '</div>'
+  }
+
   // ── Render completo ───────────────────────────────────────────
   function _render(containerId) {
     const container = document.getElementById(containerId)
     if (!container) return
 
     const state = _state(containerId)
+    if (!state.activeTab) state.activeTab = 'registros'
 
     container.innerHTML = `
       <div id="mr-root-${_esc(containerId)}">
         <div id="mr-summary-${_esc(containerId)}">${_renderSummary(state)}</div>
-        ${_renderNewForm(state, containerId)}
-        ${_renderTypeFilter(state, containerId)}
-        <div id="mr-timeline-${_esc(containerId)}">${_renderTimeline(state, containerId)}</div>
+        ${_renderTabs(state, containerId)}
+        <div id="mr-tab-content-${_esc(containerId)}"></div>
       </div>`
+
+    _renderTabContent(containerId)
+  }
+
+  async function _renderTabContent(containerId) {
+    var state = _state(containerId)
+    var el = document.getElementById('mr-tab-content-' + containerId)
+    if (!el) return
+
+    if (state.activeTab === 'registros') {
+      el.innerHTML = _renderTemplateButtons(containerId)
+        + _renderNewForm(state, containerId)
+        + _renderSearchBar(state, containerId)
+        + _renderTypeFilter(state, containerId)
+        + '<div id="mr-timeline-' + _esc(containerId) + '">' + _renderTimeline(state, containerId) + '</div>'
+    } else if (state.activeTab === 'documentos') {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Carregando documentos...</div>'
+      el.innerHTML = await _renderDocumentosTab(state, containerId)
+    } else if (state.activeTab === 'procedimentos') {
+      el.innerHTML = _renderProcedimentosTab(state)
+    } else if (state.activeTab === 'fotos') {
+      el.innerHTML = _renderFotosTab(state)
+    }
   }
 
   function _reRenderTimeline(containerId) {
@@ -518,10 +700,55 @@
   }
 
   // ── Exposição global ──────────────────────────────────────────
+  function _switchTab(containerId, tabId) {
+    var state = _state(containerId)
+    state.activeTab = tabId
+    // Re-render tabs
+    var root = document.getElementById('mr-root-' + containerId)
+    if (root) {
+      var tabsEl = root.querySelector('[data-tab]')?.parentElement
+      if (tabsEl) tabsEl.outerHTML = _renderTabs(state, containerId)
+    }
+    _renderTabContent(containerId)
+  }
+
+  function _applyTemplate(containerId, idx) {
+    var tmpl = RECORD_TEMPLATES[idx]
+    if (!tmpl) return
+    var typeEl = document.getElementById('mr-new-type-' + containerId)
+    var titleEl = document.getElementById('mr-new-title-' + containerId)
+    var contentEl = document.getElementById('mr-new-content-' + containerId)
+    if (typeEl) typeEl.value = tmpl.type
+    if (titleEl) titleEl.value = tmpl.title
+    if (contentEl) { contentEl.value = tmpl.content; contentEl.focus() }
+  }
+
+  var _searchTimer = null
+  function _onSearchRecords(containerId, query) {
+    clearTimeout(_searchTimer)
+    _searchTimer = setTimeout(function () {
+      var state = _state(containerId)
+      var q = (query || '').toLowerCase().trim()
+      if (!q) {
+        _reRenderTimeline(containerId)
+        return
+      }
+      // Filtrar registros em memoria
+      var el = document.getElementById('mr-timeline-' + containerId)
+      if (!el) return
+      var filtered = state.records.filter(function (r) {
+        return (r.content || '').toLowerCase().includes(q)
+          || (r.title || '').toLowerCase().includes(q)
+          || (r.professional_name || '').toLowerCase().includes(q)
+      })
+      var tempState = Object.assign({}, state, { records: filtered, hasMore: false })
+      el.innerHTML = _renderTimeline(tempState, containerId)
+    }, 300)
+  }
+
   window.MedicalRecordEditorUI = {
     mount,
     unmount,
-    // Internos chamados por onclick no HTML gerado
     _saveNew,
     _setFilter,
     _loadMore,
@@ -529,6 +756,9 @@
     _cancelEdit,
     _saveEdit,
     _confirmDelete,
+    _switchTab,
+    _applyTemplate,
+    _onSearchRecords,
   }
 
 })()
