@@ -834,19 +834,30 @@ async function _lmSendAnamnese(leadId, method) {
     var fullName = (lead.name || lead.nome || 'Paciente').trim()
     var phone = lead.phone || lead.whatsapp || lead.telefone || '0'
 
-    await fetch(sbUrl + '/rest/v1/patients', {
+    // Buscar tenantId dinamicamente
+    var tenantRes = await fetch(sbUrl + '/rest/v1/tenants?select=id&limit=1', { headers: hdrs })
+    var tenants = await tenantRes.json()
+    var tenantId = (tenants && tenants[0]) ? tenants[0].id : 'kktstp8hrf7x3pef0rvrp930'
+
+    var upsRes = await fetch(sbUrl + '/rest/v1/patients', {
       method: 'POST',
       headers: Object.assign({}, hdrs, { 'Prefer': 'resolution=merge-duplicates' }),
       body: JSON.stringify([{
         id: leadId,
         clinic_id: '00000000-0000-0000-0000-000000000001',
         leadId: leadId,
-        tenantId: 'kktstp8hrf7x3pef0rvrp930',
+        tenantId: tenantId,
         name: fullName,
         phone: phone,
         updatedAt: new Date().toISOString(),
       }]),
     })
+    if (!upsRes.ok) {
+      var upsErr = await upsRes.text()
+      console.error('[Anamnese] Patient upsert FAILED:', upsErr)
+      if (window._showToast) _showToast('Anamnese', 'Erro ao registrar paciente: ' + upsErr.substring(0, 80), 'error')
+      return
+    }
 
     // Criar request via RPC
     var rpcRes = await fetch(sbUrl + '/rest/v1/rpc/create_anamnesis_request', {
