@@ -241,6 +241,9 @@
       + '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10.5 14.5 8 12"/></svg>'
       + '<div class="ld-success-title">Documento Assinado</div>'
       + '<div class="ld-success-text">Obrigado, ' + _esc(_signerName) + '.<br>Sua assinatura foi registrada com sucesso.<br>Voce pode fechar esta pagina.</div>'
+      + '<div style="margin-top:20px"><button onclick="window._ldDownloadPdf()" style="padding:12px 24px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+      + 'Baixar PDF</button></div>'
       + '<div class="ld-hash">Hash: ' + _esc(_doc.document_hash || '') + '</div>'
       + '</div></div>'
   }
@@ -492,6 +495,58 @@
   }
 
   window._ldFormatCpf = _formatCpf
+
+  // ── Download PDF (via print) ──────────────────────────────
+  window._ldDownloadPdf = function () {
+    var w = window.open('', '_blank')
+    if (!w) { alert('Permita popups para baixar o PDF'); return }
+
+    var sigDate = new Date().toLocaleString('pt-BR')
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+      + '<title>Documento Assinado - ' + _esc(_signerName) + '</title>'
+      + '<style>'
+      + 'body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:0 24px;color:#111;font-size:14px;line-height:1.8}'
+      + 'h1,h2,h3,h4{font-family:Arial,sans-serif}'
+      + 'p{margin-bottom:12px}'
+      + 'ul,ol{margin:8px 0;padding-left:24px}'
+      + 'li{margin-bottom:4px}'
+      + '.sig-box{margin-top:40px;border-top:2px solid #111;padding-top:24px}'
+      + '.sig-img{max-width:280px;max-height:120px;margin:12px 0}'
+      + '.meta{font-size:11px;color:#666;margin-top:4px}'
+      + '.hash{font-family:monospace;font-size:10px;color:#999;margin-top:20px;word-break:break-all;padding:8px;background:#f5f5f5;border-radius:4px}'
+      + '.seal{display:inline-block;padding:6px 16px;border:2px solid #10B981;border-radius:8px;color:#10B981;font-weight:bold;font-size:12px;margin-top:16px}'
+      + '@media print{body{margin:20px}}'
+      + '</style></head><body>'
+
+    // Conteudo do documento
+    html += (_doc && _doc.content ? _doc.content : '')
+
+    // Bloco de assinatura
+    html += '<div class="sig-box">'
+    html += '<h3>ASSINATURA DIGITAL</h3>'
+    html += '<p><strong>Signatario:</strong> ' + _esc(_signerName) + '</p>'
+    if (_signerCpf) html += '<p><strong>CPF:</strong> ' + _esc(_signerCpf) + '</p>'
+    html += '<p><strong>Data:</strong> ' + sigDate + '</p>'
+
+    if (_signatureData) {
+      html += '<p><strong>Assinatura:</strong></p>'
+      html += '<img class="sig-img" src="' + _signatureData + '" />'
+    }
+
+    html += '<div class="seal">DOCUMENTO ASSINADO DIGITALMENTE</div>'
+    html += '<div class="meta">Assinatura eletronica simples nos termos da Lei 14.063/2020</div>'
+    html += '<div class="meta">Navegador: ' + _esc(navigator.userAgent.substring(0, 80)) + '</div>'
+
+    if (_doc && _doc.document_hash) {
+      html += '<div class="hash">Hash de integridade: ' + _esc(_doc.document_hash) + '</div>'
+    }
+
+    html += '</div></body></html>'
+
+    w.document.write(html)
+    w.document.close()
+    setTimeout(function () { w.print() }, 400)
+  }
 
   // ── Start ──────────────────────────────────────────────────
   if (document.readyState === 'loading') {

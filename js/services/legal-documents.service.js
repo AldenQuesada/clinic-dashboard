@@ -311,11 +311,55 @@
       var res = await createRequest(matching[i].id, apptOrOpts)
       results.push({ template: matching[i].name, ok: res.ok, link: res.link, error: res.error })
 
-      if (res.ok && window._showToast) {
-        _showToast('Documento', matching[i].name + ' gerado para ' + (apptOrOpts.pacienteNome || ''), 'success')
+      if (res.ok) {
+        if (window._showToast) {
+          _showToast('Documento', matching[i].name + ' gerado para ' + (apptOrOpts.pacienteNome || ''), 'success')
+        }
+        // Enviar link via WhatsApp ao paciente
+        var phone = apptOrOpts.pacienteTelefone || apptOrOpts.patient_phone || ''
+        if (phone && res.link) {
+          _sendDocLinkWhatsApp(phone, apptOrOpts.pacienteNome || apptOrOpts.patient_name || '', matching[i].name, res.link)
+        }
       }
     }
     return results
+  }
+
+  // ── Enviar link de documento via WhatsApp (Evolution API) ─────
+  async function _sendDocLinkWhatsApp(phone, patientName, templateName, link) {
+    var digits = (phone || '').replace(/\D/g, '')
+    if (!digits) return
+    if (!digits.startsWith('55') || digits.length < 12) digits = '55' + digits
+
+    var firstName = (patientName || '').split(' ')[0] || ''
+    var msg = 'Ola' + (firstName ? ' ' + firstName : '') + '! '
+      + 'Segue o documento "' + templateName + '" para sua assinatura digital. '
+      + 'Por favor, acesse o link abaixo, confira os dados e assine:\n\n'
+      + link + '\n\n'
+      + 'O link expira em 48 horas. Qualquer duvida, estamos a disposicao!'
+
+    try {
+      var r = await fetch('https://evolution.aldenquesada.site/message/sendText/Mih', {
+        method: 'POST',
+        headers: {
+          'apikey': '429683C4C977415CAAFCCE10F7D57E11',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ number: digits, text: msg }),
+      })
+      if (r.ok) {
+        console.log('[LegalDocs] WhatsApp enviado para', digits)
+      } else {
+        console.warn('[LegalDocs] WhatsApp falhou:', await r.text())
+      }
+    } catch (e) {
+      console.warn('[LegalDocs] WhatsApp erro:', e.message)
+    }
+  }
+
+  // ── Envio manual de link via WhatsApp ──────────────────────
+  async function sendDocLink(phone, patientName, templateName, link) {
+    return _sendDocLinkWhatsApp(phone, patientName, templateName, link)
   }
 
   // ── Public API ─────────────────────────────────────────────
@@ -328,6 +372,7 @@
     revokeRequest:    revokeRequest,
     generateLink:     generateLink,
     autoSendForStatus:  autoSendForStatus,
+    sendDocLink:      sendDocLink,
     createCompositeTCLE:  createCompositeTCLE,
     loadProcedureBlocks:  loadProcedureBlocks,
     matchProcedureBlocks: matchProcedureBlocks,

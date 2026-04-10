@@ -231,16 +231,23 @@
       var date = r.created_at ? new Date(r.created_at).toLocaleDateString('pt-BR') : ''
       var signedDate = r.signed_at ? new Date(r.signed_at).toLocaleString('pt-BR') : ''
 
+      var canResend = r.status === 'pending' || r.status === 'viewed'
+      var resendBtn = canResend && r.patient_phone
+        ? '<button onclick="resendLegalDocWhatsApp(\'' + _esc(r.patient_phone) + '\',\'' + _esc(r.patient_name) + '\')" title="Reenviar lembrete via WhatsApp" style="padding:4px 8px;background:#25D366;border:none;border-radius:5px;cursor:pointer;font-size:9px;color:#fff;font-weight:600;white-space:nowrap">WhatsApp</button>'
+        : ''
+
       html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#fff;border:1px solid #F3F4F6;border-radius:8px">'
         + '<div style="width:8px;height:8px;border-radius:50%;background:' + statusColor + ';flex-shrink:0"></div>'
         + '<div style="flex:1;min-width:0">'
         + '<div style="font-size:12px;font-weight:600;color:#111">' + _esc(r.patient_name) + '</div>'
         + '<div style="font-size:10px;color:#9CA3AF">' + date + (r.professional_name ? ' | ' + _esc(r.professional_name) : '') + '</div>'
         + '</div>'
+        + '<div style="display:flex;align-items:center;gap:6px">'
+        + resendBtn
         + '<div style="text-align:right">'
         + '<span style="font-size:10px;padding:2px 8px;background:' + statusColor + '15;color:' + statusColor + ';border-radius:4px;font-weight:600">' + statusLabel + '</span>'
         + (signedDate ? '<div style="font-size:9px;color:#9CA3AF;margin-top:2px">' + signedDate + '</div>' : '')
-        + '</div></div>'
+        + '</div></div></div>'
     })
 
     list.innerHTML = html
@@ -266,6 +273,39 @@
     return div.innerHTML
   }
 
+  // ── Reenviar lembrete via WhatsApp ──────────────────────────
+  async function resendLegalDocWhatsApp(phone, name) {
+    if (!phone) {
+      if (window._showToast) _showToast('Documentos', 'Telefone nao disponivel', 'warning')
+      return
+    }
+    if (window._showToast) _showToast('Documentos', 'Enviando lembrete para ' + name + '...', 'info')
+
+    var digits = (phone || '').replace(/\D/g, '')
+    if (!digits.startsWith('55') || digits.length < 12) digits = '55' + digits
+
+    var firstName = (name || '').split(' ')[0] || ''
+    var msg = 'Ola' + (firstName ? ' ' + firstName : '') + '! '
+      + 'Lembramos que voce tem um documento pendente de assinatura digital. '
+      + 'Por favor, verifique a mensagem anterior com o link de acesso. '
+      + 'Se nao encontrar, entre em contato conosco. Obrigado!'
+
+    try {
+      var r = await fetch('https://evolution.aldenquesada.site/message/sendText/Mih', {
+        method: 'POST',
+        headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number: digits, text: msg }),
+      })
+      if (r.ok) {
+        if (window._showToast) _showToast('Documentos', 'Lembrete enviado para ' + name, 'success')
+      } else {
+        if (window._showToast) _showToast('Documentos', 'Falha no envio', 'error')
+      }
+    } catch (e) {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + e.message, 'error')
+    }
+  }
+
   // ── Expose ─────────────────────────────────────────────────
   window.loadLegalDocTemplates  = loadLegalDocTemplates
   window.loadLegalDocRequests   = loadLegalDocRequests
@@ -275,6 +315,7 @@
   window.saveLegalDocTemplate   = saveLegalDocTemplate
   window.testLegalDocTemplate    = testLegalDocTemplate
   window.duplicateLegalDocTemplate = duplicateLegalDocTemplate
+  window.resendLegalDocWhatsApp  = resendLegalDocWhatsApp
   window.ldeCmd                 = ldeCmd
   window.ldeInsertVar           = ldeInsertVar
 })()
