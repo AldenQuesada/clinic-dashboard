@@ -217,7 +217,11 @@
     if (el('lde_trigger_status')) el('lde_trigger_status').value = ''
     if (el('lde_trigger_procs')) el('lde_trigger_procs').value = ''
     if (el('lde_redirect_url')) el('lde_redirect_url').value = ''
-    if (el('lde_tracking_scripts')) el('lde_tracking_scripts').value = ''
+    if (el('lde_px_fb')) el('lde_px_fb').value = ''
+    if (el('lde_px_ga')) el('lde_px_ga').value = ''
+    if (el('lde_px_gtm')) el('lde_px_gtm').value = ''
+    if (el('lde_px_tiktok')) el('lde_px_tiktok').value = ''
+    if (el('lde_px_custom')) el('lde_px_custom').value = ''
     _populateProfDropdown(null)
     _setEditorContent('')
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Novo Modelo'
@@ -236,7 +240,13 @@
     if (el('lde_trigger_status')) el('lde_trigger_status').value = t.trigger_status || ''
     if (el('lde_trigger_procs')) el('lde_trigger_procs').value = (t.trigger_procedures || []).join(', ')
     if (el('lde_redirect_url')) el('lde_redirect_url').value = t.redirect_url || ''
-    if (el('lde_tracking_scripts')) el('lde_tracking_scripts').value = t.tracking_scripts || ''
+    var px = {}
+    try { px = t.tracking_scripts ? JSON.parse(t.tracking_scripts) : {} } catch (e) { px = {} }
+    if (el('lde_px_fb')) el('lde_px_fb').value = px.fb_pixel_id || ''
+    if (el('lde_px_ga')) el('lde_px_ga').value = px.ga_id || ''
+    if (el('lde_px_gtm')) el('lde_px_gtm').value = px.gtm_id || ''
+    if (el('lde_px_tiktok')) el('lde_px_tiktok').value = px.tiktok_id || ''
+    if (el('lde_px_custom')) el('lde_px_custom').value = px.custom_scripts || ''
     _populateProfDropdown(t.professional_id)
     _setEditorContent(t.content)
     if (el('legal_doc_editor_title')) el('legal_doc_editor_title').textContent = 'Editar: ' + t.name
@@ -263,7 +273,18 @@
 
     var profId = (document.getElementById('lde_professional_id') || {}).value || ''
     var redirectUrl = (document.getElementById('lde_redirect_url') || {}).value || ''
-    var trackingScripts = (document.getElementById('lde_tracking_scripts') || {}).value || ''
+    var pixelData = {}
+    var pxFb = (document.getElementById('lde_px_fb') || {}).value || ''
+    var pxGa = (document.getElementById('lde_px_ga') || {}).value || ''
+    var pxGtm = (document.getElementById('lde_px_gtm') || {}).value || ''
+    var pxTiktok = (document.getElementById('lde_px_tiktok') || {}).value || ''
+    var pxCustom = (document.getElementById('lde_px_custom') || {}).value || ''
+    if (pxFb) pixelData.fb_pixel_id = pxFb.trim()
+    if (pxGa) pixelData.ga_id = pxGa.trim()
+    if (pxGtm) pixelData.gtm_id = pxGtm.trim()
+    if (pxTiktok) pixelData.tiktok_id = pxTiktok.trim()
+    if (pxCustom) pixelData.custom_scripts = pxCustom.trim()
+    var trackingScripts = Object.keys(pixelData).length ? JSON.stringify(pixelData) : ''
 
     var data = {
       name: name.trim(), doc_type: docType, content: content.trim(),
@@ -474,38 +495,47 @@
   }
 
   // ── Expose ─────────────────────────────────────────────────
-  // ── Config avancada (redirect + pixels) ────────────────────
+  // ── Config avancada (redirect + pixels globais) ────────────
   async function loadLegalDocAdvancedConfig() {
     if (!window._sbShared) return
     try {
       var res = await window._sbShared.from('clinics').select('settings,website').limit(1).single()
       if (!res.data) return
       var s = res.data.settings || {}
-      var el1 = document.getElementById('ld_consent_redirect_url')
-      var el2 = document.getElementById('ld_consent_tracking_scripts')
-      if (el1) el1.value = s.consent_redirect_url || res.data.website || ''
-      if (el2) el2.value = s.consent_tracking_scripts || ''
+      var el = function (id) { return document.getElementById(id) }
+      if (el('ld_consent_redirect_url')) el('ld_consent_redirect_url').value = s.consent_redirect_url || res.data.website || ''
+
+      var px = s.consent_pixels || {}
+      if (typeof px === 'string') try { px = JSON.parse(px) } catch (e) { px = {} }
+      if (el('ld_g_px_fb')) el('ld_g_px_fb').value = px.fb_pixel_id || ''
+      if (el('ld_g_px_ga')) el('ld_g_px_ga').value = px.ga_id || ''
+      if (el('ld_g_px_gtm')) el('ld_g_px_gtm').value = px.gtm_id || ''
+      if (el('ld_g_px_tiktok')) el('ld_g_px_tiktok').value = px.tiktok_id || ''
     } catch (e) {}
   }
 
   async function saveLegalDocAdvancedConfig() {
     if (!window._sbShared) return
-    var redirectUrl = (document.getElementById('ld_consent_redirect_url') || {}).value || ''
-    var scripts = (document.getElementById('ld_consent_tracking_scripts') || {}).value || ''
+    var el = function (id) { return (document.getElementById(id) || {}).value || '' }
+
+    var pixels = {}
+    if (el('ld_g_px_fb').trim()) pixels.fb_pixel_id = el('ld_g_px_fb').trim()
+    if (el('ld_g_px_ga').trim()) pixels.ga_id = el('ld_g_px_ga').trim()
+    if (el('ld_g_px_gtm').trim()) pixels.gtm_id = el('ld_g_px_gtm').trim()
+    if (el('ld_g_px_tiktok').trim()) pixels.tiktok_id = el('ld_g_px_tiktok').trim()
 
     try {
-      // Ler settings atuais
       var res = await window._sbShared.from('clinics').select('id,settings').limit(1).single()
       if (!res.data) return
       var settings = res.data.settings || {}
-      settings.consent_redirect_url = redirectUrl.trim() || null
-      settings.consent_tracking_scripts = scripts.trim() || null
+      settings.consent_redirect_url = el('ld_consent_redirect_url').trim() || null
+      settings.consent_pixels = Object.keys(pixels).length ? pixels : null
 
       var upd = await window._sbShared.from('clinics').update({ settings: settings }).eq('id', res.data.id)
       if (upd.error) {
         if (window._showToast) _showToast('Documentos', 'Erro: ' + upd.error.message, 'error')
       } else {
-        if (window._showToast) _showToast('Documentos', 'Configuracoes salvas', 'success')
+        if (window._showToast) _showToast('Documentos', 'Pixels globais salvos', 'success')
       }
     } catch (e) {
       if (window._showToast) _showToast('Documentos', 'Erro: ' + e.message, 'error')

@@ -113,37 +113,93 @@
 
   // ── Carregar config de redirect + pixels ────────────────────
   // Prioridade: template > clinica global
-  var _templateConfig = null
+  // Pixels sao objetos estruturados: { fb_pixel_id, ga_id, gtm_id, tiktok_id, custom_scripts }
+  var _pixels = null
 
   async function _loadClinicConfig() {
     try {
-      // 1. Buscar config do template especifico (via request -> template)
+      var templatePixels = null
+      var templateRedirect = null
+
+      // 1. Config do template especifico
       var reqRes = await _sb.from('legal_doc_requests').select('template_id').eq('public_slug', _slug).single()
       if (reqRes.data && reqRes.data.template_id) {
-        var tmplRes = await _sb.from('legal_doc_templates').select('tracking_scripts,redirect_url,professional_id').eq('id', reqRes.data.template_id).single()
-        if (tmplRes.data) _templateConfig = tmplRes.data
+        var tmplRes = await _sb.from('legal_doc_templates').select('tracking_scripts,redirect_url').eq('id', reqRes.data.template_id).single()
+        if (tmplRes.data) {
+          templateRedirect = tmplRes.data.redirect_url
+          try { templatePixels = JSON.parse(tmplRes.data.tracking_scripts) } catch (e) {
+            // Fallback: se nao e JSON, tratar como custom_scripts legado
+            if (tmplRes.data.tracking_scripts) templatePixels = { custom_scripts: tmplRes.data.tracking_scripts }
+          }
+        }
       }
 
-      // 2. Buscar config global da clinica como fallback
+      // 2. Config global da clinica
       var clinicRes = await _sb.from('clinics').select('settings,website').limit(1).single()
-      var globalSettings = clinicRes.data ? (clinicRes.data.settings || {}) : {}
+      var gs = clinicRes.data ? (clinicRes.data.settings || {}) : {}
+      var globalPixels = null
+      try { globalPixels = gs.consent_pixels ? (typeof gs.consent_pixels === 'string' ? JSON.parse(gs.consent_pixels) : gs.consent_pixels) : null } catch (e) {}
+      // Fallback legado
+      if (!globalPixels && gs.consent_tracking_scripts) {
+        try { globalPixels = JSON.parse(gs.consent_tracking_scripts) } catch (e) {
+          globalPixels = { custom_scripts: gs.consent_tracking_scripts }
+        }
+      }
 
       // Redirect: template > clinica > website
-      window._ldRedirectUrl = (_templateConfig && _templateConfig.redirect_url)
-        || globalSettings.consent_redirect_url
-        || (clinicRes.data && clinicRes.data.website) || ''
+      window._ldRedirectUrl = templateRedirect || gs.consent_redirect_url || (clinicRes.data && clinicRes.data.website) || ''
 
-      // Pixels: template > clinica global
-      var scripts = (_templateConfig && _templateConfig.tracking_scripts)
-        || globalSettings.consent_tracking_scripts || ''
+      // Merge pixels: template sobreescreve global campo a campo
+      _pixels = Object.assign({}, globalPixels || {}, templatePixels || {})
 
-      if (scripts) {
-        _injectScripts(scripts)
-      }
-    } catch (e) { /* silencioso */ }
+      // Injetar cada pixel
+      if (_pixels.fb_pixel_id) _injectFbPixel(_pixels.fb_pixel_id)
+      if (_pixels.ga_id) _injectGA(_pixels.ga_id)
+      if (_pixels.gtm_id) _injectGTM(_pixels.gtm_id)
+      if (_pixels.tiktok_id) _injectTikTok(_pixels.tiktok_id)
+      if (_pixels.custom_scripts) _injectCustom(_pixels.custom_scripts)
+
+    } catch (e) { console.warn('[LegalDocs] Config load error:', e.message) }
   }
 
-  function _injectScripts(html) {
+  // ── Injecao individual de cada pixel ──────────────────────
+  function _injectFbPixel(id) {
+    if (!id) return
+    var s = document.createElement('script')
+    s.textContent = "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','" + id + "');fbq('track','PageView');"
+    document.head.appendChild(s)
+    console.log('[LegalDocs] FB Pixel injected:', id)
+  }
+
+  function _injectGA(id) {
+    if (!id) return
+    var s1 = document.createElement('script')
+    s1.async = true; s1.src = 'https://www.googletagmanager.com/gtag/js?id=' + id
+    document.head.appendChild(s1)
+    var s2 = document.createElement('script')
+    s2.textContent = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','" + id + "');"
+    document.head.appendChild(s2)
+    console.log('[LegalDocs] GA injected:', id)
+  }
+
+  function _injectGTM(id) {
+    if (!id) return
+    var s = document.createElement('script')
+    s.textContent = "(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" + id + "');"
+    document.head.appendChild(s)
+    console.log('[LegalDocs] GTM injected:', id)
+  }
+
+  function _injectTikTok(id) {
+    if (!id) return
+    var s = document.createElement('script')
+    s.textContent = "!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=['page','track','identify','instances','debug','on','off','once','ready','alias','group','enableCookie','disableCookie'];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};ttq.load=function(e,n){var i='https://analytics.tiktok.com/i18n/pixel/events.js';ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=document.createElement('script');o.type='text/javascript';o.async=!0;o.src=i+'?sdkid='+e+'&lib='+t;var a=document.getElementsByTagName('script')[0];a.parentNode.insertBefore(o,a)};ttq.load('" + id + "');ttq.page()}(window,document,'ttq');"
+    document.head.appendChild(s)
+    console.log('[LegalDocs] TikTok Pixel injected:', id)
+  }
+
+  function _injectCustom(html) {
+    if (!html) return
     var div = document.createElement('div')
     div.innerHTML = html
     div.querySelectorAll('script').forEach(function (el) {
@@ -403,7 +459,7 @@
       + '</div></div>'
   }
 
-  // ── Conversion tracking (pixels + WhatsApp) ────────────────
+  // ── Conversion tracking ─────────────────────────────────────
   function _fireConversionEvents() {
     var eventData = {
       event: 'consent_signed',
@@ -418,14 +474,12 @@
       try { fbq('track', 'CompleteRegistration', { content_name: 'consent_signed', status: 'signed' }) } catch (e) {}
     }
 
-    // Google Ads / gtag
+    // Google Analytics / Ads
     if (window.gtag) {
-      try { gtag('event', 'conversion', { event_category: 'legal_docs', event_label: 'consent_signed' }) } catch (e) {}
-    }
-
-    // Google Analytics 4
-    if (window.gtag) {
-      try { gtag('event', 'consent_signed', eventData) } catch (e) {}
+      try {
+        gtag('event', 'conversion', { event_category: 'legal_docs', event_label: 'consent_signed' })
+        gtag('event', 'consent_signed', eventData)
+      } catch (e) {}
     }
 
     // TikTok Pixel
@@ -433,12 +487,12 @@
       try { ttq.track('CompleteRegistration', { content_name: 'consent_signed' }) } catch (e) {}
     }
 
-    // Generic dataLayer (GTM)
+    // GTM dataLayer
     if (window.dataLayer) {
       try { dataLayer.push(Object.assign({ event: 'consent_signed' }, eventData)) } catch (e) {}
     }
 
-    console.log('[LegalDocs] Conversion event fired:', eventData)
+    console.log('[LegalDocs] Conversion fired:', _pixels || 'no pixels config', eventData)
   }
 
   // ── Navigation ─────────────────────────────────────────────

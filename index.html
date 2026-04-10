@@ -2892,11 +2892,19 @@
 
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                 <div style="padding:12px;background:#FFF7ED;border:1px solid #F59E0B30;border-radius:10px">
-                  <div style="font-size:10px;font-weight:700;color:#D97706;margin-bottom:6px">Rastreamento</div>
-                  <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">URL apos assinar</label>
-                  <input id="lde_redirect_url" type="url" placeholder="https://... (vazio = global)" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box;margin-bottom:8px" />
-                  <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Pixels</label>
-                  <textarea id="lde_tracking_scripts" rows="2" placeholder="Scripts FB/Google/TikTok" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:9px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+                  <div style="font-size:10px;font-weight:700;color:#D97706;margin-bottom:6px">Rastreamento & Redirect</div>
+                  <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">URL apos assinar</label>
+                  <input id="lde_redirect_url" type="url" placeholder="https://... (vazio = global)" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box;margin-bottom:6px" />
+                  <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">Facebook Pixel ID</label>
+                  <input id="lde_px_fb" type="text" placeholder="Ex: 123456789012345" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box;margin-bottom:6px" />
+                  <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">Google Analytics / Ads ID</label>
+                  <input id="lde_px_ga" type="text" placeholder="Ex: G-XXXXXXXXXX ou AW-XXXXXXXXX" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box;margin-bottom:6px" />
+                  <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">GTM Container ID</label>
+                  <input id="lde_px_gtm" type="text" placeholder="Ex: GTM-XXXXXXX" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box;margin-bottom:6px" />
+                  <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">TikTok Pixel ID</label>
+                  <input id="lde_px_tiktok" type="text" placeholder="Ex: CXXXXXXXXXXXXXXXXX" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box;margin-bottom:6px" />
+                  <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">Scripts extras</label>
+                  <textarea id="lde_px_custom" rows="2" placeholder="HTML/JS personalizado (opcional)" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:9px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
                 </div>
                 <div style="padding:12px;background:#F0FDF4;border:1px solid #10B98130;border-radius:10px">
                   <div style="font-size:10px;font-weight:700;color:#10B981;margin-bottom:6px">Envio automatico</div>
@@ -2970,17 +2978,29 @@
               </div>
             </div>
 
-            <!-- Config global -->
+            <!-- Config global de pixels -->
             <div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px">
-              <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:4px">Configuracoes Globais</div>
-              <div style="font-size:9px;color:#9CA3AF;margin-bottom:10px">Fallback quando o template nao tem config propria.</div>
-              <div style="margin-bottom:10px">
-                <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">URL redirect padrao</label>
-                <input id="ld_consent_redirect_url" type="url" placeholder="https://..." style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box" />
+              <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:4px">Pixels Globais</div>
+              <div style="font-size:9px;color:#9CA3AF;margin-bottom:10px">Fallback quando o template nao tem pixel proprio.</div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">URL redirect padrao</label>
+                <input id="ld_consent_redirect_url" type="url" placeholder="https://..." style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box" />
               </div>
-              <div style="margin-bottom:10px">
-                <label style="font-size:10px;font-weight:600;color:#374151;display:block;margin-bottom:3px">Pixels globais</label>
-                <textarea id="ld_consent_tracking_scripts" rows="3" placeholder="Scripts FB/Google/TikTok" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:9px;font-family:monospace;outline:none;box-sizing:border-box;resize:vertical"></textarea>
+              <div style="margin-bottom:8px">
+                <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">Facebook Pixel ID</label>
+                <input id="ld_g_px_fb" type="text" placeholder="123456789012345" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box" />
+              </div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">Google Analytics / Ads</label>
+                <input id="ld_g_px_ga" type="text" placeholder="G-XXXXXXXXXX" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box" />
+              </div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">GTM Container</label>
+                <input id="ld_g_px_gtm" type="text" placeholder="GTM-XXXXXXX" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box" />
+              </div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:9px;font-weight:600;color:#374151;display:block;margin-bottom:2px">TikTok Pixel</label>
+                <input id="ld_g_px_tiktok" type="text" placeholder="CXXXXXXXXXXXXXXXXX" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:10px;outline:none;box-sizing:border-box" />
               </div>
               <button onclick="saveLegalDocAdvancedConfig()" style="width:100%;padding:8px;background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">Salvar</button>
             </div>
