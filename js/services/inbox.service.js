@@ -33,6 +33,24 @@
 
   function _repo() { return window.InboxRepository || null }
 
+  async function _logError(source, errorType, phone, content, errorMsg) {
+    try {
+      var url = (window.ClinicEnv?.SUPABASE_URL || '') + '/rest/v1/rpc/wa_log_error'
+      var key = window.ClinicEnv?.SUPABASE_KEY || ''
+      await fetch(url, {
+        method: 'POST',
+        headers: { 'apikey': key, 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          p_source: source,
+          p_error_type: errorType,
+          p_phone: phone || null,
+          p_payload: content ? { content: String(content).substring(0, 200) } : null,
+          p_error_msg: String(errorMsg || '').substring(0, 500)
+        })
+      })
+    } catch (e) { console.error('[InboxService] Falha ao logar erro:', e.message) }
+  }
+
   async function _sendEvolution(phone, content) {
     try {
       const r = await fetch(EVOLUTION_URL + '/message/sendText/' + EVOLUTION_INSTANCE, {
@@ -99,6 +117,8 @@
         if (msgId && repo.updateMessageStatus) {
           await repo.updateMessageStatus(msgId, 'failed')
         }
+        // Logar erro
+        _logError('inbox_send', 'evolution_failed', phone, content, evoResult.error)
         return { ok: true, data: result.data, sendFailed: true, sendError: evoResult.error }
       }
       // Marcar como enviado

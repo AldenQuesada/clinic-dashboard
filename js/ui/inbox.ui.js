@@ -150,6 +150,7 @@
     _render()
     _startAutoRefresh()
     _startRealtime()
+    _checkHealth()
   }
 
   function _startAutoRefresh() {
@@ -348,6 +349,10 @@
         '<div class="ibx-card-icon" style="background:#DCFCE7;color:#25D366">' + _svg('refreshCw', 18) + '</div>' +
         '<div class="ibx-card-info"><div class="ibx-card-label">Atualizar</div><div class="ibx-card-value" style="font-size:12px;color:var(--text-secondary)">Agora</div></div>' +
       '</button>' +
+      '<div class="ibx-card" id="ibxHealthCard" style="display:none">' +
+        '<div class="ibx-card-icon" style="background:#FEE2E2;color:#DC2626">' + _svg('alertCircle', 18) + '</div>' +
+        '<div class="ibx-card-info"><div class="ibx-card-label" id="ibxHealthLabel">Erros</div><div class="ibx-card-value" id="ibxHealthValue" style="color:#DC2626">0</div></div>' +
+      '</div>' +
     '</div>'
   }
 
@@ -708,6 +713,38 @@
     }
 
     await _loadChat(_activeId)
+  }
+
+  // ── Health Check ──────────────────────────────────────────────
+
+  async function _checkHealth() {
+    try {
+      var env = window.ClinicEnv || {}
+      if (!env.SUPABASE_URL || !env.SUPABASE_KEY) return
+      var r = await fetch(env.SUPABASE_URL + '/rest/v1/rpc/wa_health_check', {
+        method: 'POST',
+        headers: { 'apikey': env.SUPABASE_KEY, 'Authorization': 'Bearer ' + env.SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: '{}'
+      })
+      if (!r.ok) return
+      var data = await r.json()
+      var card = document.getElementById('ibxHealthCard')
+      var label = document.getElementById('ibxHealthLabel')
+      var value = document.getElementById('ibxHealthValue')
+      if (!card) return
+
+      var issues = (data.errors_unresolved || 0) + (data.failed_msgs || 0)
+      if (issues > 0) {
+        card.style.display = ''
+        value.textContent = issues
+        label.textContent = data.failed_msgs > 0 ? 'Msgs Falharam' : 'Erros'
+      } else {
+        card.style.display = 'none'
+      }
+    } catch (e) { /* silencioso */ }
+
+    // Repetir a cada 60s
+    setTimeout(_checkHealth, 60000)
   }
 
   // ── Supabase Realtime ────────────────────────────────────────
