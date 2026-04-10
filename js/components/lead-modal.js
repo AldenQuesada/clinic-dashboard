@@ -615,11 +615,10 @@ function _lmNav(activeTab) {
   ]
   var items = tabs.map(function(t) {
     var active = t.id === activeTab
-    return '<button id="lmNav_' + t.id + '" onclick="_lmSwitchTab(\'' + t.id + '\')" ' +
-      'style="width:100%;display:flex;align-items:center;gap:9px;padding:9px 12px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:' + (active?'600':'500') + ';text-align:left;transition:background .12s;background:' + (active?'#F5F3FF':'transparent') + ';color:' + (active?'#7C3AED':'#6B7280') + '">' +
+    return '<button id="lmNav_' + t.id + '" onclick="_lmSwitchTab(\'' + t.id + '\')" class="modal-sidebar-btn' + (active ? ' active' : '') + '">' +
       t.icon + t.label + '</button>'
   }).join('')
-  return '<div style="width:172px;flex-shrink:0;background:#FAFAFA;border-right:1px solid #F3F4F6;padding:14px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto">' + items + '</div>'
+  return '<div class="modal-sidebar">' + items + '</div>'
 }
 
 function _lmSwitchTab(tabId) {
@@ -627,10 +626,8 @@ function _lmSwitchTab(tabId) {
   ;['geral','clinico','anamnese','evolucao','financeiro','timeline','documentos','fichas','interacoes','protocolos'].forEach(function(t) {
     var btn = document.getElementById('lmNav_' + t)
     if (!btn) return
-    var a = t === tabId
-    btn.style.background = a ? '#F5F3FF' : 'transparent'
-    btn.style.color      = a ? '#7C3AED' : '#6B7280'
-    btn.style.fontWeight = a ? '600' : '500'
+    if (t === tabId) btn.classList.add('active')
+    else btn.classList.remove('active')
   })
   var content = document.getElementById('lmContent')
   if (content && _currentLead) {
@@ -1650,12 +1647,12 @@ function showLeadModal(lead) {
   const modal = document.createElement('div')
   modal.id = 'leadModal'
   modal.innerHTML =
-    '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9998;padding:16px" onclick="if(event.target===this){this.remove();if(typeof loadLeads===\'function\')loadLeads()}">' +
-      '<div style="background:#fff;border-radius:18px;width:100%;max-width:1080px;height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.25)">' +
+    '<div class="modal-overlay modal-xl open" onclick="if(event.target===this){this.remove();if(typeof loadLeads===\'function\')loadLeads()}">' +
+      '<div class="modal-box" style="height:92vh">' +
         _lmHeader(lead) +
-        '<div style="display:flex;flex:1;overflow:hidden">' +
+        '<div class="modal-with-sidebar">' +
           _lmNav('geral') +
-          '<div id="lmContent" style="flex:1;overflow-y:auto;padding:24px 28px">' +
+          '<div id="lmContent" class="modal-content">' +
             _renderModalTab('geral', lead) +
           '</div>' +
         '</div>' +

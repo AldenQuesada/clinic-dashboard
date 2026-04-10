@@ -1015,17 +1015,24 @@ function _buildFinModal(id, appt) {
   window._finProcCatalog = _finProcCatalog
   var _finProcOpts = '<datalist id="apptProcList">' + Object.keys(_finProcCatalog).map(function(n){return '<option value="'+n+'"/>'}).join('') + '</datalist>'
 
-  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px'
+  m.style.cssText = ''
+  m.className = ''
   m.innerHTML = _finProcOpts + `
-    <div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;width:100%;max-width:960px;max-height:96vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.25)">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #E5E7EB;flex-shrink:0">
-        <div>
-          <div style="font-size:15px;font-weight:800;color:#111">Finalizar Atendimento</div>
-          <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${appt.pacienteNome} · ${appt.data?_fmtD(appt.data):''} ${appt.horaInicio||''}</div>
+    <div class="modal-overlay modal-lg open dialog" onclick="if(event.target===this)closeFinalizeModal()">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div class="modal-header-info">
+            <div class="modal-header-icon" style="background:#10B98115;color:#10B981">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <div class="modal-title">Finalizar Atendimento</div>
+              <div class="modal-subtitle">${appt.pacienteNome} · ${appt.data?_fmtD(appt.data):''} ${appt.horaInicio||''}</div>
+            </div>
+          </div>
+          <button class="modal-close" onclick="closeFinalizeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
-        <button onclick="closeFinalizeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9CA3AF">&#10005;</button>
-      </div>
-      <div style="flex:1;overflow-y:auto;padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div class="modal-body" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
 
         <!-- ════ COLUNA ESQUERDA: Procedimentos + Financeiro ════ -->
         <div style="display:flex;flex-direction:column;gap:16px">
@@ -1123,11 +1130,12 @@ function _buildFinModal(id, appt) {
 
       </div>
 
-      <div style="padding:14px 20px;border-top:1px solid #E5E7EB;display:flex;gap:9px;flex-shrink:0">
-        <button onclick="closeFinalizeModal()" style="flex:1;padding:10px;border:1.5px solid #E5E7EB;background:#fff;color:#374151;border-radius:9px;cursor:pointer;font-size:13px;font-weight:700">Cancelar</button>
-        <button onclick="confirmFinalize('${id}')" style="flex:2;padding:10px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:800">Confirmar Finalizacao</button>
       </div>
-    </div>`
+      <div class="modal-footer">
+        <button class="modal-btn modal-btn-ghost" onclick="closeFinalizeModal()">Cancelar</button>
+        <button class="modal-btn modal-btn-primary" onclick="confirmFinalize('${id}')" style="flex:2">Confirmar Finalizacao</button>
+      </div>
+    </div></div>`
 }
 
 function _buildFinFlowChecks() {
