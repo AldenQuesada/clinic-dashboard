@@ -821,28 +821,24 @@ async function _lmSendAnamnese(leadId, method) {
     return
   }
 
-  // Upsert lead como patient no banco
+  // Upsert lead como patient via REST direto (com Prefer merge-duplicates)
   var patientId = leadId
   try {
-    // Verificar se ja existe
-    var existing = await window._sbShared.from('patients').select('id').eq('id', leadId).limit(1)
-    if (!existing.data || !existing.data.length) {
-      // Criar patient
-      var fullName = (lead.name || lead.nome || 'Paciente').trim()
-      var spaceIdx = fullName.indexOf(' ')
-      var firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
-      var lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1).trim() : null
+    var fullName = (lead.name || lead.nome || 'Paciente').trim()
+    var spaceIdx = fullName.indexOf(' ')
+    var firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
+    var lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1).trim() : null
 
-      var upsRes = await window._sbShared.from('patients').upsert({
-        id: leadId,
-        first_name: firstName,
-        last_name: lastName,
-        phone: lead.phone || lead.whatsapp || lead.telefone || null,
-        email: lead.email || null,
-      }, { onConflict: 'id' })
-      if (upsRes.error) console.warn('[Anamnese] Patient upsert:', upsRes.error.message)
-    }
-    patientId = leadId
+    var sbUrl = window.ClinicEnv ? ClinicEnv.SUPABASE_URL : 'https://oqboitkpcvuaudouwvkl.supabase.co'
+    var sbKey = window.ClinicEnv ? ClinicEnv.SUPABASE_KEY : ''
+    var sess = await window._sbShared.auth.getSession()
+    var tok = sess?.data?.session?.access_token || ''
+
+    await fetch(sbUrl + '/rest/v1/patients', {
+      method: 'POST',
+      headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify([{ id: leadId, clinic_id: '00000000-0000-0000-0000-000000000001', first_name: firstName, last_name: lastName, phone: lead.phone || lead.whatsapp || lead.telefone || null, email: lead.email || null }]),
+    })
   } catch (e) { console.warn('[Anamnese] Patient upsert error:', e.message) }
 
   // Criar request
