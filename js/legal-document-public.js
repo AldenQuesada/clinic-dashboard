@@ -150,7 +150,7 @@
       + '<div class="ld-card-body">'
       + '<div class="ld-field"><label class="ld-label">Nome completo</label>'
       + '<input class="ld-input" id="ldName" value="' + _esc(_signerName) + '" placeholder="Seu nome completo" /></div>'
-      + '<div class="ld-field"><label class="ld-label">CPF <span style="font-weight:400;color:#9CA3AF">(opcional)</span></label>'
+      + '<div class="ld-field"><label class="ld-label">CPF</label>'
       + '<input class="ld-input" id="ldCpf" value="' + _esc(_signerCpf) + '" placeholder="000.000.000-00" inputmode="numeric" oninput="this.value=window._ldFormatCpf(this.value)" maxlength="14" /></div>'
       + '<button class="ld-btn ld-btn-primary" onclick="window._ldNext(1)">Continuar</button>'
       + '</div>'
@@ -282,13 +282,12 @@
       _signerCpf = (document.getElementById('ldCpf') || {}).value || ''
       if (!_signerName.trim()) { alert('Informe seu nome completo.'); return }
 
-      // Validar CPF se preenchido
-      if (_signerCpf.trim()) {
-        if (!_validateCpf(_signerCpf)) { alert('CPF invalido. Verifique os digitos.'); return }
-        // Bater com CPF registrado
-        if (_doc.patient_cpf && !_cpfsMatch(_signerCpf, _doc.patient_cpf)) {
-          alert('O CPF informado nao corresponde ao cadastrado. Verifique.'); return
-        }
+      // Validar CPF (obrigatorio)
+      if (!_signerCpf.trim()) { alert('Informe seu CPF.'); return }
+      if (!_validateCpf(_signerCpf)) { alert('CPF invalido. Verifique os digitos.'); return }
+      // Bater com CPF registrado
+      if (_doc.patient_cpf && !_cpfsMatch(_signerCpf, _doc.patient_cpf)) {
+        alert('O CPF informado nao corresponde ao cadastrado. Verifique.'); return
       }
 
       _step = 2

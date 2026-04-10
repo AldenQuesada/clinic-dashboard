@@ -236,7 +236,7 @@
   async function testLegalDocTemplate(id) {
     var testData = {
       pacienteNome: 'Maria Silva Teste',
-      pacienteCpf: '000.000.000-00',
+      pacienteCpf: '529.982.247-25',
       profissionalIdx: 0,
       procedimento: 'Avaliacao',
       horaInicio: new Date().getHours().toString().padStart(2, '0') + ':' + new Date().getMinutes().toString().padStart(2, '0'),
