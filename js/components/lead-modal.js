@@ -754,7 +754,7 @@ async function _lmLoadFichas(lead) {
     }
 
     el.innerHTML = '<div style="text-align:center;padding:30px;color:#9CA3AF;font-size:13px">Nenhuma ficha de anamnese preenchida.</div>'
-      + '<div style="text-align:center;margin-top:8px"><button onclick="_lmSwitchTab(\'anamnese\')" style="padding:7px 16px;background:#F3F4F6;color:#374151;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">Ir para Anamnese</button></div>'
+      + _renderSendAnamnesePanel(lead)
     return
   }
 
@@ -789,7 +789,7 @@ async function _lmLoadFichas(lead) {
   })
   html += '</div>'
 
-  el.innerHTML = html
+  el.innerHTML = _renderSendAnamnesePanel(lead) + html
 }
 
 function _renderSendAnamnesePanel(lead) {
