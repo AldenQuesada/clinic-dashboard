@@ -78,6 +78,16 @@
     return _rpc('wa_inbox_reopen', { p_conversation_id: id })
   }
 
+  async function updateMessageStatus(msgId, status) {
+    try {
+      await fetch(_url() + '/rest/v1/wa_messages?id=eq.' + msgId, {
+        method: 'PATCH', headers: _headers(),
+        body: JSON.stringify({ status: status })
+      })
+      return { ok: true }
+    } catch (e) { return { ok: false, error: e.message } }
+  }
+
   // ── Expose ────────────────────────────────────────────────────
 
   window.InboxRepository = Object.freeze({
@@ -89,5 +99,6 @@
     resolve,
     archive,
     reopen,
+    updateMessageStatus,
   })
 })()

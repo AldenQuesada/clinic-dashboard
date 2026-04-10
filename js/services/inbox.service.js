@@ -92,9 +92,23 @@
     // Dispara mensagem via Evolution API
     const phone = result.data?.phone || result.data?.remoteJid || null
     if (phone) {
-      await _sendEvolution(phone, content)
+      const evoResult = await _sendEvolution(phone, content)
+      if (!evoResult.ok) {
+        // Marcar como falha no banco
+        var msgId = result.data?.message_id
+        if (msgId && repo.updateMessageStatus) {
+          await repo.updateMessageStatus(msgId, 'failed')
+        }
+        return { ok: true, data: result.data, sendFailed: true, sendError: evoResult.error }
+      }
+      // Marcar como enviado
+      var msgId2 = result.data?.message_id
+      if (msgId2 && repo.updateMessageStatus) {
+        await repo.updateMessageStatus(msgId2, 'sent')
+      }
     } else {
       console.warn('[InboxService] Sem telefone no resultado RPC, Evolution API nao chamada')
+      return { ok: true, data: result.data, sendFailed: true, sendError: 'Telefone nao encontrado' }
     }
 
     return result

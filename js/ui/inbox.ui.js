@@ -517,11 +517,18 @@
       contentHtml = _esc(msg.content || '').replace(/\n/g, '<br>')
     }
 
+    var statusIcon = ''
+    if (!isInbound && msg.status) {
+      if (msg.status === 'failed') statusIcon = '<span class="ibx-msg-status ibx-status-failed" title="Falha no envio">✗</span>'
+      else if (msg.status === 'pending') statusIcon = '<span class="ibx-msg-status ibx-status-pending" title="Enviando...">◷</span>'
+      else if (msg.status === 'sent') statusIcon = '<span class="ibx-msg-status ibx-status-sent" title="Enviado">✓</span>'
+    }
+
     return '<div class="' + msgClass + '">' +
       '<div>' + contentHtml + '</div>' +
       '<div class="ibx-msg-meta">' +
         senderLabel +
-        '<span class="ibx-msg-time">' + _timeShort(msg.sent_at) + '</span>' +
+        '<span class="ibx-msg-time">' + _timeShort(msg.sent_at) + statusIcon + '</span>' +
       '</div>' +
     '</div>'
   }
@@ -678,11 +685,27 @@
     var sendBtn = document.getElementById('ibxSendBtn')
     if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Enviando...' }
 
-    await window.InboxService.sendMessage(_activeId, text)
+    var result = await window.InboxService.sendMessage(_activeId, text)
 
     _sending = false
-    inputEl.value = ''
     inputEl.disabled = false
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Enviar' }
+
+    if (result && result.sendFailed) {
+      // Mostrar erro mas manter texto no input para reenvio
+      var errDiv = document.getElementById('ibxSendError')
+      if (!errDiv) {
+        errDiv = document.createElement('div')
+        errDiv.id = 'ibxSendError'
+        errDiv.style.cssText = 'padding:6px 12px;background:#FEE2E2;color:#DC2626;font-size:12px;font-weight:600;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center'
+        inputEl.parentNode.insertBefore(errDiv, inputEl)
+      }
+      errDiv.innerHTML = '<span>Falha ao enviar. Mensagem salva mas nao chegou ao paciente.</span><button onclick="this.parentNode.remove()" style="background:none;border:none;color:#DC2626;font-weight:700;cursor:pointer;font-size:14px">X</button>'
+    } else {
+      inputEl.value = ''
+      var errDiv = document.getElementById('ibxSendError')
+      if (errDiv) errDiv.remove()
+    }
 
     await _loadChat(_activeId)
   }

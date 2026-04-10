@@ -397,6 +397,26 @@
 .ibx-msg-time {
   font-size: 10px;
   color: #6B7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ibx-msg-status {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ibx-status-sent {
+  color: #10B981;
+}
+
+.ibx-status-pending {
+  color: #F59E0B;
+}
+
+.ibx-status-failed {
+  color: #EF4444;
 }
 
 .ibx-msg-sender {
