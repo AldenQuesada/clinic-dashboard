@@ -825,20 +825,25 @@ async function _lmSendAnamnese(leadId, method) {
   var patientId = leadId
   try {
     var fullName = (lead.name || lead.nome || 'Paciente').trim()
-    var spaceIdx = fullName.indexOf(' ')
-    var firstName = spaceIdx > 0 ? fullName.slice(0, spaceIdx) : fullName
-    var lastName = spaceIdx > 0 ? fullName.slice(spaceIdx + 1).trim() : null
+    var phone = lead.phone || lead.whatsapp || lead.telefone || '0'
 
     var sbUrl = window.ClinicEnv ? ClinicEnv.SUPABASE_URL : 'https://oqboitkpcvuaudouwvkl.supabase.co'
     var sbKey = window.ClinicEnv ? ClinicEnv.SUPABASE_KEY : ''
     var sess = await window._sbShared.auth.getSession()
     var tok = sess?.data?.session?.access_token || ''
 
-    await fetch(sbUrl + '/rest/v1/patients', {
+    // Buscar tenantId
+    var tenantRes = await fetch(sbUrl + '/rest/v1/tenants?select=id&limit=1', { headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + tok } })
+    var tenants = await tenantRes.json()
+    var tenantId = (tenants && tenants[0]) ? tenants[0].id : 'kktstp8hrf7x3pef0rvrp930'
+
+    var now = new Date().toISOString()
+    var upsRes = await fetch(sbUrl + '/rest/v1/patients', {
       method: 'POST',
       headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify([{ id: leadId, clinic_id: '00000000-0000-0000-0000-000000000001', first_name: firstName, last_name: lastName, phone: lead.phone || lead.whatsapp || lead.telefone || null, email: lead.email || null }]),
+      body: JSON.stringify([{ id: leadId, clinic_id: '00000000-0000-0000-0000-000000000001', tenantId: tenantId, leadId: leadId, name: fullName, phone: phone, updatedAt: now }]),
     })
+    if (!upsRes.ok) console.warn('[Anamnese] Patient upsert failed:', await upsRes.text())
   } catch (e) { console.warn('[Anamnese] Patient upsert error:', e.message) }
 
   // Criar request
