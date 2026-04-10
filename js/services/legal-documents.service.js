@@ -17,6 +17,24 @@
 
   var _templates = null
   var _baseUrl = ''
+  var _clinicDataFromDb = null
+
+  // ── Carregar dados da clinica do banco (CNPJ, endereco) ───
+  async function _loadClinicData() {
+    if (_clinicDataFromDb || !window._sbShared) return
+    try {
+      var res = await window._sbShared.from('clinics').select('name,address,fiscal').limit(1).single()
+      if (res.data) {
+        var addr = res.data.address || {}
+        var fiscal = res.data.fiscal || {}
+        _clinicDataFromDb = {
+          name: res.data.name || '',
+          cnpj: fiscal.cnpj || '',
+          endereco: [addr.rua, addr.num, addr.comp, addr.bairro, addr.cidade, addr.estado].filter(Boolean).join(', '),
+        }
+      }
+    } catch (e) { /* silencioso */ }
+  }
 
   // ── Detectar base URL do dashboard ─────────────────────────
   function _getBaseUrl() {
@@ -75,9 +93,15 @@
     if (window._getClinicaNome) clinicName = _getClinicaNome()
     else if (window.ClinicEnv && ClinicEnv.CLINIC_NAME) clinicName = ClinicEnv.CLINIC_NAME
 
-    // Dados da clinica
+    // Dados da clinica (localStorage + cache do banco)
     var clinicData = {}
     try { clinicData = JSON.parse(localStorage.getItem('clinicai_clinic_data') || '{}') } catch (e) {}
+    // Complementar com dados do banco se disponiveis
+    if (_clinicDataFromDb) {
+      if (!clinicData.cnpj && _clinicDataFromDb.cnpj) clinicData.cnpj = _clinicDataFromDb.cnpj
+      if (!clinicData.endereco && _clinicDataFromDb.endereco) clinicData.endereco = _clinicDataFromDb.endereco
+      if (!clinicName && _clinicDataFromDb.name) clinicName = _clinicDataFromDb.name
+    }
 
     // Endereco paciente (se disponivel no lead)
     var pacienteEndereco = opts.endereco || opts.patient_address || ''
@@ -152,6 +176,9 @@
     if (!_templates) await loadTemplates()
     var tmpl = (_templates || []).find(function (t) { return t.id === templateId })
     if (!tmpl) return { ok: false, error: 'Template nao encontrado' }
+
+    // Garantir dados da clinica carregados
+    await _loadClinicData()
 
     // Resolver profissional automaticamente pelo procedimento
     var procedimento = apptOrOpts.procedimento || apptOrOpts.procedure_name || ''
