@@ -1,13 +1,13 @@
 /**
- * ClinicAI — Legal Document Public Page
+ * ClinicAI — Legal Document Public Page (Premium)
  *
  * Pagina publica para assinatura digital de documentos legais.
  * Acesso via token: legal-document.html#slug=X&token=Y
  *
- * 4 etapas:
+ * 4 etapas com stepper visual:
  *   1. Identificacao — confirma nome e CPF
  *   2. Documento — texto completo, scroll obrigatorio
- *   3. Assinatura — canvas touch para desenhar
+ *   3. Assinatura — canvas touch com linha guia
  *   4. Confirmacao — checkbox + submit
  *
  * Lei 14.063/2020 — assinatura eletronica simples
@@ -20,7 +20,7 @@
   var _slug = ''
   var _token = ''
   var _doc = null
-  var _step = 0 // 0=loading, 1=identify, 2=document, 3=signature, 4=confirm, 5=success, -1=error
+  var _step = 0
   var _signerName = ''
   var _signerCpf = ''
   var _scrolledToBottom = false
@@ -30,9 +30,47 @@
   var _geoloc = null
   var _errorMsg = ''
 
+  // ── Toast system ──────────────────────────────────────────
+  var _toastTimer = null
+  function _toast(msg, type) {
+    var el = document.getElementById('ldToast')
+    if (!el) return
+    el.textContent = msg
+    el.className = 'ld-toast ' + (type || 'error')
+    clearTimeout(_toastTimer)
+    requestAnimationFrame(function () { el.classList.add('show') })
+    _toastTimer = setTimeout(function () { el.classList.remove('show') }, 3500)
+  }
+
+  // ── Stepper ───────────────────────────────────────────────
+  var STEP_ICONS = [
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>',
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  ]
+  var CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>'
+
+  function _renderStepper() {
+    var el = document.getElementById('ldStepper')
+    if (!el) return
+    if (_step <= 0 || _step > 4) { el.style.display = 'none'; return }
+    el.style.display = 'flex'
+
+    var html = ''
+    for (var i = 1; i <= 4; i++) {
+      var cls = i < _step ? 'done' : i === _step ? 'active' : 'pending'
+      var icon = i < _step ? CHECK_SVG : STEP_ICONS[i - 1]
+      html += '<div class="ld-step-item">'
+        + '<div class="ld-step-dot ' + cls + '">' + icon + '</div>'
+        + (i < 4 ? '<div class="ld-step-line' + (i < _step ? ' done' : '') + '"></div>' : '')
+        + '</div>'
+    }
+    el.innerHTML = html
+  }
+
   // ── Init ───────────────────────────────────────────────────
   function init() {
-    // Parse hash params
     var hash = window.location.hash.substring(1)
     var params = {}
     hash.split('&').forEach(function (p) {
@@ -50,7 +88,6 @@
       return
     }
 
-    // Init Supabase
     if (!window.ClinicEnv) {
       _errorMsg = 'Configuracao nao encontrada.'
       _step = -1
@@ -60,7 +97,6 @@
 
     _sb = window.supabase.createClient(ClinicEnv.SUPABASE_URL, ClinicEnv.SUPABASE_KEY)
 
-    // Try get geolocation
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         function (pos) { _geoloc = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy } },
@@ -77,11 +113,7 @@
   // ── Validate token ─────────────────────────────────────────
   async function _validateToken() {
     try {
-      var res = await _sb.rpc('legal_doc_validate_token', {
-        p_slug: _slug,
-        p_token: _token,
-        p_ip: null
-      })
+      var res = await _sb.rpc('legal_doc_validate_token', { p_slug: _slug, p_token: _token, p_ip: null })
 
       if (res.error) {
         _errorMsg = res.error.message || 'Erro ao validar documento.'
@@ -102,8 +134,7 @@
       _signerName = _doc.patient_name || ''
       _signerCpf = _doc.patient_cpf || ''
 
-      document.getElementById('ldHeaderTitle').textContent = 'Termo de Consentimento'
-      document.getElementById('ldHeaderSub').textContent = _doc.professional_name || 'Clinica'
+      document.getElementById('ldHeaderSub').textContent = _doc.professional_name ? 'Dr(a). ' + _doc.professional_name : 'Consentimento Digital'
 
       _step = 1
       _render()
@@ -123,9 +154,17 @@
     var pEl = document.getElementById('ldProgress')
     if (pEl) pEl.style.width = (progress[_step] || 0) + '%'
 
+    _renderStepper()
+
     if (_step === 0) { root.innerHTML = _renderLoading(); return }
     if (_step === -1) { root.innerHTML = _renderError(); return }
-    if (_step === 5) { root.innerHTML = _renderSuccess(); return }
+    if (_step === 5) {
+      root.innerHTML = _renderSuccess()
+      _showConfetti()
+      var stepperEl = document.getElementById('ldStepper')
+      if (stepperEl) stepperEl.style.display = 'none'
+      return
+    }
 
     var html = '<div class="ld-card">'
     if (_step === 1) html += _renderStep1()
@@ -145,13 +184,13 @@
     return '<div class="ld-card-header">'
       + '<div class="ld-step-label">Etapa 1 de 4</div>'
       + '<div class="ld-step-title">Identificacao</div>'
-      + '<div class="ld-step-desc">Confirme seus dados antes de visualizar o documento.</div>'
+      + '<div class="ld-step-desc">Confirme seus dados pessoais para prosseguir com a assinatura do documento.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
-      + '<div class="ld-field"><label class="ld-label">Nome completo</label>'
-      + '<input class="ld-input" id="ldName" value="' + _esc(_signerName) + '" placeholder="Seu nome completo" /></div>'
-      + '<div class="ld-field"><label class="ld-label">CPF</label>'
-      + '<input class="ld-input" id="ldCpf" value="' + _esc(_signerCpf) + '" placeholder="000.000.000-00" inputmode="numeric" oninput="this.value=window._ldFormatCpf(this.value)" maxlength="14" /></div>'
+      + '<div class="ld-field"><label class="ld-label" for="ldName">Nome completo</label>'
+      + '<input class="ld-input" id="ldName" value="' + _esc(_signerName) + '" placeholder="Seu nome completo" autocomplete="name" /></div>'
+      + '<div class="ld-field"><label class="ld-label" for="ldCpf">CPF</label>'
+      + '<input class="ld-input" id="ldCpf" value="' + _esc(_signerCpf) + '" placeholder="000.000.000-00" inputmode="numeric" oninput="this.value=window._ldFormatCpf(this.value)" maxlength="14" autocomplete="off" /></div>'
       + '<button class="ld-btn ld-btn-primary" onclick="window._ldNext(1)">Continuar</button>'
       + '</div>'
   }
@@ -161,11 +200,13 @@
     return '<div class="ld-card-header">'
       + '<div class="ld-step-label">Etapa 2 de 4</div>'
       + '<div class="ld-step-title">Leia o Documento</div>'
-      + '<div class="ld-step-desc">Leia atentamente todo o conteudo. Voce precisara rolar ate o final.</div>'
+      + '<div class="ld-step-desc">Leia atentamente todo o conteudo abaixo. Voce precisara rolar ate o final para continuar.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
       + '<div class="ld-doc-text" id="ldDocText">' + _sanitize(_doc.content || '') + '</div>'
-      + '<div class="ld-scroll-hint" id="ldScrollHint">Role ate o final para continuar</div>'
+      + '<div class="ld-scroll-hint" id="ldScrollHint">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><polyline points="6 9 12 15 18 9"/></svg>'
+      + ' Role ate o final para continuar</div>'
       + '<button class="ld-btn ld-btn-primary" id="ldDocNext" onclick="window._ldNext(2)"'
       + (_scrolledToBottom ? '' : ' disabled') + '>'
       + (_scrolledToBottom ? 'Li e desejo continuar' : 'Role ate o final para continuar')
@@ -184,9 +225,12 @@
       + '<div class="ld-card-body">'
       + '<div class="ld-sig-container" id="ldSigContainer">'
       + '<canvas class="ld-sig-canvas" id="ldSigCanvas" width="500" height="200"></canvas>'
-      + '<div class="ld-sig-placeholder" id="ldSigPlaceholder">Assine aqui</div>'
+      + '<div class="ld-sig-guide"></div>'
+      + '<div class="ld-sig-placeholder" id="ldSigPlaceholder">'
+      + '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5z"/></svg>'
+      + 'Toque ou clique para assinar</div>'
       + '</div>'
-      + '<div class="ld-sig-actions"><button class="ld-sig-clear" onclick="window._ldClearSig()">Limpar</button></div>'
+      + '<div class="ld-sig-actions"><button class="ld-sig-clear" onclick="window._ldClearSig()">Limpar assinatura</button></div>'
       + '<button class="ld-btn ld-btn-primary" onclick="window._ldNext(3)" style="margin-top:16px">Continuar</button>'
       + '<button class="ld-btn ld-btn-secondary" onclick="window._ldBack(3)">Voltar</button>'
       + '</div>'
@@ -196,60 +240,108 @@
   function _renderStep4() {
     return '<div class="ld-card-header">'
       + '<div class="ld-step-label">Etapa 4 de 4</div>'
-      + '<div class="ld-step-title">Confirmacao</div>'
-      + '<div class="ld-step-desc">Revise os dados e confirme a assinatura do documento.</div>'
+      + '<div class="ld-step-title">Confirmacao Final</div>'
+      + '<div class="ld-step-desc">Revise todos os dados e confirme a assinatura do documento.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
-      + '<div style="padding:12px;background:#F9FAFB;border-radius:10px;margin-bottom:12px;font-size:13px">'
-      + '<div><strong>Nome:</strong> ' + _esc(_signerName) + '</div>'
-      + (_signerCpf ? '<div><strong>CPF:</strong> ' + _esc(_signerCpf) + '</div>' : '')
-      + '<div><strong>Profissional:</strong> ' + _esc(_doc.professional_name || '-') + '</div>'
-      + (_doc.professional_reg ? '<div><strong>Registro:</strong> ' + _esc(_doc.professional_reg) + '</div>' : '')
-      + '<div><strong>Data:</strong> ' + new Date().toLocaleDateString('pt-BR') + '</div>'
+      + '<div style="padding:16px;background:linear-gradient(135deg,#FAFBFC,#F3F4F6);border-radius:14px;margin-bottom:16px;font-size:13px">'
+      + '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #E5E7EB"><span style="color:#6B7280">Paciente</span><span style="font-weight:600">' + _esc(_signerName) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #E5E7EB"><span style="color:#6B7280">CPF</span><span style="font-weight:600">' + _esc(_signerCpf) + '</span></div>'
+      + '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #E5E7EB"><span style="color:#6B7280">Profissional</span><span style="font-weight:600">' + _esc(_doc.professional_name || '-') + '</span></div>'
+      + (_doc.professional_reg ? '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #E5E7EB"><span style="color:#6B7280">Registro</span><span style="font-weight:600">' + _esc(_doc.professional_reg) + '</span></div>' : '')
+      + '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:#6B7280">Data</span><span style="font-weight:600">' + new Date().toLocaleDateString('pt-BR') + '</span></div>'
       + '</div>'
-      + '<div style="text-align:center;padding:12px;border:1px solid #E5E7EB;border-radius:10px;margin-bottom:12px">'
-      + '<div style="font-size:11px;color:#9CA3AF;margin-bottom:4px">Sua assinatura</div>'
-      + '<img src="' + _signatureData + '" style="max-width:200px;height:auto" />'
+      + '<div style="text-align:center;padding:16px;border:1.5px solid #E5E7EB;border-radius:14px;margin-bottom:16px;background:#fff">'
+      + '<div style="font-size:10px;color:#9CA3AF;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Sua assinatura</div>'
+      + '<img src="' + _signatureData + '" style="max-width:220px;height:auto" />'
       + '</div>'
       + '<label class="ld-check" onclick="window._ldToggleAccept()">'
       + '<input type="checkbox" id="ldAccept" ' + (_accepted ? 'checked' : '') + ' />'
       + '<span class="ld-check-text">Li, compreendi e concordo com todos os termos deste documento. Declaro que as informacoes prestadas sao verdadeiras.</span>'
       + '</label>'
-      + '<div style="font-size:10px;color:#9CA3AF;margin-bottom:12px;text-align:center">Hash do documento: ' + (_doc.document_hash || '').substring(0, 16) + '...</div>'
+      + '<div style="font-size:9px;color:#9CA3AF;margin-bottom:14px;text-align:center;font-family:monospace">Hash: ' + (_doc.document_hash || '').substring(0, 16) + '...</div>'
       + '<button class="ld-btn ld-btn-primary" onclick="window._ldSubmit()"'
       + (_accepted && !_submitting ? '' : ' disabled') + '>'
-      + (_submitting ? 'Enviando...' : 'Assinar Documento') + '</button>'
-      + '<button class="ld-btn ld-btn-secondary" onclick="window._ldBack(4)">Voltar</button>'
+      + (_submitting ? '<span style="display:inline-flex;align-items:center;gap:8px"><span class="ld-loading-spinner" style="width:18px;height:18px;border-width:2px;margin:0"></span> Registrando assinatura...</span>' : 'Assinar Documento')
+      + '</button>'
+      + '<button class="ld-btn ld-btn-secondary" onclick="window._ldBack(4)"' + (_submitting ? ' disabled' : '') + '>Voltar</button>'
       + '</div>'
   }
 
   // ── States ─────────────────────────────────────────────────
   function _renderLoading() {
-    return '<div class="ld-card"><div class="ld-loading"><div class="ld-loading-spinner"></div><div style="font-size:13px;color:#6B7280">Carregando documento...</div></div></div>'
+    return '<div class="ld-card"><div class="ld-loading">'
+      + '<div class="ld-loading-spinner"></div>'
+      + '<div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px">Carregando documento</div>'
+      + '<div style="font-size:12px;color:#9CA3AF">Verificando autenticidade...</div>'
+      + '</div></div>'
   }
 
   function _renderError() {
     return '<div class="ld-card"><div class="ld-error">'
-      + '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
-      + '<div style="font-size:16px;font-weight:700;margin-bottom:6px">Documento indisponivel</div>'
-      + '<div style="font-size:13px;color:#6B7280">' + _esc(_errorMsg) + '</div>'
+      + '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+      + '<div style="font-size:18px;font-weight:700;margin-bottom:8px;color:#111">Documento Indisponivel</div>'
+      + '<div style="font-size:13px;color:#6B7280;line-height:1.6;max-width:300px;margin:0 auto">' + _esc(_errorMsg) + '</div>'
+      + '<div style="margin-top:20px;font-size:11px;color:#9CA3AF">Se persistir, entre em contato com a clinica.</div>'
       + '</div></div>'
   }
 
   function _renderSuccess() {
+    var sigDate = new Date().toLocaleString('pt-BR')
+    var hashShort = (_doc.document_hash || '').substring(0, 12)
+
     return '<div class="ld-card"><div class="ld-success">'
-      + '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="16 9 10.5 14.5 8 12"/></svg>'
+      + '<div class="ld-success-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="30" stroke-dashoffset="0"><polyline points="20 6 9 17 4 12"/></svg></div>'
       + '<div class="ld-success-title">Documento Assinado</div>'
-      + '<div class="ld-success-text">Obrigado, ' + _esc(_signerName) + '.<br>Sua assinatura foi registrada com sucesso.<br>Voce pode fechar esta pagina.</div>'
-      + '<div style="margin-top:20px"><button onclick="window._ldDownloadPdf()" style="padding:12px 24px;background:linear-gradient(135deg,#0891B2,#06B6D4);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">'
+      + '<div class="ld-success-text">Obrigado, <strong>' + _esc(_signerName.split(' ')[0]) + '</strong>!<br>Sua assinatura foi registrada com sucesso e tem validade juridica.</div>'
+      + '<div class="ld-success-seal">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+      + 'ASSINADO DIGITALMENTE</div>'
+      + '<div class="ld-success-card">'
+      + '<div class="ld-success-card-title">Comprovante de Assinatura</div>'
+      + '<div class="ld-success-card-row"><span class="ld-success-card-label">Signatario</span><span class="ld-success-card-value">' + _esc(_signerName) + '</span></div>'
+      + '<div class="ld-success-card-row"><span class="ld-success-card-label">CPF</span><span class="ld-success-card-value">' + _esc(_signerCpf) + '</span></div>'
+      + '<div class="ld-success-card-row"><span class="ld-success-card-label">Profissional</span><span class="ld-success-card-value">' + _esc(_doc.professional_name || '-') + '</span></div>'
+      + '<div class="ld-success-card-row"><span class="ld-success-card-label">Data/Hora</span><span class="ld-success-card-value">' + sigDate + '</span></div>'
+      + '<div class="ld-success-card-row"><span class="ld-success-card-label">Hash</span><span class="ld-success-card-value" style="font-family:monospace;font-size:10px">' + hashShort + '...</span></div>'
+      + '</div>'
+      + '<div class="ld-success-btns">'
+      + '<button class="ld-btn" onclick="window._ldDownloadPdf()" style="background:linear-gradient(135deg,#C9A96E,#D4B978);color:#1a1a2e;font-size:12px;padding:12px">'
       + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
-      + 'Baixar PDF</button></div>'
-      + '<div class="ld-hash">Hash: ' + _esc(_doc.document_hash || '') + '</div>'
+      + 'Baixar PDF</button>'
+      + '</div>'
+      + '<div class="ld-hash">'
+      + '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.5px;color:#6B7280;margin-bottom:4px;font-weight:600">Hash de integridade (SHA-256)</div>'
+      + _esc(_doc.document_hash || '') + '</div>'
+      + '<div class="ld-lgpd">'
+      + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>'
+      + 'Seus dados estao protegidos pela LGPD (Lei 13.709/2018)</div>'
       + '</div></div>'
   }
 
+  // ── Confetti ──────────────────────────────────────────────
+  function _showConfetti() {
+    var container = document.createElement('div')
+    container.className = 'ld-confetti'
+    document.body.appendChild(container)
+
+    var colors = ['#C9A96E', '#D4B978', '#10B981', '#3B82F6', '#F59E0B', '#8B5CF6']
+    for (var i = 0; i < 40; i++) {
+      var piece = document.createElement('div')
+      piece.className = 'ld-confetti-piece'
+      piece.style.left = Math.random() * 100 + '%'
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)]
+      piece.style.animationDelay = Math.random() * 1.5 + 's'
+      piece.style.animationDuration = (2 + Math.random() * 2) + 's'
+      piece.style.width = (6 + Math.random() * 6) + 'px'
+      piece.style.height = (6 + Math.random() * 6) + 'px'
+      piece.style.borderRadius = Math.random() > .5 ? '50%' : '2px'
+      container.appendChild(piece)
+    }
+    setTimeout(function () { container.remove() }, 4000)
+  }
+
   // ── Navigation ─────────────────────────────────────────────
-  // CPF validation
   function _formatCpf(v) {
     var d = v.replace(/\D/g, '').substring(0, 11)
     if (d.length > 9) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4')
@@ -272,7 +364,7 @@
   }
 
   function _cpfsMatch(a, b) {
-    if (!a || !b) return true // se um dos dois nao tem, aceita
+    if (!a || !b) return true
     return a.replace(/\D/g, '') === b.replace(/\D/g, '')
   }
 
@@ -280,14 +372,12 @@
     if (fromStep === 1) {
       _signerName = (document.getElementById('ldName') || {}).value || ''
       _signerCpf = (document.getElementById('ldCpf') || {}).value || ''
-      if (!_signerName.trim()) { alert('Informe seu nome completo.'); return }
 
-      // Validar CPF (obrigatorio)
-      if (!_signerCpf.trim()) { alert('Informe seu CPF.'); return }
-      if (!_validateCpf(_signerCpf)) { alert('CPF invalido. Verifique os digitos.'); return }
-      // Bater com CPF registrado
+      if (!_signerName.trim()) { _toast('Informe seu nome completo.', 'warning'); return }
+      if (!_signerCpf.trim()) { _toast('Informe seu CPF.', 'warning'); return }
+      if (!_validateCpf(_signerCpf)) { _toast('CPF invalido. Verifique os digitos.', 'error'); return }
       if (_doc.patient_cpf && !_cpfsMatch(_signerCpf, _doc.patient_cpf)) {
-        alert('O CPF informado nao corresponde ao cadastrado. Verifique.'); return
+        _toast('O CPF informado nao corresponde ao cadastrado.', 'error'); return
       }
 
       _step = 2
@@ -297,9 +387,8 @@
     } else if (fromStep === 3) {
       var canvas = document.getElementById('ldSigCanvas')
       if (canvas) _signatureData = canvas.toDataURL('image/png')
-      if (!_signatureData || _signatureData === 'data:,') { alert('Desenhe sua assinatura.'); return }
-      // Check if canvas has content (not blank)
-      if (_isCanvasBlank(canvas)) { alert('Desenhe sua assinatura no campo.'); return }
+      if (!_signatureData || _signatureData === 'data:,') { _toast('Desenhe sua assinatura no campo.', 'warning'); return }
+      if (_isCanvasBlank(canvas)) { _toast('Desenhe sua assinatura no campo.', 'warning'); return }
       _step = 4
     }
     _render()
@@ -324,7 +413,6 @@
     var docText = document.getElementById('ldDocText')
     if (!docText) return
 
-    // If content fits without scrolling, enable immediately
     if (docText.scrollHeight <= docText.clientHeight + 10) {
       _scrolledToBottom = true
       var btn = document.getElementById('ldDocNext')
@@ -353,14 +441,14 @@
     var canvas = document.getElementById('ldSigCanvas')
     if (!canvas) return
 
-    // Responsive sizing
     var container = document.getElementById('ldSigContainer')
     var w = container.clientWidth
+    var h = Math.max(Math.round(w * 0.4), 180)
     canvas.width = w
-    canvas.height = Math.round(w * 0.4)
+    canvas.height = h
 
     var ctx = canvas.getContext('2d')
-    ctx.strokeStyle = '#111827'
+    ctx.strokeStyle = '#1a1a2e'
     ctx.lineWidth = 2.5
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
@@ -445,7 +533,7 @@
       })
 
       if (res.error) {
-        alert('Erro: ' + res.error.message)
+        _toast('Erro: ' + res.error.message, 'error')
         _submitting = false
         _render()
         return
@@ -453,7 +541,7 @@
 
       var data = res.data
       if (!data || !data.ok) {
-        alert('Erro: ' + (data ? data.error : 'Falha ao salvar'))
+        _toast(data ? data.error : 'Falha ao registrar assinatura.', 'error')
         _submitting = false
         _render()
         return
@@ -463,7 +551,7 @@
       _submitting = false
       _render()
     } catch (e) {
-      alert('Erro de conexao: ' + e.message)
+      _toast('Erro de conexao. Tente novamente.', 'error')
       _submitting = false
       _render()
     }
@@ -477,12 +565,10 @@
     return div.innerHTML
   }
 
-  // Sanitize HTML — permite formatacao basica, bloqueia scripts
   function _sanitize(html) {
     if (!html) return ''
     var tmp = document.createElement('div')
     tmp.innerHTML = html
-    // Remover scripts, iframes, on* attributes
     tmp.querySelectorAll('script,iframe,object,embed').forEach(function (el) { el.remove() })
     tmp.querySelectorAll('*').forEach(function (el) {
       for (var i = el.attributes.length - 1; i >= 0; i--) {
@@ -495,56 +581,68 @@
 
   window._ldFormatCpf = _formatCpf
 
-  // ── Download PDF (via print) ──────────────────────────────
+  // ── Download PDF (premium layout) ─────────────────────────
   window._ldDownloadPdf = function () {
     var w = window.open('', '_blank')
-    if (!w) { alert('Permita popups para baixar o PDF'); return }
+    if (!w) { _toast('Permita popups para baixar o PDF.', 'warning'); return }
 
     var sigDate = new Date().toLocaleString('pt-BR')
     var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
       + '<title>Documento Assinado - ' + _esc(_signerName) + '</title>'
       + '<style>'
-      + 'body{font-family:Georgia,serif;max-width:700px;margin:40px auto;padding:0 24px;color:#111;font-size:14px;line-height:1.8}'
-      + 'h1,h2,h3,h4{font-family:Arial,sans-serif}'
-      + 'p{margin-bottom:12px}'
+      + '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");'
+      + 'body{font-family:"Inter",Arial,sans-serif;max-width:700px;margin:0 auto;padding:40px 24px;color:#111;font-size:13px;line-height:1.8}'
+      + 'h2,h3{color:#1a1a2e;margin:20px 0 8px}'
+      + 'p{margin-bottom:10px}'
       + 'ul,ol{margin:8px 0;padding-left:24px}'
       + 'li{margin-bottom:4px}'
-      + '.sig-box{margin-top:40px;border-top:2px solid #111;padding-top:24px}'
-      + '.sig-img{max-width:280px;max-height:120px;margin:12px 0}'
-      + '.meta{font-size:11px;color:#666;margin-top:4px}'
-      + '.hash{font-family:monospace;font-size:10px;color:#999;margin-top:20px;word-break:break-all;padding:8px;background:#f5f5f5;border-radius:4px}'
-      + '.seal{display:inline-block;padding:6px 16px;border:2px solid #10B981;border-radius:8px;color:#10B981;font-weight:bold;font-size:12px;margin-top:16px}'
-      + '@media print{body{margin:20px}}'
+      + '.header{text-align:center;padding-bottom:20px;border-bottom:2px solid #C9A96E;margin-bottom:24px}'
+      + '.header h1{font-size:16px;color:#1a1a2e;margin-bottom:4px}'
+      + '.header p{font-size:11px;color:#6B7280;margin:0}'
+      + '.sig-box{margin-top:40px;padding:24px;background:#FAFBFC;border:1px solid #E5E7EB;border-radius:12px}'
+      + '.sig-box h3{margin-top:0;color:#1a1a2e}'
+      + '.sig-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #E5E7EB;font-size:12px}'
+      + '.sig-row:last-child{border:none}'
+      + '.sig-label{color:#6B7280}'
+      + '.sig-value{font-weight:600}'
+      + '.sig-img{max-width:280px;max-height:100px;margin:16px 0}'
+      + '.seal{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border:2px solid #10B981;border-radius:8px;color:#10B981;font-weight:700;font-size:11px;margin-top:16px}'
+      + '.legal{font-size:10px;color:#9CA3AF;margin-top:12px}'
+      + '.hash{font-family:monospace;font-size:9px;color:#9CA3AF;margin-top:16px;word-break:break-all;padding:10px;background:#F3F4F6;border-radius:6px}'
+      + '@media print{body{margin:20px;padding:20px} .sig-box{break-inside:avoid}}'
       + '</style></head><body>'
 
-    // Conteudo do documento
-    html += (_doc && _doc.content ? _doc.content : '')
+      + '<div class="header">'
+      + '<h1>MIRIAN DE PAULA BEAUTY & HEALTH</h1>'
+      + '<p>Documento assinado digitalmente</p>'
+      + '</div>'
 
-    // Bloco de assinatura
-    html += '<div class="sig-box">'
-    html += '<h3>ASSINATURA DIGITAL</h3>'
-    html += '<p><strong>Signatario:</strong> ' + _esc(_signerName) + '</p>'
-    if (_signerCpf) html += '<p><strong>CPF:</strong> ' + _esc(_signerCpf) + '</p>'
-    html += '<p><strong>Data:</strong> ' + sigDate + '</p>'
+      + (_doc && _doc.content ? _doc.content : '')
+
+      + '<div class="sig-box">'
+      + '<h3>COMPROVANTE DE ASSINATURA DIGITAL</h3>'
+      + '<div class="sig-row"><span class="sig-label">Signatario</span><span class="sig-value">' + _esc(_signerName) + '</span></div>'
+      + '<div class="sig-row"><span class="sig-label">CPF</span><span class="sig-value">' + _esc(_signerCpf) + '</span></div>'
+      + '<div class="sig-row"><span class="sig-label">Profissional</span><span class="sig-value">' + _esc(_doc.professional_name || '-') + '</span></div>'
+      + '<div class="sig-row"><span class="sig-label">Data/Hora</span><span class="sig-value">' + sigDate + '</span></div>'
 
     if (_signatureData) {
-      html += '<p><strong>Assinatura:</strong></p>'
-      html += '<img class="sig-img" src="' + _signatureData + '" />'
+      html += '<div style="text-align:center"><img class="sig-img" src="' + _signatureData + '" /></div>'
     }
 
-    html += '<div class="seal">DOCUMENTO ASSINADO DIGITALMENTE</div>'
-    html += '<div class="meta">Assinatura eletronica simples nos termos da Lei 14.063/2020</div>'
-    html += '<div class="meta">Navegador: ' + _esc(navigator.userAgent.substring(0, 80)) + '</div>'
+    html += '<div class="seal">ASSINADO DIGITALMENTE</div>'
+      + '<div class="legal">Assinatura eletronica simples nos termos da Lei 14.063/2020. Documento com validade juridica.</div>'
+      + '<div class="legal">Navegador: ' + _esc(navigator.userAgent.substring(0, 80)) + '</div>'
 
     if (_doc && _doc.document_hash) {
-      html += '<div class="hash">Hash de integridade: ' + _esc(_doc.document_hash) + '</div>'
+      html += '<div class="hash">Hash de integridade (SHA-256): ' + _esc(_doc.document_hash) + '</div>'
     }
 
     html += '</div></body></html>'
 
     w.document.write(html)
     w.document.close()
-    setTimeout(function () { w.print() }, 400)
+    setTimeout(function () { w.print() }, 500)
   }
 
   // ── Start ──────────────────────────────────────────────────

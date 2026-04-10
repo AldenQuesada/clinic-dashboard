@@ -89,6 +89,35 @@
     revoked: '#EF4444',
   }
 
+  // ── Dashboard metricas ─────────────────────────────────────
+  async function loadLegalDocMetrics() {
+    var dash = document.getElementById('legal_doc_metrics_dash')
+    if (!dash || !window._sbShared) return
+
+    var res = await window._sbShared.rpc('legal_doc_metrics', {})
+    var m = (res.data && res.data.ok) ? res.data : { total: 0, signed: 0, pending: 0, viewed: 0, expired: 0, sign_rate: 0, avg_hours_to_sign: 0, last_7_days: 0, signed_7_days: 0 }
+
+    var cards = [
+      { label: 'Total Enviados', value: m.total, color: '#374151', icon: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z' },
+      { label: 'Assinados', value: m.signed, color: '#10B981', icon: 'M20 6L9 17l-5-5' },
+      { label: 'Pendentes', value: (m.pending || 0) + (m.viewed || 0), color: '#F59E0B', icon: 'M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83' },
+      { label: 'Taxa Assinatura', value: m.sign_rate + '%', color: '#0891B2', icon: 'M22 12h-4l-3 9L9 3l-3 9H2' },
+      { label: 'Tempo Medio', value: m.avg_hours_to_sign + 'h', color: '#7C3AED', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 6v4l3 3' },
+      { label: 'Ultimos 7 dias', value: m.signed_7_days + '/' + m.last_7_days, color: '#3B82F6', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    ]
+
+    var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">'
+    cards.forEach(function (c) {
+      html += '<div style="padding:12px;background:#fff;border:1px solid #E5E7EB;border-radius:10px;text-align:center">'
+        + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + c.color + '" stroke-width="2" stroke-linecap="round" style="margin-bottom:4px"><path d="' + c.icon + '"/></svg>'
+        + '<div style="font-size:18px;font-weight:800;color:' + c.color + '">' + c.value + '</div>'
+        + '<div style="font-size:9px;color:#9CA3AF;font-weight:600;text-transform:uppercase;letter-spacing:.3px">' + c.label + '</div>'
+        + '</div>'
+    })
+    html += '</div>'
+    dash.innerHTML = html
+  }
+
   // ── Load templates ─────────────────────────────────────────
   async function loadLegalDocTemplates() {
     var list = document.getElementById('legal_doc_templates_list')
@@ -298,6 +327,7 @@
     window.clinicSection = function (sec) {
       _origClinicSection2(sec)
       if (sec === 'documentos') {
+        loadLegalDocMetrics()
         loadLegalDocTemplates()
         loadLegalDocRequests()
       }
@@ -346,6 +376,7 @@
   }
 
   // ── Expose ─────────────────────────────────────────────────
+  window.loadLegalDocMetrics    = loadLegalDocMetrics
   window.loadLegalDocTemplates  = loadLegalDocTemplates
   window.loadLegalDocRequests   = loadLegalDocRequests
   window.addLegalDocTemplate    = addLegalDocTemplate
