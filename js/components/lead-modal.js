@@ -607,6 +607,7 @@ function _lmNav(activeTab) {
     { id:'anamnese',   label:'Anamnese',   icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg>' },
     { id:'evolucao',   label:'Evolução',   icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>' },
     { id:'financeiro', label:'Financeiro', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
+    { id:'timeline',   label:'Linha do Tempo', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
     { id:'interacoes', label:'Interacoes', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' },
     { id:'protocolos', label:'Protocolos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
   ]
@@ -621,7 +622,7 @@ function _lmNav(activeTab) {
 
 function _lmSwitchTab(tabId) {
   _activeModalTab = tabId
-  ;['geral','clinico','anamnese','evolucao','financeiro','interacoes','protocolos'].forEach(function(t) {
+  ;['geral','clinico','anamnese','evolucao','financeiro','timeline','interacoes','protocolos'].forEach(function(t) {
     var btn = document.getElementById('lmNav_' + t)
     if (!btn) return
     var a = t === tabId
@@ -646,11 +647,163 @@ function _renderModalTab(tabId, lead) {
     case 'anamnese':   return _lmTabAnamnese(lead)
     case 'evolucao':   return _lmTabEvolucao(lead)
     case 'financeiro': return _lmTabFinanceiro(lead)
+    case 'timeline':   return _lmTabTimeline(lead)
     case 'interacoes': return _lmTabInteracoes(lead)
     case 'protocolos': return _lmTabProtocolos(lead)
     default:           return ''
   }
 }
+
+// ── Tab: Linha do Tempo ─────────────────────────────────────
+
+function _lmTabTimeline(lead) {
+  var appts = []
+  try { appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch (e) {}
+
+  var patientName = (lead.name || lead.nome || '').toLowerCase().trim()
+  var patientId = lead.id
+
+  // Filtrar agendamentos deste paciente
+  var myAppts = appts.filter(function (a) {
+    return (a.pacienteNome || a.patient_name || '').toLowerCase().trim() === patientName
+      || a.pacienteId === patientId || a.patient_id === patientId
+  })
+
+  // Construir eventos a partir dos agendamentos
+  var events = []
+  var now = new Date()
+
+  myAppts.forEach(function (a) {
+    var date = a.data || a.scheduled_date || ''
+    var prof = a.profissionalNome || a.professional_name || ''
+    var proc = a.procedimento || a.procedure_name || 'Consulta'
+    var sala = ''
+    try { var salas = window.getRooms ? getRooms() : []; sala = salas[a.salaIdx]?.nome || '' } catch (e) {}
+    var hora = (a.horaInicio || a.start_time || '') + (a.horaFim || a.end_time ? ' - ' + (a.horaFim || a.end_time) : '')
+
+    // Evento de criacao
+    var createdAt = a.created_at || a.createdAt || date
+    events.push({
+      type: 'criado',
+      date: createdAt,
+      label: 'Agendamento criado',
+      details: '<strong>' + _lmEsc(proc) + '</strong><br>' + _lmEsc(date) + ' &middot; ' + _lmEsc(hora) + '<br>' + _lmEsc(prof) + (sala ? ' &middot; ' + _lmEsc(sala) : ''),
+      color: '#3B82F6',
+      icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
+      apptId: a.id,
+    })
+
+    // Historico de status
+    var hist = a.historicoStatus || a.historico_status || []
+    hist.forEach(function (h) {
+      if (h.status === 'finalizado' || h.status === 'em_consulta') {
+        events.push({
+          type: 'concluido',
+          date: h.at || h.changed_at || '',
+          label: 'Agendamento concluido',
+          details: _lmEsc(proc),
+          color: '#10B981',
+          icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+          apptId: a.id,
+        })
+      } else if (h.status === 'cancelado') {
+        events.push({
+          type: 'cancelado',
+          date: h.at || h.changed_at || '',
+          label: 'Agendamento cancelado',
+          details: _lmEsc(proc) + (a.motivo_cancelamento ? '<br>Motivo: ' + _lmEsc(a.motivo_cancelamento) : ''),
+          color: '#EF4444',
+          icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+          apptId: a.id,
+        })
+      }
+    })
+
+    // Historico de alteracoes
+    var changes = a.historicoAlteracoes || a.historico_alteracoes || []
+    changes.forEach(function (c) {
+      if (c.action_type === 'finalizacao') return // ja coberto acima
+      var changeDetails = ''
+      if (c.old_value && c.new_value) {
+        var keys = Object.keys(c.new_value)
+        keys.forEach(function (k) {
+          if (c.old_value[k] !== undefined && c.old_value[k] !== c.new_value[k]) {
+            changeDetails += _lmEsc(k) + ': ' + _lmEsc(String(c.old_value[k])) + ' &rarr; ' + _lmEsc(String(c.new_value[k])) + '<br>'
+          }
+        })
+      }
+      events.push({
+        type: 'alterado',
+        date: c.changed_at || '',
+        label: 'Agendamento alterado',
+        details: changeDetails || _lmEsc(c.reason || ''),
+        color: '#F59E0B',
+        icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+        apptId: a.id,
+      })
+    })
+
+    // Evento futuro
+    if ((a.status === 'agendado' || a.status === 'confirmado') && date) {
+      var apptDate = new Date(date)
+      if (apptDate > now) {
+        events.push({
+          type: 'futuro',
+          date: date,
+          label: 'Agendamento futuro',
+          details: '<strong>' + _lmEsc(proc) + '</strong><br>' + _lmEsc(date) + ' &middot; ' + _lmEsc(hora) + '<br>' + _lmEsc(prof),
+          color: '#8B5CF6',
+          icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+          apptId: a.id,
+        })
+      }
+    }
+  })
+
+  // Ordenar: mais recente primeiro
+  events.sort(function (a, b) { return (b.date || '').localeCompare(a.date || '') })
+
+  if (!events.length) {
+    return '<div style="text-align:center;padding:40px;color:#9CA3AF;font-size:13px">Nenhum evento registrado para este paciente.</div>'
+  }
+
+  // Toggle futuros
+  var hasFuture = events.some(function (e) { return e.type === 'futuro' })
+
+  var html = ''
+  if (hasFuture) {
+    html += '<label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;cursor:pointer;font-size:12px;color:#6B7280">'
+      + '<input type="checkbox" id="lmTimelineFuture" checked onchange="document.querySelectorAll(\'[data-tl-future]\').forEach(function(el){el.style.display=this.checked?\'flex\':\'none\'}.bind(this))" style="accent-color:#8B5CF6">'
+      + ' Mostrar eventos futuros</label>'
+  }
+
+  html += '<div style="position:relative;padding-left:28px">'
+  // Linha vertical
+  html += '<div style="position:absolute;left:13px;top:0;bottom:0;width:2px;background:#E5E7EB"></div>'
+
+  events.forEach(function (ev) {
+    var dateStr = ev.date ? new Date(ev.date).toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
+    var isFuture = ev.type === 'futuro'
+
+    html += '<div style="display:flex;gap:12px;margin-bottom:16px;position:relative"' + (isFuture ? ' data-tl-future' : '') + '>'
+      // Dot
+      + '<div style="position:absolute;left:-21px;width:12px;height:12px;border-radius:50%;background:' + ev.color + ';border:2px solid #fff;box-shadow:0 0 0 2px ' + ev.color + '30;flex-shrink:0;margin-top:3px"></div>'
+      // Content
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+      + '<span style="color:' + ev.color + '">' + ev.icon + '</span>'
+      + '<span style="font-size:12px;font-weight:600;color:#374151">' + ev.label + '</span>'
+      + '</div>'
+      + '<div style="font-size:11px;color:#6B7280;margin-bottom:4px">' + dateStr + '</div>'
+      + (ev.details ? '<div style="font-size:12px;color:#374151;line-height:1.6;padding:8px 12px;background:#F9FAFB;border-radius:8px;border:1px solid #F3F4F6">' + ev.details + '</div>' : '')
+      + '</div></div>'
+  })
+
+  html += '</div>'
+  return html
+}
+
+function _lmEsc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 
 // ── Tab: Interacoes ──────────────────────────────────────────
 
