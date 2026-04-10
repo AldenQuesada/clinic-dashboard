@@ -119,9 +119,9 @@
     var html = '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6);padding-bottom:24px">'
 
     // ─── HEADER ───
-    html += '<div style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
+    html += '<div class="fm-header" style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
       '<div>' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">Clinica Mirian de Paula</div>' +
+        '<div class="fm-clinic-name" style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">Clinica Mirian de Paula</div>' +
         '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.55);margin-top:2px;letter-spacing:0.06em">Harmonia que revela. Precisão que dura.</div>' +
       '</div>' +
       '<div style="text-align:right">' +
@@ -129,7 +129,7 @@
         '<div style="font-size:11px;color:rgba(245,240,232,0.4);margin-top:2px;letter-spacing:0.06em">' + dateStr + '</div>' +
       '</div>' +
     '</div>' +
-    '<div style="height:1px;background:linear-gradient(90deg,transparent,#C8A97E,transparent);margin:0 32px"></div>'
+    '<div class="fm-sep" style="height:1px;background:linear-gradient(90deg,transparent,#C8A97E,transparent);margin:0 32px"></div>'
 
     // ─── SCORE DE HARMONIA GLOBAL ───
     var harmonyScore = 0, harmonyParts = 0
@@ -717,18 +717,18 @@
 
     html += '<div style="flex:1;min-width:200px;background:rgba(200,169,126,0.04);border:1px solid rgba(200,169,126,0.12);border-radius:8px;padding:14px 18px">'
     html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Plano A,Protocolo Lifting 5D</div>'
-    html += '<div style="font-size:28px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceA', '12.000 - 15.000', 'font-size:28px;font-weight:700;width:200px;') + '</div>'
+    html += '<div style="font-size:28px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceA', '12.000 - 15.000', 'font-size:28px;font-weight:700;max-width:100%;') + '</div>'
     html += '<div style="font-size:11px;color:#10B981;margin-top:4px">+ Cashback: 3 sessoes Fotona 4D (R$ 15.000)</div>'
     html += '</div>'
 
     html += '<div style="flex:1;min-width:200px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:8px;padding:14px 18px">'
     html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.5);font-weight:600;margin-bottom:4px">Plano B,Essencial</div>'
-    html += '<div style="font-size:28px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceB', '5.000 - 8.000', 'font-size:28px;font-weight:700;width:200px;') + '</div>'
+    html += '<div style="font-size:28px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceB', '5.000 - 8.000', 'font-size:28px;font-weight:700;max-width:100%;') + '</div>'
     html += '<div style="font-size:11px;color:rgba(245,240,232,0.3);margin-top:4px">Sem Fotona incluso</div>'
     html += '</div>'
 
     html += '</div>'
-    html += '<div style="margin-top:10px;font-size:14px;color:rgba(245,240,232,0.5)">Condicoes: ' + _editable('fmPaymentConditions', 'Ate 10x sem juros no cartao', 'width:300px;') + '</div>'
+    html += '<div style="margin-top:10px;font-size:14px;color:rgba(245,240,232,0.5)">Condicoes: ' + _editable('fmPaymentConditions', 'Ate 10x sem juros no cartao', 'max-width:100%;') + '</div>'
     html += '<div style="margin-top:6px;font-size:12px;color:rgba(200,169,126,0.4);font-style:italic">Acompanhamento anual: 40% de beneficio exclusivo nas sessoes de Fotona 4D + condicoes especiais em retoques.</div>'
     html += '</div>'
 
@@ -979,7 +979,7 @@
           '[contenteditable]:focus{border-color:#C8A97E !important;outline:none}' +
           'img{max-width:100%;height:auto}' +
           'table{width:100%}' +
-          '@media(max-width:600px){#fmReportCard{width:100%!important;box-sizing:border-box}#fmReportCard>div{padding-left:16px!important;padding-right:16px!important}.fm-row{flex-direction:column!important}.fm-row>[style*="flex:0.8"]{order:-1}}' +
+          '@media(max-width:600px){html,body{overflow-x:hidden!important}body{padding:8px 0!important}#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important}#fmReportCard [style*="padding"][style*="32px"]{padding-left:14px!important;padding-right:14px!important}#fmReportCard .fm-sep{margin-left:14px!important;margin-right:14px!important}.fm-header{flex-direction:column!important;gap:8px!important;align-items:flex-start!important}.fm-clinic-name{font-size:24px!important}.fm-row{flex-direction:column!important}#fmReportCard [style*="border-top:1px"]{margin-top:20px!important}#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}table{font-size:11px!important}}' +
           '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s}' +
           '.fm-cta-btn:hover{transform:scale(1.04)}' +
         '</style>' +
@@ -1460,7 +1460,7 @@
         '<title>Análise Facial, ' + FM._esc(patientName) + '</title>' +
         '<style>body{margin:0;padding:24px 16px;background:#0A0A0A;font-family:Montserrat,sans-serif;color:#F5F0E8}' +
         '#fmReportCard{max-width:794px;margin:0 auto}[contenteditable]{cursor:text}[contenteditable]:focus{border-color:#C8A97E!important;outline:none}' +
-        'img{max-width:100%;height:auto}table{width:100%}@media(max-width:600px){#fmReportCard{width:100%!important;box-sizing:border-box}#fmReportCard>div{padding-left:16px!important;padding-right:16px!important}.fm-row{flex-direction:column!important}.fm-row>[style*="flex:0.8"]{order:-1}}' +
+        'img{max-width:100%;height:auto}table{width:100%}@media(max-width:600px){html,body{overflow-x:hidden!important}body{padding:8px 0!important}#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important}#fmReportCard [style*="padding"][style*="32px"]{padding-left:14px!important;padding-right:14px!important}#fmReportCard .fm-sep{margin-left:14px!important;margin-right:14px!important}.fm-header{flex-direction:column!important;gap:8px!important;align-items:flex-start!important}.fm-clinic-name{font-size:24px!important}.fm-row{flex-direction:column!important}#fmReportCard [style*="border-top:1px"]{margin-top:20px!important}#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}table{font-size:11px!important}}' +
         '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s}' +
         '.fm-cta-btn:hover{transform:scale(1.04)}</style></head><body>' +
         '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;padding-bottom:24px">' +
