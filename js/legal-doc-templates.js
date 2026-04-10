@@ -177,10 +177,11 @@
           + (t.professional_name ? '<span style="font-size:9px;padding:1px 6px;background:#EDE9FE;color:#7C3AED;border-radius:4px">' + _esc(t.professional_name.split(' ')[0]) + '</span>' : '')
           + (t.trigger_status ? '<span style="font-size:9px;padding:1px 6px;background:#F0FDF4;color:#10B981;border-radius:4px">Auto: ' + _esc(t.trigger_status) + '</span>' : '')
           + '</div></div>'
-          + '<div style="display:flex;gap:4px">'
-          + '<button onclick="editLegalDocTemplate(\'' + t.id + '\')" title="Editar" style="padding:5px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Editar</button>'
-          + '<button onclick="duplicateLegalDocTemplate(\'' + t.id + '\')" title="Duplicar" style="padding:5px 10px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Duplicar</button>'
-          + '<button onclick="testLegalDocTemplate(\'' + t.id + '\')" title="Testar" style="padding:5px 10px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#0891B2;font-weight:600">Testar</button>'
+          + '<div style="display:flex;gap:3px">'
+          + '<button onclick="editLegalDocTemplate(\'' + t.id + '\')" title="Editar" style="padding:5px 8px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Editar</button>'
+          + '<button onclick="duplicateLegalDocTemplate(\'' + t.id + '\')" title="Duplicar" style="padding:5px 8px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Duplicar</button>'
+          + '<button onclick="testLegalDocTemplate(\'' + t.id + '\')" title="Testar" style="padding:5px 8px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#0891B2;font-weight:600">Testar</button>'
+          + '<button onclick="deleteLegalDocTemplate(\'' + t.id + '\',\'' + _esc(displayName).replace(/'/g,'\\&#39;') + '\')" title="Excluir" style="padding:5px 8px;background:#FEF2F2;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#EF4444">Excluir</button>'
           + '</div></div>'
       })
 
@@ -520,6 +521,32 @@
   window.saveLegalDocTemplate   = saveLegalDocTemplate
   window.testLegalDocTemplate    = testLegalDocTemplate
   window.duplicateLegalDocTemplate = duplicateLegalDocTemplate
+  // ── Excluir template (soft delete com confirmacao) ─────────
+  async function deleteLegalDocTemplate(id, name) {
+    // Confirmacao 1: pergunta basica
+    var confirm1 = window.confirm('Deseja excluir o modelo "' + name + '"?\n\nEsta acao nao pode ser desfeita.')
+    if (!confirm1) return
+
+    // Confirmacao 2: digitar nome para confirmar
+    var typed = window.prompt('Para confirmar, digite o nome do modelo:\n' + name)
+    if (!typed || typed.trim().toLowerCase() !== name.trim().toLowerCase()) {
+      if (window._showToast) _showToast('Documentos', 'Nome incorreto. Exclusao cancelada.', 'warning')
+      return
+    }
+
+    if (!window._sbShared) return
+    // Soft delete: setar deleted_at
+    var res = await window._sbShared.from('legal_doc_templates').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+    if (res.error) {
+      if (window._showToast) _showToast('Documentos', 'Erro: ' + res.error.message, 'error')
+    } else {
+      if (window._showToast) _showToast('Documentos', '"' + name + '" excluido', 'success')
+      await loadLegalDocTemplates()
+      loadLegalDocMetrics()
+    }
+  }
+
+  window.deleteLegalDocTemplate = deleteLegalDocTemplate
   window.resendLegalDocWhatsApp  = resendLegalDocWhatsApp
   window.saveLegalDocAdvancedConfig = saveLegalDocAdvancedConfig
   window.loadLegalDocAdvancedConfig = loadLegalDocAdvancedConfig
