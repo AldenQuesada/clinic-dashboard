@@ -126,6 +126,7 @@
     assumeConversation,
     releaseConversation,
     sendMessage,
+    sendText: _sendEvolution,
     resolveConversation,
     archiveConversation,
     reopenConversation,

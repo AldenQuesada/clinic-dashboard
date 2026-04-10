@@ -197,10 +197,10 @@
           + (t.trigger_status ? '<span style="font-size:9px;padding:1px 6px;background:#F0FDF4;color:#10B981;border-radius:4px">Auto: ' + _esc(t.trigger_status) + '</span>' : '')
           + '</div></div>'
           + '<div style="display:flex;gap:3px">'
-          + '<button onclick="editLegalDocTemplate(\'' + t.id + '\')" title="Editar" style="padding:5px 8px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Editar</button>'
-          + '<button onclick="duplicateLegalDocTemplate(\'' + t.id + '\')" title="Duplicar" style="padding:5px 8px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Duplicar</button>'
-          + '<button onclick="testLegalDocTemplate(\'' + t.id + '\')" title="Testar" style="padding:5px 8px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#0891B2;font-weight:600">Testar</button>'
-          + '<button onclick="deleteLegalDocTemplate(\'' + t.id + '\',\'' + _esc(displayName).replace(/'/g,'\\&#39;') + '\')" title="Excluir" style="padding:5px 8px;background:#FEF2F2;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#EF4444">Excluir</button>'
+          + '<button data-action="edit" data-id="' + t.id + '" style="padding:5px 8px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Editar</button>'
+          + '<button data-action="dup" data-id="' + t.id + '" style="padding:5px 8px;background:#F3F4F6;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#374151">Duplicar</button>'
+          + '<button data-action="test" data-id="' + t.id + '" style="padding:5px 8px;background:#ECFEFF;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#0891B2;font-weight:600">Testar</button>'
+          + '<button data-action="del" data-id="' + t.id + '" data-name="' + _esc(displayName) + '" style="padding:5px 8px;background:#FEF2F2;border:none;border-radius:6px;cursor:pointer;font-size:10px;color:#EF4444">Excluir</button>'
           + '</div></div>'
       })
 
@@ -208,6 +208,18 @@
     })
 
     list.innerHTML = html
+
+    // Event delegation (seguro contra XSS)
+    list.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-action]')
+      if (!btn) return
+      var action = btn.dataset.action
+      var id = btn.dataset.id
+      if (action === 'edit') editLegalDocTemplate(id)
+      else if (action === 'dup') duplicateLegalDocTemplate(id)
+      else if (action === 'test') testLegalDocTemplate(id)
+      else if (action === 'del') deleteLegalDocTemplate(id, btn.dataset.name || '')
+    })
   }
 
   // ── Populate professional dropdown ─────────────────────────
@@ -504,19 +516,15 @@
       + 'Por favor, verifique a mensagem anterior com o link de acesso. '
       + 'Se nao encontrar, entre em contato conosco. Obrigado!'
 
-    try {
-      var r = await fetch('https://evolution.aldenquesada.site/message/sendText/Mih', {
-        method: 'POST',
-        headers: { 'apikey': '429683C4C977415CAAFCCE10F7D57E11', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ number: digits, text: msg }),
-      })
+    if (window.InboxService && InboxService.sendText) {
+      var r = await InboxService.sendText(digits, msg)
       if (r.ok) {
         if (window._showToast) _showToast('Documentos', 'Lembrete enviado para ' + name, 'success')
       } else {
         if (window._showToast) _showToast('Documentos', 'Falha no envio', 'error')
       }
-    } catch (e) {
-      if (window._showToast) _showToast('Documentos', 'Erro: ' + e.message, 'error')
+    } else {
+      if (window._showToast) _showToast('Documentos', 'InboxService indisponivel', 'error')
     }
   }
 
@@ -613,10 +621,16 @@
     }
 
     try {
-      // Marcar todos como purged (RLS permite update)
-      var upd = await window._sbShared.from('legal_doc_requests')
-        .update({ status: 'purged' })
-        .neq('status', 'purged')
+      // Tentar RPC primeiro, fallback para update direto
+      var rpcRes = await window._sbShared.rpc('legal_doc_purge_all', {})
+      if (rpcRes.error) {
+        // Fallback: marcar como purged (RLS filtra por clinic_id)
+        var upd = await window._sbShared.from('legal_doc_requests')
+          .update({ status: 'purged' })
+          .neq('status', 'purged')
+      } else {
+        var upd = rpcRes
+      }
       if (upd.error) {
         if (window._showToast) _showToast('Documentos', 'Erro: ' + upd.error.message, 'error')
         return

@@ -18,6 +18,27 @@
   var _templates = null
   var _baseUrl = ''
   var _clinicDataFromDb = null
+  var _cacheClinicId = null
+
+  function _getCurrentUserEmail() {
+    try { return window._sbShared?.auth?.getUser()?.data?.user?.email || 'admin' } catch (e) { return 'admin' }
+  }
+
+  // ── Invalidar cache se clinica mudou ──────────────────────
+  function _checkCacheValid() {
+    var currentClinicId = null
+    try { currentClinicId = window._sbShared ? window._sbShared.auth.getUser()?.data?.user?.app_metadata?.clinic_id : null } catch (e) {}
+    if (!currentClinicId) {
+      try { currentClinicId = JSON.parse(localStorage.getItem('clinicai_session') || '{}').clinic_id } catch (e) {}
+    }
+    if (currentClinicId && _cacheClinicId && currentClinicId !== _cacheClinicId) {
+      _templates = null
+      _clinicDataFromDb = null
+      _resolvedProfCache = {}
+      _procedureBlocks = null
+    }
+    if (currentClinicId) _cacheClinicId = currentClinicId
+  }
 
   // ── Carregar dados da clinica do banco (CNPJ, endereco) ───
   async function _loadClinicData() {
@@ -130,6 +151,7 @@
   // ══════════════════════════════════════════════════════════
 
   async function loadTemplates() {
+    _checkCacheValid()
     if (!window._sbShared) return []
     var res = await window._sbShared.rpc('legal_doc_list_templates', {})
     if (res.data && res.data.ok) {
@@ -154,6 +176,7 @@
       professional_id: data.professional_id || null,
       tracking_scripts: data.tracking_scripts || null,
       redirect_url: data.redirect_url || null,
+      updated_by: _getCurrentUserEmail(),
     }
 
     var res
@@ -183,6 +206,21 @@
 
   async function createRequest(templateId, apptOrOpts) {
     if (!window._sbShared) return { ok: false, error: 'Supabase nao disponivel' }
+
+    // Deduplicar: nao criar se ja existe request ativo para este appointment + template
+    var apptId = apptOrOpts.appointmentId || apptOrOpts.appointment_id
+    if (apptId) {
+      var dupCheck = await window._sbShared.from('legal_doc_requests')
+        .select('id')
+        .eq('template_id', templateId)
+        .eq('appointment_id', apptId)
+        .not('status', 'in', '("revoked","purged")')
+        .limit(1)
+      if (dupCheck.data && dupCheck.data.length > 0) {
+        console.log('[LegalDocs] Dedup: ja existe request para este appointment+template')
+        return { ok: true, id: dupCheck.data[0].id, deduplicated: true }
+      }
+    }
 
     // Carregar template se necessario
     if (!_templates) await loadTemplates()
@@ -472,7 +510,7 @@
     return results
   }
 
-  // ── Enviar link de documento via WhatsApp (Evolution API) ─────
+  // ── Enviar link de documento via WhatsApp (via InboxService) ──
   async function _sendDocLinkWhatsApp(phone, patientName, templateName, link) {
     var digits = (phone || '').replace(/\D/g, '')
     if (!digits) return
@@ -485,22 +523,12 @@
       + link + '\n\n'
       + 'O link expira em 48 horas. Qualquer duvida, estamos a disposicao!'
 
-    try {
-      var r = await fetch('https://evolution.aldenquesada.site/message/sendText/Mih', {
-        method: 'POST',
-        headers: {
-          'apikey': '429683C4C977415CAAFCCE10F7D57E11',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ number: digits, text: msg }),
-      })
-      if (r.ok) {
-        console.log('[LegalDocs] WhatsApp enviado para', digits)
-      } else {
-        console.warn('[LegalDocs] WhatsApp falhou:', await r.text())
-      }
-    } catch (e) {
-      console.warn('[LegalDocs] WhatsApp erro:', e.message)
+    if (window.InboxService && InboxService.sendText) {
+      var r = await InboxService.sendText(digits, msg)
+      if (r.ok) console.log('[LegalDocs] WhatsApp enviado para', digits)
+      else console.warn('[LegalDocs] WhatsApp falhou:', r.error)
+    } else {
+      console.warn('[LegalDocs] InboxService nao disponivel')
     }
   }
 

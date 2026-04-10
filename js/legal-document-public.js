@@ -97,13 +97,8 @@
 
     _sb = window.supabase.createClient(ClinicEnv.SUPABASE_URL, ClinicEnv.SUPABASE_KEY)
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        function (pos) { _geoloc = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy } },
-        function () { _geoloc = null },
-        { timeout: 5000 }
-      )
-    }
+    // Geolocalizacao so sera solicitada na etapa de assinatura (com consentimento)
+    _geoloc = null
 
     _step = 0
     _render()
@@ -204,21 +199,8 @@
     console.log('[LegalDocs] TikTok Pixel injected:', id)
   }
 
-  function _injectCustom(html) {
-    if (!html) return
-    var div = document.createElement('div')
-    div.innerHTML = html
-    div.querySelectorAll('script').forEach(function (el) {
-      var s = document.createElement('script')
-      if (el.src) s.src = el.src
-      else s.textContent = el.textContent
-      if (el.async) s.async = true
-      document.head.appendChild(s)
-    })
-    div.querySelectorAll('noscript,img').forEach(function (el) {
-      document.body.appendChild(el.cloneNode(true))
-    })
-  }
+  // Custom scripts desabilitado por seguranca — usar apenas os campos de pixel ID
+  function _injectCustom() { /* disabled - use structured pixel IDs instead */ }
 
   // ── Validate token ─────────────────────────────────────────
   async function _validateToken() {
@@ -685,6 +667,19 @@
     _submitting = true
     _render()
 
+    // Solicitar geolocalizacao com consentimento (LGPD)
+    if (!_geoloc && navigator.geolocation) {
+      try {
+        await new Promise(function (resolve) {
+          navigator.geolocation.getCurrentPosition(
+            function (pos) { _geoloc = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; resolve() },
+            function () { resolve() },
+            { timeout: 3000 }
+          )
+        })
+      } catch (e) { /* silencioso */ }
+    }
+
     try {
       var res = await _sb.rpc('legal_doc_submit_signature', {
         p_slug: _slug,
@@ -693,7 +688,7 @@
         p_signer_cpf: _signerCpf.trim() || null,
         p_signature_data: _signatureData,
         p_ip_address: null,
-        p_user_agent: navigator.userAgent,
+        p_user_agent: navigator.userAgent.substring(0, 120),
         p_geolocation: _geoloc ? JSON.stringify(_geoloc) : null,
         p_acceptance_text: 'Li, compreendi e concordo com todos os termos deste documento.'
       })
