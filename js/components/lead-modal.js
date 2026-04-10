@@ -609,7 +609,6 @@ function _lmNav(activeTab) {
     { id:'financeiro', label:'Financeiro', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
     { id:'timeline',   label:'Linha do Tempo', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
     { id:'documentos', label:'Documentos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
-    { id:'fichas',     label:'Fichas',     icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>' },
     { id:'interacoes', label:'Interacoes', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' },
     { id:'protocolos', label:'Protocolos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
   ]
@@ -623,7 +622,7 @@ function _lmNav(activeTab) {
 
 function _lmSwitchTab(tabId) {
   _activeModalTab = tabId
-  ;['geral','clinico','anamnese','evolucao','financeiro','timeline','documentos','fichas','interacoes','protocolos'].forEach(function(t) {
+  ;['geral','clinico','anamnese','evolucao','financeiro','timeline','documentos','interacoes','protocolos'].forEach(function(t) {
     var btn = document.getElementById('lmNav_' + t)
     if (!btn) return
     if (t === tabId) btn.classList.add('active')
@@ -648,7 +647,6 @@ function _renderModalTab(tabId, lead) {
     case 'financeiro': return _lmTabFinanceiro(lead)
     case 'timeline':   return _lmTabTimeline(lead)
     case 'documentos': return _lmTabDocumentos(lead)
-    case 'fichas':     return _lmTabFichas(lead)
     case 'interacoes': return _lmTabInteracoes(lead)
     case 'protocolos': return _lmTabProtocolos(lead)
     default:           return ''
@@ -1549,7 +1547,15 @@ function _lmTabAnamnese(lead) {
       '</div>' +
     '</div>'
 
-  return digitalSection + manualSection
+  // Secao de fichas preenchidas (carrega async)
+  var fichasSection = '<div style="margin-top:22px">' +
+    '<div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;border-bottom:1px solid #F3F4F6;margin-bottom:14px">Fichas Preenchidas</div>' +
+    '<div id="lmFichasContent"><div style="text-align:center;padding:16px;color:#9CA3AF;font-size:12px">Carregando...</div></div>' +
+    '</div>'
+
+  setTimeout(function () { _lmLoadFichas(lead) }, 100)
+
+  return digitalSection + manualSection + fichasSection
 }
 
 // ── Aba: Evolução ─────────────────────────────────────────────
