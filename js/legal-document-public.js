@@ -231,10 +231,11 @@
 
   // ── Step 1: Identificacao ──────────────────────────────────
   function _renderStep1() {
+    var firstName = (_signerName || '').split(' ')[0]
     return '<div class="ld-card-header">'
       + '<div class="ld-step-label">Etapa 1 de 4</div>'
-      + '<div class="ld-step-title">Identificacao</div>'
-      + '<div class="ld-step-desc">Confirme seus dados pessoais para prosseguir com a assinatura do documento.</div>'
+      + '<div class="ld-step-title">Identifica&#231;&#227;o</div>'
+      + '<div class="ld-step-desc">' + (firstName ? firstName + ', confirme' : 'Confirme') + ' seus dados pessoais para prosseguir com a assinatura.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
       + '<div class="ld-field"><label class="ld-label" for="ldName">Nome completo</label>'
@@ -247,19 +248,20 @@
 
   // ── Step 2: Documento ──────────────────────────────────────
   function _renderStep2() {
+    var firstName = (_signerName || '').split(' ')[0]
     return '<div class="ld-card-header">'
       + '<div class="ld-step-label">Etapa 2 de 4</div>'
       + '<div class="ld-step-title">Leia o Documento</div>'
-      + '<div class="ld-step-desc">Leia atentamente todo o conteudo abaixo. Voce precisara rolar ate o final para continuar.</div>'
+      + '<div class="ld-step-desc">' + (firstName ? firstName + ', role' : 'Role') + ' at&#233; o final do documento para poder continuar.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
       + '<div class="ld-doc-text" id="ldDocText">' + _sanitize(_doc.content || '') + '</div>'
       + '<div class="ld-scroll-hint" id="ldScrollHint">'
       + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px"><polyline points="6 9 12 15 18 9"/></svg>'
-      + ' Role ate o final para continuar</div>'
+      + ' Role at&#233; o final para continuar</div>'
       + '<button class="ld-btn ld-btn-primary" id="ldDocNext" onclick="window._ldNext(2)"'
       + (_scrolledToBottom ? '' : ' disabled') + '>'
-      + (_scrolledToBottom ? 'Li e desejo continuar' : 'Role ate o final para continuar')
+      + (_scrolledToBottom ? 'Li e desejo continuar' : 'Role at&#233; o final para continuar')
       + '</button>'
       + '<button class="ld-btn ld-btn-secondary" onclick="window._ldBack(2)">Voltar</button>'
       + '</div>'
@@ -267,10 +269,11 @@
 
   // ── Step 3: Assinatura ─────────────────────────────────────
   function _renderStep3() {
+    var firstName = (_signerName || '').split(' ')[0]
     return '<div class="ld-card-header">'
       + '<div class="ld-step-label">Etapa 3 de 4</div>'
       + '<div class="ld-step-title">Sua Assinatura</div>'
-      + '<div class="ld-step-desc">Desenhe sua assinatura no campo abaixo usando o dedo ou o mouse.</div>'
+      + '<div class="ld-step-desc">' + (firstName ? firstName + ', desenhe' : 'Desenhe') + ' sua assinatura no campo abaixo usando o dedo ou o mouse.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
       + '<div class="ld-sig-container" id="ldSigContainer">'
@@ -288,10 +291,11 @@
 
   // ── Step 4: Confirmacao ────────────────────────────────────
   function _renderStep4() {
+    var firstName = (_signerName || '').split(' ')[0]
     return '<div class="ld-card-header">'
       + '<div class="ld-step-label">Etapa 4 de 4</div>'
-      + '<div class="ld-step-title">Confirmacao Final</div>'
-      + '<div class="ld-step-desc">Revise todos os dados e confirme a assinatura do documento.</div>'
+      + '<div class="ld-step-title">Confirma&#231;&#227;o Final</div>'
+      + '<div class="ld-step-desc">' + (firstName ? firstName + ', revise' : 'Revise') + ' todos os dados e confirme a assinatura.</div>'
       + '</div>'
       + '<div class="ld-card-body">'
       + '<div style="padding:16px;background:linear-gradient(135deg,#FAFBFC,#F3F4F6);border-radius:14px;margin-bottom:16px;font-size:13px">'
@@ -307,7 +311,7 @@
       + '</div>'
       + '<label class="ld-check" onclick="window._ldToggleAccept()">'
       + '<input type="checkbox" id="ldAccept" ' + (_accepted ? 'checked' : '') + ' />'
-      + '<span class="ld-check-text">Li, compreendi e concordo com todos os termos deste documento. Declaro que as informacoes prestadas sao verdadeiras.</span>'
+      + '<span class="ld-check-text">Li, compreendi e concordo com todos os termos deste documento. Declaro que as informa&#231;&#245;es prestadas s&#227;o verdadeiras.</span>'
       + '</label>'
       + '<div style="font-size:9px;color:#9CA3AF;margin-bottom:14px;text-align:center;font-family:monospace">Hash: ' + (_doc.document_hash || '').substring(0, 16) + '...</div>'
       + '<button class="ld-btn ld-btn-primary" onclick="window._ldSubmit()"'
@@ -323,16 +327,16 @@
     return '<div class="ld-card"><div class="ld-loading">'
       + '<div class="ld-loading-spinner"></div>'
       + '<div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px">Carregando documento</div>'
-      + '<div style="font-size:12px;color:#9CA3AF">Verificando autenticidade...</div>'
+      + '<div style="font-size:12px;color:#9CA3AF">Verificando autenticidade&#8230;</div>'
       + '</div></div>'
   }
 
   function _renderError() {
     return '<div class="ld-card"><div class="ld-error">'
       + '<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
-      + '<div style="font-size:18px;font-weight:700;margin-bottom:8px;color:#111">Documento Indisponivel</div>'
+      + '<div style="font-size:18px;font-weight:700;margin-bottom:8px;color:#111">Documento Indispon&#237;vel</div>'
       + '<div style="font-size:13px;color:#6B7280;line-height:1.6;max-width:300px;margin:0 auto">' + _esc(_errorMsg) + '</div>'
-      + '<div style="margin-top:20px;font-size:11px;color:#9CA3AF">Se persistir, entre em contato com a clinica.</div>'
+      + '<div style="margin-top:20px;font-size:11px;color:#9CA3AF">Se persistir, entre em contato com a cl&#237;nica.</div>'
       + '</div></div>'
   }
 
@@ -344,7 +348,7 @@
     return '<div class="ld-card"><div class="ld-success">'
       + '<div class="ld-success-check"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="30" stroke-dashoffset="0"><polyline points="20 6 9 17 4 12"/></svg></div>'
       + '<div class="ld-success-title">Documento Assinado</div>'
-      + '<div class="ld-success-text">Obrigado, <strong>' + _esc(_signerName.split(' ')[0]) + '</strong>!<br>Sua assinatura foi registrada com sucesso e tem validade juridica conforme a Lei 14.063/2020.</div>'
+      + '<div class="ld-success-text">Obrigado, <strong>' + _esc(_signerName.split(' ')[0]) + '</strong>!<br>Sua assinatura foi registrada com sucesso e tem validade jur&#237;dica conforme a Lei 14.063/2020.</div>'
 
       + '<div class="ld-success-seal">'
       + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
@@ -372,12 +376,12 @@
       + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
       + '<span style="font-size:12px;font-weight:700;color:#065F46">Autenticidade Garantida</span></div>'
       + '<p style="font-size:11px;color:#374151;line-height:1.7;margin:0 0 10px">'
-      + 'Este documento possui um <strong>codigo de autenticidade exclusivo</strong> (hash SHA-256), gerado automaticamente a partir do conteudo integral do documento. '
-      + 'Esse codigo funciona como uma "impressao digital": se qualquer caractere do documento for alterado, o codigo muda completamente.'
+      + 'Este documento possui um <strong>c&#243;digo de autenticidade exclusivo</strong> (hash SHA-256), gerado automaticamente a partir do conte&#250;do integral do documento. '
+      + 'Esse c&#243;digo funciona como uma "impress&#227;o digital": se qualquer caractere do documento for alterado, o c&#243;digo muda completamente.'
       + '</p>'
       + '<p style="font-size:11px;color:#374151;line-height:1.7;margin:0 0 10px">'
-      + 'Isso significa que <strong>ninguem pode modificar</strong> este documento apos a assinatura sem que a alteracao seja detectada. '
-      + 'Seu consentimento esta protegido e pode ser verificado a qualquer momento.'
+      + 'Isso significa que <strong>ningu&#233;m pode modificar</strong> este documento ap&#243;s a assinatura sem que a altera&#231;&#227;o seja detectada. '
+      + 'Seu consentimento est&#225; protegido e pode ser verificado a qualquer momento.'
       + '</p>'
       + '<div style="background:#fff;padding:10px 12px;border-radius:8px;border:1px solid #D1FAE5;margin-top:8px">'
       + '<div style="font-size:8px;text-transform:uppercase;letter-spacing:.8px;color:#6B7280;font-weight:700;margin-bottom:4px">Codigo de Autenticidade (SHA-256)</div>'
@@ -471,9 +475,9 @@
 
       if (!_signerName.trim()) { _toast('Informe seu nome completo.', 'warning'); return }
       if (!_signerCpf.trim()) { _toast('Informe seu CPF.', 'warning'); return }
-      if (!_validateCpf(_signerCpf)) { _toast('CPF invalido. Verifique os digitos.', 'error'); return }
+      if (!_validateCpf(_signerCpf)) { _toast('CPF inv\u00e1lido. Verifique os d\u00edgitos.', 'error'); return }
       if (_doc.patient_cpf && !_cpfsMatch(_signerCpf, _doc.patient_cpf)) {
-        _toast('O CPF informado nao corresponde ao cadastrado.', 'error'); return
+        _toast('O CPF informado n\u00e3o corresponde ao cadastrado.', 'error'); return
       }
 
       _step = 2
@@ -512,7 +516,7 @@
     if (docText.scrollHeight <= docText.clientHeight + 10) {
       _scrolledToBottom = true
       var btn = document.getElementById('ldDocNext')
-      if (btn) { btn.disabled = false; btn.textContent = 'Li e desejo continuar' }
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Li e desejo continuar' }
       return
     }
 
@@ -523,7 +527,7 @@
       if (docText.scrollTop + docText.clientHeight >= docText.scrollHeight - 20) {
         _scrolledToBottom = true
         var btn = document.getElementById('ldDocNext')
-        if (btn) { btn.disabled = false; btn.textContent = 'Li e desejo continuar' }
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Li e desejo continuar' }
         if (hint) hint.style.display = 'none'
       }
     })
@@ -690,7 +694,7 @@
         var root = document.getElementById('ldRoot')
         if (root) root.innerHTML = '<div class="ld-card"><div class="ld-success" style="padding:60px 28px">'
           + '<div class="ld-success-title" style="color:#10B981">Tudo certo!</div>'
-          + '<div class="ld-success-text">Voce ja pode fechar esta pagina.</div></div></div>'
+          + '<div class="ld-success-text">Voc&#234; j&#225; pode fechar esta p&#225;gina.</div></div></div>'
       }, 500)
     }
   }
