@@ -609,6 +609,7 @@ function _lmNav(activeTab) {
     { id:'financeiro', label:'Financeiro', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
     { id:'timeline',   label:'Linha do Tempo', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
     { id:'documentos', label:'Documentos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
+    { id:'orcamentos', label:'Or\u00e7amentos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
     { id:'interacoes', label:'Interacoes', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' },
     { id:'protocolos', label:'Protocolos', icon:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
   ]
@@ -622,7 +623,7 @@ function _lmNav(activeTab) {
 
 function _lmSwitchTab(tabId) {
   _activeModalTab = tabId
-  ;['geral','clinico','anamnese','evolucao','financeiro','timeline','documentos','interacoes','protocolos'].forEach(function(t) {
+  ;['geral','clinico','anamnese','evolucao','financeiro','timeline','documentos','orcamentos','interacoes','protocolos'].forEach(function(t) {
     var btn = document.getElementById('lmNav_' + t)
     if (!btn) return
     if (t === tabId) btn.classList.add('active')
@@ -657,6 +658,7 @@ function _renderModalTab(tabId, lead) {
     case 'financeiro': return _lmTabFinanceiro(lead)
     case 'timeline':   return _lmTabTimeline(lead)
     case 'documentos': return _lmTabDocumentos(lead)
+    case 'orcamentos': return _lmTabOrcamentos(lead)
     case 'interacoes': return _lmTabInteracoes(lead)
     case 'protocolos': return _lmTabProtocolos(lead)
     default:           return ''
@@ -2148,6 +2150,93 @@ function _lmTabProtocolos(lead) {
     '</div>' +
     '<div id="timelineContainer">' + buildTimeline(_currentCustomProtocols) + '</div>' +
   '</div>'
+}
+
+// ── Aba: Orcamentos ─────────────────────────────────────────
+
+function _lmTabOrcamentos(lead) {
+  var loading = '<div id="lmOrcContent"><div style="text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Carregando or\u00e7amentos...</div></div>'
+  setTimeout(function () { _lmLoadOrcamentos(lead) }, 50)
+  return loading
+}
+
+async function _lmLoadOrcamentos(lead) {
+  var el = document.getElementById('lmOrcContent')
+  if (!el) return
+
+  var budgets = []
+  if (window.BudgetsService) {
+    var result = await BudgetsService.getBudgets(lead.id)
+    if (result.ok) budgets = result.data || []
+  }
+
+  // KPIs
+  var abertos = 0, aprovados = 0, recusados = 0, totalValor = 0, valorAberto = 0
+  budgets.forEach(function (b) {
+    var v = b.total || 0
+    totalValor += v
+    if (b.status === 'approved') aprovados++
+    else if (b.status === 'lost') recusados++
+    else { abertos++; valorAberto += v }
+  })
+
+  function _kpi(label, value, sub, color) {
+    return '<div style="text-align:center;padding:12px 8px"><div style="font-size:18px;font-weight:800;color:' + color + '">' + value + '</div><div style="font-size:9px;color:#6B7280;font-weight:600;text-transform:uppercase;margin-top:2px">' + label + '</div>' + (sub ? '<div style="font-size:10px;color:#9CA3AF;margin-top:2px">' + sub + '</div>' : '') + '</div>'
+  }
+
+  var kpis = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#E5E7EB;border-radius:12px;overflow:hidden;margin-bottom:16px">'
+    + '<div style="background:#fff">' + _kpi('Total', budgets.length, formatCurrency(totalValor), '#374151') + '</div>'
+    + '<div style="background:#fff">' + _kpi('Abertos', abertos, formatCurrency(valorAberto), '#EA580C') + '</div>'
+    + '<div style="background:#fff">' + _kpi('Aprovados', aprovados, '', '#16A34A') + '</div>'
+    + '<div style="background:#fff">' + _kpi('Recusados', recusados, '', '#DC2626') + '</div>'
+    + '</div>'
+
+  // Lista de orcamentos
+  var lista = ''
+  if (budgets.length) {
+    lista = '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">'
+    budgets.forEach(function (b) {
+      var s = _budgetStatusInfo(b.status)
+      var val = formatCurrency(b.total || 0)
+      var dt = b.created_at ? new Date(b.created_at).toLocaleDateString('pt-BR') : ''
+      var items = b.items || []
+      var itemsHtml = items.map(function (it) { return '<span style="font-size:10px;padding:2px 6px;background:#EEF2FF;color:#4338CA;border-radius:4px">' + (it.description || '').replace(/</g, '&lt;') + '</span>' }).join(' ')
+
+      lista += '<div style="padding:12px 14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        + '<div style="font-size:13px;font-weight:600;color:#111">' + (b.title || 'Or\u00e7amento').replace(/</g, '&lt;') + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<span style="font-size:14px;font-weight:700;color:#10B981">' + val + '</span>'
+        + '<span style="padding:2px 10px;background:' + s.bg + ';color:' + s.color + ';border-radius:20px;font-size:10px;font-weight:600">' + s.label + '</span>'
+        + '<button onclick="removeBudget(\'' + lead.id + '\',\'' + b.id + '\')" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:14px" title="Excluir">&times;</button>'
+        + '</div></div>'
+        + (dt ? '<div style="font-size:10px;color:#9CA3AF;margin-bottom:4px">' + dt + '</div>' : '')
+        + (itemsHtml ? '<div style="display:flex;flex-wrap:wrap;gap:4px">' + itemsHtml + '</div>' : '')
+        + '</div>'
+    })
+    lista += '</div>'
+  } else {
+    lista = '<div style="text-align:center;padding:20px;color:#9CA3AF;font-size:13px;margin-bottom:16px">Nenhum or\u00e7amento cadastrado.</div>'
+  }
+
+  // Formulario novo orcamento
+  var form = '<div style="padding:14px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px">'
+    + '<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em">Novo Or\u00e7amento</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+    + '<div><label style="font-size:10px;font-weight:600;color:#6B7280;display:block;margin-bottom:3px">Procedimento</label>'
+    + '<input id="bProcedimento" type="text" placeholder="Ex: Full Face 5D" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box" /></div>'
+    + '<div><label style="font-size:10px;font-weight:600;color:#6B7280;display:block;margin-bottom:3px">Valor (R$)</label>'
+    + '<input id="bValor" type="number" placeholder="0,00" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box" /></div>'
+    + '<div><label style="font-size:10px;font-weight:600;color:#6B7280;display:block;margin-bottom:3px">Status</label>'
+    + '<select id="bStatus" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px;outline:none;background:#fff;box-sizing:border-box">'
+    + '<option value="draft">Aberto</option><option value="approved">Aprovado</option><option value="lost">Recusado</option><option value="negotiation">Negociando</option></select></div>'
+    + '<div><label style="font-size:10px;font-weight:600;color:#6B7280;display:block;margin-bottom:3px">Validade</label>'
+    + '<input id="bValidUntil" type="date" style="width:100%;padding:7px 10px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box" /></div>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:flex-end"><button id="bSaveBtn" onclick="saveBudget(\'' + lead.id + '\');setTimeout(function(){_lmLoadOrcamentos(_currentLead)},500)" style="padding:7px 16px;background:#7C3AED;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Adicionar</button></div>'
+    + '</div>'
+
+  el.innerHTML = kpis + lista + form
 }
 
 // ── Modal principal ───────────────────────────────────────────
