@@ -316,7 +316,10 @@
           + '<td style="padding:12px 14px;color:#374151">' + (e.patient_name || '<span style="color:#9ca3af">—</span>') + '</td>'
           + '<td style="padding:12px 14px;text-align:right;font-weight:700;color:' + color + '">' + sign + ' ' + fmt(e.amount) + '</td>'
           + '<td style="padding:12px 14px;text-align:center">' + statusBadge + '</td>'
-          + '<td style="padding:12px 14px;text-align:center">'
+          + '<td style="padding:12px 14px;text-align:center;white-space:nowrap">'
+            + (!e.patient_id
+              ? '<button data-id="' + e.id + '" data-amount="' + e.amount + '" data-date="' + e.transaction_date + '" data-desc="' + (e.description || '').replace(/"/g, '&quot;') + '" class="cf-link-btn" style="all:unset;cursor:pointer;color:#10b981;padding:4px;margin-right:8px" title="Vincular paciente">' + _icon('user-plus', 14) + '</button>'
+              : '')
             + '<button data-id="' + e.id + '" class="cf-del-btn" style="all:unset;cursor:pointer;color:#9ca3af;padding:4px" title="Excluir">' + _icon('trash-2', 14) + '</button>'
           + '</td>'
         + '</tr>'
@@ -332,9 +335,206 @@
           if (confirm('Excluir este lancamento?')) _delete(id)
         })
       })
+      var linkBtns = document.querySelectorAll('.cf-link-btn')
+      linkBtns.forEach(function(b) {
+        b.addEventListener('click', function() {
+          _openLinkModal({
+            id:     b.getAttribute('data-id'),
+            amount: parseFloat(b.getAttribute('data-amount') || 0),
+            date:   b.getAttribute('data-date'),
+            desc:   b.getAttribute('data-desc'),
+          })
+        })
+      })
     }, 0)
 
     return html
+  }
+
+  // ── Modal de Vinculacao Manual ────────────────────────────
+
+  function _openLinkModal(entry) {
+    var existing = document.getElementById('cfLinkModalBackdrop')
+    if (existing) existing.remove()
+
+    var fmt  = window.CashflowService.fmtCurrency
+    var fmtD = window.CashflowService.fmtDate
+
+    var html = ''
+      + '<div id="cfLinkModalBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px">'
+        + '<div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 25px 50px rgba(0,0,0,.25)">'
+          + '<div style="padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">'
+            + '<div>'
+              + '<h3 style="margin:0;font-size:18px;font-weight:700;color:#111827">Vincular Paciente</h3>'
+              + '<p style="margin:4px 0 0;font-size:12px;color:#6b7280">' + fmtD(entry.date) + ' | ' + fmt(entry.amount) + (entry.desc ? ' | ' + entry.desc : '') + '</p>'
+            + '</div>'
+            + '<button id="cfLinkClose" style="all:unset;cursor:pointer;color:#9ca3af;padding:8px">' + _icon('x', 20) + '</button>'
+          + '</div>'
+
+          + '<div style="padding:24px;display:flex;flex-direction:column;gap:14px">'
+
+            // Sugestao automatica baseada em valor+data
+            + '<div id="cfLinkAutoSuggest" style="display:none"></div>'
+
+            // Busca de paciente
+            + '<div>'
+              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Buscar paciente por nome</label>'
+              + '<input type="text" id="cfLinkPatientSearch" placeholder="Digite pelo menos 2 letras..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px">'
+              + '<div id="cfLinkPatientResults" style="display:none;max-height:200px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px"></div>'
+              + '<input type="hidden" id="cfLinkPatientId">'
+              + '<input type="hidden" id="cfLinkAppointmentId">'
+              + '<div id="cfLinkChosen" style="display:none;margin-top:8px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#065f46"></div>'
+            + '</div>'
+
+          + '</div>'
+
+          + '<div style="padding:16px 24px;border-top:1px solid #e5e7eb;display:flex;gap:8px;justify-content:flex-end">'
+            + '<button id="cfLinkCancel" style="background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cancelar</button>'
+            + '<button id="cfLinkSave" disabled style="background:#e5e7eb;color:#9ca3af;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed">Vincular</button>'
+          + '</div>'
+        + '</div>'
+      + '</div>'
+
+    document.body.insertAdjacentHTML('beforeend', html)
+
+    document.getElementById('cfLinkClose').addEventListener('click', _closeLinkModal)
+    document.getElementById('cfLinkCancel').addEventListener('click', _closeLinkModal)
+    document.getElementById('cfLinkModalBackdrop').addEventListener('click', function(e) {
+      if (e.target.id === 'cfLinkModalBackdrop') _closeLinkModal()
+    })
+
+    var searchInput = document.getElementById('cfLinkPatientSearch')
+    var debounceTimer
+    searchInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(function() { _linkSearchPatients(searchInput.value) }, 250)
+    })
+
+    document.getElementById('cfLinkSave').addEventListener('click', function() { _linkSave(entry.id) })
+
+    // Busca candidatos automaticos por valor+data
+    _loadAutoCandidates(entry)
+  }
+
+  function _closeLinkModal() {
+    var b = document.getElementById('cfLinkModalBackdrop')
+    if (b) b.remove()
+  }
+
+  async function _loadAutoCandidates(entry) {
+    var res = await window.CashflowService.searchCandidates(entry.amount, entry.date, 3)
+    if (!res || !res.ok || !res.data || res.data.length === 0) return
+
+    var fmt  = window.CashflowService.fmtCurrency
+    var fmtD = window.CashflowService.fmtDate
+    var div = document.getElementById('cfLinkAutoSuggest')
+    if (!div) return
+
+    var html = '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px">'
+      + '<div style="font-size:11px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Sugestoes (mesmo valor + data proxima)</div>'
+
+    res.data.slice(0, 5).forEach(function(c) {
+      html += '<button class="cf-link-cand" data-appt="' + c.id + '" data-patient="' + (c.patient_id || '') + '" data-name="' + (c.patient_name || '').replace(/"/g, '&quot;') + '" '
+        + 'style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 12px;background:#fff;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:4px">'
+        + '<div style="font-size:12px;color:#374151"><strong>' + (c.patient_name || 'Sem nome') + '</strong> | ' + fmtD(c.date) + ' | ' + fmt(c.valor || c.valor_pago || 0) + '</div>'
+        + '<span style="font-size:11px;color:#10b981;font-weight:700">VINCULAR</span>'
+        + '</button>'
+    })
+
+    html += '</div>'
+    div.innerHTML = html
+    div.style.display = 'block'
+
+    document.querySelectorAll('.cf-link-cand').forEach(function(b) {
+      b.addEventListener('click', function() {
+        document.getElementById('cfLinkPatientId').value     = b.getAttribute('data-patient')
+        document.getElementById('cfLinkAppointmentId').value = b.getAttribute('data-appt')
+        var chosen = document.getElementById('cfLinkChosen')
+        chosen.innerHTML = '✓ ' + b.getAttribute('data-name') + ' (com agendamento)'
+        chosen.style.display = 'block'
+        _enableLinkSave()
+      })
+    })
+  }
+
+  function _linkSearchPatients(q) {
+    var resultsDiv = document.getElementById('cfLinkPatientResults')
+    if (!q || q.length < 2) {
+      resultsDiv.style.display = 'none'
+      return
+    }
+
+    var leads = window.LeadsService && window.LeadsService.getLocal ? window.LeadsService.getLocal() : []
+    var qLow = q.toLowerCase()
+    var matches = leads.filter(function(l) {
+      return (l.name || '').toLowerCase().indexOf(qLow) >= 0
+    }).slice(0, 10)
+
+    if (matches.length === 0) {
+      resultsDiv.innerHTML = '<div style="padding:8px 12px;font-size:12px;color:#9ca3af">Nenhum paciente encontrado</div>'
+      resultsDiv.style.display = 'block'
+      return
+    }
+
+    resultsDiv.innerHTML = matches.map(function(p) {
+      return '<div class="cf-link-pat" data-id="' + p.id + '" data-name="' + (p.name || '').replace(/"/g, '&quot;') + '" style="padding:10px 12px;font-size:13px;color:#111827;cursor:pointer;border-bottom:1px solid #f3f4f6">'
+        + '<strong>' + (p.name || 'Sem nome') + '</strong>'
+        + '<span style="color:#9ca3af;margin-left:8px;font-size:11px">' + (p.phone || '') + '</span>'
+        + '</div>'
+    }).join('')
+    resultsDiv.style.display = 'block'
+
+    document.querySelectorAll('.cf-link-pat').forEach(function(it) {
+      it.addEventListener('click', function() {
+        var id   = it.getAttribute('data-id')
+        var name = it.getAttribute('data-name')
+        document.getElementById('cfLinkPatientId').value     = id
+        document.getElementById('cfLinkAppointmentId').value = ''
+        var chosen = document.getElementById('cfLinkChosen')
+        chosen.innerHTML = '✓ ' + name + ' (sem agendamento vinculado)'
+        chosen.style.display = 'block'
+        document.getElementById('cfLinkPatientResults').style.display = 'none'
+        document.getElementById('cfLinkPatientSearch').value = name
+        _enableLinkSave()
+      })
+    })
+  }
+
+  function _enableLinkSave() {
+    var btn = document.getElementById('cfLinkSave')
+    btn.disabled = false
+    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)'
+    btn.style.color = '#fff'
+    btn.style.cursor = 'pointer'
+  }
+
+  async function _linkSave(entryId) {
+    var patientId     = document.getElementById('cfLinkPatientId').value
+    var appointmentId = document.getElementById('cfLinkAppointmentId').value
+
+    if (!patientId) {
+      alert('Selecione um paciente primeiro')
+      return
+    }
+
+    var res
+    if (appointmentId) {
+      // Vincula appointment + paciente (com sinaliza manual + reconciled)
+      res = await window.CashflowService.linkAppointment(entryId, appointmentId, patientId)
+    } else {
+      // So paciente, sem appointment → usa update_entry
+      res = await window.CashflowService.updateEntry(entryId, {
+        patient_id: patientId,
+        match_confidence: 'manual',
+      })
+    }
+
+    if (res && res.ok) {
+      _closeLinkModal()
+      _loadData()
+    } else {
+      alert('Erro ao vincular: ' + (res && res.error || 'desconhecido'))
+    }
   }
 
   function _statusBadge(e) {
@@ -683,6 +883,7 @@
       'inbox':             '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
       'zap':               '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
       'link':              '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+      'user-plus':         '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
       'check-circle':      '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     }
     return icons[name] || ''
