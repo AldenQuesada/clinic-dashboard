@@ -201,6 +201,12 @@
     return repo.getDasEstimate(year, month)
   }
 
+  async function getForecast(monthsAhead) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: {}, error: 'CashflowRepository nao disponivel' }
+    return repo.getForecast(monthsAhead)
+  }
+
   // ── Hook: cria entry a partir de appointment finalizado ──
 
   /**
@@ -343,6 +349,7 @@
     getVipSumidos:        getVipSumidos,
     getTrends:            getTrends,
     getDasEstimate:       getDasEstimate,
+    getForecast:          getForecast,
     createFromAppointment: createFromAppointment,
   })
 })()

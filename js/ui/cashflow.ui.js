@@ -48,7 +48,7 @@
       var year  = d.getFullYear()
       var month = d.getMonth() + 1
 
-      var [sumRes, listRes, intelRes, dreRes, segRes, trendsRes] = await Promise.all([
+      var [sumRes, listRes, intelRes, dreRes, segRes, trendsRes, fcRes] = await Promise.all([
         window.CashflowService.getSummary(_state.startDate, _state.endDate),
         window.CashflowService.listEntries({
           startDate: _state.startDate,
@@ -61,6 +61,7 @@
         window.CashflowService.getDre(year, month),
         window.CashflowService.getSegments(year, month),
         window.CashflowService.getTrends(year, month),
+        window.CashflowService.getForecast(6),
       ])
 
       _state.summary      = (sumRes  && sumRes.ok)  ? sumRes.data  : {}
@@ -69,6 +70,7 @@
       _state.dre          = (dreRes && dreRes.ok)    ? dreRes.data  : {}
       _state.segments     = (segRes && segRes.ok)    ? segRes.data  : {}
       _state.trends       = (trendsRes && trendsRes.ok) ? trendsRes.data : {}
+      _state.forecast     = (fcRes && fcRes.ok)      ? fcRes.data   : {}
     } catch (e) {
       console.error('[CashflowUI] load error:', e)
       _state.summary = {}
@@ -77,6 +79,7 @@
       _state.dre = {}
       _state.segments = {}
       _state.trends = {}
+      _state.forecast = {}
     }
 
     _state.loading = false
@@ -297,6 +300,7 @@
     var dre   = _state.dre || {}
     var seg   = _state.segments || {}
     var trends = _state.trends || {}
+    var fc  = _state.forecast || {}
 
     body.innerHTML = ''
       // Painel Inteligencia
@@ -304,6 +308,9 @@
 
       // DRE Liquido
       + _drePanel(dre)
+
+      // Forecast / Cobertura de Despesas
+      + _forecastPanel(fc)
 
       // Graficos / Visualizacao
       + _chartsPanel(trends)
@@ -398,6 +405,9 @@
 
         + '</div>'
 
+        // Linha 2 (sub-grid): Cobertura proximo mes
+        + _coverageRow()
+
         // Linha 2: Inadimplentes (se houver)
         + (debtors.total > 0
           ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">'
@@ -490,6 +500,102 @@
 
   function _dreOp(op) {
     return '<div style="text-align:center;font-size:18px;font-weight:700;color:#9ca3af">' + op + '</div>'
+  }
+
+  // ── Painel Forecast / Cobertura de Despesas ───────────────
+
+  function _forecastPanel(fc) {
+    if (!fc || !fc.months) return ''
+
+    var fmt = window.CashflowService.fmtCurrency
+    var cfg = fc.config || {}
+    var months = fc.months || []
+    var summary = fc.summary || {}
+
+    // Aviso quando faltam fixos cadastrados
+    if ((cfg.fixos_count || 0) === 0) {
+      return ''
+        + '<div style="background:#fff;border:1px solid #e5e7eb;border-top:3px solid #f59e0b;border-radius:14px;padding:18px 22px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
+          + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+            + '<span style="color:#f59e0b">' + _icon('alert-circle', 18) + '</span>'
+            + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#111827">Forecast / Cobertura de Despesas</div>'
+          + '</div>'
+          + '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;font-size:13px;color:#92400e">'
+            + '<strong>Cadastre seus gastos fixos primeiro</strong> em <a onclick="navigateTo(\'fin-goals\')" style="color:#92400e;text-decoration:underline;cursor:pointer">Financeiro &rsaquo; Metas Financeiras &rsaquo; Gastos</a>. '
+            + 'Sem isso, nao da pra calcular se sua receita futura cobre o break-even.'
+          + '</div>'
+        + '</div>'
+    }
+
+    var monthLabel = function(m) {
+      var months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+      var dt = new Date(m + 'T00:00:00')
+      return months[dt.getMonth()] + '/' + String(dt.getFullYear()).slice(-2)
+    }
+
+    var html = ''
+      + '<div style="background:#fff;border:1px solid #e5e7eb;border-top:3px solid #6366f1;border-radius:14px;padding:18px 22px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+          + '<span style="color:#6366f1">' + _icon('target', 18) + '</span>'
+          + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#111827">Forecast — Cobertura de Despesas</div>'
+          + '<span style="font-size:11px;color:#9ca3af;margin-left:auto">Fixos: <strong>' + fmt(cfg.total_fixos || 0) + '</strong>/mes &middot; ' + (cfg.fixos_count || 0) + ' itens</span>'
+        + '</div>'
+
+        // Aviso critico se houver
+        + (summary.has_critical
+          ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#991b1b">'
+            + '<strong>' + _icon('alert-circle', 12) + ' ' + summary.critical_count + ' mes(es) critico(s):</strong> '
+            + 'receita comprometida nao cobre os fixos. Vendas precisam acontecer pra fechar o mes.'
+            + '</div>'
+          : '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#065f46">'
+            + '<strong>' + _icon('check-circle', 12) + ' Saudavel:</strong> '
+            + 'todos os proximos meses tem receita comprometida suficiente pra cobrir os fixos.'
+            + '</div>')
+
+        // Tabela 6 meses
+        + '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
+        + '<thead><tr style="background:#f9fafb">'
+        + '<th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Mes</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Comprometida</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Projetada</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Total Receita</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">(−) Fixos</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">(−) Variaveis</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">= Sobra</th>'
+        + '<th style="padding:10px 12px;text-align:center;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Cobertura</th>'
+        + '</tr></thead><tbody>'
+
+    months.forEach(function(m) {
+      var statusColor = m.status === 'cobre' ? '#10b981' : m.status === 'risco' ? '#f59e0b' : '#ef4444'
+      var statusBg    = m.status === 'cobre' ? '#f0fdf4' : m.status === 'risco' ? '#fffbeb' : '#fef2f2'
+      var sobraColor  = m.sobra >= 0 ? '#10b981' : '#ef4444'
+      var seasonalIcon = m.seasonal ? ' <span title="Mes critico (Jan-Carnaval)" style="color:#f59e0b">⚠</span>' : ''
+
+      html += '<tr style="border-bottom:1px solid #f3f4f6">'
+        + '<td style="padding:10px 12px;color:#111827;font-weight:600">' + monthLabel(m.month) + seasonalIcon + '</td>'
+        + '<td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:600">' + fmt(m.committed) + '</td>'
+        + '<td style="padding:10px 12px;text-align:right;color:#9ca3af">' + fmt(m.projected) + '</td>'
+        + '<td style="padding:10px 12px;text-align:right;color:#374151;font-weight:600">' + fmt(m.total_revenue) + '</td>'
+        + '<td style="padding:10px 12px;text-align:right;color:#ef4444">' + fmt(m.fixos) + '</td>'
+        + '<td style="padding:10px 12px;text-align:right;color:#ef4444">' + fmt(m.variaveis) + '</td>'
+        + '<td style="padding:10px 12px;text-align:right;color:' + sobraColor + ';font-weight:700">' + fmt(m.sobra) + '</td>'
+        + '<td style="padding:10px 12px;text-align:center"><span style="background:' + statusBg + ';color:' + statusColor + ';font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px">' + m.cobertura_pct + '%</span></td>'
+        + '</tr>'
+    })
+
+    html += '</tbody></table></div>'
+
+      // Legenda
+      + '<div style="display:flex;gap:14px;margin-top:12px;font-size:10px;color:#9ca3af;flex-wrap:wrap">'
+      + '<div><strong style="color:#10b981">Comprometida</strong> = parcelas ja vendidas</div>'
+      + '<div><strong style="color:#9ca3af">Projetada</strong> = media historica 3m</div>'
+      + '<div><strong style="color:#10b981">Cobertura ≥ 100%</strong> = ja paga fixos sem vender mais</div>'
+      + '<div><strong style="color:#f59e0b">⚠ Mes critico</strong> = sazonalidade Jan/Fev/Mar (pos-Carnaval)</div>'
+      + '</div>'
+
+      + '</div>'
+
+    return html
   }
 
   // ── Painel Graficos / Visualizacao ────────────────────────
@@ -1066,6 +1172,38 @@
     } else {
       alert('Erro ao salvar config: ' + (res && res.error || 'desconhecido'))
     }
+  }
+
+  function _coverageRow() {
+    var fc = _state.forecast || {}
+    var months = fc.months || []
+    if (months.length === 0) return ''
+    var fmt = window.CashflowService.fmtCurrency
+    // Pega o mes ATUAL (i=0) e o PROXIMO (i=1)
+    var curr = months[0]
+    var next = months[1]
+    if (!curr) return ''
+
+    function _mini(label, m) {
+      if (!m) return ''
+      var statusColor = m.status === 'cobre' ? '#10b981' : m.status === 'risco' ? '#f59e0b' : '#ef4444'
+      var statusBg    = m.status === 'cobre' ? '#f0fdf4' : m.status === 'risco' ? '#fffbeb' : '#fef2f2'
+      var statusLabel = m.status === 'cobre' ? 'Coberto' : m.status === 'risco' ? 'Em risco' : 'Critico'
+      return ''
+        + '<div style="background:' + statusBg + ';border:1px solid ' + statusColor + '40;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px">'
+          + '<div style="flex-shrink:0;width:42px;height:42px;border-radius:8px;background:' + statusColor + ';color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">' + m.cobertura_pct + '%</div>'
+          + '<div style="flex:1;min-width:0">'
+            + '<div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">' + label + '</div>'
+            + '<div style="font-size:13px;font-weight:700;color:' + statusColor + ';margin:2px 0">' + statusLabel + '</div>'
+            + '<div style="font-size:10px;color:#6b7280">Comprometido: ' + fmt(m.committed) + ' &middot; Fixos: ' + fmt(m.fixos) + '</div>'
+          + '</div>'
+        + '</div>'
+    }
+
+    return '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px">'
+      + _mini('Mes Atual', curr)
+      + (next ? _mini('Proximo Mes', next) : '')
+      + '</div>'
   }
 
   function _intelCard(label, value, sub, color, iconName) {
