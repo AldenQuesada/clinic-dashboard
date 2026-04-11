@@ -84,27 +84,27 @@
 
       if (c.status === 'resolvida') {
         line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
-          + '<span style="text-decoration:line-through;color:#9CA3AF;font-size:12px">' + _esc(c.name) + '</span>'
+          + '<span style="text-decoration:line-through;color:#9CA3AF;font-size:12px">' + _esc(c.complaint) + '</span>'
           + _badge(c.status)
           + '</div>'
       } else if (c.status === 'tratada') {
         line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
-          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.name) + '</span>'
-          + (c.procedimento ? '<span style="font-size:10px;color:#6B7280">' + _esc(c.procedimento) + '</span>' : '')
+          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.complaint) + '</span>'
+          + (c.treatment_procedure ? '<span style="font-size:10px;color:#6B7280">' + _esc(c.treatment_procedure) + '</span>' : '')
           + _badge(c.status)
           + '</div>'
       } else if (c.status === 'em_tratamento') {
-        var retouchTxt = c.retouch_days ? 'retoque em ' + _retouchLabel(c.retouch_days) : ''
+        var retouchTxt = c.retouch_interval_days ? 'retoque em ' + _retouchLabel(c.retouch_interval_days) : ''
         line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;flex-wrap:wrap">'
-          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.name) + '</span>'
-          + (c.procedimento ? '<span style="font-size:10px;color:#6B7280">' + _esc(c.procedimento) + '</span>' : '')
+          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.complaint) + '</span>'
+          + (c.treatment_procedure ? '<span style="font-size:10px;color:#6B7280">' + _esc(c.treatment_procedure) + '</span>' : '')
           + _badge(c.status)
           + (retouchTxt ? '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#6B7280">' + ICONS.clock + ' ' + _esc(retouchTxt) + '</span>' : '')
           + '</div>'
       } else {
         // pendente
         line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
-          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.name) + '</span>'
+          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.complaint) + '</span>'
           + _badge(c.status)
           + '</div>'
       }
@@ -199,14 +199,14 @@
           // Main row
           html += '<div style="display:flex;align-items:center;gap:8px">'
             + '<div style="flex:1">'
-            + '<div style="font-size:12px;font-weight:600;color:#111;' + (c.status === 'resolvida' ? 'text-decoration:line-through;color:#9CA3AF' : '') + '">' + _esc(c.name) + '</div>'
+            + '<div style="font-size:12px;font-weight:600;color:#111;' + (c.status === 'resolvida' ? 'text-decoration:line-through;color:#9CA3AF' : '') + '">' + _esc(c.complaint) + '</div>'
 
-          if (c.procedimento) {
-            html += '<div style="font-size:11px;color:#6B7280;margin-top:2px">' + _esc(c.procedimento) + '</div>'
+          if (c.treatment_procedure) {
+            html += '<div style="font-size:11px;color:#6B7280;margin-top:2px">' + _esc(c.treatment_procedure) + '</div>'
           }
-          if (c.status === 'em_tratamento' && c.retouch_days) {
+          if (c.status === 'em_tratamento' && c.retouch_interval_days) {
             html += '<div style="display:flex;align-items:center;gap:3px;font-size:10px;color:#6B7280;margin-top:2px">'
-              + ICONS.clock + ' Retoque em ' + _esc(_retouchLabel(c.retouch_days)) + '</div>'
+              + ICONS.clock + ' Retoque em ' + _esc(_retouchLabel(c.retouch_interval_days)) + '</div>'
           }
           if (c.nota) {
             html += '<div style="font-size:11px;color:#9CA3AF;margin-top:2px;font-style:italic">' + _esc(c.nota) + '</div>'
