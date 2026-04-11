@@ -1366,10 +1366,67 @@ function _lmTabGeral(lead) {
   // Botoes de transicao manual de fase
   var phaseActions = _lmPhaseActions(lead)
 
-  return _lmSection('Identidade', identidade) +
-         _lmSection('Contato', contato) +
-         _lmSection('Endereço', endereco) +
-         _lmSection('SDR', sdr + phaseActions)
+  // ── Coluna direita: dados estrategicos ──────────────────────
+  var qfRaw = lead.queixas_faciais || cf.queixas_faciais || (lead.data || {}).queixas_faciais || []
+  var qfArr = Array.isArray(qfRaw) ? qfRaw : []
+  var queixaHtml = qfArr.length
+    ? '<div style="display:flex;flex-wrap:wrap;gap:4px">' + qfArr.map(function(q) { return '<span style="padding:3px 9px;background:#EEF2FF;color:#4338CA;border-radius:6px;font-size:11px;font-weight:600">' + (q||'').replace(/</g,'&lt;') + '</span>' }).join('') + '</div>'
+    : (cf.queixaPrincipal ? '<div style="font-size:12px;color:#78350F">' + cf.queixaPrincipal.replace(/</g,'&lt;') + '</div>' : '<span style="font-size:11px;color:#9CA3AF">Nenhuma informada</span>')
+
+  var interesse = cf.procedimentoInteresse || ''
+  var valorEst = cf.valorEstimado ? 'R$ ' + (+cf.valorEstimado).toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''
+
+  // Financeiro: buscar de appointments
+  var appts = []
+  try { appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch(e) {}
+  var myAppts = appts.filter(function(a) { return (a.pacienteNome||a.patient_name||'').toLowerCase() === (lead.name||lead.nome||'').toLowerCase() || a.pacienteId === lead.id })
+  var totalRevenue = 0; var totalProcs = 0; var orcAbertos = 0
+  myAppts.forEach(function(a) {
+    if (a.status === 'finalizado') { totalRevenue += (a.valor || 0); totalProcs++ }
+  })
+
+  var ana = cf.anamnese || {}
+  var alergias = ana.alergias || ''
+
+  // Cards estrategicos
+  function _stratCard(color, title, content) {
+    return '<div style="padding:10px 12px;background:' + color + '08;border:1px solid ' + color + '20;border-radius:10px;margin-bottom:8px">'
+      + '<div style="font-size:9px;font-weight:700;color:' + color + ';text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">' + title + '</div>'
+      + content + '</div>'
+  }
+
+  var estrategico =
+    _stratCard('#7C3AED', 'Queixas Faciais', queixaHtml) +
+    _stratCard('#10B981', 'Interesse',
+      (interesse ? '<div style="font-size:12px;font-weight:600;color:#111">' + interesse.replace(/</g,'&lt;') + '</div>' : '')
+      + (valorEst ? '<div style="font-size:11px;color:#6B7280;margin-top:2px">Valor estimado: ' + valorEst + '</div>' : '')
+      + (!interesse && !valorEst ? '<span style="font-size:11px;color:#9CA3AF">Nenhum</span>' : '')
+    ) +
+    _stratCard('#C9A96E', 'Financeiro',
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">'
+      + '<div><div style="font-size:16px;font-weight:800;color:#C9A96E">R$ ' + totalRevenue.toLocaleString('pt-BR',{minimumFractionDigits:0}) + '</div><div style="font-size:9px;color:#9CA3AF">Receita</div></div>'
+      + '<div><div style="font-size:16px;font-weight:800;color:#374151">' + totalProcs + '</div><div style="font-size:9px;color:#9CA3AF">Procedimentos</div></div>'
+      + '<div><div style="font-size:16px;font-weight:800;color:#3B82F6">' + (lead.leadScore||0) + '</div><div style="font-size:9px;color:#9CA3AF">Score</div></div>'
+      + '</div>'
+    ) +
+    _stratCard('#3B82F6', 'Status',
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">'
+      + '<span style="padding:3px 9px;background:#EFF6FF;color:#2563EB;border-radius:6px;font-size:11px;font-weight:600">' + (phaseSrc[lead.phase] || lead.phase || '—') + '</span>'
+      + '<span style="padding:3px 9px;background:' + (lead.temperature==='hot'?'#FEF2F2':lead.temperature==='warm'?'#FFF7ED':'#F0F9FF') + ';color:' + (lead.temperature==='hot'?'#DC2626':lead.temperature==='warm'?'#EA580C':'#2563EB') + ';border-radius:6px;font-size:11px;font-weight:600">' + (tempSrc[lead.temperature] || lead.temperature || '—') + '</span>'
+      + (lead.lastInteractionAt ? '<span style="font-size:10px;color:#9CA3AF">Ultima: ' + new Date(lead.lastInteractionAt).toLocaleDateString('pt-BR') + '</span>' : '')
+      + '</div>'
+    ) +
+    (alergias ? _stratCard('#EF4444', 'Alergias / Riscos', '<div style="font-size:12px;color:#991B1B;line-height:1.5">' + alergias.replace(/</g,'&lt;') + '</div>') : '')
+
+  // ── Layout 2 colunas ──────────────────────────────────────
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">'
+    + '<div>'
+    + _lmSection('Identidade', identidade)
+    + _lmSection('Contato', contato)
+    + _lmSection('Endere\u00e7o', endereco)
+    + '</div>'
+    + '<div>' + estrategico + phaseActions + '</div>'
+    + '</div>'
 }
 
 // ── Aba: Clínico ──────────────────────────────────────────────
