@@ -584,6 +584,11 @@
         window.FinReports.renderPage(pageId)
       }
     }
+
+    // ── Mira Console (WhatsApp Assistente Interno) ─────────────
+    if (pageId === 'mira-console' && window.MiraConsoleUI) {
+      window.MiraConsoleUI.init()
+    }
   }
 
   // ══════════════════════════════════════════════════════════════
