@@ -134,54 +134,107 @@
 
     // Form inline para quick treat (hidden por default)
     html += '<div id="cpQuickTreatForm" style="display:none;margin-top:8px;padding:10px;background:#fff;border:1.5px solid #7C3AED30;border-radius:8px">'
-      + '<div style="font-size:10px;font-weight:700;color:#7C3AED;margin-bottom:6px">MARCAR COMO TRATADA</div>'
-      + '<div style="font-size:9px;color:#6B7280;margin-bottom:6px">Selecione o procedimento e o intervalo de retoque / pr\u00f3xima sess\u00e3o</div>'
-      + '<select id="cpQtProc" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;margin-bottom:6px;box-sizing:border-box"><option value="">Carregando procedimentos...</option></select>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+      + '<div style="font-size:10px;font-weight:700;color:#7C3AED">REGISTRAR TRATAMENTO</div>'
+      + '<button onclick="document.getElementById(\'cpQuickTreatForm\').style.display=\'none\'" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:14px">&times;</button>'
+      + '</div>'
+      + '<div id="cpQtComplaintName" style="font-size:11px;font-weight:600;color:#111;margin-bottom:6px;padding:4px 8px;background:#F5F3FF;border-radius:4px"></div>'
+      + '<div style="display:flex;gap:4px;margin-bottom:4px">'
+      + '<input id="cpQtProc" list="cpQtProcList" placeholder="Procedimento..." style="flex:2;padding:5px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;box-sizing:border-box" onchange="ComplaintsPanel._onQtProcChange()">'
+      + '<datalist id="cpQtProcList"></datalist>'
+      + '<input id="cpQtQtd" type="number" value="1" min="1" style="width:40px;padding:5px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;text-align:center" onchange="ComplaintsPanel._onQtProcChange()">'
+      + '</div>'
+      + '<div id="cpQtPriceRow" style="display:flex;gap:4px;margin-bottom:4px;align-items:center">'
+      + '<div style="flex:1"><span id="cpQtPriceHint" style="font-size:10px;color:#10B981;font-weight:600"></span></div>'
+      + '<button onclick="ComplaintsPanel._onQtDesconto()" style="padding:3px 6px;border:1px solid #E5E7EB;border-radius:4px;background:none;cursor:pointer;font-size:9px;color:#F59E0B;font-weight:600">% Desconto</button>'
+      + '</div>'
       + '<div style="display:flex;gap:4px">'
-      + '<select id="cpQtInterval" style="flex:1;padding:6px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px">'
+      + '<select id="cpQtInterval" style="flex:1;padding:5px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px">'
       + RETOUCH_INTERVALS.map(function(r) { return '<option value="' + r.value + '">' + r.label + '</option>' }).join('')
       + '</select>'
-      + '<button onclick="ComplaintsPanel._submitQuickTreat()" style="padding:6px 12px;background:#7C3AED;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer">Salvar</button>'
-      + '<button onclick="document.getElementById(\'cpQuickTreatForm\').style.display=\'none\'" style="padding:6px 8px;background:#F3F4F6;color:#374151;border:none;border-radius:4px;font-size:10px;cursor:pointer">X</button>'
+      + '<button onclick="ComplaintsPanel._submitQuickTreat()" style="padding:5px 12px;background:#7C3AED;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer">Salvar</button>'
       + '</div></div>'
 
     return _stratCard('#7C3AED', 'Queixas (' + complaints.length + ')', html)
   }
 
   // Quick treat: abre form inline no card
-  var _qtComplaintId = null, _qtLeadId = null, _procsLoaded = false
+  var _qtComplaintId = null, _qtLeadId = null, _procsLoaded = false, _procCatalog = {}
+  var _qtDesconto = 0, _qtPreco = 0
+
   async function _quickTreat(complaintId, leadId) {
     _qtComplaintId = complaintId
     _qtLeadId = leadId
+    _qtDesconto = 0
+    _qtPreco = 0
     var form = document.getElementById('cpQuickTreatForm')
     if (form) form.style.display = 'block'
 
-    // Carregar procedimentos no select
-    var sel = document.getElementById('cpQtProc')
-    if (sel && !_procsLoaded) {
+    // Mostrar nome da queixa
+    var nameEl = document.getElementById('cpQtComplaintName')
+    // Buscar complaint name
+    try {
+      var all = await loadComplaints(leadId)
+      var c = all.find(function(x) { return x.id === complaintId })
+      if (c && nameEl) nameEl.textContent = c.complaint
+    } catch (e) {}
+
+    // Carregar catalogo de procedimentos
+    if (!_procsLoaded) {
       var procs = []
       try {
         if (window._sbShared) {
-          var res = await window._sbShared.from('clinic_procedimentos').select('nome,categoria').eq('ativo', true).order('categoria,nome')
+          var res = await window._sbShared.from('clinic_procedimentos').select('nome,categoria,preco').eq('ativo', true).order('categoria,nome')
           procs = res.data || []
         }
       } catch (e) {}
-      // Fallback localStorage
       if (!procs.length) try { procs = JSON.parse(localStorage.getItem('clinic_procedimentos') || '[]') } catch (e) {}
 
-      var opts = '<option value="">Selecione o procedimento...</option>'
-      var lastCat = ''
-      procs.forEach(function(p) {
-        var cat = p.categoria || 'outro'
-        if (cat !== lastCat) { if (lastCat) opts += '</optgroup>'; opts += '<optgroup label="' + _esc(cat.charAt(0).toUpperCase() + cat.slice(1)) + '">'; lastCat = cat }
-        opts += '<option value="' + _esc(p.nome) + '">' + _esc(p.nome) + '</option>'
-      })
-      if (lastCat) opts += '</optgroup>'
-      opts += '<option value="__outro__">Outro (digitar)</option>'
-      sel.innerHTML = opts
+      // Datalist
+      var dl = document.getElementById('cpQtProcList')
+      if (dl) {
+        dl.innerHTML = procs.map(function(p) { return '<option value="' + _esc(p.nome) + '">' }).join('')
+      }
+      // Catalogo de precos
+      procs.forEach(function(p) { if (p.preco) _procCatalog[p.nome.toLowerCase()] = p })
       _procsLoaded = true
     }
+
+    // Limpar form
+    var inp = document.getElementById('cpQtProc')
+    if (inp) { inp.value = ''; inp.focus() }
+    var hint = document.getElementById('cpQtPriceHint')
+    if (hint) hint.textContent = ''
   }
+
+  function _onQtProcChange() {
+    var nome = (document.getElementById('cpQtProc') || {}).value || ''
+    var qtd = parseInt((document.getElementById('cpQtQtd') || {}).value || '1') || 1
+    var info = _procCatalog[nome.toLowerCase()]
+    var hint = document.getElementById('cpQtPriceHint')
+    _qtDesconto = 0
+    if (info && info.preco > 0) {
+      _qtPreco = info.preco
+      var total = info.preco * qtd
+      if (hint) hint.innerHTML = 'R$ ' + _fmtN(info.preco) + '/un' + (qtd > 1 ? ' &middot; Total: R$ ' + _fmtN(total) : '')
+    } else {
+      _qtPreco = 0
+      if (hint) hint.textContent = ''
+    }
+  }
+
+  function _onQtDesconto() {
+    if (_qtPreco <= 0) { alert('Selecione um procedimento com pre\u00e7o primeiro'); return }
+    var input = prompt('Valor do desconto (R$):\n(Pre\u00e7o original: R$ ' + _fmtN(_qtPreco) + ')', _qtDesconto.toFixed(2))
+    if (input === null) return
+    _qtDesconto = Math.max(0, Math.min(parseFloat(input.replace(',', '.')) || 0, _qtPreco))
+    var hint = document.getElementById('cpQtPriceHint')
+    var qtd = parseInt((document.getElementById('cpQtQtd') || {}).value || '1') || 1
+    var total = (_qtPreco - _qtDesconto) * qtd
+    if (hint) hint.innerHTML = 'R$ ' + _fmtN(_qtPreco) + '/un <span style="color:#F59E0B">-R$ ' + _fmtN(_qtDesconto) + '</span> = <strong>R$ ' + _fmtN(total) + '</strong>'
+  }
+
+  function _fmtN(v) { return Number(v||0).toFixed(2).replace('.', ',') }
 
   async function _submitQuickTreat() {
     if (!_qtComplaintId) return
@@ -542,6 +595,8 @@
     _doResolve:     _doResolve,
     _quickTreat:    _quickTreat,
     _submitQuickTreat: _submitQuickTreat,
+    _onQtProcChange: _onQtProcChange,
+    _onQtDesconto: _onQtDesconto,
   }
 
 })()
