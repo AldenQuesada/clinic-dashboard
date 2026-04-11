@@ -1098,6 +1098,106 @@ function _finRow(label, recebido, aReceber, aberto) {
 
 window._lmShowParcelaDetail = _lmShowParcelaDetail
 
+// ── Modal lateral: Detalhes da Comanda ──────────────────────
+function _lmShowComandaDetail(apptId) {
+  var appts = []
+  try { appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch(e) {}
+  var a = appts.find(function(x) { return x.id === apptId })
+  if (!a) return
+
+  var nome = a.pacienteNome || a.patient_name || ''
+  var initials = nome.trim().split(/\s+/).map(function(w){return w[0]}).join('').slice(0,2).toUpperCase()
+  var prof = a.profissionalNome || a.professional_name || ''
+  var profInit = prof.trim().split(/\s+/).map(function(w){return w[0]}).join('').slice(0,2).toUpperCase()
+  var valor = a.valor || 0
+  var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR') : ''
+  var forma = a.formaPagamento || ''
+  var det = a.pagamentoDetalhes || {}
+  var parcelas = det.parcelas || 1
+  var procs = a.procedimentosRealizados || []
+
+  var old = document.getElementById('lmComandaModal')
+  if (old) old.remove()
+
+  // Tabela de procedimentos
+  var procsHtml = ''
+  if (procs.length) {
+    procsHtml = '<div style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;margin-bottom:20px">'
+      + '<div style="display:grid;grid-template-columns:1fr 70px 90px 90px 90px;padding:8px 10px;background:#F9FAFB;font-size:9px;font-weight:700;color:#6B7280;text-transform:uppercase;border-bottom:1px solid #E5E7EB">'
+      + '<div>Nome</div><div style="text-align:center">Qtd</div><div style="text-align:right">Unit\u00e1rio</div><div style="text-align:right">Desconto</div><div style="text-align:right">Total</div></div>'
+    procs.forEach(function(p) {
+      var pNome = p.nome || p
+      var qtd = p.qtd || 1
+      var pValor = p.valor || p.preco || 0
+      var pDesc = p.desconto || 0
+      var pTotal = (pValor - pDesc) * qtd
+      procsHtml += '<div style="display:grid;grid-template-columns:1fr 70px 90px 90px 90px;padding:10px;font-size:11px;border-bottom:1px solid #F3F4F6;align-items:center">'
+        + '<div style="color:#374151;font-weight:500">' + _lmEsc(typeof pNome === 'string' ? pNome : '') + '</div>'
+        + '<div style="text-align:center">' + qtd + '</div>'
+        + '<div style="text-align:right">' + formatCurrency(pValor) + '</div>'
+        + '<div style="text-align:right">' + formatCurrency(pDesc) + '</div>'
+        + '<div style="text-align:right;font-weight:600">' + formatCurrency(pTotal) + '</div></div>'
+    })
+    procsHtml += '</div>'
+  }
+
+  // Resumo de valor
+  var resumoHtml = '<div style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden">'
+    + '<div style="display:flex;justify-content:flex-end;padding:10px;background:#F9FAFB;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #E5E7EB">Valor total (R$)</div>'
+    + '<div style="padding:8px 10px;display:flex;justify-content:space-between;font-size:11px;border-bottom:1px solid #F3F4F6"><span style="color:#374151;font-weight:500">Subtotal (R$)</span><span style="font-weight:600">' + formatCurrency(valor) + '</span></div>'
+    + '<div style="padding:8px 10px;display:flex;justify-content:space-between;font-size:11px;border-bottom:1px solid #F3F4F6"><span style="color:#374151;font-weight:500">Descontos (R$)</span><span>' + formatCurrency(0) + '</span></div>'
+    + '<div style="padding:8px 10px;display:flex;justify-content:space-between;font-size:11px"><span style="color:#374151;font-weight:500">Desconto geral (R$)</span><span>' + formatCurrency(0) + '</span></div>'
+    + '</div>'
+
+  var modal = document.createElement('div')
+  modal.id = 'lmComandaModal'
+  modal.innerHTML =
+    '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:10001;display:flex;justify-content:flex-end" onclick="if(event.target===this)this.remove()">'
+    + '<div style="width:520px;max-width:90vw;height:100vh;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.15);display:flex;flex-direction:column;animation:lmSlideIn .2s ease">'
+
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #E5E7EB">'
+    + '<div style="font-size:15px;font-weight:700;color:#111">Detalhes da comanda</div>'
+    + '<button onclick="document.getElementById(\'lmComandaModal\').remove()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:18px">&times;</button>'
+    + '</div>'
+
+    + '<div style="flex:1;overflow-y:auto;padding:24px">'
+
+    // Header info
+    + '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:#F9FAFB;border-radius:10px;margin-bottom:20px">'
+    + '<div><div style="font-size:10px;color:#6B7280;font-weight:600">Valor</div><div style="font-size:16px;font-weight:800;color:#111">' + formatCurrency(valor) + '</div></div>'
+    + '<div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;border-radius:50%;background:#10B98120;color:#10B981;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">' + initials + '</div><div><div style="font-size:12px;font-weight:600">' + _lmEsc(nome) + '</div><div style="font-size:10px;color:#9CA3AF">Paciente</div></div></div>'
+    + '<div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;border-radius:50%;background:#7C3AED20;color:#7C3AED;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">' + profInit + '</div><div><div style="font-size:12px;font-weight:600">' + _lmEsc(prof) + '</div><div style="font-size:10px;color:#9CA3AF">Profissional</div></div></div>'
+    + '</div>'
+
+    // Dados
+    + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:14px;background:#F9FAFB;border-radius:10px;margin-bottom:20px">'
+    + '<div><div style="font-size:10px;color:#6B7280;font-weight:600">Data</div><div style="font-size:12px;color:#111">' + date + '</div></div>'
+    + '<div><div style="font-size:10px;color:#6B7280;font-weight:600">Categoria</div><div style="font-size:12px;color:#111">Receitas de servi\u00e7os</div></div>'
+    + '<div><div style="font-size:10px;color:#6B7280;font-weight:600">Parcelamento</div><div style="font-size:12px;color:#111">' + parcelas + 'x</div></div>'
+    + '</div>'
+
+    // Procedimentos
+    + '<div style="font-size:13px;font-weight:700;color:#111;margin-bottom:12px">Procedimentos/Produtos</div>'
+    + (procsHtml || '<div style="padding:16px;text-align:center;color:#9CA3AF;font-size:12px">Nenhum procedimento registrado</div>')
+
+    // Resumo
+    + resumoHtml
+
+    + '</div>'
+
+    // Footer
+    + '<div style="padding:16px 24px;border-top:1px solid #E5E7EB;display:flex;justify-content:flex-end;gap:10px">'
+    + '<button onclick="window.print()" style="display:flex;align-items:center;gap:6px;padding:8px 16px;background:none;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer;font-size:12px;color:#374151;font-weight:600"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>'
+    + '<button onclick="document.getElementById(\'lmComandaModal\').remove();if(window.openFinalizeModal)openFinalizeModal(\'' + apptId + '\')" style="padding:8px 16px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">Editar</button>'
+    + '</div>'
+
+    + '</div></div>'
+
+  document.body.appendChild(modal)
+}
+
+window._lmShowComandaDetail = _lmShowComandaDetail
+
 // ── Tab: Linha do Tempo ─────────────────────────────────────
 
 function _lmTabTimeline(lead) {
@@ -2008,7 +2108,7 @@ function _lmTabFinanceiro(lead) {
         + '<div style="text-align:center;position:relative">'
         + '<button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:16px;padding:2px 6px;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">&#8942;</button>'
         + '<div style="display:none;position:absolute;right:0;top:24px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:10;min-width:160px;padding:4px">'
-        + '<button onclick="this.parentElement.style.display=\'none\';if(window.openApptModal)openApptModal(\'' + apptId + '\')" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">Visualizar consulta</button>'
+        + '<button onclick="this.parentElement.style.display=\'none\';_lmShowComandaDetail(\'' + apptId + '\')" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">Visualizar lan\u00e7amento</button>'
         + '<button onclick="this.parentElement.style.display=\'none\';if(window.openFinalizeModal)openFinalizeModal(\'' + apptId + '\')" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">Editar pagamento</button>'
         + '<button onclick="this.parentElement.style.display=\'none\';_lmShowParcelaDetail(\'' + apptId + '\')" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">Visualizar parcelas</button>'
         + '</div></div>'
