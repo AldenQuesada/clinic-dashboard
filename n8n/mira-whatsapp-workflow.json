@@ -17,7 +17,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse Evolution payload — extrai phone (com LID fallback) + text + filtra grupos\nconst body = $input.first().json.body || $input.first().json;\nconst data = body.data || body;\nconst instance = body.instance || '';\nconst event = body.event || 'messages.upsert';\n\nif (event !== 'messages.upsert') return [{ json: { skip: true, reason: 'not messages.upsert' } }];\n\nconst key = data.key || {};\nif (key.fromMe) return [{ json: { skip: true, reason: 'fromMe' } }];\n\nconst rawJid = key.remoteJid || '';\nif (rawJid.includes('@g.us') || rawJid.includes('@broadcast') || rawJid.includes('@newsletter')) {\n  return [{ json: { skip: true, reason: 'group/broadcast' } }];\n}\n\nconst msg = data.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nif (!text) return [{ json: { skip: true, reason: 'no text' } }];\n\n// Multi-device LID fallback\nlet phoneSource = '';\nif (rawJid.includes('@lid') && key.senderPn) phoneSource = key.senderPn;\nelse if (key.senderPn) phoneSource = key.senderPn;\nelse if (key.participantPn) phoneSource = key.participantPn;\nelse phoneSource = rawJid;\nconst phone = phoneSource.replace(/@.*/, '').replace(/\\D/g, '');\n\nif (!phone || phone.length < 10) {\n  return [{ json: { skip: true, reason: 'no phone resolvable' } }];\n}\n\nreturn [{ json: { skip: false, phone, text: text.trim().slice(0, 500), instance } }];"
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst data = body.data || body;\nconst instance = body.instance || '';\nconst event = body.event || 'messages.upsert';\n\nif (event !== 'messages.upsert') return [{ json: { skip: true, reason: 'not messages.upsert' } }];\nconst key = data.key || {};\nif (key.fromMe) return [{ json: { skip: true, reason: 'fromMe' } }];\nconst rawJid = key.remoteJid || '';\nif (rawJid.includes('@g.us') || rawJid.includes('@broadcast') || rawJid.includes('@newsletter')) {\n  return [{ json: { skip: true, reason: 'group/broadcast' } }];\n}\nconst msg = data.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nif (!text) return [{ json: { skip: true, reason: 'no text' } }];\n\nlet phoneSource = '';\nif (rawJid.includes('@lid') && key.senderPn) phoneSource = key.senderPn;\nelse if (key.senderPn) phoneSource = key.senderPn;\nelse if (key.participantPn) phoneSource = key.participantPn;\nelse phoneSource = rawJid;\nconst phone = phoneSource.replace(/@.*/, '').replace(/\\D/g, '');\n\nif (!phone || phone.length < 10) return [{ json: { skip: true, reason: 'no phone' } }];\nreturn [{ json: { skip: false, phone, text: text.trim().slice(0, 500), instance } }];"
       },
       "id": "mira-parse-node",
       "name": "Parse Message",
@@ -30,12 +30,7 @@
         "conditions": {
           "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
           "conditions": [
-            {
-              "id": "skip-check",
-              "leftValue": "={{ $json.skip }}",
-              "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true" }
-            }
+            { "id": "skip-check", "leftValue": "={{ $json.skip }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
           ],
           "combinator": "and"
         },
@@ -63,45 +58,140 @@
       "parameters": {
         "method": "POST",
         "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_handle_message",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [
-            { "name": "apikey", "value": "REDACTED_USE_N8N_CREDENTIALS" },
-            { "name": "Authorization", "value": "Bearer REDACTED_USE_N8N_CREDENTIALS" },
-            { "name": "Content-Type", "value": "application/json" }
-          ]
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
         },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"p_phone\": \"{{ $json.phone }}\",\n  \"p_text\": {{ JSON.stringify($json.text) }}\n}",
         "options": {}
       },
-      "id": "mira-rpc-node",
-      "name": "Mira Handle Message",
+      "id": "mira-tier1-node",
+      "name": "Tier 1 — Handle Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [900, 420]
+      "position": [900, 420],
+      "credentials": {
+        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+      }
     },
     {
       "parameters": {
-        "jsCode": "// Monta payload pro sendText: phone do parse + reply do RPC\nconst rpcResult = $input.first().json;\nconst parsed = $('Parse Message').first().json;\nreturn [{ json: { phone: parsed.phone, instance: parsed.instance, reply: rpcResult.response || '⚠️ Sem resposta' } }];"
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            { "id": "unknown-check", "leftValue": "={{ $json.intent }}", "rightValue": "unknown", "operator": { "type": "string", "operation": "equals" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "id": "mira-merge-node",
-      "name": "Merge",
-      "type": "n8n-nodes-base.code",
+      "id": "mira-tier2-if",
+      "name": "Need Tier 2?",
+      "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [1120, 420]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=http://n8n_evolution-api:8080/message/sendText/{{ $json.instance }}",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "apikey", "value": "REDACTED_EVOLUTION_KEY" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
             { "name": "Content-Type", "value": "application/json" }
           ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 512,\n  \"system\": \"Voce eh a Mira, assistente WhatsApp da clinica da Dra Mirian. Usuario eh um profissional. Escolha a tool apropriada pra responder. Se pedirem algo fora das tools, responda em texto curto educadamente que voce nao pode ajudar com isso agora.\",\n  \"tools\": [\n    {\"name\":\"get_agenda\",\"description\":\"Consulta a agenda de um dia especifico. date_offset: 0=hoje, 1=amanha, -1=ontem, etc.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"date_offset\":{\"type\":\"integer\"}},\"required\":[\"date_offset\"]}},\n    {\"name\":\"get_free_slots\",\"description\":\"Horarios livres num dia. date_offset: 0=hoje, 1=amanha.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"date_offset\":{\"type\":\"integer\"}},\"required\":[\"date_offset\"]}},\n    {\"name\":\"search_patients\",\"description\":\"Busca pacientes por nome ou telefone.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\"}},\"required\":[\"query\"]}},\n    {\"name\":\"get_patient_balance\",\"description\":\"Saldo financeiro de um paciente.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"}},\"required\":[\"name\"]}},\n    {\"name\":\"get_finance_summary\",\"description\":\"Resumo de receita num periodo (hoje, semana, mes).\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"period\":{\"type\":\"string\",\"enum\":[\"hoje\",\"semana\",\"mes\"]}},\"required\":[\"period\"]}},\n    {\"name\":\"get_commission\",\"description\":\"Comissao do profissional num periodo.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"period\":{\"type\":\"string\",\"enum\":[\"hoje\",\"semana\",\"mes\"]}},\"required\":[\"period\"]}},\n    {\"name\":\"list_payments\",\"description\":\"Lista pagamentos recebidos num periodo.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"period\":{\"type\":\"string\",\"enum\":[\"hoje\",\"semana\",\"mes\"]}},\"required\":[\"period\"]}},\n    {\"name\":\"get_quota\",\"description\":\"Quota de queries do profissional hoje.\",\"input_schema\":{\"type\":\"object\",\"properties\":{}}}\n  ],\n  \"messages\": [\n    {\"role\": \"user\", \"content\": {{ JSON.stringify($('Parse Message').first().json.text) }}}\n  ]\n}",
+        "options": {}
+      },
+      "id": "mira-claude-node",
+      "name": "Tier 2 — Claude Haiku",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "m7L9XAPfYqbrnMoB", "name": "Mira — Claude API" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parseia resposta do Claude Haiku. Se tiver tool_use block, extrai.\nconst claude = $input.first().json;\nconst content = claude.content || [];\nconst toolBlock = content.find(c => c.type === 'tool_use');\n\nif (!toolBlock) {\n  // Claude respondeu em texto (nao escolheu tool)\n  const textBlock = content.find(c => c.type === 'text');\n  const response = (textBlock && textBlock.text) || '🤔 Nao entendi e nao tenho ferramenta pra isso.';\n  return [{ json: { needsTool: false, response } }];\n}\n\nreturn [{ json: {\n  needsTool: true,\n  tool_name: toolBlock.name,\n  tool_args: toolBlock.input || {}\n} }];"
+      },
+      "id": "mira-parse-claude-node",
+      "name": "Parse Claude Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            { "id": "tool-check", "leftValue": "={{ $json.needsTool }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "mira-needs-tool-if",
+      "name": "Needs Tool?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_execute_tool",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_phone\": \"{{ $('Parse Message').first().json.phone }}\",\n  \"p_tool_name\": \"{{ $json.tool_name }}\",\n  \"p_args\": {{ JSON.stringify($json.tool_args) }}\n}",
+        "options": {}
+      },
+      "id": "mira-exec-tool-node",
+      "name": "Execute Tool",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 220],
+      "credentials": {
+        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge final: pega phone+instance do Parse + reply do Tier 1/2\nconst parsed = $('Parse Message').first().json;\nconst upstream = $input.first().json;\n\n// Se veio da execute_tool, tem .response\n// Se veio do Tier 1, tem .response\n// Se veio do claude text-only, tem .response\nconst reply = upstream.response || '⚠️ Sem resposta';\n\nreturn [{ json: { phone: parsed.phone, instance: parsed.instance, reply } }];"
+      },
+      "id": "mira-merge-node",
+      "name": "Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2220, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://n8n_evolution-api:8080/message/sendText/{{ $json.instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
         },
         "sendBody": true,
         "specifyBody": "json",
@@ -112,7 +202,10 @@
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 420]
+      "position": [2440, 420],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ezmaPVK9AyfxTg4c", "name": "Mira — Evolution API" }
+      }
     },
     {
       "parameters": {
@@ -124,16 +217,30 @@
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1560, 420]
+      "position": [2660, 420]
     }
   ],
   "connections": {
     "Webhook - Receive": { "main": [[{ "node": "Parse Message", "type": "main", "index": 0 }]] },
     "Parse Message":    { "main": [[{ "node": "Should Skip?", "type": "main", "index": 0 }]] },
-    "Should Skip?":     { "main": [[{ "node": "Respond Skip", "type": "main", "index": 0 }],[{ "node": "Mira Handle Message", "type": "main", "index": 0 }]] },
-    "Mira Handle Message": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
-    "Merge":            { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] },
-    "Send WhatsApp":    { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+    "Should Skip?":     { "main": [
+      [{ "node": "Respond Skip", "type": "main", "index": 0 }],
+      [{ "node": "Tier 1 — Handle Message", "type": "main", "index": 0 }]
+    ]},
+    "Tier 1 — Handle Message": { "main": [[{ "node": "Need Tier 2?", "type": "main", "index": 0 }]] },
+    "Need Tier 2?": { "main": [
+      [{ "node": "Tier 2 — Claude Haiku", "type": "main", "index": 0 }],
+      [{ "node": "Merge", "type": "main", "index": 0 }]
+    ]},
+    "Tier 2 — Claude Haiku": { "main": [[{ "node": "Parse Claude Response", "type": "main", "index": 0 }]] },
+    "Parse Claude Response": { "main": [[{ "node": "Needs Tool?", "type": "main", "index": 0 }]] },
+    "Needs Tool?": { "main": [
+      [{ "node": "Execute Tool", "type": "main", "index": 0 }],
+      [{ "node": "Merge", "type": "main", "index": 0 }]
+    ]},
+    "Execute Tool": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Merge": { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] },
+    "Send WhatsApp": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" }
 }
