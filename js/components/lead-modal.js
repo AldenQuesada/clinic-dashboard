@@ -648,6 +648,13 @@ function _renderModalTab(tabId, lead) {
         geralPromise.then(function(html) {
           var el = document.getElementById('lmContent')
           if (el) el.innerHTML = html
+          // Carregar complaints panel apos render
+          if (window.ComplaintsPanel) {
+            var cEl = document.getElementById('lmComplaintsCard')
+            if (cEl) ComplaintsPanel.loadComplaints(lead.id).then(function(complaints) {
+              cEl.innerHTML = ComplaintsPanel.renderCard(lead.id, complaints)
+            })
+          }
         })
         return '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando...</div>'
       }
@@ -1735,7 +1742,7 @@ async function _lmTabGeral(lead) {
   }
 
   var estrategico =
-    _stratCard('#7C3AED', 'Queixas Faciais', queixaHtml) +
+    (window.ComplaintsPanel ? '<div id="lmComplaintsCard"></div>' : _stratCard('#7C3AED', 'Queixas Faciais', queixaHtml)) +
     _stratCard('#10B981', 'Interesse',
       (interesse ? '<div style="font-size:12px;font-weight:600;color:#111">' + interesse.replace(/</g,'&lt;') + '</div>' : '')
       + (valorEst ? '<div style="font-size:11px;color:#6B7280;margin-top:2px">Valor estimado: ' + valorEst + '</div>' : '')
