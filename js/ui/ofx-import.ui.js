@@ -17,8 +17,36 @@
   var _state = {
     transactions: [],
     fileName:     '',
+    fileSize:     0,
+    fileHash:     '',
     importing:    false,
     progress:     0,
+  }
+
+  // ── Hash SHA-256 do conteudo (camada 1 de dedupe) ────────
+  async function _sha256(text) {
+    var buf = new TextEncoder().encode(text)
+    var hashBuf = await crypto.subtle.digest('SHA-256', buf)
+    var bytes = new Uint8Array(hashBuf)
+    var hex = ''
+    for (var i = 0; i < bytes.length; i++) {
+      hex += bytes[i].toString(16).padStart(2, '0')
+    }
+    return hex
+  }
+
+  // ── Signature transacao (camada 3): data | valor | descricao normalizada ──
+  function _normalizeDesc(s) {
+    return (s || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+  function _buildSignature(tx) {
+    var amt = Number(tx.amount).toFixed(2)
+    return tx.transaction_date + '|' + tx.direction + '|' + amt + '|' + _normalizeDesc(tx.description)
   }
 
   // ── OFX Parser ────────────────────────────────────────────
@@ -213,10 +241,23 @@
     if (!file) return
 
     _state.fileName = file.name
+    _state.fileSize = file.size
     var reader = new FileReader()
-    reader.onload = function(ev) {
+    reader.onload = async function(ev) {
       try {
         var content = ev.target.result
+
+        // CAMADA 1: hash SHA-256 do conteudo + checa no banco
+        _state.fileHash = await _sha256(content)
+        var sb = window._sbShared
+        if (sb) {
+          var chk = await sb.rpc('ofx_check_file_hash', { p_file_hash: _state.fileHash })
+          if (chk && chk.data && chk.data.duplicated) {
+            _renderAlreadyImportedStep(chk.data)
+            return
+          }
+        }
+
         var txs = parseOFX(content)
         if (txs.length === 0) {
           alert('Nenhuma transacao encontrada no arquivo. Verifique se e um OFX valido.')
@@ -229,6 +270,42 @@
       }
     }
     reader.readAsText(file, 'UTF-8')
+  }
+
+  // ── Step: Arquivo ja importado (camada 1 bloqueou) ───────
+  function _renderAlreadyImportedStep(info) {
+    var body = document.getElementById('ofxBody')
+    if (!body) return
+    var when = info.imported_at ? new Date(info.imported_at).toLocaleString('pt-BR') : '?'
+    var period = (info.first_date && info.last_date) ? (info.first_date + ' a ' + info.last_date) : '?'
+    body.innerHTML = ''
+      + '<div style="text-align:center;padding:32px 20px">'
+        + '<div style="color:#f59e0b;margin-bottom:16px">' + _icon('alert-circle', 64) + '</div>'
+        + '<h3 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#111827">Arquivo ja importado</h3>'
+        + '<p style="margin:0;font-size:13px;color:#6b7280">Este OFX exato foi importado anteriormente</p>'
+      + '</div>'
+      + '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px 20px;max-width:520px;margin:0 auto">'
+        + '<div style="font-size:12px;color:#92400e;line-height:1.8">'
+          + '<div><strong>Arquivo:</strong> ' + (info.file_name || _state.fileName) + '</div>'
+          + '<div><strong>Importado em:</strong> ' + when + '</div>'
+          + '<div><strong>Periodo:</strong> ' + period + '</div>'
+          + '<div><strong>Transacoes:</strong> ' + (info.row_count || '?') + '</div>'
+          + (info.total_credits != null ? '<div><strong>Creditos:</strong> R$ ' + Number(info.total_credits).toFixed(2) + '</div>' : '')
+          + (info.total_debits  != null ? '<div><strong>Debitos:</strong> R$ ' + Number(info.total_debits).toFixed(2) + '</div>' : '')
+        + '</div>'
+      + '</div>'
+      + '<div style="margin-top:16px;font-size:11px;color:#6b7280;text-align:center;max-width:520px;margin-left:auto;margin-right:auto">'
+        + 'Se voce realmente quer reimportar, apague esse registro de imports antes (tabela ofx_imports).'
+      + '</div>'
+
+    var btn = document.getElementById('ofxConfirm')
+    btn.textContent = 'Fechar'
+    btn.disabled = false
+    btn.style.background = '#f59e0b'
+    btn.style.color = '#fff'
+    btn.style.cursor = 'pointer'
+    btn.onclick = close
+    document.getElementById('ofxStatus').textContent = 'Bloqueado: camada 1 (hash de arquivo)'
   }
 
   // ── Step 2: Preview ───────────────────────────────────────
@@ -344,13 +421,24 @@
     var status = document.getElementById('ofxStatus')
     var imported = 0
     var duplicated = 0
+    var dupFitid = 0
+    var dupSignature = 0
     var errors = 0
     var total = _state.transactions.length
 
+    // Copia local pra nao sofrer mutacao do _state durante o loop
+    var _txList = (_state.transactions || []).slice()
+    console.log('[OfxImport] iniciando loop com', _txList.length, 'transacoes')
+
     for (var i = 0; i < total; i++) {
-      var t = _state.transactions[i]
+      var t = _txList[i]
+      if (!t || typeof t !== 'object') {
+        console.error('[OfxImport] transacao invalida no index', i, ':', t)
+        errors++
+        continue
+      }
       try {
-        var res = await window.CashflowService.createEntry({
+        var _payload = {
           transaction_date: t.transaction_date,
           direction:        t.direction,
           amount:           t.amount,
@@ -358,23 +446,66 @@
           description:      t.description,
           source:           'ofx_import',
           external_id:      t.fitid,
-          raw_data:         { trntype: t.raw_type, fitid: t.fitid },
-        })
+          signature:        _buildSignature(t),
+          raw_data:         { trntype: t.raw_type, fitid: t.fitid, file_hash: _state.fileHash },
+        }
+        if (i === 0) console.log('[OfxImport] primeiro payload:', JSON.stringify(_payload))
+        var res = await window.CashflowService.createEntry(_payload)
+        if (i < 3 || !res || !res.ok) {
+          console.log('[OfxImport] resposta linha', i, ':', JSON.stringify(res))
+        }
+        if (res && !res.ok) {
+          console.error('[OfxImport] ERRO linha', i, '→ error:', res.error, '| payload:', _payload)
+        }
         if (res && res.ok) {
-          if (res.data && res.data.duplicated) duplicated++
-          else imported++
+          if (res.data && res.data.duplicated) {
+            duplicated++
+            if (res.data.reason === 'signature_match') dupSignature++
+            else dupFitid++
+          } else imported++
         } else {
           errors++
         }
       } catch (e) {
         errors++
-        console.warn('[OfxImport] erro:', e.message)
+        console.error('[OfxImport] erro na linha', i, ':', e && e.message, e && e.stack)
       }
 
-      status.textContent = 'Processando: ' + (i + 1) + '/' + total
-        + ' | Novos: ' + imported
-        + ' | Duplicados: ' + duplicated
-        + ' | Erros: ' + errors
+      // Proteje contra DOM removido se user fechar modal mid-import
+      var statusEl = document.getElementById('ofxStatus')
+      if (statusEl) {
+        statusEl.textContent = 'Processando: ' + (i + 1) + '/' + total
+          + ' | Novos: ' + imported
+          + ' | Duplicados: ' + duplicated
+          + ' | Erros: ' + errors
+      }
+    }
+
+    console.log('[OfxImport] loop terminado:', { imported, duplicated, dupFitid, dupSignature, errors, total })
+
+    // Registra o arquivo (camada 1) — so se pelo menos 1 linha nova foi importada
+    if (imported > 0 && window._sbShared && _state.fileHash) {
+      try {
+        var totalCred = 0, totalDeb = 0, minD = null, maxD = null
+        _state.transactions.forEach(function(t) {
+          if (t.direction === 'credit') totalCred += t.amount
+          else totalDeb += t.amount
+          if (!minD || t.transaction_date < minD) minD = t.transaction_date
+          if (!maxD || t.transaction_date > maxD) maxD = t.transaction_date
+        })
+        await window._sbShared.rpc('ofx_register_import', {
+          p_data: {
+            file_hash:     _state.fileHash,
+            file_name:     _state.fileName,
+            file_size:     _state.fileSize,
+            row_count:     _state.transactions.length,
+            first_date:    minD,
+            last_date:     maxD,
+            total_credits: totalCred.toFixed(2),
+            total_debits:  totalDeb.toFixed(2),
+          },
+        })
+      } catch (e) { console.warn('[OfxImport] register_import falhou:', e) }
     }
 
     // Auto-reconcile apos import (silencioso) — usa range completo do arquivo
@@ -390,7 +521,7 @@
       } catch (e) { console.warn('[OfxImport] auto-reconcile falhou:', e) }
     }
 
-    _renderResultStep(imported, duplicated, errors, total)
+    _renderResultStep(imported, duplicated, errors, total, { dupFitid: dupFitid, dupSignature: dupSignature })
     _state.importing = false
 
     // Calcula range para sincronizar visao da pagina
@@ -422,12 +553,13 @@
 
   // ── Step 4: Result ────────────────────────────────────────
 
-  function _renderResultStep(imported, duplicated, errors, total) {
+  function _renderResultStep(imported, duplicated, errors, total, breakdown) {
     var body = document.getElementById('ofxBody')
     if (!body) return
 
     var color = errors > 0 ? '#f59e0b' : '#10b981'
     var iconName = errors > 0 ? 'alert-circle' : 'check-circle'
+    var bd = breakdown || { dupFitid: 0, dupSignature: 0 }
 
     body.innerHTML = ''
       + '<div style="text-align:center;padding:32px 20px">'
@@ -441,6 +573,14 @@
         + _resultBox('Duplicados',  duplicated, '#6b7280')
         + _resultBox('Erros',       errors,     errors > 0 ? '#ef4444' : '#9ca3af')
       + '</div>'
+
+      + (duplicated > 0 ? (''
+        + '<div style="margin-top:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;max-width:480px;margin-left:auto;margin-right:auto;font-size:11px;color:#6b7280;line-height:1.7">'
+          + '<strong>Breakdown dos duplicados:</strong><br>'
+          + '• Camada 2 (FITID): ' + bd.dupFitid + '<br>'
+          + '• Camada 3 (signature data+valor+descricao): ' + bd.dupSignature
+        + '</div>'
+      ) : '')
 
       + '<div style="text-align:center;margin-top:24px;font-size:12px;color:#6b7280">'
         + 'Os movimentos ja estao na pagina Fluxo de Caixa.'

@@ -1,0 +1,115 @@
+{
+  "name": "ClinicAI - Mira WhatsApp Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "mira-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "mira-webhook-node",
+      "name": "Webhook - Receive",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "mira-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Evolution payload — incoming message from professional\nconst body = $input.first().json.body || $input.first().json;\nconst data = body.data || body;\nconst instance = body.instance || '';\nconst event = body.event || 'messages.upsert';\n\nif (event !== 'messages.upsert') {\n  return [{ json: { skip: true, reason: 'not messages.upsert' } }];\n}\n\nconst key = data.key || {};\nif (key.fromMe) {\n  return [{ json: { skip: true, reason: 'fromMe' } }];\n}\n\nconst rawJid = key.remoteJid || '';\n// Skip group messages (g.us), broadcasts, newsletters\nif (rawJid.includes('@g.us') || rawJid.includes('@broadcast') || rawJid.includes('@newsletter')) {\n  return [{ json: { skip: true, reason: 'group/broadcast', remoteJid: rawJid } }];\n}\n\nconst msg = data.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nif (!text) {\n  return [{ json: { skip: true, reason: 'no text' } }];\n}\n\n// Multi-device LID: remoteJid = '<lid>@lid', phone real em key.senderPn\n// Fallback chain: senderPn → participantPn → remoteJid (se for @s.whatsapp.net)\nlet phoneSource = '';\nif (rawJid.includes('@lid') && key.senderPn) {\n  phoneSource = key.senderPn;\n} else if (key.senderPn) {\n  phoneSource = key.senderPn;\n} else if (key.participantPn) {\n  phoneSource = key.participantPn;\n} else {\n  phoneSource = rawJid;\n}\nconst phone = phoneSource.replace(/@.*/, '').replace(/\\D/g,'');\n\nif (!phone || phone.length < 10) {\n  return [{ json: { skip: true, reason: 'no phone resolvable', rawJid, senderPn: key.senderPn||null } }];\n}\n\nreturn [{ json: {\n  skip: false,\n  phone,\n  text: text.trim(),\n  instance,\n  remoteJid: rawJid,\n  replyTo: rawJid,\n  messageId: key.id || '',\n  pushName: data.pushName || '',\n}}];"
+      },
+      "id": "mira-parse-node",
+      "name": "Parse Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "mira-skip-if",
+      "name": "Should Skip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "skip",
+        "options": {}
+      },
+      "id": "mira-respond-skip",
+      "name": "Respond Skip",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 180]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── MIRA BRAIN ───────────────────────────────────────────\n// Auth + Intent (regex Tier 1) + RPC call + Format WhatsApp markdown\n\nconst SUPABASE_URL = 'https://oqboitkpcvuaudouwvkl.supabase.co';\nconst SUPABASE_KEY = 'REDACTED_USE_N8N_CREDENTIALS';\n\nconst input = $input.first().json;\nconst phone = input.phone;\nconst text = input.text;\nconst instance = input.instance;\n\nconst httpRequest = this.helpers.httpRequest.bind(this);\nasync function rpc(name, params) {\n  try {\n    return await httpRequest({\n      method: 'POST',\n      url: `${SUPABASE_URL}/rest/v1/rpc/${name}`,\n      headers: {\n        apikey: SUPABASE_KEY,\n        Authorization: 'Bearer ' + SUPABASE_KEY,\n      },\n      body: params,\n      json: true,\n    });\n  } catch (e) {\n    throw new Error(`rpc ${name}: ${e.message || e}`);\n  }\n}\n\n// ── Date helpers ───────────────────────────\nfunction pad(n){ return n<10?'0'+n:''+n; }\nfunction isoDate(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }\nfunction today(){ return new Date(); }\nfunction tomorrow(){ const d=new Date(); d.setDate(d.getDate()+1); return d; }\nfunction monthRange(){ const d=new Date(); return { start: isoDate(new Date(d.getFullYear(),d.getMonth(),1)), end: isoDate(new Date(d.getFullYear(),d.getMonth()+1,0)) }; }\nfunction weekRange(){ const d=new Date(), day=d.getDay(); const mon=new Date(d); mon.setDate(d.getDate()-((day+6)%7)); const sun=new Date(mon); sun.setDate(mon.getDate()+6); return { start: isoDate(mon), end: isoDate(sun) }; }\nfunction todayRange(){ const t=isoDate(today()); return { start:t, end:t }; }\nfunction money(n){ if(n==null||isNaN(n)) return 'R$ 0,00'; return 'R$ '+Number(n).toFixed(2).replace('.',',').replace(/\\B(?=(\\d{3})+(?!\\d))/g,'.'); }\nfunction brDate(d){ if(typeof d==='string') d=new Date(d+'T12:00:00'); return pad(d.getDate())+'/'+pad(d.getMonth()+1); }\nfunction bold(s){ return '*'+s+'*'; }\nconst LINE = '─────────────';\n\nfunction extractName(t){ return (t||'').replace(/\\b(quem|e|é|paciente|cliente|telefone|contato|whats|whatsapp|de|do|da|quanto|saldo|deve|devendo|me|a|o|esta|está)\\b/gi,' ').replace(/[?!.]/g,'').replace(/\\s+/g,' ').trim(); }\nfunction periodFromText(t){ t=(t||'').toLowerCase(); if(/hoje|do dia/.test(t)) return { label:'hoje', ...todayRange() }; if(/semana/.test(t)) return { label:'essa semana', ...weekRange() }; return { label:'esse mes', ...monthRange() }; }\n\n// ── Intent parser ──────────────────────────\nconst INTENTS = [\n  { intent:'help',           re: /^\\s*(\\/?ajuda|\\/?help|comandos|menu|opcoes|opções)\\s*$/i },\n  { intent:'greeting',       re: /^\\s*(oi|ola|olá|bom dia|boa tarde|boa noite|hey|hello|e ai)\\s*[!?.]*\\s*$/i },\n  { intent:'agenda_today',   re: /(agenda|horario|atendimento).*(hoje|do dia)|tenho hoje|tenho agenda hoje|quem.*hoje/i },\n  { intent:'agenda_tomorrow',re: /(agenda|horario|atendimento).*(amanha|amanhã)|tenho amanha|tenho amanhã/i },\n  { intent:'agenda_week',    re: /(agenda|horario).*(semana|esta semana)|minha semana/i },\n  { intent:'agenda_free',    re: /(horario|horarios).*(livre|livres|disponivel|disponiveis|vazio)|tem horario|esta livre/i },\n  { intent:'payments_list',re: /(quem|quais)\\s+(me\\s+)?(fez|fizeram|pag\\w*).*(hoje|semana|mes|mês)|pagamentos?\\s+(de\\s+)?(hoje|essa\\s+semana|este\\s+mes|do\\s+mes|do\\s+mês)|quem\\s+me\\s+pag\\w+/i },\n  { intent:'finance_revenue',re: /(faturei|faturamento|receita|fatura|recebi).*(hoje|semana|mes|mês)|receita.*(semana|mes|mês|hoje)/i },\n  { intent:'finance_commission', re: /(minha\\s+)?(comissao|comissão)|quanto\\s+ganhei/i },\n  { intent:'patient_balance',re: /(quanto\\s+(a\\s+|o\\s+)?[a-zA-Z]+\\s+(me\\s+)?deve|saldo\\s+(do|da|de)\\s+[a-zA-Z]+|devendo\\s+[a-zA-Z]+)/i },\n  { intent:'patient_lookup', re: /(paciente|cliente|quem\\s+(e|é|eh))\\s+[a-zA-Z]+/i },\n];\nfunction parseIntent(t){ for (const p of INTENTS) if (p.re.test(t)) return p.intent; return 'unknown'; }\n\n// ── Formatters ─────────────────────────────\nfunction fmtHelp(name){ return `Oi ${name||'Doutor(a)'}! 👋\\n\\nTenho 3 areas:\\n📋 ${bold('/pacientes')} — busca, saldo\\n📅 ${bold('/agenda')} — sua agenda, horarios livres\\n💰 ${bold('/financeiro')} — receita, comissao\\n\\nPode falar portugues normal.`; }\nfunction fmtGreeting(name){ return `Oi ${name||'Doutor(a)'}! Sou a Mira, sua assistente. Diga ${bold('/ajuda')} pra ver o que posso fazer.`; }\nfunction fmtUnknown(){ return `🤔 Nao entendi ainda.\\n\\nExemplos:\\n• \"tenho agenda hoje?\"\\n• \"quanto faturei essa semana?\"\\n• \"qual minha comissao do mes?\"\\n• \"quem e a Maria Silva?\"\\n\\nDigite ${bold('/ajuda')}.`; }\nfunction fmtAgenda(data,label){ if(!data?.appointments?.length) return `📅 ${bold('Agenda — '+(label||data?.date||''))}\\n\\nNenhum agendamento.`; const lines=[`📅 ${bold('Agenda — '+(label||data.date))}`,LINE]; data.appointments.forEach(a=>{ const time=(a.time||'').substring(0,5); const st=a.status==='finalizado'?'✅':(a.status==='cancelado'?'❌':'⏳'); lines.push(`${st} ${bold(time)} — ${a.patient||'Sem nome'}${a.procedure?' · '+a.procedure:''}`); }); lines.push(LINE); lines.push(`Total: ${bold(data.total)} · Finalizados: ${data.finalized} · Pendentes: ${data.pending}`); return lines.join('\\n'); }\nfunction fmtFreeSlots(data,label){ if(!data?.busy?.length) return `🟢 ${bold('Horarios — '+(label||data?.date||''))}\\n\\nDia totalmente livre.`; const lines=[`📅 ${bold('Ocupados — '+(label||data.date))}`,LINE]; data.busy.forEach(b=>{ const s=(b.start_time||'').substring(0,5); const e=(b.end_time||'').substring(0,5); lines.push(`🔴 ${bold(s+(e?'–'+e:''))} — ${b.patient||'Reservado'}`); }); return lines.join('\\n'); }\nfunction fmtPatientList(data){ if(!data?.results?.length) return `🔍 Nenhum paciente encontrado para \"${data?.query||''}\".`; const lines=[`👥 ${bold('Pacientes encontrados')}`,LINE]; data.results.forEach((r,i)=>{ lines.push(`${i+1}. ${bold(r.name)}${r.phone?' · '+r.phone:''}`); const meta=[]; if(r.phase) meta.push('fase: '+r.phase); if(r.temperature) meta.push('temp: '+r.temperature); if(meta.length) lines.push('   '+meta.join(' · ')); }); return lines.join('\\n'); }\nfunction fmtPatientBalance(data){ if(!data?.patient) return '🔍 Paciente nao encontrado.'; const p=data.patient; const lines=[`💰 ${bold('Saldo — '+p.name)}`,LINE,`Total: ${bold(money(data.total))}`,`Pago: ${money(data.paid)}`,`Saldo devedor: ${bold(money(data.balance))}`]; if(data.appointments?.length){ lines.push(LINE); lines.push(bold('Atendimentos:')); data.appointments.slice(0,5).forEach(a=>{ const saldo=Math.max(0,Number(a.value||0)-Number(a.paid||0)); lines.push(`• ${brDate(a.date)} — ${a.procedure||'s/proc'} · ${money(a.value)} (saldo ${money(saldo)})`); }); } return lines.join('\\n'); }\nfunction fmtFinanceSummary(data,label){ if(!data) return 'Sem dados financeiros.'; const lines=[`💰 ${bold('Receita — '+(label||'periodo'))}`,LINE,`Bruto: ${bold(money(data.bruto))}`,`Atendimentos: ${data.qtd}`,`Ticket medio: ${money(data.ticket_medio)}`]; if(data.delta_pct!=null){ const arrow=data.delta_pct>=0?'📈':'📉'; const pct=(data.delta_pct>=0?'+':'')+Number(data.delta_pct).toFixed(1).replace('.',',')+'%'; lines.push(`${arrow} vs anterior: ${pct} (${money(data.previous_bruto)})`); } return lines.join('\\n'); }\nfunction fmtFinanceCommission(data,label){ if(!data) return 'Sem dados de comissao.'; return [`💼 ${bold('Comissao — '+(label||'periodo'))}`,LINE,`Bruto gerado: ${money(data.bruto)}`,`Comissao: ${bold(money(data.comissao))}`,`Percentual efetivo: ${Number(data.percentual||0).toFixed(1).replace('.',',')}%`].join('\\n'); }\nfunction fmtPaymentsList(data,label){ if(!data?.payments?.length) return `💸 ${bold('Pagamentos — '+(label||'periodo'))}\\n\\nNenhum pagamento no periodo.`; const lines=[`💸 ${bold('Pagamentos — '+(label||'periodo'))}`,LINE]; data.payments.slice(0,15).forEach(p=>{ const m=p.method?' · '+p.method:''; lines.push(`• ${brDate(p.date)} ${bold(money(p.value))}${m} — ${p.patient||'?'}`); }); if(data.payments.length>15) lines.push(`... e mais ${data.payments.length-15}`); lines.push(LINE); lines.push(`Total: ${bold(money(data.sum))} em ${data.total} pagamento(s)`); return lines.join('\\n'); }\nfunction fmtRpcError(d){ if(!d) return '⚠️ Sem resposta.'; if(d.error==='unauthorized') return '🔒 Voce nao tem permissao. Fale com o admin.'; if(d.error==='patient_not_found') return '🔍 Paciente nao encontrado.'; if(d.error==='query_too_short') return '🔍 Termo muito curto.'; return '⚠️ '+(d.error||'erro'); }\n\n// ── Main flow ──────────────────────────────\nlet reply = '';\ntry {\n  // 1) Auth\n  const auth = await rpc('wa_pro_authenticate', { p_phone: phone });\n  if (!auth || auth.ok === false) {\n    reply = '🔒 Numero nao cadastrado. Fale com o admin pra liberar acesso.';\n  } else {\n    const profName = (auth.name || auth.label || '').split(' ')[0] || 'Doutor(a)';\n    const intent = parseIntent(text);\n\n    if (intent === 'help') reply = fmtHelp(profName);\n    else if (intent === 'greeting') reply = fmtGreeting(profName);\n    else if (intent === 'agenda_today')   { const r = await rpc('wa_pro_agenda',{p_phone:phone,p_date:isoDate(today())});     reply = r?.ok===false ? fmtRpcError(r) : fmtAgenda(r,'hoje'); }\n    else if (intent === 'agenda_tomorrow'){ const r = await rpc('wa_pro_agenda',{p_phone:phone,p_date:isoDate(tomorrow())});  reply = r?.ok===false ? fmtRpcError(r) : fmtAgenda(r,'amanha'); }\n    else if (intent === 'agenda_week')    { const r = await rpc('wa_pro_agenda',{p_phone:phone,p_date:isoDate(today())});     reply = r?.ok===false ? fmtRpcError(r) : fmtAgenda(r,'hoje'); }\n    else if (intent === 'agenda_free')    { const r = await rpc('wa_pro_agenda_free_slots',{p_phone:phone,p_date:isoDate(today())}); reply = r?.ok===false ? fmtRpcError(r) : fmtFreeSlots(r,'hoje'); }\n    else if (intent === 'patient_lookup') { const name=extractName(text); if(name.length<2) reply='🔍 Diga o nome do paciente.'; else { const r=await rpc('wa_pro_patient_search',{p_phone:phone,p_query:name,p_limit:5}); reply = r?.ok===false ? fmtRpcError(r) : fmtPatientList(r); } }\n    else if (intent === 'patient_balance'){ const name=extractName(text); if(name.length<2) reply='🔍 Diga o nome do paciente.'; else { const r=await rpc('wa_pro_patient_balance',{p_phone:phone,p_patient_query:name}); reply = r?.ok===false ? fmtRpcError(r) : fmtPatientBalance(r); } }\n    else if (intent === 'payments_list'){ const per=periodFromText(text); const r=await rpc('wa_pro_recent_payments',{p_phone:phone,p_start_date:per.start,p_end_date:per.end}); reply = r?.ok===false ? fmtRpcError(r) : fmtPaymentsList(r,per.label); }\n    else if (intent === 'finance_revenue'){ const per=periodFromText(text); const r=await rpc('wa_pro_finance_summary',{p_phone:phone,p_start_date:per.start,p_end_date:per.end}); reply = r?.ok===false ? fmtRpcError(r) : fmtFinanceSummary(r,per.label); }\n    else if (intent === 'finance_commission'){ const per=periodFromText(text); const r=await rpc('wa_pro_finance_commission',{p_phone:phone,p_start_date:per.start,p_end_date:per.end}); reply = r?.ok===false ? fmtRpcError(r) : fmtFinanceCommission(r,per.label); }\n    else reply = fmtUnknown();\n\n    // 2) Audit log (best-effort)\n    try {\n      await rpc('wa_pro_log_query', {\n        p_phone: phone,\n        p_professional_id: auth.professional_id,\n        p_wa_number_id: auth.wa_number_id || null,\n        p_query: text,\n        p_intent: intent,\n        p_response: reply.slice(0,500),\n        p_success: true,\n        p_error: null,\n        p_tokens_used: 0,\n        p_response_ms: null,\n      });\n    } catch(e) { /* ignore audit errors */ }\n  }\n} catch (err) {\n  reply = '⚠️ Erro interno: ' + (err.message||'desconhecido').slice(0,200);\n}\n\nreturn [{ json: { phone, instance, reply, originalText: text } }];"
+      },
+      "id": "mira-brain-node",
+      "name": "Mira Brain",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 420]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://n8n_evolution-api:8080/message/sendText/{{ $json.instance }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "REDACTED_EVOLUTION_KEY" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.phone }}\",\n  \"text\": {{ JSON.stringify($json.reply) }}\n}",
+        "options": {}
+      },
+      "id": "mira-send-node",
+      "name": "Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "ok",
+        "options": {}
+      },
+      "id": "mira-respond-ok",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 420]
+    }
+  ],
+  "connections": {
+    "Webhook - Receive": { "main": [[{ "node": "Parse Message", "type": "main", "index": 0 }]] },
+    "Parse Message":    { "main": [[{ "node": "Should Skip?", "type": "main", "index": 0 }]] },
+    "Should Skip?":     { "main": [[{ "node": "Respond Skip", "type": "main", "index": 0 }],[{ "node": "Mira Brain", "type": "main", "index": 0 }]] },
+    "Mira Brain":       { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] },
+    "Send WhatsApp":    { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}
