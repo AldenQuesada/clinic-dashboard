@@ -108,7 +108,11 @@
 
     document.getElementById('cfNewBtn').addEventListener('click', function() { _openNewModal() })
     document.getElementById('cfImportBtn').addEventListener('click', function() {
-      alert('Importacao OFX sera adicionada na proxima fase. Por enquanto, use Novo Lancamento.')
+      if (window.OfxImportUI && window.OfxImportUI.open) {
+        window.OfxImportUI.open()
+      } else {
+        alert('Modulo de importacao OFX nao carregado. Recarregue a pagina (Ctrl+Shift+R).')
+      }
     })
     var sel = document.getElementById('cfPeriodSelect')
     if (sel) sel.addEventListener('change', function(e) { _onPeriodChange(e.target.value) })
@@ -548,5 +552,8 @@
 
   // ── Expose ────────────────────────────────────────────────
 
-  window.CashflowUI = Object.freeze({ init: init })
+  window.CashflowUI = Object.freeze({
+    init:   init,
+    reload: _loadData,
+  })
 })()
