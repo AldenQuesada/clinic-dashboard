@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório — Camada 1: Modal de Agendamento</title>
+<style>
+  :root {
+    --bg: #0f0f17;
+    --panel: #1a1a26;
+    --panel-2: #232333;
+    --border: #2e2e42;
+    --text: #e5e5ee;
+    --muted: #9098b1;
+    --accent: #a78bfa;
+    --accent-2: #7c3aed;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --code-bg: #12121c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; line-height: 1.6; font-size: 14px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 40px 28px 80px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  h1 { font-size: 28px; font-weight: 800; margin: 0 0 8px; color: var(--text); }
+  h1 .tag { font-size: 13px; font-weight: 700; color: var(--accent); background: rgba(167, 139, 250, .12); padding: 4px 10px; border-radius: 8px; vertical-align: middle; margin-left: 12px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .meta strong { color: var(--text); font-weight: 600; }
+  h2 { font-size: 20px; font-weight: 700; margin: 48px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+  h2 .num { display: inline-block; width: 28px; height: 28px; line-height: 28px; text-align: center; background: var(--accent-2); color: #fff; border-radius: 7px; font-size: 13px; margin-right: 10px; vertical-align: middle; }
+  h3 { font-size: 14px; font-weight: 700; margin: 20px 0 8px; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+  p { margin: 8px 0; color: var(--text); }
+  .muted { color: var(--muted); }
+  .feature { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px 26px; margin-bottom: 24px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .badge-ok { background: rgba(52, 211, 153, .15); color: var(--green); border: 1px solid rgba(52, 211, 153, .3); }
+  .badge-pending { background: rgba(251, 191, 36, .15); color: var(--amber); border: 1px solid rgba(251, 191, 36, .3); }
+  .badge-bug { background: rgba(248, 113, 113, .15); color: var(--red); border: 1px solid rgba(248, 113, 113, .3); }
+  .badge-info { background: rgba(96, 165, 250, .15); color: var(--blue); border: 1px solid rgba(96, 165, 250, .3); }
+  pre, code { font-family: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; overflow-x: auto; line-height: 1.55; margin: 8px 0; color: var(--text); }
+  code { background: var(--code-bg); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; color: var(--accent); font-size: 12px; }
+  pre code { background: transparent; border: none; padding: 0; color: var(--text); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--panel-2); font-weight: 700; color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  td code { font-size: 11px; }
+  ul, ol { margin: 8px 0 8px 22px; padding: 0; }
+  li { margin: 4px 0; }
+  .why { background: rgba(167, 139, 250, .06); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .why strong { color: var(--accent); font-weight: 700; }
+  .file-list { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); margin: 8px 0 0 0; padding: 8px 14px; background: var(--code-bg); border-radius: 6px; border: 1px solid var(--border); }
+  .file-list span { display: block; padding: 2px 0; color: var(--text); }
+  .commit { font-family: monospace; font-size: 11px; color: var(--accent); background: rgba(167, 139, 250, .08); padding: 2px 8px; border-radius: 4px; }
+  .toc { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px 26px; margin-bottom: 32px; }
+  .toc h3 { margin-top: 0; }
+  .toc ol { margin: 0 0 0 20px; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+  .row-flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 24px; }
+  .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; }
+  .stat .num { font-size: 24px; font-weight: 800; color: var(--accent); }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Camada 1 — Modal de Agendamento <span class="tag">Sessão 2026-04-11</span></h1>
+    <p class="meta">
+      <strong>Escopo:</strong> Auditoria e refatoração end-to-end do fluxo Agendamento → Procedimentos →
+      Pagamentos → Status → Finalização. Inclui correções de persistência (Supabase),
+      validações de UI, novos campos no profissional/procedimento e cascatas entre dados.
+      <br><strong>Branch:</strong> master &nbsp;|&nbsp; <strong>Commits:</strong> dc022b8 → 1c2967d
+      &nbsp;|&nbsp; <strong>Migrations:</strong> 20260658, 20260659
+    </p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="num">12</div><div class="label">Features entregues</div></div>
+    <div class="stat"><div class="num">2</div><div class="label">Migrations aplicadas</div></div>
+    <div class="stat"><div class="num">10</div><div class="label">Commits</div></div>
+    <div class="stat"><div class="num">6</div><div class="label">Bugs corrigidos</div></div>
+  </div>
+
+  <div class="toc">
+    <h3>Índice</h3>
+    <ol>
+      <li><a href="#f1">Auto-detecção Novo / Retorno do paciente</a></li>
+      <li><a href="#f2">Indicado por como dropdown obrigatório</a></li>
+      <li><a href="#f3">Toggle Consulta vs Procedimento mutuamente exclusivo</a></li>
+      <li><a href="#f4">Cortesia da consulta exige motivo</a></li>
+      <li><a href="#f5">Valor consulta padrão por profissional</a></li>
+      <li><a href="#f6">Reorder do modal (Equipe antes de Paciente) + cascata</a></li>
+      <li><a href="#f7">Pagamentos múltiplos com Pago/Aberto, parcelas e comentário</a></li>
+      <li><a href="#f8">Cleanup completo de Procedimentos (8 colunas + RPC + cache)</a></li>
+      <li><a href="#f9">Cortesia / Retorno por procedimento agendado</a></li>
+      <li><a href="#f10">Alerta de pagamento aberto na chegada à clínica</a></li>
+      <li><a href="#f11">Modal de finalização inteligente (alerta + desconto consulta)</a></li>
+      <li><a href="#f12">Alerta multi-procedimento + double-check WhatsApp (validação escondida)</a></li>
+    </ol>
+  </div>
+
+  <!-- ═══ FEATURE 1 ═══ -->
+  <section id="f1" class="feature">
+    <h2><span class="num">1</span>Auto-detecção Novo / Retorno do paciente <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> A secretária marcava manualmente Novo/Retorno e errava com frequência —
+      especialmente quando o paciente tinha histórico mas vinha em uma nova categoria. Métricas de retenção
+      ficavam infladas/deflacionadas. Regra do negócio: se o paciente já tem ≥1 atendimento finalizado, é Retorno;
+      caso contrário, Novo. Isso é objetivo e auditável.
+    </div>
+
+    <h3>Como</h3>
+    <p>Função <code>apptDetectTipoPaciente(pacienteId)</code> em <code>js/agenda-modal.js</code> que filtra o cache
+      de appointments por <code>pacienteId</code> + <code>status === 'finalizado'</code> ignorando o appointment
+      em edição (via <code>appt_id</code>). Acionada em 2 pontos:</p>
+    <ul>
+      <li><code>selectApptPatient()</code> — quando você seleciona um paciente no dropdown de busca</li>
+      <li><code>openApptModal()</code> — quando o modal abre em edição (paciente já preenchido)</li>
+    </ul>
+
+    <h3>Variáveis</h3>
+    <table>
+      <tr><th>Camada</th><th>Nome</th><th>Tipo</th><th>Valores</th></tr>
+      <tr><td>UI (HTML)</td><td><code>appt_tipo_paciente</code></td><td>select</td><td><code>novo</code> | <code>retorno</code></td></tr>
+      <tr><td>JS (objeto appt)</td><td><code>tipoPaciente</code></td><td>string</td><td><code>'novo'</code> | <code>'retorno'</code></td></tr>
+      <tr><td>DB (appointments)</td><td>—</td><td colspan="2" class="muted">Salvo no JSON do appointment localStorage + Supabase</td></tr>
+    </table>
+
+    <h3>Validações</h3>
+    <ul>
+      <li>Detecção é determinística: <code>appts.some(a =&gt; a.id !== editId &amp;&amp; a.pacienteId === pacienteId &amp;&amp; a.status === 'finalizado')</code></li>
+      <li>O <code>editId</code> é excluído pra não contar o próprio appointment como histórico</li>
+      <li>Default é <code>'novo'</code> se nenhum critério bate</li>
+    </ul>
+  </section>
+
+  <!-- ═══ FEATURE 2 ═══ -->
+  <section id="f2" class="feature">
+    <h2><span class="num">2</span>Indicado por como dropdown obrigatório <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> O input antigo era texto livre — "Maria S.", "Maria Santos", "maria santos da costa"
+      criavam 3 entidades distintas pro mesmo lead. Métricas de programa de indicação ficavam quebradas.
+      Forçando seleção da lista, garantimos vínculo a um <code>pacienteId</code> real.
+    </div>
+
+    <h3>Como</h3>
+    <p>Substituí o <code>&lt;input type="text"&gt;</code> por um dropdown de busca igual ao do paciente principal
+      (<code>appt_paciente_q</code>). Funções novas em <code>js/agenda-modal.js</code>:</p>
+    <ul>
+      <li><code>apptIndicadoSearch(q)</code> — busca debounced (200ms) na cache de leads (<code>_leadsCache</code>)</li>
+      <li><code>apptIndicadoSelect(id, nome)</code> — preenche input visível + ID hidden</li>
+      <li>Click fora do dropdown: fecha E <strong>limpa o input se nada foi selecionado</strong> — garante seleção</li>
+      <li>Exclui o próprio paciente da lista (não pode indicar a si mesmo)</li>
+    </ul>
+
+    <h3>Variáveis</h3>
+    <table>
+      <tr><th>Camada</th><th>Nome</th><th>Tipo</th><th>Função</th></tr>
+      <tr><td>UI</td><td><code>appt_indicado_por</code></td><td>input visível</td><td>nome do indicador (display)</td></tr>
+      <tr><td>UI</td><td><code>appt_indicado_por_id</code></td><td>input hidden</td><td>UUID do paciente indicador</td></tr>
+      <tr><td>UI</td><td><code>apptIndicadoDrop</code></td><td>div absolute</td><td>dropdown de busca</td></tr>
+      <tr><td>JS (appt)</td><td><code>indicadoPor</code></td><td>string</td><td>nome (compat retroativa)</td></tr>
+      <tr><td>JS (appt)</td><td><code>indicadoPorId</code></td><td>uuid string</td><td>relacionamento real</td></tr>
+    </table>
+  </section>
+
+  <!-- ═══ FEATURE 3 ═══ -->
+  <section id="f3" class="feature">
+    <h2><span class="num">3</span>Toggle Consulta vs Procedimento mutuamente exclusivo <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> Ambos os blocos podiam ter dados ao mesmo tempo no modal antigo. Resultado:
+      relatórios financeiros contavam o mesmo atendimento como Consulta E Procedimento. Para resolver,
+      a UI precisa forçar uma escolha exclusiva, com confirmação ao trocar (proteção contra perda acidental).
+    </div>
+
+    <h3>Como</h3>
+    <p>4 helpers novos em <code>apptSetTipo()</code>:</p>
+    <pre><code>_apptHasConsultaData()       // detecta se há aval/valor/motivo/pagamento
+_apptHasProcedimentoData()   // detecta se há procs adicionados
+_apptClearConsultaData()     // limpa todos os campos do lado consulta
+_apptClearProcedimentoData() // limpa lista de procedimentos</code></pre>
+    <p>Quando o usuário troca de Consulta para Procedimento (ou vice-versa) com dados preenchidos,
+      dispara <code>confirm()</code> antes de limpar.</p>
+
+    <h3>Validações no save</h3>
+    <ul>
+      <li>Tipo vazio bloqueia o save</li>
+      <li>Save isola os campos por tipo: <code>tipoConsulta='avaliacao'</code> zera <code>procedimentos[]</code>;
+        <code>tipoConsulta='procedimento'</code> zera <code>tipoAvaliacao</code>, <code>cortesiaMotivo</code>, <code>valor</code>, <code>formaPagamento</code></li>
+    </ul>
+  </section>
+
+  <!-- ═══ FEATURE 4 ═══ -->
+  <section id="f4" class="feature">
+    <h2><span class="num">4</span>Cortesia da consulta exige motivo <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> Cortesias eram dadas sem registro do motivo, dificultando análise pós-fato
+      (parceria? primeira consulta? indicação?). Forçando o motivo no agendamento, criamos rastreabilidade
+      pra avaliar se a estratégia de cortesia gera ROI.
+    </div>
+
+    <h3>Como</h3>
+    <p>Novo input <code>appt_cortesia_motivo</code> dentro de <code>apptCortesiaRow</code> (<code>index.html:4124</code>),
+      que aparece só quando <code>apptSetAval('cortesia')</code> é chamado. <code>apptSetAval('paga')</code>
+      esconde o motivo e mostra a seção de valor. Validação no save:</p>
+    <pre><code>if (tipoAvalVal === 'cortesia' &amp;&amp; !cortesiaMotivo) {
+  alert('Informe o motivo da cortesia.'); return
+}</code></pre>
+
+    <h3>Variáveis</h3>
+    <table>
+      <tr><th>Camada</th><th>Nome</th><th>Tipo</th></tr>
+      <tr><td>UI</td><td><code>appt_cortesia_motivo</code></td><td>text input</td></tr>
+      <tr><td>UI</td><td><code>apptCortesiaRow</code></td><td>div container</td></tr>
+      <tr><td>JS (appt)</td><td><code>cortesiaMotivo</code></td><td>string</td></tr>
+    </table>
+  </section>
+
+  <!-- ═══ FEATURE 5 ═══ -->
+  <section id="f5" class="feature">
+    <h2><span class="num">5</span>Valor consulta padrão por profissional <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> Cada especialista cobra um valor diferente. Antes, a secretária digitava
+      manualmente em cada agendamento — fonte garantida de erro. Agora o valor é puxado da ficha do
+      profissional automaticamente quando ele é selecionado.
+    </div>
+
+    <h3>Migration <span class="commit">20260658000000_professional_valor_consulta.sql</span></h3>
+    <pre><code>ALTER TABLE professional_profiles
+  ADD COLUMN valor_consulta numeric(12,2);
+
+-- Recriação de get_professionals + upsert_professional para
+-- ler/gravar valor_consulta</code></pre>
+
+    <h3>Variáveis</h3>
+    <table>
+      <tr><th>Camada</th><th>Nome</th><th>Tipo</th></tr>
+      <tr><td>DB (professional_profiles)</td><td><code>valor_consulta</code></td><td>numeric(12,2)</td></tr>
+      <tr><td>RPC upsert_professional</td><td><code>p_valor_consulta</code></td><td>numeric param</td></tr>
+      <tr><td>RPC get_professionals (JSON)</td><td><code>valor_consulta</code></td><td>numeric</td></tr>
+      <tr><td>UI (profModal)</td><td><code>sp_valor_consulta</code></td><td>number input</td></tr>
+      <tr><td>JS (Repository payload)</td><td><code>valor_consulta</code></td><td>number</td></tr>
+    </table>
+
+    <h3>Bug encontrado e resolvido</h3>
+    <p><span class="badge badge-bug">Bug</span> Após adicionar o input no form, o botão Salvar não aparecia.
+      Causa: o array <code>watchIds</code> em <code>professionals.js</code> (responsável pelo dirty marker)
+      não incluía <code>sp_valor_consulta</code>. Sem dirty trigger, o botão fica <code>display:none</code>.
+      Salvo na memória como <code>feedback_profmodal_dirty_watch.md</code> pra não cair de novo.</p>
+  </section>
+
+  <!-- ═══ FEATURE 6 ═══ -->
+  <section id="f6" class="feature">
+    <h2><span class="num">6</span>Reorder do modal (Equipe antes de Paciente) + cascata <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> Pra que a auto-fill do valor (feature 5) faça sentido, o profissional
+      tem que ser selecionado <em>antes</em> do paciente. Decisão validada pelo usuário: especialista
+      primeiro define o contexto financeiro/de sala, depois vem o paciente. Cascata natural.
+    </div>
+
+    <h3>Como</h3>
+    <p>Bloco "Equipe" (roxo) movido pra antes do bloco "Paciente" (verde) em <code>index.html:3999-4072</code>.
+      Novo handler <code>apptOnProfChange()</code>:</p>
+    <pre><code>function apptOnProfChange() {
+  apptAutoSala()           // pré-existente: preenche sala vinculada
+  apptAutoValorConsulta()  // novo: puxa valor_consulta do profissional
+}
+
+function apptAutoValorConsulta() {
+  var prof = getProfessionals()[profIdx]
+  var v = parseFloat(prof.valor_consulta) || 0
+  if (v &gt; 0) appt_valor.value = v.toFixed(2)
+  // Sincroniza pagamentos: se há linha única em zero, herda o valor
+  if (_apptPagamentos.length === 1 &amp;&amp; !_apptPagamentos[0].valor) {
+    _apptPagamentos[0].valor = v
+    apptRenderPagamentos()
+  }
+}</code></pre>
+  </section>
+
+  <!-- ═══ FEATURE 7 ═══ -->
+  <section id="f7" class="feature">
+    <h2><span class="num">7</span>Pagamentos múltiplos com Pago/Aberto, parcelas e comentário <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> O modelo antigo tinha 1 forma de pagamento + 1 valor (string). Falhas:
+      <ul>
+        <li>Não suportava pagamento misto (Pix + Cartão é comum)</li>
+        <li>Não distinguia pago vs aberto — relatórios financeiros não conseguiam mostrar contas a receber</li>
+        <li>Não capturava parcelas em crédito/parcelado</li>
+        <li>Não permitia comentário (ex: "cliente pagou entrada PIX, restante no débito")</li>
+      </ul>
+      Reformulação: array de pagamentos, cada um com forma + valor + status + parcelas + valorParcela + comentário.
+    </div>
+
+    <h3>Estrutura de dados</h3>
+    <pre><code>pagamentos: [
+  {
+    forma: 'pix' | 'dinheiro' | 'debito' | 'credito' | 'parcelado' | 'entrada_saldo' | 'boleto' | 'link' | 'convenio',
+    valor: number,
+    status: 'aberto' | 'pago',
+    parcelas: int,        // só usado se credito ou parcelado
+    valorParcela: number, // auto-calculado: valor / parcelas
+    comentario: string,
+  }
+]</code></pre>
+
+    <h3>UI da linha</h3>
+    <p>Card por linha de pagamento contendo:</p>
+    <ul>
+      <li><strong>Linha principal:</strong> [Forma ▾] [R$ valor] [✓ Pago / ○ Aberto] [×]</li>
+      <li><strong>Parcelas (condicional):</strong> aparece quando forma é <code>credito</code> ou <code>parcelado</code> — input nº parcelas + input R$ valor parcela (auto-calculado)</li>
+      <li><strong>Comentário:</strong> sempre presente, opcional</li>
+    </ul>
+
+    <h3>Helper de auto-cálculo</h3>
+    <pre><code>// Quando muda valor ou parcelas:
+if (_apptFormaTemParcelas(p.forma) &amp;&amp; p.parcelas &gt; 0) {
+  p.valorParcela = +(p.valor / p.parcelas).toFixed(2)
+}</code></pre>
+
+    <h3>Validações no save</h3>
+    <ul>
+      <li>Forma obrigatória em cada linha</li>
+      <li>Se forma é crédito/parcelado, <code>parcelas &gt;= 1</code></li>
+      <li>Soma de todas as linhas == total esperado (consulta paga OU procedimentos não-cortesia com desconto)</li>
+      <li>Tolerância: 0,01 (centavo de arredondamento)</li>
+    </ul>
+
+    <h3>Derivações no save (compat retroativa)</h3>
+    <pre><code>formaPagamento: pagamentos.length === 1 ? pagamentos[0].forma : 'misto'
+statusPagamento:
+  todos pagos             → 'pago'
+  algum pago algum aberto → 'parcial'
+  todos abertos           → 'aberto'</code></pre>
+  </section>
+
+  <!-- ═══ FEATURE 8 ═══ -->
+  <section id="f8" class="feature">
+    <h2><span class="num">8</span>Cleanup completo de Procedimentos <span class="badge badge-bug">Bug crítico</span> <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> O usuário cadastrava preço nos procedimentos mas <strong>nunca persistia</strong>.
+      Auditoria revelou: 41 procedimentos no DB, todos com <code>preco = 0</code>. Diagnóstico: o repo
+      <code>procedimentos.repository.js</code> chamava o RPC com parâmetros completamente fora do contrato.
+      Plus 8 colunas que existiam no wizard frontend mas nunca tinham coluna correspondente na tabela.
+    </div>
+
+    <h3>Diagnóstico (antes / depois)</h3>
+    <table>
+      <tr><th>#</th><th>Camada</th><th>Antes</th><th>Depois</th></tr>
+      <tr><td>1</td><td>Repo upsert</td><td><code>p_valor</code> (não existe)</td><td><code>p_preco</code> (correto)</td></tr>
+      <tr><td>2</td><td>Repo upsert</td><td>4 params inválidos: <code>p_intervalo</code>, <code>p_tecnologia_id</code>, <code>p_sala_id</code>, <code>p_ativo</code></td><td>removidos</td></tr>
+      <tr><td>3</td><td>Tabela</td><td>14 colunas (faltavam <code>preco_promo</code>, <code>custo_estimado</code>, <code>combo_bonus</code>, <code>combo_descricao</code>, <code>usa_tecnologia</code>, <code>tecnologia_protocolo</code>, <code>tecnologia_sessoes</code>, <code>tecnologia_custo</code>)</td><td>22 colunas (8 novas via migration)</td></tr>
+      <tr><td>4</td><td>RPC upsert_procedimento</td><td>17 params</td><td>25 params (todos do form mapeados)</td></tr>
+      <tr><td>5</td><td>RPC get_procedimentos</td><td>16 campos retornados</td><td>24 campos retornados</td></tr>
+      <tr><td>6</td><td>procOpenForm</td><td><code>p.duracao</code> (Supabase retorna <code>duracao_min</code>) → sempre carregava 60</td><td><code>p.duracao_min || p.duracao</code></td></tr>
+      <tr><td>7</td><td>Insumos</td><td>Form usava <code>injId</code>, RPC esperava <code>injetavel_id</code> → nunca persistia</td><td>Normalizado nos dois lados</td></tr>
+      <tr><td>8</td><td>_saveProc</td><td>Só zerava cache; lista mostrava dados velhos após salvar</td><td>Chama <code>_loadProcedimentos()</code> pra refrescar</td></tr>
+      <tr><td>9</td><td>_ensureSeeds</td><td>Podia poluir localStorage com seeds em falha transitória do Supabase</td><td>Só semeia em fallback puro localStorage</td></tr>
+    </table>
+
+    <h3>Migration <span class="commit">20260659000000_procedimentos_full_fields.sql</span></h3>
+    <pre><code>ALTER TABLE clinic_procedimentos
+  ADD COLUMN preco_promo          numeric(12,2),
+  ADD COLUMN custo_estimado       numeric(12,2),
+  ADD COLUMN combo_bonus          text,
+  ADD COLUMN combo_descricao      text,
+  ADD COLUMN usa_tecnologia       boolean NOT NULL DEFAULT false,
+  ADD COLUMN tecnologia_protocolo text,
+  ADD COLUMN tecnologia_sessoes   int,
+  ADD COLUMN tecnologia_custo     numeric(12,2);
+
+-- get_procedimentos e upsert_procedimento recriados</code></pre>
+
+    <h3>Schema completo da tabela</h3>
+    <table>
+      <tr><th>Coluna</th><th>Tipo</th><th>Notas</th></tr>
+      <tr><td><code>id</code></td><td>uuid PK</td><td>gen_random_uuid()</td></tr>
+      <tr><td><code>clinic_id</code></td><td>uuid</td><td>multi-tenant</td></tr>
+      <tr><td><code>nome</code></td><td>text</td><td>UNIQUE com clinic_id</td></tr>
+      <tr><td><code>categoria</code></td><td>text</td><td>'injetavel' | 'manual' | 'tecnologia'</td></tr>
+      <tr><td><code>descricao</code></td><td>text</td><td></td></tr>
+      <tr><td><code>duracao_min</code></td><td>int</td><td>default 60</td></tr>
+      <tr><td><code>sessoes</code></td><td>int</td><td>default 1</td></tr>
+      <tr><td><code>tipo</code></td><td>text</td><td>'avulso' | 'combo'</td></tr>
+      <tr><td><code>preco</code></td><td>numeric(12,2)</td><td></td></tr>
+      <tr><td><code>preco_promo</code></td><td>numeric(12,2)</td><td>nova</td></tr>
+      <tr><td><code>custo_estimado</code></td><td>numeric(12,2)</td><td>nova</td></tr>
+      <tr><td><code>margem</code></td><td>numeric(6,2)</td><td>%</td></tr>
+      <tr><td><code>combo_sessoes</code></td><td>int</td><td></td></tr>
+      <tr><td><code>combo_desconto_pct</code></td><td>numeric(6,2)</td><td></td></tr>
+      <tr><td><code>combo_valor_final</code></td><td>numeric(12,2)</td><td></td></tr>
+      <tr><td><code>combo_bonus</code></td><td>text</td><td>nova</td></tr>
+      <tr><td><code>combo_descricao</code></td><td>text</td><td>nova</td></tr>
+      <tr><td><code>usa_tecnologia</code></td><td>boolean</td><td>nova, default false</td></tr>
+      <tr><td><code>tecnologia_protocolo</code></td><td>text</td><td>nova</td></tr>
+      <tr><td><code>tecnologia_sessoes</code></td><td>int</td><td>nova</td></tr>
+      <tr><td><code>tecnologia_custo</code></td><td>numeric(12,2)</td><td>nova</td></tr>
+      <tr><td><code>cuidados_pre</code></td><td>jsonb</td><td>array de strings</td></tr>
+      <tr><td><code>cuidados_pos</code></td><td>jsonb</td><td>array de strings</td></tr>
+      <tr><td><code>contraindicacoes</code></td><td>jsonb</td><td>array de strings</td></tr>
+      <tr><td><code>observacoes</code></td><td>text</td><td></td></tr>
+      <tr><td><code>ativo</code></td><td>boolean</td><td>soft delete</td></tr>
+    </table>
+
+    <p class="muted" style="margin-top:14px">
+      <strong>Gotcha PostgREST:</strong> ao trocar a assinatura de um RPC, o cache de schema do PostgREST
+      precisa ser recarregado manualmente. Comando: <code>NOTIFY pgrst, 'reload schema'</code>
+      via conexão direta ao DB. Aprendido nesta sessão.
+    </p>
+  </section>
+
+  <!-- ═══ FEATURE 9 ═══ -->
+  <section id="f9" class="feature">
+    <h2><span class="num">9</span>Cortesia / Retorno por procedimento agendado <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> A regra do negócio é por procedimento, não por consulta inteira. Cada
+      procedimento agendado pode ser cortesia (com motivo individual) ou pago, e pode ser sessão avulsa
+      ou parte de um plano com retorno periódico (mesma escala do prontuário). Sem isso, era impossível
+      diferenciar protocolos de longo prazo de sessões pontuais.
+    </div>
+
+    <h3>Estrutura do procedimento (extendida)</h3>
+    <pre><code>{
+  nome: string,
+  valor: number,
+  cortesia: boolean,
+  cortesiaMotivo: string,        // obrigatório se cortesia=true
+  retornoTipo: 'avulso' | 'retorno',
+  retornoIntervalo: int,         // dias — 7, 15, 30, 60, 90, 120, 150, 180, 365
+}</code></pre>
+
+    <h3>Card UI por procedimento</h3>
+    <ul>
+      <li>Linha 1: nome + valor (input direto, ou tag CORTESIA quando aplicável) + ×</li>
+      <li>Linha 2: toggle [Pago / Cortesia]</li>
+      <li>Linha 3 (condicional): input motivo da cortesia (verde, obrigatório)</li>
+      <li>Linha 4: toggle [Sessão Avulsa / Com Retorno] + select de intervalo (1 sem / 15d / 1m / 2m / 3m / 4m / 5m / 6m / 1 ano)</li>
+    </ul>
+
+    <h3>Escala compartilhada com o prontuário</h3>
+    <pre><code>// agenda-modal.js
+var APPT_RETORNO_INTERVALS = [
+  { value: 7,   label: '1 semana' },
+  { value: 15,  label: '15 dias' },
+  { value: 30,  label: '1 mês' },
+  { value: 60,  label: '2 meses' },
+  { value: 90,  label: '3 meses' },
+  { value: 120, label: '4 meses' },
+  { value: 150, label: '5 meses' },
+  { value: 180, label: '6 meses' },
+  { value: 365, label: '1 ano' },
+]
+// Mesma escala usada em complaints-panel.js (RETOUCH_INTERVALS)</code></pre>
+
+    <h3>Comportamento das cortesias</h3>
+    <ul>
+      <li><strong>Não entram</strong> no subtotal financeiro (<code>_updateApptTotalWithDiscount</code>)</li>
+      <li><strong>Não entram</strong> no total a alocar nos pagamentos (<code>_apptValorTotalPagar</code>)</li>
+      <li><strong>Bloco de pagamentos esconde</strong> se TODOS os procs forem cortesia</li>
+    </ul>
+
+    <h3>Validações no save</h3>
+    <ul>
+      <li><code>cortesia=true</code> exige <code>cortesiaMotivo</code> não-vazio (mensagem específica com nome do procedimento)</li>
+      <li><code>retornoTipo='retorno'</code> exige <code>retornoIntervalo &gt; 0</code></li>
+    </ul>
+
+    <h3>Bug pré-existente corrigido</h3>
+    <p><span class="badge badge-bug">Bug</span> Em modo edição, <code>_apptProcs</code> sempre era resetado para
+      <code>[]</code>, mesmo se o appointment salvo tinha procedimentos. Isso era uma quebra silenciosa que
+      esta sessão capturou ao reescrever o load. Agora <code>openApptModal</code> reconstrói <code>_apptProcs</code>
+      a partir de <code>a.procedimentos</code> com todos os campos.</p>
+  </section>
+
+  <!-- ═══ FEATURE 10 ═══ -->
+  <section id="f10" class="feature">
+    <h2><span class="num">10</span>Alerta de pagamento aberto na chegada à clínica <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> O ponto natural pra cobrar é quando o paciente chega — antes ele está
+      ocupado, depois ele já saiu. A secretária precisava de um lembrete automático nesse momento exato,
+      visível no instante em que o status muda para "Na Clínica". Sem isso, contas em aberto passavam batido.
+    </div>
+
+    <h3>Como</h3>
+    <p>Hook em <code>apptTransition()</code> em <code>js/agenda-smart.js</code>:</p>
+    <pre><code>if (newStatus === 'na_clinica') _alertPagamentoAberto(appt)</code></pre>
+    <p>Função <code>_alertPagamentoAberto(appt)</code>:</p>
+    <ol>
+      <li>Lê <code>appt.pagamentos[]</code> e filtra os com <code>status !== 'pago'</code></li>
+      <li>Compatibilidade retroativa: appts antigos sem array usam <code>statusPagamento === 'aberto' | 'pendente' | 'parcial'</code></li>
+      <li>Soma o total em aberto</li>
+      <li>Se &gt; 0, dispara <code>_showToast('Pagamento em aberto', msg, 'warning')</code></li>
+      <li>Fallback: modal inline amarelo se <code>_showToast</code> não estiver disponível</li>
+    </ol>
+  </section>
+
+  <!-- ═══ FEATURE 11 ═══ -->
+  <section id="f11" class="feature">
+    <h2><span class="num">11</span>Modal de finalização inteligente <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> Duas regras de negócio convergem aqui:
+      <ul>
+        <li><strong>Consulta paga sem procedimento</strong> = paciente pagou só pela avaliação, secretária
+          precisa cobrar antes de finalizar</li>
+        <li><strong>Consulta paga + procedimento fechado</strong> = a consulta vira "cortesia" e é descontada
+          do valor dos procedimentos (prática de mercado: a avaliação é grátis se você compra o tratamento)</li>
+      </ul>
+    </div>
+
+    <h3>Como</h3>
+    <p>Estado novo: <code>_finalAppt</code> guarda o appointment carregado, usado para cálculos.
+      Função <code>_finConsultaAberta(appt)</code> calcula quanto da consulta ainda está em aberto:</p>
+    <pre><code>function _finConsultaAberta(appt) {
+  if (appt.tipoConsulta !== 'avaliacao' || appt.tipoAvaliacao !== 'paga') return 0
+  var pagamentos = appt.pagamentos || []
+  if (pagamentos.length === 0) {
+    return (appt.statusPagamento === 'pago') ? 0 : (appt.valor || 0)
+  }
+  return pagamentos
+    .filter(p =&gt; p.status !== 'pago')
+    .reduce((s, p) =&gt; s + p.valor, 0)
+}</code></pre>
+
+    <p>Em <code>_finUpdateTotal()</code>:</p>
+    <ul>
+      <li><strong>Sem procs adicionados + consulta em aberto:</strong>
+        <code>finConsultaAlert</code> aparece em amarelo no topo, e o campo <code>finValor</code> é
+        preenchido com o valor da consulta</li>
+      <li><strong>Com procs + consulta em aberto:</strong>
+        <code>totalFinal = totalProcs - consultaAberta</code>, com detalhamento visual:
+        <em>"Total Procedimentos R$ X − Consulta R$ Y (cortesia ao fechar procedimento) = Total a cobrar R$ Z"</em></li>
+    </ul>
+
+    <h3>Pré-carregamento</h3>
+    <pre><code>function openFinalizeModal(id) {
+  // Pre-carrega procedimentos ja agendados (se houver)
+  // pra que o desconto da consulta funcione no primeiro render
+  if (Array.isArray(appt.procedimentos) &amp;&amp; appt.procedimentos.length &gt; 0) {
+    _finalProcs = appt.procedimentos.map(p =&gt; ({ nome: p.nome, valor: p.valor }))
+  }
+}</code></pre>
+  </section>
+
+  <!-- ═══ FEATURE 12 ═══ -->
+  <section id="f12" class="feature">
+    <h2><span class="num">12</span>Alerta multi-procedimento + double-check WhatsApp <span class="badge badge-info">Validação escondida</span> <span class="badge badge-ok">Done</span></h2>
+
+    <div class="why">
+      <strong>Por quê:</strong> Quando a secretária agenda múltiplos procedimentos no mesmo slot
+      com duração padrão de 1h, é frequente que o tempo seja insuficiente. Essa validação dispara
+      automaticamente a partir do <strong>2º procedimento</strong> adicionado e oferece ajuste de
+      duração. Mas há uma <strong>camada extra escondida</strong>: se a secretária insiste em manter
+      1h, o sistema dispara um <em>double-check</em> via WhatsApp para o responsável da agenda
+      (Mirian ou owner) confirmar que o tempo é suficiente — uma proteção contra agendamentos
+      inviáveis no calendário do especialista.
+    </div>
+
+    <h3>Trigger</h3>
+    <p>Função <code>_checkMultiProcAlert()</code> em <code>js/agenda-modal.js</code>, chamada por
+      <code>apptAddProc()</code> sempre que <code>_apptProcs.length &gt; 1</code> e a duração atual ainda é 60min.</p>
+
+    <h3>UX do modal (rebuild nesta sessão)</h3>
+    <p>O modal antigo tinha vários problemas que essa sessão consertou:</p>
+    <table>
+      <tr><th>Antes</th><th>Depois</th></tr>
+      <tr><td>Sem botão de fechar (×)</td><td><code>×</code> no header laranja</td></tr>
+      <tr><td>Click fora não fechava</td><td>Click fora do inner box fecha</td></tr>
+      <tr><td>ESC não fechava</td><td>Listener <code>keydown Escape</code> fecha</td></tr>
+      <tr><td>Radio default na primeira opção (parecia pré-marcado)</td><td>Botões custom sem default — usuário precisa selecionar explicitamente</td></tr>
+      <tr><td>Clicava → ação imediata sem confirmação</td><td>Clica → opção destacada → botão <strong>Confirmar</strong> habilita</td></tr>
+      <tr><td>Se <code>createDoubleCheck</code> dava erro silencioso, o modal ficava travado (alertEl.remove() nunca era alcançado)</td><td>Modal fecha PRIMEIRO; o double-check roda em <code>try/catch</code> depois</td></tr>
+    </table>
+
+    <h3>Estado interno</h3>
+    <pre><code>var _multiProcChoice    = null  // duração escolhida (60/90/120) ou null
+var _multiProcEscHandler = null // ref pro listener Esc removível</code></pre>
+
+    <h3>Validação escondida — createDoubleCheck</h3>
+    <p>Localizada em <code>js/agenda-notifications.js:188</code>. Quando disparada (apenas se
+      <code>dur === 60 &amp;&amp; _apptProcs.length &gt; 1</code>), executa 4 ações simultâneas:</p>
+    <ol>
+      <li>Persiste registro em <code>_doubleChecks</code> (localStorage) com <code>tipo: 'multi_proc'</code></li>
+      <li><strong>Envia WhatsApp via Evolution</strong> para o responsável da agenda usando RPC <code>wa_outbox_enqueue_appt</code></li>
+      <li>Mostra modal central inevitável <code>_showDoubleCheckAlert</code> com som de alerta</li>
+      <li>Atualiza badge do sino de notificações</li>
+    </ol>
+
+    <h3>Mensagem WhatsApp enviada</h3>
+    <pre><code>ALERTA CLINICA:
+
+Multiplos procedimentos em 1h
+
+{Paciente} tem N procedimentos ({nome1}, {nome2}, ...) agendados em 1 hora.
+Por favor revise e confirme se o tempo e suficiente.</code></pre>
+
+    <h3>Quem recebe a mensagem</h3>
+    <pre><code>// Prioridade: Mirian → primeiro profissional com telefone
+var profs = getProfessionals()
+var responsavel = profs.find(p =&gt; /mirian/i.test(p.nome || p.display_name)) || profs[0]
+var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefone</code></pre>
+
+    <h3>Variáveis</h3>
+    <table>
+      <tr><th>Camada</th><th>Nome</th><th>Função</th></tr>
+      <tr><td>JS (agenda-modal)</td><td><code>_multiProcChoice</code></td><td>duração selecionada (60/90/120)</td></tr>
+      <tr><td>JS (agenda-modal)</td><td><code>_multiProcEscHandler</code></td><td>handler do Esc para remoção limpa</td></tr>
+      <tr><td>UI</td><td><code>multiProcAlert</code></td><td>div overlay</td></tr>
+      <tr><td>UI</td><td><code>multiProcInner</code></td><td>card interno (click-fora detection)</td></tr>
+      <tr><td>UI</td><td><code>multiProcOpt_60</code> / <code>_90</code> / <code>_120</code></td><td>botões de opção</td></tr>
+      <tr><td>UI</td><td><code>multiProcConfirmBtn</code></td><td>botão Confirmar (disabled até pick)</td></tr>
+      <tr><td>JS (notifications)</td><td><code>_doubleChecks</code></td><td>array localStorage de double-checks</td></tr>
+      <tr><td>RPC Supabase</td><td><code>wa_outbox_enqueue_appt</code></td><td>enfileira WhatsApp via Evolution</td></tr>
+    </table>
+  </section>
+
+  <!-- ═══ MIGRATIONS ═══ -->
+  <h2>Migrations aplicadas</h2>
+  <table>
+    <tr><th>Arquivo</th><th>Conteúdo</th><th>Status</th></tr>
+    <tr>
+      <td><code>20260658000000_professional_valor_consulta.sql</code></td>
+      <td>+ coluna <code>valor_consulta numeric(12,2)</code><br>+ recreate <code>get_professionals</code><br>+ recreate <code>upsert_professional</code> com <code>p_valor_consulta</code></td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260659000000_procedimentos_full_fields.sql</code></td>
+      <td>+ 8 colunas em <code>clinic_procedimentos</code>: <code>preco_promo</code>, <code>custo_estimado</code>, <code>combo_bonus</code>, <code>combo_descricao</code>, <code>usa_tecnologia</code>, <code>tecnologia_protocolo</code>, <code>tecnologia_sessoes</code>, <code>tecnologia_custo</code><br>+ recreate <code>get_procedimentos</code> (retorna 24 campos)<br>+ recreate <code>upsert_procedimento</code> (25 params)</td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+  </table>
+
+  <!-- ═══ ARQUIVOS ═══ -->
+  <h2>Arquivos modificados</h2>
+  <div class="grid-2">
+    <div>
+      <h3>JavaScript</h3>
+      <div class="file-list">
+        <span>js/agenda-modal.js</span>
+        <span>js/agenda-smart.js</span>
+        <span>js/professionals.js</span>
+        <span>js/procedimentos.js</span>
+        <span>js/repositories/professionals.repository.js</span>
+        <span>js/repositories/procedimentos.repository.js</span>
+      </div>
+    </div>
+    <div>
+      <h3>HTML / Migrations</h3>
+      <div class="file-list">
+        <span>index.html</span>
+        <span>supabase/migrations/20260658000000_professional_valor_consulta.sql</span>
+        <span>supabase/migrations/20260659000000_procedimentos_full_fields.sql</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ COMMITS ═══ -->
+  <h2>Histórico de commits</h2>
+  <table>
+    <tr><th>Hash</th><th>Mensagem</th></tr>
+    <tr><td><span class="commit">dc022b8</span></td><td>feat(agenda): valor consulta padrao por profissional + validacoes do modal</td></tr>
+    <tr><td><span class="commit">8e37cfa</span></td><td>chore: bump cache-busters professionals + agenda-modal + repo</td></tr>
+    <tr><td><span class="commit">aff8d88</span></td><td>fix(agenda): adicionar apptOnProfChange (cascata sala+valor)</td></tr>
+    <tr><td><span class="commit">8e3f780</span></td><td>fix(prof-modal): sp_valor_consulta dispara dirty marker</td></tr>
+    <tr><td><span class="commit">e54c2ae</span></td><td>feat(agenda): pagamentos multiplos com pago/aberto</td></tr>
+    <tr><td><span class="commit">d24a829</span></td><td>fix(procedimentos): repo enviava p_valor em vez de p_preco</td></tr>
+    <tr><td><span class="commit">1bd5b54</span></td><td>fix(procedimentos): cleanup completo persistencia + cache + insumos</td></tr>
+    <tr><td><span class="commit">f29a3b5</span></td><td>feat(agenda): pagamentos no procedimento + alertas pagamento aberto</td></tr>
+    <tr><td><span class="commit">1c2967d</span></td><td>feat(agenda): cortesia/retorno por procedimento</td></tr>
+    <tr><td><span class="commit">pendente</span></td><td>fix(agenda): rebuild multi-proc alert UX (close, esc, click-out, confirmar)</td></tr>
+  </table>
+
+  <!-- ═══ PRÓXIMOS PASSOS ═══ -->
+  <h2>Próximos passos</h2>
+
+  <h3>Pendente / a confirmar com o usuário</h3>
+  <ul>
+    <li><span class="badge badge-pending">Decidir</span> Adicionar indicador visual no modal mostrando que a mensagem WhatsApp de confirmação foi agendada (existe via <code>AutomationsEngine.processAppointment</code>, mas sem feedback UI)</li>
+    <li><span class="badge badge-pending">Pendente</span> Drag &amp; drop na agenda quebrado (memória <code>project_clinic_session_20260411_full.md</code>)</li>
+    <li><span class="badge badge-pending">Pendente</span> Mensagem antecipada com timing errado (1h em vez de 24h)</li>
+  </ul>
+
+  <h3>Camada 2 — Pré-atendimento (anamnese + consentimento)</h3>
+  <ul>
+    <li>Link de anamnese abre dashboard em vez de form-render.html (<code>location.origin</code> diverge entre localhost/deploy)</li>
+    <li>Auto-send do consentimento não dispara</li>
+    <li>Queixas não puxam da <code>patient_complaints</code> (fallback por nome adicionado, falta testar)</li>
+  </ul>
+
+  <h3>Camada 3 — Finalização</h3>
+  <ul>
+    <li>Retoque/Sessão na finalização (campo existe mas não integrado)</li>
+    <li>Garantir que <code>saveAppointments</code> sempre chama <code>syncOne()</code> (lição já documentada em <code>feedback_finalize_must_sync</code>)</li>
+  </ul>
+
+  <h3>Camada 4 — Prontuário</h3>
+  <ul>
+    <li>Timeline premium implementada (7 tipos)</li>
+    <li>Trigger de prontuário recriado</li>
+    <li>Ortografia dos labels pós-atendimento</li>
+  </ul>
+
+  <hr style="margin: 60px 0 20px; border: none; border-top: 1px solid var(--border)">
+  <p class="muted" style="text-align: center; font-size: 12px;">
+    Documento gerado em 2026-04-11 — sessão de auditoria e refatoração da Camada 1.
+    Atualizar conforme próximas camadas forem entregues.
+  </p>
+
+</div>
+</body>
+</html>

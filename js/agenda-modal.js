@@ -504,65 +504,126 @@
   }
 
   // ── Alerta multi-procedimento ──────────────────────────────
+  // Estado da seleção (não usa radio do DOM pra evitar default)
+  var _multiProcChoice = null
+  var _multiProcEscHandler = null
+
   function _checkMultiProcAlert() {
     var durEl = document.getElementById('appt_duracao')
     var durAtual = durEl ? parseInt(durEl.value) : 60
     if (durAtual > 60) return // ja aumentou, nao alertar
 
-    var existing = document.getElementById('multiProcAlert')
-    if (existing) existing.remove()
+    _multiProcCloseAlert() // garante limpeza de instancia anterior
+    _multiProcChoice = null
 
     var alert = document.createElement('div')
     alert.id = 'multiProcAlert'
     alert.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px'
     alert.innerHTML =
-      '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:16px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">' +
-        '<div style="background:#F59E0B;padding:14px 18px">' +
-          '<div style="font-size:14px;font-weight:800;color:#fff">Mais de 1 procedimento</div>' +
-          '<div style="font-size:11px;color:rgba(255,255,255,.8);margin-top:2px">' + _apptProcs.length + ' procedimentos na mesma sessao</div>' +
+      '<div id="multiProcInner" style="background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">' +
+        '<div style="background:#F59E0B;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px">' +
+          '<div>' +
+            '<div style="font-size:14px;font-weight:800;color:#fff">Mais de 1 procedimento</div>' +
+            '<div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px">' + _apptProcs.length + ' procedimentos na mesma sessao</div>' +
+          '</div>' +
+          '<button type="button" onclick="_multiProcCloseAlert()" aria-label="Fechar" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700;line-height:1">×</button>' +
         '</div>' +
         '<div style="padding:16px 18px">' +
-          '<div style="font-size:13px;color:#374151;line-height:1.6;margin-bottom:14px">O tempo pode nao ser suficiente para todos os procedimentos. Deseja aumentar a duracao?</div>' +
-          '<div style="display:flex;flex-direction:column;gap:8px">' +
-            '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer" onclick="_multiProcSelect(60)">' +
-              '<input type="radio" name="multiProcDur" value="60" style="accent-color:#F59E0B"> <span style="font-size:13px;font-weight:600;color:#374151">Manter 1h</span>' +
-            '</label>' +
-            '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer" onclick="_multiProcSelect(90)">' +
-              '<input type="radio" name="multiProcDur" value="90" style="accent-color:#F59E0B"> <span style="font-size:13px;font-weight:600;color:#374151">Aumentar pra 1h30</span>' +
-            '</label>' +
-            '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer" onclick="_multiProcSelect(120)">' +
-              '<input type="radio" name="multiProcDur" value="120" style="accent-color:#F59E0B"> <span style="font-size:13px;font-weight:600;color:#374151">Aumentar pra 2h</span>' +
-            '</label>' +
+          '<div style="font-size:13px;color:#374151;line-height:1.55;margin-bottom:14px">O tempo pode nao ser suficiente para todos os procedimentos. Deseja aumentar a duracao?</div>' +
+          '<div style="display:flex;flex-direction:column;gap:8px" id="multiProcOpts">' +
+            _multiProcOpt(60,  'Manter 1h') +
+            _multiProcOpt(90,  'Aumentar pra 1h30') +
+            _multiProcOpt(120, 'Aumentar pra 2h') +
+          '</div>' +
+          '<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">' +
+            '<button type="button" onclick="_multiProcCloseAlert()" style="padding:8px 14px;background:#F3F4F6;color:#6B7280;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Cancelar</button>' +
+            '<button type="button" id="multiProcConfirmBtn" onclick="_multiProcConfirm()" disabled style="padding:8px 16px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:not-allowed;opacity:.6">Confirmar</button>' +
           '</div>' +
         '</div>' +
       '</div>'
+
+    // click-fora fecha
+    alert.addEventListener('click', function(e) {
+      var inner = document.getElementById('multiProcInner')
+      if (inner && !inner.contains(e.target)) _multiProcCloseAlert()
+    })
+
     document.body.appendChild(alert)
+
+    // ESC fecha
+    _multiProcEscHandler = function(e) { if (e.key === 'Escape') _multiProcCloseAlert() }
+    document.addEventListener('keydown', _multiProcEscHandler)
   }
 
-  function _multiProcSelect(dur) {
+  function _multiProcOpt(dur, label) {
+    return '<button type="button" onclick="_multiProcPick(' + dur + ')" id="multiProcOpt_' + dur + '"' +
+      ' style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:9px;cursor:pointer;text-align:left;width:100%;transition:all .15s">' +
+      '<span style="width:14px;height:14px;border:1.5px solid #D1D5DB;border-radius:50%;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center" id="multiProcDot_' + dur + '"></span>' +
+      '<span style="font-size:13px;font-weight:600;color:#374151">' + label + '</span>' +
+      '</button>'
+  }
+
+  function _multiProcPick(dur) {
+    _multiProcChoice = dur
+    // Repinta visual
+    [60, 90, 120].forEach(function(d) {
+      var btn = document.getElementById('multiProcOpt_' + d)
+      var dot = document.getElementById('multiProcDot_' + d)
+      if (!btn || !dot) return
+      var sel = d === dur
+      btn.style.background = sel ? '#FFFBEB' : '#fff'
+      btn.style.borderColor = sel ? '#F59E0B' : '#E5E7EB'
+      dot.style.borderColor = sel ? '#F59E0B' : '#D1D5DB'
+      dot.innerHTML = sel ? '<span style="width:7px;height:7px;background:#F59E0B;border-radius:50%"></span>' : ''
+    })
+    // Habilita Confirmar
+    var btnConfirm = document.getElementById('multiProcConfirmBtn')
+    if (btnConfirm) {
+      btnConfirm.disabled = false
+      btnConfirm.style.background = '#F59E0B'
+      btnConfirm.style.cursor = 'pointer'
+      btnConfirm.style.opacity = '1'
+    }
+  }
+
+  function _multiProcConfirm() {
+    var dur = _multiProcChoice
+    if (!dur) return
     var durEl = document.getElementById('appt_duracao')
     if (durEl) durEl.value = dur
     apptUpdateEndTime()
+    _multiProcCloseAlert()
 
-    // Se manteve 1h com multiplos procs, double-check com responsavel
+    // Validacao escondida: se manteve 1h com multiplos procs, dispara
+    // double-check via WhatsApp para o responsavel da agenda confirmar
+    // que o tempo é suficiente. Roda apos fechar o modal pra nao travar
+    // a UI se createDoubleCheck lancar erro.
     if (dur === 60 && _apptProcs.length > 1) {
-      var paciente = (document.getElementById('appt_paciente_q') && document.getElementById('appt_paciente_q').value) || 'Paciente'
-      var procsNomes = _apptProcs.map(function(p) { return p.nome }).join(', ')
-      var msg = paciente + ' tem ' + _apptProcs.length + ' procedimentos (' + procsNomes + ') agendados em 1 hora.\nPor favor revise e confirme se o tempo e suficiente.'
+      try {
+        var paciente = (document.getElementById('appt_paciente_q') && document.getElementById('appt_paciente_q').value) || 'Paciente'
+        var procsNomes = _apptProcs.map(function(p) { return p.nome }).join(', ')
+        var msg = paciente + ' tem ' + _apptProcs.length + ' procedimentos (' + procsNomes + ') agendados em 1 hora.\nPor favor revise e confirme se o tempo e suficiente.'
 
-      // Buscar telefone do responsavel da agenda (Mirian ou owner)
-      var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
-      var responsavel = profs.find(function(p) { return /mirian/i.test(p.nome || p.display_name || '') }) || profs[0]
-      var respPhone = responsavel && (responsavel.phone || responsavel.whatsapp || responsavel.telefone) || ''
-      var respName = responsavel && (responsavel.display_name || responsavel.nome) || 'Responsavel'
+        var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+        var responsavel = profs.find(function(p) { return /mirian/i.test(p.nome || p.display_name || '') }) || profs[0]
+        var respPhone = responsavel && (responsavel.phone || responsavel.whatsapp || responsavel.telefone) || ''
+        var respName = responsavel && (responsavel.display_name || responsavel.nome) || 'Responsavel'
 
-      if (window.createDoubleCheck) {
-        createDoubleCheck('multi_proc', 'Multiplos procedimentos em 1h', msg, respPhone, respName)
-      }
+        if (window.createDoubleCheck) {
+          createDoubleCheck('multi_proc', 'Multiplos procedimentos em 1h', msg, respPhone, respName)
+        }
+      } catch (e) { console.error('[multi_proc double-check]', e) }
     }
+  }
 
+  function _multiProcCloseAlert() {
     var alertEl = document.getElementById('multiProcAlert')
     if (alertEl) alertEl.remove()
+    if (_multiProcEscHandler) {
+      document.removeEventListener('keydown', _multiProcEscHandler)
+      _multiProcEscHandler = null
+    }
+    _multiProcChoice = null
   }
 
   function apptProcUpdate(i, field, value) {
@@ -1458,6 +1519,8 @@
   window.apptProcSelected   = apptProcSelected
   window.apptToggleDesconto = apptToggleDesconto
   window.apptCalcDesconto   = apptCalcDesconto
-  window._multiProcSelect   = _multiProcSelect
+  window._multiProcPick     = _multiProcPick
+  window._multiProcConfirm  = _multiProcConfirm
+  window._multiProcCloseAlert = _multiProcCloseAlert
 
 })()
