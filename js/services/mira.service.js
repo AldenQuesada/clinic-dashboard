@@ -101,6 +101,223 @@
       + 'Por enquanto so reconheco. Em breve ja estarei respondendo.'
   }
 
+  // ── Helpers de data e dinheiro ────────────────────────────
+
+  function _pad(n) { return n < 10 ? '0' + n : '' + n }
+  function _isoDate(d) { return d.getFullYear() + '-' + _pad(d.getMonth() + 1) + '-' + _pad(d.getDate()) }
+  function _brDate(d)  { if (typeof d === 'string') d = new Date(d + 'T12:00:00'); return _pad(d.getDate()) + '/' + _pad(d.getMonth() + 1) }
+  function _today()    { return new Date() }
+  function _tomorrow() { var d = new Date(); d.setDate(d.getDate() + 1); return d }
+  function _weekRange() {
+    var d = new Date(), day = d.getDay() // 0=dom
+    var monday = new Date(d); monday.setDate(d.getDate() - ((day + 6) % 7))
+    var sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
+    return { start: _isoDate(monday), end: _isoDate(sunday) }
+  }
+  function _monthRange() {
+    var d = new Date()
+    var start = new Date(d.getFullYear(), d.getMonth(), 1)
+    var end   = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+    return { start: _isoDate(start), end: _isoDate(end) }
+  }
+  function _todayRange() { var t = _isoDate(_today()); return { start: t, end: t } }
+
+  function _money(n) {
+    if (n == null || isNaN(n)) return 'R$ 0,00'
+    var v = Number(n).toFixed(2).replace('.', ',')
+    return 'R$ ' + v.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+  function _pct(n) { return (n >= 0 ? '+' : '') + Number(n).toFixed(1).replace('.', ',') + '%' }
+
+  function _extractName(text) {
+    if (!text) return ''
+    // Remove palavras de comando comuns
+    var stop = /\b(quem|e|é|paciente|cliente|telefone|contato|whats|whatsapp|de|do|da|quanto|saldo|deve|devendo|me|a|o|me|esta|está)\b/gi
+    var cleaned = text.replace(stop, ' ').replace(/[?!.]/g, '').replace(/\s+/g, ' ').trim()
+    return cleaned
+  }
+
+  function _periodFromText(text) {
+    var t = (text || '').toLowerCase()
+    if (/hoje|do dia/.test(t))                       return Object.assign({ label: 'hoje' }, _todayRange())
+    if (/semana/.test(t))                            return Object.assign({ label: 'essa semana' }, _weekRange())
+    if (/mes|mês/.test(t))                           return Object.assign({ label: 'esse mes' }, _monthRange())
+    return Object.assign({ label: 'esse mes' }, _monthRange()) // default
+  }
+
+  // ── Formatters de resposta ────────────────────────────────
+
+  function formatAgenda(data, label) {
+    if (!data || !data.appointments || data.appointments.length === 0) {
+      return '📅 ' + _bold('Agenda — ' + (label || data.date)) + '\n\nNenhum agendamento.'
+    }
+    var lines = ['📅 ' + _bold('Agenda — ' + (label || data.date)), _line()]
+    data.appointments.forEach(function(a) {
+      var time = (a.time || '').substring(0, 5)
+      var status = a.status === 'finalizado' ? '✅' : (a.status === 'cancelado' ? '❌' : '⏳')
+      lines.push(status + ' ' + _bold(time) + ' — ' + (a.patient || 'Sem nome') + (a.procedure ? ' · ' + a.procedure : ''))
+    })
+    lines.push(_line())
+    lines.push('Total: ' + _bold(data.total) + ' · Finalizados: ' + data.finalized + ' · Pendentes: ' + data.pending)
+    return lines.join('\n')
+  }
+
+  function formatFreeSlots(data, label) {
+    if (!data || !data.busy || data.busy.length === 0) {
+      return '🟢 ' + _bold('Horarios — ' + (label || data.date)) + '\n\nDia totalmente livre.'
+    }
+    var lines = ['📅 ' + _bold('Ocupados — ' + (label || data.date)), _line()]
+    data.busy.forEach(function(b) {
+      var s = (b.start_time || '').substring(0, 5)
+      var e = (b.end_time || '').substring(0, 5)
+      lines.push('🔴 ' + _bold(s + (e ? '–' + e : '')) + ' — ' + (b.patient || 'Reservado'))
+    })
+    return lines.join('\n')
+  }
+
+  function formatPatientList(data) {
+    if (!data || !data.results || data.results.length === 0) {
+      return '🔍 Nenhum paciente encontrado para "' + (data && data.query || '') + '".'
+    }
+    var lines = ['👥 ' + _bold('Pacientes encontrados'), _line()]
+    data.results.forEach(function(r, i) {
+      lines.push((i + 1) + '. ' + _bold(r.name) + (r.phone ? ' · ' + r.phone : ''))
+      var meta = []
+      if (r.phase) meta.push('fase: ' + r.phase)
+      if (r.temperature) meta.push('temp: ' + r.temperature)
+      if (r.status) meta.push(r.status)
+      if (meta.length) lines.push('   ' + meta.join(' · '))
+    })
+    return lines.join('\n')
+  }
+
+  function formatPatientBalance(data) {
+    if (!data || !data.patient) return '🔍 Paciente nao encontrado.'
+    var p = data.patient
+    var lines = [
+      '💰 ' + _bold('Saldo — ' + p.name),
+      _line(),
+      'Total: ' + _bold(_money(data.total)),
+      'Pago: '  + _money(data.paid),
+      'Saldo devedor: ' + _bold(_money(data.balance)),
+    ]
+    if (data.appointments && data.appointments.length) {
+      lines.push(_line())
+      lines.push(_bold('Atendimentos:'))
+      data.appointments.slice(0, 5).forEach(function(a) {
+        var saldoApt = Math.max(0, Number(a.value || 0) - Number(a.paid || 0))
+        lines.push('• ' + _brDate(a.date) + ' — ' + (a.procedure || 's/proc') + ' · ' + _money(a.value) + ' (saldo ' + _money(saldoApt) + ')')
+      })
+    }
+    return lines.join('\n')
+  }
+
+  function formatFinanceSummary(data, label) {
+    if (!data) return 'Sem dados financeiros.'
+    var lines = [
+      '💰 ' + _bold('Receita — ' + (label || 'periodo')),
+      _line(),
+      'Bruto: ' + _bold(_money(data.bruto)),
+      'Atendimentos: ' + data.qtd,
+      'Ticket medio: ' + _money(data.ticket_medio),
+    ]
+    if (data.delta_pct != null) {
+      var arrow = data.delta_pct >= 0 ? '📈' : '📉'
+      lines.push(arrow + ' vs anterior: ' + _pct(data.delta_pct) + ' (' + _money(data.previous_bruto) + ')')
+    }
+    return lines.join('\n')
+  }
+
+  function formatFinanceCommission(data, label) {
+    if (!data) return 'Sem dados de comissao.'
+    return [
+      '💼 ' + _bold('Comissao — ' + (label || 'periodo')),
+      _line(),
+      'Bruto gerado: ' + _money(data.bruto),
+      'Comissao: ' + _bold(_money(data.comissao)),
+      'Percentual efetivo: ' + Number(data.percentual || 0).toFixed(1).replace('.', ',') + '%',
+    ].join('\n')
+  }
+
+  function formatRpcError(data) {
+    if (!data) return '⚠️ Sem resposta do servidor.'
+    if (data.error === 'unauthorized') return formatUnauthorized()
+    if (data.error === 'patient_not_found') return '🔍 Paciente nao encontrado.'
+    if (data.error === 'query_too_short')   return '🔍 Termo de busca muito curto. Mande pelo menos 2 letras.'
+    return '⚠️ ' + (data.error || 'erro desconhecido')
+  }
+
+  // ── Execucao de intents (chama RPC + formata) ─────────────
+
+  async function executeIntent(parsed, phone) {
+    var repo = _repo()
+    var intent = parsed.intent
+    var text = parsed.text || ''
+
+    // AGENDA
+    if (intent === 'agenda_today') {
+      var r = await repo.agenda(phone, _isoDate(_today()))
+      if (!r.ok || !r.data || r.data.ok === false) return formatRpcError(r.data)
+      return formatAgenda(r.data, 'hoje')
+    }
+    if (intent === 'agenda_tomorrow') {
+      var r2 = await repo.agenda(phone, _isoDate(_tomorrow()))
+      if (!r2.ok || !r2.data || r2.data.ok === false) return formatRpcError(r2.data)
+      return formatAgenda(r2.data, 'amanha')
+    }
+    if (intent === 'agenda_week') {
+      var w = _weekRange()
+      var t = _isoDate(_today())
+      var rw = await repo.agenda(phone, t)
+      if (!rw.ok || !rw.data || rw.data.ok === false) return formatRpcError(rw.data)
+      return formatAgenda(rw.data, 'hoje (' + w.start + ' a ' + w.end + ')')
+    }
+    if (intent === 'agenda_free') {
+      var rf = await repo.agendaFreeSlots(phone, _isoDate(_today()))
+      if (!rf.ok || !rf.data || rf.data.ok === false) return formatRpcError(rf.data)
+      return formatFreeSlots(rf.data, 'hoje')
+    }
+
+    // PACIENTES
+    if (intent === 'patient_lookup' || intent === 'patient_phone') {
+      var name = _extractName(text)
+      if (!name || name.length < 2) return '🔍 Diga o nome do paciente. Ex: "quem e Maria Silva?"'
+      var rp = await repo.patientSearch(phone, name, 5)
+      if (!rp.ok || !rp.data || rp.data.ok === false) return formatRpcError(rp.data)
+      return formatPatientList(rp.data)
+    }
+    if (intent === 'patient_balance') {
+      var name2 = _extractName(text)
+      if (!name2 || name2.length < 2) return '🔍 Diga o nome do paciente. Ex: "quanto a Maria Silva me deve?"'
+      var rb = await repo.patientBalance(phone, name2)
+      if (!rb.ok || !rb.data || rb.data.ok === false) return formatRpcError(rb.data)
+      return formatPatientBalance(rb.data)
+    }
+
+    // FINANCEIRO
+    if (intent === 'finance_revenue') {
+      var per = _periodFromText(text)
+      var rs = await repo.financeSummary(phone, per.start, per.end)
+      if (!rs.ok || !rs.data || rs.data.ok === false) return formatRpcError(rs.data)
+      return formatFinanceSummary(rs.data, per.label)
+    }
+    if (intent === 'finance_commission') {
+      var per2 = _periodFromText(text)
+      var rc = await repo.financeCommission(phone, per2.start, per2.end)
+      if (!rc.ok || !rc.data || rc.data.ok === false) return formatRpcError(rc.data)
+      return formatFinanceCommission(rc.data, per2.label)
+    }
+    if (intent === 'finance_coverage' || intent === 'finance_meta') {
+      // Ainda nao tem RPC dedicada — usa summary do mes como base
+      var perM = _periodFromText('mes')
+      var rcv = await repo.financeSummary(phone, perM.start, perM.end)
+      if (!rcv.ok || !rcv.data || rcv.data.ok === false) return formatRpcError(rcv.data)
+      return formatFinanceSummary(rcv.data, perM.label) + '\n\n_Cobertura/meta: detalhamento em fase futura._'
+    }
+
+    return formatNotImplemented(intent)
+  }
+
   function formatRateLimited(count, max) {
     return ''
       + '⛔ Voce atingiu o limite de ' + max + ' queries por dia (' + count + '/' + max + ').\n\n'
@@ -173,29 +390,20 @@
 
     // 4. Roteamento de respostas
     var response = ''
-    switch (parsed.intent) {
-      case 'help':
-        response = formatHelp(prof.name)
-        break
-      case 'greeting':
-        response = formatGreeting(prof.name)
-        break
-      case 'agenda_today':
-      case 'agenda_tomorrow':
-      case 'agenda_week':
-      case 'agenda_free':
-      case 'patient_lookup':
-      case 'patient_phone':
-      case 'patient_balance':
-      case 'finance_revenue':
-      case 'finance_commission':
-      case 'finance_coverage':
-      case 'finance_meta':
-        // Tier 1 reconheceu mas a fase de execucao ainda nao foi codada
-        response = formatNotImplemented(parsed.intent)
-        break
-      default:
-        response = formatUnknown()
+    if (parsed.intent === 'help') {
+      response = formatHelp(prof.name)
+    } else if (parsed.intent === 'greeting') {
+      response = formatGreeting(prof.name)
+    } else if (parsed.intent === 'unknown') {
+      response = formatUnknown()
+    } else {
+      // Intents de execucao chamam RPC + formatador
+      try {
+        response = await executeIntent(parsed, phone)
+      } catch (e) {
+        console.warn('[Mira] executeIntent error:', e)
+        response = '⚠️ Erro ao processar: ' + (e && e.message || e)
+      }
     }
 
     var elapsedMs = Date.now() - startedAt

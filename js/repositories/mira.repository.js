@@ -74,11 +74,79 @@
     } catch (e) { return _err(e.message || e) }
   }
 
+  // ── Bloco B: queries (pacientes, agenda, financeiro) ─────
+
+  async function patientSearch(phone, query, limit) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_patient_search', {
+        p_phone: phone, p_query: query, p_limit: limit || 5,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function patientBalance(phone, patientQuery) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_patient_balance', {
+        p_phone: phone, p_patient_query: patientQuery,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function agenda(phone, date) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_agenda', {
+        p_phone: phone, p_date: date,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function agendaFreeSlots(phone, date) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_agenda_free_slots', {
+        p_phone: phone, p_date: date,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function financeSummary(phone, startDate, endDate) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_finance_summary', {
+        p_phone: phone, p_start_date: startDate, p_end_date: endDate,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function financeCommission(phone, startDate, endDate) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_finance_commission', {
+        p_phone: phone, p_start_date: startDate, p_end_date: endDate,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
   window.MiraRepository = Object.freeze({
-    authenticate:    authenticate,
-    checkRateLimit:  checkRateLimit,
-    logQuery:        logQuery,
-    registerNumber:  registerNumber,
-    listNumbers:     listNumbers,
+    authenticate:     authenticate,
+    checkRateLimit:   checkRateLimit,
+    logQuery:         logQuery,
+    registerNumber:   registerNumber,
+    listNumbers:      listNumbers,
+    patientSearch:    patientSearch,
+    patientBalance:   patientBalance,
+    agenda:           agenda,
+    agendaFreeSlots:  agendaFreeSlots,
+    financeSummary:   financeSummary,
+    financeCommission: financeCommission,
   })
 })()
