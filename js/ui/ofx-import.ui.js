@@ -361,12 +361,22 @@
         + ' | Erros: ' + errors
     }
 
+    // Auto-reconcile apos import (silencioso)
+    if (imported > 0 && window.CashflowService && window.CashflowService.autoReconcile) {
+      try {
+        await window.CashflowService.autoReconcile()
+      } catch (e) { console.warn('[OfxImport] auto-reconcile falhou:', e) }
+    }
+
     _renderResultStep(imported, duplicated, errors, total)
     _state.importing = false
 
-    // Recarrega a lista de movimentos
+    // Recarrega lista + mostra sugestoes se houver
     if (window.CashflowUI && window.CashflowUI.reload) {
       window.CashflowUI.reload()
+    }
+    if (window.CashflowUI && window.CashflowUI.showSuggestions) {
+      setTimeout(window.CashflowUI.showSuggestions, 500)
     }
   }
 

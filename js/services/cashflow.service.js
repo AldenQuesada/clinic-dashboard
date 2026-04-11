@@ -129,6 +129,24 @@
     return repo.searchAppointments(amount, date, toleranceDays)
   }
 
+  async function autoReconcile(startDate, endDate) {
+    var repo = _repo()
+    if (!repo) return { ok: false, error: 'CashflowRepository nao disponivel' }
+    return repo.autoReconcile(startDate, endDate)
+  }
+
+  async function getSuggestions(startDate, endDate) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: [], error: 'CashflowRepository nao disponivel' }
+    return repo.getSuggestions(startDate, endDate)
+  }
+
+  async function rejectSuggestion(entryId) {
+    var repo = _repo()
+    if (!repo) return { ok: false, error: 'CashflowRepository nao disponivel' }
+    return repo.rejectSuggestion(entryId)
+  }
+
   // ── Hook: cria entry a partir de appointment finalizado ──
 
   /**
@@ -257,6 +275,9 @@
     deleteEntry:          deleteEntry,
     linkAppointment:      linkAppointment,
     searchCandidates:     searchCandidates,
+    autoReconcile:        autoReconcile,
+    getSuggestions:       getSuggestions,
+    rejectSuggestion:     rejectSuggestion,
     createFromAppointment: createFromAppointment,
   })
 })()

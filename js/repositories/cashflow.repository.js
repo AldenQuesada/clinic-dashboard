@@ -90,6 +90,39 @@
     } catch (e) { return _err(e.message || e) }
   }
 
+  async function autoReconcile(startDate, endDate, toleranceDays, amountTolerance) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_auto_reconcile', {
+        p_start_date:       startDate || null,
+        p_end_date:         endDate   || null,
+        p_tolerance_days:   toleranceDays   || 2,
+        p_amount_tolerance: amountTolerance || 0.50,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function getSuggestions(startDate, endDate, limit) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_get_suggestions', {
+        p_start_date: startDate || null,
+        p_end_date:   endDate   || null,
+        p_limit:      limit     || 50,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || [])
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function rejectSuggestion(entryId) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_reject_suggestion', { p_entry_id: entryId })
+      if (error) return _err(error.message || error)
+      return _ok(data)
+    } catch (e) { return _err(e.message || e) }
+  }
+
   window.CashflowRepository = Object.freeze({
     create,
     update,
@@ -98,5 +131,8 @@
     summary,
     linkAppointment,
     searchAppointments,
+    autoReconcile,
+    getSuggestions,
+    rejectSuggestion,
   })
 })()

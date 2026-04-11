@@ -91,12 +91,15 @@
           + '<h2 style="margin:0;font-size:22px;font-weight:700;color:#111827">Fluxo de Caixa</h2>'
           + '<p style="margin:4px 0 0;font-size:13px;color:#6b7280">Movimentos financeiros do periodo, vinculados a agendamentos quando possivel</p>'
         + '</div>'
-        + '<div style="display:flex;gap:8px;align-items:center">'
+        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
           + _periodSelect()
+          + '<button id="cfReconcileBtn" title="Casar movimentos com agendamentos" style="display:flex;align-items:center;gap:6px;background:#fff;color:#6366f1;border:1.5px solid #c7d2fe;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
+            + _icon('zap', 14) + ' Reconciliar'
+          + '</button>'
           + '<button id="cfNewBtn" style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,.3)">'
             + _icon('plus', 14) + ' Novo Lancamento'
           + '</button>'
-          + '<button id="cfImportBtn" title="Em breve: importar OFX do Sicredi" style="display:flex;align-items:center;gap:6px;background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
+          + '<button id="cfImportBtn" title="Importar extrato OFX (Sicredi)" style="display:flex;align-items:center;gap:6px;background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
             + _icon('upload', 14) + ' Importar OFX'
           + '</button>'
         + '</div>'
@@ -114,6 +117,7 @@
         alert('Modulo de importacao OFX nao carregado. Recarregue a pagina (Ctrl+Shift+R).')
       }
     })
+    document.getElementById('cfReconcileBtn').addEventListener('click', _runReconcile)
     var sel = document.getElementById('cfPeriodSelect')
     if (sel) sel.addEventListener('change', function(e) { _onPeriodChange(e.target.value) })
   }
@@ -336,6 +340,127 @@
     return '<span style="background:#f3f4f6;color:#6b7280;font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px">SEM VINCULO</span>'
   }
 
+  // ── Auto-reconcile ────────────────────────────────────────
+
+  async function _runReconcile(opts) {
+    opts = opts || {}
+    var btn = document.getElementById('cfReconcileBtn')
+    if (btn) {
+      btn.disabled = true
+      btn.style.opacity = '0.6'
+      btn.innerHTML = _icon('zap', 14) + ' Reconciliando...'
+    }
+
+    var res = await window.CashflowService.autoReconcile(_state.startDate, _state.endDate)
+    var d = (res && res.ok) ? res.data : {}
+
+    if (btn) {
+      btn.disabled = false
+      btn.style.opacity = '1'
+      btn.innerHTML = _icon('zap', 14) + ' Reconciliar'
+    }
+
+    if (!opts.silent) {
+      var msg = 'Reconciliacao concluida\n\n'
+        + 'Processados: ' + (d.processed || 0) + '\n'
+        + 'Vinculados automaticamente: ' + (d.auto_high || 0) + '\n'
+        + 'Sugestoes (review): ' + (d.auto_low || 0) + '\n'
+        + 'Sem match: ' + (d.no_match || 0) + '\n'
+        + 'Confirmados pelo banco: ' + (d.pending_confirmed || 0)
+      alert(msg)
+    }
+
+    await _loadData()
+    if ((d.auto_low || 0) > 0) await _loadAndShowSuggestions()
+  }
+
+  async function _loadAndShowSuggestions() {
+    var res = await window.CashflowService.getSuggestions(_state.startDate, _state.endDate)
+    if (!res || !res.ok || !res.data || res.data.length === 0) return
+    _renderSuggestionsPanel(res.data)
+  }
+
+  function _renderSuggestionsPanel(suggestions) {
+    var existing = document.getElementById('cfSuggestionsPanel')
+    if (existing) existing.remove()
+
+    var fmt = window.CashflowService.fmtCurrency
+    var fmtD = window.CashflowService.fmtDate
+
+    var html = '<div id="cfSuggestionsPanel" style="background:#fff;border:1px solid #c7d2fe;border-radius:12px;padding:18px;margin-bottom:20px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+        + '<div style="display:flex;align-items:center;gap:10px">'
+          + '<span style="color:#6366f1">' + _icon('zap', 18) + '</span>'
+          + '<div>'
+            + '<div style="font-size:14px;font-weight:700;color:#111827">Sugestoes de reconciliacao</div>'
+            + '<div style="font-size:11px;color:#6b7280">' + suggestions.length + ' movimentos com mais de um agendamento candidato</div>'
+          + '</div>'
+        + '</div>'
+        + '<button id="cfSuggClose" style="all:unset;cursor:pointer;color:#9ca3af;padding:4px">' + _icon('x', 16) + '</button>'
+      + '</div>'
+
+    suggestions.forEach(function(s) {
+      html += '<div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+          + '<div>'
+            + '<div style="font-size:13px;font-weight:600;color:#111827">' + (s.description || 'Sem descricao') + '</div>'
+            + '<div style="font-size:11px;color:#6b7280">' + fmtD(s.transaction_date) + ' | ' + fmt(s.amount) + '</div>'
+          + '</div>'
+          + '<button data-entry="' + s.entry_id + '" class="cf-sugg-reject" style="all:unset;cursor:pointer;color:#9ca3af;font-size:11px;text-decoration:underline">Ignorar</button>'
+        + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:6px">'
+
+      ;(s.candidates || []).forEach(function(c) {
+        html += '<button class="cf-sugg-link" data-entry="' + s.entry_id + '" data-appt="' + c.appointment_id + '" data-patient="' + (c.patient_id || '') + '" '
+          + 'style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">'
+          + '<div style="font-size:12px;color:#374151">'
+            + '<strong>' + (c.patient_name || 'Sem nome') + '</strong>'
+            + ' | ' + fmtD(c.date)
+            + (c.start_time ? ' ' + c.start_time.substring(0, 5) : '')
+            + ' | ' + fmt(c.valor || c.valor_pago || 0)
+          + '</div>'
+          + '<span style="font-size:11px;color:#10b981;font-weight:600">VINCULAR ' + _icon('check-circle', 12) + '</span>'
+          + '</button>'
+      })
+
+      html += '</div></div>'
+    })
+
+    html += '</div>'
+
+    var body = document.getElementById('cfBody')
+    if (body) body.insertAdjacentHTML('afterbegin', html)
+
+    document.getElementById('cfSuggClose').addEventListener('click', function() {
+      var p = document.getElementById('cfSuggestionsPanel')
+      if (p) p.remove()
+    })
+
+    document.querySelectorAll('.cf-sugg-link').forEach(function(b) {
+      b.addEventListener('click', async function() {
+        var entryId = b.getAttribute('data-entry')
+        var apptId  = b.getAttribute('data-appt')
+        var patId   = b.getAttribute('data-patient') || null
+        await window.CashflowService.linkAppointment(entryId, apptId, patId)
+        _loadData()
+        var p = document.getElementById('cfSuggestionsPanel')
+        if (p) p.remove()
+        setTimeout(_loadAndShowSuggestions, 300)
+      })
+    })
+
+    document.querySelectorAll('.cf-sugg-reject').forEach(function(b) {
+      b.addEventListener('click', async function() {
+        var entryId = b.getAttribute('data-entry')
+        await window.CashflowService.rejectSuggestion(entryId)
+        _loadData()
+        var p = document.getElementById('cfSuggestionsPanel')
+        if (p) p.remove()
+        setTimeout(_loadAndShowSuggestions, 300)
+      })
+    })
+  }
+
   // ── Delete ────────────────────────────────────────────────
 
   async function _delete(id) {
@@ -546,6 +671,8 @@
       'trash-2':           '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
       'x':                 '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
       'inbox':             '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
+      'zap':               '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      'check-circle':      '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     }
     return icons[name] || ''
   }
@@ -553,7 +680,9 @@
   // ── Expose ────────────────────────────────────────────────
 
   window.CashflowUI = Object.freeze({
-    init:   init,
-    reload: _loadData,
+    init:           init,
+    reload:         _loadData,
+    runReconcile:   _runReconcile,
+    showSuggestions: _loadAndShowSuggestions,
   })
 })()
