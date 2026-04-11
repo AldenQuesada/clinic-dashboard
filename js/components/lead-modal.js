@@ -816,6 +816,11 @@ async function _lmLoadFichas(lead) {
           displayVal = 'Sim'
         } else if (rawVal === false || rawVal === 'false') {
           displayVal = 'N\u00e3o'
+        } else if (typeof rawVal === 'object' && rawVal !== null && !Array.isArray(rawVal)) {
+          // Objeto (ex: endereco)
+          var parts = []
+          Object.keys(rawVal).forEach(function(k) { if (rawVal[k]) parts.push(rawVal[k]) })
+          displayVal = parts.join(', ')
         } else if (typeof rawVal === 'string') {
           displayVal = optLabels[a.field_id + ':' + rawVal] || rawVal
         } else if (rawVal !== null && rawVal !== undefined) {
@@ -825,7 +830,15 @@ async function _lmLoadFichas(lead) {
         if (!displayVal || displayVal === 'null' || displayVal === '[REDACTED]') return
 
         // Label do campo
-        var fieldLabel = fieldLabels[a.field_id] || (a.field_key || '').replace(/_/g, ' ')
+        var gdLabels = {
+          '__gd_nome': 'Nome', '__gd_sexo': 'Sexo', '__gd_cpf': 'CPF', '__gd_rg': 'RG',
+          '__gd_telefone': 'Telefone', '__gd_email': 'E-mail',
+          '__gd_data_nascimento': 'Data de Nascimento', '__gd_dataNascimento': 'Data de Nascimento',
+          '__gd_cep': 'CEP', '__gd_rua': 'Rua', '__gd_numero': 'N\u00famero',
+          '__gd_complemento': 'Complemento', '__gd_bairro': 'Bairro',
+          '__gd_cidade': 'Cidade', '__gd_estado': 'Estado', '__gd_pais': 'Pa\u00eds',
+        }
+        var fieldLabel = gdLabels[a.field_key] || fieldLabels[a.field_id] || (a.field_key || '').replace(/__gd_/g, '').replace(/_/g, ' ')
 
         html += '<div style="margin-bottom:10px">'
           + '<div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.03em">' + _lmEsc(fieldLabel) + '</div>'
