@@ -7,7 +7,11 @@
   if (window._clinicaiCashflowRepoLoaded) return
   window._clinicaiCashflowRepoLoaded = true
 
-  function _sb() { return window.supabaseClient || null }
+  function _sb() {
+    var sb = window._sbShared
+    if (!sb) throw new Error('Supabase client (_sbShared) nao inicializado')
+    return sb
+  }
   function _ok(data) { return { ok: true, data, error: null } }
   function _err(e)   { return { ok: false, data: null, error: String(e || 'erro desconhecido') } }
 
