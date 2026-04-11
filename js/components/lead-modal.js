@@ -1407,10 +1407,22 @@ async function _lmTabGeral(lead) {
           })
         }
 
-        // Preencher dados cadastrais da anamnese se vazios
-        if (!dob && anamData['__gd_data_nascimento']) dob = anamData['__gd_data_nascimento'].value_json || ''
-        if (!cf.sexo && anamData['__gd_sexo']) cf.sexo = anamData['__gd_sexo'].value_json || ''
-        if (!cf.cpf && anamData['__gd_cpf'] && anamData['__gd_cpf'].value_json !== '[REDACTED]') cf.cpf = anamData['__gd_cpf'].value_json || ''
+        // Dados gerais nao sao salvos em anamnesis_answers (__gd_* tem field_id null)
+        // Buscar do patient no banco
+        try {
+          var ptRes = await window._sbShared.from('patients')
+            .select('sex,birth_date,address_json,rg,phone,email')
+            .eq('id', lead.id).single()
+          if (ptRes.data) {
+            if (!cf.sexo && ptRes.data.sex) cf.sexo = ptRes.data.sex
+            if (!dob && ptRes.data.birth_date) dob = ptRes.data.birth_date
+            if (!cf.rg && ptRes.data.rg) cf.rg = ptRes.data.rg
+            if (ptRes.data.address_json && !addr.rua) {
+              var pa = ptRes.data.address_json
+              addr = typeof pa === 'string' ? JSON.parse(pa) : pa
+            }
+          }
+        } catch (e) {}
       }
     } catch (e) { console.warn('[Geral] Anamnese enrich error:', e.message) }
   }
