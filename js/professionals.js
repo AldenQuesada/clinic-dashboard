@@ -305,7 +305,7 @@ function openProfModal(index) {
   const watchIds = ['sp_nome','sp_especialidade','sp_registro','sp_cargo','sp_email',
     'sp_telefone','sp_whatsapp','sp_bio','sp_cep','sp_rua','sp_num_end',
     'sp_comp_end','sp_bairro_end','sp_cidade_end','sp_estado_end',
-    'sp_contrato','sp_salario','sp_role','sp_sala','sp_senha','sp_senha2',
+    'sp_contrato','sp_salario','sp_valor_consulta','sp_role','sp_sala','sp_senha','sp_senha2',
     'sp_cpf','sp_nascimento']
   watchIds.forEach(id => {
     const el = document.getElementById(id)
