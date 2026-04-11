@@ -309,22 +309,10 @@ function _alertPagamentoAberto(appt) {
   var nome = appt.pacienteNome || 'Paciente'
   var msg = nome + ' chegou na clinica com PAGAMENTO EM ABERTO de R$ ' + totalAberto.toFixed(2).replace('.', ',') + '. Cobrar antes de iniciar o atendimento.'
 
-  if (window._showToast) {
+  if (window.Modal) {
+    Modal.alert({ title: 'Pagamento em aberto', message: msg, tone: 'warn' })
+  } else if (window._showToast) {
     _showToast('Pagamento em aberto', msg, 'warning')
-  } else {
-    // Fallback inline modal
-    var dlg = document.createElement('div')
-    dlg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10005;display:flex;align-items:center;justify-content:center;padding:16px'
-    dlg.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:380px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">' +
-      '<div style="background:#F59E0B;padding:14px 18px;color:#fff">' +
-        '<div style="font-size:14px;font-weight:800">Pagamento em aberto</div>' +
-      '</div>' +
-      '<div style="padding:18px;font-size:13px;color:#374151;line-height:1.5">' + msg + '</div>' +
-      '<div style="padding:0 18px 16px;display:flex;justify-content:flex-end">' +
-        '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:8px 16px;background:#F59E0B;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">Entendido</button>' +
-      '</div>' +
-    '</div>'
-    document.body.appendChild(dlg)
   }
 }
 

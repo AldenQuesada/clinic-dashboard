@@ -66,10 +66,35 @@
     try {
       const { data, error } = await _sb().rpc('appt_upsert', { p_data: apptData })
       if (error) return _err(error.message || String(error))
+      // Após salvar appointment principal, popula agregados de cortesia
+      // (o RPC principal não conhece esses campos — patch separado)
+      if (apptData.id && (apptData.valorCortesia > 0 || apptData.qtdProcsCortesia > 0)) {
+        try {
+          await _sb().rpc('appt_set_cortesia', {
+            p_id:             apptData.id,
+            p_valor_cortesia: apptData.valorCortesia || 0,
+            p_motivo:         apptData.motivoCortesia || null,
+            p_qtd_procs:      apptData.qtdProcsCortesia || 0,
+          })
+        } catch (cortErr) { console.warn('[appt] set_cortesia falhou:', cortErr) }
+      }
       return _ok(data)
     } catch (err) {
       return _err(err.message || String(err))
     }
+  }
+
+  // ── listScheduledMessages ─────────────────────────────────────
+  /**
+   * Lista mensagens WhatsApp enfileiradas para um appointment.
+   * Usado pelo modal para mostrar feedback de "confirmação agendada".
+   */
+  async function listScheduledMessages(apptId) {
+    try {
+      const { data, error } = await _sb().rpc('wa_outbox_list_for_appt', { p_appt_ref: apptId })
+      if (error) return _err(error.message || String(error))
+      return _ok(data || [])
+    } catch (err) { return _err(err.message || String(err)) }
   }
 
   // ── remove (soft delete) ──────────────────────────────────────
@@ -112,6 +137,7 @@
     upsert,
     remove,
     syncBatch,
+    listScheduledMessages,
   })
 
 })()

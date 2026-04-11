@@ -42,8 +42,45 @@
   function _setLeadStatus(id, s, skip) { if (window._apptSetLeadStatus) window._apptSetLeadStatus(id, s, skip) }
   function _enviarMsg(appt)  { if (window._apptEnviarMsg) window._apptEnviarMsg(appt) }
 
+  // ── Event delegation: centraliza data-action em vez de onclick=fn ─
+  // Vantagem: bindings sobrevivem ao re-render, menos globals no window
+  // e um único ponto de dispatch para todas as interações dos cards.
+  var _apptDelegationBound = false
+  function _bindApptDelegation() {
+    if (_apptDelegationBound) return
+    var modal = document.getElementById('apptModal')
+    if (!modal) return
+    _apptDelegationBound = true
+    modal.addEventListener('click', _apptHandleDelegated)
+    modal.addEventListener('input', _apptHandleDelegated)
+    modal.addEventListener('change', _apptHandleDelegated)
+  }
+  function _apptHandleDelegated(e) {
+    var el = e.target.closest('[data-action]')
+    if (!el) return
+    var action = el.dataset.action
+    var idx = parseInt(el.dataset.idx)
+    var field = el.dataset.field
+    var value = el.dataset.value
+
+    // input/change → somente para elementos editáveis
+    if (e.type === 'input' || e.type === 'change') {
+      if (action === 'apptPagamentoField') apptUpdatePagamento(idx, field, el.value)
+      else if (action === 'apptProcField') apptProcUpdate(idx, field, el.value)
+      return
+    }
+    // click → botões
+    if (e.type !== 'click') return
+    if (action === 'apptPagamentoRemove')  apptRemovePagamento(idx)
+    else if (action === 'apptPagamentoToggle') apptTogglePago(idx)
+    else if (action === 'apptProcRemove')  apptRemoveProc(idx)
+    else if (action === 'apptProcSetCortesia') apptProcUpdate(idx, 'cortesia', value === 'true')
+    else if (action === 'apptProcSetRetorno')  apptProcUpdate(idx, 'retornoTipo', value)
+  }
+
   // ── openApptModal ─────────────────────────────────────────────
   function openApptModal(id, date, time, profIdx) {
+    _bindApptDelegation()
     const modal = document.getElementById('apptModal')
     if (!modal) return
 
@@ -228,8 +265,23 @@
     if (procRow) procRow.style.display = (tipo === 'procedimento') ? '' : 'none'
   }
 
+  // ── Estado consolidado do modal de agendamento ───────────────
+  // Single object pra facilitar reset coordenado e debugging.
+  // Arrays permanecem mutáveis in-place (push/splice) para manter
+  // as refs existentes válidas em closures.
+  var _apptState = {
+    procs: [],
+    pagamentos: [],
+    multiProcChoice: null,
+  }
+  function _apptStateReset() {
+    _apptState.procs.length = 0
+    _apptState.pagamentos.length = 0
+    _apptState.multiProcChoice = null
+  }
+
   // ── Toggle Consulta / Procedimento ─────────────────────────
-  var _apptProcs = []
+  var _apptProcs = _apptState.procs
 
   function _apptHasConsultaData() {
     var aval = document.getElementById('appt_taval_hidden') && document.getElementById('appt_taval_hidden').value
@@ -504,8 +556,7 @@
   }
 
   // ── Alerta multi-procedimento ──────────────────────────────
-  // Estado da seleção (não usa radio do DOM pra evitar default)
-  var _multiProcChoice = null
+  // Estado da seleção vive em _apptState.multiProcChoice (unificado)
   var _multiProcEscHandler = null
 
   function _checkMultiProcAlert() {
@@ -514,7 +565,7 @@
     if (durAtual > 60) return // ja aumentou, nao alertar
 
     _multiProcCloseAlert() // garante limpeza de instancia anterior
-    _multiProcChoice = null
+    _apptState.multiProcChoice = null
 
     var alert = document.createElement('div')
     alert.id = 'multiProcAlert'
@@ -564,7 +615,7 @@
   }
 
   function _multiProcPick(dur) {
-    _multiProcChoice = dur
+    _apptState.multiProcChoice = dur
     // Repinta visual
     [60, 90, 120].forEach(function(d) {
       var btn = document.getElementById('multiProcOpt_' + d)
@@ -587,7 +638,7 @@
   }
 
   function _multiProcConfirm() {
-    var dur = _multiProcChoice
+    var dur = _apptState.multiProcChoice
     if (!dur) return
     var durEl = document.getElementById('appt_duracao')
     if (durEl) durEl.value = dur
@@ -623,7 +674,7 @@
       document.removeEventListener('keydown', _multiProcEscHandler)
       _multiProcEscHandler = null
     }
-    _multiProcChoice = null
+    _apptState.multiProcChoice = null
   }
 
   function apptProcUpdate(i, field, value) {
@@ -653,6 +704,7 @@
       _updateApptTotalWithDiscount()
       return
     }
+    var H = window.html
     list.innerHTML = _apptProcs.map(function(p, i) {
       var cortesia = !!p.cortesia
       var bgCard = cortesia ? '#F0FDF4' : '#fff'
@@ -663,7 +715,7 @@
       var btnPagaFg = !cortesia ? '#fff'    : '#4F46E5'
 
       var motivoHtml = cortesia
-        ? '<input type="text" placeholder="Motivo da cortesia *" value="' + (p.cortesiaMotivo || '').replace(/"/g, '&quot;') + '" oninput="apptProcUpdate(' + i + ', \'cortesiaMotivo\', this.value)" style="width:100%;margin-top:4px;padding:5px 7px;border:1px solid #86EFAC;border-radius:5px;font-size:11px;outline:none;box-sizing:border-box;background:#fff"/>'
+        ? H`<input type="text" placeholder="Motivo da cortesia *" value="${p.cortesiaMotivo || ''}" data-action="apptProcField" data-idx="${i}" data-field="cortesiaMotivo" style="width:100%;margin-top:4px;padding:5px 7px;border:1px solid #86EFAC;border-radius:5px;font-size:11px;outline:none;box-sizing:border-box;background:#fff"/>`
         : ''
 
       var retorno = p.retornoTipo || 'avulso'
@@ -672,28 +724,31 @@
       var btnRtBg = retorno === 'retorno' ? '#7C3AED' : '#fff'
       var btnRtFg = retorno === 'retorno' ? '#fff'    : '#7C3AED'
       var intervaloHtml = retorno === 'retorno'
-        ? '<select onchange="apptProcUpdate(' + i + ', \'retornoIntervalo\', this.value)" style="flex:1;padding:5px 7px;border:1px solid #DDD6FE;border-radius:5px;font-size:11px;background:#fff;outline:none">' + _apptRetornoOpts(p.retornoIntervalo) + '</select>'
+        ? H`<select data-action="apptProcField" data-idx="${i}" data-field="retornoIntervalo" style="flex:1;padding:5px 7px;border:1px solid #DDD6FE;border-radius:5px;font-size:11px;background:#fff;outline:none">${H.raw(_apptRetornoOpts(p.retornoIntervalo))}</select>`
         : ''
 
-      return '<div style="background:' + bgCard + ';border:1px solid ' + bdCard + ';border-radius:8px;padding:7px">' +
-        '<div style="display:flex;align-items:center;gap:6px">' +
-          '<span style="flex:1;font-size:11px;font-weight:700;color:#374151">' + (p.nome || '').replace(/</g, '&lt;') + '</span>' +
-          (cortesia
-            ? '<span style="font-size:10px;font-weight:700;color:#16A34A">CORTESIA</span>'
-            : '<input type="number" step="0.01" value="' + (p.valor ? p.valor.toFixed(2) : '') + '" oninput="apptProcUpdate(' + i + ', \'valor\', this.value)" style="width:75px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;text-align:right;outline:none"/>') +
-          '<button onclick="apptRemoveProc(' + i + ')" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:5px;font-size:12px;font-weight:700;width:22px;height:22px;cursor:pointer;line-height:1">×</button>' +
-        '</div>' +
-        '<div style="display:flex;gap:5px;margin-top:5px">' +
-          '<button type="button" onclick="apptProcUpdate(' + i + ', \'cortesia\', false)" style="flex:1;padding:4px 8px;background:' + btnPagaBg + ';color:' + btnPagaFg + ';border:1px solid #C7D2FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Pago</button>' +
-          '<button type="button" onclick="apptProcUpdate(' + i + ', \'cortesia\', true)" style="flex:1;padding:4px 8px;background:' + btnCortBg + ';color:' + btnCortFg + ';border:1px solid #BBF7D0;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Cortesia</button>' +
-        '</div>' +
-        motivoHtml +
-        '<div style="display:flex;gap:5px;margin-top:5px">' +
-          '<button type="button" onclick="apptProcUpdate(' + i + ', \'retornoTipo\', \'avulso\')" style="flex:1;padding:4px 8px;background:' + btnAvBg + ';color:' + btnAvFg + ';border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Sessão Avulsa</button>' +
-          '<button type="button" onclick="apptProcUpdate(' + i + ', \'retornoTipo\', \'retorno\')" style="flex:1;padding:4px 8px;background:' + btnRtBg + ';color:' + btnRtFg + ';border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Com Retorno</button>' +
-          intervaloHtml +
-        '</div>' +
-      '</div>'
+      var valorStr = p.valor ? p.valor.toFixed(2) : ''
+      var valorOrTag = cortesia
+        ? H`<span style="font-size:10px;font-weight:700;color:#16A34A">CORTESIA</span>`
+        : H`<input type="number" step="0.01" value="${valorStr}" data-action="apptProcField" data-idx="${i}" data-field="valor" style="width:75px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;text-align:right;outline:none"/>`
+
+      return H`<div data-proc-row="${i}" style="background:${bgCard};border:1px solid ${bdCard};border-radius:8px;padding:7px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="flex:1;font-size:11px;font-weight:700;color:#374151">${p.nome || ''}</span>
+          ${H.raw(valorOrTag)}
+          <button type="button" data-action="apptProcRemove" data-idx="${i}" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:5px;font-size:12px;font-weight:700;width:22px;height:22px;cursor:pointer;line-height:1">×</button>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:5px">
+          <button type="button" data-action="apptProcSetCortesia" data-idx="${i}" data-value="false" style="flex:1;padding:4px 8px;background:${btnPagaBg};color:${btnPagaFg};border:1px solid #C7D2FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Pago</button>
+          <button type="button" data-action="apptProcSetCortesia" data-idx="${i}" data-value="true" style="flex:1;padding:4px 8px;background:${btnCortBg};color:${btnCortFg};border:1px solid #BBF7D0;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Cortesia</button>
+        </div>
+        ${H.raw(motivoHtml)}
+        <div style="display:flex;gap:5px;margin-top:5px">
+          <button type="button" data-action="apptProcSetRetorno" data-idx="${i}" data-value="avulso" style="flex:1;padding:4px 8px;background:${btnAvBg};color:${btnAvFg};border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Sessão Avulsa</button>
+          <button type="button" data-action="apptProcSetRetorno" data-idx="${i}" data-value="retorno" style="flex:1;padding:4px 8px;background:${btnRtBg};color:${btnRtFg};border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Com Retorno</button>
+          ${H.raw(intervaloHtml)}
+        </div>
+      </div>`
     }).join('')
 
     _updateApptTotalWithDiscount()
@@ -774,7 +829,9 @@
   //   forma, valor, status: 'aberto'|'pago',
   //   parcelas, valorParcela, comentario
   // }]
-  var _apptPagamentos = []
+  // Ref alias do _apptState.pagamentos (mesma identidade — reset
+  // coordenado em _apptStateReset)
+  var _apptPagamentos = _apptState.pagamentos
 
   var FORMAS_PAGAMENTO = [
     { value: 'pix',           label: 'PIX' },
@@ -861,19 +918,68 @@
     var p = _apptPagamentos[idx]
     if (!p) return
     if (field === 'valor')          p.valor = parseFloat(value) || 0
-    else if (field === 'parcelas')  p.parcelas = parseInt(value) || 1
+    else if (field === 'parcelas') {
+      var n = parseInt(value) || 1
+      if (n < 1) n = 1
+      if (n > 24) n = 24
+      p.parcelas = n
+    }
     else if (field === 'valorParcela') p.valorParcela = parseFloat(value) || 0
     else                            p[field] = value
     // Recalcula valorParcela quando valor ou parcelas mudam
     if (field === 'valor' || field === 'parcelas' || field === 'forma') {
       if (_apptFormaTemParcelas(p.forma) && p.parcelas > 0) {
-        p.valorParcela = +(p.valor / p.parcelas).toFixed(2)
+        p.valorParcela = window.Money ? window.Money.div(p.valor, p.parcelas) : +(p.valor / p.parcelas).toFixed(2)
       } else {
         p.valorParcela = p.valor
       }
     }
-    if (field === 'forma') apptRenderPagamentos()
+    if (field === 'forma') apptRerenderPagamentoRow(idx)
     else apptUpdatePagamentosTotal()
+  }
+
+  // Re-renderiza UMA linha de pagamento in-place — preserva foco
+  // dos outros inputs (comentário, valor) enquanto o usuário edita.
+  function apptRerenderPagamentoRow(idx) {
+    var row = document.querySelector('[data-pagamento-row="' + idx + '"]')
+    if (!row) { apptRenderPagamentos(); return }
+    var H = window.html
+    var canRemove = _apptPagamentos.length > 1
+    var p = _apptPagamentos[idx]
+    if (!p) return
+    var pago = p.status === 'pago'
+    var bg   = pago ? '#F0FDF4' : '#fff'
+    var bd   = pago ? '#86EFAC' : '#E5E7EB'
+    var btnTxt = pago ? '✓ Pago'  : '○ Aberto'
+    var btnBg  = pago ? '#16A34A' : '#F3F4F6'
+    var btnFg  = pago ? '#fff'    : '#6B7280'
+    var temParcelas = _apptFormaTemParcelas(p.forma)
+    var valorStr = p.valor ? p.valor.toFixed(2) : ''
+    var valorParcelaStr = p.valorParcela ? p.valorParcela.toFixed(2) : ''
+
+    var parcelasHtml = temParcelas
+      ? H`<div style="display:flex;gap:5px;align-items:center;margin-top:5px">
+          <label style="font-size:10px;font-weight:700;color:#6B7280">Parcelas</label>
+          <input type="number" min="1" max="24" value="${p.parcelas || 1}" data-action="apptPagamentoField" data-idx="${idx}" data-field="parcelas" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+          <span style="font-size:10px;color:#6B7280">x R$</span>
+          <input type="number" step="0.01" value="${valorParcelaStr}" data-action="apptPagamentoField" data-idx="${idx}" data-field="valorParcela" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+        </div>`
+      : ''
+    var removeBtn = canRemove
+      ? H`<button type="button" data-action="apptPagamentoRemove" data-idx="${idx}" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>`
+      : ''
+
+    row.style.background = bg
+    row.style.borderColor = bd
+    row.innerHTML = H`<div style="display:flex;gap:5px;align-items:center">
+        <select data-action="apptPagamentoField" data-idx="${idx}" data-field="forma" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">${H.raw(_formaOptions(p.forma))}</select>
+        <input type="number" step="0.01" placeholder="0,00" value="${valorStr}" data-action="apptPagamentoField" data-idx="${idx}" data-field="valor" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>
+        <button type="button" data-action="apptPagamentoToggle" data-idx="${idx}" style="padding:5px 8px;background:${btnBg};color:${btnFg};border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${btnTxt}</button>
+        ${H.raw(removeBtn)}
+      </div>
+      ${H.raw(parcelasHtml)}
+      <input type="text" placeholder="Comentário (opcional)" value="${p.comentario || ''}" data-action="apptPagamentoField" data-idx="${idx}" data-field="comentario" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>`
+    apptUpdatePagamentosTotal()
   }
 
   function apptTogglePago(idx) {
@@ -902,6 +1008,7 @@
   function apptRenderPagamentos() {
     var list = document.getElementById('apptPagamentosList')
     if (!list) return
+    var H = window.html
     var canRemove = _apptPagamentos.length > 1
     list.innerHTML = _apptPagamentos.map(function(p, i) {
       var pago = p.status === 'pago'
@@ -911,24 +1018,32 @@
       var btnBg  = pago ? '#16A34A' : '#F3F4F6'
       var btnFg  = pago ? '#fff'    : '#6B7280'
       var temParcelas = _apptFormaTemParcelas(p.forma)
+      var valorStr = p.valor ? p.valor.toFixed(2) : ''
+      var valorParcelaStr = p.valorParcela ? p.valorParcela.toFixed(2) : ''
+
       var parcelasHtml = temParcelas
-        ? '<div style="display:flex;gap:5px;align-items:center;margin-top:5px">' +
-          '<label style="font-size:10px;font-weight:700;color:#6B7280">Parcelas</label>' +
-          '<input type="number" min="1" max="24" value="' + (p.parcelas || 1) + '" oninput="apptUpdatePagamento(' + i + ', \'parcelas\', this.value)" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>' +
-          '<span style="font-size:10px;color:#6B7280">x R$</span>' +
-          '<input type="number" step="0.01" value="' + (p.valorParcela ? p.valorParcela.toFixed(2) : '') + '" oninput="apptUpdatePagamento(' + i + ', \'valorParcela\', this.value)" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>' +
-          '</div>'
+        ? H`<div style="display:flex;gap:5px;align-items:center;margin-top:5px">
+            <label style="font-size:10px;font-weight:700;color:#6B7280">Parcelas</label>
+            <input type="number" min="1" max="24" value="${p.parcelas || 1}" data-action="apptPagamentoField" data-idx="${i}" data-field="parcelas" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+            <span style="font-size:10px;color:#6B7280">x R$</span>
+            <input type="number" step="0.01" value="${valorParcelaStr}" data-action="apptPagamentoField" data-idx="${i}" data-field="valorParcela" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+          </div>`
         : ''
-      return '<div style="background:' + bg + ';border:1px solid ' + bd + ';border-radius:8px;padding:7px">' +
-        '<div style="display:flex;gap:5px;align-items:center">' +
-          '<select onchange="apptUpdatePagamento(' + i + ', \'forma\', this.value)" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">' + _formaOptions(p.forma) + '</select>' +
-          '<input type="number" step="0.01" placeholder="0,00" value="' + (p.valor ? p.valor.toFixed(2) : '') + '" oninput="apptUpdatePagamento(' + i + ', \'valor\', this.value)" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>' +
-          '<button type="button" onclick="apptTogglePago(' + i + ')" style="padding:5px 8px;background:' + btnBg + ';color:' + btnFg + ';border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">' + btnTxt + '</button>' +
-          (canRemove ? '<button type="button" onclick="apptRemovePagamento(' + i + ')" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>' : '') +
-        '</div>' +
-        parcelasHtml +
-        '<input type="text" placeholder="Comentário (opcional)" value="' + (p.comentario || '').replace(/"/g, '&quot;') + '" oninput="apptUpdatePagamento(' + i + ', \'comentario\', this.value)" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>' +
-      '</div>'
+
+      var removeBtn = canRemove
+        ? H`<button type="button" data-action="apptPagamentoRemove" data-idx="${i}" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>`
+        : ''
+
+      return H`<div data-pagamento-row="${i}" style="background:${bg};border:1px solid ${bd};border-radius:8px;padding:7px">
+        <div style="display:flex;gap:5px;align-items:center">
+          <select data-action="apptPagamentoField" data-idx="${i}" data-field="forma" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">${H.raw(_formaOptions(p.forma))}</select>
+          <input type="number" step="0.01" placeholder="0,00" value="${valorStr}" data-action="apptPagamentoField" data-idx="${i}" data-field="valor" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>
+          <button type="button" data-action="apptPagamentoToggle" data-idx="${i}" style="padding:5px 8px;background:${btnBg};color:${btnFg};border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${btnTxt}</button>
+          ${H.raw(removeBtn)}
+        </div>
+        ${H.raw(parcelasHtml)}
+        <input type="text" placeholder="Comentário (opcional)" value="${p.comentario || ''}" data-action="apptPagamentoField" data-idx="${i}" data-field="comentario" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>
+      </div>`
     }).join('')
     apptUpdatePagamentosTotal()
   }
@@ -936,18 +1051,20 @@
   function apptUpdatePagamentosTotal() {
     var totalEl = document.getElementById('apptPagamentosTotal')
     if (!totalEl) return
-    var total = _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
+    var M = window.Money
+    var total = M ? M.sum(_apptPagamentos.map(function(p) { return p.valor })) : _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
     var valor = _apptValorTotalPagar()
-    var diff = +(valor - total).toFixed(2)
-    if (Math.abs(diff) < 0.01) {
+    var diff = M ? M.sub(valor, total) : +(valor - total).toFixed(2)
+    var fmt = M ? M.format : function(v) { return 'R$ ' + (parseFloat(v)||0).toFixed(2) }
+    if (M ? M.isZero(diff) : Math.abs(diff) < 0.01) {
       totalEl.style.color = '#16A34A'
-      totalEl.textContent = 'Alocado: R$ ' + total.toFixed(2) + ' / R$ ' + valor.toFixed(2)
+      totalEl.textContent = 'Alocado: ' + fmt(total) + ' / ' + fmt(valor)
     } else if (diff > 0) {
       totalEl.style.color = '#DC2626'
-      totalEl.textContent = 'Falta alocar R$ ' + diff.toFixed(2) + ' (alocado: R$ ' + total.toFixed(2) + ' / R$ ' + valor.toFixed(2) + ')'
+      totalEl.textContent = 'Falta alocar ' + fmt(diff) + ' (alocado: ' + fmt(total) + ' / ' + fmt(valor) + ')'
     } else {
       totalEl.style.color = '#DC2626'
-      totalEl.textContent = 'Excesso de R$ ' + Math.abs(diff).toFixed(2) + ' (alocado: R$ ' + total.toFixed(2) + ' / R$ ' + valor.toFixed(2) + ')'
+      totalEl.textContent = 'Excesso de ' + fmt(Math.abs(diff)) + ' (alocado: ' + fmt(total) + ' / ' + fmt(valor) + ')'
     }
   }
 
@@ -1175,10 +1292,16 @@
         return _apptFormaTemParcelas(p.forma) && (!p.parcelas || p.parcelas < 1)
       })
       if (faltaParcelas) { alert('Informe o numero de parcelas para pagamento parcelado/credito.'); return }
-      var somaPag = _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
+      var parcelasExcede = _apptPagamentos.find(function(p) {
+        return _apptFormaTemParcelas(p.forma) && p.parcelas > 24
+      })
+      if (parcelasExcede) { alert('Numero maximo de parcelas: 24.'); return }
+      var M = window.Money
+      var somaPag = M ? M.sum(_apptPagamentos.map(function(p) { return p.valor })) : _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
       var totalEsperado = _apptValorTotalPagar()
-      if (Math.abs(somaPag - totalEsperado) >= 0.01) {
-        alert('A soma dos pagamentos (R$ ' + somaPag.toFixed(2) + ') deve ser igual ao total (R$ ' + totalEsperado.toFixed(2) + ').'); return
+      var matches = M ? M.eq(somaPag, totalEsperado) : Math.abs(somaPag - totalEsperado) < 0.01
+      if (!matches) {
+        alert('A soma dos pagamentos (' + (M ? M.format(somaPag) : 'R$ ' + somaPag.toFixed(2)) + ') deve ser igual ao total (' + (M ? M.format(totalEsperado) : 'R$ ' + totalEsperado.toFixed(2)) + ').'); return
       }
     }
 
@@ -1241,6 +1364,21 @@
             }
           })
         : [],
+      // Agregados de cortesia (alimentam relatórios financeiros)
+      valorCortesia: (function() {
+        if (tipoAtend !== 'procedimento') return 0
+        var M = window.Money
+        var cortValores = _apptProcs.filter(function(p) { return p.cortesia }).map(function(p) { return p.valor })
+        return M ? M.sum(cortValores) : cortValores.reduce(function(s, v) { return s + (parseFloat(v) || 0) }, 0)
+      })(),
+      qtdProcsCortesia: tipoAtend === 'procedimento'
+        ? _apptProcs.filter(function(p) { return p.cortesia }).length
+        : 0,
+      motivoCortesia: (function() {
+        if (tipoAtend !== 'procedimento') return ''
+        var motivos = _apptProcs.filter(function(p) { return p.cortesia && p.cortesiaMotivo }).map(function(p) { return p.nome + ': ' + p.cortesiaMotivo })
+        return motivos.join(' | ')
+      })(),
     }
 
     const appts  = _getAppts()

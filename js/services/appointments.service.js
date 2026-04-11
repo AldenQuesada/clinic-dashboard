@@ -214,6 +214,37 @@
     _retryOfflineQueue()
   }
 
+  /**
+   * Versão awaitable de syncOne — para chamadores que precisam saber
+   * se o save realmente persistiu no Supabase antes de prosseguir.
+   * Retorna { ok: bool, error?: string, queued?: bool }
+   *
+   * Uso:
+   *   const result = await AppointmentsService.syncOneAwait(appt)
+   *   if (!result.ok) showError(result.error)
+   */
+  async function syncOneAwait(appt) {
+    const repo = _repo()
+    if (!repo) {
+      _addToOfflineQueue(_enrichForSupabase(appt))
+      return { ok: false, queued: true, error: 'Sem conexão. Salvo localmente.' }
+    }
+    if (!appt?.id) return { ok: false, error: 'Appointment sem ID' }
+
+    const enriched = _enrichForSupabase(appt)
+    try {
+      const result = await repo.upsert(enriched)
+      if (result && !result.ok) {
+        _addToOfflineQueue(enriched)
+        return { ok: false, queued: true, error: result.error || 'Erro ao sincronizar' }
+      }
+      return { ok: true }
+    } catch (err) {
+      _addToOfflineQueue(enriched)
+      return { ok: false, queued: true, error: err.message || String(err) }
+    }
+  }
+
   // ── softDelete ────────────────────────────────────────────────
   /**
    * Dispara soft delete no Supabase (fire-and-forget).
@@ -433,6 +464,7 @@
   window.AppointmentsService = Object.freeze({
     loadForPeriod,
     syncOne,
+    syncOneAwait,
     softDelete,
     syncBatch,
     getLocalForPeriod,

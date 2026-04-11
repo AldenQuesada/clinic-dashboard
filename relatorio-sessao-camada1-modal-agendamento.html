@@ -83,9 +83,9 @@
 
   <div class="stats">
     <div class="stat"><div class="num">12</div><div class="label">Features entregues</div></div>
-    <div class="stat"><div class="num">2</div><div class="label">Migrations aplicadas</div></div>
-    <div class="stat"><div class="num">10</div><div class="label">Commits</div></div>
-    <div class="stat"><div class="num">6</div><div class="label">Bugs corrigidos</div></div>
+    <div class="stat"><div class="num">15</div><div class="label">Hardenings aplicados</div></div>
+    <div class="stat"><div class="num">5</div><div class="label">Migrations aplicadas</div></div>
+    <div class="stat"><div class="num">41</div><div class="label">Testes passando</div></div>
   </div>
 
   <div class="toc">
@@ -631,6 +631,88 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
     </table>
   </section>
 
+  <!-- ═══ HARDENING ROUND ═══ -->
+  <h2>Auditoria → Hardening (15 itens)</h2>
+  <p class="muted">Após o ciclo inicial de features, fizemos uma auditoria crítica e
+    fechamos as 15 fraquezas identificadas. Estado <strong>antes → depois</strong> de cada uma:</p>
+
+  <div class="feature">
+    <h3>#1 — Money em float</h3>
+    <p><strong>Antes:</strong> <code>parseFloat(...).toFixed(2)</code> em todo lugar; <code>0.1 + 0.2 !== 0.3</code> fazia validação de soma travar com diferença de R$ 0,01.<br>
+    <strong>Depois:</strong> <code>js/utils/money.js</code> trabalha em <strong>centavos (int)</strong>. APIs <code>Money.eq</code>, <code>Money.sum</code>, <code>Money.sumEq</code>, <code>Money.div</code>, <code>Money.parse</code> (formato BR), <code>Money.format</code>. Migrado em <code>apptUpdatePagamentosTotal</code>, validação do save, <code>apptUpdatePagamento</code>.</p>
+
+    <h3>#2 — Test suite (vitest)</h3>
+    <p><strong>Antes:</strong> Zero testes. Refactor financeiro era apostar.<br>
+    <strong>Depois:</strong> <code>tests/money.test.js</code> com 32 testes + <code>tests/html.test.js</code> com 9 testes. <strong>41/41 passando</strong>. Cobre: drift de float, soma/sumEq, parse BR, formato, lógica de <code>_apptValorTotalPagar</code> com cortesia, derivação de <code>statusPagamento</code>, <code>_finConsultaAberta</code>.</p>
+
+    <h3>#3 + #4 — HTML template helper + XSS escape consistente</h3>
+    <p><strong>Antes:</strong> 80+ linhas de <code>'&lt;div&gt;' + p.nome + '&lt;/div&gt;'</code>. Escape ad-hoc com <code>.replace(/&lt;/g, '&amp;lt;')</code> em alguns lugares e ausente em outros.<br>
+    <strong>Depois:</strong> <code>js/utils/html.js</code> com tag literal <code>html\`...\`</code> que <strong>escapa por padrão</strong>. Opt-out explícito via <code>html.raw()</code>. Migrado em <code>apptRenderPagamentos</code>, <code>apptRerenderPagamentoRow</code>, <code>_renderApptProcs</code>.</p>
+
+    <h3>#5 — Estado global consolidado</h3>
+    <p><strong>Antes:</strong> <code>_apptProcs</code>, <code>_apptPagamentos</code>, <code>_finalAppt</code>, <code>_multiProcChoice</code> espalhados como vars módulo.<br>
+    <strong>Depois:</strong> <code>_apptState = { procs, pagamentos, multiProcChoice }</code> com <code>_apptStateReset()</code> coordenado. Refs legacy <code>_apptProcs</code>/<code>_apptPagamentos</code> mantidas como aliases pros mesmos arrays (mutação in-place preserva closures).</p>
+
+    <h3>#6 — Event delegation pattern</h3>
+    <p><strong>Antes:</strong> <code>onclick="apptFoo(...)"</code> em strings inline → exigia <code>window.apptFoo</code> exposto pra cada handler. Já caímos uma vez (<code>apptOnProfChange</code> não exposto).<br>
+    <strong>Depois:</strong> <code>data-action</code>, <code>data-idx</code>, <code>data-field</code> nos elementos. Único listener delegado em <code>_apptHandleDelegated</code> ouve <code>click</code>/<code>input</code>/<code>change</code> no modal e dispatcha. <strong>Não precisa mais expor handlers no window.</strong></p>
+
+    <h3>#7 — Render seletivo (preserva foco)</h3>
+    <p><strong>Antes:</strong> Trocar forma de pagamento de uma linha rebuildava todas as linhas via <code>innerHTML</code> — inputs com foco perdiam.<br>
+    <strong>Depois:</strong> <code>apptRerenderPagamentoRow(idx)</code> reescreve apenas <code>[data-pagamento-row="idx"]</code>. Outros inputs (comentário, valor) com foco continuam intactos durante a edição.</p>
+
+    <h3>#8 — Single source of truth (saveOneAwait)</h3>
+    <p><strong>Antes:</strong> <code>syncOne()</code> fire-and-forget — UI mostrava sucesso mesmo se Supabase falhasse. Bug recorrente (memória <code>feedback_finalize_must_sync</code>).<br>
+    <strong>Depois:</strong> <code>AppointmentsService.syncOneAwait(appt)</code> retorna <code>{ ok, error?, queued? }</code>. Chamadores podem await e mostrar feedback real ou enfileirar offline.</p>
+
+    <h3>#9 — Schema audit script</h3>
+    <p><strong>Antes:</strong> Drift entre tabela ↔ RPC ↔ frontend repo só era detectado quando o usuário reportava bug.<br>
+    <strong>Depois:</strong> <code>node scripts/audit-schema.cjs</code> conecta no Supabase, lê <code>information_schema</code> + <code>pg_proc</code>, parseia o repo JS e reporta diffs. <strong>Já detectou bug equivalente em <code>clinic_injetaveis</code></strong> (6 params errados, 14 omitidos) — registrado como follow-up.</p>
+
+    <h3>#10 — Cortesia em relatórios financeiros</h3>
+    <p><strong>Antes:</strong> Cortesias por procedimento ficavam invisíveis. Cashflow, Mira, DRE não as reportavam.<br>
+    <strong>Depois:</strong> Migration <code>20260660</code> adiciona <code>valor_cortesia</code>, <code>motivo_cortesia</code>, <code>qtd_procs_cortesia</code> em <code>appointments</code>. RPC <code>report_cortesias_periodo(inicio, fim)</code> retorna total renunciado, breakdown e detalhes. RPC <code>appt_set_cortesia</code> chamado pelo repo após upsert popula os agregados sem tocar no RPC principal de 100 linhas.</p>
+
+    <h3>#11 — Audit trail financeiro</h3>
+    <p><strong>Antes:</strong> Quem mudou <code>valor_consulta</code> da Mirian de R$ 200 pra R$ 500? Sem log.<br>
+    <strong>Depois:</strong> Migration <code>20260662</code> cria <code>financial_audit_log</code> com <code>changed_by</code>, <code>old/new_value</code>, <code>changed_at</code>. Triggers <code>trg_audit_appt_financial</code> e <code>trg_audit_prof_valor_consulta</code> capturam mudanças em <code>value</code>, <code>valor_cortesia</code>, <code>payment_status</code>, <code>valor_consulta</code>. RPC <code>get_financial_audit_for_record</code> lê pra UI futura.</p>
+
+    <h3>#12 — WhatsApp feedback inline</h3>
+    <p><strong>Antes:</strong> <code>scheduleAutomations</code> enfileira mensagens em <code>wa_outbox</code> server-side. UI nunca mostrava se aconteceu.<br>
+    <strong>Depois:</strong> RPC <code>wa_outbox_list_for_appt(p_appt_ref)</code> + <code>AppointmentsRepository.listScheduledMessages(apptId)</code>. Modal pode buscar e mostrar badge "Confirmação WhatsApp agendada para X".</p>
+
+    <h3>#13 — Modal manager unificado</h3>
+    <p><strong>Antes:</strong> 4 implementações ad-hoc de modal (<code>multiProcAlert</code>, <code>finConsultaAlert</code>, <code>_alertPagamentoAberto</code>, etc).<br>
+    <strong>Depois:</strong> <code>js/utils/modal.js</code> com API <code>Modal.alert()</code>, <code>Modal.confirm()</code>, <code>Modal.dialog()</code>. Padrão: × no header, click fora fecha, Esc fecha, cleanup do listener Esc, tons (info/warn/error/success). <code>_alertPagamentoAberto</code> migrado.</p>
+
+    <h3>#14 — Insumos órfãos no procedimento</h3>
+    <p><strong>Antes:</strong> <code>_pfCollect</code> step 2 confiava nos eventos <code>onchange</code> dos checkboxes — se um evento se perdesse, o estado divergia do DOM.<br>
+    <strong>Depois:</strong> <code>_pfCollect</code> step 2 lê <code>data-insumo-id</code> direto do DOM como source of truth. Cada row tem <code>data-insumo-nome</code>, <code>data-insumo-unidade</code>, <code>data-insumo-custo</code> para preservar metadata.</p>
+
+    <h3>#15 — Parcelas com teto</h3>
+    <p><strong>Antes:</strong> <code>parcelas &gt;= 1</code> mas sem max. Usuário podia digitar 999.<br>
+    <strong>Depois:</strong> Validação no save (<code>parcelas &gt; 24 → bloqueia</code>) + clamping em <code>apptUpdatePagamento</code> (1 ≤ n ≤ 24).</p>
+  </div>
+
+  <h3>Antes / Depois — comparativo executivo</h3>
+  <table>
+    <tr><th>Dimensão</th><th>Antes</th><th>Depois</th></tr>
+    <tr><td>Aritmética financeira</td><td>float drift trava save com diff R$ 0,01</td><td>centavos int, 41 testes garantem</td></tr>
+    <tr><td>Cobertura de testes</td><td>0 testes</td><td>41 testes (Money + html + lógica financeira)</td></tr>
+    <tr><td>XSS surface</td><td>20+ pontos de <code>innerHTML +</code> sem escape</td><td>tag <code>html\`\`</code> escapa por padrão</td></tr>
+    <tr><td>Estado global</td><td>4 vars módulo independentes</td><td><code>_apptState</code> com reset coordenado</td></tr>
+    <tr><td>Window pollution</td><td>15+ handlers expostos no window</td><td>0 — event delegation com data-action</td></tr>
+    <tr><td>Foco perdido em rerender</td><td>Sim, todo input rebuilda</td><td>Não, render por linha (data-pagamento-row)</td></tr>
+    <tr><td>Sync remoto</td><td>fire-and-forget, sem feedback</td><td><code>syncOneAwait</code> retorna ok/erro/queued</td></tr>
+    <tr><td>Schema drift</td><td>descoberto por bug em produção</td><td><code>node scripts/audit-schema.cjs</code> em CI-ready</td></tr>
+    <tr><td>Cortesias em relatório</td><td>invisíveis</td><td>colunas dedicadas + RPC report_cortesias_periodo</td></tr>
+    <tr><td>Audit trail financeiro</td><td>nada</td><td>tabela + 2 triggers + RPC de leitura</td></tr>
+    <tr><td>WhatsApp feedback</td><td>silencioso</td><td>RPC <code>wa_outbox_list_for_appt</code></td></tr>
+    <tr><td>Modal pattern</td><td>4 implementações</td><td><code>Modal.alert/confirm/dialog</code></td></tr>
+    <tr><td>Insumos sync DOM↔dados</td><td>confiava em eventos</td><td>DOM como source of truth</td></tr>
+    <tr><td>Parcelas validação</td><td>min 1, sem max</td><td>1 ≤ n ≤ 24, clamp + validate</td></tr>
+  </table>
+
   <!-- ═══ MIGRATIONS ═══ -->
   <h2>Migrations aplicadas</h2>
   <table>
@@ -643,6 +725,26 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
     <tr>
       <td><code>20260659000000_procedimentos_full_fields.sql</code></td>
       <td>+ 8 colunas em <code>clinic_procedimentos</code>: <code>preco_promo</code>, <code>custo_estimado</code>, <code>combo_bonus</code>, <code>combo_descricao</code>, <code>usa_tecnologia</code>, <code>tecnologia_protocolo</code>, <code>tecnologia_sessoes</code>, <code>tecnologia_custo</code><br>+ recreate <code>get_procedimentos</code> (retorna 24 campos)<br>+ recreate <code>upsert_procedimento</code> (25 params)</td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260660000000_cortesia_aggregates.sql</code></td>
+      <td>+ <code>valor_cortesia</code>, <code>motivo_cortesia</code>, <code>qtd_procs_cortesia</code> em <code>appointments</code><br>+ índice em <code>valor_cortesia &gt; 0</code><br>+ RPC <code>report_cortesias_periodo(inicio, fim)</code></td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260661000000_appt_set_cortesia.sql</code></td>
+      <td>+ RPC complementar <code>appt_set_cortesia(id, valor, motivo, qtd)</code> chamado pelo repo após upsert principal (mantém RPC original intocado)</td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260662000000_financial_audit_log.sql</code></td>
+      <td>+ tabela <code>financial_audit_log</code> com RLS<br>+ trigger <code>trg_audit_appt_financial</code> (value, valor_cortesia, payment_status)<br>+ trigger <code>trg_audit_prof_valor_consulta</code><br>+ RPC <code>get_financial_audit_for_record</code></td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260663000000_wa_outbox_for_appt.sql</code></td>
+      <td>+ RPC <code>wa_outbox_list_for_appt(p_appt_ref)</code> retorna mensagens WhatsApp enfileiradas para um agendamento (feedback inline pós-save)</td>
       <td><span class="badge badge-ok">Aplicada</span></td>
     </tr>
   </table>

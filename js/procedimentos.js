@@ -1000,13 +1000,36 @@ function _pfCollect() {
       _pfData.descricao = document.getElementById('pf_desc')?.value?.trim() || ''
       _pfData.observacoes = document.getElementById('pf_obs')?.value?.trim() || ''
       break
-    case 2:
-      // insumos collected via pfToggleInsumo / pfQtdInsumo directly in _pfData.insumos
+    case 2: {
+      // Source of truth: ler DOM em vez de confiar nos closures dos
+      // pfToggleInsumo (eventos podem ter sido perdidos em re-renders).
+      const checkedRows = document.querySelectorAll('[data-insumo-id]')
+      const fromDom = []
+      checkedRows.forEach(row => {
+        const cb = row.querySelector('input[type=checkbox]')
+        if (!cb || !cb.checked) return
+        const injId = row.dataset.insumoId
+        if (!injId) return
+        const qtyEl = row.querySelector('input[type=number]')
+        const qty = qtyEl ? (parseFloat(qtyEl.value) || 1) : 1
+        // Preserva metadados (nome/unidade/custo) do estado anterior
+        const prev = (Array.isArray(_pfData.insumos) ? _pfData.insumos : []).find(s => s.injId === injId)
+        fromDom.push({
+          injId,
+          nome: prev?.nome || row.dataset.insumoNome || '',
+          unidade: prev?.unidade || row.dataset.insumoUnidade || 'un',
+          custo_unit: prev?.custo_unit || parseFloat(row.dataset.insumoCusto || '0') || 0,
+          qtd_por_sessao: qty,
+        })
+      })
+      // Só sobrescreve se conseguimos ler o DOM (step 2 ativo)
+      if (checkedRows.length > 0 || _pfStep === 2) _pfData.insumos = fromDom
       _pfData.usa_tecnologia        = document.getElementById('pf_usa_tec')?.checked || false
       _pfData.tecnologia_protocolo  = document.getElementById('pf_tec_nome')?.value?.trim() || ''
       _pfData.tecnologia_sessoes    = parseInt(document.getElementById('pf_tec_ses')?.value || '1') || 1
       _pfData.tecnologia_custo      = parseFloat(document.getElementById('pf_tec_custo')?.value || '0') || 0
       break
+    }
     case 3:
       // lists managed via pfAddListItem / pfRemoveListItem directly
       break
@@ -1140,7 +1163,7 @@ function _pfStep2() {
     const qty    = sel?.qtd_por_sessao || 1
     const catN   = (typeof _getCatNome === 'function' ? '' : '')
     return `
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #F9FAFB;transition:.15s"
+      <div data-insumo-id="${_escHtml(inj.id)}" data-insumo-nome="${_escHtml(inj.nome)}" data-insumo-unidade="${_escHtml(inj.unidade || 'un')}" data-insumo-custo="${inj.custo_unit || 0}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #F9FAFB;transition:.15s"
            onmouseenter="this.style.background='#FAFAFA'" onmouseleave="this.style.background=''">
         <input type="checkbox" id="pfc_${inj.id}" ${isChk ? 'checked' : ''}
           onchange="pfToggleInsumo('${inj.id}','${_escHtml(inj.nome)}','${inj.unidade||'un'}',${inj.custo_unit||0})"
