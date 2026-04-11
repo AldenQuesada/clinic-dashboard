@@ -1041,12 +1041,14 @@ function _buildFinModal(id, appt) {
           <div>
             <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:7px">Procedimentos Realizados</div>
             <div id="finProcList">${_renderFinProcs()}</div>
-            <div style="display:flex;gap:6px;margin-top:6px">
-              <input id="finProcNome" placeholder="Procedimento..." style="flex:1;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px" list="apptProcList" onchange="finProcAutoPrice()">
-              <input id="finProcQtd"  type="number" value="1" min="1" style="width:52px;padding:7px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;text-align:center" onchange="finProcAutoPrice()">
-              <button onclick="addFinProc()" style="padding:7px 13px;background:#7C3AED;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700">+</button>
+            <div style="display:flex;gap:6px;margin-top:6px;align-items:center">
+              <select id="finProcNome" onchange="finProcAutoPrice()" style="flex:1;padding:8px 10px;border:1.5px solid #7C3AED40;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
+                <option value="">Selecione o procedimento...</option>
+                ${_buildFinProcOptions()}
+              </select>
+              <input id="finProcValor" type="text" readonly placeholder="R$" style="width:75px;padding:8px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;text-align:right;background:#F9FAFB;color:#10B981;font-weight:600;box-sizing:border-box">
+              <button onclick="addFinProc()" style="padding:8px 14px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700">+</button>
             </div>
-            <div id="finProcPriceHint" style="margin-top:4px;font-size:11px;color:#7C3AED;font-weight:600"></div>
             <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#F59E0B;cursor:pointer;margin-top:6px">
               <input type="checkbox" id="finDescontoCb" onchange="var r=document.getElementById('finDescontoRow');r.style.display=this.checked?'block':'none'" style="accent-color:#F59E0B;width:13px;height:13px"> Aplicar desconto
             </label>
@@ -1275,15 +1277,16 @@ function _renderFinProcs() {
 }
 
 function addFinProc() {
-  var n = (document.getElementById('finProcNome')?.value||'').trim()
-  var q = parseInt(document.getElementById('finProcQtd')?.value||'1') || 1
+  var sel = document.getElementById('finProcNome')
+  var n = (sel?.value||'').trim()
   if (!n) return
   var info = _findProcInCatalog(n) || {}
   var preco = info.preco || 0
-  _finalProcs.push({ nome:n, qtd:q, precoOriginal:preco, desconto:0 })
+  _finalProcs.push({ nome:n, qtd:1, precoOriginal:preco, desconto:0 })
   document.getElementById('finProcList').innerHTML = _renderFinProcs()
-  document.getElementById('finProcNome').value = ''
-  document.getElementById('finProcPriceHint').textContent = ''
+  if (sel) sel.value = ''
+  var valEl = document.getElementById('finProcValor')
+  if (valEl) valEl.value = ''
   _finUpdateTotal()
   _finAutoRoute()
 }
@@ -1341,6 +1344,34 @@ function _finAutoRoute() {
   }
 }
 
+function _buildFinProcOptions() {
+  var cat = window._finProcCatalog || {}
+  var byCategoria = {}
+  // Agrupar por categoria
+  try {
+    var procs = typeof getProcedimentos === 'function' ? getProcedimentos() : JSON.parse(localStorage.getItem('clinic_procedimentos') || '[]')
+    procs.forEach(function(p) {
+      var c = p.categoria || 'outro'
+      if (!byCategoria[c]) byCategoria[c] = []
+      byCategoria[c].push(p.nome || p.name || '')
+    })
+  } catch(e) {}
+
+  // Se nao tem categorias, usar catalogo flat
+  if (!Object.keys(byCategoria).length) {
+    return Object.keys(cat).map(function(n) { return '<option value="' + n.replace(/"/g,'&quot;') + '">' + n.replace(/</g,'&lt;') + '</option>' }).join('')
+  }
+
+  var html = ''
+  var catLabels = { injetavel:'Injet\u00e1veis', tecnologia:'Tecnologias', manual:'Manuais', integrativo:'Integrativos' }
+  Object.keys(byCategoria).forEach(function(c) {
+    html += '<optgroup label="' + (catLabels[c] || c.charAt(0).toUpperCase() + c.slice(1)) + '">'
+    byCategoria[c].forEach(function(n) { html += '<option value="' + n.replace(/"/g,'&quot;') + '">' + n.replace(/</g,'&lt;') + '</option>' })
+    html += '</optgroup>'
+  })
+  return html
+}
+
 function _findProcInCatalog(nome) {
   var cat = window._finProcCatalog || {}
   if (cat[nome]) return cat[nome]
@@ -1357,13 +1388,12 @@ function _findProcInCatalog(nome) {
 
 function finProcAutoPrice() {
   var n = (document.getElementById('finProcNome')?.value||'').trim()
-  var q = parseInt(document.getElementById('finProcQtd')?.value||'1') || 1
   var info = _findProcInCatalog(n)
-  var hint = document.getElementById('finProcPriceHint')
-  if (hint && info && info.preco > 0) {
-    hint.textContent = 'Valor: R$ ' + _fmtBRL(info.preco) + '/un' + (info.preco_promo > 0 ? ' | Promo: R$ ' + _fmtBRL(info.preco_promo) : '') + (q > 1 ? ' | Total: R$ ' + _fmtBRL(info.preco * q) : '')
-  } else if (hint) {
-    hint.textContent = ''
+  var valEl = document.getElementById('finProcValor')
+  if (valEl && info && info.preco > 0) {
+    valEl.value = 'R$ ' + _fmtBRL(info.preco)
+  } else if (valEl) {
+    valEl.value = ''
   }
 }
 
