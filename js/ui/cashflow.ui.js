@@ -48,7 +48,7 @@
       var year  = d.getFullYear()
       var month = d.getMonth() + 1
 
-      var [sumRes, listRes, intelRes, dreRes, segRes] = await Promise.all([
+      var [sumRes, listRes, intelRes, dreRes, segRes, trendsRes] = await Promise.all([
         window.CashflowService.getSummary(_state.startDate, _state.endDate),
         window.CashflowService.listEntries({
           startDate: _state.startDate,
@@ -60,6 +60,7 @@
         window.CashflowService.getIntelligence(year, month),
         window.CashflowService.getDre(year, month),
         window.CashflowService.getSegments(year, month),
+        window.CashflowService.getTrends(year, month),
       ])
 
       _state.summary      = (sumRes  && sumRes.ok)  ? sumRes.data  : {}
@@ -67,6 +68,7 @@
       _state.intelligence = (intelRes && intelRes.ok) ? intelRes.data : {}
       _state.dre          = (dreRes && dreRes.ok)    ? dreRes.data  : {}
       _state.segments     = (segRes && segRes.ok)    ? segRes.data  : {}
+      _state.trends       = (trendsRes && trendsRes.ok) ? trendsRes.data : {}
     } catch (e) {
       console.error('[CashflowUI] load error:', e)
       _state.summary = {}
@@ -74,6 +76,7 @@
       _state.intelligence = {}
       _state.dre = {}
       _state.segments = {}
+      _state.trends = {}
     }
 
     _state.loading = false
@@ -198,6 +201,7 @@
     var intel = _state.intelligence || {}
     var dre   = _state.dre || {}
     var seg   = _state.segments || {}
+    var trends = _state.trends || {}
 
     body.innerHTML = ''
       // Painel Inteligencia
@@ -205,6 +209,9 @@
 
       // DRE Liquido
       + _drePanel(dre)
+
+      // Graficos / Visualizacao
+      + _chartsPanel(trends)
 
       // Segmentacao Estrategica
       + _segmentsPanel(seg)
@@ -388,6 +395,224 @@
 
   function _dreOp(op) {
     return '<div style="text-align:center;font-size:18px;font-weight:700;color:#9ca3af">' + op + '</div>'
+  }
+
+  // ── Painel Graficos / Visualizacao ────────────────────────
+
+  var _chartInstances = {}
+
+  function _chartsPanel(trends) {
+    if (!trends || !trends.daily) return ''
+
+    var html = ''
+      + '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 22px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+          + '<span style="color:#3b82f6">' + _icon('bar-chart-2', 18) + '</span>'
+          + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#111827">Visualizacao</div>'
+          + '<span style="font-size:11px;color:#9ca3af;margin-left:auto">Mes atual + historico</span>'
+        + '</div>'
+
+        // Grafico 1: linha receita do mes (full width)
+        + '<div style="margin-bottom:18px">'
+          + '<div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Receita diaria do mes</div>'
+          + '<div style="height:200px;position:relative"><canvas id="cfChartDaily"></canvas></div>'
+        + '</div>'
+
+        // Linha 2: 2 graficos lado a lado
+        + '<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px">'
+          + '<div>'
+            + '<div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Ultimos 12 meses</div>'
+            + '<div style="height:200px;position:relative"><canvas id="cfChartMonthly"></canvas></div>'
+          + '</div>'
+          + '<div>'
+            + '<div style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Por metodo de pagamento</div>'
+            + '<div style="height:200px;position:relative"><canvas id="cfChartMethod"></canvas></div>'
+          + '</div>'
+        + '</div>'
+      + '</div>'
+
+    setTimeout(function() { _renderCharts(trends) }, 50)
+
+    return html
+  }
+
+  function _renderCharts(trends) {
+    if (typeof Chart === 'undefined') {
+      console.warn('[CashflowUI] Chart.js nao carregado')
+      return
+    }
+
+    // Destroi instancias antigas (re-render)
+    Object.keys(_chartInstances).forEach(function(k) {
+      try { _chartInstances[k].destroy() } catch (e) {}
+    })
+    _chartInstances = {}
+
+    var fmt = window.CashflowService.fmtCurrency
+
+    // Daily line
+    var dailyCanvas = document.getElementById('cfChartDaily')
+    if (dailyCanvas && trends.daily && trends.daily.length > 0) {
+      var labels = trends.daily.map(function(d) {
+        var dt = new Date(d.date + 'T00:00:00')
+        return dt.getDate() + '/' + (dt.getMonth() + 1)
+      })
+      var credits = trends.daily.map(function(d) { return d.credits })
+      var debits  = trends.daily.map(function(d) { return d.debits })
+      var balance = trends.daily.map(function(d) { return d.balance })
+
+      _chartInstances.daily = new Chart(dailyCanvas, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Entradas',
+              data: credits,
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16,185,129,.1)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 2,
+              pointHoverRadius: 5,
+            },
+            {
+              label: 'Saidas',
+              data: debits,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239,68,68,.05)',
+              fill: false,
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 2,
+              pointHoverRadius: 5,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { intersect: false, mode: 'index' },
+          plugins: {
+            legend: {
+              position: 'top',
+              align: 'end',
+              labels: { font: { size: 11 }, boxWidth: 12, padding: 12 },
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return ctx.dataset.label + ': ' + fmt(ctx.parsed.y) },
+              },
+            },
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: {
+              grid: { color: '#f3f4f6' },
+              ticks: {
+                font: { size: 10 },
+                callback: function(v) { return 'R$ ' + (v / 1000).toFixed(0) + 'k' },
+              },
+            },
+          },
+        },
+      })
+    }
+
+    // Monthly bar
+    var monthlyCanvas = document.getElementById('cfChartMonthly')
+    if (monthlyCanvas && trends.monthly && trends.monthly.length > 0) {
+      var monthLabels = trends.monthly.map(function(m) {
+        var dt = new Date(m.month + 'T00:00:00')
+        var months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+        return months[dt.getMonth()] + '/' + String(dt.getFullYear()).slice(-2)
+      })
+      var monthCredits = trends.monthly.map(function(m) { return m.credits })
+
+      _chartInstances.monthly = new Chart(monthlyCanvas, {
+        type: 'bar',
+        data: {
+          labels: monthLabels,
+          datasets: [{
+            label: 'Receita',
+            data: monthCredits,
+            backgroundColor: monthCredits.map(function(_, i) {
+              return i === monthCredits.length - 1 ? '#10b981' : 'rgba(16,185,129,.4)'
+            }),
+            borderRadius: 4,
+            barThickness: 18,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return fmt(ctx.parsed.y) },
+              },
+            },
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: {
+              grid: { color: '#f3f4f6' },
+              ticks: {
+                font: { size: 10 },
+                callback: function(v) { return 'R$ ' + (v / 1000).toFixed(0) + 'k' },
+              },
+            },
+          },
+        },
+      })
+    }
+
+    // Method pie
+    var methodCanvas = document.getElementById('cfChartMethod')
+    if (methodCanvas && trends.by_method && trends.by_method.length > 0) {
+      var labelMap = window.CashflowService.methodLabel
+      var pieLabels = trends.by_method.map(function(m) { return labelMap(m.method) })
+      var pieValues = trends.by_method.map(function(m) { return m.amount })
+      var palette = ['#10b981','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#ef4444','#84cc16','#6366f1','#f97316','#14b8a6','#a855f7']
+
+      _chartInstances.method = new Chart(methodCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: pieLabels,
+          datasets: [{
+            data: pieValues,
+            backgroundColor: palette.slice(0, pieLabels.length),
+            borderWidth: 2,
+            borderColor: '#fff',
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: {
+                font: { size: 10 },
+                boxWidth: 10,
+                padding: 8,
+              },
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  var total = ctx.dataset.data.reduce(function(s, v) { return s + v }, 0)
+                  var pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : 0
+                  return ctx.label + ': ' + fmt(ctx.parsed) + ' (' + pct + '%)'
+                },
+              },
+            },
+          },
+        },
+      })
+    }
   }
 
   // ── Painel Segmentacao Estrategica ────────────────────────

@@ -187,6 +187,17 @@
     } catch (e) { return _err(e.message || e) }
   }
 
+  async function getTrends(year, month) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_trends', {
+        p_year:  year  || null,
+        p_month: month || null,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
   async function rejectSuggestion(entryId) {
     try {
       const { data, error } = await _sb().rpc('cashflow_reject_suggestion', { p_entry_id: entryId })
@@ -213,5 +224,6 @@
     getSegments,
     getPatientsLtv,
     getVipSumidos,
+    getTrends,
   })
 })()

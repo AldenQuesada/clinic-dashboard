@@ -189,6 +189,12 @@
     return repo.getVipSumidos(minDays, maxDays, limit)
   }
 
+  async function getTrends(year, month) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: {}, error: 'CashflowRepository nao disponivel' }
+    return repo.getTrends(year, month)
+  }
+
   // ── Hook: cria entry a partir de appointment finalizado ──
 
   /**
@@ -329,6 +335,7 @@
     getSegments:          getSegments,
     getPatientsLtv:       getPatientsLtv,
     getVipSumidos:        getVipSumidos,
+    getTrends:            getTrends,
     createFromAppointment: createFromAppointment,
   })
 })()
