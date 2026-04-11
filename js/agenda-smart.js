@@ -1163,7 +1163,7 @@ function _buildFinModal(id, appt) {
         if (window._sbShared) { var r = await window._sbShared.from('clinic_procedimentos').select('nome').eq('ativo', true).order('nome'); procs = r.data || [] }
       } catch(e) {}
       var procOpts = '<option value="">Procedimento...</option>' + procs.map(function(p) { return '<option value="' + p.nome.replace(/"/g,'&quot;') + '">' + p.nome.replace(/</g,'&lt;') + '</option>' }).join('') + '<option value="__outro__">Outro</option>'
-      var retouchOpts = '<option value="30">1 mes</option><option value="90">3 meses</option><option value="120" selected>4 meses</option><option value="150">5 meses</option><option value="180">6 meses</option><option value="365">1 ano</option>'
+      var retouchOpts = '<option value="7">1 semana</option><option value="15">15 dias</option><option value="30">1 mes</option><option value="60">2 meses</option><option value="90">3 meses</option><option value="120" selected>4 meses</option><option value="150">5 meses</option><option value="180">6 meses</option><option value="365">1 ano</option>'
 
       var html = ''
       pendentes.forEach(function(c) {

@@ -29,12 +29,16 @@
 
   // ── Retouch intervals ────────────────────────────────────────
   var RETOUCH_INTERVALS = [
+    { value: 7,   label: '1 semana' },
+    { value: 15,  label: '15 dias' },
     { value: 30,  label: '1 mes' },
+    { value: 60,  label: '2 meses' },
     { value: 90,  label: '3 meses' },
     { value: 120, label: '4 meses' },
     { value: 150, label: '5 meses' },
     { value: 180, label: '6 meses' },
     { value: 365, label: '1 ano' },
+    { value: 0,   label: 'Personalizado...' },
   ]
 
   // ── Helpers ───────────────────────────────────────────────────
@@ -131,6 +135,7 @@
     // Form inline para quick treat (hidden por default)
     html += '<div id="cpQuickTreatForm" style="display:none;margin-top:8px;padding:10px;background:#fff;border:1.5px solid #7C3AED30;border-radius:8px">'
       + '<div style="font-size:10px;font-weight:700;color:#7C3AED;margin-bottom:6px">MARCAR COMO TRATADA</div>'
+      + '<div style="font-size:9px;color:#6B7280;margin-bottom:6px">Selecione o procedimento e o intervalo de retoque / pr\u00f3xima sess\u00e3o</div>'
       + '<select id="cpQtProc" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;margin-bottom:6px;box-sizing:border-box"><option value="">Carregando procedimentos...</option></select>'
       + '<div style="display:flex;gap:4px">'
       + '<select id="cpQtInterval" style="flex:1;padding:6px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px">'
@@ -183,6 +188,12 @@
     var proc = (document.getElementById('cpQtProc') || {}).value || ''
     if (proc === '__outro__') proc = prompt('Digite o procedimento:') || ''
     var interval = parseInt((document.getElementById('cpQtInterval') || {}).value || '120')
+    if (interval === 0) {
+      var custom = prompt('Quantos dias entre sess\u00f5es?')
+      if (!custom) return
+      interval = parseInt(custom)
+      if (isNaN(interval) || interval <= 0) { alert('Valor inv\u00e1lido'); return }
+    }
     if (!proc.trim()) { alert('Selecione o procedimento'); return }
 
     try {
