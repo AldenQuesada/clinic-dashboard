@@ -656,7 +656,13 @@ function _renderModalTab(tabId, lead) {
     case 'anamnese':   return _lmTabAnamnese(lead)
     case 'evolucao':   return _lmTabEvolucao(lead)
     case 'financeiro': return _lmTabFinanceiro(lead)
-    case 'timeline':   return _lmTabTimeline(lead)
+    case 'timeline':
+      var tlPromise = _lmTabTimeline(lead)
+      if (tlPromise && typeof tlPromise.then === 'function') {
+        tlPromise.then(function(html) { var el = document.getElementById('lmContent'); if (el) el.innerHTML = html })
+        return '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando linha do tempo...</div>'
+      }
+      return tlPromise
     case 'documentos': return _lmTabDocumentos(lead)
     case 'orcamentos': return _lmTabOrcamentos(lead)
     case 'interacoes': return _lmTabInteracoes(lead)
@@ -1202,20 +1208,33 @@ window._lmShowComandaDetail = _lmShowComandaDetail
 
 // ── Tab: Linha do Tempo ─────────────────────────────────────
 
-function _lmTabTimeline(lead) {
+async function _lmTabTimeline(lead) {
   var appts = []
   try { appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch (e) {}
 
   var patientName = (lead.name || lead.nome || '').toLowerCase().trim()
   var patientId = lead.id
 
-  // Filtrar agendamentos deste paciente
   var myAppts = appts.filter(function (a) {
     return (a.pacienteNome || a.patient_name || '').toLowerCase().trim() === patientName
       || a.pacienteId === patientId || a.patient_id === patientId
   })
 
-  // Construir eventos a partir dos agendamentos
+  // Icones SVG reutilizaveis
+  var IC = {
+    calendar: '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    check:    '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    x:        '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    edit:     '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+    dollar:   '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
+    clock:    '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    user:     '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+    pin:      '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    tag:      '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+    shield:   '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    file:     '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  }
+
   var events = []
   var now = new Date()
 
@@ -1226,85 +1245,96 @@ function _lmTabTimeline(lead) {
     var sala = ''
     try { var salas = window.getRooms ? getRooms() : []; sala = salas[a.salaIdx]?.nome || '' } catch (e) {}
     var hora = (a.horaInicio || a.start_time || '') + (a.horaFim || a.end_time ? ' - ' + (a.horaFim || a.end_time) : '')
+    var valor = a.valor || 0
+    var procs = a.procedimentosRealizados || []
+    var procsStr = procs.length ? procs.map(function(p){return (p.qtd||1)+'x ' + (p.nome||p)}).join(', ') : ''
 
-    // Evento de criacao
+    // Evento de criacao (expandido como referencia)
     var createdAt = a.created_at || a.createdAt || date
-    events.push({
-      type: 'criado',
-      date: createdAt,
-      label: 'Agendamento criado',
-      details: '<strong>' + _lmEsc(proc) + '</strong><br>' + _lmEsc(date) + ' &middot; ' + _lmEsc(hora) + '<br>' + _lmEsc(prof) + (sala ? ' &middot; ' + _lmEsc(sala) : ''),
-      color: '#3B82F6',
-      icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>',
-      apptId: a.id,
-    })
+    var detailLines = '<div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">'
+      + '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6B7280">' + IC.clock + ' <span style="color:#8B5CF6;font-weight:600">Agendado</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#374151">' + IC.calendar + ' ' + _lmEsc(date) + ' &middot; ' + _lmEsc(hora) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#374151">' + IC.user + ' ' + _lmEsc(prof) + '</div>'
+      + (sala ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#374151">' + IC.pin + ' ' + _lmEsc(sala) + '</div>' : '')
+      + (procsStr ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#374151">' + IC.tag + ' ' + _lmEsc(procsStr) + '</div>' : (proc !== 'Consulta' ? '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#374151">' + IC.tag + ' 1x ' + _lmEsc(proc) + '</div>' : ''))
+      + '</div>'
+
+    events.push({ type:'criado', date:createdAt, label:'Agendamento criado', details:detailLines, color:'#3B82F6', icon:IC.calendar, apptId:a.id, raw:true })
 
     // Historico de status
     var hist = a.historicoStatus || a.historico_status || []
     hist.forEach(function (h) {
       if (h.status === 'finalizado' || h.status === 'em_consulta') {
-        events.push({
-          type: 'concluido',
-          date: h.at || h.changed_at || '',
-          label: 'Agendamento concluido',
-          details: _lmEsc(proc),
-          color: '#10B981',
-          icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
-          apptId: a.id,
-        })
+        events.push({ type:'concluido', date:h.at||h.changed_at||'', label:'Agendamento concluido', details:'', color:'#10B981', icon:IC.check, apptId:a.id })
       } else if (h.status === 'cancelado') {
-        events.push({
-          type: 'cancelado',
-          date: h.at || h.changed_at || '',
-          label: 'Agendamento cancelado',
-          details: _lmEsc(proc) + (a.motivo_cancelamento ? '<br>Motivo: ' + _lmEsc(a.motivo_cancelamento) : ''),
-          color: '#EF4444',
-          icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-          apptId: a.id,
-        })
+        events.push({ type:'cancelado', date:h.at||h.changed_at||'', label:'Agendamento cancelado', details:a.motivo_cancelamento ? 'Motivo: ' + _lmEsc(a.motivo_cancelamento) : '', color:'#EF4444', icon:IC.x, apptId:a.id })
       }
     })
 
-    // Historico de alteracoes
+    // Historico de alteracoes (antes > depois com cor)
     var changes = a.historicoAlteracoes || a.historico_alteracoes || []
     changes.forEach(function (c) {
-      if (c.action_type === 'finalizacao') return // ja coberto acima
-      var changeDetails = ''
+      if (c.action_type === 'finalizacao') return
+      var changeLines = '<div style="display:flex;flex-direction:column;gap:3px;margin-top:4px">'
       if (c.old_value && c.new_value) {
-        var keys = Object.keys(c.new_value)
-        keys.forEach(function (k) {
+        Object.keys(c.new_value).forEach(function (k) {
           if (c.old_value[k] !== undefined && c.old_value[k] !== c.new_value[k]) {
-            changeDetails += _lmEsc(k) + ': ' + _lmEsc(String(c.old_value[k])) + ' &rarr; ' + _lmEsc(String(c.new_value[k])) + '<br>'
+            changeLines += '<div style="display:flex;align-items:center;gap:6px;font-size:11px">'
+              + IC.calendar + ' <span style="color:#9CA3AF;text-decoration:line-through">' + _lmEsc(String(c.old_value[k])) + '</span>'
+              + ' <span style="color:#F59E0B">&gt;</span> <span style="color:#10B981;font-weight:600">' + _lmEsc(String(c.new_value[k])) + '</span></div>'
           }
         })
       }
-      events.push({
-        type: 'alterado',
-        date: c.changed_at || '',
-        label: 'Agendamento alterado',
-        details: changeDetails || _lmEsc(c.reason || ''),
-        color: '#F59E0B',
-        icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
-        apptId: a.id,
-      })
+      changeLines += '</div>'
+      events.push({ type:'alterado', date:c.changed_at||'', label:'Agendamento alterado', details:changeLines, color:'#F59E0B', icon:IC.edit, apptId:a.id, raw:true })
     })
+
+    // Eventos financeiros
+    if (a.status === 'finalizado' && valor > 0) {
+      var sp = a.statusPagamento || 'pendente'
+      if (sp === 'pago') {
+        events.push({ type:'financeiro', date:a.finalizadoEm||a.data||'', label:'Pagamento recebido', details:'<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#16A34A;font-weight:700">' + IC.dollar + ' ' + formatCurrency(valor) + '</div>', color:'#16A34A', icon:IC.dollar, apptId:a.id, raw:true })
+      } else if (sp === 'parcial') {
+        events.push({ type:'financeiro', date:a.finalizadoEm||a.data||'', label:'Pagamento parcial', details:'<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#EA580C;font-weight:700">' + IC.dollar + ' ' + formatCurrency(a.valorPago||0) + ' de ' + formatCurrency(valor) + '</div>', color:'#EA580C', icon:IC.dollar, apptId:a.id, raw:true })
+      } else {
+        events.push({ type:'financeiro', date:a.finalizadoEm||a.data||'', label:'Valor em aberto', details:'<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#DC2626;font-weight:700">' + IC.dollar + ' ' + formatCurrency(valor) + '</div>', color:'#DC2626', icon:IC.dollar, apptId:a.id, raw:true })
+      }
+    }
 
     // Evento futuro
     if ((a.status === 'agendado' || a.status === 'confirmado') && date) {
-      var apptDate = new Date(date)
-      if (apptDate > now) {
-        events.push({
-          type: 'futuro',
-          date: date,
-          label: 'Agendamento futuro',
-          details: '<strong>' + _lmEsc(proc) + '</strong><br>' + _lmEsc(date) + ' &middot; ' + _lmEsc(hora) + '<br>' + _lmEsc(prof),
-          color: '#8B5CF6',
-          icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-          apptId: a.id,
-        })
+      if (new Date(date) > now) {
+        events.push({ type:'futuro', date:date, label:'Agendamento futuro', details:detailLines, color:'#8B5CF6', icon:IC.calendar, apptId:a.id, raw:true })
       }
     }
   })
+
+  // Eventos de consentimentos (TCLE)
+  if (window._sbShared) {
+    try {
+      var docsRes = await window._sbShared.from('legal_doc_requests')
+        .select('status,created_at,signed_at,professional_name')
+        .or('patient_name.ilike.%' + (lead.name||lead.nome||'').trim() + '%,patient_id.eq.' + patientId)
+        .neq('status', 'purged').order('created_at', { ascending: false }).limit(20)
+      ;(docsRes.data || []).forEach(function(d) {
+        if (d.status === 'signed') {
+          events.push({ type:'consent', date:d.signed_at||d.created_at, label:'Consentimento assinado', details:'<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#10B981">' + IC.shield + ' Assinado digitalmente &middot; ' + _lmEsc(d.professional_name||'') + '</div>', color:'#10B981', icon:IC.shield, raw:true })
+        } else if (d.status === 'pending' || d.status === 'viewed') {
+          events.push({ type:'consent', date:d.created_at, label:'Consentimento enviado', details:'<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#F59E0B">' + IC.shield + ' Pendente de assinatura</div>', color:'#F59E0B', icon:IC.shield, raw:true })
+        }
+      })
+    } catch (e) {}
+
+    // Eventos de anamnese
+    try {
+      var anamRes = await window._sbShared.from('anamnesis_responses')
+        .select('status,created_at,completed_at').eq('patient_id', patientId).eq('status', 'completed')
+        .order('created_at', { ascending: false }).limit(5)
+      ;(anamRes.data || []).forEach(function(r) {
+        events.push({ type:'anamnese', date:r.completed_at||r.created_at, label:'Ficha de anamnese preenchida', details:'<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#7C3AED">' + IC.file + ' Formulario digital completo</div>', color:'#7C3AED', icon:IC.file, raw:true })
+      })
+    } catch (e) {}
+  }
 
   // Ordenar: mais recente primeiro
   events.sort(function (a, b) { return (b.date || '').localeCompare(a.date || '') })
@@ -1323,25 +1353,26 @@ function _lmTabTimeline(lead) {
       + ' Mostrar eventos futuros</label>'
   }
 
-  html += '<div style="position:relative;padding-left:28px">'
-  // Linha vertical
-  html += '<div style="position:absolute;left:13px;top:0;bottom:0;width:2px;background:#E5E7EB"></div>'
+  html += '<div style="position:relative;padding-left:32px">'
+  html += '<div style="position:absolute;left:14px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,#E5E7EB,#F3F4F6)"></div>'
 
   events.forEach(function (ev) {
     var dateStr = ev.date ? new Date(ev.date).toLocaleString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
     var isFuture = ev.type === 'futuro'
 
-    html += '<div style="display:flex;gap:12px;margin-bottom:16px;position:relative"' + (isFuture ? ' data-tl-future' : '') + '>'
-      // Dot
-      + '<div style="position:absolute;left:-21px;width:12px;height:12px;border-radius:50%;background:' + ev.color + ';border:2px solid #fff;box-shadow:0 0 0 2px ' + ev.color + '30;flex-shrink:0;margin-top:3px"></div>'
+    html += '<div style="display:flex;gap:14px;margin-bottom:18px;position:relative"' + (isFuture ? ' data-tl-future' : '') + '>'
+      // Dot com icone
+      + '<div style="position:absolute;left:-25px;width:22px;height:22px;border-radius:50%;background:' + ev.color + '18;border:2px solid ' + ev.color + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;color:' + ev.color + '">'
+      + '<div style="width:10px;height:10px;display:flex;align-items:center;justify-content:center">' + ev.icon + '</div></div>'
       // Content
       + '<div style="flex:1;min-width:0">'
-      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
-      + '<span style="color:' + ev.color + '">' + ev.icon + '</span>'
-      + '<span style="font-size:12px;font-weight:600;color:#374151">' + ev.label + '</span>'
+      // Label + data na mesma linha (como referencia)
+      + '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">'
+      + '<span style="font-size:13px;font-weight:700;color:#111">' + ev.label + '</span>'
+      + '<span style="font-size:11px;color:#9CA3AF">' + dateStr + '</span>'
       + '</div>'
-      + '<div style="font-size:11px;color:#6B7280;margin-bottom:4px">' + dateStr + '</div>'
-      + (ev.details ? '<div style="font-size:12px;color:#374151;line-height:1.6;padding:8px 12px;background:#F9FAFB;border-radius:8px;border:1px solid #F3F4F6">' + ev.details + '</div>' : '')
+      // Details
+      + (ev.details ? '<div style="margin-top:4px;font-size:12px;color:#374151;line-height:1.6">' + (ev.raw ? ev.details : _lmEsc(ev.details)) + '</div>' : '')
       + '</div></div>'
   })
 
