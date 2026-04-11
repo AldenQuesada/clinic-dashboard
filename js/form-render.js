@@ -50,7 +50,9 @@
       body: JSON.stringify(body),
     })
     if (!res.ok) throw new Error(await res.text())
-    return res.json()
+    const txt = await res.text()
+    if (!txt) return null
+    try { return JSON.parse(txt) } catch (e) { return null }
   }
 
   async function _post(path, body) {
