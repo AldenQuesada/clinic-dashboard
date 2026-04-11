@@ -23,9 +23,23 @@
     progress:     0,
   }
 
-  // ── Hash SHA-256 do conteudo (camada 1 de dedupe) ────────
+  // ── Hash SHA-256 do conteudo normalizado (camada 1) ─────
+  // Normaliza tags volateis (DTSERVER, TRNUID, DTSTART, DTEND) pra que
+  // 2 exports do mesmo periodo gerem o mesmo hash, mesmo com horario
+  // de geracao diferente.
+  function _normalizeOfxContent(text) {
+    return String(text || '')
+      .replace(/<DTSERVER>[^<\n\r]*/gi, '<DTSERVER>')
+      .replace(/<TRNUID>[^<\n\r]*/gi, '<TRNUID>')
+      .replace(/<DTSTART>[^<\n\r]*/gi, '<DTSTART>')
+      .replace(/<DTEND>[^<\n\r]*/gi, '<DTEND>')
+      .replace(/<SEVERITY>[^<\n\r]*/gi, '<SEVERITY>')
+      .replace(/\r\n/g, '\n')
+      .trim()
+  }
   async function _sha256(text) {
-    var buf = new TextEncoder().encode(text)
+    var normalized = _normalizeOfxContent(text)
+    var buf = new TextEncoder().encode(normalized)
     var hashBuf = await crypto.subtle.digest('SHA-256', buf)
     var bytes = new Uint8Array(hashBuf)
     var hex = ''
