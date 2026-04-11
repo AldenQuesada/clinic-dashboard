@@ -725,13 +725,16 @@ async function _lmLoadFichas(lead) {
   if (!el || !window._sbShared) return
 
   // Buscar respostas de anamnese deste paciente
+  var leadId = lead.id || ''
+  console.log('[Fichas] Buscando para patient_id:', leadId)
   var res = await window._sbShared.from('anamnesis_responses')
     .select('id,patient_id,template_id,status,progress_percent,created_at,completed_at')
-    .eq('patient_id', lead.id || '')
+    .eq('patient_id', leadId)
     .eq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(20)
 
+  console.log('[Fichas] Resultado:', res.data?.length || 0, 'fichas', res.error || '')
   var fichas = res.data || []
 
   if (!fichas.length) {
