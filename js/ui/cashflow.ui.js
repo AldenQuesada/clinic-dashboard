@@ -93,6 +93,9 @@
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
           + _periodSelect()
+          + '<button id="cfBankBtn" title="Gerenciar bancos conectados (Pluggy)" style="display:flex;align-items:center;gap:6px;background:#fff;color:#8b5cf6;border:1.5px solid #ddd6fe;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
+            + _icon('link', 14) + ' Bancos'
+          + '</button>'
           + '<button id="cfReconcileBtn" title="Casar movimentos com agendamentos" style="display:flex;align-items:center;gap:6px;background:#fff;color:#6366f1;border:1.5px solid #c7d2fe;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
             + _icon('zap', 14) + ' Reconciliar'
           + '</button>'
@@ -118,6 +121,13 @@
       }
     })
     document.getElementById('cfReconcileBtn').addEventListener('click', _runReconcile)
+    document.getElementById('cfBankBtn').addEventListener('click', function() {
+      if (window.PluggyConnectUI && window.PluggyConnectUI.open) {
+        window.PluggyConnectUI.open()
+      } else {
+        alert('Modulo de conexao bancaria ainda nao carregado. Recarregue a pagina.')
+      }
+    })
     var sel = document.getElementById('cfPeriodSelect')
     if (sel) sel.addEventListener('change', function(e) { _onPeriodChange(e.target.value) })
   }
@@ -672,6 +682,7 @@
       'x':                 '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
       'inbox':             '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>',
       'zap':               '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      'link':              '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
       'check-circle':      '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     }
     return icons[name] || ''

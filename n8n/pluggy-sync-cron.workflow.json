@@ -1,0 +1,153 @@
+{
+  "name": "Pluggy — Sync Cron (hourly)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [ { "field": "hours", "hoursInterval": 1 } ]
+        }
+      },
+      "id": "cron",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pluggy.ai/auth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"clientId\": \"{{ $env.PLUGGY_CLIENT_ID }}\",\n  \"clientSecret\": \"{{ $env.PLUGGY_CLIENT_SECRET }}\"\n}"
+      },
+      "id": "auth",
+      "name": "Pluggy Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/pluggy_list_connections",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={}"
+      },
+      "id": "list-conns",
+      "name": "List Connections",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Itera sobre cada conexao e gera um item por conexao\nconst apiKey = $('Pluggy Auth').item.json.apiKey\nconst conns  = $('List Connections').item.json\nconst items  = []\nfor (const c of (Array.isArray(conns) ? conns : [])) {\n  if (c.status !== 'active') continue\n  items.push({ json: { apiKey, itemId: c.item_id, connectionId: c.id } })\n}\nreturn items"
+      },
+      "id": "split",
+      "name": "Split by Connection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.pluggy.ai/transactions?itemId={{ $json.itemId }}&from={{ $now.minus({ days: 7 }).toFormat('yyyy-MM-dd') }}&pageSize=500",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-KEY", "value": "={{ $json.apiKey }}" }
+          ]
+        }
+      },
+      "id": "fetch-txs",
+      "name": "Fetch Transactions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Converte cada transacao Pluggy em payload para cashflow_create_entry\nconst results = $input.first().json.results || []\nconst mapped = results.map(tx => {\n  const amount = Math.abs(Number(tx.amount || 0))\n  const direction = Number(tx.amount) >= 0 ? 'credit' : 'debit'\n  const memo = ((tx.description || '') + ' ' + (tx.descriptionRaw || '')).toUpperCase()\n\n  let method = 'other'\n  if (/PIX/.test(memo)) method = 'pix'\n  else if (/TED|DOC|TRANSF/.test(memo)) method = 'transfer'\n  else if (/CIELO|REDE|GETNET|STONE|PAGSEGURO/.test(memo)) method = /DEB/.test(memo) ? 'card_debit' : 'card_credit'\n  else if (/BOLETO/.test(memo)) method = 'boleto'\n  else if (/TARIFA|IOF|IMPOSTO/.test(memo)) method = 'fee'\n  else if (/SAQUE|DEPOSITO/.test(memo)) method = 'cash'\n  else if (/ESTORNO|REVERSAO/.test(memo)) method = 'chargeback'\n\n  return {\n    json: {\n      p_data: {\n        transaction_date: (tx.date || '').substring(0, 10),\n        transaction_datetime: tx.date,\n        direction,\n        amount,\n        payment_method: method,\n        description: tx.description || tx.descriptionRaw || null,\n        source: 'pluggy',\n        external_id: tx.id,\n        raw_data: { pluggy: { id: tx.id, category: tx.category, type: tx.type } }\n      }\n    }\n  }\n})\nreturn mapped"
+      },
+      "id": "map",
+      "name": "Map to Cashflow",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/cashflow_create_entry",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "insert",
+      "name": "Insert Cashflow Entry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1520, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/cashflow_auto_reconcile",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "apikey", "value": "={{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Authorization", "value": "=Bearer {{ $env.SUPABASE_SERVICE_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={}"
+      },
+      "id": "reconcile",
+      "name": "Auto Reconcile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1740, 300]
+    }
+  ],
+  "connections": {
+    "Cron Trigger":         { "main": [[{ "node": "Pluggy Auth", "type": "main", "index": 0 }]] },
+    "Pluggy Auth":          { "main": [[{ "node": "List Connections", "type": "main", "index": 0 }]] },
+    "List Connections":     { "main": [[{ "node": "Split by Connection", "type": "main", "index": 0 }]] },
+    "Split by Connection":  { "main": [[{ "node": "Fetch Transactions", "type": "main", "index": 0 }]] },
+    "Fetch Transactions":   { "main": [[{ "node": "Map to Cashflow", "type": "main", "index": 0 }]] },
+    "Map to Cashflow":      { "main": [[{ "node": "Insert Cashflow Entry", "type": "main", "index": 0 }]] },
+    "Insert Cashflow Entry":{ "main": [[{ "node": "Auto Reconcile", "type": "main", "index": 0 }]] }
+  },
+  "settings": {},
+  "staticData": null
+}

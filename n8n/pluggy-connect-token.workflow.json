@@ -1,0 +1,92 @@
+{
+  "name": "Pluggy — Connect Token Proxy",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pluggy-connect-token",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-in",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pluggy.ai/auth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"clientId\": \"{{ $env.PLUGGY_CLIENT_ID }}\",\n  \"clientSecret\": \"{{ $env.PLUGGY_CLIENT_SECRET }}\"\n}",
+        "options": {}
+      },
+      "id": "auth-call",
+      "name": "Pluggy Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pluggy.ai/connect_token",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-KEY", "value": "={{ $json.apiKey }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"clientUserId\": \"{{ $('Webhook').item.json.body.clientUserId || 'default' }}\"\n}",
+        "options": {}
+      },
+      "id": "ct-call",
+      "name": "Create Connect Token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"accessToken\": $json.accessToken } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
+              { "name": "Access-Control-Allow-Headers", "value": "Content-Type" }
+            ]
+          }
+        }
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [860, 300]
+    }
+  ],
+  "connections": {
+    "Webhook":                { "main": [[{ "node": "Pluggy Auth", "type": "main", "index": 0 }]] },
+    "Pluggy Auth":            { "main": [[{ "node": "Create Connect Token", "type": "main", "index": 0 }]] },
+    "Create Connect Token":   { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": {},
+  "staticData": null
+}
