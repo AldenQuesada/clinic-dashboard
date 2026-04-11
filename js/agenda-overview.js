@@ -1173,12 +1173,58 @@ async function loadAgendaOverview() {
     _aoRenderWeekChart(appts, rangeObj)
     _aoRenderBirthdays(bdArr)
     _aoRenderNoReturn(patientsArr)
+    _aoRenderCashflowToday()
 
   } catch (err) {
     const errHtml = `<div class="ao-timeline-empty"><p style="color:#EF4444">${err.message || 'Erro ao carregar'}</p></div>`
     ;['aoTimeline','aoProcRanking','aoNoReturn','aoBirthdays'].forEach(id => {
       const el = document.getElementById(id); if (el) el.innerHTML = errHtml
     })
+  }
+}
+
+// ── Saldo do Dia (integracao com Cashflow) ─────────────
+async function _aoRenderCashflowToday() {
+  if (!window.CashflowService || !window.CashflowService.getSummary) return
+  var host = document.getElementById('aoCashflowToday')
+  if (!host) {
+    // Cria container injetado no topo da pagina overview, antes do KPI grid
+    var page = document.getElementById('page-agenda-overview')
+    if (!page) return
+    var kpiGrid = page.querySelector('.ao-kpi-grid')
+    if (!kpiGrid) return
+    host = document.createElement('div')
+    host.id = 'aoCashflowToday'
+    host.style.cssText = 'background:#fff;border:1px solid #e5e7eb;border-top:3px solid #10b981;border-radius:14px;padding:14px 18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;align-items:center;gap:14px;flex-wrap:wrap'
+    kpiGrid.parentNode.insertBefore(host, kpiGrid)
+  }
+
+  host.innerHTML = '<div style="font-size:11px;color:#9ca3af;font-weight:600">Carregando saldo do dia...</div>'
+
+  try {
+    var todayISO = new Date().toISOString().slice(0, 10)
+    var res = await window.CashflowService.getSummary(todayISO, todayISO)
+    if (!res || !res.ok) { host.style.display = 'none'; return }
+    var s = res.data || {}
+    var fmt = window.CashflowService.fmtCurrency
+    var bal = (s.credits || 0) - (s.debits || 0)
+    var balColor = bal >= 0 ? '#10b981' : '#ef4444'
+
+    host.innerHTML = ''
+      + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'
+        + '<div style="font-size:11px;font-weight:700;color:#111827;text-transform:uppercase;letter-spacing:.4px">Caixa de hoje</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">'
+        + '<div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;font-weight:600">Entradas</div><div style="font-size:16px;color:#10b981;font-weight:700">' + fmt(s.credits || 0) + '</div></div>'
+        + '<div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;font-weight:600">Saidas</div><div style="font-size:16px;color:#ef4444;font-weight:700">' + fmt(s.debits || 0) + '</div></div>'
+        + '<div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;font-weight:600">Saldo</div><div style="font-size:18px;color:' + balColor + ';font-weight:700">' + fmt(bal) + '</div></div>'
+        + '<div><div style="font-size:9px;color:#9ca3af;text-transform:uppercase;font-weight:600">Movimentos</div><div style="font-size:16px;color:#374151;font-weight:700">' + (s.count || 0) + '</div></div>'
+      + '</div>'
+      + '<button onclick="navigateTo(\'fin-cashflow\')" style="margin-left:auto;background:#fff;color:#10b981;border:1.5px solid #bbf7d0;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Ver detalhes →</button>'
+  } catch (e) {
+    console.warn('[AgendaOverview] cashflow today error:', e)
+    host.style.display = 'none'
   }
 }
 

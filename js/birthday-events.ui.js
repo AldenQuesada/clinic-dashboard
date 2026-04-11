@@ -25,6 +25,18 @@
     _attachFormattingToolbar()
     _attachLivePreview()
     _attachShortLinks()
+    _attachVipFilter()
+  }
+
+  function _attachVipFilter() {
+    var cb = document.getElementById('bdayVipOnly')
+    if (cb) {
+      cb.addEventListener('change', function() {
+        if (window.BirthdayUI && window.BirthdayUI.setVipFilter) {
+          window.BirthdayUI.setVipFilter(cb.checked)
+        }
+      })
+    }
   }
 
   // ── Tab navigation ─────────────────────────────────────────

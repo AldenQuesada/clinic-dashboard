@@ -24,6 +24,8 @@
   var _segFilter = null
   var _loading = false
   var _selectedCampaign = null
+  var _vipOnly = false
+  var _ltvByPatient = {}  // patient_id -> rfm_class + monetary
 
   function getState() {
     return { tab: _tab, segFilter: _segFilter, loading: _loading, selectedCampaign: _selectedCampaign }
@@ -33,6 +35,38 @@
     if (key === 'segFilter') _segFilter = val
     if (key === 'loading') _loading = val
     if (key === 'selectedCampaign') _selectedCampaign = val
+  }
+
+  // ── Carrega LTV/RFM dos pacientes (cache local) ────────────
+  async function _loadLtv() {
+    if (!window.CashflowService || !window.CashflowService.getPatientsLtv) return
+    try {
+      var res = await window.CashflowService.getPatientsLtv(500, false)
+      if (!res || !res.ok) return
+      var data = res.data || {}
+      var pats = data.patients || []
+      _ltvByPatient = {}
+      pats.forEach(function(p) {
+        if (p.patient_id) {
+          _ltvByPatient[p.patient_id] = {
+            rfm_class: p.rfm_class,
+            monetary:  p.monetary,
+            recency_days: p.recency_days,
+          }
+        }
+      })
+      render()  // re-render com badges
+    } catch (e) { console.warn('[BirthdayUI] _loadLtv:', e) }
+  }
+
+  function setVipFilter(enabled) {
+    _vipOnly = !!enabled
+    render()
+  }
+
+  function _isVip(patientId) {
+    var l = _ltvByPatient[patientId]
+    return l && (l.rfm_class === 'vip' || l.rfm_class === 'em_risco')
   }
 
   // ── Main render ────────────────────────────────────────────
@@ -106,14 +140,32 @@
     html += _segCard(s.segment_orcamento || 0, 'Orcamento', '#2563EB')
     html += '</div>'
 
+    // Filtro VIP (LTV)
+    var vipCount = upcoming.filter(function(u) { return _isVip(u.lead_id || u.patient_id || u.id) }).length
+    html += '<div style="display:flex;align-items:center;gap:10px;margin:14px 0;padding:10px 14px;background:' + (_vipOnly ? '#fffbeb' : '#f9fafb') + ';border:1px solid ' + (_vipOnly ? '#fde68a' : '#e5e7eb') + ';border-radius:10px">'
+    html += '<input type="checkbox" id="bdayVipOnly" ' + (_vipOnly ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;accent-color:#f59e0b">'
+    html += '<label for="bdayVipOnly" style="cursor:pointer;font-size:12px;font-weight:600;color:#374151">Apenas VIPs / Em Risco (LTV)</label>'
+    html += '<span style="font-size:11px;color:#9ca3af">' + vipCount + ' de ' + upcoming.length + ' aniversariantes sao VIP</span>'
+    html += '<span style="margin-left:auto;font-size:10px;color:#9ca3af">Foco em quem ja gerou receita historicamente</span>'
+    html += '</div>'
+
+    // Filtra upcoming se VIP-only
+    var filtered = _vipOnly
+      ? upcoming.filter(function(u) { return _isVip(u.lead_id || u.patient_id || u.id) })
+      : upcoming
+
     // Upcoming list
     html += '<div class="bday-section-title">' + _ico('calendar', 16) + ' Proximos aniversarios</div>'
     html += '<div class="bday-upcoming-list">'
 
-    if (!upcoming.length) {
-      html += '<div class="bday-empty">Nenhum aniversario nos proximos 60 dias</div>'
+    if (!filtered.length) {
+      if (_vipOnly && upcoming.length > 0) {
+        html += '<div class="bday-empty">Nenhum aniversariante VIP no periodo. Desmarque o filtro pra ver todos.</div>'
+      } else {
+        html += '<div class="bday-empty">Nenhum aniversario nos proximos 60 dias</div>'
+      }
     } else {
-      upcoming.forEach(function (u) {
+      filtered.forEach(function (u) {
         html += _renderUpcomingCard(u)
       })
     }
@@ -407,7 +459,12 @@
     unmount: unmount,
     getState: getState,
     setState: setState,
+    setVipFilter: setVipFilter,
+    loadLtv: _loadLtv,
     esc: _esc,
     ico: _ico,
   })
+
+  // Carrega LTV em background apos um pequeno delay (nao bloqueia init)
+  setTimeout(function() { _loadLtv() }, 1500)
 })()

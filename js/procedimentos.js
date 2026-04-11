@@ -545,11 +545,52 @@ function _groupByCat(items) {
   return ordered
 }
 
+// ── Margens reais (do Cashflow do mes) ────────────────────────
+var _procMargensReais = {}  // keyed por procedure_name LOWER
+
+async function _loadProcMargens() {
+  if (!window.CashflowService || !window.CashflowService.getSegments) return
+  try {
+    var now = new Date()
+    var res = await window.CashflowService.getSegments(now.getFullYear(), now.getMonth() + 1)
+    if (!res || !res.ok) return
+    var data = res.data || {}
+    var byProc = data.by_procedure || []
+    _procMargensReais = {}
+    byProc.forEach(function(p) {
+      if (p.name && p.name !== '(sem procedimento)') {
+        _procMargensReais[p.name.toLowerCase().trim()] = {
+          bruto:      p.bruto,
+          liquido:    p.liquido,
+          margem_pct: p.margem_pct,
+          qtd:        p.qtd,
+        }
+      }
+    })
+    // Re-render se dados chegaram apos render inicial
+    if (typeof _procRefreshContent === 'function') _procRefreshContent()
+  } catch (e) { console.warn('[procedimentos] _loadProcMargens:', e) }
+}
+
+function _procMargemBadge(procName) {
+  if (!procName) return '<span style="color:#9CA3AF;font-size:11px">—</span>'
+  var key = String(procName).toLowerCase().trim()
+  var m = _procMargensReais[key]
+  if (!m) return '<span style="color:#9CA3AF;font-size:11px">sem dado</span>'
+  var color = m.margem_pct >= 30 ? '#10B981' : m.margem_pct >= 15 ? '#F59E0B' : '#EF4444'
+  return ''
+    + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">'
+      + '<span style="background:' + color + '22;color:' + color + ';font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px">' + m.margem_pct + '%</span>'
+      + '<span style="font-size:10px;color:#9CA3AF">' + m.qtd + ' venda(s)</span>'
+    + '</div>'
+}
+
 // ── Render Principal ──────────────────────────────────────────
 async function renderProcedimentos() {
   const page = document.getElementById('page-procedimentos')
   if (!page) return
   await _loadProcedimentos()
+  _loadProcMargens().catch(function() {})  // fire-and-forget — re-render quando voltar
   _ensureSeeds()
   _ensureOverlay()
 
@@ -728,6 +769,7 @@ function _procList(items) {
               <th>Duração</th>
               <th>Sessões</th>
               <th>Preço</th>
+              <th style="text-align:right">Margem (Mês)</th>
               <th></th>
             </tr>
           </thead>
@@ -744,6 +786,7 @@ function _procList(items) {
                   ${p.preco > 0 ? `<span style="font-weight:700;color:#10B981">R$ ${_fmtMoney(p.preco)}</span>` : '<span style="color:#9CA3AF">A definir</span>'}
                   ${p.preco_promo > 0 ? `<div style="font-size:11px;color:#F59E0B">Promo: R$ ${_fmtMoney(p.preco_promo)}</div>` : ''}
                 </td>
+                <td style="text-align:right">${_procMargemBadge(p.nome)}</td>
                 <td onclick="event.stopPropagation()">
                   <div style="display:flex;align-items:center;gap:4px;justify-content:flex-end">
                     <button class="inj-card-btn" onclick="procOpenForm('${p.id}')" title="Editar"><i data-feather="edit-2" style="width:12px;height:12px"></i></button>
