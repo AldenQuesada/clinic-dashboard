@@ -236,7 +236,7 @@
 
   // ── Modal: Cadastrar numero ────────────────────────────────
 
-  function _openRegisterModal() {
+  async function _openRegisterModal() {
     var existing = document.getElementById('miraRegBackdrop')
     if (existing) existing.remove()
 
@@ -256,9 +256,11 @@
               + '<input type="text" id="miraRegPhone" placeholder="554498787673" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px">'
             + '</div>'
             + '<div>'
-              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Profissional ID (uuid de professional_profiles)</label>'
-              + '<input type="text" id="miraRegProfId" placeholder="uuid-do-profissional" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px">'
-              + '<div style="font-size:11px;color:#9ca3af;margin-top:4px">Pegue em Configuracoes > Funcionarios > [Nome] > URL ou painel admin</div>'
+              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Profissional</label>'
+              + '<select id="miraRegProfId" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff">'
+                + '<option value="">Carregando...</option>'
+              + '</select>'
+              + '<div style="font-size:11px;color:#9ca3af;margin-top:4px">Lista atualizada de <strong>professional_profiles</strong> ativos</div>'
             + '</div>'
             + '<div>'
               + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Label (opcional)</label>'
@@ -282,6 +284,28 @@
 
     document.body.insertAdjacentHTML('beforeend', html)
     document.getElementById('miraRegSave').addEventListener('click', _handleRegister)
+    await _loadProfessionalsIntoSelect()
+  }
+
+  async function _loadProfessionalsIntoSelect() {
+    var sel = document.getElementById('miraRegProfId')
+    if (!sel || !window.MiraService || !window.MiraService.listProfessionals) return
+    try {
+      var res = await window.MiraService.listProfessionals()
+      var profs = (res && res.ok && Array.isArray(res.data)) ? res.data : []
+      if (profs.length === 0) {
+        sel.innerHTML = '<option value="">Nenhum profissional ativo</option>'
+        return
+      }
+      sel.innerHTML = '<option value="">— escolha —</option>'
+        + profs.map(function(p) {
+          var label = (p.display_name || 'Sem nome') + (p.specialty ? ' · ' + p.specialty : '')
+          return '<option value="' + p.id + '">' + _escHtml(label) + '</option>'
+        }).join('')
+    } catch (e) {
+      console.warn('[MiraConsole] _loadProfessionalsIntoSelect:', e)
+      sel.innerHTML = '<option value="">Erro ao carregar</option>'
+    }
   }
 
   async function _handleRegister() {

@@ -126,6 +126,18 @@
     } catch (e) { return _err(e.message || e) }
   }
 
+  async function listProfessionals() {
+    try {
+      const { data, error } = await _sb()
+        .from('professional_profiles')
+        .select('id,display_name,specialty,is_active')
+        .eq('is_active', true)
+        .order('display_name', { ascending: true })
+      if (error) return _err(error.message || error)
+      return _ok(data || [])
+    } catch (e) { return _err(e.message || e) }
+  }
+
   async function financeCommission(phone, startDate, endDate) {
     try {
       const { data, error } = await _sb().rpc('wa_pro_finance_commission', {
@@ -142,6 +154,7 @@
     logQuery:         logQuery,
     registerNumber:   registerNumber,
     listNumbers:      listNumbers,
+    listProfessionals: listProfessionals,
     patientSearch:    patientSearch,
     patientBalance:   patientBalance,
     agenda:           agenda,

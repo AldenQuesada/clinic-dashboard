@@ -439,6 +439,7 @@
     formatGreeting: formatGreeting,
     formatUnknown: formatUnknown,
     listNumbers:   function() { return _repo() ? _repo().listNumbers() : Promise.resolve({ ok: false, data: [] }) },
+    listProfessionals: function() { return _repo() ? _repo().listProfessionals() : Promise.resolve({ ok: false, data: [] }) },
     registerNumber: function(p) { return _repo() ? _repo().registerNumber(p) : Promise.resolve({ ok: false }) },
   })
 })()
