@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposta — Mira: Assistente WhatsApp Interno | ClinicAI</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Arial, sans-serif;
+    background: #f9fafb;
+    color: #111827;
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* Header */
+  .header {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-top: 4px solid #c9a96e;
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+  }
+  .header .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #c9a96e, #a8895a);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+  }
+  .header h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .header h1 span { color: #c9a96e; }
+  .header .subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    margin-bottom: 18px;
+  }
+  .header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 12px;
+    color: #9ca3af;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 14px;
+  }
+  .header .meta strong { color: #374151; }
+
+  /* TOC */
+  .toc {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+  }
+  .toc h3 {
+    font-size: 11px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 12px;
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: toc;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .toc li {
+    counter-increment: toc;
+    font-size: 13px;
+  }
+  .toc li::before {
+    content: counter(toc) ". ";
+    color: #c9a96e;
+    font-weight: 700;
+  }
+  .toc a {
+    color: #374151;
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .toc a:hover { color: #c9a96e; }
+
+  /* Section */
+  section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 22px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+  }
+  section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #c9a96e;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  section h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #374151;
+    margin-top: 22px;
+    margin-bottom: 10px;
+  }
+  section p {
+    color: #4b5563;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  section .lead {
+    font-size: 15px;
+    color: #6b7280;
+    margin-bottom: 22px;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 18px;
+  }
+
+  /* World boxes */
+  .worlds {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 18px 0;
+  }
+  .world {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .world.external { border-top: 3px solid #3b82f6; }
+  .world.internal { border-top: 3px solid #10b981; }
+  .world h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .world.external h4 { color: #1e40af; }
+  .world.internal h4 { color: #065f46; }
+  .world .row {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #4b5563;
+  }
+  .world .row strong { color: #111827; min-width: 80px; }
+
+  /* Code/diagram */
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 14px 0;
+    font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+  }
+  pre.diagram {
+    background: #f9fafb;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 14px 0;
+  }
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #f9fafb;
+    color: #6b7280;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    border-bottom: 2px solid #e5e7eb;
+  }
+  td {
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+    vertical-align: top;
+  }
+  td .pri-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .pri-critica { background: #fee2e2; color: #991b1b; }
+  .pri-alta    { background: #d1fae5; color: #065f46; }
+  .pri-media   { background: #fef3c7; color: #92400e; }
+  .pri-baixa   { background: #e0e7ff; color: #3730a3; }
+
+  /* Tags / pills */
+  .pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+  }
+  .pill {
+    background: #f3f4f6;
+    color: #374151;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pill.gold { background: #fef3c7; color: #92400e; }
+  .pill.green { background: #d1fae5; color: #065f46; }
+  .pill.blue { background: #dbeafe; color: #1e40af; }
+
+  /* Highlight box */
+  .highlight {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid #fde68a;
+    border-left: 4px solid #c9a96e;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: #78350f;
+  }
+  .highlight strong { color: #451a03; }
+
+  .danger-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid #ef4444;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: #991b1b;
+  }
+
+  /* Phone mockup */
+  .phone {
+    background: #efeae2;
+    border-radius: 16px;
+    padding: 16px;
+    max-width: 400px;
+    margin: 18px auto;
+    font-family: -apple-system, sans-serif;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  }
+  .phone-header {
+    background: #075e54;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 12px 12px 0 0;
+    margin: -16px -16px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .phone-header .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #c9a96e;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800;
+  }
+  .msg {
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    max-width: 85%;
+    white-space: pre-line;
+  }
+  .msg.user {
+    background: #dcf8c6;
+    margin-left: auto;
+    border-bottom-right-radius: 2px;
+  }
+  .msg.bot {
+    background: #fff;
+    margin-right: auto;
+    border-bottom-left-radius: 2px;
+    color: #111;
+  }
+
+  /* Decisions / questions */
+  .decision {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
+  }
+  .decision h4 {
+    font-size: 14px;
+    color: #065f46;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .decision .options {
+    list-style: none;
+    margin-top: 10px;
+  }
+  .decision .options li {
+    padding: 6px 0 6px 24px;
+    position: relative;
+    font-size: 13px;
+    color: #4b5563;
+  }
+  .decision .options li::before {
+    content: "○";
+    position: absolute;
+    left: 4px;
+    color: #10b981;
+    font-weight: 700;
+  }
+  .decision .options li.recommended::before {
+    content: "★";
+    color: #c9a96e;
+  }
+  .decision .options li.recommended { color: #065f46; font-weight: 600; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 30px 20px;
+    color: #9ca3af;
+    font-size: 12px;
+    border-top: 1px solid #e5e7eb;
+    margin-top: 30px;
+  }
+
+  /* Anchor offset */
+  section[id] { scroll-margin-top: 20px; }
+
+  @media (max-width: 700px) {
+    .wrap { padding: 20px 16px 60px; }
+    .worlds { grid-template-columns: 1fr; }
+    .toc ol { grid-template-columns: 1fr; }
+    section { padding: 20px 22px; }
+    .header { padding: 24px 22px; }
+    .header h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ───── HEADER ───── -->
+  <div class="header">
+    <span class="badge">Proposta de Arquitetura</span>
+    <h1>Mira <span>—</span> Assistente WhatsApp Interno</h1>
+    <p class="subtitle">Os profissionais conversam com o sistema da clinica pelo WhatsApp deles.<br>Pacientes, agenda, financeiro estrategico — tudo na ponta dos dedos.</p>
+    <div class="meta">
+      <div><strong>Cliente:</strong> Clinica Mirian de Paula</div>
+      <div><strong>Modulo:</strong> ClinicAI Dashboard</div>
+      <div><strong>Versao:</strong> 1.0</div>
+      <div><strong>Data:</strong> 11 de Abril de 2026</div>
+    </div>
+  </div>
+
+  <!-- ───── TOC ───── -->
+  <nav class="toc">
+    <h3>Conteudo</h3>
+    <ol>
+      <li><a href="#visao">Visao geral</a></li>
+      <li><a href="#mundos">Os 2 mundos separados</a></li>
+      <li><a href="#camadas">Arquitetura em camadas</a></li>
+      <li><a href="#seguranca">Seguranca</a></li>
+      <li><a href="#fases">Fases priorizadas</a></li>
+      <li><a href="#plano">Plano sugerido (Bloco A + B)</a></li>
+      <li><a href="#exemplo">Mira em acao (exemplo real)</a></li>
+      <li><a href="#decisoes">Decisoes pendentes</a></li>
+    </ol>
+  </nav>
+
+  <!-- ───── 1. Visao geral ───── -->
+  <section id="visao">
+    <h2><span class="num">1</span> Visao geral</h2>
+    <p class="lead">Hoje a clinica tem uma instancia WhatsApp ("Mih") que e a Lara — atende pacientes externos. Esta proposta cria uma <strong>segunda camada paralela</strong>: cada profissional conecta o proprio numero (ou um dedicado) e fala com um <strong>assistente interno</strong> que consulta dados do sistema e responde diretamente no WhatsApp.</p>
+
+    <h3>O que muda na pratica</h3>
+    <p>A Dra Mirian, ao inves de abrir o sistema, manda uma mensagem no WhatsApp pessoal:</p>
+    <div class="pills">
+      <span class="pill blue">"tenho horario amanha?"</span>
+      <span class="pill blue">"quanto a Maria me deve?"</span>
+      <span class="pill blue">"faturei essa semana?"</span>
+      <span class="pill blue">"qual minha comissao do mes?"</span>
+    </div>
+    <p>E recebe a resposta em segundos, formatada, direta. Sem precisar abrir laptop, sem login, sem cliques.</p>
+  </section>
+
+  <!-- ───── 2. Mundos ───── -->
+  <section id="mundos">
+    <h2><span class="num">2</span> Os 2 mundos separados</h2>
+    <p class="lead">A separacao e <strong>fisica + logica + de seguranca</strong>. Numero diferente, instancia diferente, workflow diferente, bot diferente, RLS diferente.</p>
+
+    <div class="worlds">
+      <div class="world external">
+        <h4>🌎 Mundo Externo</h4>
+        <div class="row"><strong>Numero(s):</strong> Oficial(is) da clinica</div>
+        <div class="row"><strong>Bot:</strong> Lara (vende, atende, agenda)</div>
+        <div class="row"><strong>Quem fala:</strong> PACIENTE</div>
+        <div class="row"><strong>Acesso:</strong> Apenas dados do paciente em questao</div>
+        <div class="row"><strong>Status:</strong> Ja existe (instancia "Mih")</div>
+      </div>
+      <div class="world internal">
+        <h4>🔒 Mundo Interno</h4>
+        <div class="row"><strong>Numero(s):</strong> Particular(es) dos profissionais</div>
+        <div class="row"><strong>Bot:</strong> Mira (consultas, lembretes, comandos)</div>
+        <div class="row"><strong>Quem fala:</strong> PROFISSIONAL</div>
+        <div class="row"><strong>Acesso:</strong> Total (filtrado por permissao)</div>
+        <div class="row"><strong>Status:</strong> A criar (esta proposta)</div>
+      </div>
+    </div>
+
+    <div class="highlight">
+      <strong>Cross-talk impossivel:</strong> roteamento checa <code>wa_number_id</code> antes de chamar qualquer bot. Mira nunca responde a paciente. Lara nunca responde a profissional. Garantia logica + fisica.
+    </div>
+  </section>
+
+  <!-- ───── 3. Camadas ───── -->
+  <section id="camadas">
+    <h2><span class="num">3</span> Arquitetura em camadas</h2>
+    <p class="lead">7 camadas independentes que fluem da mensagem ao retorno formatado.</p>
+
+    <pre class="diagram">┌─────────────────────────────────────────────┐
+│  WhatsApp Numbers (multi-instance)          │
+│  ┌──────────────┐  ┌────────────────────┐  │
+│  │ Clinica      │  │ Profissionais      │  │
+│  │ "Mih"        │  │ Mirian, Paloma...  │  │
+│  │ → Lara       │  │ → Mira (interna)   │  │
+│  └──────────────┘  └────────────────────┘  │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│  n8n Router                                  │
+│  Identifica wa_number → tipo → roteia        │
+└─────────────────────────────────────────────┘
+        ↓                       ↓
+┌──────────────┐     ┌────────────────────┐
+│   LARA       │     │       MIRA         │
+│ (existente)  │     │     (nova)         │
+│  Paciente    │     │   Profissional     │
+└──────────────┘     └────────────────────┘
+                              ↓
+                     ┌────────────────────┐
+                     │  Intent Parser     │
+                     │  (NLU via Claude)  │
+                     │  patient/agenda/   │
+                     │  financial/help    │
+                     └────────────────────┘
+                              ↓
+                     ┌────────────────────┐
+                     │  RPCs read-only    │
+                     │  wa_pro_*          │
+                     │  (RLS por phone)   │
+                     └────────────────────┘
+                              ↓
+                     ┌────────────────────┐
+                     │  Formatador        │
+                     │  → texto WhatsApp  │
+                     └────────────────────┘</pre>
+
+    <h3>Camada 1 — Numeros (extensao da tabela existente)</h3>
+    <pre>ALTER TABLE wa_numbers
+  ADD COLUMN number_type text DEFAULT 'clinic_official'
+    CHECK (number_type IN ('clinic_official','professional_private')),
+  ADD COLUMN professional_id uuid REFERENCES professional_profiles(id),
+  ADD COLUMN access_scope text DEFAULT 'own'
+    CHECK (access_scope IN ('own','team','full'));</pre>
+    <p><strong>access_scope</strong> define o que cada numero pode ver:</p>
+    <ul style="margin-left:24px;color:#4b5563;font-size:13px;line-height:1.8">
+      <li><strong>own</strong> — so seus pacientes/agenda/financeiro</li>
+      <li><strong>team</strong> — agenda da equipe inteira (gerente)</li>
+      <li><strong>full</strong> — tudo da clinica (owner/admin)</li>
+    </ul>
+
+    <h3>Camada 2 — Roteamento (n8n)</h3>
+    <p>Webhook recebe a mensagem → identifica <code>wa_number_id</code> → checa <code>number_type</code>:</p>
+    <ul style="margin-left:24px;color:#4b5563;font-size:13px;line-height:1.8">
+      <li><code>clinic_official</code> → segue fluxo Lara existente (zero mudanca)</li>
+      <li><code>professional_private</code> → vai pro fluxo Mira novo</li>
+    </ul>
+
+    <h3>Camada 3 — Autenticacao</h3>
+    <p>Quando uma mensagem chega pelo numero do profissional:</p>
+    <ol style="margin-left:24px;color:#4b5563;font-size:13px;line-height:1.8">
+      <li>Match telefone do remetente com <code>professional_profiles.phone</code></li>
+      <li>Se nao bate → mensagem ignorada + log (alerta de uso indevido)</li>
+      <li>Se bate → carrega o <code>professional_id</code> e <code>access_scope</code></li>
+      <li>Cada chamada de RPC passa esse contexto</li>
+    </ol>
+
+    <h3>Camada 4 — Intent Parser (NLU)</h3>
+    <p>Mira recebe texto → identifica intencao via <strong>Claude API</strong> com tool use:</p>
+    <div class="pills">
+      <span class="pill">patient_query</span>
+      <span class="pill">agenda_query</span>
+      <span class="pill">financial_query</span>
+      <span class="pill">action_command</span>
+      <span class="pill">help</span>
+    </div>
+
+    <h3>Camada 5 — RPCs read-only <code>wa_pro_*</code></h3>
+    <p>Todas com prefixo padronizado e validacao de telefone como primeiro passo. Exemplo:</p>
+    <pre>CREATE FUNCTION wa_pro_my_agenda(p_phone text, p_date date)
+RETURNS jsonb AS $$
+DECLARE v_prof_id uuid;
+BEGIN
+  -- 1. Autentica
+  SELECT id INTO v_prof_id FROM professional_profiles
+  WHERE phone = p_phone AND is_active = true;
+  IF v_prof_id IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'unauthorized');
+  END IF;
+
+  -- 2. Retorna dados (filtrados pelo professional_id)
+  RETURN ...
+END $$ SECURITY DEFINER;</pre>
+
+    <h3>Camada 6 — Formatador de resposta</h3>
+    <p>Mira nao manda JSON cru — formata pro WhatsApp com markdown WhatsApp (*negrito*, separadores), emojis estrategicos, alinhamento de colunas.</p>
+
+    <h3>Camada 7 — Audit + Rate limit</h3>
+    <p>Toda query do profissional logada em <code>wa_pro_audit_log</code>. Rate limit configuravel (default: 30 queries/profissional/dia). Alerta no painel admin se profissional faz queries demais (potencial vazamento).</p>
+  </section>
+
+  <!-- ───── 4. Seguranca ───── -->
+  <section id="seguranca">
+    <h2><span class="num">4</span> Seguranca</h2>
+    <p class="lead">Cada risco tem uma mitigacao concreta.</p>
+
+    <table>
+      <thead>
+        <tr><th>Risco</th><th>Mitigacao</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Profissional vaza dados financeiros da clinica</td>
+          <td><code>access_scope='own'</code> por padrao — so ve o proprio. Owner explicitamente da <code>'full'</code></td>
+        </tr>
+        <tr>
+          <td>Alguem rouba o celular do profissional</td>
+          <td>2FA opcional via codigo enviado no email do profissional pra acoes sensiveis</td>
+        </tr>
+        <tr>
+          <td>Numero do profissional cair em maos erradas</td>
+          <td>Toda RPC valida telefone E checa se profissional esta ativo. Owner pode "bloquear acesso WhatsApp" no painel sem mexer no Evolution</td>
+        </tr>
+        <tr>
+          <td>Lara responder a profissional por engano</td>
+          <td>Roteamento checa <code>wa_number_id</code> antes de chamar Lara. Cross-talk impossivel</td>
+        </tr>
+        <tr>
+          <td>Mira responder a paciente por engano</td>
+          <td>Mesma protecao — numero do profissional nunca cai no fluxo Lara</td>
+        </tr>
+        <tr>
+          <td>Custos LLM explodirem</td>
+          <td>Rate limit por profissional + cache de respostas comuns + uso de Claude Haiku (mais barato) pra parser</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="danger-box">
+      <strong>Compliance LGPD:</strong> Dados sensiveis (CPF, valores totais) sao logados em audit. Owner pode auditar quem consultou o que e quando.
+    </div>
+  </section>
+
+  <!-- ───── 5. Fases ───── -->
+  <section id="fases">
+    <h2><span class="num">5</span> Fases priorizadas</h2>
+    <p class="lead">8 fases organizadas por prioridade. As 5 primeiras (Bloco A + B) entregam a base completa.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30px">#</th>
+          <th>Fase</th>
+          <th>Prioridade</th>
+          <th>Esforco</th>
+          <th>Entregavel principal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>0</strong></td>
+          <td><strong>Schema + Roteamento</strong></td>
+          <td><span class="pri-badge pri-critica">Critica</span></td>
+          <td>~1d</td>
+          <td>Numeros segmentados, n8n roteia certo, log diferente</td>
+        </tr>
+        <tr>
+          <td><strong>1</strong></td>
+          <td><strong>Autenticacao + Comandos basicos</strong></td>
+          <td><span class="pri-badge pri-critica">Critica</span></td>
+          <td>~1d</td>
+          <td>Profissional manda "ola" → Mira responde "autenticado, comandos disponiveis..."</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td><strong>Pacientes (consulta)</strong></td>
+          <td><span class="pri-badge pri-alta">Alta</span></td>
+          <td>~2d</td>
+          <td>"quem e Maria?", "telefone do Pedro", "ultima visita da Ana"</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td><strong>Agenda (consulta)</strong></td>
+          <td><span class="pri-badge pri-alta">Alta</span></td>
+          <td>~2d</td>
+          <td>"tenho hoje?", "horarios livres quinta", "meu dia mais cheio"</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td><strong>Financeiro estrategico</strong></td>
+          <td><span class="pri-badge pri-alta">Alta</span></td>
+          <td>~2d</td>
+          <td>"faturei essa semana?", "minha comissao", "cobertura do mes", "quanto Maria deve"</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>NLU avancado / Tool use</td>
+          <td><span class="pri-badge pri-media">Media</span></td>
+          <td>~3d</td>
+          <td>Conversas multi-turn, contexto, "qual Maria? a Silva ou a Souza?"</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>Notificacoes proativas</td>
+          <td><span class="pri-badge pri-media">Media</span></td>
+          <td>~2d</td>
+          <td>Bom dia automatico com agenda, alerta de meta, lembrete de pagamento atrasado</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>Acoes (escrita)</td>
+          <td><span class="pri-badge pri-baixa">Baixa</span></td>
+          <td>~3d</td>
+          <td>"marcar Maria 14h amanha", "cancelar 15h", "registrar pagamento PIX"</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>Multi-clinica + permissoes finas</td>
+          <td><span class="pri-badge pri-baixa">Baixa</span></td>
+          <td>~2d</td>
+          <td>Gerente ve agenda do time, dono ve financeiro consolidado</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ───── 6. Plano ───── -->
+  <section id="plano">
+    <h2><span class="num">6</span> Plano sugerido (Bloco A + B)</h2>
+    <p class="lead">Voce pediu prioridade <strong>Pacientes + Agenda + Financeiro</strong>. Isso bate com as Fases 2-3-4. Mas as Fases 0-1 sao pre-requisitos obrigatorios.</p>
+
+    <h3>Bloco A — Fundacao (Fases 0+1) · ~2 dias</h3>
+    <ul style="margin-left:20px;color:#4b5563;font-size:13px;line-height:1.9">
+      <li>Schema: extender <code>wa_numbers</code>, criar <code>wa_messages_pro</code>, <code>wa_pro_audit_log</code></li>
+      <li>Migration de seed: marcar a instancia Mih como <code>clinic_official</code></li>
+      <li>UI no painel: tela "Numeros WhatsApp" pra cadastrar/segmentar</li>
+      <li>n8n: novo workflow "Mira router" com webhook proprio</li>
+      <li>Mira basica: responde "ola", lista comandos, autentica</li>
+    </ul>
+
+    <h3>Bloco B — Consultas core (Fases 2+3+4) · ~6 dias</h3>
+    <ul style="margin-left:20px;color:#4b5563;font-size:13px;line-height:1.9">
+      <li>Fase 2 (Pacientes): 4-5 RPCs <code>wa_pro_patient_*</code> + intents</li>
+      <li>Fase 3 (Agenda): 4-5 RPCs <code>wa_pro_agenda_*</code> + intents</li>
+      <li>Fase 4 (Financeiro): 4-5 RPCs <code>wa_pro_finance_*</code> + intents</li>
+      <li>Cada uma com seu prompt no Mira</li>
+    </ul>
+
+    <h3>Bloco C — Avancado (Fases 5-8)</h3>
+    <p>Implementado depois, conforme demanda. Sao melhorias incrementais sobre uma base ja funcional.</p>
+
+    <div class="highlight">
+      <strong>Total Bloco A + B = ~8 dias uteis</strong> pra ter a Mira em producao com as 3 capacidades principais (pacientes / agenda / financeiro) funcionando para 1 profissional inicial (Dra Mirian).
+    </div>
+  </section>
+
+  <!-- ───── 7. Exemplo ───── -->
+  <section id="exemplo">
+    <h2><span class="num">7</span> Mira em acao (apos Bloco A + B)</h2>
+    <p class="lead">Conversa real esperada apos as 5 primeiras fases.</p>
+
+    <div class="phone">
+      <div class="phone-header">
+        <div class="avatar">M</div>
+        <div>
+          <div>Mira (Assistente)</div>
+          <div style="font-size:10px;font-weight:400;opacity:.8">online agora</div>
+        </div>
+      </div>
+
+      <div class="msg user">oi mira</div>
+      <div class="msg bot">Oi Dra Mirian! 👋
+
+Tenho 4 areas de informacao:
+📋 /pacientes  — busca, saldo, historico
+📅 /agenda     — sua agenda, horarios livres
+💰 /financeiro — receita, comissao, cobertura
+❓ /ajuda      — todos os comandos
+
+Pode me perguntar em portugues normal, sem comando.</div>
+
+      <div class="msg user">tem horario amanha?</div>
+      <div class="msg bot">*Sua agenda — Sabado 12/04*
+─────────────
+09:00  Maria Silva    Lifting 5D
+14:00  [LIVRE]
+15:30  Ana Costa      Drenagem
+17:00  [LIVRE]
+
+3 atendimentos · 2 horarios livres</div>
+
+      <div class="msg user">quanto a maria silva ainda me deve</div>
+      <div class="msg bot">🔍 *Maria Silva* (5544...9123)
+─────────────
+Ultimo atendimento: 02/04 — Lifting 5D
+Valor total: R$ 4.500
+Pago: R$ 1.500 (entrada PIX)
+
+*Saldo: R$ 3.000* — em 6x de R$ 500
+Proxima parcela: 05/05 — R$ 500</div>
+
+      <div class="msg user">quanto faturei essa semana</div>
+      <div class="msg bot">💰 *Sua receita — Semana 06-12/04*
+─────────────
+Bruto:        R$ 8.400
+Sua comissao: R$ 2.520 (30%)
+Atendimentos: 7
+Ticket medio: R$ 1.200
+
+Comparado a semana passada: +12% 📈
+Voce ja bateu 67% da sua meta mensal.</div>
+    </div>
+  </section>
+
+  <!-- ───── 8. Decisoes ───── -->
+  <section id="decisoes">
+    <h2><span class="num">8</span> Decisoes pendentes</h2>
+    <p class="lead">3 decisoes sao necessarias antes de comecar a codar.</p>
+
+    <div class="decision">
+      <h4>1️⃣ Nome do bot interno</h4>
+      <ul class="options">
+        <li class="recommended">Mira (sugestao — Mirian Intelligence Reports Assistant)</li>
+        <li>Sage</li>
+        <li>Iris</li>
+        <li>Aria</li>
+        <li>Vista</li>
+        <li>Sem nome ("Assistente Clinica")</li>
+      </ul>
+    </div>
+
+    <div class="decision">
+      <h4>2️⃣ Quantos profissionais na fase inicial</h4>
+      <ul class="options">
+        <li class="recommended">So Dra Mirian (validar com 1, depois escalar)</li>
+        <li>Mirian + Paloma</li>
+        <li>Time todo (definir quem)</li>
+      </ul>
+    </div>
+
+    <div class="decision">
+      <h4>3️⃣ LLM provider</h4>
+      <ul class="options">
+        <li>Claude Haiku (mais barato, ~R$0.30/1k mensagens)</li>
+        <li>Claude Sonnet (mais inteligente, ~R$3/1k mensagens)</li>
+        <li class="recommended">Mistura Haiku + Sonnet (Haiku pra parser, Sonnet so quando precisa) — recomendado</li>
+      </ul>
+    </div>
+
+    <div class="highlight">
+      <strong>Recomendacao final:</strong> Mira (nome) + So Dra Mirian (escopo inicial) + Mistura Haiku/Sonnet (custos otimizados). Apos validar com 1 profissional por 1-2 semanas, escalar para o time todo.
+    </div>
+  </section>
+
+  <footer>
+    <p>ClinicAI Dashboard · Proposta Mira v1.0 · 11 de Abril de 2026</p>
+    <p style="margin-top:6px">Documento gerado automaticamente · Aprovacao necessaria pra iniciar Bloco A</p>
+  </footer>
+
+</div>
+</body>
+</html>
