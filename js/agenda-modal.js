@@ -335,7 +335,7 @@
       var res = await ProcedimentosRepository.getAll(true)
       if (res.ok && Array.isArray(res.data)) {
         res.data.forEach(function(p) {
-          procs.push({ nome: p.nome, categoria: p.categoria || p.tipo || 'Procedimentos', valor: parseFloat(p.preco || p.valor) || 0, duracao: parseInt(p.duracao_min || p.duracao) || 60 })
+          procs.push({ nome: p.nome, categoria: p.categoria || 'Procedimentos', valor: parseFloat(p.preco) || 0, duracao: parseInt(p.duracao_min) || 60 })
         })
       }
     }

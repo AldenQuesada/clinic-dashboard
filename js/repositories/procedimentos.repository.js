@@ -26,19 +26,23 @@
   async function upsert(proc) {
     try {
       const { data, error } = await _sb().rpc('upsert_procedimento', {
-        p_id:           proc.id           ?? null,
-        p_nome:         proc.nome         ?? null,
-        p_categoria:    proc.categoria    ?? null,
-        p_descricao:    proc.descricao    ?? null,
-        p_duracao_min:  proc.duracao_min  ?? null,
-        p_valor:        proc.valor        ?? null,
-        p_sessoes:      proc.sessoes      ?? null,
-        p_intervalo:    proc.intervalo    ?? null,
-        p_tecnologia_id:proc.tecnologia_id ?? null,
-        p_sala_id:      proc.sala_id      ?? null,
-        p_ativo:        proc.ativo        ?? null,
-        p_observacoes:  proc.observacoes  ?? null,
-        p_insumos:      proc.insumos      ?? null,
+        p_id:                 proc.id                 ?? null,
+        p_nome:               proc.nome               ?? null,
+        p_categoria:          proc.categoria          ?? null,
+        p_descricao:          proc.descricao          ?? null,
+        p_duracao_min:        proc.duracao_min        ?? null,
+        p_sessoes:            proc.sessoes            ?? null,
+        p_tipo:               proc.tipo               ?? null,
+        p_preco:              proc.preco              ?? null,
+        p_margem:             proc.margem             ?? null,
+        p_combo_sessoes:      proc.combo_sessoes      ?? null,
+        p_combo_desconto_pct: proc.combo_desconto_pct ?? null,
+        p_combo_valor_final:  proc.combo_valor_final  ?? null,
+        p_cuidados_pre:       proc.cuidados_pre       ?? null,
+        p_cuidados_pos:       proc.cuidados_pos       ?? null,
+        p_contraindicacoes:   proc.contraindicacoes   ?? null,
+        p_observacoes:        proc.observacoes        ?? null,
+        p_insumos:            proc.insumos            ?? null,
       })
       if (error) return _err(error.message || String(error))
       return _ok(data)
