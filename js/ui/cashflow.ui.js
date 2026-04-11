@@ -48,7 +48,7 @@
       var year  = d.getFullYear()
       var month = d.getMonth() + 1
 
-      var [sumRes, listRes, intelRes, dreRes] = await Promise.all([
+      var [sumRes, listRes, intelRes, dreRes, segRes] = await Promise.all([
         window.CashflowService.getSummary(_state.startDate, _state.endDate),
         window.CashflowService.listEntries({
           startDate: _state.startDate,
@@ -59,18 +59,21 @@
         }),
         window.CashflowService.getIntelligence(year, month),
         window.CashflowService.getDre(year, month),
+        window.CashflowService.getSegments(year, month),
       ])
 
       _state.summary      = (sumRes  && sumRes.ok)  ? sumRes.data  : {}
       _state.entries      = (listRes && listRes.ok) ? listRes.data : []
       _state.intelligence = (intelRes && intelRes.ok) ? intelRes.data : {}
       _state.dre          = (dreRes && dreRes.ok)    ? dreRes.data  : {}
+      _state.segments     = (segRes && segRes.ok)    ? segRes.data  : {}
     } catch (e) {
       console.error('[CashflowUI] load error:', e)
       _state.summary = {}
       _state.entries = []
       _state.intelligence = {}
       _state.dre = {}
+      _state.segments = {}
     }
 
     _state.loading = false
@@ -194,6 +197,7 @@
     var fmt = window.CashflowService.fmtCurrency
     var intel = _state.intelligence || {}
     var dre   = _state.dre || {}
+    var seg   = _state.segments || {}
 
     body.innerHTML = ''
       // Painel Inteligencia
@@ -201,6 +205,9 @@
 
       // DRE Liquido
       + _drePanel(dre)
+
+      // Segmentacao Estrategica
+      + _segmentsPanel(seg)
 
       // KPIs
       + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">'
@@ -381,6 +388,200 @@
 
   function _dreOp(op) {
     return '<div style="text-align:center;font-size:18px;font-weight:700;color:#9ca3af">' + op + '</div>'
+  }
+
+  // ── Painel Segmentacao Estrategica ────────────────────────
+
+  var _segTab = 'procedure'
+
+  function _segmentsPanel(seg) {
+    if (!seg || (!seg.by_procedure && !seg.by_professional)) return ''
+
+    var html = ''
+      + '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 22px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+          + '<span style="color:#8b5cf6">' + _icon('pie-chart', 18) + '</span>'
+          + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#111827">Segmentacao Estrategica</div>'
+        + '</div>'
+
+        + '<div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #e5e7eb;padding-bottom:0">'
+          + _segTabBtn('procedure',    'Procedimentos', (seg.by_procedure || []).length)
+          + _segTabBtn('professional', 'Especialistas', (seg.by_professional || []).length)
+          + _segTabBtn('origem',       'Origem',        (seg.by_origem || []).length)
+          + _segTabBtn('heatmap',      'Dia x Hora',    (seg.heatmap || []).length)
+        + '</div>'
+
+        + '<div id="cfSegContent">' + _renderSegContent(seg, _segTab) + '</div>'
+      + '</div>'
+
+    setTimeout(function() {
+      document.querySelectorAll('.cf-seg-tab').forEach(function(b) {
+        b.addEventListener('click', function() {
+          _segTab = b.getAttribute('data-tab')
+          document.querySelectorAll('.cf-seg-tab').forEach(function(x) {
+            var active = x.getAttribute('data-tab') === _segTab
+            x.style.color = active ? '#111827' : '#9ca3af'
+            x.style.borderBottom = active ? '2px solid #c9a96e' : '2px solid transparent'
+          })
+          var c = document.getElementById('cfSegContent')
+          if (c) c.innerHTML = _renderSegContent(seg, _segTab)
+        })
+      })
+    }, 0)
+
+    return html
+  }
+
+  function _segTabBtn(id, label, count) {
+    var active = id === _segTab
+    return '<button class="cf-seg-tab" data-tab="' + id + '" style="all:unset;cursor:pointer;padding:8px 14px 10px;font-size:12px;font-weight:600;color:' + (active ? '#111827' : '#9ca3af') + ';border-bottom:2px solid ' + (active ? '#c9a96e' : 'transparent') + ';margin-bottom:-1px">'
+      + label + '<span style="font-size:10px;color:#9ca3af;margin-left:6px">' + count + '</span>'
+      + '</button>'
+  }
+
+  function _renderSegContent(seg, tab) {
+    var fmt = window.CashflowService.fmtCurrency
+
+    if (tab === 'procedure') {
+      var data = seg.by_procedure || []
+      if (data.length === 0) return _segEmpty('Nenhum dado de procedimento neste periodo')
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        + '<thead><tr style="background:#f9fafb">'
+        + '<th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Procedimento</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Qtd</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Bruto</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Custo</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Taxa</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Comissao</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Liquido</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Margem</th>'
+        + '</tr></thead><tbody>'
+
+      data.forEach(function(p) {
+        var marginColor = p.margem_pct >= 30 ? '#10b981' : p.margem_pct >= 15 ? '#f59e0b' : '#ef4444'
+        html += '<tr style="border-bottom:1px solid #f3f4f6">'
+          + '<td style="padding:10px 12px;color:#111827"><strong>' + p.name + '</strong></td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#6b7280">' + p.qtd + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:600">' + fmt(p.bruto) + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#9ca3af">' + (p.custo > 0 ? fmt(p.custo) : '—') + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#9ca3af">' + (p.taxa > 0 ? fmt(p.taxa) : '—') + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#9ca3af">' + (p.comissao > 0 ? fmt(p.comissao) : '—') + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:' + marginColor + ';font-weight:700">' + fmt(p.liquido) + '</td>'
+          + '<td style="padding:10px 12px;text-align:right"><span style="background:' + marginColor + '22;color:' + marginColor + ';font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px">' + p.margem_pct + '%</span></td>'
+          + '</tr>'
+      })
+      html += '</tbody></table>'
+      return html
+    }
+
+    if (tab === 'professional') {
+      var data = seg.by_professional || []
+      if (data.length === 0) return _segEmpty('Nenhum dado de especialista neste periodo')
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        + '<thead><tr style="background:#f9fafb">'
+        + '<th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Especialista</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Atendimentos</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Ticket Medio</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Bruto</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Comissao</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Liquido</th>'
+        + '</tr></thead><tbody>'
+
+      data.forEach(function(p) {
+        html += '<tr style="border-bottom:1px solid #f3f4f6">'
+          + '<td style="padding:10px 12px;color:#111827"><strong>' + p.name + '</strong></td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#6b7280">' + p.qtd + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#374151">' + fmt(p.ticket_medio) + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:600">' + fmt(p.bruto) + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#f59e0b">' + (p.comissao > 0 ? fmt(p.comissao) : '—') + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:700">' + fmt(p.liquido) + '</td>'
+          + '</tr>'
+      })
+      html += '</tbody></table>'
+      return html
+    }
+
+    if (tab === 'origem') {
+      var data = seg.by_origem || []
+      if (data.length === 0) return _segEmpty('Nenhum dado de origem neste periodo')
+      var total = data.reduce(function(s, x) { return s + Number(x.bruto || 0) }, 0)
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        + '<thead><tr style="background:#f9fafb">'
+        + '<th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Origem</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Pacientes</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Atendimentos</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Ticket Medio</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Bruto</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">% Total</th>'
+        + '</tr></thead><tbody>'
+
+      data.forEach(function(o) {
+        var pct = total > 0 ? ((o.bruto / total) * 100).toFixed(1) : 0
+        html += '<tr style="border-bottom:1px solid #f3f4f6">'
+          + '<td style="padding:10px 12px;color:#111827"><strong>' + o.origem + '</strong></td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#6b7280">' + o.pacientes + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#6b7280">' + o.qtd + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#374151">' + fmt(o.ticket_medio_paciente) + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:600">' + fmt(o.bruto) + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#8b5cf6;font-weight:600">' + pct + '%</td>'
+          + '</tr>'
+      })
+      html += '</tbody></table>'
+      return html
+    }
+
+    if (tab === 'heatmap') {
+      var data = seg.heatmap || []
+      if (data.length === 0) return _segEmpty('Nenhum dado de movimento neste periodo')
+      return _renderHeatmap(data)
+    }
+
+    return ''
+  }
+
+  function _renderHeatmap(data) {
+    // Mapeia dados em uma matriz dow x hour
+    var matrix = {}
+    var maxValue = 0
+    data.forEach(function(d) {
+      if (!matrix[d.dow]) matrix[d.dow] = {}
+      matrix[d.dow][d.hour] = d.total
+      if (d.total > maxValue) maxValue = d.total
+    })
+
+    var dowLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
+    var hours = []
+    for (var h = 6; h <= 22; h++) hours.push(h)
+
+    var fmt = window.CashflowService.fmtCurrency
+
+    var html = '<div style="overflow-x:auto"><table style="border-collapse:separate;border-spacing:3px;font-size:10px;margin:0 auto">'
+      + '<thead><tr><th></th>'
+    hours.forEach(function(h) {
+      html += '<th style="padding:4px 0;color:#9ca3af;font-weight:600;width:32px">' + h + 'h</th>'
+    })
+    html += '</tr></thead><tbody>'
+
+    for (var dow = 0; dow < 7; dow++) {
+      html += '<tr><td style="padding:4px 8px;color:#6b7280;font-weight:600;text-align:right">' + dowLabels[dow] + '</td>'
+      hours.forEach(function(h) {
+        var v = matrix[dow] && matrix[dow][h] || 0
+        var intensity = maxValue > 0 ? v / maxValue : 0
+        var bg = v > 0
+          ? 'rgba(16,185,129,' + (0.15 + intensity * 0.75) + ')'
+          : '#f3f4f6'
+        html += '<td title="' + dowLabels[dow] + ' ' + h + 'h: ' + fmt(v) + '" style="width:32px;height:24px;background:' + bg + ';border-radius:4px;text-align:center;color:' + (intensity > 0.5 ? '#fff' : '#374151') + ';font-weight:600">' + (v > 0 ? Math.round(v / 1000) + 'k' : '') + '</td>'
+      })
+      html += '</tr>'
+    }
+    html += '</tbody></table>'
+      + '<div style="margin-top:12px;font-size:11px;color:#6b7280;text-align:center">Verde mais intenso = mais receita. Numeros em milhares.</div>'
+      + '</div>'
+    return html
+  }
+
+  function _segEmpty(msg) {
+    return '<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px">' + msg + '</div>'
   }
 
   // ── Modal de Configuracao (Custos / Taxas / Comissoes) ────

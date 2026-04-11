@@ -171,6 +171,12 @@
     return repo.saveConfig(data)
   }
 
+  async function getSegments(year, month) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: {}, error: 'CashflowRepository nao disponivel' }
+    return repo.getSegments(year, month)
+  }
+
   // ── Hook: cria entry a partir de appointment finalizado ──
 
   /**
@@ -308,6 +314,7 @@
     getDre:               getDre,
     getConfig:            getConfig,
     saveConfig:           saveConfig,
+    getSegments:          getSegments,
     createFromAppointment: createFromAppointment,
   })
 })()
