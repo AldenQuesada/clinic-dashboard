@@ -284,6 +284,7 @@
       if (pagaRow) pagaRow.style.display = 'none'
       if (cortRow) cortRow.style.display = 'none'
     }
+    apptShowPagamentosBlock()
   }
 
   function apptSetAval(val) {
@@ -312,15 +313,14 @@
       if (radioPaga) radioPaga.checked = true
       // Limpa motivo cortesia (não se aplica a paga)
       var motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = ''
-      // Garante 1 linha default e sincroniza valor com o total
       if (_apptPagamentos.length === 0) apptResetPagamentos()
       var valElP = document.getElementById('appt_valor')
       if (valElP && valElP.value && _apptPagamentos.length === 1 && !_apptPagamentos[0].valor) {
         _apptPagamentos[0].valor = parseFloat(valElP.value) || 0
       }
-      apptRenderPagamentos()
     }
     if (hiddenEl) hiddenEl.value = val
+    apptShowPagamentosBlock()
   }
 
   // ── Carregar procedimentos da BD ─────────────────────────────
@@ -443,6 +443,12 @@
     if (nameEl) nameEl.value = ''
     if (valorEl) valorEl.value = ''
     _renderApptProcs()
+    // Sincroniza pagamentos: 1ª linha herda total se ainda em zero
+    if (_apptPagamentos.length === 1 && !_apptPagamentos[0].valor) {
+      _apptPagamentos[0].valor = _apptValorTotalPagar()
+      apptRenderPagamentos()
+    }
+    apptShowPagamentosBlock()
 
     // Alerta se mais de 1 procedimento em 1h
     if (_apptProcs.length > 1) _checkMultiProcAlert()
@@ -451,6 +457,8 @@
   function apptRemoveProc(i) {
     _apptProcs.splice(i, 1)
     _renderApptProcs()
+    apptShowPagamentosBlock()
+    apptUpdatePagamentosTotal()
   }
 
   // ── Alerta multi-procedimento ──────────────────────────────
@@ -549,6 +557,7 @@
 
   function apptCalcDesconto() {
     _updateApptTotalWithDiscount()
+    apptUpdatePagamentosTotal()
   }
 
   function _updateApptTotalWithDiscount() {
@@ -604,8 +613,11 @@
     apptUpdatePagamentosTotal()
   }
 
-  // ── Pagamentos múltiplos (Pix + Cartão etc) ─────────────────
-  // Estrutura: _apptPagamentos = [{ forma, valor, status: 'aberto'|'pago' }]
+  // ── Pagamentos múltiplos (Consulta Paga ou Procedimento) ────
+  // Estrutura: _apptPagamentos = [{
+  //   forma, valor, status: 'aberto'|'pago',
+  //   parcelas, valorParcela, comentario
+  // }]
   var _apptPagamentos = []
 
   var FORMAS_PAGAMENTO = [
@@ -620,6 +632,10 @@
     { value: 'convenio',      label: 'Convênio' },
   ]
 
+  function _apptFormaTemParcelas(forma) {
+    return forma === 'credito' || forma === 'parcelado'
+  }
+
   function _formaOptions(selected) {
     return '<option value="">Forma...</option>' +
       FORMAS_PAGAMENTO.map(function(f) {
@@ -628,8 +644,21 @@
       }).join('')
   }
 
+  // Total a pagar = consulta (appt_valor) ou soma dos procedimentos (com desconto)
+  function _apptValorTotalPagar() {
+    var tipoEl = document.getElementById('appt_tipo')
+    var tipo = tipoEl && tipoEl.value
+    if (tipo === 'procedimento') {
+      var subtotal = _apptProcs.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
+      var desc = parseFloat((document.getElementById('appt_desconto_valor') || {}).value || '0') || 0
+      return Math.max(0, subtotal - desc)
+    }
+    var valEl = document.getElementById('appt_valor')
+    return parseFloat((valEl && valEl.value) || '0') || 0
+  }
+
   function apptResetPagamentos() {
-    _apptPagamentos = [{ forma: '', valor: 0, status: 'aberto' }]
+    _apptPagamentos = [{ forma: '', valor: 0, status: 'aberto', parcelas: 1, valorParcela: 0, comentario: '' }]
     apptRenderPagamentos()
   }
 
@@ -637,24 +666,29 @@
     if (Array.isArray(arr) && arr.length > 0) {
       _apptPagamentos = arr.map(function(p) {
         return {
-          forma:  p.forma  || '',
-          valor:  parseFloat(p.valor) || 0,
-          status: p.status === 'pago' ? 'pago' : 'aberto'
+          forma:        p.forma || '',
+          valor:        parseFloat(p.valor) || 0,
+          status:       p.status === 'pago' ? 'pago' : 'aberto',
+          parcelas:     parseInt(p.parcelas) || 1,
+          valorParcela: parseFloat(p.valorParcela) || 0,
+          comentario:   p.comentario || '',
         }
       })
     } else {
-      // Fallback compat: appt antigo so tem formaPagamento + valor
       _apptPagamentos = [{
         forma: fallbackForma || '',
         valor: parseFloat(fallbackValor) || 0,
-        status: 'aberto'
+        status: 'aberto',
+        parcelas: 1,
+        valorParcela: parseFloat(fallbackValor) || 0,
+        comentario: '',
       }]
     }
     apptRenderPagamentos()
   }
 
   function apptAddPagamento() {
-    _apptPagamentos.push({ forma: '', valor: 0, status: 'aberto' })
+    _apptPagamentos.push({ forma: '', valor: 0, status: 'aberto', parcelas: 1, valorParcela: 0, comentario: '' })
     apptRenderPagamentos()
   }
 
@@ -665,16 +699,44 @@
   }
 
   function apptUpdatePagamento(idx, field, value) {
-    if (!_apptPagamentos[idx]) return
-    if (field === 'valor') _apptPagamentos[idx].valor = parseFloat(value) || 0
-    else _apptPagamentos[idx][field] = value
-    apptUpdatePagamentosTotal()
+    var p = _apptPagamentos[idx]
+    if (!p) return
+    if (field === 'valor')          p.valor = parseFloat(value) || 0
+    else if (field === 'parcelas')  p.parcelas = parseInt(value) || 1
+    else if (field === 'valorParcela') p.valorParcela = parseFloat(value) || 0
+    else                            p[field] = value
+    // Recalcula valorParcela quando valor ou parcelas mudam
+    if (field === 'valor' || field === 'parcelas' || field === 'forma') {
+      if (_apptFormaTemParcelas(p.forma) && p.parcelas > 0) {
+        p.valorParcela = +(p.valor / p.parcelas).toFixed(2)
+      } else {
+        p.valorParcela = p.valor
+      }
+    }
+    if (field === 'forma') apptRenderPagamentos()
+    else apptUpdatePagamentosTotal()
   }
 
   function apptTogglePago(idx) {
     if (!_apptPagamentos[idx]) return
     _apptPagamentos[idx].status = _apptPagamentos[idx].status === 'pago' ? 'aberto' : 'pago'
     apptRenderPagamentos()
+  }
+
+  function apptShowPagamentosBlock() {
+    var block = document.getElementById('apptPagamentosBlock')
+    if (!block) return
+    var tipoEl = document.getElementById('appt_tipo')
+    var tipo = tipoEl && tipoEl.value
+    var avalEl = document.getElementById('appt_taval_hidden')
+    var aval = avalEl && avalEl.value
+    var consultaPaga = tipo === 'avaliacao' && aval === 'paga'
+    var procWithItems = tipo === 'procedimento' && _apptProcs.length > 0
+    block.style.display = (consultaPaga || procWithItems) ? '' : 'none'
+    if (consultaPaga || procWithItems) {
+      if (_apptPagamentos.length === 0) apptResetPagamentos()
+      else apptRenderPagamentos()
+    }
   }
 
   function apptRenderPagamentos() {
@@ -688,11 +750,24 @@
       var btnTxt = pago ? '✓ Pago'  : '○ Aberto'
       var btnBg  = pago ? '#16A34A' : '#F3F4F6'
       var btnFg  = pago ? '#fff'    : '#6B7280'
-      return '<div style="display:flex;gap:5px;align-items:center;background:' + bg + ';border:1px solid ' + bd + ';border-radius:7px;padding:5px">' +
-        '<select onchange="apptUpdatePagamento(' + i + ', \'forma\', this.value)" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">' + _formaOptions(p.forma) + '</select>' +
-        '<input type="number" step="0.01" placeholder="0,00" value="' + (p.valor ? p.valor.toFixed(2) : '') + '" oninput="apptUpdatePagamento(' + i + ', \'valor\', this.value)" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>' +
-        '<button type="button" onclick="apptTogglePago(' + i + ')" style="padding:5px 8px;background:' + btnBg + ';color:' + btnFg + ';border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">' + btnTxt + '</button>' +
-        (canRemove ? '<button type="button" onclick="apptRemovePagamento(' + i + ')" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>' : '') +
+      var temParcelas = _apptFormaTemParcelas(p.forma)
+      var parcelasHtml = temParcelas
+        ? '<div style="display:flex;gap:5px;align-items:center;margin-top:5px">' +
+          '<label style="font-size:10px;font-weight:700;color:#6B7280">Parcelas</label>' +
+          '<input type="number" min="1" max="24" value="' + (p.parcelas || 1) + '" oninput="apptUpdatePagamento(' + i + ', \'parcelas\', this.value)" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>' +
+          '<span style="font-size:10px;color:#6B7280">x R$</span>' +
+          '<input type="number" step="0.01" value="' + (p.valorParcela ? p.valorParcela.toFixed(2) : '') + '" oninput="apptUpdatePagamento(' + i + ', \'valorParcela\', this.value)" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>' +
+          '</div>'
+        : ''
+      return '<div style="background:' + bg + ';border:1px solid ' + bd + ';border-radius:8px;padding:7px">' +
+        '<div style="display:flex;gap:5px;align-items:center">' +
+          '<select onchange="apptUpdatePagamento(' + i + ', \'forma\', this.value)" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">' + _formaOptions(p.forma) + '</select>' +
+          '<input type="number" step="0.01" placeholder="0,00" value="' + (p.valor ? p.valor.toFixed(2) : '') + '" oninput="apptUpdatePagamento(' + i + ', \'valor\', this.value)" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>' +
+          '<button type="button" onclick="apptTogglePago(' + i + ')" style="padding:5px 8px;background:' + btnBg + ';color:' + btnFg + ';border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">' + btnTxt + '</button>' +
+          (canRemove ? '<button type="button" onclick="apptRemovePagamento(' + i + ')" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>' : '') +
+        '</div>' +
+        parcelasHtml +
+        '<input type="text" placeholder="Comentário (opcional)" value="' + (p.comentario || '').replace(/"/g, '&quot;') + '" oninput="apptUpdatePagamento(' + i + ', \'comentario\', this.value)" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>' +
       '</div>'
     }).join('')
     apptUpdatePagamentosTotal()
@@ -702,7 +777,7 @@
     var totalEl = document.getElementById('apptPagamentosTotal')
     if (!totalEl) return
     var total = _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
-    var valor = parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0
+    var valor = _apptValorTotalPagar()
     var diff = +(valor - total).toFixed(2)
     if (Math.abs(diff) < 0.01) {
       totalEl.style.color = '#16A34A'
@@ -921,16 +996,23 @@
       alert('Adicione ao menos um procedimento.'); return
     }
 
-    // Validação pagamentos (Consulta Paga)
+    // Validação pagamentos (Consulta Paga OU Procedimento)
     const valorTotal = parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0
-    if (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') {
-      if (valorTotal <= 0) { alert('Informe o valor da consulta.'); return }
+    const consultaPaga = tipoAtend === 'avaliacao' && tipoAvalVal === 'paga'
+    const procWithItems = tipoAtend === 'procedimento' && _apptProcs.length > 0
+    if (consultaPaga && valorTotal <= 0) { alert('Informe o valor da consulta.'); return }
+    if (consultaPaga || procWithItems) {
       if (!_apptPagamentos.length) { alert('Adicione ao menos uma forma de pagamento.'); return }
       var faltaForma = _apptPagamentos.find(function(p) { return !p.forma })
       if (faltaForma) { alert('Selecione a forma de cada pagamento.'); return }
+      var faltaParcelas = _apptPagamentos.find(function(p) {
+        return _apptFormaTemParcelas(p.forma) && (!p.parcelas || p.parcelas < 1)
+      })
+      if (faltaParcelas) { alert('Informe o numero de parcelas para pagamento parcelado/credito.'); return }
       var somaPag = _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
-      if (Math.abs(somaPag - valorTotal) >= 0.01) {
-        alert('A soma dos pagamentos (R$ ' + somaPag.toFixed(2) + ') deve ser igual ao valor total (R$ ' + valorTotal.toFixed(2) + ').'); return
+      var totalEsperado = _apptValorTotalPagar()
+      if (Math.abs(somaPag - totalEsperado) >= 0.01) {
+        alert('A soma dos pagamentos (R$ ' + somaPag.toFixed(2) + ') deve ser igual ao total (R$ ' + totalEsperado.toFixed(2) + ').'); return
       }
     }
 
@@ -950,15 +1032,26 @@
       tipoAvaliacao:       tipoAtend === 'avaliacao' ? tipoAvalVal : '',
       cortesiaMotivo:      (tipoAtend === 'avaliacao' && tipoAvalVal === 'cortesia') ? cortesiaMotivo : '',
       origem:              (document.getElementById('appt_origem') && document.getElementById('appt_origem').value) || '',
-      valor:               (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? valorTotal : 0,
-      pagamentos:          (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? _apptPagamentos.map(function(p) { return { forma: p.forma, valor: parseFloat(p.valor) || 0, status: p.status === 'pago' ? 'pago' : 'aberto' } }) : [],
+      valor:               (consultaPaga || procWithItems) ? _apptValorTotalPagar() : 0,
+      pagamentos:          (consultaPaga || procWithItems)
+        ? _apptPagamentos.map(function(p) {
+            return {
+              forma:        p.forma,
+              valor:        parseFloat(p.valor) || 0,
+              status:       p.status === 'pago' ? 'pago' : 'aberto',
+              parcelas:     _apptFormaTemParcelas(p.forma) ? (parseInt(p.parcelas) || 1) : 1,
+              valorParcela: _apptFormaTemParcelas(p.forma) ? (parseFloat(p.valorParcela) || 0) : (parseFloat(p.valor) || 0),
+              comentario:   p.comentario || '',
+            }
+          })
+        : [],
       formaPagamento:      (function() {
-        if (tipoAtend !== 'avaliacao' || tipoAvalVal !== 'paga') return ''
+        if (!consultaPaga && !procWithItems) return ''
         if (_apptPagamentos.length === 1) return _apptPagamentos[0].forma || ''
         return 'misto'
       })(),
       statusPagamento:     (function() {
-        if (tipoAtend !== 'avaliacao' || tipoAvalVal !== 'paga') return 'pendente'
+        if (!consultaPaga && !procWithItems) return 'pendente'
         var pagos = _apptPagamentos.filter(function(p) { return p.status === 'pago' }).length
         if (pagos === 0) return 'aberto'
         if (pagos === _apptPagamentos.length) return 'pago'

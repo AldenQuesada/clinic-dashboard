@@ -290,6 +290,44 @@ function _logAuto(apptId, type, status) {
 }
 
 // ── State Machine Transition ──────────────────────────────────────
+// Alerta secretaria quando paciente chega na clinica e ha pagamento em aberto
+function _alertPagamentoAberto(appt) {
+  if (!appt) return
+  var pagamentos = Array.isArray(appt.pagamentos) ? appt.pagamentos : []
+  var abertos = pagamentos.filter(function(p) { return p.status !== 'pago' })
+  // Compat: appts antigos so tem statusPagamento
+  var statusLegacy = appt.statusPagamento
+  var temAberto = abertos.length > 0 || (pagamentos.length === 0 && (statusLegacy === 'aberto' || statusLegacy === 'pendente' || statusLegacy === 'parcial'))
+  if (!temAberto) return
+
+  var totalAberto = abertos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
+  if (totalAberto === 0 && pagamentos.length === 0) {
+    totalAberto = parseFloat(appt.valor) || 0
+  }
+  if (totalAberto <= 0) return
+
+  var nome = appt.pacienteNome || 'Paciente'
+  var msg = nome + ' chegou na clinica com PAGAMENTO EM ABERTO de R$ ' + totalAberto.toFixed(2).replace('.', ',') + '. Cobrar antes de iniciar o atendimento.'
+
+  if (window._showToast) {
+    _showToast('Pagamento em aberto', msg, 'warning')
+  } else {
+    // Fallback inline modal
+    var dlg = document.createElement('div')
+    dlg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10005;display:flex;align-items:center;justify-content:center;padding:16px'
+    dlg.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:380px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">' +
+      '<div style="background:#F59E0B;padding:14px 18px;color:#fff">' +
+        '<div style="font-size:14px;font-weight:800">Pagamento em aberto</div>' +
+      '</div>' +
+      '<div style="padding:18px;font-size:13px;color:#374151;line-height:1.5">' + msg + '</div>' +
+      '<div style="padding:0 18px 16px;display:flex;justify-content:flex-end">' +
+        '<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="padding:8px 16px;background:#F59E0B;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">Entendido</button>' +
+      '</div>' +
+    '</div>'
+    document.body.appendChild(dlg)
+  }
+}
+
 function apptTransition(id, newStatus, by) {
   if (!window.getAppointments) return false
   const appts = getAppointments()
@@ -322,6 +360,9 @@ function apptTransition(id, newStatus, by) {
   if (window.AppointmentsService?.syncOne) {
     AppointmentsService.syncOne(appt)
   }
+
+  // Alerta de pagamento em aberto quando paciente chega na clinica
+  if (newStatus === 'na_clinica') _alertPagamentoAberto(appt)
 
   // Aplicar tag correspondente ao status (cérebro do sistema)
   const tagId = STATUS_TAG_MAP[newStatus]
@@ -988,13 +1029,33 @@ function savePay(id) {
 
 // ── Finalization Modal ────────────────────────────────────────────
 let _finalProcs = []
+let _finalAppt  = null
 
 function openFinalizeModal(id) {
   _finalProcs = []
+  _finalAppt  = null
   if (!window.getAppointments) return
   const appt = getAppointments().find(a=>a.id===id)
   if (!appt) return
+  _finalAppt = appt
+  // Pre-carrega procedimentos ja agendados (se houver) para iniciar o desconto
+  if (Array.isArray(appt.procedimentos) && appt.procedimentos.length > 0) {
+    _finalProcs = appt.procedimentos.map(function(p) { return { nome: p.nome, valor: parseFloat(p.valor) || 0 } })
+  }
   _buildFinModal(id, appt)
+}
+
+// Calcula valor da consulta em aberto (paga ainda nao quitada)
+function _finConsultaAberta(appt) {
+  if (!appt) return 0
+  if (appt.tipoConsulta !== 'avaliacao' || appt.tipoAvaliacao !== 'paga') return 0
+  var pagamentos = Array.isArray(appt.pagamentos) ? appt.pagamentos : []
+  if (pagamentos.length === 0) {
+    return (appt.statusPagamento === 'pago') ? 0 : (parseFloat(appt.valor) || 0)
+  }
+  return pagamentos
+    .filter(function(p) { return p.status !== 'pago' })
+    .reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
 }
 
 function _buildFinModal(id, appt) {
@@ -1056,6 +1117,7 @@ function _buildFinModal(id, appt) {
               <input id="finDescontoVal" type="number" placeholder="Valor do desconto (R$)" step="0.01" style="width:100%;padding:7px 9px;border:1px solid #F59E0B40;border-radius:7px;font-size:12px;box-sizing:border-box">
             </div>
             <div id="finProcTotal" style="margin-top:8px;padding:8px 10px;background:#F5F3FF;border-radius:8px;font-size:13px;font-weight:700;color:#5B21B6;display:none"></div>
+            <div id="finConsultaAlert" style="margin-top:8px;display:none"></div>
           </div>
 
           <!-- Financeiro -->
@@ -1150,6 +1212,9 @@ function _buildFinModal(id, appt) {
         <button class="modal-btn modal-btn-primary" onclick="confirmFinalize('${id}')" style="flex:2">Confirmar Finaliza&#231;&#227;o</button>
       </div>
     </div></div>`
+
+  // Renderiza alerta de consulta + atualiza total inicial
+  setTimeout(function() { _finUpdateTotal() }, 0)
 
   // Carregar queixas do paciente async
   setTimeout(async function() {
@@ -1413,18 +1478,53 @@ function finProcDesconto(i) {
 function _finUpdateTotal() {
   var total = 0
   _finalProcs.forEach(function(p) { total += ((p.precoOriginal||0) - (p.desconto||0)) * (p.qtd||1) })
+  var consultaAberta = _finConsultaAberta(_finalAppt)
+  // Quando ha procedimentos adicionados, a consulta paga vira "cortesia"
+  // (descontada do total dos procedimentos)
+  var totalFinal = total
+  if (_finalProcs.length > 0 && consultaAberta > 0) {
+    totalFinal = Math.max(0, total - consultaAberta)
+  }
   var el = document.getElementById('finProcTotal')
   if (el) {
     if (_finalProcs.length && total > 0) {
       el.style.display = 'block'
-      el.textContent = 'Total Procedimentos: R$ ' + _fmtBRL(total)
+      var info = 'Total Procedimentos: R$ ' + _fmtBRL(total)
+      if (consultaAberta > 0) {
+        info += '<br><span style="font-size:11px;color:#16A34A">- Consulta R$ ' + _fmtBRL(consultaAberta) + ' (cortesia ao fechar procedimento)</span>'
+        info += '<br><span style="color:#5B21B6">= Total a cobrar: R$ ' + _fmtBRL(totalFinal) + '</span>'
+      }
+      el.innerHTML = info
     } else {
       el.style.display = 'none'
     }
   }
-  // Auto-fill financial total
+  // Auto-fill financial total (com desconto da consulta aplicado)
   var finValor = document.getElementById('finValor')
-  if (finValor && total > 0) finValor.value = total.toFixed(2)
+  if (finValor && totalFinal > 0) finValor.value = totalFinal.toFixed(2)
+  _finRenderConsultaAlert()
+}
+
+// Mostra alerta quando finalizando consulta paga sem procedimento adicionado
+function _finRenderConsultaAlert() {
+  var holder = document.getElementById('finConsultaAlert')
+  if (!holder) return
+  var consultaAberta = _finConsultaAberta(_finalAppt)
+  if (consultaAberta > 0 && _finalProcs.length === 0) {
+    holder.style.display = 'block'
+    holder.innerHTML =
+      '<div style="padding:10px 12px;background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:8px">' +
+        '<div style="font-size:12px;font-weight:800;color:#92400E;margin-bottom:3px">Cobrar consulta antes de finalizar</div>' +
+        '<div style="font-size:11px;color:#92400E">Consulta paga em aberto: R$ ' + _fmtBRL(consultaAberta) + '. Adicione um procedimento para descontar ou registre o pagamento abaixo.</div>' +
+      '</div>'
+    var finValor = document.getElementById('finValor')
+    if (finValor && (!finValor.value || parseFloat(finValor.value) === 0)) {
+      finValor.value = consultaAberta.toFixed(2)
+    }
+  } else {
+    holder.style.display = 'none'
+    holder.innerHTML = ''
+  }
 }
 
 // ── Dynamic payment fields per method ─────────────────────────────
