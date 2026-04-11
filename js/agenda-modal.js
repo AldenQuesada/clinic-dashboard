@@ -524,6 +524,15 @@
       }).join('')
   }
 
+  // Sincroniza o valor total do pagamento com o total a pagar
+  // (consulta ou soma dos procs). Só afeta quando há 1 linha única —
+  // se o usuário já dividiu em múltiplas formas, não mexe.
+  function apptSyncPagamentoTotal() {
+    if (_apptPagamentos.length !== 1) return
+    _apptPagamentos[0].valor = _apptValorTotalPagar()
+    apptRenderPagamentos()
+  }
+
   function apptAddProc() {
     var selEl = document.getElementById('appt_proc_select')
     var nameEl = document.getElementById('appt_proc')
@@ -543,12 +552,8 @@
     if (nameEl) nameEl.value = ''
     if (valorEl) valorEl.value = ''
     _renderApptProcs()
-    // Sincroniza pagamentos: 1ª linha herda total se ainda em zero
-    if (_apptPagamentos.length === 1 && !_apptPagamentos[0].valor) {
-      _apptPagamentos[0].valor = _apptValorTotalPagar()
-      apptRenderPagamentos()
-    }
     apptShowPagamentosBlock()
+    apptSyncPagamentoTotal()
 
     // Alerta se mais de 1 procedimento em 1h
     if (_apptProcs.length > 1) _checkMultiProcAlert()
@@ -558,6 +563,7 @@
     _apptProcs.splice(i, 1)
     _renderApptProcs()
     apptShowPagamentosBlock()
+    apptSyncPagamentoTotal()
     apptUpdatePagamentosTotal()
   }
 
@@ -697,6 +703,7 @@
     _renderApptProcs()
     _updateApptTotalWithDiscount()
     apptShowPagamentosBlock()
+    apptSyncPagamentoTotal()
     apptUpdatePagamentosTotal()
   }
 
@@ -775,6 +782,7 @@
 
   function apptCalcDesconto() {
     _updateApptTotalWithDiscount()
+    apptSyncPagamentoTotal()
     apptUpdatePagamentosTotal()
   }
 
@@ -824,7 +832,11 @@
     if (v <= 0) return
     var valEl = document.getElementById('appt_valor')
     if (valEl) valEl.value = v.toFixed(2)
-    // Se ja tem 1 pagamento aberto sem valor, sincroniza com o total
+    // Só mexe nos pagamentos se o tipo for consulta (ou indefinido).
+    // Em procedimento, o total vem da soma dos procs, não da consulta.
+    var tipoEl = document.getElementById('appt_tipo')
+    var tipo = tipoEl && tipoEl.value
+    if (tipo === 'procedimento') return
     if (_apptPagamentos.length === 1 && (!_apptPagamentos[0].valor || _apptPagamentos[0].valor === 0)) {
       _apptPagamentos[0].valor = v
       apptRenderPagamentos()
