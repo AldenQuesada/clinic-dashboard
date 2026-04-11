@@ -1047,6 +1047,12 @@ function _buildFinModal(id, appt) {
               <button onclick="addFinProc()" style="padding:7px 13px;background:#7C3AED;color:#fff;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700">+</button>
             </div>
             <div id="finProcPriceHint" style="margin-top:4px;font-size:11px;color:#7C3AED;font-weight:600"></div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#F59E0B;cursor:pointer;margin-top:6px">
+              <input type="checkbox" id="finDescontoCb" onchange="var r=document.getElementById('finDescontoRow');r.style.display=this.checked?'block':'none'" style="accent-color:#F59E0B;width:13px;height:13px"> Aplicar desconto
+            </label>
+            <div id="finDescontoRow" style="display:none;margin-top:4px">
+              <input id="finDescontoVal" type="number" placeholder="Valor do desconto (R$)" step="0.01" style="width:100%;padding:7px 9px;border:1px solid #F59E0B40;border-radius:7px;font-size:12px;box-sizing:border-box">
+            </div>
             <div id="finProcTotal" style="margin-top:8px;padding:8px 10px;background:#F5F3FF;border-radius:8px;font-size:13px;font-weight:700;color:#5B21B6;display:none"></div>
           </div>
 
@@ -1149,6 +1155,15 @@ function _buildFinModal(id, appt) {
     if (!el || !window.ComplaintsPanel) { if (el) el.innerHTML = '<span style="font-size:10px;color:#9CA3AF">Sistema de queixas nao disponivel</span>'; return }
 
     var patientId = appt.pacienteId || appt.patient_id || ''
+    // Fallback: buscar lead ID pelo nome
+    if (!patientId) {
+      try {
+        var leads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+        var nome = (appt.pacienteNome || appt.patient_name || '').toLowerCase()
+        var lead = leads.find(function(l) { return (l.name||l.nome||'').toLowerCase() === nome })
+        if (lead) patientId = lead.id
+      } catch(e) {}
+    }
     if (!patientId) { el.innerHTML = '<span style="font-size:10px;color:#9CA3AF">Paciente sem ID</span>'; return }
 
     try {
