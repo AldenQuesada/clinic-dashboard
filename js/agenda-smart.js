@@ -1120,6 +1120,12 @@ function _buildFinModal(id, appt) {
           </div>
         </div>
 
+          <!-- Queixas do paciente -->
+          <div id="finComplaintsSection" style="margin-bottom:12px">
+            <label style="font-size:10px;font-weight:700;color:#7C3AED;display:block;margin-bottom:6px">QUEIXAS TRATADAS NESTA CONSULTA</label>
+            <div id="finComplaintsList" style="font-size:11px;color:#9CA3AF">Carregando queixas...</div>
+          </div>
+
           <div>
             <label style="font-size:10px;font-weight:700;color:#9CA3AF;display:block;margin-bottom:4px">Observacoes Finais</label>
             <textarea id="finObs" rows="3" placeholder="Notas sobre o atendimento..." style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;resize:none;font-family:inherit">${appt.obsFinal||''}</textarea>
@@ -1136,6 +1142,43 @@ function _buildFinModal(id, appt) {
         <button class="modal-btn modal-btn-primary" onclick="confirmFinalize('${id}')" style="flex:2">Confirmar Finalizacao</button>
       </div>
     </div></div>`
+
+  // Carregar queixas do paciente async
+  setTimeout(async function() {
+    var el = document.getElementById('finComplaintsList')
+    if (!el || !window.ComplaintsPanel) { if (el) el.innerHTML = '<span style="font-size:10px;color:#9CA3AF">Sistema de queixas nao disponivel</span>'; return }
+
+    var patientId = appt.pacienteId || appt.patient_id || ''
+    if (!patientId) { el.innerHTML = '<span style="font-size:10px;color:#9CA3AF">Paciente sem ID</span>'; return }
+
+    try {
+      var complaints = await ComplaintsPanel.loadComplaints(patientId)
+      var pendentes = (complaints || []).filter(function(c) { return c.status === 'pendente' || c.status === 'em_tratamento' })
+
+      if (!pendentes.length) { el.innerHTML = '<span style="font-size:10px;color:#9CA3AF">Nenhuma queixa pendente</span>'; return }
+
+      // Carregar procedimentos
+      var procs = []
+      try {
+        if (window._sbShared) { var r = await window._sbShared.from('clinic_procedimentos').select('nome').eq('ativo', true).order('nome'); procs = r.data || [] }
+      } catch(e) {}
+      var procOpts = '<option value="">Procedimento...</option>' + procs.map(function(p) { return '<option value="' + p.nome.replace(/"/g,'&quot;') + '">' + p.nome.replace(/</g,'&lt;') + '</option>' }).join('') + '<option value="__outro__">Outro</option>'
+      var retouchOpts = '<option value="30">1 mes</option><option value="90">3 meses</option><option value="120" selected>4 meses</option><option value="150">5 meses</option><option value="180">6 meses</option><option value="365">1 ano</option>'
+
+      var html = ''
+      pendentes.forEach(function(c) {
+        html += '<div style="padding:6px 0;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;gap:8px">'
+          + '<input type="checkbox" class="finComplaintCb" data-cid="' + c.id + '" style="width:14px;height:14px;accent-color:#7C3AED" />'
+          + '<span style="font-size:11px;color:#111;font-weight:500;flex:1">' + (c.complaint||'').replace(/</g,'&lt;') + '</span>'
+          + '<select class="finComplaintProc" data-cid="' + c.id + '" style="padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px;max-width:140px">' + procOpts + '</select>'
+          + '<select class="finComplaintRetouch" data-cid="' + c.id + '" style="padding:4px 6px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px;width:80px">' + retouchOpts + '</select>'
+          + '</div>'
+      })
+      el.innerHTML = html
+    } catch (e) {
+      el.innerHTML = '<span style="font-size:10px;color:#EF4444">Erro: ' + e.message + '</span>'
+    }
+  }, 100)
 }
 
 function _buildFinFlowChecks() {
@@ -1717,6 +1760,30 @@ function confirmFinalize(id) {
       formaPagamento: forma,
       pagamentoDetalhes: pagDetalhes,
     }).catch(function(e) { console.warn('[Agenda] Cashflow create falhou:', e) })
+  }
+
+  // Queixas: atualizar queixas marcadas como tratadas
+  if (window.ComplaintsPanel) {
+    var cbs = document.querySelectorAll('.finComplaintCb:checked')
+    cbs.forEach(function(cb) {
+      var cid = cb.dataset.cid
+      var procSel = document.querySelector('.finComplaintProc[data-cid="' + cid + '"]')
+      var retouchSel = document.querySelector('.finComplaintRetouch[data-cid="' + cid + '"]')
+      var proc = procSel ? procSel.value : ''
+      if (proc === '__outro__') proc = 'Outro'
+      var retouch = retouchSel ? parseInt(retouchSel.value) : 120
+      if (proc) {
+        ComplaintsPanel.saveComplaint({
+          p_id: cid,
+          p_status: 'em_tratamento',
+          p_treatment_procedure: proc,
+          p_treatment_date: new Date().toISOString(),
+          p_retouch_interval_days: retouch,
+          p_professional_name: apptFinal.profissionalNome || apptFinal.professional_name || '',
+          p_appointment_id: apptFinal.id,
+        }).catch(function(e) { console.warn('[Agenda] Complaint update falhou:', e) })
+      }
+    })
   }
 
   // Consentimentos: verificar se procedimento realizado tem TCLE pendente

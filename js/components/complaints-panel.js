@@ -129,33 +129,61 @@
     }
 
     // Form inline para quick treat (hidden por default)
-    html += '<div id="cpQuickTreatForm" style="display:none;margin-top:8px;padding:8px;background:#fff;border:1px solid #E5E7EB;border-radius:6px">'
-      + '<input id="cpQtProc" type="text" placeholder="Procedimento..." style="width:100%;padding:5px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;margin-bottom:4px;box-sizing:border-box" />'
-      + '<div style="display:flex;gap:4px;margin-bottom:4px">'
-      + '<select id="cpQtInterval" style="flex:1;padding:5px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px">'
+    html += '<div id="cpQuickTreatForm" style="display:none;margin-top:8px;padding:10px;background:#fff;border:1.5px solid #7C3AED30;border-radius:8px">'
+      + '<div style="font-size:10px;font-weight:700;color:#7C3AED;margin-bottom:6px">MARCAR COMO TRATADA</div>'
+      + '<select id="cpQtProc" style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;margin-bottom:6px;box-sizing:border-box"><option value="">Carregando procedimentos...</option></select>'
+      + '<div style="display:flex;gap:4px">'
+      + '<select id="cpQtInterval" style="flex:1;padding:6px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px">'
       + RETOUCH_INTERVALS.map(function(r) { return '<option value="' + r.value + '">' + r.label + '</option>' }).join('')
       + '</select>'
-      + '<button onclick="ComplaintsPanel._submitQuickTreat()" style="padding:5px 10px;background:#7C3AED;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer">Salvar</button>'
-      + '<button onclick="document.getElementById(\'cpQuickTreatForm\').style.display=\'none\'" style="padding:5px 8px;background:#F3F4F6;color:#374151;border:none;border-radius:4px;font-size:10px;cursor:pointer">X</button>'
+      + '<button onclick="ComplaintsPanel._submitQuickTreat()" style="padding:6px 12px;background:#7C3AED;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer">Salvar</button>'
+      + '<button onclick="document.getElementById(\'cpQuickTreatForm\').style.display=\'none\'" style="padding:6px 8px;background:#F3F4F6;color:#374151;border:none;border-radius:4px;font-size:10px;cursor:pointer">X</button>'
       + '</div></div>'
 
     return _stratCard('#7C3AED', 'Queixas (' + complaints.length + ')', html)
   }
 
   // Quick treat: abre form inline no card
-  var _qtComplaintId = null, _qtLeadId = null
-  function _quickTreat(complaintId, leadId) {
+  var _qtComplaintId = null, _qtLeadId = null, _procsLoaded = false
+  async function _quickTreat(complaintId, leadId) {
     _qtComplaintId = complaintId
     _qtLeadId = leadId
     var form = document.getElementById('cpQuickTreatForm')
-    if (form) { form.style.display = 'block'; document.getElementById('cpQtProc')?.focus() }
+    if (form) form.style.display = 'block'
+
+    // Carregar procedimentos no select
+    var sel = document.getElementById('cpQtProc')
+    if (sel && !_procsLoaded) {
+      var procs = []
+      try {
+        if (window._sbShared) {
+          var res = await window._sbShared.from('clinic_procedimentos').select('nome,categoria').eq('ativo', true).order('categoria,nome')
+          procs = res.data || []
+        }
+      } catch (e) {}
+      // Fallback localStorage
+      if (!procs.length) try { procs = JSON.parse(localStorage.getItem('clinic_procedimentos') || '[]') } catch (e) {}
+
+      var opts = '<option value="">Selecione o procedimento...</option>'
+      var lastCat = ''
+      procs.forEach(function(p) {
+        var cat = p.categoria || 'outro'
+        if (cat !== lastCat) { if (lastCat) opts += '</optgroup>'; opts += '<optgroup label="' + _esc(cat.charAt(0).toUpperCase() + cat.slice(1)) + '">'; lastCat = cat }
+        opts += '<option value="' + _esc(p.nome) + '">' + _esc(p.nome) + '</option>'
+      })
+      if (lastCat) opts += '</optgroup>'
+      opts += '<option value="__outro__">Outro (digitar)</option>'
+      sel.innerHTML = opts
+      _procsLoaded = true
+    }
   }
 
   async function _submitQuickTreat() {
     if (!_qtComplaintId) return
     var proc = (document.getElementById('cpQtProc') || {}).value || ''
+    if (proc === '__outro__') proc = prompt('Digite o procedimento:') || ''
     var interval = parseInt((document.getElementById('cpQtInterval') || {}).value || '120')
-    if (!proc.trim()) { alert('Informe o procedimento'); return }
+    if (!proc.trim()) { alert('Selecione o procedimento'); return }
 
     try {
       await saveComplaint({
