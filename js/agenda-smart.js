@@ -1127,7 +1127,7 @@ function _buildFinModal(id, appt) {
           </div>
 
           <div>
-            <label style="font-size:10px;font-weight:700;color:#9CA3AF;display:block;margin-bottom:4px">Observacoes Finais</label>
+            <label style="font-size:10px;font-weight:700;color:#9CA3AF;display:block;margin-bottom:4px">Observa&#231;&#245;es Finais</label>
             <textarea id="finObs" rows="3" placeholder="Notas sobre o atendimento..." style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #E5E7EB;border-radius:7px;font-size:12px;resize:none;font-family:inherit">${appt.obsFinal||''}</textarea>
           </div>
 
@@ -1139,7 +1139,7 @@ function _buildFinModal(id, appt) {
       </div>
       <div class="modal-footer">
         <button class="modal-btn modal-btn-ghost" onclick="closeFinalizeModal()">Cancelar</button>
-        <button class="modal-btn modal-btn-primary" onclick="confirmFinalize('${id}')" style="flex:2">Confirmar Finalizacao</button>
+        <button class="modal-btn modal-btn-primary" onclick="confirmFinalize('${id}')" style="flex:2">Confirmar Finaliza&#231;&#227;o</button>
       </div>
     </div></div>`
 
@@ -1163,7 +1163,7 @@ function _buildFinModal(id, appt) {
         if (window._sbShared) { var r = await window._sbShared.from('clinic_procedimentos').select('nome').eq('ativo', true).order('nome'); procs = r.data || [] }
       } catch(e) {}
       var procOpts = '<option value="">Procedimento...</option>' + procs.map(function(p) { return '<option value="' + p.nome.replace(/"/g,'&quot;') + '">' + p.nome.replace(/</g,'&lt;') + '</option>' }).join('') + '<option value="__outro__">Outro</option>'
-      var retouchOpts = '<option value="7">1 semana</option><option value="15">15 dias</option><option value="30">1 mes</option><option value="60">2 meses</option><option value="90">3 meses</option><option value="120" selected>4 meses</option><option value="150">5 meses</option><option value="180">6 meses</option><option value="365">1 ano</option>'
+      var retouchOpts = '<option value="7">1 semana</option><option value="15">15 dias</option><option value="30">1 m&#234;s</option><option value="60">2 meses</option><option value="90">3 meses</option><option value="120" selected>4 meses</option><option value="150">5 meses</option><option value="180">6 meses</option><option value="365">1 ano</option>'
 
       var html = ''
       pendentes.forEach(function(c) {
@@ -1211,11 +1211,11 @@ function _buildFinFlowChecks() {
   // Fallback fixed checks if engine not loaded
   if (!checks.length) {
     checks = [
-      { id:'finWAPos',          label:'Enviar WhatsApp pos-atendimento (cuidados)', checked:true },
-      { id:'finAvalGoogle',     label:'Solicitar avaliacao Google',                  checked:true },
-      { id:'finGerarRetorno',   label:'Gerar retorno / proximo agendamento',         checked:true },
-      { id:'finFluxoParceria',  label:'Fluxo de parceria / indicacao',               checked:false },
-      { id:'finEnviarOrcamento',label:'Enviar orcamento',                            checked:true },
+      { id:'finWAPos',          label:'Enviar WhatsApp p\u00f3s-atendimento (cuidados)', checked:true },
+      { id:'finAvalGoogle',     label:'Solicitar avalia\u00e7\u00e3o Google',                  checked:true },
+      { id:'finGerarRetorno',   label:'Gerar retorno / pr\u00f3ximo agendamento',         checked:true },
+      { id:'finFluxoParceria',  label:'Fluxo de parceria / indica\u00e7\u00e3o',               checked:false },
+      { id:'finEnviarOrcamento',label:'Enviar or\u00e7amento',                            checked:true },
     ]
   }
 
@@ -1650,7 +1650,7 @@ function confirmFinalize(id) {
 
   // ── Confirmacao de seguranca ──
   var nomePac = appt.pacienteNome || 'Paciente'
-  var routeLabel = { paciente:'Paciente', pac_orcamento:'Paciente + Orcamento', orcamento:'Orcamento', nenhum:'—' }[routeVal] || routeVal
+  var routeLabel = { paciente:'Paciente', pac_orcamento:'Paciente + Or\u00e7amento', orcamento:'Or\u00e7amento', nenhum:'\u2014' }[routeVal] || routeVal
   var resumo = 'Tem certeza que quer finalizar a consulta de *' + nomePac + '*?\n\n'
     + 'Procedimentos: ' + (_finalProcs.length ? _finalProcs.map(function(p){return p.nome}).join(', ') : 'nenhum') + '\n'
     + 'Valor: R$ ' + _fmtBRL(valor) + '\n'

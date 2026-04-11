@@ -31,7 +31,7 @@
   var RETOUCH_INTERVALS = [
     { value: 7,   label: '1 semana' },
     { value: 15,  label: '15 dias' },
-    { value: 30,  label: '1 mes' },
+    { value: 30,  label: '1 m\u00eas' },
     { value: 60,  label: '2 meses' },
     { value: 90,  label: '3 meses' },
     { value: 120, label: '4 meses' },
