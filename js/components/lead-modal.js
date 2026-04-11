@@ -1329,10 +1329,25 @@ window._lmChangePhase  = _lmChangePhase
 
 async function _lmTabGeral(lead) {
   var cf   = lead.customFields || {}
+  var ld   = lead.data || {}
+  // Dados na raiz do lead > customFields > data JSON
   var addr = cf.endereco || {}
-  var dob  = cf.dataNascimento || ''
+  if (typeof lead.endereco === 'string' && lead.endereco) {
+    // Parse endereco string: "Rua X, 123, Bairro, Cidade/UF, CEP"
+    var parts = lead.endereco.split(',').map(function(s){return s.trim()})
+    addr = { rua: parts[0]||'', numero: parts[1]||'', bairro: parts[2]||'', cidade: (parts[3]||'').split('/')[0]?.trim(), estado: (parts[3]||'').split('/')[1]?.trim(), cep: parts[4]||'' }
+  }
+  var dob  = lead.birth_date || cf.dataNascimento || ld.dataNascimento || ''
   var age  = _calcAge(dob) || (lead.idade ? lead.idade : null)
-  var sexLabels = { feminino:'Feminino', masculino:'Masculino', male:'Masculino', female:'Feminino', other:'Outro', not_informed:'Não informado' }
+  // Sexo: raiz > customFields > data
+  if (!cf.sexo) cf.sexo = lead.sexo || ld.sexo || ''
+  // CPF: customFields > data
+  if (!cf.cpf) cf.cpf = ld.cpf || ''
+  // Profissao
+  if (!cf.profissao) cf.profissao = lead.profissao || ld.profissao || ''
+  // Estado civil
+  if (!cf.estadoCivil) cf.estadoCivil = lead.estado_civil || ld.estado_civil || ''
+  var sexLabels = { feminino:'Feminino', masculino:'Masculino', male:'Masculino', female:'Feminino', other:'Outro', not_informed:'N\u00e3o informado', Feminino:'Feminino', Masculino:'Masculino' }
   var phaseSrc  = { lead:'Lead', agendado:'Agendado', reagendado:'Reagendado', compareceu:'Compareceu', paciente:'Paciente', orcamento:'Orçamento', perdido:'Perdido' }
   var tempSrc   = { hot:'Quente', warm:'Morno', cold:'Frio' }
   var phone = lead.phone || lead.whatsapp || lead.telefone || ''
