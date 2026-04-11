@@ -768,10 +768,30 @@ async function _lmLoadFichas(lead) {
 
     // Buscar answers desta ficha
     var answersRes = await window._sbShared.from('anamnesis_answers')
-      .select('field_key,value_json,normalized_text')
+      .select('field_id,field_key,value_json,normalized_text')
       .eq('response_id', f.id)
       .limit(100)
     var answers = (answersRes.data || [])
+
+    // Buscar labels das opcoes para traduzir values internos
+    var fieldIds = answers.map(function(a) { return a.field_id }).filter(Boolean)
+    var optLabels = {}
+    if (fieldIds.length) {
+      var optsRes = await window._sbShared.from('anamnesis_field_options')
+        .select('field_id,value,label')
+        .in('field_id', fieldIds)
+      ;(optsRes.data || []).forEach(function(o) {
+        optLabels[o.field_id + ':' + o.value] = o.label
+      })
+    }
+    // Buscar labels dos fields
+    var fieldLabels = {}
+    if (fieldIds.length) {
+      var flRes = await window._sbShared.from('anamnesis_fields')
+        .select('id,label')
+        .in('id', fieldIds)
+      ;(flRes.data || []).forEach(function(fl) { fieldLabels[fl.id] = fl.label })
+    }
 
     html += '<div style="padding:14px 16px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;cursor:pointer" onclick="this.querySelector(\'.lm-ficha-detail\').style.display=this.querySelector(\'.lm-ficha-detail\').style.display===\'none\'?\'block\':\'none\'">'
       + '<div style="display:flex;justify-content:space-between;align-items:center">'
@@ -783,14 +803,31 @@ async function _lmLoadFichas(lead) {
       + '</div>'
       + '<div class="lm-ficha-detail" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">'
 
-    // Renderizar respostas
+    // Renderizar respostas com labels legiveis
     if (answers.length) {
       answers.forEach(function (a) {
-        var val = a.normalized_text || (typeof a.value_json === 'string' ? a.value_json : JSON.stringify(a.value_json))
-        if (!val || val === 'null' || val === '[REDACTED]') return
-        html += '<div style="margin-bottom:8px">'
-          + '<div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.03em">' + _lmEsc((a.field_key || '').replace(/_/g, ' ')) + '</div>'
-          + '<div style="font-size:12px;color:#374151;line-height:1.5">' + _lmEsc(String(val)) + '</div>'
+        var rawVal = a.value_json
+        var displayVal = ''
+
+        // Traduzir values internos para labels
+        if (Array.isArray(rawVal)) {
+          displayVal = rawVal.map(function(v) { return optLabels[a.field_id + ':' + v] || v }).join(', ')
+        } else if (typeof rawVal === 'boolean') {
+          displayVal = rawVal ? 'Sim' : 'Nao'
+        } else if (typeof rawVal === 'string') {
+          displayVal = optLabels[a.field_id + ':' + rawVal] || rawVal
+        } else if (rawVal !== null && rawVal !== undefined) {
+          displayVal = String(rawVal)
+        }
+
+        if (!displayVal || displayVal === 'null' || displayVal === '[REDACTED]') return
+
+        // Label do campo
+        var fieldLabel = fieldLabels[a.field_id] || (a.field_key || '').replace(/_/g, ' ')
+
+        html += '<div style="margin-bottom:10px">'
+          + '<div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.03em">' + _lmEsc(fieldLabel) + '</div>'
+          + '<div style="font-size:12px;color:#374151;line-height:1.5">' + _lmEsc(displayVal) + '</div>'
           + '</div>'
       })
     }
