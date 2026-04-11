@@ -461,6 +461,10 @@ let _pfStep = 1             // passo atual (1-4)
 
 // ── CRUD ──────────────────────────────────────────────────────
 function _ensureSeeds() {
+  // Só semeia em fallback puro localStorage. Se o repo Supabase
+  // está disponível, _loadProcedimentos populou _procsCache (mesmo
+  // que vazio); nunca poluímos com seeds nesse caso.
+  if (window.ProcedimentosRepository) return
   const stored = getProcs()
   if (stored.length > 0) return
   saveProcs(PROC_SEEDS.map(s => ({ ...s, preco: 0, preco_promo: 0, ativo: true })))
@@ -470,26 +474,42 @@ function _getProc(id) { return getProcs().find(p => p.id === id) }
 
 async function _saveProc(proc) {
   if (window.ProcedimentosRepository) {
+    // Insumos: padroniza pra { injetavel_id, qtd_por_sessao } (formato do RPC)
+    const insumosNorm = (proc.insumos || []).map(i => ({
+      injetavel_id:   i.injetavel_id || i.injId || null,
+      qtd_por_sessao: parseFloat(i.qtd_por_sessao) || 1,
+    })).filter(i => i.injetavel_id && _isProcUuid(i.injetavel_id))
+
     const r = await window.ProcedimentosRepository.upsert({
-      id:                 _isProcUuid(proc.id) ? proc.id : null,
-      nome:               proc.nome,
-      categoria:          proc.categoria        || null,
-      descricao:          proc.descricao        || null,
-      duracao_min:        proc.duracao          || 60,
-      sessoes:            proc.sessoes          || 1,
-      tipo:               proc.tipo             || 'avulso',
-      preco:              proc.preco            || null,
-      margem:             proc.margem           || null,
-      combo_sessoes:      proc.combo_sessoes    || null,
-      combo_desconto_pct: proc.combo_desconto_pct || null,
-      combo_valor_final:  proc.combo_valor_final  || null,
-      cuidados_pre:       proc.cuidados_pre     || [],
-      cuidados_pos:       proc.cuidados_pos     || [],
-      contraindicacoes:   proc.contraindicacoes || [],
-      observacoes:        proc.observacoes      || null,
+      id:                   _isProcUuid(proc.id) ? proc.id : null,
+      nome:                 proc.nome,
+      categoria:            proc.categoria            || null,
+      descricao:            proc.descricao            || null,
+      duracao_min:          proc.duracao              || 60,
+      sessoes:              proc.sessoes              || 1,
+      tipo:                 proc.tipo                 || 'avulso',
+      preco:                proc.preco                || null,
+      preco_promo:          proc.preco_promo          || null,
+      custo_estimado:       proc.custo_estimado       || null,
+      margem:               proc.margem               || null,
+      combo_sessoes:        proc.combo_sessoes        || null,
+      combo_desconto_pct:   proc.combo_desconto_pct   || null,
+      combo_valor_final:    proc.combo_valor_final    || null,
+      combo_bonus:          proc.combo_bonus          || null,
+      combo_descricao:      proc.combo_descricao      || null,
+      usa_tecnologia:       !!proc.usa_tecnologia,
+      tecnologia_protocolo: proc.tecnologia_protocolo || null,
+      tecnologia_sessoes:   proc.tecnologia_sessoes   || null,
+      tecnologia_custo:     proc.tecnologia_custo     || null,
+      cuidados_pre:         proc.cuidados_pre         || [],
+      cuidados_pos:         proc.cuidados_pos         || [],
+      contraindicacoes:     proc.contraindicacoes     || [],
+      observacoes:          proc.observacoes          || null,
+      insumos:              insumosNorm,
     })
     if (!r.ok) throw new Error(r.error || 'Erro ao salvar procedimento')
     _procsCache = null
+    await _loadProcedimentos()
     return
   }
   const all = getProcs()
@@ -504,6 +524,7 @@ async function _deleteProc(id) {
     const r = await window.ProcedimentosRepository.softDelete(id)
     if (!r.ok) throw new Error(r.error || 'Erro ao excluir procedimento')
     _procsCache = null
+    await _loadProcedimentos()
     return
   }
   saveProcs(getProcs().filter(p => p.id !== id))
@@ -1482,28 +1503,39 @@ function procOpenForm(id) {
   _pfStep = 1
 
   if (p) {
+    // Insumos do RPC vêm como { injetavel_id, injetavel_nome, qtd_por_sessao }.
+    // O wizard local usa { injId, nome, custo_unit, qtd_por_sessao } —
+    // normalizamos pra evitar quebra do toggle/edit.
+    const insumosNorm = (p.insumos || []).map(i => ({
+      injId:          i.injetavel_id || i.injId,
+      injetavel_id:   i.injetavel_id || i.injId,
+      nome:           i.injetavel_nome || i.nome || '',
+      unidade:        i.unidade || 'un',
+      custo_unit:     parseFloat(i.custo_unit) || 0,
+      qtd_por_sessao: parseFloat(i.qtd_por_sessao) || 1,
+    }))
     _pfData = {
       nome:                 p.nome || '',
       categoria:            p.categoria || '',
-      duracao:              p.duracao || 60,
+      duracao:              p.duracao_min || p.duracao || 60,
       descricao:            p.descricao || '',
       observacoes:          p.observacoes || '',
-      insumos:              JSON.parse(JSON.stringify(p.insumos || [])),
+      insumos:              insumosNorm,
       usa_tecnologia:       !!p.usa_tecnologia,
       tecnologia_protocolo: p.tecnologia_protocolo || '',
       tecnologia_sessoes:   p.tecnologia_sessoes || 1,
-      tecnologia_custo:     p.tecnologia_custo || 0,
+      tecnologia_custo:     parseFloat(p.tecnologia_custo) || 0,
       cuidados_pre:         [...(p.cuidados_pre || [])],
       cuidados_pos:         [...(p.cuidados_pos || [])],
       contraindicacoes:     [...(p.contraindicacoes || [])],
       tipo:                 p.tipo || 'avulso',
       sessoes:              p.sessoes || 1,
-      custo_estimado:       p.custo_estimado || 0,
-      preco:                p.preco || 0,
-      preco_promo:          p.preco_promo || 0,
+      custo_estimado:       parseFloat(p.custo_estimado) || 0,
+      preco:                parseFloat(p.preco) || 0,
+      preco_promo:          parseFloat(p.preco_promo) || 0,
       combo_sessoes:        p.combo_sessoes || 0,
-      combo_desconto_pct:   p.combo_desconto_pct || 0,
-      combo_valor_final:    p.combo_valor_final || 0,
+      combo_desconto_pct:   parseFloat(p.combo_desconto_pct) || 0,
+      combo_valor_final:    parseFloat(p.combo_valor_final) || 0,
       combo_bonus:          p.combo_bonus || '',
       combo_descricao:      p.combo_descricao || '',
     }
