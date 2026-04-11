@@ -1534,66 +1534,29 @@ function _lmCopyAnamLink() {
 // ── Aba: Anamnese ─────────────────────────────────────────────
 
 function _lmTabAnamnese(lead) {
-  var ana = lead.customFields?.anamnese || {}
-  var hasAnamnese = Object.keys(ana).some(function(k) { return !!ana[k] })
-
-  var statusBadge = hasAnamnese
-    ? '<div style="display:inline-flex;align-items:center;gap:6px;background:#F0FDF4;color:#16A34A;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600">' +
-        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Ficha manual preenchida</div>'
-    : '<div style="display:inline-flex;align-items:center;gap:6px;background:#FFF7ED;color:#EA580C;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600">' +
-        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Ficha manual pendente</div>'
-
   var digitalSection =
-    '<div style="margin-bottom:22px">' +
-      '<div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;border-bottom:1px solid #F3F4F6;margin-bottom:14px">Ficha Digital (link único)</div>' +
+    '<div style="margin-bottom:18px">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">' +
-        '<p style="margin:0;font-size:13px;color:#6B7280;line-height:1.5">Gere um link seguro para o paciente preencher a ficha online no próprio dispositivo. O link expira em 30 dias.</p>' +
-        '<button onclick="_lmOpenLinkPanel(\'' + lead.id + '\')" style="flex-shrink:0;margin-left:16px;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:700;color:#374151">Ficha de Anamnese Digital</div>' +
+          '<div style="font-size:11px;color:#9CA3AF;margin-top:2px">Gere um link para o paciente preencher no celular.</div>' +
+        '</div>' +
+        '<button onclick="_lmOpenLinkPanel(\'' + lead.id + '\')" style="flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">' +
           '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>' +
-          'Gerar Link' +
+          'Enviar Ficha' +
         '</button>' +
       '</div>' +
       '<div id="lmAnamLinkPanel" style="display:none"></div>' +
     '</div>'
 
-  var fields = [
-    { key:'alergias',      label:'Alergias',                          rows:2 },
-    { key:'medicamentos',  label:'Medicamentos em uso',                rows:2 },
-    { key:'doencas',       label:'Condições preexistentes',            rows:2 },
-    { key:'cirurgias',     label:'Cirurgias anteriores',               rows:2 },
-    { key:'procedimentos', label:'Procedimentos estéticos anteriores', rows:2 },
-    { key:'objetivos',     label:'Objetivos do tratamento',            rows:3 },
-    { key:'observacoes',   label:'Observações adicionais',             rows:3 },
-  ]
-
-  var formFields = fields.map(function(f) {
-    return '<div style="margin-bottom:14px">' +
-      '<label style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:5px">' + f.label + '</label>' +
-      '<textarea id="ana_' + f.key + '" rows="' + f.rows + '" style="width:100%;padding:9px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;color:#374151">' + (ana[f.key] || '') + '</textarea>' +
-    '</div>'
-  }).join('')
-
-  var manualSection =
-    '<div>' +
-      '<div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;border-bottom:1px solid #F3F4F6;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between">' +
-        'Preenchimento Manual' +
-        statusBadge +
-      '</div>' +
-      formFields +
-      '<div style="display:flex;justify-content:flex-end;padding-top:4px">' +
-        '<button onclick="saveAnamnese(\'' + lead.id + '\')" style="padding:9px 20px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Salvar Ficha</button>' +
-      '</div>' +
-    '</div>'
-
-  // Secao de fichas preenchidas (carrega async)
-  var fichasSection = '<div style="margin-top:22px">' +
+  var fichasSection = '<div>' +
     '<div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;padding-bottom:8px;border-bottom:1px solid #F3F4F6;margin-bottom:14px">Fichas Preenchidas</div>' +
     '<div id="lmFichasContent"><div style="text-align:center;padding:16px;color:#9CA3AF;font-size:12px">Carregando...</div></div>' +
     '</div>'
 
   setTimeout(function () { _lmLoadFichas(lead) }, 100)
 
-  return digitalSection + manualSection + fichasSection
+  return digitalSection + fichasSection
 }
 
 // ── Aba: Evolução ─────────────────────────────────────────────
