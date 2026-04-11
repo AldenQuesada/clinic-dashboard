@@ -3998,6 +3998,26 @@
 
         <!-- ═══ COLUNA ESQUERDA ═══ -->
 
+        <!-- Profissional + Sala (roxo suave) — agora primeiro -->
+        <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:12px;padding:12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+            <div style="width:24px;height:24px;border-radius:6px;background:#EDE9FE;display:flex;align-items:center;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <span style="font-size:11px;font-weight:800;color:#6D28D9;text-transform:uppercase;letter-spacing:.04em">Equipe *</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">PROFISSIONAL</label>
+              <select id="appt_prof" onchange="apptOnProfChange()" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
+            </div>
+            <div>
+              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">SALA</label>
+              <select id="appt_sala" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
+            </div>
+          </div>
+        </div>
+
         <!-- Paciente (verde suave) -->
         <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:12px">
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
@@ -4026,26 +4046,6 @@
               <input id="appt_indicado_por" type="text" placeholder="Buscar paciente..." autocomplete="off" oninput="apptIndicadoSearch(this.value)" onfocus="apptIndicadoSearch(this.value)" style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
               <input id="appt_indicado_por_id" type="hidden" value=""/>
               <div id="apptIndicadoDrop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin-top:2px;max-height:180px;overflow-y:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.08)"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Profissional + Sala (roxo suave) -->
-        <div style="background:#F5F3FF;border:1px solid #DDD6FE;border-radius:12px;padding:12px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
-            <div style="width:24px;height:24px;border-radius:6px;background:#EDE9FE;display:flex;align-items:center;justify-content:center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <span style="font-size:11px;font-weight:800;color:#6D28D9;text-transform:uppercase;letter-spacing:.04em">Equipe</span>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">PROFISSIONAL</label>
-              <select id="appt_prof" onchange="apptAutoSala()" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
-            </div>
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">SALA</label>
-              <select id="appt_sala" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
             </div>
           </div>
         </div>
@@ -5043,7 +5043,7 @@
   <!-- Mestres de dados clínicos — Supabase (rooms, technologies, professionals, injetaveis, procedimentos) -->
   <script src="js/repositories/rooms.repository.js?v=20260407p" defer></script>
   <script src="js/repositories/technologies.repository.js?v=20260407p" defer></script>
-  <script src="js/repositories/professionals.repository.js?v=20260407p" defer></script>
+  <script src="js/repositories/professionals.repository.js?v=20260411b" defer></script>
   <script src="js/repositories/injetaveis.repository.js?v=20260407p" defer></script>
   <script src="js/repositories/procedimentos.repository.js?v=20260407p" defer></script>
   <script src="js/services/local-migration.service.js?v=20260407p" defer></script>
@@ -5130,7 +5130,7 @@
   <script src="js/repositories/alexa-devices.repository.js?v=20260409e" defer></script>
   <script src="js/alexa-settings.js?v=20260409e" defer></script>
   <script src="js/users-admin.js?v=20260407p" defer></script>
-  <script src="js/professionals.js?v=20260407p" defer></script>
+  <script src="js/professionals.js?v=20260411b" defer></script>
   <!-- Módulos extraídos de api.js — devem carregar ANTES de api.js -->
   <script src="js/rooms.js?v=20260407p" defer></script>
   <script src="js/technologies.js?v=20260407p" defer></script>
@@ -5138,7 +5138,7 @@
   <script src="js/api.js?v=20260407p" defer></script>
   <!-- Módulos extraídos de api.js — carregam DEPOIS de api.js, sobrescrevem globals -->
   <script src="js/agenda-notifications.js?v=20260407p" defer></script>
-  <script src="js/agenda-modal.js?v=20260407p" defer></script>
+  <script src="js/agenda-modal.js?v=20260411b" defer></script>
   <script src="js/agenda-finalize.js?v=20260407p" defer></script>
   <script src="js/injetaveis.js?v=20260409e" defer></script>
   <script src="js/procedimentos.js?v=20260409e" defer></script>
