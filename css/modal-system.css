@@ -226,6 +226,9 @@
   padding: 24px 28px;
 }
 
+/* Slide-in lateral */
+@keyframes lmSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
 /* Mobile */
 @media (max-width: 640px) {
   .modal-box { border-radius: 14px; max-height: 100vh; }
