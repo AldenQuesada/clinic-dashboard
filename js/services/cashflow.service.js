@@ -147,6 +147,12 @@
     return repo.rejectSuggestion(entryId)
   }
 
+  async function getIntelligence(year, month) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: {}, error: 'CashflowRepository nao disponivel' }
+    return repo.getIntelligence(year, month)
+  }
+
   // ── Hook: cria entry a partir de appointment finalizado ──
 
   /**
@@ -278,6 +284,7 @@
     autoReconcile:        autoReconcile,
     getSuggestions:       getSuggestions,
     rejectSuggestion:     rejectSuggestion,
+    getIntelligence:      getIntelligence,
     createFromAppointment: createFromAppointment,
   })
 })()

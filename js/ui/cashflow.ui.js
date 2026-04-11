@@ -43,7 +43,12 @@
     _renderBody()
 
     try {
-      var [sumRes, listRes] = await Promise.all([
+      // Determina ano/mes do periodo (se mes atual)
+      var d = new Date(_state.startDate + 'T00:00:00')
+      var year  = d.getFullYear()
+      var month = d.getMonth() + 1
+
+      var [sumRes, listRes, intelRes] = await Promise.all([
         window.CashflowService.getSummary(_state.startDate, _state.endDate),
         window.CashflowService.listEntries({
           startDate: _state.startDate,
@@ -52,14 +57,17 @@
           method:    _state.method    || null,
           onlyUnreconciled: _state.onlyUnreconciled,
         }),
+        window.CashflowService.getIntelligence(year, month),
       ])
 
-      _state.summary = (sumRes && sumRes.ok) ? sumRes.data : {}
-      _state.entries = (listRes && listRes.ok) ? listRes.data : []
+      _state.summary      = (sumRes  && sumRes.ok)  ? sumRes.data  : {}
+      _state.entries      = (listRes && listRes.ok) ? listRes.data : []
+      _state.intelligence = (intelRes && intelRes.ok) ? intelRes.data : {}
     } catch (e) {
       console.error('[CashflowUI] load error:', e)
       _state.summary = {}
       _state.entries = []
+      _state.intelligence = {}
     }
 
     _state.loading = false
@@ -177,8 +185,12 @@
 
     var s   = _state.summary || {}
     var fmt = window.CashflowService.fmtCurrency
+    var intel = _state.intelligence || {}
 
     body.innerHTML = ''
+      // Painel Inteligencia
+      + _intelligencePanel(intel)
+
       // KPIs
       + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">'
         + _kpi('Entradas',     fmt(s.credits || 0),   '#10b981', _icon('arrow-down-circle', 16))
@@ -195,6 +207,169 @@
 
       // Tabela de movimentos
       + _table()
+  }
+
+  // ── Painel Inteligencia ───────────────────────────────────
+
+  function _intelligencePanel(intel) {
+    if (!intel || !intel.period) return ''
+
+    var fmt = window.CashflowService.fmtCurrency
+    var current     = intel.current     || {}
+    var previous    = intel.previous    || {}
+    var delta       = intel.delta       || {}
+    var projection  = intel.projection  || {}
+    var goal        = intel.goal        || {}
+    var receivables = intel.receivables || {}
+    var debtors     = intel.debtors     || {}
+    var alerts      = intel.alerts      || []
+
+    var html = ''
+      // Header
+      + '<div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;border-radius:14px;padding:20px 22px;margin-bottom:20px;box-shadow:0 8px 24px rgba(15,23,42,.15)">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
+          + '<span style="color:#fbbf24">' + _icon('zap', 18) + '</span>'
+          + '<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#e2e8f0">Inteligencia do Mes</div>'
+          + '<span style="font-size:11px;color:#94a3b8;margin-left:auto">Dia ' + (intel.period.days_passed || 0) + ' de ' + (intel.period.days_in_month || 0) + '</span>'
+        + '</div>'
+
+        // Cards inteligencia (4 colunas)
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px">'
+
+          // Card 1: vs Mes anterior
+          + _intelCard(
+              'vs Mes Anterior',
+              delta.credits_pct !== null && delta.credits_pct !== undefined
+                ? (delta.credits_pct >= 0 ? '+' : '') + delta.credits_pct + '%'
+                : '—',
+              previous.credits ? 'Antes: ' + fmt(previous.credits) : 'Sem historico',
+              delta.credits_pct >= 0 ? '#10b981' : '#ef4444',
+              delta.credits_pct >= 0 ? 'trending-up' : 'trending-down'
+            )
+
+          // Card 2: Projecao fim do mes
+          + _intelCard(
+              'Projecao Fim do Mes',
+              fmt(projection.projected_credits || 0),
+              'Media diaria: ' + fmt(projection.daily_avg || 0),
+              '#fbbf24',
+              'target'
+            )
+
+          // Card 3: Meta
+          + _intelCard(
+              'Meta do Mes',
+              goal.has_goal ? (goal.pct || 0) + '%' : '—',
+              goal.has_goal
+                ? fmt(goal.realized || 0) + ' / ' + fmt(goal.meta || 0)
+                : 'Configurar em Metas',
+              goal.has_goal && goal.pct >= 100 ? '#10b981' : goal.has_goal && goal.pct >= 50 ? '#fbbf24' : '#94a3b8',
+              'flag'
+            )
+
+          // Card 4: Recebiveis 30d
+          + _intelCard(
+              'A Receber (30d)',
+              fmt(receivables.total_30d || 0),
+              (receivables.count || 0) + ' parcela(s) pendente(s)',
+              '#60a5fa',
+              'inbox'
+            )
+
+        + '</div>'
+
+        // Linha 2: Inadimplentes (se houver) + alertas
+        + (debtors.total > 0
+          ? '<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">'
+            + '<div style="display:flex;align-items:center;gap:10px">'
+              + '<span style="color:#fca5a5">' + _icon('alert-circle', 16) + '</span>'
+              + '<div>'
+                + '<div style="font-size:12px;font-weight:600;color:#fecaca">Pacientes em aberto</div>'
+                + '<div style="font-size:11px;color:#fca5a5">' + (debtors.count || 0) + ' paciente(s) devem total de <strong>' + fmt(debtors.total) + '</strong></div>'
+              + '</div>'
+            + '</div>'
+            + '<button id="cfDebtorsBtn" style="background:rgba(239,68,68,.2);color:#fecaca;border:1px solid rgba(239,68,68,.4);padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Ver lista</button>'
+          + '</div>'
+          : '')
+
+        // Alertas
+        + (alerts.length > 0
+          ? '<div style="display:flex;flex-direction:column;gap:6px">'
+            + alerts.map(function(a) {
+                var bg = a.severity === 'success' ? 'rgba(16,185,129,.15)' : a.severity === 'warning' ? 'rgba(251,191,36,.15)' : 'rgba(239,68,68,.15)'
+                var bd = a.severity === 'success' ? 'rgba(16,185,129,.3)'  : a.severity === 'warning' ? 'rgba(251,191,36,.3)'  : 'rgba(239,68,68,.3)'
+                var col = a.severity === 'success' ? '#6ee7b7' : a.severity === 'warning' ? '#fcd34d' : '#fca5a5'
+                return '<div style="background:' + bg + ';border:1px solid ' + bd + ';border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px">'
+                  + '<span style="color:' + col + '">' + _icon(a.icon || 'alert-circle', 14) + '</span>'
+                  + '<div style="font-size:11px"><strong style="color:#fff">' + a.title + ':</strong> <span style="color:#cbd5e1">' + a.message + '</span></div>'
+                  + '</div>'
+              }).join('')
+          + '</div>'
+          : '')
+
+      + '</div>'
+
+    setTimeout(function() {
+      var d = document.getElementById('cfDebtorsBtn')
+      if (d) d.addEventListener('click', function() { _showDebtorsList(debtors.list || []) })
+    }, 0)
+
+    return html
+  }
+
+  function _intelCard(label, value, sub, color, iconName) {
+    return ''
+      + '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px">'
+        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
+          + '<span style="color:' + color + '">' + _icon(iconName, 14) + '</span>'
+          + '<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">' + label + '</div>'
+        + '</div>'
+        + '<div style="font-size:20px;font-weight:700;color:' + color + ';margin-bottom:2px">' + value + '</div>'
+        + '<div style="font-size:10px;color:#64748b">' + sub + '</div>'
+      + '</div>'
+  }
+
+  function _showDebtorsList(list) {
+    var existing = document.getElementById('cfDebtorsModal')
+    if (existing) existing.remove()
+    if (!list || list.length === 0) {
+      alert('Nenhum paciente em aberto.')
+      return
+    }
+    var fmt  = window.CashflowService.fmtCurrency
+    var fmtD = window.CashflowService.fmtDate
+
+    var html = '<div id="cfDebtorsModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px">'
+      + '<div style="background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:80vh;overflow:auto;box-shadow:0 25px 50px rgba(0,0,0,.25)">'
+        + '<div style="padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">'
+          + '<div>'
+            + '<h3 style="margin:0;font-size:18px;font-weight:700;color:#111827">Pacientes em Aberto</h3>'
+            + '<p style="margin:4px 0 0;font-size:12px;color:#6b7280">' + list.length + ' paciente(s) com saldo pendente</p>'
+          + '</div>'
+          + '<button onclick="document.getElementById(\'cfDebtorsModal\').remove()" style="all:unset;cursor:pointer;color:#9ca3af;padding:8px">' + _icon('x', 20) + '</button>'
+        + '</div>'
+        + '<div style="padding:0">'
+          + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+            + '<thead><tr style="background:#f9fafb">'
+              + '<th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Paciente</th>'
+              + '<th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Data</th>'
+              + '<th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Total</th>'
+              + '<th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Pago</th>'
+              + '<th style="padding:10px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase">Saldo</th>'
+            + '</tr></thead><tbody>'
+
+    list.forEach(function(d) {
+      html += '<tr style="border-top:1px solid #f3f4f6">'
+        + '<td style="padding:12px 14px;color:#111827"><strong>' + (d.patient_name || 'Sem nome') + '</strong></td>'
+        + '<td style="padding:12px 14px;color:#6b7280">' + fmtD(d.date) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#374151">' + fmt(d.valor) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#10b981">' + fmt(d.valor_pago) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#ef4444;font-weight:700">' + fmt(d.saldo) + '</td>'
+        + '</tr>'
+    })
+
+    html += '</tbody></table></div></div></div>'
+    document.body.insertAdjacentHTML('beforeend', html)
   }
 
   function _kpi(label, value, color, iconHtml, suffix) {
@@ -884,6 +1059,10 @@
       'zap':               '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
       'link':              '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
       'user-plus':         '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
+      'trending-up':       '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+      'trending-down':     '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>',
+      'target':            '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+      'flag':              '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
       'check-circle':      '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     }
     return icons[name] || ''
