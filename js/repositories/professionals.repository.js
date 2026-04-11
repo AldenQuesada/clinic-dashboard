@@ -46,6 +46,7 @@
         p_observacoes:  prof.observacoes  ?? null,
         p_sala_id:      prof.sala_id      ?? null,
         p_user_id:      prof.user_id      ?? null,
+        p_valor_consulta: prof.valor_consulta ?? null,
       })
       if (error) return _err(error.message || String(error))
       return _ok(data)

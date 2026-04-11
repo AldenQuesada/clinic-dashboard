@@ -4021,9 +4021,11 @@
                 <option value="retorno">Retorno</option>
               </select>
             </div>
-            <div>
+            <div style="position:relative">
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">INDICADO POR</label>
-              <input id="appt_indicado_por" type="text" placeholder="Nome de quem indicou" autocomplete="off" style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
+              <input id="appt_indicado_por" type="text" placeholder="Buscar paciente..." autocomplete="off" oninput="apptIndicadoSearch(this.value)" onfocus="apptIndicadoSearch(this.value)" style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"/>
+              <input id="appt_indicado_por_id" type="hidden" value=""/>
+              <div id="apptIndicadoDrop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #E5E7EB;border-radius:8px;margin-top:2px;max-height:180px;overflow-y:auto;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.08)"></div>
             </div>
           </div>
         </div>
@@ -4118,6 +4120,10 @@
             <input type="hidden" name="appt_tipo_aval" id="appt_taval_hidden" value=""/>
             <input type="radio" name="appt_tipo_aval" id="appt_taval_paga" value="paga" style="display:none"/>
             <input type="radio" name="appt_tipo_aval" id="appt_taval_cortesia" value="cortesia" style="display:none"/>
+            <div id="apptCortesiaRow" style="display:none;margin-top:6px">
+              <label style="font-size:10px;font-weight:700;color:#16A34A;display:block;margin-bottom:3px">MOTIVO DA CORTESIA *</label>
+              <input id="appt_cortesia_motivo" type="text" placeholder="Ex: primeira consulta, parceria, indicacao..." style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#F0FDF4"/>
+            </div>
           </div>
           <!-- Consulta Paga: valor + pagamento -->
           <div id="apptPagaRow" style="display:none">
@@ -4486,6 +4492,16 @@
                 <input id="sp_salario" type="number" min="0" step="0.01" placeholder="0,00" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>
               </div>
               <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Atualiza automaticamente os Gastos Fixos</div>
+            </div>
+
+            <!-- Valor Consulta padrao -->
+            <div>
+              <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Valor Consulta Padrão (R$)</label>
+              <div style="position:relative">
+                <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;font-weight:700;color:#9CA3AF">R$</span>
+                <input id="sp_valor_consulta" type="number" min="0" step="0.01" placeholder="0,00" style="width:100%;padding:9px 12px 9px 32px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>
+              </div>
+              <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Preenche automaticamente o valor ao agendar consulta</div>
             </div>
 
             <!-- Sala -->

@@ -102,10 +102,15 @@
       const origEl = document.getElementById('appt_origem'); if (origEl) origEl.value = a.origem || ''
       const valEl  = document.getElementById('appt_valor'); if (valEl)  valEl.value  = a.valor || ''
       const pagEl  = document.getElementById('appt_forma_pag'); if (pagEl) pagEl.value = a.formaPagamento || ''
+      const indEl  = document.getElementById('appt_indicado_por'); if (indEl) indEl.value = a.indicadoPor || ''
+      const indIdEl= document.getElementById('appt_indicado_por_id'); if (indIdEl) indIdEl.value = a.indicadoPorId || ''
       if (a.tipoAvaliacao) {
         const rad = document.querySelector(`input[name="appt_tipo_aval"][value="${a.tipoAvaliacao}"]`)
         if (rad) rad.checked = true
+        apptSetAval(a.tipoAvaliacao)
       }
+      const motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = a.cortesiaMotivo || ''
+      if (a.tipoConsulta === 'avaliacao' || a.tipoConsulta === 'procedimento') apptSetTipo(a.tipoConsulta)
       apptTipoChange()
       if (deleteBtn) deleteBtn.style.display = 'inline-flex'
     } else {
@@ -133,9 +138,13 @@
 
     document.getElementById('apptPatientDrop').style.display = 'none'
     document.getElementById('appt_paciente_warn').style.display = 'none'
-    // Reset novos campos
+    // Reset novos campos — tipoPaciente é auto-detectado a partir do historico
     var tipoPac = document.getElementById('appt_tipo_paciente'); if (tipoPac) tipoPac.value = 'novo'
+    var pacIdAtual = document.getElementById('appt_paciente_id') && document.getElementById('appt_paciente_id').value
+    if (pacIdAtual) apptDetectTipoPaciente(pacIdAtual)
     var indicado = document.getElementById('appt_indicado_por'); if (indicado) indicado.value = ''
+    var indicadoId = document.getElementById('appt_indicado_por_id'); if (indicadoId) indicadoId.value = ''
+    var indicadoDrop = document.getElementById('apptIndicadoDrop'); if (indicadoDrop) indicadoDrop.style.display = 'none'
     _apptProcs = []
     var procsList = document.getElementById('apptProcsList'); if (procsList) procsList.innerHTML = ''
     var procsTotal = document.getElementById('apptProcsTotal'); if (procsTotal) procsTotal.textContent = ''
@@ -207,13 +216,55 @@
   // ── Toggle Consulta / Procedimento ─────────────────────────
   var _apptProcs = []
 
+  function _apptHasConsultaData() {
+    var aval = document.getElementById('appt_taval_hidden') && document.getElementById('appt_taval_hidden').value
+    var val  = document.getElementById('appt_valor') && document.getElementById('appt_valor').value
+    var pag  = document.getElementById('appt_forma_pag') && document.getElementById('appt_forma_pag').value
+    var mot  = document.getElementById('appt_cortesia_motivo') && document.getElementById('appt_cortesia_motivo').value
+    return !!(aval || val || pag || mot)
+  }
+
+  function _apptHasProcedimentoData() {
+    return Array.isArray(_apptProcs) && _apptProcs.length > 0
+  }
+
+  function _apptClearConsultaData() {
+    var hidden = document.getElementById('appt_taval_hidden'); if (hidden) hidden.value = ''
+    var rPaga = document.getElementById('appt_taval_paga'); if (rPaga) rPaga.checked = false
+    var rCort = document.getElementById('appt_taval_cortesia'); if (rCort) rCort.checked = false
+    var btnCort = document.getElementById('appt_aval_cortesia'); if (btnCort) { btnCort.style.background = '#fff'; btnCort.style.borderColor = '#BBF7D0' }
+    var btnPaga = document.getElementById('appt_aval_paga'); if (btnPaga) { btnPaga.style.background = '#fff'; btnPaga.style.borderColor = '#FECACA' }
+    var valEl = document.getElementById('appt_valor'); if (valEl) valEl.value = ''
+    var pagEl = document.getElementById('appt_forma_pag'); if (pagEl) pagEl.value = ''
+    var motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = ''
+  }
+
+  function _apptClearProcedimentoData() {
+    _apptProcs = []
+    var procsList = document.getElementById('apptProcsList'); if (procsList) procsList.innerHTML = ''
+    var procsTotal = document.getElementById('apptProcsTotal'); if (procsTotal) procsTotal.textContent = ''
+    var procSel = document.getElementById('appt_proc_select'); if (procSel) procSel.value = ''
+    var procVal = document.getElementById('appt_proc_valor'); if (procVal) procVal.value = ''
+  }
+
   function apptSetTipo(tipo) {
     var btnC = document.getElementById('appt_tipo_btn_consulta')
     var btnP = document.getElementById('appt_tipo_btn_proc')
     var avalRow = document.getElementById('apptTipoAvalRow')
     var pagaRow = document.getElementById('apptPagaRow')
+    var cortRow = document.getElementById('apptCortesiaRow')
     var procRow = document.getElementById('apptProcRow')
     var tipoSel = document.getElementById('appt_tipo')
+    var tipoAtual = tipoSel && tipoSel.value
+
+    // Confirma antes de descartar dados do outro lado
+    if (tipo === 'avaliacao' && tipoAtual === 'procedimento' && _apptHasProcedimentoData()) {
+      if (!confirm('Trocar para Consulta vai apagar os procedimentos adicionados. Continuar?')) return
+      _apptClearProcedimentoData()
+    } else if (tipo === 'procedimento' && tipoAtual === 'avaliacao' && _apptHasConsultaData()) {
+      if (!confirm('Trocar para Procedimento vai apagar os dados da consulta. Continuar?')) return
+      _apptClearConsultaData()
+    }
 
     if (tipo === 'avaliacao') {
       if (tipoSel) tipoSel.value = 'avaliacao'
@@ -222,6 +273,7 @@
       if (avalRow) avalRow.style.display = ''
       if (procRow) procRow.style.display = 'none'
       if (pagaRow) pagaRow.style.display = 'none'
+      if (cortRow) cortRow.style.display = 'none'
     } else {
       if (tipoSel) tipoSel.value = 'procedimento'
       if (btnP) { btnP.style.background = '#EEF2FF'; btnP.style.borderColor = '#4F46E5'; btnP.style.color = '#4F46E5' }
@@ -229,6 +281,7 @@
       if (avalRow) avalRow.style.display = 'none'
       if (procRow) procRow.style.display = ''
       if (pagaRow) pagaRow.style.display = 'none'
+      if (cortRow) cortRow.style.display = 'none'
     }
   }
 
@@ -236,6 +289,7 @@
     var btnCort = document.getElementById('appt_aval_cortesia')
     var btnPaga = document.getElementById('appt_aval_paga')
     var pagaRow = document.getElementById('apptPagaRow')
+    var cortRow = document.getElementById('apptCortesiaRow')
     var hiddenEl = document.getElementById('appt_taval_hidden')
     var radioPaga = document.getElementById('appt_taval_paga')
     var radioCort = document.getElementById('appt_taval_cortesia')
@@ -244,12 +298,19 @@
       if (btnCort) { btnCort.style.background = '#F0FDF4'; btnCort.style.borderColor = '#16A34A' }
       if (btnPaga) { btnPaga.style.background = '#fff'; btnPaga.style.borderColor = '#FECACA' }
       if (pagaRow) pagaRow.style.display = 'none'
+      if (cortRow) cortRow.style.display = ''
       if (radioCort) radioCort.checked = true
+      // Limpa valor/pagamento (não se aplicam à cortesia)
+      var valEl = document.getElementById('appt_valor'); if (valEl) valEl.value = ''
+      var pagEl = document.getElementById('appt_forma_pag'); if (pagEl) pagEl.value = ''
     } else {
       if (btnPaga) { btnPaga.style.background = '#FEF2F2'; btnPaga.style.borderColor = '#DC2626' }
       if (btnCort) { btnCort.style.background = '#fff'; btnCort.style.borderColor = '#BBF7D0' }
       if (pagaRow) pagaRow.style.display = ''
+      if (cortRow) cortRow.style.display = 'none'
       if (radioPaga) radioPaga.checked = true
+      // Limpa motivo cortesia (não se aplica a paga)
+      var motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = ''
     }
     if (hiddenEl) hiddenEl.value = val
   }
@@ -583,6 +644,92 @@
     if (phoneEl) phoneEl.value = phone || ''
     document.getElementById('apptPatientDrop').style.display = 'none'
     document.getElementById('appt_paciente_warn').style.display = 'none'
+    apptDetectTipoPaciente(id)
+  }
+
+  // ── apptIndicadoSearch / apptIndicadoSelect ──────────────────
+  // Dropdown de busca para "Indicado por". Forca selecao da lista —
+  // o usuario nao pode digitar nome livre. Reusa _leadsCache.
+  var _indicadoTimer = null
+
+  function apptIndicadoSearch(q) {
+    var idEl = document.getElementById('appt_indicado_por_id')
+    if (idEl) idEl.value = ''
+    if (_indicadoTimer) clearTimeout(_indicadoTimer)
+    _indicadoTimer = setTimeout(function() { _doIndicadoSearch(q) }, 200)
+  }
+
+  function _doIndicadoSearch(q) {
+    var drop = document.getElementById('apptIndicadoDrop')
+    if (!drop) return
+    if (!_leadsCache) {
+      _leadsCache = window.LeadsService
+        ? LeadsService.getLocal()
+        : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+      setTimeout(function() { _leadsCache = null }, 30000)
+    }
+    var pacienteAtualId = (document.getElementById('appt_paciente_id') && document.getElementById('appt_paciente_id').value) || ''
+    var query = (q || '').trim().toLowerCase()
+    var matches = _leadsCache
+      .filter(function(l) { return (l.id || '') !== pacienteAtualId })
+      .filter(function(l) {
+        if (!query) return true
+        var nome = (l.nome || l.name || '').toLowerCase()
+        return nome.includes(query)
+      })
+      .slice(0, 8)
+
+    if (!matches.length) { drop.style.display = 'none'; return }
+
+    drop.innerHTML = matches.map(function(l) {
+      var nome = l.nome || l.name || 'Paciente'
+      var phone = l.phone || l.whatsapp || ''
+      return '<div data-ind-id="' + (l.id || '') + '" data-ind-name="' + nome.replace(/"/g, '&quot;') + '"' +
+        ' style="padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid #F3F4F6"' +
+        ' onmouseover="this.style.background=\'#F9FAFB\'" onmouseout="this.style.background=\'\'">' +
+        '<div style="font-weight:600;color:#111">' + nome.replace(/</g, '&lt;') + '</div>' +
+        (phone ? '<div style="font-size:10px;color:#9CA3AF">' + phone.replace(/</g, '&lt;') + '</div>' : '') +
+        '</div>'
+    }).join('')
+    drop.onclick = function(e) {
+      var el = e.target.closest('[data-ind-id]')
+      if (el) apptIndicadoSelect(el.dataset.indId, el.dataset.indName)
+    }
+    drop.style.display = 'block'
+  }
+
+  function apptIndicadoSelect(id, nome) {
+    var inp = document.getElementById('appt_indicado_por')
+    var idEl = document.getElementById('appt_indicado_por_id')
+    if (inp) inp.value = nome
+    if (idEl) idEl.value = id
+    var drop = document.getElementById('apptIndicadoDrop')
+    if (drop) drop.style.display = 'none'
+  }
+
+  // Fecha dropdown ao clicar fora
+  document.addEventListener('click', function(e) {
+    var drop = document.getElementById('apptIndicadoDrop')
+    var inp = document.getElementById('appt_indicado_por')
+    if (!drop || drop.style.display === 'none') return
+    if (e.target === inp || drop.contains(e.target)) return
+    drop.style.display = 'none'
+    // Se digitou algo mas nao selecionou, limpa
+    if (inp && !document.getElementById('appt_indicado_por_id').value) inp.value = ''
+  })
+
+  // ── apptDetectTipoPaciente ───────────────────────────────────
+  // Regra: se o paciente ja tem >=1 atendimento finalizado, é "retorno".
+  // Caso contrario, "novo". Ignora o appointment em edição.
+  function apptDetectTipoPaciente(pacienteId) {
+    var tipoEl = document.getElementById('appt_tipo_paciente')
+    if (!tipoEl || !pacienteId) return
+    var editId = (document.getElementById('appt_id') && document.getElementById('appt_id').value) || ''
+    var all = _getAppts()
+    var jaAtendido = all.some(function(a) {
+      return a.id !== editId && a.pacienteId === pacienteId && a.status === 'finalizado'
+    })
+    tipoEl.value = jaAtendido ? 'retorno' : 'novo'
   }
 
   // ── saveAppt ──────────────────────────────────────────────────
@@ -609,7 +756,24 @@
     const salaIdx = parseInt((document.getElementById('appt_sala') && document.getElementById('appt_sala').value) || '')
     const profs   = typeof getProfessionals === 'function' ? getProfessionals() : []
 
+    // Validação tipo de atendimento (Consulta vs Procedimento — exclusivos)
+    const tipoAtend = (document.getElementById('appt_tipo') && document.getElementById('appt_tipo').value) || ''
+    if (!tipoAtend) { alert('Selecione o tipo de atendimento (Consulta ou Procedimento).'); return }
+
     const tipoAvalEl = document.querySelector('input[name="appt_tipo_aval"]:checked')
+    const tipoAvalVal = tipoAvalEl && tipoAvalEl.value || ''
+    const cortesiaMotivo = (document.getElementById('appt_cortesia_motivo') && document.getElementById('appt_cortesia_motivo').value.trim()) || ''
+
+    if (tipoAtend === 'avaliacao') {
+      if (!tipoAvalVal) { alert('Indique se a consulta é Cortesia ou Paga.'); return }
+      if (tipoAvalVal === 'cortesia' && !cortesiaMotivo) {
+        alert('Informe o motivo da cortesia.'); return
+      }
+    }
+    if (tipoAtend === 'procedimento' && (!_apptProcs || _apptProcs.length === 0)) {
+      alert('Adicione ao menos um procedimento.'); return
+    }
+
     const apptData = {
       pacienteId:          (document.getElementById('appt_paciente_id') && document.getElementById('appt_paciente_id').value) || '',
       pacienteNome:        nome,
@@ -622,18 +786,20 @@
       horaInicio:          inicio,
       horaFim:             fim,
       status:              (document.getElementById('appt_status') && document.getElementById('appt_status').value) || 'agendado',
-      tipoConsulta:        (document.getElementById('appt_tipo') && document.getElementById('appt_tipo').value) || '',
-      tipoAvaliacao:       tipoAvalEl && tipoAvalEl.value || '',
+      tipoConsulta:        tipoAtend,
+      tipoAvaliacao:       tipoAtend === 'avaliacao' ? tipoAvalVal : '',
+      cortesiaMotivo:      (tipoAtend === 'avaliacao' && tipoAvalVal === 'cortesia') ? cortesiaMotivo : '',
       origem:              (document.getElementById('appt_origem') && document.getElementById('appt_origem').value) || '',
-      valor:               parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0,
-      formaPagamento:      (document.getElementById('appt_forma_pag') && document.getElementById('appt_forma_pag').value) || '',
+      valor:               (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? (parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0) : 0,
+      formaPagamento:      (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? ((document.getElementById('appt_forma_pag') && document.getElementById('appt_forma_pag').value) || '') : '',
       statusPagamento:     'pendente',
       confirmacaoEnviada:  (document.getElementById('appt_confirmacao') && document.getElementById('appt_confirmacao').checked) || false,
       consentimentoImagem: (document.getElementById('appt_consentimento') && document.getElementById('appt_consentimento').checked) ? 'assinado' : 'pendente',
       obs:                 (document.getElementById('appt_obs') && document.getElementById('appt_obs').value.trim()) || '',
       tipoPaciente:        (document.getElementById('appt_tipo_paciente') && document.getElementById('appt_tipo_paciente').value) || 'novo',
       indicadoPor:         (document.getElementById('appt_indicado_por') && document.getElementById('appt_indicado_por').value.trim()) || '',
-      procedimentos:       _apptProcs.length ? _apptProcs.slice() : [],
+      indicadoPorId:       (document.getElementById('appt_indicado_por_id') && document.getElementById('appt_indicado_por_id').value) || '',
+      procedimentos:       tipoAtend === 'procedimento' && _apptProcs.length ? _apptProcs.slice() : [],
     }
 
     const appts  = _getAppts()
@@ -892,6 +1058,8 @@
   window.openApptDetail    = openApptDetail
   window.apptSearchPatient = apptSearchPatient
   window.selectApptPatient = selectApptPatient
+  window.apptIndicadoSearch = apptIndicadoSearch
+  window.apptIndicadoSelect = apptIndicadoSelect
   window.apptProcAutofill  = apptProcAutofill
   window.apptTipoChange    = apptTipoChange
   window.apptUpdateEndTime = apptUpdateEndTime
