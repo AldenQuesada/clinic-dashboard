@@ -1525,6 +1525,187 @@
   }
 
   // ── openApptDetail ────────────────────────────────────────────
+  // ── apptReagendar — dialog dedicado de reagendamento ─────────
+  // Abre um mini-dialog com nova data/hora/motivo, valida via
+  // AgendaValidator, grava histórico, aplica nova data, dispara
+  // scheduleAutomations (WhatsApp) e refresca a agenda.
+  function apptReagendar(id) {
+    var a = _getAppts().find(function(x) { return x.id === id })
+    if (!a) return
+    // Guarda: status que bloqueiam reagendamento
+    var blocked = ['finalizado', 'cancelado', 'no_show']
+    if (blocked.indexOf(a.status) !== -1) {
+      if (window.Modal) Modal.alert({ title: 'Não é possível reagendar', message: 'Atendimentos com status "' + a.status + '" não podem ser reagendados.', tone: 'warn' })
+      else alert('Atendimentos com status "' + a.status + '" não podem ser reagendados.')
+      return
+    }
+
+    var existing = document.getElementById('apptReagendarDlg')
+    if (existing) existing.remove()
+
+    var H = window.html
+    var fmtD = _fmtDate(a.data)
+
+    var dlg = document.createElement('div')
+    dlg.id = 'apptReagendarDlg'
+    dlg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10015;display:flex;align-items:center;justify-content:center;padding:16px'
+    dlg.innerHTML = H`<div id="apptReagendarInner" role="dialog" aria-modal="true" aria-labelledby="apptReagendarTitle" style="background:#fff;border-radius:14px;width:100%;max-width:440px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+      <div style="background:#3B82F6;padding:14px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="apptReagendarTitle" style="font-size:14px;font-weight:800">Reagendar consulta</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px">${a.pacienteNome || 'Paciente'}</div>
+        </div>
+        <button type="button" onclick="document.getElementById('apptReagendarDlg').remove()" aria-label="Fechar" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700;line-height:1">×</button>
+      </div>
+      <div style="padding:18px">
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:10px 12px;margin-bottom:14px">
+          <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Agendamento atual</div>
+          <div style="font-size:13px;font-weight:700;color:#111">${fmtD} &nbsp;${a.horaInicio}–${a.horaFim}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">NOVA DATA *</label>
+            <input id="rg_data" type="date" value="${a.data}" style="width:100%;padding:8px 10px;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">NOVO HORÁRIO *</label>
+            <input id="rg_hora" type="time" value="${a.horaInicio}" style="width:100%;padding:8px 10px;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">MOTIVO <span style="color:#9CA3AF">(opcional, registrado na timeline)</span></label>
+          <textarea id="rg_motivo" rows="2" placeholder="Ex: paciente pediu adiar, conflito de agenda..." style="width:100%;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;font-family:inherit;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" onclick="document.getElementById('apptReagendarDlg').remove()" style="padding:9px 16px;background:#F3F4F6;color:#6B7280;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Cancelar</button>
+          <button type="button" onclick="apptReagendarConfirm('${id}')" style="padding:9px 20px;background:#3B82F6;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Confirmar reagendamento</button>
+        </div>
+      </div>
+    </div>`
+    dlg.addEventListener('click', function(e) {
+      var inner = document.getElementById('apptReagendarInner')
+      if (inner && !inner.contains(e.target)) dlg.remove()
+    })
+    document.body.appendChild(dlg)
+    setTimeout(function() {
+      var dataEl = document.getElementById('rg_data')
+      if (dataEl) dataEl.focus()
+    }, 0)
+  }
+
+  function apptReagendarConfirm(id) {
+    var appts = _getAppts()
+    var idx = appts.findIndex(function(x) { return x.id === id })
+    if (idx < 0) return
+    var a = appts[idx]
+
+    var novaData  = (document.getElementById('rg_data') || {}).value
+    var novaHora  = (document.getElementById('rg_hora') || {}).value
+    var motivo    = ((document.getElementById('rg_motivo') || {}).value || '').trim()
+
+    if (!novaData || !novaHora) {
+      if (window.Modal) Modal.alert({ title: 'Campos obrigatórios', message: 'Informe a nova data e hora.', tone: 'warn' })
+      else alert('Informe a nova data e hora.')
+      return
+    }
+
+    // Validação: data/hora no futuro
+    var todayIso = new Date().toISOString().slice(0, 10)
+    if (novaData < todayIso) {
+      if (window.Modal) Modal.alert({ title: 'Data inválida', message: 'Não é possível reagendar para data passada.', tone: 'warn' })
+      else alert('Não é possível reagendar para data passada.')
+      return
+    }
+    if (novaData === todayIso && new Date(novaData + 'T' + novaHora + ':00') < new Date()) {
+      if (window.Modal) Modal.alert({ title: 'Horário inválido', message: 'Não é possível reagendar para horário que já passou.', tone: 'warn' })
+      else alert('Não é possível reagendar para horário que já passou.')
+      return
+    }
+
+    // Calcula nova hora fim preservando a duração
+    var oldStart = a.horaInicio.split(':').map(Number)
+    var oldEnd   = a.horaFim.split(':').map(Number)
+    var duration = (oldEnd[0] * 60 + oldEnd[1]) - (oldStart[0] * 60 + oldStart[1])
+    var novaHoraFim = _addMins(novaHora, duration)
+
+    // Validação via AgendaValidator (mesmo pipeline do drag & drop)
+    if (window.AgendaValidator && AgendaValidator.validateDragDrop) {
+      var errs = AgendaValidator.validateDragDrop(a, novaData, novaHora, novaHoraFim)
+      if (errs && errs.length) {
+        if (window.showValidationErrors) showValidationErrors(errs, 'Reagendamento não permitido')
+        else if (window.Modal) Modal.alert({ title: 'Reagendamento não permitido', message: errs.join('\n'), tone: 'error' })
+        else alert(errs[0])
+        return
+      }
+    } else {
+      // Fallback legado: checa conflito
+      var provisional = Object.assign({}, a, { data: novaData, horaInicio: novaHora, horaFim: novaHoraFim })
+      var conf = _checkConflict(provisional, appts)
+      if (conf && conf.conflict) {
+        if (window.Modal) Modal.alert({ title: 'Conflito de horário', message: conf.reason || 'Outro agendamento no mesmo horário.', tone: 'error' })
+        else alert('Conflito de horário: ' + (conf.reason || ''))
+        return
+      }
+    }
+
+    // Registra histórico completo
+    if (!appts[idx].historicoAlteracoes) appts[idx].historicoAlteracoes = []
+    appts[idx].historicoAlteracoes.push({
+      action_type: 'reagendamento_manual',
+      old_value:   { data: a.data, horaInicio: a.horaInicio, horaFim: a.horaFim },
+      new_value:   { data: novaData, horaInicio: novaHora, horaFim: novaHoraFim },
+      changed_by:  'secretaria',
+      changed_at:  new Date().toISOString(),
+      reason:      motivo || 'Reagendamento manual via botão',
+    })
+    if (!appts[idx].historicoStatus) appts[idx].historicoStatus = []
+    appts[idx].historicoStatus.push({
+      status: appts[idx].status,
+      at:     new Date().toISOString(),
+      by:     'reagendar_btn',
+      motivo: 'Reagendado de ' + a.data + ' ' + a.horaInicio + ' para ' + novaData + ' ' + novaHora + (motivo ? ' — ' + motivo : ''),
+    })
+
+    // Aplica nova data/hora preservando duração
+    appts[idx].data          = novaData
+    appts[idx].horaInicio    = novaHora
+    appts[idx].horaFim       = novaHoraFim
+    appts[idx].lastRescheduledAt = new Date().toISOString()
+    appts[idx].rescheduledCount  = (appts[idx].rescheduledCount || 0) + 1
+    if (motivo) appts[idx].reagendamentoMotivo = motivo
+
+    _saveAppts(appts)
+
+    // Sync Supabase
+    if (window.AppointmentsService && window.AppointmentsService.syncOne) {
+      AppointmentsService.syncOne(appts[idx])
+    }
+    // Reaplica automações (WhatsApp de confirmação, 24h/30min antes)
+    if (window.scheduleAutomations) scheduleAutomations(appts[idx])
+    // Tag de reagendado
+    if (window._applyStatusTag && appts[idx].pacienteId) {
+      _applyStatusTag(appts[idx], 'reagendado', 'reagendar_btn')
+    }
+    // SDR hook
+    if (window.SdrService && appts[idx].pacienteId) {
+      SdrService.onLeadScheduled(appts[idx].pacienteId, appts[idx])
+    }
+
+    // Fecha dialogs e refresca
+    var dlg = document.getElementById('apptReagendarDlg'); if (dlg) dlg.remove()
+    var detail = document.getElementById('apptDetailDlg'); if (detail) detail.remove()
+    _refresh()
+
+    // Toast de sucesso
+    if (window.Modal) {
+      Modal.alert({
+        title: 'Reagendado com sucesso',
+        message: appts[idx].pacienteNome + ' — novo horário: ' + _fmtDate(novaData) + ' ' + novaHora + '. Mensagem de confirmação WhatsApp reagendada automaticamente.',
+        tone: 'success'
+      })
+    }
+  }
+
   function openApptDetail(id) {
     const appts = _getAppts()
     const a = appts.find(x => x.id === id)
@@ -1555,6 +1736,7 @@
     }
 
     const canFinish = ['agendado', 'confirmado', 'em_atendimento'].includes(a.status)
+    const canReagendar = !['finalizado', 'cancelado', 'no_show'].includes(a.status)
 
     const existing = document.getElementById('apptDetailDlg')
     if (existing) existing.remove()
@@ -1632,9 +1814,14 @@
             </div>
           </div>
 
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             ${canFinish ? `<button onclick="document.getElementById('apptDetailDlg').remove();openFinalizarModal('${id}')"
-              style="flex:2;padding:11px;background:#7C3AED;color:#fff;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px">Finalizar Atendimento</button>` : ''}
+              style="flex:2 1 100%;padding:11px;background:#7C3AED;color:#fff;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px">Finalizar Atendimento</button>` : ''}
+            ${canReagendar ? `<button onclick="apptReagendar('${id}')"
+              style="flex:1;padding:11px;background:#3B82F6;color:#fff;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>
+              Reagendar
+            </button>` : ''}
             <button onclick="document.getElementById('apptDetailDlg').remove();openApptModal('${id}')"
               style="flex:1;padding:11px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px">Editar</button>
           </div>
@@ -1660,6 +1847,8 @@
   window.apptIndicadoSearch = apptIndicadoSearch
   window.apptIndicadoSelect = apptIndicadoSelect
   window.apptOnProfChange   = apptOnProfChange
+  window.apptReagendar      = apptReagendar
+  window.apptReagendarConfirm = apptReagendarConfirm
   window.apptAddPagamento   = apptAddPagamento
   window.apptRemovePagamento = apptRemovePagamento
   window.apptUpdatePagamento = apptUpdatePagamento

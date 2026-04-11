@@ -13,7 +13,10 @@ const BLOCKS_CALENDAR = new Set([
 ])
 const FREE_STATUSES = new Set(['cancelado','no_show','finalizado','remarcado'])
 const LOCKED_STATUSES = new Set(['finalizado','em_consulta','na_clinica'])
-const NO_DRAG_STATUSES = new Set(['finalizado','em_consulta','na_clinica'])
+// Drag & drop só é bloqueado APÓS o atendimento ser finalizado.
+// Status intermediários (na_clinica, em_consulta) permitem reagendar
+// caso a secretária precise corrigir algo no fluxo.
+const NO_DRAG_STATUSES = new Set(['finalizado'])
 
 // Motivos padrão para cancelamento/no-show
 const CANCEL_REASONS = [

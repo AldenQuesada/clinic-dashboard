@@ -839,15 +839,16 @@ function _tabFin(a) {
 }
 
 const _ACTION_LABELS = {
-  mudanca_status:    'Mudança de status',
-  edicao:            'Edição de dados',
-  remarcacao_drag:   'Remarcação (drag & drop)',
-  remarcacao:        'Remarcação',
-  cancelamento:      'Cancelamento',
-  no_show:           'No-show',
-  finalizacao:       'Finalização',
+  mudanca_status:        'Mudança de status',
+  edicao:                'Edição de dados',
+  remarcacao_drag:       'Remarcação (drag & drop)',
+  reagendamento_manual:  'Reagendamento (botão Reagendar)',
+  remarcacao:            'Remarcação',
+  cancelamento:          'Cancelamento',
+  no_show:               'No-show',
+  finalizacao:           'Finalização',
   fluxo_avaliacao_google: 'Fluxo: Avaliação Google',
-  fluxo_parceria:    'Fluxo: Parceria',
+  fluxo_parceria:        'Fluxo: Parceria',
 }
 
 function _tabHist(a) {
