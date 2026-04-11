@@ -111,6 +111,20 @@
         apptSetAval(a.tipoAvaliacao)
       }
       const motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = a.cortesiaMotivo || ''
+      // Carrega procedimentos salvos com todos os campos novos
+      if (Array.isArray(a.procedimentos) && a.procedimentos.length > 0) {
+        _apptProcs = a.procedimentos.map(function(p) {
+          return {
+            nome:             p.nome || '',
+            valor:            parseFloat(p.valor) || 0,
+            cortesia:         !!p.cortesia,
+            cortesiaMotivo:   p.cortesiaMotivo || '',
+            retornoTipo:      p.retornoTipo === 'retorno' ? 'retorno' : 'avulso',
+            retornoIntervalo: parseInt(p.retornoIntervalo) || 0,
+          }
+        })
+        _renderApptProcs()
+      }
       if (a.tipoConsulta === 'avaliacao' || a.tipoConsulta === 'procedimento') apptSetTipo(a.tipoConsulta)
       apptTipoChange()
       if (deleteBtn) deleteBtn.style.display = 'inline-flex'
@@ -431,6 +445,27 @@
   }
 
   // ── Adicionar procedimento a lista ─────────────────────────
+  // Escala de intervalos de retorno (compartilhada com o prontuario)
+  var APPT_RETORNO_INTERVALS = [
+    { value: 7,   label: '1 semana' },
+    { value: 15,  label: '15 dias' },
+    { value: 30,  label: '1 mês' },
+    { value: 60,  label: '2 meses' },
+    { value: 90,  label: '3 meses' },
+    { value: 120, label: '4 meses' },
+    { value: 150, label: '5 meses' },
+    { value: 180, label: '6 meses' },
+    { value: 365, label: '1 ano' },
+  ]
+
+  function _apptRetornoOpts(selected) {
+    return '<option value="">Sem retorno</option>' +
+      APPT_RETORNO_INTERVALS.map(function(r) {
+        var sel = parseInt(selected) === r.value ? ' selected' : ''
+        return '<option value="' + r.value + '"' + sel + '>' + r.label + '</option>'
+      }).join('')
+  }
+
   function apptAddProc() {
     var selEl = document.getElementById('appt_proc_select')
     var nameEl = document.getElementById('appt_proc')
@@ -438,7 +473,14 @@
     var name = (selEl && selEl.value) || (nameEl && nameEl.value.trim())
     var valor = valorEl ? parseFloat(valorEl.value || '0') : 0
     if (!name) return
-    _apptProcs.push({ nome: name, valor: valor })
+    _apptProcs.push({
+      nome: name,
+      valor: valor,
+      cortesia: false,
+      cortesiaMotivo: '',
+      retornoTipo: 'avulso',
+      retornoIntervalo: 0,
+    })
     if (selEl) selEl.value = ''
     if (nameEl) nameEl.value = ''
     if (valorEl) valorEl.value = ''
@@ -523,6 +565,23 @@
     if (alertEl) alertEl.remove()
   }
 
+  function apptProcUpdate(i, field, value) {
+    var p = _apptProcs[i]
+    if (!p) return
+    if (field === 'valor')             p.valor = parseFloat(value) || 0
+    else if (field === 'retornoIntervalo') p.retornoIntervalo = parseInt(value) || 0
+    else                                p[field] = value
+    if (field === 'cortesia') {
+      // Limpa motivo se voltou pra paga; limpa valor se virou cortesia
+      if (!value) p.cortesiaMotivo = ''
+    }
+    if (field === 'retornoTipo' && value !== 'retorno') p.retornoIntervalo = 0
+    _renderApptProcs()
+    _updateApptTotalWithDiscount()
+    apptShowPagamentosBlock()
+    apptUpdatePagamentosTotal()
+  }
+
   function _renderApptProcs() {
     var list = document.getElementById('apptProcsList')
     var totalEl = document.getElementById('apptProcsTotal')
@@ -534,10 +593,45 @@
       return
     }
     list.innerHTML = _apptProcs.map(function(p, i) {
-      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:#fff;border:1px solid #E5E7EB;border-radius:6px">' +
-        '<span style="flex:1;font-size:11px;font-weight:600;color:#374151">' + (p.nome || '').replace(/</g, '&lt;') + '</span>' +
-        (p.valor > 0 ? '<span style="font-size:11px;font-weight:700;color:#10B981">R$ ' + p.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) + '</span>' : '') +
-        '<button onclick="apptRemoveProc(' + i + ')" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:14px;padding:0 2px">x</button>' +
+      var cortesia = !!p.cortesia
+      var bgCard = cortesia ? '#F0FDF4' : '#fff'
+      var bdCard = cortesia ? '#86EFAC' : '#E5E7EB'
+      var btnCortBg = cortesia ? '#16A34A' : '#fff'
+      var btnCortFg = cortesia ? '#fff'    : '#16A34A'
+      var btnPagaBg = !cortesia ? '#4F46E5' : '#fff'
+      var btnPagaFg = !cortesia ? '#fff'    : '#4F46E5'
+
+      var motivoHtml = cortesia
+        ? '<input type="text" placeholder="Motivo da cortesia *" value="' + (p.cortesiaMotivo || '').replace(/"/g, '&quot;') + '" oninput="apptProcUpdate(' + i + ', \'cortesiaMotivo\', this.value)" style="width:100%;margin-top:4px;padding:5px 7px;border:1px solid #86EFAC;border-radius:5px;font-size:11px;outline:none;box-sizing:border-box;background:#fff"/>'
+        : ''
+
+      var retorno = p.retornoTipo || 'avulso'
+      var btnAvBg = retorno === 'avulso' ? '#7C3AED' : '#fff'
+      var btnAvFg = retorno === 'avulso' ? '#fff'    : '#7C3AED'
+      var btnRtBg = retorno === 'retorno' ? '#7C3AED' : '#fff'
+      var btnRtFg = retorno === 'retorno' ? '#fff'    : '#7C3AED'
+      var intervaloHtml = retorno === 'retorno'
+        ? '<select onchange="apptProcUpdate(' + i + ', \'retornoIntervalo\', this.value)" style="flex:1;padding:5px 7px;border:1px solid #DDD6FE;border-radius:5px;font-size:11px;background:#fff;outline:none">' + _apptRetornoOpts(p.retornoIntervalo) + '</select>'
+        : ''
+
+      return '<div style="background:' + bgCard + ';border:1px solid ' + bdCard + ';border-radius:8px;padding:7px">' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+          '<span style="flex:1;font-size:11px;font-weight:700;color:#374151">' + (p.nome || '').replace(/</g, '&lt;') + '</span>' +
+          (cortesia
+            ? '<span style="font-size:10px;font-weight:700;color:#16A34A">CORTESIA</span>'
+            : '<input type="number" step="0.01" value="' + (p.valor ? p.valor.toFixed(2) : '') + '" oninput="apptProcUpdate(' + i + ', \'valor\', this.value)" style="width:75px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;text-align:right;outline:none"/>') +
+          '<button onclick="apptRemoveProc(' + i + ')" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:5px;font-size:12px;font-weight:700;width:22px;height:22px;cursor:pointer;line-height:1">×</button>' +
+        '</div>' +
+        '<div style="display:flex;gap:5px;margin-top:5px">' +
+          '<button type="button" onclick="apptProcUpdate(' + i + ', \'cortesia\', false)" style="flex:1;padding:4px 8px;background:' + btnPagaBg + ';color:' + btnPagaFg + ';border:1px solid #C7D2FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Pago</button>' +
+          '<button type="button" onclick="apptProcUpdate(' + i + ', \'cortesia\', true)" style="flex:1;padding:4px 8px;background:' + btnCortBg + ';color:' + btnCortFg + ';border:1px solid #BBF7D0;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Cortesia</button>' +
+        '</div>' +
+        motivoHtml +
+        '<div style="display:flex;gap:5px;margin-top:5px">' +
+          '<button type="button" onclick="apptProcUpdate(' + i + ', \'retornoTipo\', \'avulso\')" style="flex:1;padding:4px 8px;background:' + btnAvBg + ';color:' + btnAvFg + ';border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Sessão Avulsa</button>' +
+          '<button type="button" onclick="apptProcUpdate(' + i + ', \'retornoTipo\', \'retorno\')" style="flex:1;padding:4px 8px;background:' + btnRtBg + ';color:' + btnRtFg + ';border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Com Retorno</button>' +
+          intervaloHtml +
+        '</div>' +
       '</div>'
     }).join('')
 
@@ -562,7 +656,8 @@
 
   function _updateApptTotalWithDiscount() {
     var totalEl = document.getElementById('apptProcsTotal')
-    var subtotal = _apptProcs.reduce(function(s, p) { return s + (p.valor || 0) }, 0)
+    // Cortesias não entram no subtotal financeiro
+    var subtotal = _apptProcs.reduce(function(s, p) { return s + (p.cortesia ? 0 : (p.valor || 0)) }, 0)
     var descontoVal = parseFloat((document.getElementById('appt_desconto_valor') || {}).value || '0') || 0
     var total = Math.max(0, subtotal - descontoVal)
     var pct = subtotal > 0 ? Math.round((descontoVal / subtotal) * 100) : 0
@@ -644,12 +739,15 @@
       }).join('')
   }
 
-  // Total a pagar = consulta (appt_valor) ou soma dos procedimentos (com desconto)
+  // Total a pagar = consulta (appt_valor) ou soma dos procedimentos
+  // (excluindo cortesias) com desconto
   function _apptValorTotalPagar() {
     var tipoEl = document.getElementById('appt_tipo')
     var tipo = tipoEl && tipoEl.value
     if (tipo === 'procedimento') {
-      var subtotal = _apptProcs.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
+      var subtotal = _apptProcs.reduce(function(s, p) {
+        return s + (p.cortesia ? 0 : (parseFloat(p.valor) || 0))
+      }, 0)
       var desc = parseFloat((document.getElementById('appt_desconto_valor') || {}).value || '0') || 0
       return Math.max(0, subtotal - desc)
     }
@@ -731,9 +829,10 @@
     var avalEl = document.getElementById('appt_taval_hidden')
     var aval = avalEl && avalEl.value
     var consultaPaga = tipo === 'avaliacao' && aval === 'paga'
-    var procWithItems = tipo === 'procedimento' && _apptProcs.length > 0
-    block.style.display = (consultaPaga || procWithItems) ? '' : 'none'
-    if (consultaPaga || procWithItems) {
+    // Procedimento: só mostra pagamento se houver ao menos 1 NÃO cortesia
+    var procWithPaid = tipo === 'procedimento' && _apptProcs.some(function(p) { return !p.cortesia })
+    block.style.display = (consultaPaga || procWithPaid) ? '' : 'none'
+    if (consultaPaga || procWithPaid) {
       if (_apptPagamentos.length === 0) apptResetPagamentos()
       else apptRenderPagamentos()
     }
@@ -995,6 +1094,12 @@
     if (tipoAtend === 'procedimento' && (!_apptProcs || _apptProcs.length === 0)) {
       alert('Adicione ao menos um procedimento.'); return
     }
+    if (tipoAtend === 'procedimento') {
+      var procSemMotivo = _apptProcs.find(function(p) { return p.cortesia && !(p.cortesiaMotivo && p.cortesiaMotivo.trim()) })
+      if (procSemMotivo) { alert('Informe o motivo da cortesia em "' + procSemMotivo.nome + '".'); return }
+      var procSemIntervalo = _apptProcs.find(function(p) { return p.retornoTipo === 'retorno' && (!p.retornoIntervalo || p.retornoIntervalo <= 0) })
+      if (procSemIntervalo) { alert('Selecione o intervalo de retorno em "' + procSemIntervalo.nome + '".'); return }
+    }
 
     // Validação pagamentos (Consulta Paga OU Procedimento)
     const valorTotal = parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0
@@ -1063,7 +1168,18 @@
       tipoPaciente:        (document.getElementById('appt_tipo_paciente') && document.getElementById('appt_tipo_paciente').value) || 'novo',
       indicadoPor:         (document.getElementById('appt_indicado_por') && document.getElementById('appt_indicado_por').value.trim()) || '',
       indicadoPorId:       (document.getElementById('appt_indicado_por_id') && document.getElementById('appt_indicado_por_id').value) || '',
-      procedimentos:       tipoAtend === 'procedimento' && _apptProcs.length ? _apptProcs.slice() : [],
+      procedimentos:       tipoAtend === 'procedimento' && _apptProcs.length
+        ? _apptProcs.map(function(p) {
+            return {
+              nome:             p.nome,
+              valor:            parseFloat(p.valor) || 0,
+              cortesia:         !!p.cortesia,
+              cortesiaMotivo:   p.cortesia ? (p.cortesiaMotivo || '') : '',
+              retornoTipo:      p.retornoTipo === 'retorno' ? 'retorno' : 'avulso',
+              retornoIntervalo: p.retornoTipo === 'retorno' ? (parseInt(p.retornoIntervalo) || 0) : 0,
+            }
+          })
+        : [],
     }
 
     const appts  = _getAppts()
@@ -1330,6 +1446,7 @@
   window.apptUpdatePagamento = apptUpdatePagamento
   window.apptTogglePago     = apptTogglePago
   window.apptUpdatePagamentosTotal = apptUpdatePagamentosTotal
+  window.apptProcUpdate     = apptProcUpdate
   window.apptProcAutofill  = apptProcAutofill
   window.apptTipoChange    = apptTipoChange
   window.apptUpdateEndTime = apptUpdateEndTime
