@@ -19,6 +19,7 @@
     fileName:     '',
     fileSize:     0,
     fileHash:     '',
+    fingerprint:  '',
     importing:    false,
     progress:     0,
   }
@@ -250,6 +251,20 @@
     document.getElementById('ofxFileInput').addEventListener('change', _onFileSelected)
   }
 
+  // Constroi fingerprint semantica: qtd|first_date|last_date|total_credits|total_debits
+  // Invariante a DTSERVER/TRNUID/re-exports — usa so o que o usuario ve no preview.
+  function _buildFingerprint(txs) {
+    var totalCred = 0, totalDeb = 0, minD = null, maxD = null
+    txs.forEach(function(t) {
+      if (t.direction === 'credit') totalCred += t.amount
+      else totalDeb += t.amount
+      if (!minD || t.transaction_date < minD) minD = t.transaction_date
+      if (!maxD || t.transaction_date > maxD) maxD = t.transaction_date
+    })
+    return txs.length + '|' + minD + '|' + maxD + '|' +
+           totalCred.toFixed(2) + '|' + totalDeb.toFixed(2)
+  }
+
   function _onFileSelected(e) {
     var file = e.target.files[0]
     if (!file) return
@@ -261,25 +276,29 @@
       try {
         var content = ev.target.result
 
-        // CAMADA 1: hash SHA-256 do conteudo + checa no banco
-        _state.fileHash = await _sha256(content)
-        var sb = window._sbShared
-        if (sb) {
-          var chk = await sb.rpc('ofx_check_file_hash', { p_file_hash: _state.fileHash })
-          if (chk && chk.data && chk.data.duplicated) {
-            _renderAlreadyImportedStep(chk.data)
-            return
-          }
-        }
-
+        // Parse primeiro — precisa dos dados pra fingerprint
         var txs = parseOFX(content)
         if (txs.length === 0) {
           alert('Nenhuma transacao encontrada no arquivo. Verifique se e um OFX valido.')
           return
         }
         _state.transactions = txs
+        _state.fingerprint = _buildFingerprint(txs)
+        _state.fileHash = await _sha256(content) // mantem pra audit/backup
+
+        // CAMADA 1: fingerprint semantica (qtd+period+totals)
+        var sb = window._sbShared
+        if (sb) {
+          var chk = await sb.rpc('ofx_check_fingerprint', { p_fingerprint: _state.fingerprint })
+          if (chk && chk.data && chk.data.duplicated) {
+            _renderAlreadyImportedStep(chk.data)
+            return
+          }
+        }
+
         _renderPreviewStep()
       } catch (err) {
+        console.error('[OfxImport] erro ao parsear:', err)
         alert('Erro ao parsear OFX: ' + err.message)
       }
     }
@@ -509,6 +528,7 @@
         })
         await window._sbShared.rpc('ofx_register_import', {
           p_data: {
+            fingerprint:   _state.fingerprint,
             file_hash:     _state.fileHash,
             file_name:     _state.fileName,
             file_size:     _state.fileSize,
