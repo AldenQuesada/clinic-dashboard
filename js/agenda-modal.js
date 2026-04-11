@@ -104,6 +104,7 @@
       const pagEl  = document.getElementById('appt_forma_pag'); if (pagEl) pagEl.value = a.formaPagamento || ''
       const indEl  = document.getElementById('appt_indicado_por'); if (indEl) indEl.value = a.indicadoPor || ''
       const indIdEl= document.getElementById('appt_indicado_por_id'); if (indIdEl) indIdEl.value = a.indicadoPorId || ''
+      apptLoadPagamentos(a.pagamentos, a.formaPagamento, a.valor)
       if (a.tipoAvaliacao) {
         const rad = document.querySelector(`input[name="appt_tipo_aval"][value="${a.tipoAvaliacao}"]`)
         if (rad) rad.checked = true
@@ -130,7 +131,7 @@
       const tipoEl2 = document.getElementById('appt_tipo'); if (tipoEl2) tipoEl2.value = ''
       const origEl2 = document.getElementById('appt_origem'); if (origEl2) origEl2.value = ''
       const valEl2  = document.getElementById('appt_valor'); if (valEl2)  valEl2.value  = ''
-      const pagEl2  = document.getElementById('appt_forma_pag'); if (pagEl2) pagEl2.value = ''
+      apptResetPagamentos()
       apptTipoChange()
       if (profIdx !== undefined && profSel) profSel.value = profIdx
       if (deleteBtn) deleteBtn.style.display = 'none'
@@ -219,9 +220,9 @@
   function _apptHasConsultaData() {
     var aval = document.getElementById('appt_taval_hidden') && document.getElementById('appt_taval_hidden').value
     var val  = document.getElementById('appt_valor') && document.getElementById('appt_valor').value
-    var pag  = document.getElementById('appt_forma_pag') && document.getElementById('appt_forma_pag').value
     var mot  = document.getElementById('appt_cortesia_motivo') && document.getElementById('appt_cortesia_motivo').value
-    return !!(aval || val || pag || mot)
+    var hasPag = _apptPagamentos.some(function(p) { return p.forma || p.valor })
+    return !!(aval || val || mot || hasPag)
   }
 
   function _apptHasProcedimentoData() {
@@ -235,8 +236,8 @@
     var btnCort = document.getElementById('appt_aval_cortesia'); if (btnCort) { btnCort.style.background = '#fff'; btnCort.style.borderColor = '#BBF7D0' }
     var btnPaga = document.getElementById('appt_aval_paga'); if (btnPaga) { btnPaga.style.background = '#fff'; btnPaga.style.borderColor = '#FECACA' }
     var valEl = document.getElementById('appt_valor'); if (valEl) valEl.value = ''
-    var pagEl = document.getElementById('appt_forma_pag'); if (pagEl) pagEl.value = ''
     var motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = ''
+    apptResetPagamentos()
   }
 
   function _apptClearProcedimentoData() {
@@ -300,9 +301,9 @@
       if (pagaRow) pagaRow.style.display = 'none'
       if (cortRow) cortRow.style.display = ''
       if (radioCort) radioCort.checked = true
-      // Limpa valor/pagamento (não se aplicam à cortesia)
+      // Limpa valor/pagamentos (não se aplicam à cortesia)
       var valEl = document.getElementById('appt_valor'); if (valEl) valEl.value = ''
-      var pagEl = document.getElementById('appt_forma_pag'); if (pagEl) pagEl.value = ''
+      apptResetPagamentos()
     } else {
       if (btnPaga) { btnPaga.style.background = '#FEF2F2'; btnPaga.style.borderColor = '#DC2626' }
       if (btnCort) { btnCort.style.background = '#fff'; btnCort.style.borderColor = '#BBF7D0' }
@@ -311,6 +312,13 @@
       if (radioPaga) radioPaga.checked = true
       // Limpa motivo cortesia (não se aplica a paga)
       var motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = ''
+      // Garante 1 linha default e sincroniza valor com o total
+      if (_apptPagamentos.length === 0) apptResetPagamentos()
+      var valElP = document.getElementById('appt_valor')
+      if (valElP && valElP.value && _apptPagamentos.length === 1 && !_apptPagamentos[0].valor) {
+        _apptPagamentos[0].valor = parseFloat(valElP.value) || 0
+      }
+      apptRenderPagamentos()
     }
     if (hiddenEl) hiddenEl.value = val
   }
@@ -588,6 +596,124 @@
     if (v <= 0) return
     var valEl = document.getElementById('appt_valor')
     if (valEl) valEl.value = v.toFixed(2)
+    // Se ja tem 1 pagamento aberto sem valor, sincroniza com o total
+    if (_apptPagamentos.length === 1 && (!_apptPagamentos[0].valor || _apptPagamentos[0].valor === 0)) {
+      _apptPagamentos[0].valor = v
+      apptRenderPagamentos()
+    }
+    apptUpdatePagamentosTotal()
+  }
+
+  // ── Pagamentos múltiplos (Pix + Cartão etc) ─────────────────
+  // Estrutura: _apptPagamentos = [{ forma, valor, status: 'aberto'|'pago' }]
+  var _apptPagamentos = []
+
+  var FORMAS_PAGAMENTO = [
+    { value: 'pix',           label: 'PIX' },
+    { value: 'dinheiro',      label: 'Dinheiro' },
+    { value: 'debito',        label: 'Débito' },
+    { value: 'credito',       label: 'Crédito' },
+    { value: 'parcelado',     label: 'Parcelado' },
+    { value: 'entrada_saldo', label: 'Entrada + Saldo' },
+    { value: 'boleto',        label: 'Boleto' },
+    { value: 'link',          label: 'Link Pagamento' },
+    { value: 'convenio',      label: 'Convênio' },
+  ]
+
+  function _formaOptions(selected) {
+    return '<option value="">Forma...</option>' +
+      FORMAS_PAGAMENTO.map(function(f) {
+        var sel = f.value === selected ? ' selected' : ''
+        return '<option value="' + f.value + '"' + sel + '>' + f.label + '</option>'
+      }).join('')
+  }
+
+  function apptResetPagamentos() {
+    _apptPagamentos = [{ forma: '', valor: 0, status: 'aberto' }]
+    apptRenderPagamentos()
+  }
+
+  function apptLoadPagamentos(arr, fallbackForma, fallbackValor) {
+    if (Array.isArray(arr) && arr.length > 0) {
+      _apptPagamentos = arr.map(function(p) {
+        return {
+          forma:  p.forma  || '',
+          valor:  parseFloat(p.valor) || 0,
+          status: p.status === 'pago' ? 'pago' : 'aberto'
+        }
+      })
+    } else {
+      // Fallback compat: appt antigo so tem formaPagamento + valor
+      _apptPagamentos = [{
+        forma: fallbackForma || '',
+        valor: parseFloat(fallbackValor) || 0,
+        status: 'aberto'
+      }]
+    }
+    apptRenderPagamentos()
+  }
+
+  function apptAddPagamento() {
+    _apptPagamentos.push({ forma: '', valor: 0, status: 'aberto' })
+    apptRenderPagamentos()
+  }
+
+  function apptRemovePagamento(idx) {
+    if (_apptPagamentos.length <= 1) return
+    _apptPagamentos.splice(idx, 1)
+    apptRenderPagamentos()
+  }
+
+  function apptUpdatePagamento(idx, field, value) {
+    if (!_apptPagamentos[idx]) return
+    if (field === 'valor') _apptPagamentos[idx].valor = parseFloat(value) || 0
+    else _apptPagamentos[idx][field] = value
+    apptUpdatePagamentosTotal()
+  }
+
+  function apptTogglePago(idx) {
+    if (!_apptPagamentos[idx]) return
+    _apptPagamentos[idx].status = _apptPagamentos[idx].status === 'pago' ? 'aberto' : 'pago'
+    apptRenderPagamentos()
+  }
+
+  function apptRenderPagamentos() {
+    var list = document.getElementById('apptPagamentosList')
+    if (!list) return
+    var canRemove = _apptPagamentos.length > 1
+    list.innerHTML = _apptPagamentos.map(function(p, i) {
+      var pago = p.status === 'pago'
+      var bg   = pago ? '#F0FDF4' : '#fff'
+      var bd   = pago ? '#86EFAC' : '#E5E7EB'
+      var btnTxt = pago ? '✓ Pago'  : '○ Aberto'
+      var btnBg  = pago ? '#16A34A' : '#F3F4F6'
+      var btnFg  = pago ? '#fff'    : '#6B7280'
+      return '<div style="display:flex;gap:5px;align-items:center;background:' + bg + ';border:1px solid ' + bd + ';border-radius:7px;padding:5px">' +
+        '<select onchange="apptUpdatePagamento(' + i + ', \'forma\', this.value)" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">' + _formaOptions(p.forma) + '</select>' +
+        '<input type="number" step="0.01" placeholder="0,00" value="' + (p.valor ? p.valor.toFixed(2) : '') + '" oninput="apptUpdatePagamento(' + i + ', \'valor\', this.value)" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>' +
+        '<button type="button" onclick="apptTogglePago(' + i + ')" style="padding:5px 8px;background:' + btnBg + ';color:' + btnFg + ';border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">' + btnTxt + '</button>' +
+        (canRemove ? '<button type="button" onclick="apptRemovePagamento(' + i + ')" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>' : '') +
+      '</div>'
+    }).join('')
+    apptUpdatePagamentosTotal()
+  }
+
+  function apptUpdatePagamentosTotal() {
+    var totalEl = document.getElementById('apptPagamentosTotal')
+    if (!totalEl) return
+    var total = _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
+    var valor = parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0
+    var diff = +(valor - total).toFixed(2)
+    if (Math.abs(diff) < 0.01) {
+      totalEl.style.color = '#16A34A'
+      totalEl.textContent = 'Alocado: R$ ' + total.toFixed(2) + ' / R$ ' + valor.toFixed(2)
+    } else if (diff > 0) {
+      totalEl.style.color = '#DC2626'
+      totalEl.textContent = 'Falta alocar R$ ' + diff.toFixed(2) + ' (alocado: R$ ' + total.toFixed(2) + ' / R$ ' + valor.toFixed(2) + ')'
+    } else {
+      totalEl.style.color = '#DC2626'
+      totalEl.textContent = 'Excesso de R$ ' + Math.abs(diff).toFixed(2) + ' (alocado: R$ ' + total.toFixed(2) + ' / R$ ' + valor.toFixed(2) + ')'
+    }
   }
 
   function apptAutoSala() {
@@ -795,6 +921,19 @@
       alert('Adicione ao menos um procedimento.'); return
     }
 
+    // Validação pagamentos (Consulta Paga)
+    const valorTotal = parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0
+    if (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') {
+      if (valorTotal <= 0) { alert('Informe o valor da consulta.'); return }
+      if (!_apptPagamentos.length) { alert('Adicione ao menos uma forma de pagamento.'); return }
+      var faltaForma = _apptPagamentos.find(function(p) { return !p.forma })
+      if (faltaForma) { alert('Selecione a forma de cada pagamento.'); return }
+      var somaPag = _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
+      if (Math.abs(somaPag - valorTotal) >= 0.01) {
+        alert('A soma dos pagamentos (R$ ' + somaPag.toFixed(2) + ') deve ser igual ao valor total (R$ ' + valorTotal.toFixed(2) + ').'); return
+      }
+    }
+
     const apptData = {
       pacienteId:          (document.getElementById('appt_paciente_id') && document.getElementById('appt_paciente_id').value) || '',
       pacienteNome:        nome,
@@ -811,9 +950,20 @@
       tipoAvaliacao:       tipoAtend === 'avaliacao' ? tipoAvalVal : '',
       cortesiaMotivo:      (tipoAtend === 'avaliacao' && tipoAvalVal === 'cortesia') ? cortesiaMotivo : '',
       origem:              (document.getElementById('appt_origem') && document.getElementById('appt_origem').value) || '',
-      valor:               (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? (parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0) : 0,
-      formaPagamento:      (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? ((document.getElementById('appt_forma_pag') && document.getElementById('appt_forma_pag').value) || '') : '',
-      statusPagamento:     'pendente',
+      valor:               (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? valorTotal : 0,
+      pagamentos:          (tipoAtend === 'avaliacao' && tipoAvalVal === 'paga') ? _apptPagamentos.map(function(p) { return { forma: p.forma, valor: parseFloat(p.valor) || 0, status: p.status === 'pago' ? 'pago' : 'aberto' } }) : [],
+      formaPagamento:      (function() {
+        if (tipoAtend !== 'avaliacao' || tipoAvalVal !== 'paga') return ''
+        if (_apptPagamentos.length === 1) return _apptPagamentos[0].forma || ''
+        return 'misto'
+      })(),
+      statusPagamento:     (function() {
+        if (tipoAtend !== 'avaliacao' || tipoAvalVal !== 'paga') return 'pendente'
+        var pagos = _apptPagamentos.filter(function(p) { return p.status === 'pago' }).length
+        if (pagos === 0) return 'aberto'
+        if (pagos === _apptPagamentos.length) return 'pago'
+        return 'parcial'
+      })(),
       confirmacaoEnviada:  (document.getElementById('appt_confirmacao') && document.getElementById('appt_confirmacao').checked) || false,
       consentimentoImagem: (document.getElementById('appt_consentimento') && document.getElementById('appt_consentimento').checked) ? 'assinado' : 'pendente',
       obs:                 (document.getElementById('appt_obs') && document.getElementById('appt_obs').value.trim()) || '',
@@ -1082,6 +1232,11 @@
   window.apptIndicadoSearch = apptIndicadoSearch
   window.apptIndicadoSelect = apptIndicadoSelect
   window.apptOnProfChange   = apptOnProfChange
+  window.apptAddPagamento   = apptAddPagamento
+  window.apptRemovePagamento = apptRemovePagamento
+  window.apptUpdatePagamento = apptUpdatePagamento
+  window.apptTogglePago     = apptTogglePago
+  window.apptUpdatePagamentosTotal = apptUpdatePagamentosTotal
   window.apptProcAutofill  = apptProcAutofill
   window.apptTipoChange    = apptTipoChange
   window.apptUpdateEndTime = apptUpdateEndTime

@@ -4125,19 +4125,19 @@
               <input id="appt_cortesia_motivo" type="text" placeholder="Ex: primeira consulta, parceria, indicacao..." style="width:100%;padding:7px 10px;border:1.5px solid #BBF7D0;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#F0FDF4"/>
             </div>
           </div>
-          <!-- Consulta Paga: valor + pagamento -->
+          <!-- Consulta Paga: valor + pagamentos (multi) -->
           <div id="apptPagaRow" style="display:none">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <div>
-                <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">VALOR (R$)</label>
-                <input id="appt_valor" type="number" step="0.01" placeholder="0,00" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
+            <div style="margin-bottom:8px">
+              <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">VALOR TOTAL (R$)</label>
+              <input id="appt_valor" type="number" step="0.01" placeholder="0,00" oninput="apptUpdatePagamentosTotal()" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box"/>
+            </div>
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <label style="font-size:10px;font-weight:700;color:#6B7280">FORMAS DE PAGAMENTO</label>
+                <button type="button" onclick="apptAddPagamento()" style="padding:3px 8px;background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer">+ adicionar</button>
               </div>
-              <div>
-                <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">PAGAMENTO</label>
-                <select id="appt_forma_pag" style="width:100%;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">
-                  <option value="">--</option><option value="pix">PIX</option><option value="dinheiro">Dinheiro</option><option value="debito">Debito</option><option value="credito">Credito</option><option value="parcelado">Parcelado</option><option value="entrada_saldo">Entrada + Saldo</option><option value="boleto">Boleto</option><option value="link">Link Pagamento</option><option value="cortesia">Cortesia</option><option value="convenio">Convenio</option>
-                </select>
-              </div>
+              <div id="apptPagamentosList" style="display:flex;flex-direction:column;gap:5px"></div>
+              <div id="apptPagamentosTotal" style="margin-top:5px;font-size:10px;font-weight:700;text-align:right;color:#6B7280"></div>
             </div>
           </div>
           <!-- Procedimento: catalogo por categoria -->
@@ -5138,7 +5138,7 @@
   <script src="js/api.js?v=20260407p" defer></script>
   <!-- Módulos extraídos de api.js — carregam DEPOIS de api.js, sobrescrevem globals -->
   <script src="js/agenda-notifications.js?v=20260407p" defer></script>
-  <script src="js/agenda-modal.js?v=20260411c" defer></script>
+  <script src="js/agenda-modal.js?v=20260411d" defer></script>
   <script src="js/agenda-finalize.js?v=20260407p" defer></script>
   <script src="js/injetaveis.js?v=20260409e" defer></script>
   <script src="js/procedimentos.js?v=20260409e" defer></script>
