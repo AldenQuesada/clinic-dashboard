@@ -1883,8 +1883,8 @@ function _lmTabFinanceiro(lead) {
     table = '<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">' + myAppts.length + ' registros</div>'
     table += '<div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden">'
     // Header
-    table += '<div style="display:grid;grid-template-columns:80px 1fr 90px 90px;padding:8px 12px;background:#F9FAFB;font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid #E5E7EB">'
-      + '<div>Data</div><div>Procedimento</div><div style="text-align:center">Situa\u00e7\u00e3o</div><div style="text-align:right">Valor</div></div>'
+    table += '<div style="display:grid;grid-template-columns:80px 1fr 90px 90px 30px;padding:8px 12px;background:#F9FAFB;font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid #E5E7EB">'
+      + '<div>Data</div><div>Procedimento</div><div style="text-align:center">Situa\u00e7\u00e3o</div><div style="text-align:right">Valor</div><div></div></div>'
     // Rows
     myAppts.forEach(function(a) {
       var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : ''
@@ -1893,11 +1893,19 @@ function _lmTabFinanceiro(lead) {
       var cfg = statusCfg[sp] || statusCfg.pendente
       var valor = a.valor || 0
 
-      table += '<div style="display:grid;grid-template-columns:80px 1fr 90px 90px;padding:10px 12px;border-bottom:1px solid #F3F4F6;align-items:center;font-size:12px">'
+      var apptId = (a.id || '').replace(/'/g, '')
+      table += '<div style="display:grid;grid-template-columns:80px 1fr 90px 90px 30px;padding:10px 12px;border-bottom:1px solid #F3F4F6;align-items:center;font-size:12px">'
         + '<div style="color:#6B7280">' + date + '</div>'
         + '<div style="color:#374151;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + proc.replace(/</g,'&lt;') + '</div>'
         + '<div style="text-align:center"><span style="padding:2px 8px;background:' + cfg.bg + ';color:' + cfg.color + ';border-radius:4px;font-size:10px;font-weight:600">' + cfg.label + '</span></div>'
         + '<div style="text-align:right;font-weight:700;color:#111">' + formatCurrency(valor) + '</div>'
+        + '<div style="text-align:center;position:relative">'
+        + '<button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:16px;padding:2px 6px;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">&#8942;</button>'
+        + '<div style="display:none;position:absolute;right:0;top:24px;background:#fff;border:1px solid #E5E7EB;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:10;min-width:160px;padding:4px">'
+        + '<button onclick="this.parentElement.style.display=\'none\';if(window.openApptModal)openApptModal(\'' + apptId + '\')" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">Visualizar consulta</button>'
+        + '<button onclick="this.parentElement.style.display=\'none\';if(window.openFinalizeModal)openFinalizeModal(\'' + apptId + '\')" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">Editar pagamento</button>'
+        + '<button onclick="this.parentElement.style.display=\'none\'" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;cursor:pointer;font-size:12px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#F3F4F6\'" onmouseout="this.style.background=\'none\'">Visualizar parcelas</button>'
+        + '</div></div>'
         + '</div>'
     })
     table += '</div>'
