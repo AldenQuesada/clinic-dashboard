@@ -404,10 +404,11 @@
           + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#111827">Segmentacao Estrategica</div>'
         + '</div>'
 
-        + '<div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #e5e7eb;padding-bottom:0">'
+        + '<div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid #e5e7eb;padding-bottom:0;flex-wrap:wrap">'
           + _segTabBtn('procedure',    'Procedimentos', (seg.by_procedure || []).length)
           + _segTabBtn('professional', 'Especialistas', (seg.by_professional || []).length)
           + _segTabBtn('origem',       'Origem',        (seg.by_origem || []).length)
+          + _segTabBtn('patients',     'Pacientes LTV', '')
           + _segTabBtn('heatmap',      'Dia x Hora',    (seg.heatmap || []).length)
         + '</div>'
 
@@ -536,7 +537,71 @@
       return _renderHeatmap(data)
     }
 
+    if (tab === 'patients') {
+      // Carrega async via getPatientsLtv
+      _loadPatientsTab()
+      return '<div id="cfPatTabContent" style="padding:20px;text-align:center;color:#9ca3af;font-size:13px">Carregando pacientes...</div>'
+    }
+
     return ''
+  }
+
+  async function _loadPatientsTab() {
+    try {
+      var res = await window.CashflowService.getPatientsLtv(20, false)
+      var div = document.getElementById('cfPatTabContent')
+      if (!div) return
+      if (!res || !res.ok) {
+        div.innerHTML = _segEmpty('Erro ao carregar pacientes')
+        return
+      }
+      var data = res.data || {}
+      var pats = data.patients || []
+      var stats = data.stats || {}
+      var fmt = window.CashflowService.fmtCurrency
+
+      if (pats.length === 0) {
+        div.innerHTML = _segEmpty('Nenhum paciente com receita ainda. Vincule pacientes nas transacoes via botao verde +pessoa.')
+        return
+      }
+
+      var rfmColors = {
+        vip:      { bg: '#f0fdf4', col: '#10b981', label: 'VIP' },
+        regular:  { bg: '#eff6ff', col: '#3b82f6', label: 'Regular' },
+        novo:     { bg: '#f5f3ff', col: '#8b5cf6', label: 'Novo' },
+        em_risco: { bg: '#fffbeb', col: '#f59e0b', label: 'Em Risco' },
+        inativo:  { bg: '#fef2f2', col: '#ef4444', label: 'Inativo' },
+        distante: { bg: '#f3f4f6', col: '#9ca3af', label: 'Distante' },
+      }
+
+      var html = '<div style="margin-bottom:12px;font-size:11px;color:#6b7280">Total: <strong>' + (stats.total_patients || 0) + '</strong> pacientes | LTV medio: <strong>' + fmt(stats.avg_ltv || 0) + '</strong> | Top 10% concentra <strong>' + (stats.top10_pct || 0) + '%</strong> da receita</div>'
+        + '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+        + '<thead><tr style="background:#f9fafb">'
+        + '<th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">#</th>'
+        + '<th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Paciente</th>'
+        + '<th style="padding:10px 12px;text-align:center;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Classe</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Visitas</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">LTV</th>'
+        + '<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase">Recencia</th>'
+        + '</tr></thead><tbody>'
+
+      pats.forEach(function(p, i) {
+        var c = rfmColors[p.rfm_class] || rfmColors.distante
+        html += '<tr style="border-bottom:1px solid #f3f4f6">'
+          + '<td style="padding:10px 12px;color:#9ca3af">' + (i + 1) + '</td>'
+          + '<td style="padding:10px 12px;color:#111827"><strong>' + p.name + '</strong></td>'
+          + '<td style="padding:10px 12px;text-align:center"><span style="background:' + c.bg + ';color:' + c.col + ';font-size:9px;font-weight:700;padding:2px 8px;border-radius:5px">' + c.label.toUpperCase() + '</span></td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#6b7280">' + p.visit_days + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#10b981;font-weight:700">' + fmt(p.monetary) + '</td>'
+          + '<td style="padding:10px 12px;text-align:right;color:#9ca3af">' + (p.recency_days === 0 ? 'hoje' : p.recency_days + 'd') + '</td>'
+          + '</tr>'
+      })
+
+      html += '</tbody></table>'
+      div.innerHTML = html
+    } catch (e) {
+      console.warn('[CashflowUI] _loadPatientsTab:', e)
+    }
   }
 
   function _renderHeatmap(data) {

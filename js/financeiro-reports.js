@@ -332,15 +332,8 @@ window.FinReports = (() => {
     },
 
     'fin-by-patient': function() {
-      return _subShell('Receita por Paciente', 'user', '#f59e0b', [
-        _kpiRow([
-          { label: 'Top 10 Pacientes', value: 'R$ 28.400',  delta: null, suffix: '31,7% do total' },
-          { label: 'LTV Médio',        value: 'R$ 4.200',   delta: '+9%', up: true },
-          { label: 'Retorno Médio',    value: '2,4x / ano', delta: null },
-        ]),
-        _chartPlaceholder('Distribuição de receita por faixa de valor — pacientes'),
-        _tableHeader(['Paciente', 'Atend.', 'Receita Total', 'LTV Est.']),
-      ])
+      _loadPatientsLtvReport()
+      return _loadingShell('Receita por Paciente / LTV', 'user', '#f59e0b')
     },
 
     'fin-by-campaign': function() {
@@ -531,6 +524,111 @@ window.FinReports = (() => {
     }
 
     return _subShell(title, icon, color, sections)
+  }
+
+  async function _loadPatientsLtvReport() {
+    setTimeout(async function() {
+      try {
+        if (!window.CashflowService || !window.CashflowService.getPatientsLtv) {
+          _renderUnavailable('fin-by-patient', 'Receita por Paciente / LTV', 'user', '#f59e0b')
+          return
+        }
+        var res = await window.CashflowService.getPatientsLtv(50, false)
+        if (!res || !res.ok) {
+          _renderUnavailable('fin-by-patient', 'Receita por Paciente / LTV', 'user', '#f59e0b')
+          return
+        }
+        var data = res.data || {}
+        var fmt = window.CashflowService.fmtCurrency
+        var root = document.getElementById('finByPatientRoot')
+        if (!root) return
+        root.innerHTML = _renderPatientsLtv(data, fmt)
+      } catch (e) { console.warn('[FinReports] _loadPatientsLtvReport:', e) }
+    }, 100)
+  }
+
+  function _renderPatientsLtv(data, fmt) {
+    var stats = data.stats || {}
+    var rfm   = data.rfm   || {}
+    var pats  = data.patients || []
+
+    var rfmColors = {
+      vip:      { bg: '#f0fdf4', bd: '#bbf7d0', col: '#10b981', label: 'VIP' },
+      regular:  { bg: '#eff6ff', bd: '#bfdbfe', col: '#3b82f6', label: 'Regular' },
+      novo:     { bg: '#f5f3ff', bd: '#ddd6fe', col: '#8b5cf6', label: 'Novo' },
+      em_risco: { bg: '#fffbeb', bd: '#fde68a', col: '#f59e0b', label: 'Em Risco' },
+      inativo:  { bg: '#fef2f2', bd: '#fecaca', col: '#ef4444', label: 'Inativo' },
+      distante: { bg: '#f3f4f6', bd: '#e5e7eb', col: '#9ca3af', label: 'Distante' },
+    }
+
+    var sections = [
+      // KPIs principais
+      _kpiRow([
+        { label: 'Total Pacientes',  value: String(stats.total_patients || 0) },
+        { label: 'LTV Medio',        value: fmt(stats.avg_ltv || 0) },
+        { label: 'Top 10% Receita',  value: stats.top10_pct + '%', suffix: 'concentracao' },
+        { label: 'Threshold VIP',    value: fmt(stats.p80_threshold || 0), suffix: 'monetary >= isso' },
+      ]),
+
+      // Cards RFM
+      _rfmCards(rfm, rfmColors, fmt),
+    ]
+
+    if (pats.length === 0) {
+      sections.push('<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px">Nenhum paciente com receita. Vincule pacientes as transacoes pra ativar.</div>')
+    } else {
+      sections.push(_patientsTable(pats, fmt, rfmColors))
+    }
+
+    return _subShell('Receita por Paciente / LTV', 'user', '#f59e0b', sections)
+  }
+
+  function _rfmCards(rfm, colors, fmt) {
+    var classes = ['vip','regular','novo','em_risco','inativo','distante']
+    var html = '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px">'
+    classes.forEach(function(cls) {
+      var data = rfm[cls] || { count: 0, monetary: 0 }
+      var c = colors[cls]
+      html += '<div style="background:' + c.bg + ';border:1px solid ' + c.bd + ';border-radius:10px;padding:14px 12px;text-align:center">'
+        + '<div style="font-size:10px;font-weight:700;color:' + c.col + ';text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">' + c.label + '</div>'
+        + '<div style="font-size:22px;font-weight:700;color:' + c.col + ';margin-bottom:2px">' + (data.count || 0) + '</div>'
+        + '<div style="font-size:10px;color:#6b7280">' + fmt(data.monetary || 0) + '</div>'
+        + '</div>'
+    })
+    html += '</div>'
+    return html
+  }
+
+  function _patientsTable(pats, fmt, colors) {
+    var html = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:16px">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      + '<thead><tr style="background:#f9fafb">'
+      + '<th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">#</th>'
+      + '<th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Paciente</th>'
+      + '<th style="padding:12px 14px;text-align:center;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Classe</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Visitas</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Ticket Medio</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">LTV</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Ultima Visita</th>'
+      + '</tr></thead><tbody>'
+
+    pats.forEach(function(p, i) {
+      var c = colors[p.rfm_class] || colors.distante
+      html += '<tr style="border-bottom:1px solid #f3f4f6">'
+        + '<td style="padding:12px 14px;color:#9ca3af">' + (i + 1) + '</td>'
+        + '<td style="padding:12px 14px;color:#111827"><strong>' + p.name + '</strong>'
+        + (p.phone ? '<div style="font-size:10px;color:#9ca3af">' + p.phone + '</div>' : '')
+        + '</td>'
+        + '<td style="padding:12px 14px;text-align:center"><span style="background:' + c.bg + ';color:' + c.col + ';font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;border:1px solid ' + c.bd + '">' + c.label.toUpperCase() + '</span></td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#6b7280">' + p.visit_days + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#374151">' + fmt(p.avg_ticket) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#10b981;font-weight:700">' + fmt(p.monetary) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#9ca3af;font-size:11px">' + (p.recency_days === 0 ? 'hoje' : 'ha ' + p.recency_days + 'd') + '</td>'
+        + '</tr>'
+    })
+
+    html += '</tbody></table></div>'
+    return html
   }
 
   function _renderOrigemReport(seg, fmt, title, icon, color) {

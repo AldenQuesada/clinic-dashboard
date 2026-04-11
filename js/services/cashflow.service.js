@@ -177,6 +177,18 @@
     return repo.getSegments(year, month)
   }
 
+  async function getPatientsLtv(limit, onlyActive) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: {}, error: 'CashflowRepository nao disponivel' }
+    return repo.getPatientsLtv(limit, onlyActive)
+  }
+
+  async function getVipSumidos(minDays, maxDays, limit) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: [], error: 'CashflowRepository nao disponivel' }
+    return repo.getVipSumidos(minDays, maxDays, limit)
+  }
+
   // ── Hook: cria entry a partir de appointment finalizado ──
 
   /**
@@ -315,6 +327,8 @@
     getConfig:            getConfig,
     saveConfig:           saveConfig,
     getSegments:          getSegments,
+    getPatientsLtv:       getPatientsLtv,
+    getVipSumidos:        getVipSumidos,
     createFromAppointment: createFromAppointment,
   })
 })()
