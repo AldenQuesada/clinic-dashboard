@@ -640,7 +640,17 @@ function _lmSwitchTab(tabId) {
 
 function _renderModalTab(tabId, lead) {
   switch (tabId) {
-    case 'geral':      return _lmTabGeral(lead)
+    case 'geral':
+      // Async — renderizar placeholder e atualizar quando pronto
+      var geralPromise = _lmTabGeral(lead)
+      if (geralPromise && typeof geralPromise.then === 'function') {
+        geralPromise.then(function(html) {
+          var el = document.getElementById('lmContent')
+          if (el) el.innerHTML = html
+        })
+        return '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando...</div>'
+      }
+      return geralPromise
     case 'clinico':    return _lmTabClinico(lead)
     case 'anamnese':   return _lmTabAnamnese(lead)
     case 'evolucao':   return _lmTabEvolucao(lead)
@@ -1317,7 +1327,7 @@ window._lmChangePhase  = _lmChangePhase
 
 // ── Aba: Geral ────────────────────────────────────────────────
 
-function _lmTabGeral(lead) {
+async function _lmTabGeral(lead) {
   var cf   = lead.customFields || {}
   var addr = cf.endereco || {}
   var dob  = cf.dataNascimento || ''
@@ -1366,9 +1376,58 @@ function _lmTabGeral(lead) {
   // Botoes de transicao manual de fase
   var phaseActions = _lmPhaseActions(lead)
 
+  // ── Enriquecer com dados da anamnese (se existir) ──────────
+  var anamData = {}
+  if (window._sbShared) {
+    try {
+      var respRes = await window._sbShared.from('anamnesis_responses')
+        .select('id').eq('patient_id', lead.id).eq('status', 'completed')
+        .order('created_at', { ascending: false }).limit(1)
+      if (respRes.data && respRes.data.length) {
+        var ansRes = await window._sbShared.from('anamnesis_answers')
+          .select('field_id,field_key,value_json')
+          .eq('response_id', respRes.data[0].id)
+        ;(ansRes.data || []).forEach(function(a) { anamData[a.field_key] = a })
+
+        // Traduzir opcoes para labels
+        var fids = (ansRes.data || []).map(function(a) { return a.field_id }).filter(Boolean)
+        if (fids.length) {
+          var optsRes = await window._sbShared.from('anamnesis_field_options')
+            .select('field_id,value,label').in('field_id', fids)
+          var optMap = {}
+          ;(optsRes.data || []).forEach(function(o) { optMap[o.field_id + ':' + o.value] = o.label })
+          // Enriquecer anamData com labels
+          Object.keys(anamData).forEach(function(k) {
+            var a = anamData[k]
+            if (Array.isArray(a.value_json)) {
+              a._labels = a.value_json.map(function(v) { return optMap[a.field_id + ':' + v] || v })
+            } else if (typeof a.value_json === 'string') {
+              a._label = optMap[a.field_id + ':' + a.value_json] || a.value_json
+            }
+          })
+        }
+
+        // Preencher dados cadastrais da anamnese se vazios
+        if (!dob && anamData['__gd_data_nascimento']) dob = anamData['__gd_data_nascimento'].value_json || ''
+        if (!cf.sexo && anamData['__gd_sexo']) cf.sexo = anamData['__gd_sexo'].value_json || ''
+        if (!cf.cpf && anamData['__gd_cpf'] && anamData['__gd_cpf'].value_json !== '[REDACTED]') cf.cpf = anamData['__gd_cpf'].value_json || ''
+      }
+    } catch (e) { console.warn('[Geral] Anamnese enrich error:', e.message) }
+  }
+
+  // Recalcular idade apos enriquecimento
+  if (dob) age = _calcAge(dob) || age
+
   // ── Coluna direita: dados estrategicos ──────────────────────
+  // Queixas: primeiro da anamnese, fallback do lead
   var qfRaw = lead.queixas_faciais || cf.queixas_faciais || (lead.data || {}).queixas_faciais || []
   var qfArr = Array.isArray(qfRaw) ? qfRaw : []
+
+  // Enriquecer queixas com dados da anamnese
+  var anamQueixas = anamData['assinale_as_opcoes_que_voce_gostaria_de_melhorar_e']
+  if (anamQueixas && anamQueixas._labels && anamQueixas._labels.length) {
+    qfArr = anamQueixas._labels
+  }
   var queixaHtml = qfArr.length
     ? '<div style="display:flex;flex-wrap:wrap;gap:4px">' + qfArr.map(function(q) { return '<span style="padding:3px 9px;background:#EEF2FF;color:#4338CA;border-radius:6px;font-size:11px;font-weight:600">' + (q||'').replace(/</g,'&lt;') + '</span>' }).join('') + '</div>'
     : (cf.queixaPrincipal ? '<div style="font-size:12px;color:#78350F">' + cf.queixaPrincipal.replace(/</g,'&lt;') + '</div>' : '<span style="font-size:11px;color:#9CA3AF">Nenhuma informada</span>')
@@ -1387,6 +1446,12 @@ function _lmTabGeral(lead) {
 
   var ana = cf.anamnese || {}
   var alergias = ana.alergias || ''
+  // Enriquecer alergias da anamnese digital
+  var anamAlergias = anamData['possui_alergia']
+  if (anamAlergias && anamAlergias._labels && anamAlergias._labels.length) {
+    var filtered = anamAlergias._labels.filter(function(l) { return l && l !== 'NENHUMA' && l !== 'Nenhuma' })
+    if (filtered.length) alergias = filtered.join(', ')
+  }
 
   // Cards estrategicos
   function _stratCard(color, title, content) {
