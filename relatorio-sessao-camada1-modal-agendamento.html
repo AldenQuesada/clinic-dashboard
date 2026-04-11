@@ -84,12 +84,288 @@
   <div class="stats">
     <div class="stat"><div class="num">12</div><div class="label">Features</div></div>
     <div class="stat"><div class="num">15</div><div class="label">Hardenings</div></div>
-    <div class="stat"><div class="num">7</div><div class="label">Premium upgrades</div></div>
-    <div class="stat"><div class="num">59</div><div class="label">Testes passando</div></div>
+    <div class="stat"><div class="num">7</div><div class="label">Premium</div></div>
+    <div class="stat"><div class="num">4</div><div class="label">Regressões fix</div></div>
+  </div>
+
+  <!-- ═══ DEVELOPER GUIDE ═══ -->
+  <h2 id="dev-guide">Guia do Desenvolvedor</h2>
+  <p class="muted">Referência rápida pros padrões, utilitários e gotchas introduzidos nesta sessão.
+    Novo código na camada 1 (e adjacências) deve seguir essas convenções.</p>
+
+  <h3>Utilitários novos (js/utils/)</h3>
+
+  <div class="feature">
+    <h3>Money — matemática financeira em centavos</h3>
+    <p>Sempre usar <code>Money</code> para qualquer aritmética monetária. Evita drift de float
+      (<code>0.1 + 0.2 !== 0.3</code>).</p>
+    <pre><code>// Soma de pagamentos valida contra total
+var somaPag = Money.sum(pagamentos.map(p =&gt; p.valor))
+if (!Money.eq(somaPag, total)) alert('Soma diferente do total')
+
+// Divisão em parcelas arredondando certo
+var valorParcela = Money.div(1000, 3)  // 333.33
+
+// Parse de input BR ("1.234,56")
+var valor = Money.parse(input.value)
+
+// Formatação
+Money.format(1234.56)        // "R$ 1.234,56"
+Money.format(1234.56, false) // "1.234,56"</code></pre>
+    <p class="muted">Testes: <code>tests/money.test.js</code> (32 casos). Nunca usar
+      <code>parseFloat(x).toFixed(2)</code> em somas/comparações.</p>
+  </div>
+
+  <div class="feature">
+    <h3>html — tag literal com escape por default</h3>
+    <p>Substitui concatenação manual de strings HTML. Cada valor interpolado é escapado
+      automaticamente — elimina a classe <strong>innerHTML + user data = XSS</strong>.</p>
+    <pre><code>// ANTES (vetor XSS)
+list.innerHTML = procs.map(p =&gt;
+  '&lt;div&gt;' + p.nome + '&lt;/div&gt;'  // nome pode conter &lt;script&gt;
+).join('')
+
+// DEPOIS (seguro)
+var H = window.html
+list.innerHTML = procs.map(p =&gt; H`&lt;div&gt;${p.nome}&lt;/div&gt;`).join('')
+
+// Quando você PRECISA de HTML bruto (already-safe), use .raw()
+list.innerHTML = H`&lt;div&gt;${H.raw(alreadyBuiltHtml)}&lt;/div&gt;`</code></pre>
+    <p class="muted">Testes: <code>tests/html.test.js</code>. <code>raw()</code> é opt-out
+      explícito — nunca passar dado do usuário por <code>raw()</code>.</p>
+  </div>
+
+  <div class="feature">
+    <h3>Modal — alert/confirm/dialog unificado</h3>
+    <p>API única que padroniza botão ×, click-fora, Esc, ARIA, focus trap, restore focus.</p>
+    <pre><code>// Alerta simples
+Modal.alert({ title: 'Erro', message: 'Algo deu errado', tone: 'error' })
+
+// Confirmação (retorna Promise&lt;boolean&gt;)
+var ok = await Modal.confirm({
+  title: 'Descartar?',
+  message: 'Os dados preenchidos serão perdidos',
+  confirmText: 'Descartar',
+  tone: 'warn'
+})
+
+// Dialog customizado
+var dlg = Modal.dialog({
+  title: 'Detalhes',
+  bodyHtml: someHtml,
+  buttons: [
+    { label: 'OK', primary: true, onClick: () =&gt; { /* fecha por default */ } }
+  ]
+})
+dlg.close()  // fecha programaticamente</code></pre>
+    <p class="muted">Tones: <code>info</code> (azul), <code>success</code> (verde), <code>warn</code> (amarelo), <code>error</code> (vermelho).</p>
+  </div>
+
+  <div class="feature">
+    <h3>Logger — logging estruturado</h3>
+    <p>Níveis (debug/info/warn/error), buffer ring (últimos 100), hook <code>onError</code> opcional.
+      Persiste o nível em localStorage.</p>
+    <pre><code>Logger.info('appointment:saved', { id: appt.id, valor: appt.valor })
+Logger.warn('sync:failed', { error: err.message })
+Logger.error('save:exception', { stack: err.stack })
+
+// Inspeção via DevTools
+Logger.dump()            // últimos 100 logs
+Logger.setLevel('debug') // persiste em localStorage
+
+// Hook pra envio remoto
+Logger.onError(entry =&gt; fetch('/log', { method:'POST', body: JSON.stringify(entry) }))</code></pre>
+    <p class="muted">Default level é <code>warn</code>. Mudar para <code>debug</code> via console
+      pra debugar algo específico.</p>
+  </div>
+
+  <div class="feature">
+    <h3>FeatureFlags — rollout gradual</h3>
+    <p>Flags em localStorage com defaults no código. Override por usuário via DevTools.</p>
+    <pre><code>// No código
+if (FeatureFlags.isEnabled('new_payment_block')) {
+  // código novo
+}
+
+// Ativar pra um usuário específico via DevTools
+localStorage.setItem('clinicai_ff_audit_trail_ui', '1')
+
+// Inspeção
+FeatureFlags.list()  // { new_payment_block: true, cortesia_per_proc: true, ... }</code></pre>
+    <p class="muted">Adicionar nova flag em <code>FLAG_DEFAULTS</code> de
+      <code>js/utils/feature-flags.js</code>. Usar para features experimentais que precisam
+      ser testadas por um usuário antes de virar default.</p>
+  </div>
+
+  <div class="feature">
+    <h3>ErrorBoundary — captura global</h3>
+    <p>Auto-instalado no <code>DOMContentLoaded</code>. Captura <code>window.error</code> e
+      <code>unhandledrejection</code>, mostra modal amigável ao usuário (com throttle),
+      loga via Logger.</p>
+    <pre><code>// Já instalado — não precisa chamar
+// Test manual:
+ErrorBoundary.test()  // lança erro pra ver o modal
+
+// Configurar envio remoto (opcional)
+ErrorBoundary.install({ remoteEndpoint: '/api/client-errors' })</code></pre>
+  </div>
+
+  <h3>Padrões e Gotchas</h3>
+
+  <div class="feature">
+    <h3>State alias mutation — nunca reatribuir</h3>
+    <p>Quando um módulo consolida estado num objeto (<code>_apptState</code>) e mantém
+      <code>var _apptProcs = _apptState.procs</code> como alias, <strong>qualquer reatribuição</strong>
+      do alias quebra a sincronia.</p>
+    <pre><code>// ❌ ERRADO — _apptProcs fica órfão, _apptState.procs continua apontando pro antigo
+_apptProcs = []
+
+// ✅ CERTO — muta in-place, alias continua válido
+_apptProcs.length = 0</code></pre>
+    <p class="muted">Foi um dos 4 bugs de regressão pós-Premium. Memória:
+      <code>feedback_state_alias_mutation.md</code>. Aplicar o mesmo princípio para objetos
+      (<code>Object.keys(o).forEach(k =&gt; delete o[k])</code>).</p>
+  </div>
+
+  <div class="feature">
+    <h3>Event delegation vs onclick direto</h3>
+    <p>Event delegation (<code>data-action</code> + listener único no container) é elegante
+      mas sensível: se o listener não é instalado OU bubbling é bloqueado por propagação
+      stop, o clique silenciosamente não funciona.</p>
+    <p><strong>Regra prática:</strong></p>
+    <ul>
+      <li><strong>Use delegation</strong> quando tem muitos botões dinâmicos (listas longas) e a
+        interação é simples (click único)</li>
+      <li><strong>Use <code>onclick="fn(...)"</code> direto</strong> para interações críticas em
+        modais complexos — é determinístico e debug é trivial</li>
+    </ul>
+    <p>Onclick direto exige expor a função em <code>window</code> — isso é catchado pelo typecheck
+      via <code>_globals.d.ts</code>.</p>
+  </div>
+
+  <div class="feature">
+    <h3>Cache-buster: sempre bumpar ao mudar JS</h3>
+    <p>O Easypanel auto-deploya, mas o browser + Cloudflare podem servir versão antiga
+      por <strong>horas</strong> se o cache-buster não mudar.</p>
+    <pre><code>&lt;!-- index.html --&gt;
+&lt;script src="js/agenda-modal.js?v=20260411r" defer&gt;&lt;/script&gt;</code></pre>
+    <p>Sempre bumpar o <code>?v=</code> (ex: <code>r → s</code>) quando mexer no JS que o HTML
+      carrega. Já temos um script separado pra isso no futuro
+      (<a href="#f9">item #9 do hardening</a>).</p>
+  </div>
+
+  <div class="feature">
+    <h3>RPC signature mismatch → NOTIFY pgrst</h3>
+    <p>Quando você muda a assinatura de um RPC PostgreSQL (params adicionados/removidos),
+      o PostgREST mantém cache de schema por até 10 minutos. Isso gera o erro famoso:</p>
+    <pre><code>"Could not find the function public.xxx(...) in the schema cache"</code></pre>
+    <p>Solução: notificar reload explícito via psql direto:</p>
+    <pre><code>await c.query("NOTIFY pgrst, 'reload schema'")</code></pre>
+    <p>Todos os scripts de apply de migration devem incluir esse NOTIFY no final.</p>
+  </div>
+
+  <div class="feature">
+    <h3>Dirty watcher pattern (profModal)</h3>
+    <p>O modal de profissional tem um array <code>watchIds</code> que dispara dirty
+      marker para revelar o botão Salvar. Ao adicionar qualquer novo campo:</p>
+    <pre><code>// js/professionals.js
+const watchIds = ['sp_nome', 'sp_salario', 'sp_valor_consulta', /* ... */]</code></pre>
+    <p>Se esquecer, o usuário digita e o botão Salvar nunca aparece.
+      Memória: <code>feedback_profmodal_dirty_watch.md</code>.</p>
+  </div>
+
+  <h3>Comandos do projeto</h3>
+  <table>
+    <tr><th>Comando</th><th>Uso</th></tr>
+    <tr><td><code>npm test</code></td><td>Roda 59 testes vitest (Money, html, logger, feature-flags + testes legacy)</td></tr>
+    <tr><td><code>npm run test:watch</code></td><td>Vitest em modo watch (TDD)</td></tr>
+    <tr><td><code>npm run typecheck</code></td><td>Valida JSDoc nos utils críticos via <code>tsc --checkJs</code></td></tr>
+    <tr><td><code>npm run audit:schema</code></td><td>Detecta drift entre DB / RPC / frontend em 4 entidades</td></tr>
+    <tr><td><code>npm run perf:budget</code></td><td>Lista tamanho de cada JS no boot chain + flags visuais</td></tr>
+  </table>
+
+  <h3>Workflow ao adicionar nova feature na camada 1</h3>
+  <ol>
+    <li>Criar migration SQL em <code>supabase/migrations/YYYYMMDDHHMMSS_*.sql</code> se precisar de DB</li>
+    <li>Aplicar migration via <code>node temp-apply-*.cjs</code> (template em histórico) + <code>NOTIFY pgrst</code></li>
+    <li>Atualizar repo correspondente (<code>js/repositories/*.repository.js</code>) e manter alinhado com RPC</li>
+    <li>Rodar <code>npm run audit:schema</code> para garantir que não criou drift</li>
+    <li>Escrever testes em <code>tests/*.test.js</code> antes/durante a implementação</li>
+    <li>Rodar <code>npm test</code> e <code>npm run typecheck</code> antes do commit</li>
+    <li>Bumpar cache-buster dos JS afetados em <code>index.html</code></li>
+    <li>Commit + push (Easypanel auto-deploya)</li>
+  </ol>
+
+  <!-- ═══ REGRESSÕES PÓS-PREMIUM ═══ -->
+  <h2 id="regressoes">Regressões pós-Premium (4 bugs) <span class="badge badge-ok">Corrigidas</span></h2>
+  <p class="muted">Após o push do Premium round, o usuário reportou 3 bugs reais + 1 follow-up
+    relacionado. Abaixo, cada um com causa raiz e fix.</p>
+
+  <div class="feature">
+    <h3>R#1 — Procedimento não deletava nem selecionava cortesia</h3>
+    <p><strong>Causa:</strong> O item #6 do hardening trocou <code>onclick="apptFoo()"</code>
+      por <code>data-action</code> + event delegation em <code>#apptModal</code>. A delegation
+      teoricamente funcionava, mas na prática não disparava (provavelmente alguma propagação
+      stop ou listener bind antes do DOM estar pronto).</p>
+    <p><strong>Fix:</strong> Revert seletivo do <code>_renderApptProcs</code> e
+      <code>apptRenderPagamentos</code> para <code>onclick="..."</code> direto, mantendo
+      <code>html\`\`</code> tag pra escape de XSS. Commit <code>e4acaa8</code>.</p>
+    <p><strong>Lição:</strong> Onclick direto é determinístico em árvores DOM complexas.
+      Priorizar simplicidade quando o ganho da delegation é pequeno.</p>
+  </div>
+
+  <div class="feature">
+    <h3>R#2 — <code>_apptProcs</code> órfão após troca de tipo</h3>
+    <p><strong>Causa:</strong> O item #5 do hardening consolidou estado em <code>_apptState</code>
+      e manteve <code>var _apptProcs = _apptState.procs</code> como alias. Mas em 2 pontos do
+      código havia <code>_apptProcs = []</code> — atribuição que criava um array novo e deixava
+      <code>_apptState.procs</code> apontando pro antigo.</p>
+    <p>Consequência: depois da troca de tipo, clicar nos procs não respondia porque o estado
+      interno estava dessincronizado do rendering.</p>
+    <p><strong>Fix:</strong> <code>_apptProcs.length = 0</code> em ambos os pontos
+      (<code>_apptClearProcedimentoData</code> + reset no <code>openApptModal</code>).
+      Commit <code>e4acaa8</code>.</p>
+    <p><strong>Lição:</strong> Consolidar estado via alias exige mutação in-place.
+      Salvo na memória como <code>feedback_state_alias_mutation.md</code>.</p>
+  </div>
+
+  <div class="feature">
+    <h3>R#3 — Valor da consulta "cruzando" pro procedimento</h3>
+    <p><strong>Causa:</strong> Na troca de tipo, o <code>_apptHasConsultaData()</code> retornava
+      <code>false</code> quando o valor era 0 ou campos vazios, pulando o <code>confirm()</code>
+      e o clear. Daí o <code>appt_valor</code> antigo permanecia.</p>
+    <p><strong>Fix:</strong> Sempre zerar <code>appt_valor</code> + <code>apptResetPagamentos()</code>
+      na troca de tipo, mesmo quando o confirm não dispara. Commit <code>e4acaa8</code>.</p>
+  </div>
+
+  <div class="feature">
+    <h3>R#4 — Pagamento travado em R$ 200 (valor consulta) com procs somando R$ 1.500</h3>
+    <p><strong>Sintoma reportado:</strong> "alocado: R$ 200,00 / R$ 1.500,00 — falta R$ 1.300,00"
+      em modo procedimento, sem o usuário ter feito split.</p>
+    <p><strong>Causa:</strong> <code>apptAutoValorConsulta</code> (disparado na seleção do
+      profissional) setava cegamente <code>_apptPagamentos[0].valor = valor_consulta</code>
+      mesmo quando o tipo era procedimento. Depois, <code>apptAddProc</code> só atualizava
+      a linha se <code>valor === 0</code>, então ficava travado nos 200.</p>
+    <p><strong>Fix em 3 camadas:</strong></p>
+    <ol>
+      <li><code>apptAutoValorConsulta</code> — early return se <code>tipo === 'procedimento'</code></li>
+      <li>Nova função <code>apptSyncPagamentoTotal()</code> que força a 1ª linha de pagamento
+        a refletir <code>_apptValorTotalPagar()</code> quando há exatamente 1 linha (respeita split manual)</li>
+      <li>Chamadas adicionadas em <code>apptAddProc</code>, <code>apptRemoveProc</code>,
+        <code>apptProcUpdate</code> (cortesia/valor), <code>apptCalcDesconto</code></li>
+    </ol>
+    <p>Commit <code>320d0f4</code>.</p>
   </div>
 
   <div class="toc">
     <h3>Índice</h3>
+    <p class="muted" style="margin:0 0 12px 20px;font-size:12px">
+      <strong>Seções topo:</strong>
+      <a href="#dev-guide">Guia do Desenvolvedor</a> •
+      <a href="#regressoes">Regressões pós-Premium</a> •
+      <a href="#migrations">Migrations</a> •
+      <a href="#commits">Commits</a>
+    </p>
     <ol>
       <li><a href="#f1">Auto-detecção Novo / Retorno do paciente</a></li>
       <li><a href="#f2">Indicado por como dropdown obrigatório</a></li>
@@ -781,7 +1057,7 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
   </table>
 
   <!-- ═══ MIGRATIONS ═══ -->
-  <h2>Migrations aplicadas</h2>
+  <h2 id="migrations">Migrations aplicadas</h2>
   <table>
     <tr><th>Arquivo</th><th>Conteúdo</th><th>Status</th></tr>
     <tr>
@@ -841,7 +1117,7 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
   </div>
 
   <!-- ═══ COMMITS ═══ -->
-  <h2>Histórico de commits</h2>
+  <h2 id="commits">Histórico de commits</h2>
   <table>
     <tr><th>Hash</th><th>Mensagem</th></tr>
     <tr><td><span class="commit">dc022b8</span></td><td>feat(agenda): valor consulta padrao por profissional + validacoes do modal</td></tr>
@@ -853,7 +1129,11 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
     <tr><td><span class="commit">1bd5b54</span></td><td>fix(procedimentos): cleanup completo persistencia + cache + insumos</td></tr>
     <tr><td><span class="commit">f29a3b5</span></td><td>feat(agenda): pagamentos no procedimento + alertas pagamento aberto</td></tr>
     <tr><td><span class="commit">1c2967d</span></td><td>feat(agenda): cortesia/retorno por procedimento</td></tr>
-    <tr><td><span class="commit">pendente</span></td><td>fix(agenda): rebuild multi-proc alert UX (close, esc, click-out, confirmar)</td></tr>
+    <tr><td><span class="commit">4d43c87</span></td><td>fix(agenda): rebuild multi-proc alert UX (close, esc, click-out, confirmar)</td></tr>
+    <tr><td><span class="commit">b278c3d</span></td><td>hardening: 15 itens de auditoria pre-camada-2</td></tr>
+    <tr><td><span class="commit">4b20f0e</span></td><td>premium: 7 upgrades production-grade</td></tr>
+    <tr><td><span class="commit">e4acaa8</span></td><td>fix(agenda): 3 bugs críticos pós-hardening (delegation, state alias, cross-value)</td></tr>
+    <tr><td><span class="commit">320d0f4</span></td><td>fix(agenda): pagamento não sincroniza com soma dos procs</td></tr>
   </table>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
