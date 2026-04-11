@@ -1748,6 +1748,16 @@ function confirmFinalize(id) {
 
   const apptFinal = appts[idx]
 
+  // Sync pro Supabase: garante que professional_id, value, status e
+  // demais campos saiam do localStorage pro banco. Sem isso, o appointment
+  // finalizado vive so local e relatorios por profissional/financeiros
+  // ficam vazios.
+  if (window.AppointmentsService && window.AppointmentsService.syncOne) {
+    window.AppointmentsService.syncOne(apptFinal).catch(function(e) {
+      console.warn('[Agenda] syncOne finalize falhou:', e)
+    })
+  }
+
   // Cashflow: cria entrada(s) automaticamente se houve pagamento
   if (window.CashflowService && pago > 0) {
     window.CashflowService.createFromAppointment({
