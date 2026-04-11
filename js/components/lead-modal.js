@@ -1826,21 +1826,86 @@ function _lmTabEvolucao(lead) {
 
 function _lmTabFinanceiro(lead) {
   var cf = lead.customFields || {}
-  var pat = lead.patient || {}
+  var patName = (lead.name || lead.nome || '').toLowerCase()
 
-  var kpis = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px">' +
-    '<div style="background:#F0FDF4;border-radius:10px;padding:14px;text-align:center"><div style="font-size:18px;font-weight:800;color:#16A34A">' + formatCurrency(pat.totalRevenue||0) + '</div><div style="font-size:11px;color:#15803D;font-weight:600;margin-top:2px">Total Gasto</div></div>' +
-    '<div style="background:#EFF6FF;border-radius:10px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:800;color:#2563EB">' + (pat.totalProcedures||0) + '</div><div style="font-size:11px;color:#1D4ED8;font-weight:600;margin-top:2px">Procedimentos</div></div>' +
-    '<div style="background:#FFF7ED;border-radius:10px;padding:14px;text-align:center"><div style="font-size:18px;font-weight:800;color:#EA580C">' + formatCurrency(cf.valorEstimado||0) + '</div><div style="font-size:11px;color:#C2410C;font-weight:600;margin-top:2px">Valor Estimado</div></div>' +
+  // Buscar transacoes dos agendamentos finalizados
+  var appts = []
+  try { appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch(e) {}
+  var myAppts = appts.filter(function(a) {
+    return (a.status === 'finalizado')
+      && ((a.pacienteNome||a.patient_name||'').toLowerCase() === patName || a.pacienteId === lead.id)
+  }).sort(function(a,b) { return (b.data||b.scheduled_date||'').localeCompare(a.data||a.scheduled_date||'') })
+
+  // Calcular KPIs
+  var realizado = 0, aReceber = 0, emAberto = 0
+  myAppts.forEach(function(a) {
+    var v = a.valor || 0
+    var pago = a.valorPago || 0
+    var sp = a.statusPagamento || 'pendente'
+    if (sp === 'pago') realizado += v
+    else if (sp === 'parcial') { realizado += pago; aReceber += (v - pago) }
+    else emAberto += v
+  })
+  var total = realizado + aReceber + emAberto
+
+  // KPIs cards
+  function _kpi(label, value, color, dotColor) {
+    return '<div style="text-align:center;padding:12px 8px">'
+      + '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:4px">'
+      + '<div style="width:6px;height:6px;border-radius:50%;background:' + dotColor + '"></div>'
+      + '<span style="font-size:9px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:.03em">' + label + '</span></div>'
+      + '<div style="font-size:16px;font-weight:800;color:' + color + '">' + formatCurrency(value) + '</div></div>'
+  }
+
+  var kpis = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#E5E7EB;border-radius:12px;overflow:hidden;margin-bottom:20px">'
+    + '<div style="background:#fff">' + _kpi('Realizado', realizado, '#16A34A', '#16A34A') + '</div>'
+    + '<div style="background:#fff">' + _kpi('A receber', aReceber, '#2563EB', '#2563EB') + '</div>'
+    + '<div style="background:#fff">' + _kpi('Em aberto', emAberto, '#EA580C', '#EA580C') + '</div>'
+    + '<div style="background:#fff">' + _kpi('Total', total, '#111', '#6B7280') + '</div>'
+    + '</div>'
+
+  // Botao orcamentos
+  var orcBtn = '<div style="margin-bottom:16px">' +
+    '<button id="budgetBadge" onclick="showBudgetModal(\'' + lead.id + '\')" style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1.5px solid #E5E7EB;background:#F9FAFB;color:#6B7280;font-size:12px;font-weight:600;cursor:pointer">' +
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' +
+      'Gerenciar Or\u00e7amentos</button>' +
   '</div>'
 
-  var orcBtn = '<div style="margin-bottom:20px">' +
-    '<button id="budgetBadge" onclick="showBudgetModal(\'' + lead.id + '\')" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:9px;border:1.5px solid #E5E7EB;background:#F9FAFB;color:#6B7280;font-size:13px;font-weight:600;cursor:pointer">' +
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' +
-      'Gerenciar Orçamentos</button>' +
-  '</div>'
+  // Tabela de transacoes
+  var table = ''
+  if (myAppts.length) {
+    var statusCfg = {
+      pago:     { label: 'Recebido',  bg: '#F0FDF4', color: '#16A34A' },
+      parcial:  { label: 'Parcial',   bg: '#FFF7ED', color: '#EA580C' },
+      pendente: { label: 'Pendente',  bg: '#FEF2F2', color: '#DC2626' },
+    }
 
-  return kpis + orcBtn
+    table = '<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">' + myAppts.length + ' registros</div>'
+    table += '<div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden">'
+    // Header
+    table += '<div style="display:grid;grid-template-columns:80px 1fr 90px 90px;padding:8px 12px;background:#F9FAFB;font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid #E5E7EB">'
+      + '<div>Data</div><div>Procedimento</div><div style="text-align:center">Situa\u00e7\u00e3o</div><div style="text-align:right">Valor</div></div>'
+    // Rows
+    myAppts.forEach(function(a) {
+      var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit'}) : ''
+      var proc = a.procedimento || a.procedure_name || 'Consulta'
+      var sp = a.statusPagamento || 'pendente'
+      var cfg = statusCfg[sp] || statusCfg.pendente
+      var valor = a.valor || 0
+
+      table += '<div style="display:grid;grid-template-columns:80px 1fr 90px 90px;padding:10px 12px;border-bottom:1px solid #F3F4F6;align-items:center;font-size:12px">'
+        + '<div style="color:#6B7280">' + date + '</div>'
+        + '<div style="color:#374151;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + proc.replace(/</g,'&lt;') + '</div>'
+        + '<div style="text-align:center"><span style="padding:2px 8px;background:' + cfg.bg + ';color:' + cfg.color + ';border-radius:4px;font-size:10px;font-weight:600">' + cfg.label + '</span></div>'
+        + '<div style="text-align:right;font-weight:700;color:#111">' + formatCurrency(valor) + '</div>'
+        + '</div>'
+    })
+    table += '</div>'
+  } else {
+    table = '<div style="text-align:center;padding:24px;color:#9CA3AF;font-size:13px">Nenhuma transa\u00e7\u00e3o registrada.</div>'
+  }
+
+  return kpis + orcBtn + table
 }
 
 // ── Aba: Protocolos ───────────────────────────────────────────
