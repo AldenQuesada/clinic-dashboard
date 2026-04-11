@@ -322,27 +322,13 @@ window.FinReports = (() => {
     },
 
     'fin-commissions': function() {
-      return _subShell('Comissões', 'users', '#6366f1', [
-        _kpiRow([
-          { label: 'Total Comissões', value: 'R$ 12.000', delta: '+3%', up: false },
-          { label: '% da Receita',    value: '13,4%',     delta: null },
-          { label: 'Por Especialista', value: 'R$ 2.400', delta: null, suffix: 'média' },
-        ]),
-        _chartPlaceholder('Comissões por especialista — barras comparativas'),
-        _tableHeader(['Especialista', 'Atend.', 'Comissão %', 'Valor Pago']),
-      ])
+      _loadSegmentReport('fin-commissions', 'professional', 'Comissões', 'users', '#6366f1')
+      return _loadingShell('Comissões', 'users', '#6366f1')
     },
 
     'fin-by-procedure': function() {
-      return _subShell('Receita por Procedimento', 'activity', '#f59e0b', [
-        _kpiRow([
-          { label: 'Top Procedimento', value: 'Botox',      delta: null },
-          { label: 'Receita Top 3',    value: 'R$ 62.160',  delta: '+11%', up: true },
-          { label: 'Margem Média',     value: '67,8%',      delta: '+2pp', up: true },
-        ]),
-        _chartPlaceholder('Receita por procedimento — treemap ou barras'),
-        _tableHeader(['Procedimento', 'Qtd', 'Receita', 'Margem %']),
-      ])
+      _loadSegmentReport('fin-by-procedure', 'procedure', 'Receita por Procedimento', 'activity', '#f59e0b')
+      return _loadingShell('Receita por Procedimento', 'activity', '#f59e0b')
     },
 
     'fin-by-patient': function() {
@@ -358,6 +344,11 @@ window.FinReports = (() => {
     },
 
     'fin-by-campaign': function() {
+      _loadSegmentReport('fin-by-campaign', 'origem', 'Receita por Origem', 'target', '#f59e0b')
+      return _loadingShell('Receita por Origem', 'target', '#f59e0b')
+    },
+
+    '__legacy-by-campaign': function() {
       return _subShell('Receita por Campanha', 'target', '#f59e0b', [
         _kpiRow([
           { label: 'Melhor Campanha', value: 'Instagram Ads', delta: null },
@@ -379,6 +370,212 @@ window.FinReports = (() => {
     if (!renderer) return
     root.innerHTML = renderer()
     if (window.feather) feather.replace()
+  }
+
+  // ── Loading shell + dynamic report (com dados reais via cashflow_segments) ──
+
+  function _loadingShell(title, icon, color) {
+    return _subShell(title, icon, color, [
+      '<div style="padding:60px 20px;text-align:center;color:#9ca3af;font-size:13px">Carregando dados...</div>'
+    ])
+  }
+
+  async function _loadSegmentReport(pageId, segmentType, title, icon, color) {
+    // Aguarda o DOM ser injetado primeiro
+    setTimeout(async function() {
+      try {
+        if (!window.CashflowService || !window.CashflowService.getSegments) {
+          _renderUnavailable(pageId, title, icon, color)
+          return
+        }
+
+        var now = new Date()
+        var year  = now.getFullYear()
+        var month = now.getMonth() + 1
+
+        var res = await window.CashflowService.getSegments(year, month)
+        if (!res || !res.ok) {
+          _renderUnavailable(pageId, title, icon, color)
+          return
+        }
+
+        var seg = res.data || {}
+        var fmt = window.CashflowService.fmtCurrency
+        var rootId = pageId.replace(/-([a-z])/g, function(_, c) { return c.toUpperCase() }) + 'Root'
+        var root = document.getElementById(rootId)
+        if (!root) return
+
+        if (segmentType === 'procedure') {
+          root.innerHTML = _renderProcedureReport(seg, fmt, title, icon, color)
+        } else if (segmentType === 'professional') {
+          root.innerHTML = _renderProfessionalReport(seg, fmt, title, icon, color)
+        } else if (segmentType === 'origem') {
+          root.innerHTML = _renderOrigemReport(seg, fmt, title, icon, color)
+        }
+      } catch (e) {
+        console.warn('[FinReports] _loadSegmentReport error:', e)
+      }
+    }, 100)
+  }
+
+  function _renderUnavailable(pageId, title, icon, color) {
+    var rootId = pageId.replace(/-([a-z])/g, function(_, c) { return c.toUpperCase() }) + 'Root'
+    var root = document.getElementById(rootId)
+    if (!root) return
+    root.innerHTML = _subShell(title, icon, color, [
+      '<div style="padding:40px 20px;text-align:center;color:#9ca3af;font-size:13px">CashflowService nao disponivel. Acesse <strong>Fluxo de Caixa</strong> primeiro pra carregar.</div>'
+    ])
+  }
+
+  function _renderProcedureReport(seg, fmt, title, icon, color) {
+    var data = seg.by_procedure || []
+    var total = data.reduce(function(s, x) { return s + Number(x.bruto || 0) }, 0)
+    var totalLiquido = data.reduce(function(s, x) { return s + Number(x.liquido || 0) }, 0)
+    var top = data[0] || {}
+    var avgMargin = data.length > 0
+      ? (data.reduce(function(s, x) { return s + Number(x.margem_pct || 0) }, 0) / data.length).toFixed(1)
+      : 0
+
+    var sections = [
+      _kpiRow([
+        { label: 'Procedimento Top', value: top.name || '—', suffix: top.bruto ? fmt(top.bruto) + ' bruto' : '' },
+        { label: 'Total Bruto',      value: fmt(total) },
+        { label: 'Total Liquido',    value: fmt(totalLiquido) },
+        { label: 'Margem Media',     value: avgMargin + '%' },
+      ]),
+    ]
+
+    if (data.length === 0) {
+      sections.push('<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px">Nenhum procedimento registrado neste mes.</div>')
+    } else {
+      sections.push(_realProcedureTable(data, fmt))
+    }
+
+    return _subShell(title, icon, color, sections)
+  }
+
+  function _realProcedureTable(data, fmt) {
+    var html = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:16px">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+      + '<thead><tr style="background:#f9fafb">'
+      + '<th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Procedimento</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Qtd</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Ticket Medio</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Bruto</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Custo</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Taxa</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Comissao</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Liquido</th>'
+      + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Margem</th>'
+      + '</tr></thead><tbody>'
+
+    data.forEach(function(p) {
+      var marginColor = p.margem_pct >= 30 ? '#10b981' : p.margem_pct >= 15 ? '#f59e0b' : '#ef4444'
+      html += '<tr style="border-bottom:1px solid #f3f4f6">'
+        + '<td style="padding:12px 14px;color:#111827"><strong>' + p.name + '</strong></td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#6b7280">' + p.qtd + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#374151">' + fmt(p.ticket_medio) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#10b981;font-weight:600">' + fmt(p.bruto) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#9ca3af">' + (p.custo > 0 ? fmt(p.custo) : '—') + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#9ca3af">' + (p.taxa > 0 ? fmt(p.taxa) : '—') + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:#9ca3af">' + (p.comissao > 0 ? fmt(p.comissao) : '—') + '</td>'
+        + '<td style="padding:12px 14px;text-align:right;color:' + marginColor + ';font-weight:700">' + fmt(p.liquido) + '</td>'
+        + '<td style="padding:12px 14px;text-align:right"><span style="background:' + marginColor + '22;color:' + marginColor + ';font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px">' + p.margem_pct + '%</span></td>'
+        + '</tr>'
+    })
+
+    html += '</tbody></table></div>'
+    return html
+  }
+
+  function _renderProfessionalReport(seg, fmt, title, icon, color) {
+    var data = seg.by_professional || []
+    var totalBruto = data.reduce(function(s, x) { return s + Number(x.bruto || 0) }, 0)
+    var totalComm  = data.reduce(function(s, x) { return s + Number(x.comissao || 0) }, 0)
+    var pctRev = totalBruto > 0 ? ((totalComm / totalBruto) * 100).toFixed(1) : 0
+
+    var sections = [
+      _kpiRow([
+        { label: 'Total Comissoes', value: fmt(totalComm) },
+        { label: '% da Receita',    value: pctRev + '%' },
+        { label: 'Total Bruto',     value: fmt(totalBruto) },
+        { label: 'Especialistas',   value: String(data.length) },
+      ]),
+    ]
+
+    if (data.length === 0) {
+      sections.push('<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px">Nenhum especialista com receita neste mes.</div>')
+    } else {
+      var html = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:16px">'
+        + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+        + '<thead><tr style="background:#f9fafb">'
+        + '<th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Especialista</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Atendimentos</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Ticket Medio</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Bruto</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Comissao</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Liquido</th>'
+        + '</tr></thead><tbody>'
+      data.forEach(function(p) {
+        html += '<tr style="border-bottom:1px solid #f3f4f6">'
+          + '<td style="padding:12px 14px;color:#111827"><strong>' + p.name + '</strong></td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#6b7280">' + p.qtd + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#374151">' + fmt(p.ticket_medio) + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#10b981;font-weight:600">' + fmt(p.bruto) + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#f59e0b">' + (p.comissao > 0 ? fmt(p.comissao) : '—') + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#10b981;font-weight:700">' + fmt(p.liquido) + '</td>'
+          + '</tr>'
+      })
+      html += '</tbody></table></div>'
+      sections.push(html)
+    }
+
+    return _subShell(title, icon, color, sections)
+  }
+
+  function _renderOrigemReport(seg, fmt, title, icon, color) {
+    var data = seg.by_origem || []
+    var total = data.reduce(function(s, x) { return s + Number(x.bruto || 0) }, 0)
+    var topOrigin = data[0] || {}
+
+    var sections = [
+      _kpiRow([
+        { label: 'Origem Top', value: topOrigin.origem || '—' },
+        { label: 'Total Bruto', value: fmt(total) },
+        { label: 'Origens Ativas', value: String(data.length) },
+        { label: 'Pacientes Convertidos', value: String(data.reduce(function(s, x) { return s + (x.pacientes || 0) }, 0)) },
+      ]),
+    ]
+
+    if (data.length === 0) {
+      sections.push('<div style="padding:32px;text-align:center;color:#9ca3af;font-size:13px">Nenhuma origem com receita neste mes. Vincule pacientes/leads as transacoes pra aparecer aqui.</div>')
+    } else {
+      var html = '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:16px">'
+        + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+        + '<thead><tr style="background:#f9fafb">'
+        + '<th style="padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Origem</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Pacientes</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Atendimentos</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Ticket Medio/Paciente</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">Bruto</th>'
+        + '<th style="padding:12px 14px;text-align:right;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #e5e7eb">% Total</th>'
+        + '</tr></thead><tbody>'
+      data.forEach(function(o) {
+        var pct = total > 0 ? ((o.bruto / total) * 100).toFixed(1) : 0
+        html += '<tr style="border-bottom:1px solid #f3f4f6">'
+          + '<td style="padding:12px 14px;color:#111827"><strong>' + o.origem + '</strong></td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#6b7280">' + o.pacientes + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#6b7280">' + o.qtd + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#374151">' + fmt(o.ticket_medio_paciente) + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#10b981;font-weight:600">' + fmt(o.bruto) + '</td>'
+          + '<td style="padding:12px 14px;text-align:right;color:#8b5cf6;font-weight:700">' + pct + '%</td>'
+          + '</tr>'
+      })
+      html += '</tbody></table></div>'
+      sections.push(html)
+    }
+
+    return _subShell(title, icon, color, sections)
   }
 
   // ── Shell de sub-relatório ────────────────────────────────────
