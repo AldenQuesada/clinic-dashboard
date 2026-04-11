@@ -328,6 +328,32 @@
     return '🚫 Numero nao autorizado. Peca ao admin pra cadastrar voce na lista de profissionais Mira.'
   }
 
+  function formatNoPermission(area) {
+    var labels = { agenda: 'Agenda', pacientes: 'Pacientes', financeiro: 'Financeiro' }
+    return '🔒 Voce nao tem permissao para consultar ' + _bold(labels[area] || area) + '.\n\nPeca ao admin pra liberar essa area no seu cadastro.'
+  }
+
+  // Mapa intent → area de permissao
+  var INTENT_AREA = {
+    agenda_today:    'agenda',
+    agenda_tomorrow: 'agenda',
+    agenda_week:     'agenda',
+    agenda_free:     'agenda',
+    patient_lookup:  'pacientes',
+    patient_phone:   'pacientes',
+    patient_balance: 'pacientes',
+    finance_revenue:    'financeiro',
+    finance_commission: 'financeiro',
+    finance_coverage:   'financeiro',
+    finance_meta:       'financeiro',
+  }
+
+  function _hasPermission(perms, area) {
+    if (!area) return true
+    if (!perms) return true // sem perms cadastradas = libera tudo (compat com numeros antigos)
+    return perms[area] !== false
+  }
+
   // ── Orquestrador principal ────────────────────────────────
 
   /**
@@ -367,6 +393,7 @@
         id:           authRes.data.professional_id,
         name:         authRes.data.name,
         access_scope: authRes.data.access_scope,
+        permissions:  authRes.data.permissions || null,
       }
       waNumberId = authRes.data.wa_number_id
 
@@ -382,7 +409,7 @@
         }
       }
     } else {
-      prof = opts.testProfessional || { id: null, name: 'Tester', access_scope: 'full' }
+      prof = opts.testProfessional || { id: null, name: 'Tester', access_scope: 'full', permissions: { agenda: true, pacientes: true, financeiro: true } }
     }
 
     // 3. Parse intent (Tier 1: regex)
@@ -397,12 +424,17 @@
     } else if (parsed.intent === 'unknown') {
       response = formatUnknown()
     } else {
-      // Intents de execucao chamam RPC + formatador
-      try {
-        response = await executeIntent(parsed, phone)
-      } catch (e) {
-        console.warn('[Mira] executeIntent error:', e)
-        response = '⚠️ Erro ao processar: ' + (e && e.message || e)
+      // Checa permissao antes de executar
+      var area = INTENT_AREA[parsed.intent]
+      if (area && !_hasPermission(prof.permissions, area)) {
+        response = formatNoPermission(area)
+      } else {
+        try {
+          response = await executeIntent(parsed, phone)
+        } catch (e) {
+          console.warn('[Mira] executeIntent error:', e)
+          response = '⚠️ Erro ao processar: ' + (e && e.message || e)
+        }
       }
     }
 

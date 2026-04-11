@@ -60,6 +60,7 @@
         p_professional_id: payload.professional_id,
         p_label:           payload.label || null,
         p_access_scope:    payload.access_scope || 'own',
+        p_permissions:     payload.permissions || { agenda: true, pacientes: true, financeiro: true },
       })
       if (error) return _err(error.message || error)
       return _ok(data)
@@ -130,7 +131,7 @@
     try {
       const { data, error } = await _sb()
         .from('professional_profiles')
-        .select('id,display_name,specialty,is_active')
+        .select('id,display_name,specialty,is_active,phone,telefone,whatsapp')
         .eq('is_active', true)
         .order('display_name', { ascending: true })
       if (error) return _err(error.message || error)

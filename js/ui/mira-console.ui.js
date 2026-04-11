@@ -236,44 +236,63 @@
 
   // ── Modal: Cadastrar numero ────────────────────────────────
 
+  // Cache local pra mapear option value → { phone, prof_id }
+  var _profOptions = []
+
+  function _bestPhone(p) {
+    return (p.whatsapp || p.telefone || p.phone || '').toString().trim()
+  }
+  function _digitsOnly(s) {
+    return String(s || '').replace(/[^0-9]/g, '')
+  }
+
   async function _openRegisterModal() {
     var existing = document.getElementById('miraRegBackdrop')
     if (existing) existing.remove()
 
     var html = ''
       + '<div id="miraRegBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px">'
-        + '<div style="background:#fff;border-radius:16px;width:100%;max-width:480px;padding:0;box-shadow:0 25px 50px rgba(0,0,0,.25);overflow:hidden">'
+        + '<div style="background:#fff;border-radius:16px;width:100%;max-width:520px;padding:0;box-shadow:0 25px 50px rgba(0,0,0,.25);overflow:hidden">'
           + '<div style="padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">'
             + '<div>'
               + '<h3 style="margin:0;font-size:18px;font-weight:700;color:#111827">Cadastrar Numero Profissional</h3>'
-              + '<p style="margin:4px 0 0;font-size:12px;color:#6b7280">Vincula um WhatsApp particular a um profissional pra usar a Mira</p>'
+              + '<p style="margin:4px 0 0;font-size:12px;color:#6b7280">Selecione o profissional — telefone e ID sao puxados automatico</p>'
             + '</div>'
             + '<button onclick="document.getElementById(\'miraRegBackdrop\').remove()" style="all:unset;cursor:pointer;color:#9ca3af;padding:8px;font-size:20px">×</button>'
           + '</div>'
-          + '<div style="padding:24px;display:flex;flex-direction:column;gap:14px">'
-            + '<div>'
-              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Telefone (com DDD)</label>'
-              + '<input type="text" id="miraRegPhone" placeholder="554498787673" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px">'
-            + '</div>'
+          + '<div style="padding:24px;display:flex;flex-direction:column;gap:16px">'
+
+            // Dropdown profissional (com telefone)
             + '<div>'
               + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Profissional</label>'
-              + '<select id="miraRegProfId" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff">'
+              + '<select id="miraRegProfSelect" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff">'
                 + '<option value="">Carregando...</option>'
               + '</select>'
-              + '<div style="font-size:11px;color:#9ca3af;margin-top:4px">Lista atualizada de <strong>professional_profiles</strong> ativos</div>'
+              + '<div id="miraRegProfHint" style="font-size:11px;color:#9ca3af;margin-top:4px">Lista atualizada de profissionais ativos com WhatsApp cadastrado</div>'
             + '</div>'
+
+            // Telefone (auto-preenchido, editavel)
             + '<div>'
-              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Label (opcional)</label>'
-              + '<input type="text" id="miraRegLabel" placeholder="Mira da Dra Mirian" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px">'
+              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Telefone (auto)</label>'
+              + '<input type="text" id="miraRegPhone" placeholder="auto-preenchido ao escolher profissional" readonly style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#f9fafb;color:#374151">'
+              + '<div style="font-size:11px;color:#9ca3af;margin-top:4px">Se quiser editar, desbloqueie clicando no campo</div>'
             + '</div>'
+
+            // Permissoes (checkboxes)
             + '<div>'
-              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Escopo de acesso</label>'
-              + '<select id="miraRegScope" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px">'
-                + '<option value="own">own — so seus dados</option>'
-                + '<option value="team">team — equipe</option>'
-                + '<option value="full">full — clinica toda (admin/owner)</option>'
-              + '</select>'
+              + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">Permissoes — areas que pode consultar</label>'
+              + '<div style="display:flex;flex-direction:column;gap:8px;background:#f9fafb;padding:12px 14px;border:1px solid #e5e7eb;border-radius:8px">'
+                + _permCheck('agenda',     'Agenda',     'Ver agenda do dia, semana, horarios livres')
+                + _permCheck('pacientes',  'Pacientes',  'Buscar paciente, ver telefone, saldo devedor')
+                + _permCheck('financeiro', 'Financeiro', 'Receita, comissao, cobertura, meta')
+              + '</div>'
             + '</div>'
+
+            // Hidden: prof_id, label, scope
+            + '<input type="hidden" id="miraRegProfId">'
+            + '<input type="hidden" id="miraRegLabel">'
+            + '<input type="hidden" id="miraRegScope" value="own">'
+
           + '</div>'
           + '<div style="padding:16px 24px;border-top:1px solid #e5e7eb;display:flex;gap:8px;justify-content:flex-end">'
             + '<button onclick="document.getElementById(\'miraRegBackdrop\').remove()" style="background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cancelar</button>'
@@ -284,24 +303,63 @@
 
     document.body.insertAdjacentHTML('beforeend', html)
     document.getElementById('miraRegSave').addEventListener('click', _handleRegister)
+    document.getElementById('miraRegPhone').addEventListener('focus', function(e) { e.target.removeAttribute('readonly') })
+    document.getElementById('miraRegProfSelect').addEventListener('change', _onProfSelected)
     await _loadProfessionalsIntoSelect()
   }
 
+  function _permCheck(value, label, hint) {
+    return ''
+      + '<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">'
+        + '<input type="checkbox" class="mira-perm" data-area="' + value + '" checked style="margin-top:2px;cursor:pointer;width:16px;height:16px;accent-color:#10b981">'
+        + '<div>'
+          + '<div style="font-size:13px;font-weight:600;color:#111827">' + label + '</div>'
+          + '<div style="font-size:11px;color:#6b7280">' + hint + '</div>'
+        + '</div>'
+      + '</label>'
+  }
+
+  function _onProfSelected(e) {
+    var idx = parseInt(e.target.value, 10)
+    if (isNaN(idx) || idx < 0 || !_profOptions[idx]) {
+      document.getElementById('miraRegProfId').value = ''
+      document.getElementById('miraRegPhone').value = ''
+      document.getElementById('miraRegLabel').value = ''
+      return
+    }
+    var p = _profOptions[idx]
+    document.getElementById('miraRegProfId').value = p.id
+    document.getElementById('miraRegPhone').value = _digitsOnly(p.phone)
+    document.getElementById('miraRegLabel').value = 'Mira ' + (p.display_name || '').split(' ')[0]
+  }
+
   async function _loadProfessionalsIntoSelect() {
-    var sel = document.getElementById('miraRegProfId')
+    var sel = document.getElementById('miraRegProfSelect')
+    var hint = document.getElementById('miraRegProfHint')
     if (!sel || !window.MiraService || !window.MiraService.listProfessionals) return
     try {
       var res = await window.MiraService.listProfessionals()
-      var profs = (res && res.ok && Array.isArray(res.data)) ? res.data : []
-      if (profs.length === 0) {
-        sel.innerHTML = '<option value="">Nenhum profissional ativo</option>'
+      var all = (res && res.ok && Array.isArray(res.data)) ? res.data : []
+      // Filtra so quem tem telefone cadastrado
+      _profOptions = all
+        .map(function(p) { return { id: p.id, display_name: p.display_name, specialty: p.specialty, phone: _bestPhone(p) } })
+        .filter(function(p) { return p.phone && _digitsOnly(p.phone).length >= 10 })
+
+      if (_profOptions.length === 0) {
+        sel.innerHTML = '<option value="">Nenhum profissional com WhatsApp cadastrado</option>'
+        if (hint) hint.innerHTML = '<span style="color:#f59e0b">Cadastre o WhatsApp do profissional em Configuracoes > Funcionarios primeiro</span>'
         return
       }
+
+      var skipped = all.length - _profOptions.length
       sel.innerHTML = '<option value="">— escolha —</option>'
-        + profs.map(function(p) {
-          var label = (p.display_name || 'Sem nome') + (p.specialty ? ' · ' + p.specialty : '')
-          return '<option value="' + p.id + '">' + _escHtml(label) + '</option>'
+        + _profOptions.map(function(p, i) {
+          var label = (p.display_name || 'Sem nome') + ' — ' + p.phone + (p.specialty ? ' · ' + p.specialty : '')
+          return '<option value="' + i + '">' + _escHtml(label) + '</option>'
         }).join('')
+      if (hint && skipped > 0) {
+        hint.innerHTML = _profOptions.length + ' profissional(is) com WhatsApp · ' + skipped + ' sem telefone foram ocultados'
+      }
     } catch (e) {
       console.warn('[MiraConsole] _loadProfessionalsIntoSelect:', e)
       sel.innerHTML = '<option value="">Erro ao carregar</option>'
@@ -309,12 +367,22 @@
   }
 
   async function _handleRegister() {
-    var phone = document.getElementById('miraRegPhone').value.trim()
+    var phone = _digitsOnly(document.getElementById('miraRegPhone').value)
     var profId = document.getElementById('miraRegProfId').value.trim()
     var label = document.getElementById('miraRegLabel').value.trim()
     var scope = document.getElementById('miraRegScope').value
 
-    if (!phone || !profId) { alert('Telefone e profissional ID sao obrigatorios'); return }
+    // Coleta checkboxes de permissoes
+    var perms = { agenda: false, pacientes: false, financeiro: false }
+    document.querySelectorAll('.mira-perm').forEach(function(cb) {
+      perms[cb.getAttribute('data-area')] = cb.checked
+    })
+
+    if (!profId) { alert('Selecione um profissional'); return }
+    if (!phone || phone.length < 10) { alert('Telefone invalido'); return }
+    if (!perms.agenda && !perms.pacientes && !perms.financeiro) {
+      alert('Marque ao menos uma area de permissao'); return
+    }
 
     if (!window.MiraService) { alert('MiraService nao carregado'); return }
     var res = await window.MiraService.registerNumber({
@@ -322,6 +390,7 @@
       professional_id: profId,
       label: label,
       access_scope: scope,
+      permissions: perms,
     })
     if (res && res.ok) {
       alert('Numero cadastrado com sucesso!')
