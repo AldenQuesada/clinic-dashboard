@@ -35,9 +35,16 @@
     })
   }
 
+  var _modalIdCounter = 0
+
   function _open(opts) {
     var tone = TONES[opts.tone] || TONES.info
     var headerBg = tone.bg
+    var modalId = 'clinicai-modal-' + (++_modalIdCounter)
+    var titleId = modalId + '-title'
+
+    // Salva o elemento ativo pra restaurar foco no close
+    var previousFocus = /** @type {HTMLElement|null} */ (document.activeElement)
 
     var overlay = document.createElement('div')
     overlay.className = 'clinicai-modal-overlay'
@@ -45,15 +52,19 @@
 
     var inner = document.createElement('div')
     inner.className = 'clinicai-modal-inner'
+    inner.id = modalId
+    inner.setAttribute('role', 'dialog')
+    inner.setAttribute('aria-modal', 'true')
+    inner.setAttribute('aria-labelledby', titleId)
     inner.style.cssText = 'background:#fff;border-radius:14px;width:100%;max-width:440px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh;display:flex;flex-direction:column'
 
     var header = document.createElement('div')
     header.style.cssText = 'background:' + headerBg + ';padding:14px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0'
     header.innerHTML = '<div>' +
-      '<div style="font-size:14px;font-weight:800">' + _esc(opts.title || tone.tag) + '</div>' +
+      '<div id="' + titleId + '" style="font-size:14px;font-weight:800">' + _esc(opts.title || tone.tag) + '</div>' +
       (opts.subtitle ? '<div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px">' + _esc(opts.subtitle) + '</div>' : '') +
     '</div>' +
-    '<button type="button" data-modal-close style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700;line-height:1">×</button>'
+    '<button type="button" data-modal-close aria-label="Fechar" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700;line-height:1">×</button>'
 
     var body = document.createElement('div')
     body.style.cssText = 'padding:18px;font-size:13px;color:#374151;line-height:1.55;overflow-y:auto;flex:1'
@@ -71,19 +82,46 @@
     function close(reason) {
       if (overlay._closed) return
       overlay._closed = true
-      document.removeEventListener('keydown', escHandler)
+      document.removeEventListener('keydown', keyHandler)
       _activeStack = _activeStack.filter(function(o) { return o !== overlay })
       try { document.body.removeChild(overlay) } catch (e) {}
+      // Restore focus para onde estava antes
+      if (previousFocus && typeof previousFocus.focus === 'function') {
+        try { previousFocus.focus() } catch (e) {}
+      }
       if (typeof opts.onClose === 'function') opts.onClose(reason)
     }
 
-    function escHandler(e) { if (e.key === 'Escape') close('esc') }
+    // Focus trap: tab e shift+tab ciclam dentro do modal
+    function _focusableElements() {
+      return /** @type {NodeListOf<HTMLElement>} */ (inner.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ))
+    }
+
+    function keyHandler(e) {
+      if (e.key === 'Escape') {
+        close('esc')
+        return
+      }
+      if (e.key === 'Tab') {
+        var els = _focusableElements()
+        if (!els.length) return
+        var first = /** @type {HTMLElement} */ (els[0])
+        var last = /** @type {HTMLElement} */ (els[els.length - 1])
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first.focus()
+        }
+      }
+    }
 
     overlay.addEventListener('click', function(e) {
       if (e.target === overlay) close('outside')
     })
     header.querySelector('[data-modal-close]').addEventListener('click', function() { close('button') })
-    document.addEventListener('keydown', escHandler)
+    document.addEventListener('keydown', keyHandler)
 
     // Botões customizados
     if (opts.buttons && Array.isArray(opts.buttons)) {
@@ -105,6 +143,14 @@
 
     document.body.appendChild(overlay)
     _activeStack.push(overlay)
+
+    // Move foco para o primeiro elemento focável (a11y)
+    setTimeout(function() {
+      var focusables = /** @type {NodeListOf<HTMLElement>} */ (inner.querySelectorAll('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      if (focusables.length) focusables[0].focus()
+      else { inner.setAttribute('tabindex', '-1'); inner.focus() }
+    }, 0)
+
     return { close: close, overlay: overlay, body: body }
   }
 

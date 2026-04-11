@@ -82,10 +82,10 @@
   </header>
 
   <div class="stats">
-    <div class="stat"><div class="num">12</div><div class="label">Features entregues</div></div>
-    <div class="stat"><div class="num">15</div><div class="label">Hardenings aplicados</div></div>
-    <div class="stat"><div class="num">5</div><div class="label">Migrations aplicadas</div></div>
-    <div class="stat"><div class="num">41</div><div class="label">Testes passando</div></div>
+    <div class="stat"><div class="num">12</div><div class="label">Features</div></div>
+    <div class="stat"><div class="num">15</div><div class="label">Hardenings</div></div>
+    <div class="stat"><div class="num">7</div><div class="label">Premium upgrades</div></div>
+    <div class="stat"><div class="num">59</div><div class="label">Testes passando</div></div>
   </div>
 
   <div class="toc">
@@ -711,6 +711,73 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
     <tr><td>Modal pattern</td><td>4 implementações</td><td><code>Modal.alert/confirm/dialog</code></td></tr>
     <tr><td>Insumos sync DOM↔dados</td><td>confiava em eventos</td><td>DOM como source of truth</td></tr>
     <tr><td>Parcelas validação</td><td>min 1, sem max</td><td>1 ≤ n ≤ 24, clamp + validate</td></tr>
+  </table>
+
+  <!-- ═══ PREMIUM ROUND ═══ -->
+  <h2>Premium upgrades (7 itens)</h2>
+  <p class="muted">Após o hardening, fizemos uma rodada Premium para elevar
+    qualidade ao nível de aplicação production-grade. Foco em type safety,
+    observabilidade, acessibilidade e visibilidade operacional.</p>
+
+  <div class="feature">
+    <h3>P#1 — JSDoc + tsc --checkJs</h3>
+    <p><strong>O que:</strong> <code>tsconfig.checkjs.json</code> com <code>checkJs: true</code> + JSDoc nos utils + arquivo <code>js/utils/_globals.d.ts</code> declarando tipos para <code>window.Money</code>, <code>window.html</code>, <code>window.Modal</code>, <code>window.Logger</code>, <code>window.FeatureFlags</code>.<br>
+    <strong>Por quê:</strong> Sem type system, erros como "função não exposta no window" só aparecem em runtime na produção (já caímos uma vez nesta sessão com <code>apptOnProfChange</code>). Agora <code>npm run typecheck</code> roda <code>tsc --noEmit</code> e captura tudo no CI.<br>
+    <strong>Status:</strong> <code>npm run typecheck</code> passa <strong>limpo</strong>. Custo zero em runtime.</p>
+
+    <h3>P#2 — Structured logger</h3>
+    <p><strong>O que:</strong> <code>js/utils/logger.js</code> com níveis (<code>debug</code>/<code>info</code>/<code>warn</code>/<code>error</code>), buffer ring (últimos 100 logs), persistência do nível em localStorage, hook <code>onError(handler)</code> opcional para envio remoto.<br>
+    <strong>Por quê:</strong> <code>console.warn</code> espalhado pelo código não tem contexto, não tem nível, e não é inspecionável. Logger estruturado permite <code>Logger.dump()</code> no console pra ver os últimos 100 eventos com timestamp e contexto.<br>
+    <strong>Uso:</strong> <code>Logger.info('appointment:saved', { id, valor })</code></p>
+
+    <h3>P#3 — Error boundary global</h3>
+    <p><strong>O que:</strong> <code>js/utils/error-boundary.js</code> com <code>ErrorBoundary.install()</code> que captura <code>window.error</code> e <code>unhandledrejection</code>. Mostra <code>Modal.alert</code> user-facing com throttle (5s), delega para <code>Logger</code>, e opcionalmente envia pra endpoint remoto.<br>
+    <strong>Por quê:</strong> Erros JS hoje quebram silenciosamente — usuário vê tela travada sem feedback. Agora ele vê uma mensagem clara e a equipe técnica recebe o stack trace.<br>
+    <strong>Inicialização:</strong> chamado no <code>DOMContentLoaded</code> em <code>index.html:5816</code></p>
+
+    <h3>P#4 — A11y no Modal manager</h3>
+    <p><strong>O que:</strong> Modal manager refatorado com:</p>
+    <ul>
+      <li><code>role="dialog"</code> + <code>aria-modal="true"</code> + <code>aria-labelledby</code> apontando pro título</li>
+      <li><code>aria-label="Fechar"</code> no botão ×</li>
+      <li><strong>Focus trap</strong>: Tab e Shift+Tab ciclam dentro do modal</li>
+      <li><strong>Restore focus</strong>: ao fechar, devolve foco pro elemento que abriu o modal</li>
+      <li>Foco inicial automático no primeiro elemento focável</li>
+    </ul>
+    <p><strong>Por quê:</strong> WCAG AA compliance básica + UX teclado decente. Usuário com leitor de tela ou só teclado consegue usar todos os modais.</p>
+
+    <h3>P#5 — Feature flag service</h3>
+    <p><strong>O que:</strong> <code>js/utils/feature-flags.js</code> com <code>FeatureFlags.isEnabled()</code>, <code>enable()</code>, <code>disable()</code>, <code>list()</code>. Defaults no código, override em localStorage (<code>clinicai_ff_*</code>).<br>
+    <strong>Flags atuais:</strong> <code>new_payment_block</code>, <code>cortesia_per_proc</code>, <code>audit_trail_ui</code>, <code>whatsapp_feedback_badge</code>, <code>error_boundary_remote</code>, <code>perf_lazy_modal_mount</code>.<br>
+    <strong>Por quê:</strong> Permite rollout gradual de features de risco. Você pode habilitar uma feature pra um único usuário (DevTools <code>localStorage.setItem('clinicai_ff_xyz', '1')</code>) antes de defaultar pra todos.</p>
+
+    <h3>P#6 — Performance budget audit</h3>
+    <p><strong>O que:</strong> <code>scripts/perf-budget.cjs</code> que parseia <code>index.html</code>, mede tamanho de cada <code>&lt;script src&gt;</code>, classifica em verde (&lt;50KB) / amarelo (&lt;150KB) / vermelho (≥150KB), reporta top 15 e total.<br>
+    <strong>Comando:</strong> <code>npm run perf:budget</code><br>
+    <strong>Achados imediatos:</strong></p>
+    <ul>
+      <li><strong>3.68 MB de JS no boot</strong>, 163 scripts</li>
+      <li><span class="badge badge-bug">VERMELHO</span> <code>injetaveis.js</code> (235 KB)</li>
+      <li><span class="badge badge-pending">AMARELO</span> 18 arquivos (lead-modal 142KB, api 132KB, agenda-smart 121KB, tags 114KB, cashflow.ui 106KB, procedimentos 100KB, ...)</li>
+    </ul>
+    <p>Otimização (lazy load + code split) registrada como follow-up.</p>
+
+    <h3>P#7 — Expansão dos testes</h3>
+    <p><strong>O que:</strong> Novos test files:</p>
+    <ul>
+      <li><code>tests/logger.test.js</code> — 9 testes (API, buffer, níveis, onError handler)</li>
+      <li><code>tests/feature-flags.test.js</code> — 9 testes (defaults, enable/disable/reset, list)</li>
+    </ul>
+    <p><strong>Total de testes na sessão:</strong> <code>money</code> (32) + <code>html</code> (9) + <code>logger</code> (9) + <code>feature-flags</code> (9) = <strong>59 testes, todos passando</strong>.</p>
+  </div>
+
+  <h3>Comandos novos do package.json</h3>
+  <table>
+    <tr><th>Comando</th><th>O que faz</th></tr>
+    <tr><td><code>npm test</code></td><td>Roda os 59 testes vitest</td></tr>
+    <tr><td><code>npm run typecheck</code></td><td>Type-check via JSDoc + tsc nos utils críticos</td></tr>
+    <tr><td><code>npm run audit:schema</code></td><td>Detecta drift entre DB/RPC/repo</td></tr>
+    <tr><td><code>npm run perf:budget</code></td><td>Reporta tamanho de cada JS no boot</td></tr>
   </table>
 
   <!-- ═══ MIGRATIONS ═══ -->

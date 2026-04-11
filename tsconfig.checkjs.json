@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "lib": ["ES2020", "DOM"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": false,
+    "forceConsistentCasingInFileNames": true,
+    "types": []
+  },
+  "include": [
+    "js/utils/_globals.d.ts",
+    "js/utils/money.js",
+    "js/utils/html.js",
+    "js/utils/modal.js",
+    "js/utils/logger.js",
+    "js/utils/feature-flags.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "tests",
+    "scripts"
+  ]
+}

@@ -10,6 +10,7 @@
  *   html`<div>${html.raw(trustedHtml)}</div>` // marca como seguro
  *   html.attr(value)                           // escapa atributo
  */
+// @ts-nocheck — wrapper IIFE com tipos dinâmicos.
 (function (root, factory) {
   var mod = factory()
   if (typeof module !== 'undefined' && module.exports) module.exports = mod

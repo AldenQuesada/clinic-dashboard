@@ -5044,9 +5044,12 @@
   <!-- Mestres de dados clínicos — Supabase (rooms, technologies, professionals, injetaveis, procedimentos) -->
   <script src="js/repositories/rooms.repository.js?v=20260407p" defer></script>
   <script src="js/repositories/technologies.repository.js?v=20260407p" defer></script>
-  <script src="js/utils/money.js?v=20260411k" defer></script>
-  <script src="js/utils/html.js?v=20260411k" defer></script>
-  <script src="js/utils/modal.js?v=20260411k" defer></script>
+  <script src="js/utils/money.js?v=20260411n" defer></script>
+  <script src="js/utils/html.js?v=20260411n" defer></script>
+  <script src="js/utils/modal.js?v=20260411n" defer></script>
+  <script src="js/utils/logger.js?v=20260411n" defer></script>
+  <script src="js/utils/feature-flags.js?v=20260411n" defer></script>
+  <script src="js/utils/error-boundary.js?v=20260411n" defer></script>
   <script src="js/repositories/professionals.repository.js?v=20260411b" defer></script>
   <script src="js/repositories/injetaveis.repository.js?v=20260407p" defer></script>
   <script src="js/repositories/procedimentos.repository.js?v=20260411f" defer></script>
@@ -5809,6 +5812,9 @@
   document.addEventListener('DOMContentLoaded', () => {
     vpiRefreshKpis('');
     vpiRenderRanking('');
+    // Premium hardenings
+    if (window.ErrorBoundary) window.ErrorBoundary.install();
+    if (window.Logger) window.Logger.info('boot', { ts: new Date().toISOString() });
   });
 
   window.vpiSwitchTab      = vpiSwitchTab;
