@@ -812,8 +812,10 @@ async function _lmLoadFichas(lead) {
         // Traduzir values internos para labels
         if (Array.isArray(rawVal)) {
           displayVal = rawVal.map(function(v) { return optLabels[a.field_id + ':' + v] || v }).join(', ')
-        } else if (typeof rawVal === 'boolean') {
-          displayVal = rawVal ? 'Sim' : 'Nao'
+        } else if (rawVal === true || rawVal === 'true') {
+          displayVal = 'Sim'
+        } else if (rawVal === false || rawVal === 'false') {
+          displayVal = 'N\u00e3o'
         } else if (typeof rawVal === 'string') {
           displayVal = optLabels[a.field_id + ':' + rawVal] || rawVal
         } else if (rawVal !== null && rawVal !== undefined) {
