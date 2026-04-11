@@ -252,12 +252,27 @@
       if (!dateMax || t.transaction_date > dateMax) dateMax = t.transaction_date
     })
 
+    // Detecta se cobre multiplos meses
+    var isMultiMonth = false
+    if (dateMin && dateMax) {
+      var dMin = new Date(dateMin + 'T00:00:00')
+      var dMax = new Date(dateMax + 'T00:00:00')
+      isMultiMonth = (dMin.getFullYear() !== dMax.getFullYear() || dMin.getMonth() !== dMax.getMonth())
+    }
+    var monthsSpan = 0
+    if (isMultiMonth) {
+      var d1 = new Date(dateMin + 'T00:00:00')
+      var d2 = new Date(dateMax + 'T00:00:00')
+      monthsSpan = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth()) + 1
+    }
+
     var html = ''
       // Cabecalho do preview
       + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 18px;margin-bottom:16px">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
           + '<span style="color:#10b981">' + _icon('check-circle', 18) + '</span>'
           + '<div style="font-size:13px;font-weight:700;color:#065f46">Arquivo lido com sucesso</div>'
+          + (isMultiMonth ? '<span style="background:#dbeafe;color:#1e40af;font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;margin-left:6px">' + monthsSpan + ' MESES</span>' : '')
         + '</div>'
         + '<div style="font-size:12px;color:#065f46;line-height:1.6">'
           + '<strong>' + _state.fileName + '</strong><br>'
@@ -267,6 +282,7 @@
           + '<span style="color:#ef4444">Saidas: ' + fmt(totalDebit) + '</span> | '
           + '<strong>Saldo: ' + fmt(totalCredit - totalDebit) + '</strong>'
         + '</div>'
+        + (isMultiMonth ? '<div style="margin-top:8px;padding:8px 10px;background:#dbeafe;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;color:#1e40af"><strong>Multi-mes detectado:</strong> apos importar, a visao do Fluxo de Caixa sera ajustada automaticamente pra mostrar todo o periodo do arquivo.</div>' : '')
       + '</div>'
 
       // Tabela
@@ -361,15 +377,39 @@
         + ' | Erros: ' + errors
     }
 
-    // Auto-reconcile apos import (silencioso)
+    // Auto-reconcile apos import (silencioso) — usa range completo do arquivo
     if (imported > 0 && window.CashflowService && window.CashflowService.autoReconcile) {
       try {
-        await window.CashflowService.autoReconcile()
+        // Calcula range das transacoes importadas
+        var minDate = null, maxDate = null
+        _state.transactions.forEach(function(t) {
+          if (!minDate || t.transaction_date < minDate) minDate = t.transaction_date
+          if (!maxDate || t.transaction_date > maxDate) maxDate = t.transaction_date
+        })
+        await window.CashflowService.autoReconcile(minDate, maxDate)
       } catch (e) { console.warn('[OfxImport] auto-reconcile falhou:', e) }
     }
 
     _renderResultStep(imported, duplicated, errors, total)
     _state.importing = false
+
+    // Calcula range para sincronizar visao da pagina
+    var minDate2 = null, maxDate2 = null
+    _state.transactions.forEach(function(t) {
+      if (!minDate2 || t.transaction_date < minDate2) minDate2 = t.transaction_date
+      if (!maxDate2 || t.transaction_date > maxDate2) maxDate2 = t.transaction_date
+    })
+
+    // Se foi multi-mes, ajusta o periodo da pagina pra mostrar tudo
+    if (window.CashflowUI && window.CashflowUI.setCustomRange && minDate2 && maxDate2) {
+      var d1 = new Date(minDate2 + 'T00:00:00')
+      var d2 = new Date(maxDate2 + 'T00:00:00')
+      var multiMonth = (d1.getFullYear() !== d2.getFullYear() || d1.getMonth() !== d2.getMonth())
+      if (multiMonth) {
+        window.CashflowUI.setCustomRange(minDate2, maxDate2)
+        return  // setCustomRange ja faz reload
+      }
+    }
 
     // Recarrega lista + mostra sugestoes se houver
     if (window.CashflowUI && window.CashflowUI.reload) {

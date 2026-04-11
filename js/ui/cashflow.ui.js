@@ -194,34 +194,84 @@
         b.addEventListener('mouseleave', function() { b.style.background = '#fff' })
       })
     }
-    var sel = document.getElementById('cfPeriodSelect')
-    if (sel) sel.addEventListener('change', function(e) { _onPeriodChange(e.target.value) })
+    _bindPeriodButtons()
   }
 
   function _periodSelect() {
+    var p = _state.period || 'month'
+    function btn(value, label) {
+      var active = p === value
+      return '<button class="cf-period-btn" data-period="' + value + '" style="all:unset;cursor:pointer;padding:9px 14px;font-size:12px;font-weight:600;color:' + (active ? '#fff' : '#6b7280') + ';background:' + (active ? '#10b981' : 'transparent') + ';border-radius:8px;transition:all .15s">' + label + '</button>'
+    }
     return ''
-      + '<select id="cfPeriodSelect" style="background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:9px 12px;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer">'
-        + '<option value="month">Mes Atual</option>'
-        + '<option value="last30">Ultimos 30 dias</option>'
-        + '<option value="last7">Ultimos 7 dias</option>'
-      + '</select>'
+      + '<div style="display:inline-flex;align-items:center;gap:2px;background:#f3f4f6;border:1.5px solid #e5e7eb;border-radius:10px;padding:3px">'
+        + btn('today',  'Hoje')
+        + btn('week',   'Semana')
+        + btn('month',  'Mes')
+        + btn('custom', 'Periodo')
+      + '</div>'
+      + '<div id="cfCustomRange" style="display:' + (p === 'custom' ? 'inline-flex' : 'none') + ';align-items:center;gap:6px;margin-left:6px;background:#fff;border:1.5px solid #c7d2fe;border-radius:10px;padding:6px 10px">'
+        + '<input type="date" id="cfCustomStart" value="' + (_state.startDate || '') + '" style="border:none;outline:none;font-size:12px;color:#374151;background:transparent">'
+        + '<span style="color:#9ca3af;font-size:11px">ate</span>'
+        + '<input type="date" id="cfCustomEnd" value="' + (_state.endDate || '') + '" style="border:none;outline:none;font-size:12px;color:#374151;background:transparent">'
+        + '<button id="cfCustomApply" style="background:#6366f1;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px">Aplicar</button>'
+      + '</div>'
+  }
+
+  function _bindPeriodButtons() {
+    document.querySelectorAll('.cf-period-btn').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var p = b.getAttribute('data-period')
+        if (p === 'custom') {
+          // toggle do painel custom sem disparar load (espera o user clicar Aplicar)
+          _state.period = 'custom'
+          // Atualiza estilo dos botoes
+          document.querySelectorAll('.cf-period-btn').forEach(function(x) {
+            var active = x.getAttribute('data-period') === 'custom'
+            x.style.color = active ? '#fff' : '#6b7280'
+            x.style.background = active ? '#10b981' : 'transparent'
+          })
+          var range = document.getElementById('cfCustomRange')
+          if (range) range.style.display = 'inline-flex'
+          return
+        }
+        _onPeriodChange(p)
+      })
+    })
+    var apply = document.getElementById('cfCustomApply')
+    if (apply) {
+      apply.addEventListener('click', function() {
+        var s = document.getElementById('cfCustomStart').value
+        var e = document.getElementById('cfCustomEnd').value
+        if (!s || !e) { alert('Selecione data inicial e final'); return }
+        if (s > e) { alert('Data inicial deve ser anterior a data final'); return }
+        _state.period = 'custom'
+        _state.startDate = s
+        _state.endDate = e
+        _loadData()
+      })
+    }
   }
 
   function _onPeriodChange(value) {
     _state.period = value
     var today = new Date()
-    if (value === 'month') {
+    if (value === 'today') {
+      var iso = _isoDate(today)
+      _state.startDate = iso
+      _state.endDate   = iso
+    } else if (value === 'week') {
+      // Segunda a Domingo da semana atual (BR padrao)
+      var dow = today.getDay() // 0=Dom, 1=Seg, ..., 6=Sab
+      var diffToMon = dow === 0 ? -6 : (1 - dow)
+      var monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMon)
+      var sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+      _state.startDate = _isoDate(monday)
+      _state.endDate   = _isoDate(sunday)
+    } else if (value === 'month') {
       var r = window.CashflowService.monthRange()
       _state.startDate = r.start
       _state.endDate   = r.end
-    } else if (value === 'last30') {
-      var d30 = new Date(today.getTime() - 30 * 86400000)
-      _state.startDate = _isoDate(d30)
-      _state.endDate   = _isoDate(today)
-    } else if (value === 'last7') {
-      var d7 = new Date(today.getTime() - 7 * 86400000)
-      _state.startDate = _isoDate(d7)
-      _state.endDate   = _isoDate(today)
     }
     _loadData()
   }
@@ -1773,10 +1823,19 @@
 
   // ── Expose ────────────────────────────────────────────────
 
+  function setCustomRange(startDate, endDate) {
+    _state.period = 'custom'
+    _state.startDate = startDate
+    _state.endDate = endDate
+    _renderShell()  // re-renderiza header com botoes ja no estado custom
+    _loadData()
+  }
+
   window.CashflowUI = Object.freeze({
     init:           init,
     reload:         _loadData,
     runReconcile:   _runReconcile,
     showSuggestions: _loadAndShowSuggestions,
+    setCustomRange: setCustomRange,
   })
 })()
