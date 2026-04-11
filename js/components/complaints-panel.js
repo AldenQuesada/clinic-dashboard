@@ -78,40 +78,101 @@
       )
     }
 
-    var items = complaints.map(function(c) {
+    var pendentes = complaints.filter(function(c) { return c.status === 'pendente' })
+    var emTrat = complaints.filter(function(c) { return c.status === 'em_tratamento' })
+    var tratadas = complaints.filter(function(c) { return c.status === 'tratada' })
+    var resolvidas = complaints.filter(function(c) { return c.status === 'resolvida' })
+
+    function _row(c) {
       var st = STATUS_CFG[c.status] || STATUS_CFG.pendente
-      var line = ''
+      var clickable = c.status === 'pendente'
+      var retouchTxt = c.retouch_interval_days ? _retouchLabel(c.retouch_interval_days) : ''
 
-      if (c.status === 'resolvida') {
-        line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
-          + '<span style="text-decoration:line-through;color:#9CA3AF;font-size:12px">' + _esc(c.complaint) + '</span>'
-          + _badge(c.status)
-          + '</div>'
-      } else if (c.status === 'tratada') {
-        line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
-          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.complaint) + '</span>'
-          + (c.treatment_procedure ? '<span style="font-size:10px;color:#6B7280">' + _esc(c.treatment_procedure) + '</span>' : '')
-          + _badge(c.status)
-          + '</div>'
-      } else if (c.status === 'em_tratamento') {
-        var retouchTxt = c.retouch_interval_days ? 'retoque em ' + _retouchLabel(c.retouch_interval_days) : ''
-        line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;flex-wrap:wrap">'
-          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.complaint) + '</span>'
-          + (c.treatment_procedure ? '<span style="font-size:10px;color:#6B7280">' + _esc(c.treatment_procedure) + '</span>' : '')
-          + _badge(c.status)
-          + (retouchTxt ? '<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#6B7280">' + ICONS.clock + ' ' + _esc(retouchTxt) + '</span>' : '')
-          + '</div>'
-      } else {
-        // pendente
-        line = '<div style="display:flex;align-items:center;gap:6px;padding:4px 0">'
-          + '<span style="font-size:12px;color:#111;font-weight:500">' + _esc(c.complaint) + '</span>'
-          + _badge(c.status)
-          + '</div>'
-      }
-      return line
-    }).join('')
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F3F4F620;gap:8px'
+        + (clickable ? ';cursor:pointer' : '') + '"'
+        + (clickable ? ' onclick="ComplaintsPanel._quickTreat(\'' + c.id + '\',\'' + _esc(leadId) + '\')" title="Clique para marcar como tratada"' : '') + '>'
+        + '<div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1">'
+        + '<span style="color:' + st.color + ';flex-shrink:0">' + st.icon + '</span>'
+        + '<span style="font-size:11px;font-weight:500;color:' + (c.status === 'resolvida' ? '#9CA3AF' : '#111') + ';' + (c.status === 'resolvida' ? 'text-decoration:line-through' : '') + '">' + _esc(c.complaint) + '</span>'
+        + (c.treatment_procedure ? '<span style="font-size:9px;color:#6B7280">(' + _esc(c.treatment_procedure) + ')</span>' : '')
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
+        + (retouchTxt ? '<span style="font-size:9px;color:#6B7280;display:flex;align-items:center;gap:2px">' + ICONS.clock + retouchTxt + '</span>' : '')
+        + '<span style="font-size:9px;padding:2px 6px;background:' + st.bg + ';color:' + st.color + ';border-radius:4px;font-weight:600">' + st.label + '</span>'
+        + '</div></div>'
+    }
 
-    return _stratCard('#7C3AED', 'Queixas (' + complaints.length + ')', items)
+    var html = ''
+
+    // Pendentes (destacar)
+    if (pendentes.length) {
+      html += '<div style="margin-bottom:6px"><div style="font-size:9px;font-weight:700;color:#EA580C;margin-bottom:3px">' + pendentes.length + ' PENDENTE' + (pendentes.length > 1 ? 'S' : '') + '</div>'
+        + pendentes.map(_row).join('') + '</div>'
+    }
+
+    // Em tratamento
+    if (emTrat.length) {
+      html += '<div style="margin-bottom:6px"><div style="font-size:9px;font-weight:700;color:#2563EB;margin-bottom:3px">' + emTrat.length + ' EM TRATAMENTO</div>'
+        + emTrat.map(_row).join('') + '</div>'
+    }
+
+    // Tratadas
+    if (tratadas.length) {
+      html += '<div style="margin-bottom:6px"><div style="font-size:9px;font-weight:700;color:#16A34A;margin-bottom:3px">' + tratadas.length + ' TRATADA' + (tratadas.length > 1 ? 'S' : '') + '</div>'
+        + tratadas.map(_row).join('') + '</div>'
+    }
+
+    // Resolvidas (colapsado)
+    if (resolvidas.length) {
+      html += '<div><div style="font-size:9px;font-weight:700;color:#9CA3AF;margin-bottom:3px">' + resolvidas.length + ' RESOLVIDA' + (resolvidas.length > 1 ? 'S' : '') + '</div>'
+        + resolvidas.map(_row).join('') + '</div>'
+    }
+
+    // Form inline para quick treat (hidden por default)
+    html += '<div id="cpQuickTreatForm" style="display:none;margin-top:8px;padding:8px;background:#fff;border:1px solid #E5E7EB;border-radius:6px">'
+      + '<input id="cpQtProc" type="text" placeholder="Procedimento..." style="width:100%;padding:5px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:11px;margin-bottom:4px;box-sizing:border-box" />'
+      + '<div style="display:flex;gap:4px;margin-bottom:4px">'
+      + '<select id="cpQtInterval" style="flex:1;padding:5px 8px;border:1px solid #E5E7EB;border-radius:4px;font-size:10px">'
+      + RETOUCH_INTERVALS.map(function(r) { return '<option value="' + r.value + '">' + r.label + '</option>' }).join('')
+      + '</select>'
+      + '<button onclick="ComplaintsPanel._submitQuickTreat()" style="padding:5px 10px;background:#7C3AED;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer">Salvar</button>'
+      + '<button onclick="document.getElementById(\'cpQuickTreatForm\').style.display=\'none\'" style="padding:5px 8px;background:#F3F4F6;color:#374151;border:none;border-radius:4px;font-size:10px;cursor:pointer">X</button>'
+      + '</div></div>'
+
+    return _stratCard('#7C3AED', 'Queixas (' + complaints.length + ')', html)
+  }
+
+  // Quick treat: abre form inline no card
+  var _qtComplaintId = null, _qtLeadId = null
+  function _quickTreat(complaintId, leadId) {
+    _qtComplaintId = complaintId
+    _qtLeadId = leadId
+    var form = document.getElementById('cpQuickTreatForm')
+    if (form) { form.style.display = 'block'; document.getElementById('cpQtProc')?.focus() }
+  }
+
+  async function _submitQuickTreat() {
+    if (!_qtComplaintId) return
+    var proc = (document.getElementById('cpQtProc') || {}).value || ''
+    var interval = parseInt((document.getElementById('cpQtInterval') || {}).value || '120')
+    if (!proc.trim()) { alert('Informe o procedimento'); return }
+
+    try {
+      await saveComplaint({
+        p_id: _qtComplaintId,
+        p_status: 'em_tratamento',
+        p_treatment_procedure: proc.trim(),
+        p_treatment_date: new Date().toISOString(),
+        p_retouch_interval_days: interval,
+      })
+      document.getElementById('cpQuickTreatForm').style.display = 'none'
+      // Recarregar card
+      var complaints = await loadComplaints(_qtLeadId)
+      var el = document.getElementById('lmComplaintsCard')
+      if (el) el.innerHTML = renderCard(_qtLeadId, complaints)
+    } catch (e) {
+      alert('Erro: ' + e.message)
+    }
   }
 
   // ── 2. renderFullPanel ────────────────────────────────────────
@@ -440,6 +501,8 @@
     _doAdd:         _doAdd,
     _doTreat:       _doTreat,
     _doResolve:     _doResolve,
+    _quickTreat:    _quickTreat,
+    _submitQuickTreat: _submitQuickTreat,
   }
 
 })()
