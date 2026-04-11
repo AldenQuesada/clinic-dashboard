@@ -362,12 +362,39 @@
    *   - Real: validacao + auth + rate limit + log
    *   - Test: bypass auth se opts.bypassAuth=true
    */
+  // SSOT: chama wa_pro_handle_message direto. Fonte unica de verdade.
+  async function handleMessageSSOT(phone, text) {
+    try {
+      var sb = window._sbShared
+      if (!sb) throw new Error('Supabase client nao disponivel')
+      var r = await sb.rpc('wa_pro_handle_message', { p_phone: phone, p_text: text })
+      if (r.error) return { ok: false, response: '⚠️ ' + r.error.message, intent: 'error' }
+      var d = r.data || {}
+      return {
+        ok: d.ok !== false,
+        response: d.response || 'Sem resposta',
+        intent: d.intent || 'unknown',
+        professional: d.professional || null,
+        ms: d.elapsed_ms || 0,
+        quota: d.quota || null,
+        tier: 'rpc',
+      }
+    } catch (e) {
+      return { ok: false, response: '⚠️ ' + (e.message || e), intent: 'error' }
+    }
+  }
+
   async function handleMessage(phone, text, opts) {
     opts = opts || {}
     var startedAt = Date.now()
 
     if (!text || !String(text).trim()) {
       return { ok: false, response: 'Mensagem vazia', intent: 'empty' }
+    }
+
+    // SSOT: se nao eh bypass, delega pra RPC
+    if (!opts.bypassAuth) {
+      return handleMessageSSOT(phone, text)
     }
 
     var repo = _repo()
@@ -466,6 +493,7 @@
 
   window.MiraService = Object.freeze({
     handleMessage: handleMessage,
+    handleMessageSSOT: handleMessageSSOT,
     parseIntent:   parseIntent,
     formatHelp:    formatHelp,
     formatGreeting: formatGreeting,
