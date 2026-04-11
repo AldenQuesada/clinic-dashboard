@@ -197,7 +197,7 @@
     var indicado = document.getElementById('appt_indicado_por'); if (indicado) indicado.value = ''
     var indicadoId = document.getElementById('appt_indicado_por_id'); if (indicadoId) indicadoId.value = ''
     var indicadoDrop = document.getElementById('apptIndicadoDrop'); if (indicadoDrop) indicadoDrop.style.display = 'none'
-    _apptProcs = []
+    _apptProcs.length = 0  // muta in-place pra preservar ref compartilhada com _apptState.procs
     var procsList = document.getElementById('apptProcsList'); if (procsList) procsList.innerHTML = ''
     var procsTotal = document.getElementById('apptProcsTotal'); if (procsTotal) procsTotal.textContent = ''
     // Reset tipo buttons
@@ -307,7 +307,7 @@
   }
 
   function _apptClearProcedimentoData() {
-    _apptProcs = []
+    _apptProcs.length = 0  // muta in-place pra preservar ref compartilhada
     var procsList = document.getElementById('apptProcsList'); if (procsList) procsList.innerHTML = ''
     var procsTotal = document.getElementById('apptProcsTotal'); if (procsTotal) procsTotal.textContent = ''
     var procSel = document.getElementById('appt_proc_select'); if (procSel) procSel.value = ''
@@ -331,6 +331,12 @@
     } else if (tipo === 'procedimento' && tipoAtual === 'avaliacao' && _apptHasConsultaData()) {
       if (!confirm('Trocar para Procedimento vai apagar os dados da consulta. Continuar?')) return
       _apptClearConsultaData()
+    }
+    // Clear adicional: sempre zera valor/pagamentos ao trocar tipo,
+    // evita "cruzamento" de dados quando confirm skip (ex: valor 0).
+    if (tipoAtual && tipoAtual !== tipo) {
+      var valEl = document.getElementById('appt_valor'); if (valEl) valEl.value = ''
+      apptResetPagamentos()
     }
 
     if (tipo === 'avaliacao') {
@@ -704,6 +710,8 @@
       _updateApptTotalWithDiscount()
       return
     }
+    // Onclick direto (mais robusto que delegation pra este caso)
+    // html`` continua escapando valores interpolados.
     var H = window.html
     list.innerHTML = _apptProcs.map(function(p, i) {
       var cortesia = !!p.cortesia
@@ -715,7 +723,7 @@
       var btnPagaFg = !cortesia ? '#fff'    : '#4F46E5'
 
       var motivoHtml = cortesia
-        ? H`<input type="text" placeholder="Motivo da cortesia *" value="${p.cortesiaMotivo || ''}" data-action="apptProcField" data-idx="${i}" data-field="cortesiaMotivo" style="width:100%;margin-top:4px;padding:5px 7px;border:1px solid #86EFAC;border-radius:5px;font-size:11px;outline:none;box-sizing:border-box;background:#fff"/>`
+        ? H`<input type="text" placeholder="Motivo da cortesia *" value="${p.cortesiaMotivo || ''}" oninput="apptProcUpdate(${i}, 'cortesiaMotivo', this.value)" style="width:100%;margin-top:4px;padding:5px 7px;border:1px solid #86EFAC;border-radius:5px;font-size:11px;outline:none;box-sizing:border-box;background:#fff"/>`
         : ''
 
       var retorno = p.retornoTipo || 'avulso'
@@ -724,28 +732,28 @@
       var btnRtBg = retorno === 'retorno' ? '#7C3AED' : '#fff'
       var btnRtFg = retorno === 'retorno' ? '#fff'    : '#7C3AED'
       var intervaloHtml = retorno === 'retorno'
-        ? H`<select data-action="apptProcField" data-idx="${i}" data-field="retornoIntervalo" style="flex:1;padding:5px 7px;border:1px solid #DDD6FE;border-radius:5px;font-size:11px;background:#fff;outline:none">${H.raw(_apptRetornoOpts(p.retornoIntervalo))}</select>`
+        ? H`<select onchange="apptProcUpdate(${i}, 'retornoIntervalo', this.value)" style="flex:1;padding:5px 7px;border:1px solid #DDD6FE;border-radius:5px;font-size:11px;background:#fff;outline:none">${H.raw(_apptRetornoOpts(p.retornoIntervalo))}</select>`
         : ''
 
       var valorStr = p.valor ? p.valor.toFixed(2) : ''
       var valorOrTag = cortesia
         ? H`<span style="font-size:10px;font-weight:700;color:#16A34A">CORTESIA</span>`
-        : H`<input type="number" step="0.01" value="${valorStr}" data-action="apptProcField" data-idx="${i}" data-field="valor" style="width:75px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;text-align:right;outline:none"/>`
+        : H`<input type="number" step="0.01" value="${valorStr}" oninput="apptProcUpdate(${i}, 'valor', this.value)" style="width:75px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;text-align:right;outline:none"/>`
 
       return H`<div data-proc-row="${i}" style="background:${bgCard};border:1px solid ${bdCard};border-radius:8px;padding:7px">
         <div style="display:flex;align-items:center;gap:6px">
           <span style="flex:1;font-size:11px;font-weight:700;color:#374151">${p.nome || ''}</span>
           ${H.raw(valorOrTag)}
-          <button type="button" data-action="apptProcRemove" data-idx="${i}" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:5px;font-size:12px;font-weight:700;width:22px;height:22px;cursor:pointer;line-height:1">×</button>
+          <button type="button" onclick="apptRemoveProc(${i})" style="background:#FEE2E2;color:#DC2626;border:none;border-radius:5px;font-size:12px;font-weight:700;width:22px;height:22px;cursor:pointer;line-height:1">×</button>
         </div>
         <div style="display:flex;gap:5px;margin-top:5px">
-          <button type="button" data-action="apptProcSetCortesia" data-idx="${i}" data-value="false" style="flex:1;padding:4px 8px;background:${btnPagaBg};color:${btnPagaFg};border:1px solid #C7D2FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Pago</button>
-          <button type="button" data-action="apptProcSetCortesia" data-idx="${i}" data-value="true" style="flex:1;padding:4px 8px;background:${btnCortBg};color:${btnCortFg};border:1px solid #BBF7D0;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Cortesia</button>
+          <button type="button" onclick="apptProcUpdate(${i}, 'cortesia', false)" style="flex:1;padding:4px 8px;background:${btnPagaBg};color:${btnPagaFg};border:1px solid #C7D2FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Pago</button>
+          <button type="button" onclick="apptProcUpdate(${i}, 'cortesia', true)" style="flex:1;padding:4px 8px;background:${btnCortBg};color:${btnCortFg};border:1px solid #BBF7D0;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Cortesia</button>
         </div>
         ${H.raw(motivoHtml)}
         <div style="display:flex;gap:5px;margin-top:5px">
-          <button type="button" data-action="apptProcSetRetorno" data-idx="${i}" data-value="avulso" style="flex:1;padding:4px 8px;background:${btnAvBg};color:${btnAvFg};border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Sessão Avulsa</button>
-          <button type="button" data-action="apptProcSetRetorno" data-idx="${i}" data-value="retorno" style="flex:1;padding:4px 8px;background:${btnRtBg};color:${btnRtFg};border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Com Retorno</button>
+          <button type="button" onclick="apptProcUpdate(${i}, 'retornoTipo', 'avulso')" style="flex:1;padding:4px 8px;background:${btnAvBg};color:${btnAvFg};border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Sessão Avulsa</button>
+          <button type="button" onclick="apptProcUpdate(${i}, 'retornoTipo', 'retorno')" style="flex:1;padding:4px 8px;background:${btnRtBg};color:${btnRtFg};border:1px solid #DDD6FE;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer">Com Retorno</button>
           ${H.raw(intervaloHtml)}
         </div>
       </div>`
@@ -960,25 +968,25 @@
     var parcelasHtml = temParcelas
       ? H`<div style="display:flex;gap:5px;align-items:center;margin-top:5px">
           <label style="font-size:10px;font-weight:700;color:#6B7280">Parcelas</label>
-          <input type="number" min="1" max="24" value="${p.parcelas || 1}" data-action="apptPagamentoField" data-idx="${idx}" data-field="parcelas" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+          <input type="number" min="1" max="24" value="${p.parcelas || 1}" oninput="apptUpdatePagamento(${idx}, 'parcelas', this.value)" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
           <span style="font-size:10px;color:#6B7280">x R$</span>
-          <input type="number" step="0.01" value="${valorParcelaStr}" data-action="apptPagamentoField" data-idx="${idx}" data-field="valorParcela" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+          <input type="number" step="0.01" value="${valorParcelaStr}" oninput="apptUpdatePagamento(${idx}, 'valorParcela', this.value)" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
         </div>`
       : ''
     var removeBtn = canRemove
-      ? H`<button type="button" data-action="apptPagamentoRemove" data-idx="${idx}" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>`
+      ? H`<button type="button" onclick="apptRemovePagamento(${idx})" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>`
       : ''
 
     row.style.background = bg
     row.style.borderColor = bd
     row.innerHTML = H`<div style="display:flex;gap:5px;align-items:center">
-        <select data-action="apptPagamentoField" data-idx="${idx}" data-field="forma" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">${H.raw(_formaOptions(p.forma))}</select>
-        <input type="number" step="0.01" placeholder="0,00" value="${valorStr}" data-action="apptPagamentoField" data-idx="${idx}" data-field="valor" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>
-        <button type="button" data-action="apptPagamentoToggle" data-idx="${idx}" style="padding:5px 8px;background:${btnBg};color:${btnFg};border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${btnTxt}</button>
+        <select onchange="apptUpdatePagamento(${idx}, 'forma', this.value)" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">${H.raw(_formaOptions(p.forma))}</select>
+        <input type="number" step="0.01" placeholder="0,00" value="${valorStr}" oninput="apptUpdatePagamento(${idx}, 'valor', this.value)" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>
+        <button type="button" onclick="apptTogglePago(${idx})" style="padding:5px 8px;background:${btnBg};color:${btnFg};border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${btnTxt}</button>
         ${H.raw(removeBtn)}
       </div>
       ${H.raw(parcelasHtml)}
-      <input type="text" placeholder="Comentário (opcional)" value="${p.comentario || ''}" data-action="apptPagamentoField" data-idx="${idx}" data-field="comentario" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>`
+      <input type="text" placeholder="Comentário (opcional)" value="${p.comentario || ''}" oninput="apptUpdatePagamento(${idx}, 'comentario', this.value)" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>`
     apptUpdatePagamentosTotal()
   }
 
@@ -1024,25 +1032,25 @@
       var parcelasHtml = temParcelas
         ? H`<div style="display:flex;gap:5px;align-items:center;margin-top:5px">
             <label style="font-size:10px;font-weight:700;color:#6B7280">Parcelas</label>
-            <input type="number" min="1" max="24" value="${p.parcelas || 1}" data-action="apptPagamentoField" data-idx="${i}" data-field="parcelas" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+            <input type="number" min="1" max="24" value="${p.parcelas || 1}" oninput="apptUpdatePagamento(${i}, 'parcelas', this.value)" style="width:50px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
             <span style="font-size:10px;color:#6B7280">x R$</span>
-            <input type="number" step="0.01" value="${valorParcelaStr}" data-action="apptPagamentoField" data-idx="${i}" data-field="valorParcela" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
+            <input type="number" step="0.01" value="${valorParcelaStr}" oninput="apptUpdatePagamento(${i}, 'valorParcela', this.value)" style="width:80px;padding:4px 6px;border:1px solid #E5E7EB;border-radius:5px;font-size:11px;outline:none"/>
           </div>`
         : ''
 
       var removeBtn = canRemove
-        ? H`<button type="button" data-action="apptPagamentoRemove" data-idx="${i}" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>`
+        ? H`<button type="button" onclick="apptRemovePagamento(${i})" style="padding:5px 7px;background:#FEE2E2;color:#DC2626;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;line-height:1">×</button>`
         : ''
 
       return H`<div data-pagamento-row="${i}" style="background:${bg};border:1px solid ${bd};border-radius:8px;padding:7px">
         <div style="display:flex;gap:5px;align-items:center">
-          <select data-action="apptPagamentoField" data-idx="${i}" data-field="forma" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">${H.raw(_formaOptions(p.forma))}</select>
-          <input type="number" step="0.01" placeholder="0,00" value="${valorStr}" data-action="apptPagamentoField" data-idx="${i}" data-field="valor" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>
-          <button type="button" data-action="apptPagamentoToggle" data-idx="${i}" style="padding:5px 8px;background:${btnBg};color:${btnFg};border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${btnTxt}</button>
+          <select onchange="apptUpdatePagamento(${i}, 'forma', this.value)" style="flex:1;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;background:#fff;outline:none">${H.raw(_formaOptions(p.forma))}</select>
+          <input type="number" step="0.01" placeholder="0,00" value="${valorStr}" oninput="apptUpdatePagamento(${i}, 'valor', this.value)" style="width:75px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none"/>
+          <button type="button" onclick="apptTogglePago(${i})" style="padding:5px 8px;background:${btnBg};color:${btnFg};border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">${btnTxt}</button>
           ${H.raw(removeBtn)}
         </div>
         ${H.raw(parcelasHtml)}
-        <input type="text" placeholder="Comentário (opcional)" value="${p.comentario || ''}" data-action="apptPagamentoField" data-idx="${i}" data-field="comentario" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>
+        <input type="text" placeholder="Comentário (opcional)" value="${p.comentario || ''}" oninput="apptUpdatePagamento(${i}, 'comentario', this.value)" style="width:100%;margin-top:5px;padding:5px 7px;border:1px solid #E5E7EB;border-radius:6px;font-size:11px;outline:none;box-sizing:border-box"/>
       </div>`
     }).join('')
     apptUpdatePagamentosTotal()
