@@ -569,6 +569,27 @@
   }
 
   // ── Auto-preencher sala ao selecionar profissional ─────────
+  // ── apptOnProfChange — handler único para troca de profissional ──
+  // Cascata: auto-sala + auto-valor (puxa valor_consulta padrão).
+  function apptOnProfChange() {
+    apptAutoSala()
+    apptAutoValorConsulta()
+  }
+
+  function apptAutoValorConsulta() {
+    var profSel = document.getElementById('appt_prof')
+    if (!profSel) return
+    var profIdx = parseInt(profSel.value)
+    if (isNaN(profIdx)) return
+    var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+    var prof = profs[profIdx]
+    if (!prof) return
+    var v = parseFloat(prof.valor_consulta) || 0
+    if (v <= 0) return
+    var valEl = document.getElementById('appt_valor')
+    if (valEl) valEl.value = v.toFixed(2)
+  }
+
   function apptAutoSala() {
     var profSel = document.getElementById('appt_prof')
     var salaSel = document.getElementById('appt_sala')
@@ -1060,6 +1081,7 @@
   window.selectApptPatient = selectApptPatient
   window.apptIndicadoSearch = apptIndicadoSearch
   window.apptIndicadoSelect = apptIndicadoSelect
+  window.apptOnProfChange   = apptOnProfChange
   window.apptProcAutofill  = apptProcAutofill
   window.apptTipoChange    = apptTipoChange
   window.apptUpdateEndTime = apptUpdateEndTime
