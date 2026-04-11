@@ -725,10 +725,10 @@ async function _lmLoadFichas(lead) {
   if (!el || !window._sbShared) return
 
   // Buscar respostas de anamnese deste paciente
-  var patientName = (lead.name || lead.nome || '').trim()
   var res = await window._sbShared.from('anamnesis_responses')
-    .select('id,form_id,patient_name,professional_name,created_at,data')
-    .or('patient_name.ilike.%' + patientName + '%,patient_id.eq.' + (lead.id || ''))
+    .select('id,patient_id,template_id,status,progress_percent,created_at,completed_at')
+    .eq('patient_id', lead.id || '')
+    .eq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(20)
 
@@ -756,35 +756,43 @@ async function _lmLoadFichas(lead) {
     return
   }
 
+  // Carregar respostas de cada ficha
   var html = '<div style="display:flex;flex-direction:column;gap:10px">'
-  fichas.forEach(function (f) {
-    var date = f.created_at ? new Date(f.created_at).toLocaleString('pt-BR') : ''
-    var dataObj = f.data || {}
-    var fieldCount = typeof dataObj === 'object' ? Object.keys(dataObj).length : 0
+  for (var fi = 0; fi < fichas.length; fi++) {
+    var f = fichas[fi]
+    var date = f.completed_at ? new Date(f.completed_at).toLocaleString('pt-BR') : (f.created_at ? new Date(f.created_at).toLocaleString('pt-BR') : '')
+    var patientName = (lead.name || lead.nome || '').trim()
+
+    // Buscar answers desta ficha
+    var answersRes = await window._sbShared.from('anamnesis_answers')
+      .select('field_key,value_json,normalized_text')
+      .eq('response_id', f.id)
+      .limit(100)
+    var answers = (answersRes.data || [])
 
     html += '<div style="padding:14px 16px;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;cursor:pointer" onclick="this.querySelector(\'.lm-ficha-detail\').style.display=this.querySelector(\'.lm-ficha-detail\').style.display===\'none\'?\'block\':\'none\'">'
       + '<div style="display:flex;justify-content:space-between;align-items:center">'
       + '<div>'
-      + '<div style="font-size:13px;font-weight:600;color:#111">' + _lmEsc(f.patient_name || patientName) + '</div>'
-      + '<div style="font-size:10px;color:#9CA3AF">' + date + ' | ' + _lmEsc(f.professional_name || '') + ' | ' + fieldCount + ' campos</div>'
+      + '<div style="font-size:13px;font-weight:600;color:#111">' + _lmEsc(patientName) + '</div>'
+      + '<div style="font-size:10px;color:#9CA3AF">' + date + ' | ' + answers.length + ' respostas | ' + _lmEsc(f.status) + '</div>'
       + '</div>'
       + '<svg width="14" height="14" fill="none" stroke="#9CA3AF" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'
       + '</div>'
       + '<div class="lm-ficha-detail" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #F3F4F6">'
 
-    // Renderizar campos da ficha
-    if (typeof dataObj === 'object') {
-      Object.keys(dataObj).forEach(function (key) {
-        var val = dataObj[key]
-        if (val === null || val === undefined || val === '') return
+    // Renderizar respostas
+    if (answers.length) {
+      answers.forEach(function (a) {
+        var val = a.normalized_text || (typeof a.value_json === 'string' ? a.value_json : JSON.stringify(a.value_json))
+        if (!val || val === 'null' || val === '[REDACTED]') return
         html += '<div style="margin-bottom:8px">'
-          + '<div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.03em">' + _lmEsc(key.replace(/_/g, ' ')) + '</div>'
+          + '<div style="font-size:10px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:.03em">' + _lmEsc((a.field_key || '').replace(/_/g, ' ')) + '</div>'
           + '<div style="font-size:12px;color:#374151;line-height:1.5">' + _lmEsc(String(val)) + '</div>'
           + '</div>'
       })
     }
     html += '</div></div>'
-  })
+  }
   html += '</div>'
 
   el.innerHTML = _renderSendAnamnesePanel(lead) + html
