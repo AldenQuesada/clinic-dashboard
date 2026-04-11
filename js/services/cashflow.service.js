@@ -153,6 +153,24 @@
     return repo.getIntelligence(year, month)
   }
 
+  async function getDre(year, month) {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: {}, error: 'CashflowRepository nao disponivel' }
+    return repo.getDre(year, month)
+  }
+
+  async function getConfig() {
+    var repo = _repo()
+    if (!repo) return { ok: false, data: {}, error: 'CashflowRepository nao disponivel' }
+    return repo.getConfig()
+  }
+
+  async function saveConfig(data) {
+    var repo = _repo()
+    if (!repo) return { ok: false, error: 'CashflowRepository nao disponivel' }
+    return repo.saveConfig(data)
+  }
+
   // ── Hook: cria entry a partir de appointment finalizado ──
 
   /**
@@ -257,6 +275,8 @@
       external_id:      appt.id,
       patient_id:       appt.patient_id || appt.pacienteId || null,
       appointment_id:   appt.id,
+      procedure_name:   appt.procedimento || null,
+      professional_id:  appt.professional_id || null,
       match_confidence: 'manual',
     })
     if (r.ok && r.data && r.data.id) ids.push(r.data.id)
@@ -285,6 +305,9 @@
     getSuggestions:       getSuggestions,
     rejectSuggestion:     rejectSuggestion,
     getIntelligence:      getIntelligence,
+    getDre:               getDre,
+    getConfig:            getConfig,
+    saveConfig:           saveConfig,
     createFromAppointment: createFromAppointment,
   })
 })()

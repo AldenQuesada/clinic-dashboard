@@ -126,6 +126,33 @@
     } catch (e) { return _err(e.message || e) }
   }
 
+  async function getDre(year, month) {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_dre', {
+        p_year:  year  || null,
+        p_month: month || null,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function getConfig() {
+    try {
+      const { data, error } = await _sb().rpc('cashflow_get_config')
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function saveConfig(data) {
+    try {
+      const { data: res, error } = await _sb().rpc('cashflow_save_config', { p_data: data })
+      if (error) return _err(error.message || error)
+      return _ok(res)
+    } catch (e) { return _err(e.message || e) }
+  }
+
   async function rejectSuggestion(entryId) {
     try {
       const { data, error } = await _sb().rpc('cashflow_reject_suggestion', { p_entry_id: entryId })
@@ -146,5 +173,8 @@
     getSuggestions,
     rejectSuggestion,
     getIntelligence,
+    getDre,
+    getConfig,
+    saveConfig,
   })
 })()

@@ -48,7 +48,7 @@
       var year  = d.getFullYear()
       var month = d.getMonth() + 1
 
-      var [sumRes, listRes, intelRes] = await Promise.all([
+      var [sumRes, listRes, intelRes, dreRes] = await Promise.all([
         window.CashflowService.getSummary(_state.startDate, _state.endDate),
         window.CashflowService.listEntries({
           startDate: _state.startDate,
@@ -58,16 +58,19 @@
           onlyUnreconciled: _state.onlyUnreconciled,
         }),
         window.CashflowService.getIntelligence(year, month),
+        window.CashflowService.getDre(year, month),
       ])
 
       _state.summary      = (sumRes  && sumRes.ok)  ? sumRes.data  : {}
       _state.entries      = (listRes && listRes.ok) ? listRes.data : []
       _state.intelligence = (intelRes && intelRes.ok) ? intelRes.data : {}
+      _state.dre          = (dreRes && dreRes.ok)    ? dreRes.data  : {}
     } catch (e) {
       console.error('[CashflowUI] load error:', e)
       _state.summary = {}
       _state.entries = []
       _state.intelligence = {}
+      _state.dre = {}
     }
 
     _state.loading = false
@@ -101,6 +104,9 @@
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
           + _periodSelect()
+          + '<button id="cfConfigBtn" title="Configurar taxas e comissoes" style="display:flex;align-items:center;gap:6px;background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
+            + _icon('settings', 14) + ' Custos'
+          + '</button>'
           + '<button id="cfBankBtn" title="Gerenciar bancos conectados (Pluggy)" style="display:flex;align-items:center;gap:6px;background:#fff;color:#8b5cf6;border:1.5px solid #ddd6fe;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
             + _icon('link', 14) + ' Bancos'
           + '</button>'
@@ -136,6 +142,7 @@
         alert('Modulo de conexao bancaria ainda nao carregado. Recarregue a pagina.')
       }
     })
+    document.getElementById('cfConfigBtn').addEventListener('click', _openConfigModal)
     var sel = document.getElementById('cfPeriodSelect')
     if (sel) sel.addEventListener('change', function(e) { _onPeriodChange(e.target.value) })
   }
@@ -186,10 +193,14 @@
     var s   = _state.summary || {}
     var fmt = window.CashflowService.fmtCurrency
     var intel = _state.intelligence || {}
+    var dre   = _state.dre || {}
 
     body.innerHTML = ''
       // Painel Inteligencia
       + _intelligencePanel(intel)
+
+      // DRE Liquido
+      + _drePanel(dre)
 
       // KPIs
       + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">'
@@ -225,12 +236,12 @@
     var alerts      = intel.alerts      || []
 
     var html = ''
-      // Header
-      + '<div style="background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);color:#fff;border-radius:14px;padding:20px 22px;margin-bottom:20px;box-shadow:0 8px 24px rgba(15,23,42,.15)">'
+      // Header (light, premium, gold accent)
+      + '<div style="background:#fff;border:1px solid #e5e7eb;border-top:3px solid #c9a96e;border-radius:14px;padding:18px 22px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">'
-          + '<span style="color:#fbbf24">' + _icon('zap', 18) + '</span>'
-          + '<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#e2e8f0">Inteligencia do Mes</div>'
-          + '<span style="font-size:11px;color:#94a3b8;margin-left:auto">Dia ' + (intel.period.days_passed || 0) + ' de ' + (intel.period.days_in_month || 0) + '</span>'
+          + '<span style="color:#c9a96e">' + _icon('zap', 18) + '</span>'
+          + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#111827">Inteligencia do Mes</div>'
+          + '<span style="font-size:11px;color:#9ca3af;margin-left:auto">Dia ' + (intel.period.days_passed || 0) + ' de ' + (intel.period.days_in_month || 0) + '</span>'
         + '</div>'
 
         // Cards inteligencia (4 colunas)
@@ -252,7 +263,7 @@
               'Projecao Fim do Mes',
               fmt(projection.projected_credits || 0),
               'Media diaria: ' + fmt(projection.daily_avg || 0),
-              '#fbbf24',
+              '#c9a96e',
               'target'
             )
 
@@ -263,7 +274,7 @@
               goal.has_goal
                 ? fmt(goal.realized || 0) + ' / ' + fmt(goal.meta || 0)
                 : 'Configurar em Metas',
-              goal.has_goal && goal.pct >= 100 ? '#10b981' : goal.has_goal && goal.pct >= 50 ? '#fbbf24' : '#94a3b8',
+              goal.has_goal && goal.pct >= 100 ? '#10b981' : goal.has_goal && goal.pct >= 50 ? '#f59e0b' : '#9ca3af',
               'flag'
             )
 
@@ -272,23 +283,23 @@
               'A Receber (30d)',
               fmt(receivables.total_30d || 0),
               (receivables.count || 0) + ' parcela(s) pendente(s)',
-              '#60a5fa',
+              '#3b82f6',
               'inbox'
             )
 
         + '</div>'
 
-        // Linha 2: Inadimplentes (se houver) + alertas
+        // Linha 2: Inadimplentes (se houver)
         + (debtors.total > 0
-          ? '<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">'
+          ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">'
             + '<div style="display:flex;align-items:center;gap:10px">'
-              + '<span style="color:#fca5a5">' + _icon('alert-circle', 16) + '</span>'
+              + '<span style="color:#ef4444">' + _icon('alert-circle', 16) + '</span>'
               + '<div>'
-                + '<div style="font-size:12px;font-weight:600;color:#fecaca">Pacientes em aberto</div>'
-                + '<div style="font-size:11px;color:#fca5a5">' + (debtors.count || 0) + ' paciente(s) devem total de <strong>' + fmt(debtors.total) + '</strong></div>'
+                + '<div style="font-size:12px;font-weight:600;color:#991b1b">Pacientes em aberto</div>'
+                + '<div style="font-size:11px;color:#b91c1c">' + (debtors.count || 0) + ' paciente(s) devem total de <strong>' + fmt(debtors.total) + '</strong></div>'
               + '</div>'
             + '</div>'
-            + '<button id="cfDebtorsBtn" style="background:rgba(239,68,68,.2);color:#fecaca;border:1px solid rgba(239,68,68,.4);padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Ver lista</button>'
+            + '<button id="cfDebtorsBtn" style="background:#fff;color:#991b1b;border:1px solid #fecaca;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Ver lista</button>'
           + '</div>'
           : '')
 
@@ -296,12 +307,13 @@
         + (alerts.length > 0
           ? '<div style="display:flex;flex-direction:column;gap:6px">'
             + alerts.map(function(a) {
-                var bg = a.severity === 'success' ? 'rgba(16,185,129,.15)' : a.severity === 'warning' ? 'rgba(251,191,36,.15)' : 'rgba(239,68,68,.15)'
-                var bd = a.severity === 'success' ? 'rgba(16,185,129,.3)'  : a.severity === 'warning' ? 'rgba(251,191,36,.3)'  : 'rgba(239,68,68,.3)'
-                var col = a.severity === 'success' ? '#6ee7b7' : a.severity === 'warning' ? '#fcd34d' : '#fca5a5'
+                var bg = a.severity === 'success' ? '#f0fdf4' : a.severity === 'warning' ? '#fffbeb' : '#fef2f2'
+                var bd = a.severity === 'success' ? '#bbf7d0' : a.severity === 'warning' ? '#fde68a' : '#fecaca'
+                var col = a.severity === 'success' ? '#10b981' : a.severity === 'warning' ? '#f59e0b' : '#ef4444'
+                var titleCol = a.severity === 'success' ? '#065f46' : a.severity === 'warning' ? '#92400e' : '#991b1b'
                 return '<div style="background:' + bg + ';border:1px solid ' + bd + ';border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px">'
                   + '<span style="color:' + col + '">' + _icon(a.icon || 'alert-circle', 14) + '</span>'
-                  + '<div style="font-size:11px"><strong style="color:#fff">' + a.title + ':</strong> <span style="color:#cbd5e1">' + a.message + '</span></div>'
+                  + '<div style="font-size:11px"><strong style="color:' + titleCol + '">' + a.title + ':</strong> <span style="color:#6b7280">' + a.message + '</span></div>'
                   + '</div>'
               }).join('')
           + '</div>'
@@ -317,15 +329,168 @@
     return html
   }
 
+  // ── Painel DRE / Lucro Real ───────────────────────────────
+
+  function _drePanel(dreData) {
+    if (!dreData || !dreData.dre) return ''
+
+    var d = dreData.dre
+    var fmt = window.CashflowService.fmtCurrency
+    var marginColor = d.margem_pct >= 30 ? '#10b981' : d.margem_pct >= 15 ? '#f59e0b' : '#ef4444'
+    var marginLabel = d.margem_pct >= 30 ? 'Saudavel' : d.margem_pct >= 15 ? 'Atencao' : 'Critica'
+
+    return ''
+      + '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 22px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+          + '<span style="color:#10b981">' + _icon('dollar-sign', 18) + '</span>'
+          + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#111827">DRE — Lucro Real</div>'
+          + '<span style="background:' + marginColor + '22;color:' + marginColor + ';font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;margin-left:8px">' + marginLabel.toUpperCase() + ' • ' + (d.margem_pct || 0) + '%</span>'
+          + '<button id="cfDreDetailsBtn" style="margin-left:auto;all:unset;cursor:pointer;font-size:11px;color:#6b7280;text-decoration:underline">Ver detalhes</button>'
+        + '</div>'
+
+        + '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:center">'
+          + _dreStep('Bruto',     fmt(d.bruto || 0),     '#10b981', false)
+          + _dreOp('−')
+          + _dreStep('Taxas',     fmt(d.taxa || 0),      '#f59e0b', true, 'cartao + boleto')
+          + _dreOp('−')
+          + _dreStep('Custos',    fmt(d.custo || 0),     '#f59e0b', true, 'procedimentos')
+          + _dreOp('−')
+          + _dreStep('Comissao',  fmt(d.comissao || 0),  '#f59e0b', true, 'especialistas')
+          + _dreOp('−')
+          + _dreStep('Despesas',  fmt(d.despesas || 0),  '#ef4444', true, 'operacionais')
+          + _dreOp('=')
+          + _dreStep('Liquido',   fmt(d.liquido || 0),   marginColor, false, 'no bolso')
+        + '</div>'
+
+        + (d.taxa === 0 && d.custo === 0 && d.comissao === 0
+          ? '<div style="margin-top:12px;padding:8px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:11px;color:#92400e">'
+            + _icon('alert-circle', 12) + ' <strong>Calculo aproximado:</strong> taxas, custos e comissoes ainda nao configurados. Clique em <strong>Custos</strong> no topo para ativar.'
+          + '</div>'
+          : '')
+      + '</div>'
+  }
+
+  function _dreStep(label, value, color, dim, sub) {
+    return ''
+      + '<div style="text-align:center;padding:10px 6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px">'
+        + '<div style="font-size:9px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">' + label + '</div>'
+        + '<div style="font-size:14px;font-weight:700;color:' + color + ';' + (dim ? 'opacity:.85' : '') + '">' + value + '</div>'
+        + (sub ? '<div style="font-size:9px;color:#9ca3af;margin-top:2px">' + sub + '</div>' : '')
+      + '</div>'
+  }
+
+  function _dreOp(op) {
+    return '<div style="text-align:center;font-size:18px;font-weight:700;color:#9ca3af">' + op + '</div>'
+  }
+
+  // ── Modal de Configuracao (Custos / Taxas / Comissoes) ────
+
+  function _openConfigModal() {
+    var existing = document.getElementById('cfConfigBackdrop')
+    if (existing) existing.remove()
+
+    var html = ''
+      + '<div id="cfConfigBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px">'
+        + '<div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 50px rgba(0,0,0,.25)">'
+          + '<div style="padding:20px 24px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between">'
+            + '<div>'
+              + '<h3 style="margin:0;font-size:18px;font-weight:700;color:#111827">Configurar Custos</h3>'
+              + '<p style="margin:4px 0 0;font-size:12px;color:#6b7280">Taxas por metodo de pagamento e comissao por especialista</p>'
+            + '</div>'
+            + '<button id="cfCfgClose" style="all:unset;cursor:pointer;color:#9ca3af;padding:8px">' + _icon('x', 20) + '</button>'
+          + '</div>'
+          + '<div id="cfCfgBody" style="padding:24px;overflow:auto;flex:1">Carregando...</div>'
+          + '<div style="padding:16px 24px;border-top:1px solid #e5e7eb;display:flex;gap:8px;justify-content:flex-end">'
+            + '<button id="cfCfgCancel" style="background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cancelar</button>'
+            + '<button id="cfCfgSave" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Salvar</button>'
+          + '</div>'
+        + '</div>'
+      + '</div>'
+
+    document.body.insertAdjacentHTML('beforeend', html)
+
+    document.getElementById('cfCfgClose').addEventListener('click', _closeConfigModal)
+    document.getElementById('cfCfgCancel').addEventListener('click', _closeConfigModal)
+    document.getElementById('cfConfigBackdrop').addEventListener('click', function(e) {
+      if (e.target.id === 'cfConfigBackdrop') _closeConfigModal()
+    })
+    document.getElementById('cfCfgSave').addEventListener('click', _saveConfig)
+
+    _loadConfigInModal()
+  }
+
+  function _closeConfigModal() {
+    var b = document.getElementById('cfConfigBackdrop')
+    if (b) b.remove()
+  }
+
+  async function _loadConfigInModal() {
+    var res = await window.CashflowService.getConfig()
+    var cfg = (res && res.ok) ? res.data : { fees: {}, commissions: {} }
+    var fees = cfg.fees || {}
+    var comm = cfg.commissions || {}
+
+    var methods = window.CashflowService.PAYMENT_METHODS
+    var label = window.CashflowService.methodLabel
+
+    var html = ''
+      + '<div style="margin-bottom:20px">'
+        + '<div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Taxa por metodo de pagamento (%)</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+
+    methods.forEach(function(m) {
+      var v = fees[m.id] !== undefined ? fees[m.id] : 0
+      html += '<div style="display:flex;align-items:center;gap:8px">'
+        + '<div style="flex:1;font-size:12px;color:#374151">' + m.label + '</div>'
+        + '<input type="number" step="0.01" min="0" max="100" data-fee="' + m.id + '" value="' + v + '" style="width:70px;padding:6px 8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;text-align:right">'
+        + '<span style="font-size:11px;color:#9ca3af">%</span>'
+        + '</div>'
+    })
+
+    html += '</div></div>'
+
+      + '<div>'
+        + '<div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Comissao especialistas (%)</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+          + '<div style="flex:1;font-size:12px;color:#374151">Comissao padrao (todos)</div>'
+          + '<input type="number" step="0.5" min="0" max="100" id="cfCfgDefaultComm" value="' + (comm.default_pct || 0) + '" style="width:70px;padding:6px 8px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:12px;text-align:right">'
+          + '<span style="font-size:11px;color:#9ca3af">%</span>'
+        + '</div>'
+        + '<div style="margin-top:8px;padding:8px 10px;background:#f9fafb;border-radius:6px;font-size:11px;color:#6b7280">Comissao individual por especialista pode ser configurada via SQL ate a tela dedicada ser feita.</div>'
+      + '</div>'
+
+    document.getElementById('cfCfgBody').innerHTML = html
+  }
+
+  async function _saveConfig() {
+    var fees = {}
+    document.querySelectorAll('[data-fee]').forEach(function(input) {
+      fees[input.getAttribute('data-fee')] = parseFloat(input.value || 0)
+    })
+    var defaultComm = parseFloat(document.getElementById('cfCfgDefaultComm').value || 0)
+
+    var res = await window.CashflowService.saveConfig({
+      fees: fees,
+      commissions: { default_pct: defaultComm, by_professional: {} },
+    })
+
+    if (res && res.ok) {
+      _closeConfigModal()
+      _loadData()
+    } else {
+      alert('Erro ao salvar config: ' + (res && res.error || 'desconhecido'))
+    }
+  }
+
   function _intelCard(label, value, sub, color, iconName) {
     return ''
-      + '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px">'
+      + '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px">'
         + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">'
           + '<span style="color:' + color + '">' + _icon(iconName, 14) + '</span>'
-          + '<div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">' + label + '</div>'
+          + '<div style="font-size:10px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">' + label + '</div>'
         + '</div>'
         + '<div style="font-size:20px;font-weight:700;color:' + color + ';margin-bottom:2px">' + value + '</div>'
-        + '<div style="font-size:10px;color:#64748b">' + sub + '</div>'
+        + '<div style="font-size:10px;color:#9ca3af">' + sub + '</div>'
       + '</div>'
   }
 
@@ -1063,6 +1228,7 @@
       'trending-down':     '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>',
       'target':            '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
       'flag':              '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
+      'settings':          '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
       'check-circle':      '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
     }
     return icons[name] || ''
