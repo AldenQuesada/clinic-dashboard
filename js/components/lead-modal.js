@@ -1341,8 +1341,8 @@ async function _lmTabGeral(lead) {
   var age  = _calcAge(dob) || (lead.idade ? lead.idade : null)
   // Sexo: raiz > customFields > data
   if (!cf.sexo) cf.sexo = lead.sexo || ld.sexo || ''
-  // CPF: customFields > data
-  if (!cf.cpf) cf.cpf = ld.cpf || ''
+  // CPF: customFields > data > lead raiz
+  if (!cf.cpf) cf.cpf = ld.cpf || lead.cpf || ''
   // Profissao
   if (!cf.profissao) cf.profissao = lead.profissao || ld.profissao || ''
   // Estado civil
@@ -1390,6 +1390,14 @@ async function _lmTabGeral(lead) {
 
   // Botoes de transicao manual de fase
   var phaseActions = _lmPhaseActions(lead)
+
+  // ── Enriquecer CPF do banco se nao encontrou localmente ─────
+  if (!cf.cpf && window._sbShared) {
+    try {
+      var leadDb = await window._sbShared.from('leads').select('data').eq('id', lead.id).single()
+      if (leadDb.data && leadDb.data.data && leadDb.data.data.cpf) cf.cpf = leadDb.data.data.cpf
+    } catch (e) {}
+  }
 
   // ── Enriquecer com dados da anamnese (se existir) ──────────
   var anamData = {}
