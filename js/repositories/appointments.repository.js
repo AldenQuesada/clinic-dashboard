@@ -66,17 +66,29 @@
     try {
       const { data, error } = await _sb().rpc('appt_upsert', { p_data: apptData })
       if (error) return _err(error.message || String(error))
-      // Após salvar appointment principal, popula agregados de cortesia
-      // (o RPC principal não conhece esses campos — patch separado)
-      if (apptData.id && (apptData.valorCortesia > 0 || apptData.qtdProcsCortesia > 0)) {
-        try {
-          await _sb().rpc('appt_set_cortesia', {
-            p_id:             apptData.id,
-            p_valor_cortesia: apptData.valorCortesia || 0,
-            p_motivo:         apptData.motivoCortesia || null,
-            p_qtd_procs:      apptData.qtdProcsCortesia || 0,
-          })
-        } catch (cortErr) { console.warn('[appt] set_cortesia falhou:', cortErr) }
+      // ═ Patches complementares (RPC principal não conhece esses campos) ═
+      if (apptData.id) {
+        // 1. Agregados de cortesia (relatórios financeiros)
+        if (apptData.valorCortesia > 0 || apptData.qtdProcsCortesia > 0) {
+          try {
+            await _sb().rpc('appt_set_cortesia', {
+              p_id:             apptData.id,
+              p_valor_cortesia: apptData.valorCortesia || 0,
+              p_motivo:         apptData.motivoCortesia || null,
+              p_qtd_procs:      apptData.qtdProcsCortesia || 0,
+            })
+          } catch (cortErr) { console.warn('[appt] set_cortesia falhou:', cortErr) }
+        }
+        // 2. Arrays canônicos (procedimentos + pagamentos)
+        if (Array.isArray(apptData.procedimentos) || Array.isArray(apptData.pagamentos)) {
+          try {
+            await _sb().rpc('appt_set_canonical', {
+              p_id:            apptData.id,
+              p_procedimentos: apptData.procedimentos || [],
+              p_pagamentos:    apptData.pagamentos || [],
+            })
+          } catch (canErr) { console.warn('[appt] set_canonical falhou:', canErr) }
+        }
       }
       return _ok(data)
     } catch (err) {

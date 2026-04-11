@@ -365,7 +365,7 @@
       var prof = a.profissionalNome || a.professional_name || ''
       var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR') : ''
       var valor = a.valor ? 'R$ ' + Number(a.valor).toFixed(2).replace('.', ',') : ''
-      var procs = a.procedimentosRealizados || []
+      var procs = window.ApptSchema ? window.ApptSchema.getProcs(a) : (a.procedimentos || a.procedimentosRealizados || [])
 
       var html = '<div style="padding:14px 16px;background:var(--surface,#fff);border:1.5px solid var(--border,#E5E7EB);border-radius:10px">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'

@@ -213,28 +213,37 @@
    * Cria entrada(s) de fluxo de caixa a partir de um agendamento finalizado.
    * Chamado pelo finalize-modal apos salvar o appointment.
    *
-   * @param {object} appt — appointment com pagamentoDetalhes
+   * Lê do schema canônico (pagamentos[]) com fallback pra pagamentoDetalhes
+   * legacy via ApptSchema.getPagamentos.
+   *
+   * @param {object} appt
    * @returns {Promise<{ok, ids[]}>}
    */
   async function createFromAppointment(appt) {
     if (!appt || !appt.id) return { ok: false, error: 'Appointment invalido' }
 
-    var formaPagamento = appt.formaPagamento || (appt.pagamentoDetalhes && appt.pagamentoDetalhes.forma)
-    var valorPago      = Number(appt.valorPago || 0)
-    if (!formaPagamento || valorPago <= 0) {
+    // ═ Schema canônico: pagamentos[] ═
+    var S = window.ApptSchema
+    var pagamentos = S ? S.getPagamentos(appt) : (appt.pagamentos || [])
+    var valorPago = Number(appt.valorPago || 0)
+
+    if (!pagamentos.length || valorPago <= 0) {
       return { ok: true, ids: [], skipped: 'sem pagamento' }
     }
 
+    var formaPagamento = (S && S.deriveFormaPagamento(pagamentos)) || appt.formaPagamento || ''
+    if (!formaPagamento) return { ok: true, ids: [], skipped: 'sem forma' }
+
     var method = APPT_PAYMENT_MAP[formaPagamento] || 'other'
     var dateStr = appt.date || appt.dataAgendamento || todayISO()
-    // appt.date pode estar em formato YYYY-MM-DD ou DD/MM/YYYY
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
       var parts = dateStr.split('/')
       dateStr = parts[2] + '-' + parts[1] + '-' + parts[0]
     }
 
     var ids = []
-    var det = appt.pagamentoDetalhes || {}
+    // det é compat legacy pro código antigo abaixo; novos caminhos preferem pagamentos[]
+    var det = appt.pagamentoDetalhes || (pagamentos[0] || {})
 
     // Caso especial: entrada + saldo → cria 2 entries
     if (formaPagamento === 'entrada_saldo' && det.entrada && det.saldo) {

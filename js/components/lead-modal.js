@@ -1019,13 +1019,16 @@ function _lmShowParcelaDetail(apptId) {
   var proc = a.procedimento || a.procedure_name || 'Consulta'
   var valor = a.valor || 0
   var pago = a.valorPago || 0
-  var forma = a.formaPagamento || ''
-  var sp = a.statusPagamento || 'pendente'
+  // Schema canônico com fallback legacy
+  var S = window.ApptSchema
+  var pagamentos = S ? S.getPagamentos(a) : (a.pagamentos || [])
+  var forma = (S && S.deriveFormaPagamento(pagamentos)) || a.formaPagamento || ''
+  var sp = (S && S.deriveStatusPagamento(pagamentos)) || a.statusPagamento || 'pendente'
   var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR') : ''
   var finDate = a.finalizadoEm ? new Date(a.finalizadoEm).toLocaleDateString('pt-BR') : date
-  var det = a.pagamentoDetalhes || {}
-  var parcelas = det.parcelas || 1
-  var valorParcela = det.valorParcela || valor
+  var det = a.pagamentoDetalhes || (pagamentos[0] || {})
+  var parcelas = (pagamentos[0] && pagamentos[0].parcelas) || det.parcelas || 1
+  var valorParcela = (pagamentos[0] && pagamentos[0].valorParcela) || det.valorParcela || valor
 
   var statusCfg = { pago: { l:'Recebido', bg:'#F0FDF4', c:'#16A34A' }, parcial: { l:'Parcial', bg:'#FFF7ED', c:'#EA580C' }, pendente: { l:'Pendente', bg:'#FEF2F2', c:'#DC2626' } }
   var sCfg = statusCfg[sp] || statusCfg.pendente
@@ -1126,10 +1129,13 @@ function _lmShowComandaDetail(apptId) {
   var profInit = prof.trim().split(/\s+/).map(function(w){return w[0]}).join('').slice(0,2).toUpperCase()
   var valor = a.valor || 0
   var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR') : ''
-  var forma = a.formaPagamento || ''
-  var det = a.pagamentoDetalhes || {}
-  var parcelas = det.parcelas || 1
-  var procs = a.procedimentosRealizados || []
+  // Schema canônico: pagamentos[] e procedimentos[] (com fallback legacy)
+  var S = window.ApptSchema
+  var pagamentos = S ? S.getPagamentos(a) : (a.pagamentos || [])
+  var procs = S ? S.getProcs(a) : (a.procedimentos || a.procedimentosRealizados || [])
+  var forma = (S && S.deriveFormaPagamento(pagamentos)) || a.formaPagamento || ''
+  var det = a.pagamentoDetalhes || (pagamentos[0] || {})
+  var parcelas = (pagamentos[0] && pagamentos[0].parcelas) || det.parcelas || 1
 
   var old = document.getElementById('lmComandaModal')
   if (old) old.remove()
@@ -1253,7 +1259,8 @@ async function _lmTabTimeline(lead) {
     try { var salas = window.getRooms ? getRooms() : []; sala = salas[a.salaIdx]?.nome || '' } catch (e) {}
     var hora = (a.horaInicio || a.start_time || '') + (a.horaFim || a.end_time ? ' - ' + (a.horaFim || a.end_time) : '')
     var valor = a.valor || 0
-    var procs = a.procedimentosRealizados || []
+    var S2 = window.ApptSchema
+    var procs = S2 ? S2.getProcs(a) : (a.procedimentos || a.procedimentosRealizados || [])
     var procsStr = procs.length ? procs.map(function(p){return (p.qtd||1)+'x ' + (p.nome||p)}).join(', ') : ''
 
     // Evento de criacao (expandido como referencia)

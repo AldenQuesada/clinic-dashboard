@@ -774,7 +774,7 @@ function _tabResumo(a) {
   const origMap = { whatsapp:'WhatsApp', instagram:'Instagram', indicacao:'Indicação', site:'Site', direto:'Direto' }
   const tipoPMap= { novo:'Novo', retorno:'Retorno', vip:'VIP' }
 
-  const procs = a.procedimentosRealizados || []
+  const procs = window.ApptSchema ? window.ApptSchema.getProcs(a) : (a.procedimentos || a.procedimentosRealizados || [])
 
   return `
     <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#9CA3AF;letter-spacing:.06em;margin-bottom:6px">Consulta</div>
@@ -1725,6 +1725,44 @@ function closeFinalizeModal(force) {
 
 var _finalizingInProgress = false
 
+// Converte um pagamento "classic" (forma + pagDetalhes object) pra
+// uma linha do array pagamentos[] canônico.
+function _detalhesToPagamento(forma, valorTotal, valorPago, statusPag, det) {
+  if (!forma) return null
+  det = det || {}
+  var status = (statusPag === 'pago' || valorPago >= valorTotal) ? 'pago' : 'aberto'
+  var parcelas = 1
+  if (forma === 'credito' && det.tipo === 'parcelado') parcelas = parseInt(det.parcelas) || 1
+  else if (forma === 'parcelado') parcelas = parseInt(det.parcelas) || 1
+  else if (forma === 'boleto' && det.parcelas) parcelas = parseInt(det.parcelas) || 1
+  var valorParcela = parcelas > 0 ? Math.round((valorTotal / parcelas) * 100) / 100 : valorTotal
+
+  var pag = {
+    forma: forma,
+    valor: parseFloat(valorTotal) || 0,
+    status: status,
+    parcelas: parcelas,
+    valorParcela: valorParcela,
+    comentario: '',
+  }
+  if (forma === 'cortesia') pag.motivoCortesia = det.motivo || ''
+  if (forma === 'convenio') { pag.convenioNome = det.convenioNome || ''; pag.autorizacao = det.autorizacao || '' }
+  if (forma === 'link')     pag.linkUrl = det.linkUrl || ''
+  if (forma === 'dinheiro') { pag.recebido = parseFloat(det.recebido) || 0; pag.troco = parseFloat(det.troco) || 0 }
+  if (det.primeiroVencimento) pag.primeiroVencimento = det.primeiroVencimento
+
+  // Caso entrada_saldo: retorna 2 linhas seria mais correto, mas aqui
+  // mantemos 1 linha com metadata pra não quebrar o array. O render lê ambas.
+  if (forma === 'entrada_saldo') {
+    pag.entrada = parseFloat(det.entrada) || 0
+    pag.saldo = parseFloat(det.saldo) || (valorTotal - pag.entrada)
+    pag.formaEntrada = det.formaEntrada || 'pix'
+    pag.formaSaldo = det.formaSaldo || 'boleto'
+    pag.vencimentoSaldo = det.vencimentoSaldo || ''
+  }
+  return pag
+}
+
 function confirmFinalize(id) {
   // Idempotency guard: prevent double-click
   if (_finalizingInProgress) return
@@ -1851,7 +1889,43 @@ function confirmFinalize(id) {
   if (pago>0 && valor>0 && pago>=valor) spFinal = 'pago'
   else if (pago>0) spFinal = 'parcial'
 
-  const procs = _finalProcs.length ? _finalProcs : (appt.procedimentosRealizados||[])
+  // ═══ SCHEMA CANÔNICO ═══
+  // Merge procedimentos: preserva agendamento (cortesia, retorno, motivo)
+  // e marca os realizados com realizado=true + realizadoEm.
+  const S = window.ApptSchema
+  const procsAgendados = S ? S.getProcs(appt) : (appt.procedimentos || appt.procedimentosRealizados || [])
+  const procsRealizados = _finalProcs.length ? _finalProcs.map(function(p) {
+    return {
+      nome:   p.nome || '',
+      valor:  parseFloat(p.valor || p.preco || 0) || 0,
+      qtd:    p.qtd || 1,
+      realizado:   true,
+      realizadoEm: new Date().toISOString(),
+    }
+  }) : procsAgendados
+  const procsMerged = S ? S.mergeProcs(procsAgendados, procsRealizados) : procsRealizados
+
+  // Merge pagamentos: converte pagDetalhes pro array canônico e faz append
+  // Se o appt já tem pagamentos[] do agendamento, usa eles como base
+  var pagamentosCanon = (appt.pagamentos && appt.pagamentos.length)
+    ? appt.pagamentos.slice()
+    : (S ? S.getPagamentos(appt) : [])
+  // Adiciona o pagamento registrado na finalização
+  var pagNovo = _detalhesToPagamento(forma, valor, pago, spFinal, pagDetalhes)
+  if (pagNovo) {
+    // Se já tem 1 linha sem forma (placeholder), substitui; senão, faz append
+    if (pagamentosCanon.length === 1 && !pagamentosCanon[0].forma) {
+      pagamentosCanon[0] = pagNovo
+    } else {
+      pagamentosCanon.push(pagNovo)
+    }
+  }
+
+  // Agregados de cortesia (consumidos por relatórios Mira/cashflow)
+  var valorCortesia = S ? S.deriveValorCortesia(procsMerged) : 0
+  var qtdProcsCortesia = procsMerged.filter(function(p) { return p.cortesia }).length
+  var motivoCortesia = procsMerged.filter(function(p) { return p.cortesia && p.cortesiaMotivo })
+    .map(function(p) { return p.nome + ': ' + p.cortesiaMotivo }).join(' | ')
 
   const at = new Date().toISOString()
   const auditLog = [...(appt.historicoAlteracoes||[]), {
@@ -1868,15 +1942,24 @@ function confirmFinalize(id) {
     status:                 'finalizado',
     valor,
     valorPago:              pago,
-    formaPagamento:         forma,
-    statusPagamento:        spFinal,
-    pagamentoDetalhes:      pagDetalhes,
+    // Schema canônico (nomes únicos em todo o sistema):
+    procedimentos:          procsMerged,
+    pagamentos:             pagamentosCanon,
+    valorCortesia:          valorCortesia,
+    qtdProcsCortesia:       qtdProcsCortesia,
+    motivoCortesia:         motivoCortesia,
+    // Derivados legacy pra compat retroativa:
+    formaPagamento:         S ? S.deriveFormaPagamento(pagamentosCanon) : forma,
+    statusPagamento:        S ? S.deriveStatusPagamento(pagamentosCanon) : spFinal,
+    // Campos específicos da finalização:
     obsFinal:               obs,
-    procedimentosRealizados:procs,
     routingFinal:           route,
     finalizadoEm:           at,
     historicoStatus:        [...(appt.historicoStatus||[]),{status:'finalizado',at,by:'manual'}],
     historicoAlteracoes:    auditLog,
+    // Legacy: manter temporariamente pra não quebrar consumidores antigos
+    procedimentosRealizados: procsMerged,
+    pagamentoDetalhes:       pagDetalhes,
   }
   saveAppointments(appts)
 
