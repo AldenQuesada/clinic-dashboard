@@ -110,6 +110,25 @@
         + '</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
           + _periodSelect()
+          + '<div style="position:relative;display:inline-block">'
+            + '<button id="cfExportBtn" title="Exportar / DAS / PDF" style="display:flex;align-items:center;gap:6px;background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
+              + _icon('download', 14) + ' Exportar'
+            + '</button>'
+            + '<div id="cfExportMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden;z-index:50;min-width:200px">'
+              + '<button class="cf-export-opt" data-fmt="csv" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;padding:12px 16px;font-size:13px;color:#111827">'
+                + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+                + 'Exportar CSV'
+              + '</button>'
+              + '<button class="cf-export-opt" data-fmt="pdf" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;padding:12px 16px;font-size:13px;color:#111827;border-top:1px solid #f3f4f6">'
+                + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+                + 'Relatorio PDF mensal'
+              + '</button>'
+              + '<button class="cf-export-opt" data-fmt="das" style="all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;padding:12px 16px;font-size:13px;color:#111827;border-top:1px solid #f3f4f6">'
+                + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>'
+                + 'DAS estimado'
+              + '</button>'
+            + '</div>'
+          + '</div>'
           + '<button id="cfConfigBtn" title="Configurar taxas e comissoes" style="display:flex;align-items:center;gap:6px;background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">'
             + _icon('settings', 14) + ' Custos'
           + '</button>'
@@ -149,6 +168,32 @@
       }
     })
     document.getElementById('cfConfigBtn').addEventListener('click', _openConfigModal)
+
+    // Export menu (CSV / PDF / DAS)
+    var exportBtn = document.getElementById('cfExportBtn')
+    var exportMenu = document.getElementById('cfExportMenu')
+    if (exportBtn && exportMenu) {
+      exportBtn.addEventListener('click', function(e) {
+        e.stopPropagation()
+        exportMenu.style.display = exportMenu.style.display === 'block' ? 'none' : 'block'
+      })
+      document.addEventListener('click', function() { exportMenu.style.display = 'none' })
+      document.querySelectorAll('.cf-export-opt').forEach(function(b) {
+        b.addEventListener('click', async function(e) {
+          e.stopPropagation()
+          exportMenu.style.display = 'none'
+          var fmt = b.getAttribute('data-fmt')
+          var d = new Date(_state.startDate + 'T00:00:00')
+          var y = d.getFullYear(), m = d.getMonth() + 1
+          if (!window.CashflowExportUI) { alert('Modulo de export nao carregado'); return }
+          if (fmt === 'csv') await window.CashflowExportUI.exportCsv(y, m)
+          else if (fmt === 'pdf') await window.CashflowExportUI.exportPdfMensal(y, m)
+          else if (fmt === 'das') await window.CashflowExportUI.showDasModal(y, m)
+        })
+        b.addEventListener('mouseenter', function() { b.style.background = '#f9fafb' })
+        b.addEventListener('mouseleave', function() { b.style.background = '#fff' })
+      })
+    }
     var sel = document.getElementById('cfPeriodSelect')
     if (sel) sel.addEventListener('change', function(e) { _onPeriodChange(e.target.value) })
   }
@@ -1704,6 +1749,7 @@
     var icons = {
       'plus':              '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
       'upload':            '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+      'download':          '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
       'dollar-sign':       '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
       'arrow-down-circle': '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 12 16 16 12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>',
       'arrow-up-circle':   '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>',
