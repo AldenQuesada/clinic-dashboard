@@ -222,6 +222,9 @@
     <a href="#status">Status atual</a>
     <a href="#concepts">Conceitos</a>
 
+    <a class="section">Referência</a>
+    <a href="#commands">Guia de Comandos</a>
+
     <a class="section">Arquitetura</a>
     <a href="#architecture">Topologia</a>
     <a href="#ssot">SSOT</a>
@@ -287,7 +290,7 @@
   <div class="stat"><div class="value">8</div><div class="label">Tools Tier 2</div></div>
   <div class="stat"><div class="value">5</div><div class="label">Workflows n8n</div></div>
   <div class="stat"><div class="value">39</div><div class="label">Testes (0 falhas)</div></div>
-  <div class="stat"><div class="value">12</div><div class="label">Migrations</div></div>
+  <div class="stat"><div class="value">22</div><div class="label">Migrations</div></div>
   <div class="stat"><div class="value">4</div><div class="label">Cron proativas</div></div>
   <div class="stat"><div class="value">5/7</div><div class="label">WOW features</div></div>
 </div>
@@ -319,6 +322,86 @@
   <div class="k">Access Scope</div><div class="v"><code>own</code> / <code>team</code> / <code>full</code>. Determina se o profissional vê só seus dados, do time ou da clínica toda.</div>
   <div class="k">Two Worlds</div><div class="v">Números oficiais da clínica → Lara (atende pacientes). Números privados dos profissionais → Mira (consultas internas). Cross-talk impossível.</div>
 </div>
+
+</section>
+
+<!-- ============ COMMANDS ============ -->
+<section id="commands">
+<h2>Guia Rapido de Comandos</h2>
+
+<div class="callout info">
+  <div class="title info">Voz e texto</div>
+  Todos os comandos funcionam por texto E por voz (audio). A Mira transcreve automaticamente via Groq Whisper. Prefixos como "Mira", "Olha", "Entao" sao removidos automaticamente.
+</div>
+
+<div class="callout info">
+  <div class="title info">Formatos de data aceitos</div>
+  <code>hoje</code>, <code>amanha</code>, <code>segunda</code>/<code>terca</code>/.../<code>sexta</code>, <code>DD/MM</code>, <code>dia N</code>, <code>N horas</code>
+</div>
+
+<h3>Leitura — Agenda</h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Agenda de hoje</td><td><code>"tenho agenda hoje?"</code> / <code>"minha agenda"</code></td><td>Lista de consultas do dia</td></tr>
+  <tr><td>Agenda de amanha</td><td><code>"tenho amanha?"</code> / <code>"agenda amanha"</code></td><td>Lista de consultas de amanha</td></tr>
+  <tr><td>Agenda da semana</td><td><code>"minha semana"</code> / <code>"agenda da semana"</code></td><td>Lista semanal</td></tr>
+  <tr><td>Horarios livres</td><td><code>"tem horario livre?"</code> / <code>"esta livre?"</code></td><td>Horarios ocupados do dia</td></tr>
+  <tr><td>Proximo paciente</td><td><code>"qual meu proximo?"</code> / <code>"proximo paciente"</code></td><td>Perfil completo do proximo agendado</td></tr>
+</table>
+
+<h3>Leitura — Pacientes</h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Buscar paciente</td><td><code>"quem e Maria Silva?"</code> / <code>"paciente Gislaine"</code></td><td>Perfil completo (dados, historico, queixas, financeiro)</td></tr>
+  <tr><td>Saldo devedor</td><td><code>"quanto a Maria me deve?"</code></td><td>Saldo + ultimos atendimentos</td></tr>
+  <tr><td>Quem fez procedimento</td><td><code>"quem fez botox esse mes?"</code></td><td>Lista de pacientes por procedimento</td></tr>
+  <tr><td>Lista de devedores</td><td><code>"quem me deve?"</code> / <code>"devedores"</code> / <code>"quem me deve mais de 500?"</code></td><td>Top devedores com saldo</td></tr>
+</table>
+
+<h3>Leitura — Financeiro</h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Receita do periodo</td><td><code>"quanto faturei essa semana?"</code> / <code>"receita do mes"</code></td><td>Bruto, ticket medio, comparativo</td></tr>
+  <tr><td>Comissao</td><td><code>"minha comissao do mes"</code></td><td>Bruto gerado, comissao, percentual</td></tr>
+  <tr><td>Pagamentos recebidos</td><td><code>"quem me pagou essa semana?"</code></td><td>Lista de pagamentos</td></tr>
+  <tr><td>Quota de uso</td><td><code>"minha quota"</code></td><td>Queries usadas/restantes hoje</td></tr>
+</table>
+
+<h3>Leitura — Inteligencia</h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Resumo do dia</td><td><code>"como foi meu dia?"</code> / <code>"resumo do dia"</code></td><td>Consultas, receita, no-shows, pendentes</td></tr>
+  <tr><td>Uso da Mira</td><td><code>"uso da mira"</code> / <code>"quanto gastei de voz?"</code></td><td>Queries, voice, custo Whisper</td></tr>
+</table>
+
+<h3>Escrita — Agendamento <span class="badge accent">2-step: preview + "sim"</span></h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Marcar consulta</td><td><code>"marca a Maria amanha 14h"</code> / <code>"agendar Maria dia 17 14 horas"</code></td><td>Preview &rarr; confirma &rarr; agendamento + confirmacao WhatsApp ao paciente</td></tr>
+  <tr><td>Cancelar consulta</td><td><code>"cancela a Maria amanha"</code> / <code>"desmarca Maria 17/04"</code></td><td>Preview &rarr; confirma &rarr; cancela + avisa paciente + remove lembretes</td></tr>
+  <tr><td>Reagendar consulta</td><td><code>"reagenda a Maria pra terca 15h"</code> / <code>"remarca Maria pra dia 20 14h"</code></td><td>Preview &rarr; confirma &rarr; atualiza + regenera lembretes</td></tr>
+</table>
+
+<h3>Escrita — Cadastro <span class="badge accent">2-step</span></h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Cadastrar paciente novo (com agendamento)</td><td><code>"marca Zuleika amanha 14h"</code> (se nao existe) &rarr; Mira pede dados &rarr; <code>"Nome, CPF, Tel, Sexo"</code></td><td>Cadastra + agenda + envia confirmacao + anamnese</td></tr>
+  <tr><td>Cadastrar paciente avulso</td><td><code>"cadastrar novo paciente"</code> &rarr; Mira pede dados &rarr; <code>"Nome, CPF, Tel, Sexo"</code></td><td>Cadastra lead sem agendamento</td></tr>
+</table>
+
+<h3>Confirmacao</h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Confirmar acao pendente</td><td><code>"sim"</code> / <code>"ok"</code> / <code>"confirma"</code> / <code>"pode"</code></td><td>Executa a acao em stage</td></tr>
+  <tr><td>Cancelar acao pendente</td><td><code>"nao"</code> / <code>"cancela"</code> / <code>"deixa"</code></td><td>Descarta sem executar</td></tr>
+</table>
+
+<h3>Geral</h3>
+<table>
+  <tr><th>O que voce quer</th><th>O que falar/digitar</th><th>Exemplo de resposta</th></tr>
+  <tr><td>Ajuda</td><td><code>"/ajuda"</code> / <code>"help"</code> / <code>"menu"</code></td><td>Lista completa de comandos</td></tr>
+  <tr><td>Saudacao</td><td><code>"oi"</code> / <code>"bom dia"</code></td><td>Resposta de boas-vindas</td></tr>
+</table>
 
 </section>
 
@@ -1746,6 +1829,9 @@ SELECT wa_pro_evening_digest('5544998787673');
   <tr><td>20260672</td><td><code>mira_anamnese_new_patient.sql</code></td><td><b>New patient:</b> <code>_anamnese_link</code> helper + detecção <code>is_new_patient</code> (prior finalized count=0) + anexa bloco da ficha só na confirmação inicial do paciente novo</td></tr>
   <tr><td>20260673</td><td><code>mira_cancel_reschedule.sql</code></td><td><b>Bloco D #1 — Cancel + Reschedule:</b> <code>_parse_cancel_appointment</code> + <code>_parse_reschedule_appointment</code> + <code>_find_target_appointments</code> (scope-aware) + 2 novos stage RPCs + extensão de <code>wa_pro_confirm_pending</code> (guard de status, outbox cleanup, template lookup). Intents regex: cancelar, reagendar, marcar, sim/não curtos. Idempotente, disambiguado, preserva anamnese token</td></tr>
   <tr><td>20260674</td><td><code>mira_voice_transcripts.sql</code></td><td><b>Bloco D #2 — Voice → Task:</b> tabela <code>wa_pro_transcripts</code> com UNIQUE index em <code>message_id</code> (dedupe), RPC <code>wa_pro_process_voice</code> que loga + chama <code>handle_message</code>, view <code>wa_pro_voice_usage</code> pra monitorar custo. Workflow n8n estendido com branch áudio: Is Audio? → Cap Duration → Skip Transcribe? → Download Media (Evolution) → Transcribe Groq (<code>whisper-large-v3-turbo</code>) → Process Voice → Merge</td></tr>
+  <tr><td>20260675</td><td><code>mira_register_patient.sql</code></td><td><b>Cadastro de paciente novo:</b> <code>confirm_pending</code> com 5 branches + criacao de lead + agendamento opcional</td></tr>
+  <tr><td>20260676</td><td><code>mira_patient_profile.sql</code></td><td><b>Perfil completo:</b> <code>wa_pro_patient_profile</code> + permission check por area</td></tr>
+  <tr><td>20260677</td><td><code>mira_wow_features.sql</code></td><td><b>5 WOW features:</b> day_summary, next_patient, patients_by_procedure, debtors, mira_usage</td></tr>
 </table>
 
 </section>
@@ -1774,7 +1860,10 @@ SELECT wa_pro_evening_digest('5544998787673');
 ├── 20260671000000_mira_appointment_automations.sql
 ├── 20260672000000_mira_anamnese_new_patient.sql
 ├── 20260673000000_mira_cancel_reschedule.sql
-└── 20260674000000_mira_voice_transcripts.sql</pre>
+├── 20260674000000_mira_voice_transcripts.sql
+├── 20260675000000_mira_register_patient.sql
+├── 20260676000000_mira_patient_profile.sql
+└── 20260677000000_mira_wow_features.sql</pre>
 
 <h3>Frontend / Dashboard</h3>
 <pre>js/repositories/mira.repository.js   (166 lines)  — RPC wrappers
