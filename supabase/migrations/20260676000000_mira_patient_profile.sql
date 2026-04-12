@@ -16,8 +16,9 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_auth     jsonb := wa_pro_resolve_phone(p_phone);
+  v_auth     jsonb := wa_pro_authenticate(p_phone);
   v_clinic_id uuid;
+  v_perms    jsonb;
   v_lead     record;
   v_appts    jsonb;
   v_procs    text[];
@@ -28,7 +29,15 @@ BEGIN
   IF NOT (v_auth->>'ok')::boolean THEN
     RETURN jsonb_build_object('ok', false, 'error', 'unauthorized');
   END IF;
-  v_clinic_id := (v_auth->>'clinic_id')::uuid;
+
+  -- Checa permissao (precisa de 'pacientes')
+  v_perms := v_auth->'permissions';
+  IF v_perms IS NOT NULL AND (v_perms->>'pacientes')::boolean IS NOT DISTINCT FROM false THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'no_permission');
+  END IF;
+
+  -- authenticate nao retorna clinic_id, resolve via _sdr_clinic_id()
+  v_clinic_id := COALESCE(public._sdr_clinic_id(), '00000000-0000-0000-0000-000000000001'::uuid);
 
   -- Dados cadastrais
   SELECT * INTO v_lead FROM leads

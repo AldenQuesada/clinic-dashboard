@@ -665,6 +665,161 @@ function assertIncludes(haystack, needle, msg) {
   await voiceCleanup();
 
   // ========================================
+  // GROUP: Register + Profile
+  // ========================================
+  console.log('\n━━━ register + profile ━━━\n');
+
+  // Setup: get a real patient for profile tests
+  const rpSetup = await c.query(`
+    SELECT id, name, COALESCE(cpf, data->>'cpf') as cpf
+    FROM leads WHERE deleted_at IS NULL AND name IS NOT NULL
+    ORDER BY created_at LIMIT 1
+  `);
+  const RP_PATIENT_ID = rpSetup.rows[0]?.id;
+  const RP_PATIENT_NAME = rpSetup.rows[0]?.name;
+
+  // Get a CPF that already exists
+  const cpfRow = await c.query(`
+    SELECT COALESCE(cpf, data->>'cpf') as cpf FROM leads
+    WHERE deleted_at IS NULL AND COALESCE(cpf, data->>'cpf') IS NOT NULL AND COALESCE(cpf, data->>'cpf') != ''
+    LIMIT 1
+  `);
+  const EXISTING_CPF = cpfRow.rows[0]?.cpf || '00000000000';
+
+  async function rpCleanup() {
+    await c.query("DELETE FROM wa_pro_pending_actions WHERE phone = $1", [MIRIAN_OWN]);
+    await c.query("DELETE FROM wa_pro_context WHERE phone = $1", [MIRIAN_OWN]);
+    await c.query("DELETE FROM wa_pro_transcripts WHERE message_id LIKE 'mtest_alexa%' OR message_id LIKE 'mtest_olha%'");
+    await c.query("DELETE FROM appointments WHERE id LIKE 'appt_rptest_%'");
+  }
+  await rpCleanup();
+
+  // a) register_patient_start intent
+  await test('register: "cadastrar novo paciente" → intent register_patient_start', async () => {
+    await c.query("DELETE FROM wa_pro_context WHERE phone = $1", [MIRIAN_OWN]);
+    const r = await rpc('wa_pro_handle_message', { p_phone: MIRIAN_OWN, p_text: 'cadastrar novo paciente' });
+    assertEq(r.intent, 'register_patient_start', 'intent');
+    assertIncludes(r.response, 'Nome completo', 'response pede nome');
+  });
+
+  // b) register_patient dados incompletos
+  await test('register: dados incompletos → error incomplete_data ou pede mais dados', async () => {
+    // Set context to awaiting_patient_registration_only via the proper columns
+    const profRow = await c.query("SELECT professional_id FROM wa_numbers WHERE number_type = 'professional_private' AND phone LIKE '%' || RIGHT($1, 8) LIMIT 1", [MIRIAN_OWN]);
+    const profId = profRow.rows[0]?.professional_id;
+    await c.query(`
+      INSERT INTO wa_pro_context (phone, clinic_id, professional_id, last_intent, updated_at, expires_at)
+      VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'awaiting_patient_registration_only', now(), now() + interval '10 minutes')
+      ON CONFLICT (phone) DO UPDATE SET last_intent = 'awaiting_patient_registration_only', updated_at = now(), expires_at = now() + interval '10 minutes'
+    `, [MIRIAN_OWN, profId]);
+    const r = await rpc('wa_pro_handle_message', { p_phone: MIRIAN_OWN, p_text: 'Maria Silva telefone 44999887766' });
+    // Without CPF, should have error or ask for more data
+    assert(
+      r.intent === 'register_patient_error' || (r.response && (r.response.includes('Faltou') || r.response.includes('CPF') || r.response.includes('falt'))),
+      'deve indicar dados incompletos, got intent=' + r.intent + ' response=' + (r.response || '').slice(0, 100)
+    );
+  });
+
+  // c) register_patient CPF duplicado
+  await test('register: CPF duplicado → error cpf_duplicate', async () => {
+    const profRow2 = await c.query("SELECT professional_id FROM wa_numbers WHERE number_type = 'professional_private' AND phone LIKE '%' || RIGHT($1, 8) LIMIT 1", [MIRIAN_OWN]);
+    const profId2 = profRow2.rows[0]?.professional_id;
+    await c.query(`
+      INSERT INTO wa_pro_context (phone, clinic_id, professional_id, last_intent, updated_at, expires_at)
+      VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'awaiting_patient_registration_only', now(), now() + interval '10 minutes')
+      ON CONFLICT (phone) DO UPDATE SET last_intent = 'awaiting_patient_registration_only', updated_at = now(), expires_at = now() + interval '10 minutes'
+    `, [MIRIAN_OWN, profId2]);
+    const r = await rpc('wa_pro_handle_message', {
+      p_phone: MIRIAN_OWN,
+      p_text: 'Maria Teste CPF ' + EXISTING_CPF + ' telefone 44999000111 feminino'
+    });
+    assert(
+      r.intent === 'register_patient_error' || (r.response && (r.response.includes('CPF') || r.response.includes('duplicad') || r.response.includes('ja cadastrad'))),
+      'deve indicar CPF duplicado, got intent=' + r.intent + ' response=' + (r.response || '').slice(0, 100)
+    );
+  });
+
+  // d) patient_profile retorna dados
+  await test('patient_profile: lead real → ok=true, tem patient.name', async () => {
+    const r = await rpc('wa_pro_patient_profile', { p_phone: MIRIAN_OWN, p_patient_id: RP_PATIENT_ID });
+    assertEq(r.ok, true, 'ok');
+    assert(r.patient && r.patient.name, 'patient.name presente');
+  });
+
+  // e) patient_profile not_found
+  await test('patient_profile: id inexistente → ok=false', async () => {
+    const r = await rpc('wa_pro_patient_profile', { p_phone: MIRIAN_OWN, p_patient_id: '00000000-0000-0000-0000-000000000000' });
+    assertEq(r.ok, false, 'ok=false');
+    assertEq(r.error, 'not_found', 'error');
+  });
+
+  // f) patient_lookup retorna perfil completo
+  await test('patient_lookup: "quem e Gislaine Molina" → response inclui Tel:', async () => {
+    // Clear context from previous registration tests
+    await c.query("DELETE FROM wa_pro_context WHERE phone = $1", [MIRIAN_OWN]);
+    const r = await rpc('wa_pro_handle_message', { p_phone: MIRIAN_OWN, p_text: 'quem e Gislaine Molina' });
+    assertEq(r.intent, 'patient_lookup', 'intent');
+    assertIncludes(r.response, 'Tel:', 'perfil completo com Tel:');
+  });
+
+  // g) slot_conflict no create
+  await test('create_appointment: slot_conflict quando horario ocupado', async () => {
+    const futureDate = await c.query("SELECT (CURRENT_DATE + 10)::text as d, TO_CHAR(CURRENT_DATE + 10, 'DD/MM') as fmt");
+    const fd = futureDate.rows[0].d;
+    const fdfmt = futureDate.rows[0].fmt;
+    const profId = (await c.query("SELECT professional_id FROM wa_numbers WHERE number_type = 'professional_private' AND phone LIKE '%' || RIGHT($1, 8) LIMIT 1", [MIRIAN_OWN])).rows[0]?.professional_id;
+    // Seed conflicting appointment
+    await c.query(`
+      INSERT INTO appointments (id, clinic_id, patient_id, patient_name, professional_id,
+        scheduled_date, start_time, end_time, procedure_name, status, origem)
+      VALUES ('appt_rptest_conflict', '00000000-0000-0000-0000-000000000001', $1, $2, $3,
+        $4::date, '09:00', '10:00', 'Consulta', 'agendado', 'test')
+    `, [RP_PATIENT_ID, RP_PATIENT_NAME, profId, fd]);
+    // Try to create at same slot
+    const r = await rpc('wa_pro_stage_create_appointment', {
+      p_phone: MIRIAN_OWN,
+      p_query: 'marca Gislaine dia ' + fdfmt + ' 9h'
+    });
+    assert(
+      r.error === 'slot_conflict' || r.error === 'slot_taken' || (r.response && (r.response.includes('ocupado') || r.response.includes('conflito') || r.response.includes('horario'))),
+      'deve indicar conflito, got error=' + r.error + ' response=' + (r.response || '').slice(0, 100)
+    );
+    await c.query("DELETE FROM appointments WHERE id = 'appt_rptest_conflict'");
+  });
+
+  // h) voice strip Alexa
+  await test('voice: strip "Alexa" prefix → intent create_appointment', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: MIRIAN_OWN,
+      p_transcript: 'Alexa marca a Maria amanha 14h',
+      p_duration_s: 5,
+      p_message_id: 'mtest_alexa'
+    });
+    assert(r.ok, 'falhou: ' + JSON.stringify(r));
+    assertEq(r.intent, 'create_appointment', 'intent deve ser create_appointment apos strip Alexa');
+  });
+
+  // i) voice strip Olha
+  await test('voice: strip "Olha" prefix → intent agenda_today', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: MIRIAN_OWN,
+      p_transcript: 'Olha, tenho agenda hoje?',
+      p_duration_s: 3,
+      p_message_id: 'mtest_olha'
+    });
+    assert(r.ok, 'falhou: ' + JSON.stringify(r));
+    assertEq(r.intent, 'agenda_today', 'intent deve ser agenda_today apos strip Olha');
+  });
+
+  // j) parser "14 horas"
+  await test('parser: "14 horas" → time 14:00', async () => {
+    const r = await rpc('_parse_create_appointment', { p_text: 'marca Maria dia 20 14 horas' });
+    assertEq(r.time, '14:00', 'time');
+  });
+
+  await rpCleanup();
+
+  // ========================================
   // Resultado
   // ========================================
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━');

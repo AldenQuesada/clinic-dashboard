@@ -990,6 +990,14 @@ BEGIN
     WHEN v_text ~* '(quanto\s+(a\s+|o\s+)?[a-zA-Z]+\s+(me\s+)?deve|saldo\s+(do|da|de)\s+[a-zA-Z]+|devendo\s+[a-zA-Z]+)' THEN 'patient_balance'
     WHEN v_text ~* '(paciente|cliente|quem\s+(e|é|eh))\s+[a-zA-Z]+' THEN 'patient_lookup'
     WHEN v_text ~* '^\s*(minha\s+)?quota\s*$' THEN 'quota'
+
+    -- WOW features
+    WHEN v_text ~* '(como\s+foi|resumo|relatorio).*(dia|hoje)|meu\s+dia' THEN 'day_summary'
+    WHEN v_text ~* '(proximo|próximo)\s+(paciente|consulta|atendimento)|quem\s+.*(proximo|próximo)' THEN 'next_patient'
+    WHEN v_text ~* '(quem\s+fez|pacientes?\s+de|fizeram)\s+' THEN 'patients_by_procedure'
+    WHEN v_text ~* '(devedores|quem\s+me\s+deve[^n])' THEN 'debtors'
+    WHEN v_text ~* '(uso\s+da\s+mira|consumo|quanto\s+gastei\s+de\s+voz|dashboard\s+mira)' THEN 'mira_usage'
+
     ELSE 'unknown'
   END;
 
@@ -1002,6 +1010,7 @@ BEGIN
     WHEN 'create_appointment'     THEN 'agenda'
     WHEN 'cancel_appointment'     THEN 'agenda'
     WHEN 'reschedule_appointment' THEN 'agenda'
+    WHEN 'register_patient_start'  THEN 'pacientes'
     WHEN 'patient_lookup'         THEN 'pacientes'
     WHEN 'patient_balance'        THEN 'pacientes'
     WHEN 'finance_revenue'        THEN 'financeiro'
@@ -1131,7 +1140,14 @@ BEGIN
            E'*Escrita (2-step com confirmacao):*\n' ||
            E'• "marca a Maria amanha 14h"\n' ||
            E'• "cancela a Maria amanha"\n' ||
-           E'• "reagenda a Maria pra terca 15h"';
+           E'• "reagenda a Maria pra terca 15h"\n' ||
+           E'• "cadastrar novo paciente"\n\n' ||
+           E'*Inteligencia:*\n' ||
+           E'• "como foi meu dia?"\n' ||
+           E'• "qual meu proximo paciente?"\n' ||
+           E'• "quem fez botox esse mes?"\n' ||
+           E'• "quem me deve mais de 500?"\n' ||
+           E'• "uso da mira"';
   END IF;
 
   IF p_intent = 'greeting' THEN
@@ -1186,6 +1202,48 @@ BEGIN
   IF p_intent = 'cancel_pending' THEN
     v_data := wa_pro_cancel_pending(p_phone);
     RETURN COALESCE(v_data->>'response', '❌ Cancelado.');
+  END IF;
+
+  -- ═══════ WOW FEATURES ═══════
+  IF p_intent = 'day_summary' THEN
+    v_data := wa_pro_day_summary(p_phone);
+    RETURN _fmt_day_summary(v_data);
+  END IF;
+
+  IF p_intent = 'next_patient' THEN
+    v_data := wa_pro_next_patient(p_phone);
+    RETURN _fmt_next_patient(v_data);
+  END IF;
+
+  IF p_intent = 'patients_by_procedure' THEN
+    -- Extrai nome do procedimento do texto
+    DECLARE v_proc_q text;
+    BEGIN
+      v_proc_q := TRIM(REGEXP_REPLACE(p_text,
+        '[[:<:]](quem|fez|fizeram|pacientes?|de|do|da|esse|esta|este|nesse|neste|nesta|mes|mês|semana|hoje|faz)[[:>:]]',
+        '', 'gi'));
+      v_proc_q := TRIM(REGEXP_REPLACE(v_proc_q, '[?!.]+', '', 'g'));
+      IF LENGTH(v_proc_q) < 2 THEN v_proc_q := 'consulta'; END IF;
+      v_data := wa_pro_patients_by_procedure(p_phone, v_proc_q);
+      RETURN _fmt_patients_by_procedure(v_data);
+    END;
+  END IF;
+
+  IF p_intent = 'debtors' THEN
+    -- Extrai valor minimo se mencionado ("quem me deve mais de 500")
+    DECLARE v_min numeric := 0;
+    BEGIN
+      IF p_text ~ '([0-9]+)' THEN
+        v_min := (REGEXP_MATCH(p_text, '([0-9]+)'))[1]::numeric;
+      END IF;
+      v_data := wa_pro_debtors(p_phone, v_min);
+      RETURN _fmt_debtors(v_data);
+    END;
+  END IF;
+
+  IF p_intent = 'mira_usage' THEN
+    v_data := wa_pro_mira_usage(p_phone);
+    RETURN _fmt_mira_usage(v_data);
   END IF;
 
   IF p_intent = 'unknown' THEN
