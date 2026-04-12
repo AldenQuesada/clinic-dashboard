@@ -247,3 +247,117 @@ GRANT EXECUTE ON FUNCTION public.wa_pro_confirm_pending(text) TO authenticated, 
 
 COMMENT ON FUNCTION public.wa_pro_fire_appointment_automations(text)
   IS 'Enfileira mensagens WhatsApp do outbox pros triggers de agenda (on_status + d_before + d_zero + min_before)';
+-- Remove min_before da lista que Mira dispara pra pacientes.
+-- User explicitou as 3 mensagens corretas:
+--   1. Confirmacao (on_status agendado)
+--   2. Dia anterior lembrete (d_before)
+--   3. Dia da consulta chegou (d_zero)
+
+CREATE OR REPLACE FUNCTION public.wa_pro_fire_appointment_automations(p_appt_id text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_appt       record;
+  v_lead_id    text;
+  v_patient_phone text;
+  v_rule       record;
+  v_content    text;
+  v_scheduled  timestamptz;
+  v_appt_dt    timestamptz;
+  v_count      int := 0;
+  v_results    jsonb := '[]'::jsonb;
+BEGIN
+  SELECT * INTO v_appt FROM public.appointments WHERE id = p_appt_id AND deleted_at IS NULL;
+  IF v_appt.id IS NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'appointment_not_found');
+  END IF;
+
+  IF v_appt.patient_id IS NOT NULL THEN
+    SELECT phone INTO v_patient_phone FROM public.leads
+    WHERE id = v_appt.patient_id::text AND deleted_at IS NULL;
+    v_lead_id := v_appt.patient_id::text;
+  END IF;
+
+  IF v_patient_phone IS NULL OR v_patient_phone = '' THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'patient_phone_not_found', 'appt_id', p_appt_id);
+  END IF;
+
+  v_patient_phone := REGEXP_REPLACE(v_patient_phone, '[^0-9]', '', 'g');
+  v_appt_dt := (v_appt.scheduled_date::text || ' ' || v_appt.start_time::text)::timestamp
+               AT TIME ZONE 'America/Sao_Paulo';
+
+  -- ═══════════════════════════════════════
+  -- 1. on_status 'agendado' → Confirmacao (NOW)
+  -- ═══════════════════════════════════════
+  FOR v_rule IN
+    SELECT * FROM public.wa_agenda_automations
+    WHERE clinic_id = v_appt.clinic_id
+      AND is_active = true
+      AND trigger_type = 'on_status'
+      AND recipient_type = 'patient'
+      AND channel = 'whatsapp'
+      AND trigger_config->>'status' = v_appt.status
+  LOOP
+    v_content := _render_appt_template(v_rule.content_template, v_appt);
+    INSERT INTO public.wa_outbox (
+      clinic_id, lead_id, phone, content, content_type,
+      scheduled_at, business_hours, priority, max_attempts, status, appt_ref
+    ) VALUES (
+      v_appt.clinic_id, v_lead_id, v_patient_phone, v_content, 'text',
+      now(), true, 1, 3, 'queued', p_appt_id
+    );
+    v_count := v_count + 1;
+    v_results := v_results || jsonb_build_object('rule', v_rule.name, 'scheduled_at', now());
+  END LOOP;
+
+  -- ═══════════════════════════════════════
+  -- 2. d_before (Confirmacao D-1) + d_zero (Chegou o Dia)
+  -- NAO inclui min_before — esse e alerta interno, nao vai pro paciente via Mira
+  -- ═══════════════════════════════════════
+  FOR v_rule IN
+    SELECT * FROM public.wa_agenda_automations
+    WHERE clinic_id = v_appt.clinic_id
+      AND is_active = true
+      AND trigger_type IN ('d_before', 'd_zero')
+      AND recipient_type = 'patient'
+      AND channel = 'whatsapp'
+  LOOP
+    IF v_rule.trigger_type = 'd_before' THEN
+      v_scheduled := (v_appt_dt::date - COALESCE((v_rule.trigger_config->>'days')::int, 1))::date
+                     + (COALESCE((v_rule.trigger_config->>'hour')::int, 9) || ' hours')::interval
+                     + (COALESCE((v_rule.trigger_config->>'minute')::int, 0) || ' minutes')::interval;
+    ELSIF v_rule.trigger_type = 'd_zero' THEN
+      v_scheduled := v_appt_dt::date
+                     + (COALESCE((v_rule.trigger_config->>'hour')::int, 8) || ' hours')::interval
+                     + (COALESCE((v_rule.trigger_config->>'minute')::int, 0) || ' minutes')::interval;
+    END IF;
+
+    -- Skip se ja passou
+    IF v_scheduled < now() THEN CONTINUE; END IF;
+
+    v_content := _render_appt_template(v_rule.content_template, v_appt);
+    INSERT INTO public.wa_outbox (
+      clinic_id, lead_id, phone, content, content_type,
+      scheduled_at, business_hours, priority, max_attempts, status, appt_ref
+    ) VALUES (
+      v_appt.clinic_id, v_lead_id, v_patient_phone, v_content, 'text',
+      v_scheduled, true, 2, 3, 'queued', p_appt_id
+    );
+    v_count := v_count + 1;
+    v_results := v_results || jsonb_build_object('rule', v_rule.name, 'scheduled_at', v_scheduled);
+  END LOOP;
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'appt_id', p_appt_id,
+    'patient_phone', v_patient_phone,
+    'queued_count', v_count,
+    'rules', v_results
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.wa_pro_fire_appointment_automations(text) TO authenticated, anon;
