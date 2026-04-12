@@ -779,16 +779,28 @@
     }
 
     /* ── Grade de Imagens ─────────────────────────────────── */
-    .img-grid-wrap { display: flex; flex-direction: column; gap: 6px; }
-    .img-grid-gen-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 2px; }
-    .img-grid-gen-desc  { font-size: 13px; color: #6B7280; margin-bottom: 10px; line-height: 1.5; }
-    .img-grid-row  { display: flex; gap: 12px; }
+    /* Imagens bleed-to-edge: margem negativa cancela o padding
+       do session-card (16px) pra ocupar canto-a-canto do card visual */
+    .img-grid-wrap {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-left: -16px; margin-right: -16px;
+    }
+    .img-grid-gen-title {
+      font-size: 15px; font-weight: 700; color: #111827;
+      margin-bottom: 2px; padding: 0 16px;
+    }
+    .img-grid-gen-desc  {
+      font-size: 13px; color: #6B7280; margin-bottom: 10px;
+      line-height: 1.5; padding: 0 16px;
+    }
+    .img-grid-row  { display: flex; gap: 4px; }
 
     .img-grid-card {
       flex: 1; min-width: 0;
       display: flex; flex-direction: column; align-items: center;
       border-radius: 12px; border: 2px solid transparent;
-      padding: 8px; background: #FAFAFA;
+      padding: 0; background: #FAFAFA;
+      overflow: hidden;
       transition: border-color .15s, background .15s;
     }
     .img-grid-card[onclick] { cursor: pointer; }
@@ -796,23 +808,29 @@
     .img-grid-card.ig-selected { border-color: #7C3AED !important; background: #F5F3FF !important; }
     .img-grid-card--spacer { background: transparent; border-color: transparent; pointer-events: none; }
 
-    .img-grid-img-wrap { width: 100%; border-radius: 8px; overflow: hidden; background: #F3F4F6; }
+    .img-grid-img-wrap {
+      width: 100%;
+      overflow: hidden;
+      background: #F3F4F6;
+    }
     .img-grid-img {
-      width: 100%; height: auto; max-height: 420px;
-      object-fit: contain; display: block;
+      width: 100%; height: auto; max-height: 640px;
+      min-height: 240px;
+      object-fit: cover;
+      display: block;
     }
     .img-grid-placeholder {
-      width: 100%; height: 120px;
+      width: 100%; height: 240px;
       display: flex; align-items: center; justify-content: center; color: #9CA3AF;
       font-size: 12px;
     }
     .img-grid-title {
-      font-size: 13px; font-weight: 600; color: #111827;
-      margin-top: 8px; text-align: center;
+      font-size: 14px; font-weight: 600; color: #111827;
+      padding: 10px 12px 4px; text-align: center;
     }
     .img-grid-radio {
       display: flex; align-items: center; gap: 6px;
-      margin-top: 8px; padding: 5px 10px;
+      margin: 0 12px 10px; padding: 5px 10px;
       border-radius: 20px; background: #F3F4F6;
     }
     .ig-radio-circle {
