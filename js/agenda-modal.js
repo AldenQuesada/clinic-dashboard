@@ -261,14 +261,20 @@
   }
 
   // ── apptTipoChange (legacy compat) ──────────────────────────
+  function _toggleSection(el, show) {
+    if (!el) return
+    if (!el.classList.contains('appt-section-anim')) el.classList.add('appt-section-anim')
+    if (show) { el.classList.remove('hidden'); el.classList.add('visible'); el.style.display = '' }
+    else { el.classList.add('hidden'); el.classList.remove('visible') }
+  }
   function apptTipoChange() {
     var tipo = document.getElementById('appt_tipo') && document.getElementById('appt_tipo').value
     var avalRow = document.getElementById('apptTipoAvalRow')
     var pagaRow = document.getElementById('apptPagaRow')
     var procRow = document.getElementById('apptProcRow')
-    if (avalRow) avalRow.style.display = (tipo === 'avaliacao') ? '' : 'none'
-    if (pagaRow) pagaRow.style.display = 'none'
-    if (procRow) procRow.style.display = (tipo === 'procedimento') ? '' : 'none'
+    _toggleSection(avalRow, tipo === 'avaliacao')
+    _toggleSection(pagaRow, false)
+    _toggleSection(procRow, tipo === 'procedimento')
   }
 
   // ── Estado consolidado do modal de agendamento ───────────────
@@ -1181,6 +1187,16 @@
     }
   }
 
+  // ── Fuzzy search helpers ────────────────────────────────────
+  function _normalize(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') }
+  function _fuzzyMatch(query, target) {
+    var qi = 0
+    for (var ti = 0; ti < target.length && qi < query.length; ti++) {
+      if (target[ti] === query[qi]) qi++
+    }
+    return qi === query.length
+  }
+
   // ── apptSearchPatient (debounced 300ms) ──────────────────────
   var _searchTimer = null
   var _leadsCache = null
@@ -1203,7 +1219,20 @@
       setTimeout(function() { _leadsCache = null }, 30000)
     }
     const leads = _leadsCache
-    const matches = leads.filter(l => (l.nome || l.name || '').toLowerCase().includes(q.toLowerCase())).slice(0, 8)
+    const ql = _normalize(q)
+    const matches = leads
+      .map(function (l) {
+        var nome = _normalize(l.nome || l.name || '')
+        var phone = l.phone || l.whatsapp || ''
+        if (nome.includes(ql)) return { l: l, score: 0 }
+        if (phone.includes(q)) return { l: l, score: 1 }
+        if (_fuzzyMatch(ql, nome)) return { l: l, score: 2 }
+        return null
+      })
+      .filter(Boolean)
+      .sort(function (a, b) { return a.score - b.score })
+      .map(function (m) { return m.l })
+      .slice(0, 8)
 
     if (!matches.length) {
       drop.style.display = 'none'

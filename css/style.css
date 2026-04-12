@@ -2979,6 +2979,23 @@ strong {
 .sk-w40 { width: 40%; }
 .sk-w30 { width: 30%; }
 
+/* ── Modal section transitions ────────────────────────────── */
+.appt-section-anim {
+  transition: opacity 0.25s ease, max-height 0.3s ease, margin 0.25s ease;
+  overflow: hidden;
+}
+.appt-section-anim.hidden {
+  opacity: 0;
+  max-height: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  pointer-events: none;
+}
+.appt-section-anim.visible {
+  opacity: 1;
+  max-height: 800px;
+}
+
 /* ── Especialista na timeline ─────────────────────────────── */
 .ao-timeline-specialist {
   font-size: 11px;
