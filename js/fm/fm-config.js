@@ -41,11 +41,25 @@
   FM._apiAvailable = null  // null = unknown, true/false after health check
 
   // ── WhatsApp message captions — pulled from Banco de Mensagens ──
+  // ── Clinic name (dynamic from ClinicContext) ────────────────
+  FM._clinicName = function () {
+    if (window.ClinicContext) return window.ClinicContext.getSetting('clinic_name', 'Clinica Mirian de Paula')
+    return 'Clinica Mirian de Paula'
+  }
+  FM._profName = function () {
+    return localStorage.getItem('fm_professional_name')
+      || (window.ClinicContext ? window.ClinicContext.getSetting('professional_name', 'Dra. Mirian de Paula') : 'Dra. Mirian de Paula')
+  }
+  FM._tagline = function () {
+    if (window.ClinicContext) return window.ClinicContext.getSetting('tagline', 'Harmonia que revela. Precisao que dura.')
+    return 'Harmonia que revela. Precisao que dura.'
+  }
+
   FM._getWACaption = function (type) {
     try {
       var msgs = JSON.parse(localStorage.getItem('clinicai_wa_messages') || '[]')
       var msg = msgs.find(function (m) { return m.type === type && m.active })
-      if (msg) return msg.message.replace(/\{\{clinica\}\}/g, 'Clinica Mirian de Paula')
+      if (msg) return msg.message.replace(/\{\{clinica\}\}/g, FM._clinicName())
     } catch (e) {}
     return null
   }

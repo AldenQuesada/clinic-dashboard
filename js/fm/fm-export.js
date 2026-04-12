@@ -121,7 +121,7 @@
     // ─── HEADER ───
     html += '<div class="fm-header" style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
       '<div>' +
-        '<div class="fm-clinic-name" style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">Clinica Mirian de Paula</div>' +
+        '<div class="fm-clinic-name" style="font-family:Cormorant Garamond,serif;font-size:32px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em">' + FM._clinicName() + '</div>' +
         '<div style="font-family:Cormorant Garamond,serif;font-size:13px;font-weight:300;font-style:italic;color:rgba(200,169,126,0.55);margin-top:2px;letter-spacing:0.06em">Harmonia que revela. Precisão que dura.</div>' +
       '</div>' +
       '<div style="text-align:right">' +
@@ -754,7 +754,7 @@
       '</div>' +
     '</div>'
 
-    var profName = localStorage.getItem('fm_professional_name') || 'Dra. Mirian de Paula'
+    var profName = FM._profName()
     var profCRM = localStorage.getItem('fm_professional_crm') || 'CRM/SP 000000'
     var reportId = 'HF-' + Date.now().toString(36).toUpperCase()
 
@@ -966,7 +966,7 @@
       var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head>' +
         '<meta charset="UTF-8">' +
         '<meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-        '<meta property="og:title" content="Análise Facial \u2014 Clinica Mirian de Paula">' +
+        '<meta property="og:title" content="Análise Facial \u2014 ' + FM._clinicName() + '">' +
         '<meta property="og:description" content="Proposta personalizada de harmonização facial para ' + FM._esc(patientName) + '">' +
         '<meta property="og:type" content="website">' +
         '<link rel="preconnect" href="https://fonts.googleapis.com">' +
@@ -1220,7 +1220,7 @@
       ctx.font = '300 14px serif'
       ctx.fillStyle = '#C8A97E'
       ctx.textAlign = 'center'
-      ctx.fillText('Clinica Mirian de Paula', totalW / 2, 26)
+      ctx.fillText('' + FM._clinicName() + '', totalW / 2, 26)
 
       // ANTES photo
       ctx.drawImage(beforeImg, 0, headerH, imgW, imgH)
@@ -1303,7 +1303,7 @@
               number: phone,
               mediatype: 'document',
               mimetype: 'text/html',
-              caption: (FM._getWACaption && FM._getWACaption('report_html') || '').replace(/\{\{nome\}\}/g, patientName) || 'Plano de Harmonia Facial personalizado para ' + patientName + '\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
+              caption: (FM._getWACaption && FM._getWACaption('report_html') || '').replace(/\{\{nome\}\}/g, patientName) || 'Plano de Harmonia Facial personalizado para ' + patientName + '\n\n' + FM._clinicName() + '\nHarmonia que revela. Precisão que dura.',
               media: base64,
               fileName: 'proposta-facial-' + safeName + '.html',
             }),
@@ -1344,7 +1344,7 @@
             number: phone,
             mediatype: 'image',
             mimetype: 'image/jpeg',
-            caption: (FM._getWACaption && FM._getWACaption('report_imagem')) || 'Resultado do seu Protocolo de Harmonia Facial\n\nClinica Mirian de Paula\nHarmonia que revela. Precisão que dura.',
+            caption: (FM._getWACaption && FM._getWACaption('report_imagem')) || 'Resultado do seu Protocolo de Harmonia Facial\n\n' + FM._clinicName() + '\nHarmonia que revela. Precisão que dura.',
             media: imgBase64,
             fileName: 'resultado-' + safeName + '.jpg',
           }),
@@ -1437,7 +1437,7 @@
 
       var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head>' +
         '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
-        '<meta property="og:title" content="Análise Facial, Clinica Mirian de Paula">' +
+        '<meta property="og:title" content="Análise Facial, ' + FM._clinicName() + '">' +
         '<meta property="og:description" content="Proposta personalizada para ' + FM._esc(patientName) + '">' +
         '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">' +
         '<title>Análise Facial, ' + FM._esc(patientName) + '</title>' +

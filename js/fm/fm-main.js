@@ -88,6 +88,7 @@
     _showNoteEditor: FM._showNoteEditor,
     _saveNote: FM._saveNote,
     _shareReport: FM._shareReport,
+    _restoreFromHistory: FM._restoreFromHistory,
     _showTemplates: FM._showTemplates,
     _applyTemplate: FM._applyTemplate,
     _autoDetectZones: FM._autoDetectZones,

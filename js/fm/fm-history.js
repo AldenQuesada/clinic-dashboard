@@ -54,38 +54,43 @@
     if (!FM._lead) { FM._showToast('Selecione um paciente primeiro.', 'warn'); return }
     var leadId = FM._lead.id || FM._lead.lead_id
 
-    // Load from Supabase
+    // Try Supabase first, fallback to localStorage
     var sb = window._sbShared
-    if (!sb) { FM._showToast('Supabase nao disponivel.', 'warn'); return }
 
     FM._showLoading('Carregando historico...')
+
+    // Collect from both sources
+    var supabaseSession = null
+    var localSessions = []
+
+    try {
+      var key = 'fm_sessions_' + leadId
+      localSessions = JSON.parse(localStorage.getItem(key) || '[]')
+    } catch (e) { /* ignore */ }
+
+    if (!sb) {
+      FM._hideLoading()
+      if (localSessions.length > 0) {
+        _renderHistoryList(localSessions, null)
+      } else {
+        FM._showToast('Nenhum historico encontrado.', 'warn')
+      }
+      return
+    }
+
     sb.rpc('get_facial_session', { p_lead_id: leadId })
       .then(function (res) {
         FM._hideLoading()
-        if (res.data && res.data.found) {
-          _renderHistory(res.data)
-        } else {
-          FM._showToast('Nenhuma sessao anterior encontrada.', 'warn')
-        }
+        supabaseSession = (res.data && res.data.found) ? res.data : null
+        _renderHistoryList(localSessions, supabaseSession)
       })
       .catch(function () {
         FM._hideLoading()
-        // Try localStorage
-        var key = 'fm_sessions_' + leadId
-        try {
-          var sessions = JSON.parse(localStorage.getItem(key) || '[]')
-          if (sessions.length > 0) {
-            _renderHistory({ session_data: sessions[sessions.length - 1] })
-          } else {
-            FM._showToast('Nenhum historico encontrado.', 'warn')
-          }
-        } catch (e) { FM._showToast('Erro ao carregar historico.', 'error') }
+        _renderHistoryList(localSessions, null)
       })
   }
 
-  function _renderHistory(data) {
-    var session = data.session_data || {}
-    var gpt = data.gpt_analysis || null
+  function _renderHistoryList(localSessions, supabaseData) {
     var overlay = document.createElement('div')
     overlay.className = 'fm-export-overlay'
     overlay.id = 'fmHistoryOverlay'
@@ -98,33 +103,99 @@
       '</div>' +
       '<div style="padding:16px 20px">'
 
-    if (gpt) {
-      html += '<div style="margin-bottom:16px;padding:12px;background:rgba(200,169,126,0.08);border-radius:8px;border:1px solid rgba(200,169,126,0.15)">' +
-        '<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E;margin-bottom:6px">Analise IA</div>' +
-        '<div style="font-size:12px;color:rgba(245,240,232,0.7);line-height:1.6">' + FM._esc(gpt.overall_assessment || '') + '</div>' +
-      '</div>'
+    // Supabase session (cloud)
+    if (supabaseData) {
+      var sd = supabaseData.session_data || {}
+      var gpt = supabaseData.gpt_analysis || null
+      html += '<div style="margin-bottom:16px;padding:14px;background:rgba(200,169,126,0.06);border-radius:10px;border:1px solid rgba(200,169,126,0.15)">'
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      html += '<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E">Sessao Salva (Nuvem)</div>'
+      html += '<button onclick="FaceMapping._restoreFromHistory(\'supabase\')" style="padding:5px 12px;border:1px solid #C8A97E;border-radius:6px;background:none;color:#C8A97E;font-size:11px;cursor:pointer;font-weight:600">Restaurar</button>'
+      html += '</div>'
+      if (gpt) {
+        html += '<div style="font-size:12px;color:rgba(245,240,232,0.7);line-height:1.5;margin-bottom:8px">' + FM._esc(gpt.overall_assessment || '') + '</div>'
+      }
+      html += _renderSessionAnns(sd)
+      if (sd.session_date) html += '<div style="font-size:11px;color:rgba(245,240,232,0.3);margin-top:8px">Data: ' + sd.session_date + '</div>'
+      html += '</div>'
     }
 
-    var anns = session.annotations || []
-    if (anns.length > 0) {
-      html += '<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E;margin-bottom:8px">' + anns.length + ' Zonas Marcadas</div>'
-      anns.forEach(function (a) {
-        var z = FM.ZONES.find(function (zz) { return zz.id === a.zone })
-        html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
-          '<span style="width:10px;height:10px;border-radius:50%;background:' + (z ? z.color : '#999') + ';flex-shrink:0"></span>' +
-          '<span style="font-size:12px;color:#F5F0E8;font-weight:600;flex:1">' + (z ? z.label : a.zone) + '</span>' +
-          '<span style="font-size:11px;color:#C8A97E">' + a.ml + (z ? z.unit : 'mL') + '</span>' +
-        '</div>'
+    // Local sessions
+    if (localSessions.length > 0) {
+      html += '<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#C8A97E;margin-bottom:10px">Sessoes Locais (' + localSessions.length + ')</div>'
+      // Show most recent 5
+      var recent = localSessions.slice(-5).reverse()
+      recent.forEach(function (s, i) {
+        var idx = localSessions.length - 1 - i
+        html += '<div style="margin-bottom:10px;padding:12px;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">'
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
+        html += '<span style="font-size:12px;color:#F5F0E8;font-weight:600">' + (s.session_date || 'Sem data') + '</span>'
+        html += '<button onclick="FaceMapping._restoreFromHistory(\'local\',' + idx + ')" style="padding:4px 10px;border:1px solid rgba(200,169,126,0.3);border-radius:5px;background:none;color:#C8A97E;font-size:10px;cursor:pointer">Restaurar</button>'
+        html += '</div>'
+        html += _renderSessionAnns(s)
+        html += '</div>'
       })
     }
 
-    if (session.session_date) {
-      html += '<div style="margin-top:16px;font-size:11px;color:rgba(245,240,232,0.3)">Sessao: ' + session.session_date + '</div>'
+    if (!supabaseData && localSessions.length === 0) {
+      html += '<div style="text-align:center;padding:24px;color:rgba(245,240,232,0.3);font-size:13px">Nenhuma sessao anterior encontrada.</div>'
     }
 
     html += '</div></div>'
     overlay.innerHTML = html
     document.body.appendChild(overlay)
+
+    // Cache for restore
+    FM._historyCache = { local: localSessions, supabase: supabaseData }
+  }
+
+  function _renderSessionAnns(session) {
+    var anns = session.annotations || []
+    if (anns.length === 0) return '<div style="font-size:11px;color:rgba(245,240,232,0.3)">Sem marcacoes</div>'
+    var html = ''
+    anns.forEach(function (a) {
+      var z = FM.ZONES.find(function (zz) { return zz.id === a.zone })
+      html += '<div style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;margin:2px;background:rgba(255,255,255,0.05);border-radius:4px;font-size:11px">' +
+        '<span style="width:7px;height:7px;border-radius:50%;background:' + (z ? z.color : '#999') + '"></span>' +
+        '<span style="color:#F5F0E8">' + (z ? z.label : a.zone) + '</span>' +
+        '<span style="color:#C8A97E">' + (a.ml || '') + (z ? z.unit : 'mL') + '</span>' +
+      '</div>'
+    })
+    return html
+  }
+
+  // ── Restore from history ──────────────────────────────────
+  FM._restoreFromHistory = function (source, index) {
+    if (!FM._historyCache) return
+    var session = null
+
+    if (source === 'supabase' && FM._historyCache.supabase) {
+      session = FM._historyCache.supabase.session_data
+    } else if (source === 'local' && FM._historyCache.local[index]) {
+      session = FM._historyCache.local[index]
+    }
+
+    if (!session) { FM._showToast('Sessao nao encontrada.', 'error'); return }
+    if (!confirm('Restaurar esta sessao? As marcacoes atuais serao substituidas.')) return
+
+    // Restore annotations
+    FM._annotations = session.annotations || []
+    FM._nextId = FM._annotations.reduce(function (max, a) { return Math.max(max, a.id || 0) }, 0) + 1
+
+    // Restore angle state if present
+    if (session.stateByAngle) {
+      Object.keys(session.stateByAngle).forEach(function (ang) {
+        FM._angleStore[ang] = session.stateByAngle[ang]
+      })
+    }
+
+    FM._autoSave()
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+
+    var overlay = document.getElementById('fmHistoryOverlay')
+    if (overlay) overlay.remove()
+    FM._showToast('Sessao restaurada com sucesso', 'success')
   }
 
   // ── Share via Link ────────────────────────────────────────

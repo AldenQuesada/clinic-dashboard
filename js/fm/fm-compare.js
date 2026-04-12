@@ -152,7 +152,7 @@
         // Header
         '<div class="fmc-header">' +
           '<div class="fmc-brand">' +
-            '<span class="fmc-brand-name">Clinica Mirian de Paula</span>' +
+            '<span class="fmc-brand-name">' + FM._clinicName() + '</span>' +
             '<span class="fmc-brand-sub">Resultado do Tratamento</span>' +
           '</div>' +
           '<div class="fmc-modes">' +
@@ -284,7 +284,7 @@
           '</div>' +
 
           // Watermark
-          '<span class="fmc-watermark">Clinica Mirian de Paula</span>' +
+          '<span class="fmc-watermark">' + FM._clinicName() + '</span>' +
 
           // Zoom indicator
           '<span class="fmc-zoom-indicator" id="fmcZoomIndicator" style="display:none">1.0x</span>' +
@@ -861,7 +861,7 @@
     ctx.font = '300 26px Cormorant Garamond, serif'
     ctx.fillStyle = '#F5F0E8'
     ctx.textAlign = 'center'
-    ctx.fillText('Clinica Mirian de Paula', size / 2, 38)
+    ctx.fillText(FM._clinicName(), size / 2, 38)
     ctx.font = '500 11px Montserrat, sans-serif'
     ctx.fillStyle = '#C8A97E'
     ctx.letterSpacing = '0.15em'
@@ -880,7 +880,7 @@
     ctx.font = 'italic 300 10px Cormorant Garamond, serif'
     ctx.fillStyle = 'rgba(200,169,126,0.3)'
     ctx.textAlign = 'right'
-    ctx.fillText('Clinica Mirian de Paula', size - 20, size - 12)
+    ctx.fillText(FM._clinicName(), size - 20, size - 12)
 
     // Render annotations on exported image
     if (_compareAnnotations.length > 0) {
@@ -1269,7 +1269,7 @@
       ctx.font = 'italic 8px Cormorant Garamond, serif'
       ctx.fillStyle = 'rgba(200,169,126,0.4)'
       ctx.textAlign = 'right'
-      ctx.fillText('Clinica Mirian de Paula', width - 6, height - 4)
+      ctx.fillText(FM._clinicName(), width - 6, height - 4)
 
       frameIndex++
       setTimeout(_drawFrame, frameDelay)

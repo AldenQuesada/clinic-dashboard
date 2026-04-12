@@ -8,13 +8,33 @@
 
   FM._viewMode = FM._viewMode || '1x'  // '1x' or '2x'
 
+  FM._imgCache = {}  // { angle: { url, img } }
+
   FM._initCanvas = function () {
     FM._canvas = document.getElementById('fmCanvas')
     if (!FM._canvas || !FM._photoUrls[FM._activeAngle]) return
 
     FM._ctx = FM._canvas.getContext('2d')
+    var ang = FM._activeAngle || 'front'
+    var url = FM._photoUrls[ang]
+
+    // Reuse cached image if URL unchanged (eliminates flicker)
+    var cached = FM._imgCache[ang]
+    if (cached && cached.url === url && cached.img.complete) {
+      FM._img = cached.img
+      _onImgReady()
+      return
+    }
+
     FM._img = new Image()
     FM._img.onload = function () {
+      FM._imgCache[ang] = { url: url, img: FM._img }
+      _onImgReady()
+    }
+    FM._img.src = url
+    return
+
+    function _onImgReady() {
       var area = document.getElementById('fmCanvasArea')
       var isFS = area && area.classList.contains('fm-fullscreen')
 
@@ -52,7 +72,6 @@
         FM._autoAnalyze(true)
       }
     }
-    FM._img.src = FM._photoUrls[FM._activeAngle]
 
     FM._canvas.addEventListener('mousedown', FM._onMouseDown)
     FM._canvas.addEventListener('mousemove', FM._onMouseMove)
