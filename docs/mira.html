@@ -224,6 +224,7 @@
 
     <a class="section">Referência</a>
     <a href="#commands">Guia de Comandos</a>
+    <a href="#checkup">Check-up Final</a>
 
     <a class="section">Arquitetura</a>
     <a href="#architecture">Topologia</a>
@@ -1944,6 +1945,137 @@ n8n/mira-anomaly-workflow.json         — 🎯 cron 22h</pre>
   <li>Supabase: plano existente</li>
   <li>n8n VPS Easypanel: já rodando</li>
   <li>Evolution API: já rodando (nova instância <code>mira-mirian</code> é barata)</li>
+</ul>
+
+</section>
+
+<!-- ============ CHECKUP FINAL ============ -->
+<section id="checkup">
+<h2>Check-up Final</h2>
+
+<h3>Numeros</h3>
+<table>
+  <tr><th>Metrica</th><th>Valor</th></tr>
+  <tr><td>RPCs (wa_pro_*)</td><td>45</td></tr>
+  <tr><td>Helpers (formatters, parsers)</td><td>29</td></tr>
+  <tr><td>Tabelas</td><td>8</td></tr>
+  <tr><td>Views</td><td>1</td></tr>
+  <tr><td>Migrations</td><td>29</td></tr>
+  <tr><td>Workflows n8n (todos ativos)</td><td>12</td></tr>
+  <tr><td>Testes automatizados</td><td>69/69</td></tr>
+  <tr><td>Intents distintas</td><td>21</td></tr>
+  <tr><td>Linhas de teste</td><td>834</td></tr>
+  <tr><td>Linhas de documentacao</td><td>2.035</td></tr>
+</table>
+
+<h3>Agenda (5 comandos)</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"tenho agenda hoje?"</code></td><td>Lista todas as consultas do dia com status</td></tr>
+  <tr><td><code>"tenho amanha?"</code></td><td>Lista consultas de amanha</td></tr>
+  <tr><td><code>"minha semana"</code></td><td>Lista consultas da semana</td></tr>
+  <tr><td><code>"tem horario livre?"</code></td><td>Mostra horarios ocupados do dia</td></tr>
+  <tr><td><code>"qual meu proximo paciente?"</code></td><td>Proximo agendado de hoje com perfil completo inline</td></tr>
+</table>
+
+<h3>Pacientes (5 comandos)</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"quem e Gislaine Molina?"</code></td><td>Perfil completo: dados, historico, queixas, procedimentos, financeiro</td></tr>
+  <tr><td><code>"quanto a Maria me deve?"</code></td><td>Saldo devedor + ultimos atendimentos</td></tr>
+  <tr><td><code>"quem fez botox esse mes?"</code></td><td>Lista pacientes por procedimento no periodo</td></tr>
+  <tr><td><code>"quem me deve mais de 500?"</code></td><td>Top devedores com saldo, filtro por valor</td></tr>
+  <tr><td><code>"liga pra Gislaine"</code></td><td>Nome + telefone + link wa.me clicavel</td></tr>
+</table>
+
+<h3>Financeiro (4 comandos)</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"quanto faturei essa semana?"</code></td><td>Bruto, ticket medio, comparativo vs anterior</td></tr>
+  <tr><td><code>"minha comissao do mes"</code></td><td>Bruto gerado, comissao, percentual efetivo</td></tr>
+  <tr><td><code>"quem me pagou essa semana?"</code></td><td>Lista pagamentos com metodo e paciente</td></tr>
+  <tr><td><code>"como foi meu dia?"</code></td><td>Resumo executivo: consultas, receita, no-shows, top procedimento</td></tr>
+</table>
+
+<h3>Agendamento via WhatsApp (4 comandos, 2-step)</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"marca a Maria amanha 14h"</code></td><td>Preview &rarr; "sim" &rarr; cria + 3 msgs automaticas + link anamnese se novo</td></tr>
+  <tr><td><code>"cancela a Maria amanha"</code></td><td>Preview (avisa se &lt;24h) &rarr; "sim" &rarr; cancela + remove lembretes + avisa paciente</td></tr>
+  <tr><td><code>"reagenda a Maria pra terca 15h"</code></td><td>Preview &rarr; "sim" &rarr; atualiza + regenera lembretes</td></tr>
+  <tr><td><code>"marca Zuleika amanha 14h"</code> (inexistente)</td><td>Pede dados &rarr; cadastra lead + agenda + confirmacao + anamnese</td></tr>
+</table>
+
+<h3>Cadastro (2 comandos)</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"cadastrar novo paciente"</code></td><td>Pede Nome, CPF, Tel, Sexo &rarr; cadastra lead sem agendamento</td></tr>
+  <tr><td>(automatico no marca)</td><td>Se paciente nao existe, fluxo de cadastro inline</td></tr>
+</table>
+
+<h3>Confirmacao (2 comandos)</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"sim"</code> / <code>"ok"</code> / <code>"confirma"</code></td><td>Executa acao pendente</td></tr>
+  <tr><td><code>"nao"</code> / <code>"cancela"</code> / <code>"deixa"</code></td><td>Descarta sem executar</td></tr>
+</table>
+
+<h3>Inteligencia (2 comandos)</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"como foi meu dia?"</code></td><td>Resumo executivo on-demand</td></tr>
+  <tr><td><code>"uso da mira"</code></td><td>Dashboard: queries, audios, custo Whisper</td></tr>
+</table>
+
+<h3>Multi-turn</h3>
+<table>
+  <tr><th>Comando</th><th>O que faz</th></tr>
+  <tr><td><code>"quanto a Maria me deve?"</code> &rarr; 6 Marias &rarr; <code>"2"</code></td><td>Resolve segunda Maria</td></tr>
+  <tr><td><code>"cancela a Josceli"</code> &rarr; 2 consultas &rarr; <code>"1"</code></td><td>Cancela primeira da lista</td></tr>
+  <tr><td><code>"reagenda a Maria"</code> &rarr; 2 consultas &rarr; <code>"primeira"</code></td><td>Reagenda primeira</td></tr>
+</table>
+
+<h3>Voz (Groq Whisper)</h3>
+<div class="callout info">
+  <div class="title info">Audio</div>
+  Todos os comandos funcionam por audio. Groq whisper-large-v3-turbo, ~1.5s latencia, ~R$ 0.01/mes. Cap 60s. Strip automatico de "Mira/Alexa/Olha/Entao". Aceita "14 horas", "tres da tarde", "meio dia", "dia 17". Preserva nomes como "Maria de Fatima". Tier 2 Claude Haiku se nao entender.
+</div>
+
+<h3>Automacoes Proativas (7 cron)</h3>
+<table>
+  <tr><th>Workflow</th><th>Quando</th><th>O que faz</th></tr>
+  <tr><td>Daily Digest</td><td>7h seg-sab</td><td>Resumo do dia</td></tr>
+  <tr><td>Evening Digest</td><td>20h seg-sab</td><td>Como foi o dia</td></tr>
+  <tr><td>Pre-Consult Alerts</td><td>cada 5min</td><td>Avisa 10min antes</td></tr>
+  <tr><td>Birthday Alerts</td><td>7h diario</td><td>Aniversariantes</td></tr>
+  <tr><td>Inactivity Radar</td><td>18h sexta</td><td>Pacientes inativos</td></tr>
+  <tr><td>Weekly Roundup</td><td>7h segunda</td><td>Resumo semanal</td></tr>
+  <tr><td>Smart Follow-up</td><td>diario</td><td>Sugestoes de follow-up</td></tr>
+</table>
+
+<h3>Infraestrutura</h3>
+<table>
+  <tr><th>Componente</th><th>Detalhe</th></tr>
+  <tr><td>Health Check</td><td>Cron 5min: pinga Evolution + Supabase + Outbox, alerta WhatsApp se cair</td></tr>
+  <tr><td>Outbox Processor</td><td>Cron 2min: envia msgs via Evolution</td></tr>
+  <tr><td>Task Reminders</td><td>Cron: lembra tarefas</td></tr>
+  <tr><td>Rate Limit</td><td>30/dia + 10/min por profissional</td></tr>
+  <tr><td>Audit Log</td><td>Toda query logada</td></tr>
+  <tr><td>RLS</td><td>Tabelas protegidas</td></tr>
+  <tr><td>Dedupe voice</td><td>UNIQUE em message_id</td></tr>
+</table>
+
+<h3>Blindagens</h3>
+<ul>
+  <li>Idempotencia em todas as escritas</li>
+  <li>Conflito de horario na clinica inteira</li>
+  <li>Scope enforcement (own/team/full)</li>
+  <li>Aviso &lt;24h no cancelamento</li>
+  <li>Confirmacao 2-step obrigatoria</li>
+  <li>CPF e telefone duplicado no cadastro</li>
+  <li>TTL 5min nas pending actions</li>
+  <li>Transcript minimo 3 chars</li>
+  <li>Health check a cada 5 minutos</li>
 </ul>
 
 </section>
