@@ -172,9 +172,14 @@
     return html
   }
 
+  function _totalMinutes(t) {
+    return ((parseInt(t.day) || 0) * 1440) + ((parseInt(t.delay_hours) || 0) * 60) + (parseInt(t.delay_minutes) || 0)
+  }
+
   function _filteredTemplates() {
-    if (_activeTab === 'todos') return _templates
-    return _templates.filter(function (t) { return (t.category || 'geral') === _activeTab })
+    var list = _activeTab === 'todos' ? _templates.slice() : _templates.filter(function (t) { return (t.category || 'geral') === _activeTab })
+    list.sort(function (a, b) { return _totalMinutes(a) - _totalMinutes(b) })
+    return list
   }
 
   function _renderList(items) {
@@ -185,11 +190,12 @@
       var sel = t.id === _selectedId ? ' te-item-selected' : ''
       var inactive = _getActive(t) ? '' : ' te-item-inactive'
       var delay = _fmtDelay(t.day, t.delay_hours, t.delay_minutes)
+      var idx = items.indexOf(t)
       html += '<div class="te-item' + sel + inactive + '" data-action="select" data-id="' + _esc(t.id) + '">' +
-        '<div class="te-item-dot" style="background:' + meta.color + '"></div>' +
+        '<div class="te-item-order">' + (idx + 1) + '</div>' +
         '<div class="te-item-info">' +
           '<div class="te-item-name">' + _esc(t.name) + '</div>' +
-          '<div class="te-item-cat">' + meta.label + (delay ? ' · ' + delay : '') + '</div>' +
+          '<div class="te-item-cat">' + delay + '</div>' +
         '</div>' +
         '<div class="te-item-status">' + (_getActive(t) ? '<span class="te-badge-on">ON</span>' : '<span class="te-badge-off">OFF</span>') + '</div>' +
       '</div>'

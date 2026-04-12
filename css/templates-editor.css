@@ -43,6 +43,12 @@
 .te-item-selected { background:#FFF7ED !important; border-left:3px solid var(--accent-gold); }
 .te-item-inactive { opacity:0.5; }
 .te-item-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.te-item-order {
+  width:22px; height:22px; border-radius:50%; flex-shrink:0;
+  background:var(--border); color:var(--text-secondary);
+  font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.te-item-selected .te-item-order { background:var(--accent-gold); color:#fff; }
 .te-item-info { flex:1; min-width:0; }
 .te-item-name { font-size:13px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .te-item-cat { font-size:10px; color:var(--text-muted); margin-top:2px; }
