@@ -1704,16 +1704,29 @@ async function _enviarMsgAgendamento(appt) {
   const dbTpl = await _getWaTemplate(slug)
   let mensagem
   if (dbTpl) {
+    var _cfg = {}; try { _cfg = JSON.parse(localStorage.getItem('clinicai_clinic_settings') || '{}') } catch(e) {}
+    var _end = [_cfg.rua, _cfg.num].filter(Boolean).join(', ')
+    if (_cfg.comp) _end += ' - ' + _cfg.comp
+    if (_cfg.bairro) _end += ', ' + _cfg.bairro
+    if (_cfg.cidade) _end += ' - ' + _cfg.cidade
+
     mensagem = _waTplRender(dbTpl, {
-      nome:              nomeEnx,
-      clinica:           clinica,
-      data:              dataFmt,
-      hora:              appt.horaInicio,
-      procedimento:      proc,
-      profissional:      profNome,
+      nome:               nomeEnx,
+      clinica:            clinica,
+      data:               dataFmt,
+      data_consulta:      appt.data ? appt.data.split('-').reverse().join('/') : '',
+      hora:               appt.horaInicio,
+      hora_consulta:      appt.horaInicio,
+      procedimento:       proc,
+      profissional:       profNome,
       linha_procedimento: linhaProc,
-      link_anamnese:     linkAnam || '',
-      menu_clinica:      (window.location.origin || '') + '/menu-clinica.html',
+      link_anamnese:      linkAnam || '',
+      endereco:           _end || '',
+      endereco_clinica:   _end || '',
+      link_maps:          _cfg.maps || '',
+      link:               _cfg.site || '',
+      menu_clinica:       (window.location.origin || '') + '/menu-clinica.html',
+      valor:              appt.valor ? 'R$ ' + parseFloat(appt.valor).toFixed(2).replace('.', ',') : '',
     })
     // Se template de novo e link falhou, remove a linha do link
     if (isNovo && !linkAnam) {
