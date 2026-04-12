@@ -936,6 +936,19 @@ BEGIN
     END IF;
   END IF;
 
+  -- Se contexto anterior era awaiting_patient_registration,
+  -- trata a mensagem como dados de cadastro
+  IF NOT v_ctx_resolved AND v_ctx_phone IS NOT NULL
+     AND v_ctx_intent = 'awaiting_patient_registration' THEN
+    DECLARE v_reg_result jsonb;
+    BEGIN
+      v_reg_result := wa_pro_stage_register_and_schedule(p_phone, v_text);
+      v_response := COALESCE(v_reg_result->>'response', '⚠️ ' || COALESCE(v_reg_result->>'error', 'erro'));
+      v_intent := CASE WHEN (v_reg_result->>'ok')::boolean THEN 'register_patient' ELSE 'register_patient_error' END;
+      v_ctx_resolved := true;
+    END;
+  END IF;
+
   IF NOT v_ctx_resolved THEN
   -- Intent parse (ordem importa!)
   v_intent := CASE
@@ -995,12 +1008,24 @@ BEGIN
     v_response := _strip_markdown(v_response);
   END IF;
 
-  -- 🧠 Salva context enriquecido — se foi patient_balance multi-match
+  -- 🧠 Salva context enriquecido
   v_options_to_save := NULL;
-  v_entity_id := NULL;
-  v_entity_name := NULL;
 
-  IF v_intent = 'patient_balance' THEN
+  -- Se stage_create_appointment salvou awaiting_patient_registration,
+  -- preserva esse contexto (nao sobrescreve)
+  IF v_intent = 'create_appointment' THEN
+    SELECT last_intent INTO v_ctx_intent
+    FROM wa_pro_context WHERE phone = p_phone LIMIT 1;
+    IF v_ctx_intent = 'awaiting_patient_registration' THEN
+      -- Stage ja salvou o contexto certo, nao sobrescrever
+      NULL;
+    ELSE
+      PERFORM _save_context(
+        p_phone, v_clinic_id, v_prof_id, v_intent, v_text,
+        'patient', v_entity_id, v_entity_name, NULL
+      );
+    END IF;
+  ELSIF v_intent = 'patient_balance' AND NOT v_ctx_resolved THEN
     v_patient_data := wa_pro_patient_balance(p_phone,
       TRIM(REGEXP_REPLACE(v_text, '[[:<:]](quem|e|é|paciente|cliente|telefone|contato|whats|whatsapp|de|do|da|quanto|saldo|deve|devendo|me|a|o|esta|está|eh)[[:>:]]', ' ', 'gi'))
     );
@@ -1011,12 +1036,16 @@ BEGIN
       v_entity_id := v_patient_data->'patient'->>'id';
       v_entity_name := v_patient_data->'patient'->>'name';
     END IF;
+    PERFORM _save_context(
+      p_phone, v_clinic_id, v_prof_id, v_intent, v_text,
+      'patient', v_entity_id, v_entity_name, v_options_to_save
+    );
+  ELSE
+    PERFORM _save_context(
+      p_phone, v_clinic_id, v_prof_id, v_intent, v_text,
+      'patient', v_entity_id, v_entity_name, NULL
+    );
   END IF;
-
-  PERFORM _save_context(
-    p_phone, v_clinic_id, v_prof_id, v_intent, v_text,
-    'patient', v_entity_id, v_entity_name, v_options_to_save
-  );
 
   v_elapsed := EXTRACT(epoch FROM (clock_timestamp() - v_started_at))::int * 1000;
 
