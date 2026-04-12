@@ -2425,7 +2425,34 @@ AGENDAMENTO (tudo ate o check final de finalizacao)
     <li>Paciente responde NAO/nao/cancela → status = cancelado + resposta editavel (<code>auto_reply_cancelled</code>)</li>
     <li>Busca agendamento futuro por telefone (right 8 digits)</li>
     <li>So mensagens curtas (&lt;50 chars) para nao confundir com conversa</li>
+    <li>Respostas editaveis em Config > Templates > Agendamento</li>
   </ul>
+
+  <h3>Arquitetura WhatsApp — sem n8n (2026-04-12)</h3>
+  <p><strong>n8n eliminado</strong> do fluxo de mensagens. Tudo via Supabase + Evolution API direto:</p>
+  <pre>
+INBOUND (paciente responde):
+  WhatsApp → Evolution API → webhook → Supabase RPC wa_evolution_webhook
+    → parseia payload Evolution (event, data.key.remoteJid, data.message)
+    → chama wa_receive_inbound(phone, content)
+    → INSERT wa_messages (direction=inbound)
+    → trigger trg_wa_auto_confirm dispara se SIM/NAO
+    → UPDATE appointments.status + enfileira resposta
+
+OUTBOUND (clinica envia):
+  wa_outbox (status=pending) → pg_cron cada 30s → wa_outbox_process_direct
+    → pg_net HTTP POST → Evolution API /message/sendText/Mih
+    → UPDATE wa_outbox status=sent
+  </pre>
+  <table>
+    <tr><th>RPC</th><th>Funcao</th></tr>
+    <tr><td><code>wa_evolution_webhook</code></td><td>Recebe payload da Evolution, parseia, chama wa_receive_inbound</td></tr>
+    <tr><td><code>wa_receive_inbound</code></td><td>Cria conversa, INSERT wa_messages, atualiza unread</td></tr>
+    <tr><td><code>wa_outbox_process_direct</code></td><td>Busca pendentes, envia via pg_net → Evolution API, marca sent</td></tr>
+    <tr><td><code>wa_auto_confirm_appointment</code></td><td>Trigger: detecta SIM/NAO, muda status, enfileira resposta</td></tr>
+  </table>
+  <p><strong>Workflows n8n desativados:</strong> CLINICA WHATSAPP (inbound), Outbox Processor (outbound).
+  Mantidos inativos como backup.</p>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
   <h2>Próximos passos</h2>
