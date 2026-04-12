@@ -121,7 +121,7 @@
               '<th style="padding:12px 16px;text-align:left;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Procedimento</th>' +
               '<th style="padding:12px 16px;text-align:center;font-size:12px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.05em">Acoes</th>' +
             '</tr></thead>' +
-            '<tbody id="' + p + 'TableBody"><tr><td colspan="8" style="text-align:center;padding:40px;color:#9CA3AF">Carregando...</td></tr></tbody>' +
+            '<tbody id="' + p + 'TableBody">' + (window.Skeleton ? Skeleton.tableRows(4, 8) : '<tr><td colspan="8"><div class="sk sk-line sk-w60" style="margin:16px auto"></div></td></tr>') + '</tbody>' +
           '</table>' +
         '</div>' +
         '<div style="padding:16px 0;text-align:center">' +

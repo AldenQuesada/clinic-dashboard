@@ -1123,7 +1123,14 @@ function aoBdOpenWhatsapp() {
 async function loadAgendaOverview() {
   const spin = (id) => {
     const el = document.getElementById(id)
-    if (el) el.innerHTML = `<div class="ao-loading"><div class="ao-spinner"></div><span>Carregando...</span></div>`
+    if (!el) return
+    if (window.Skeleton) {
+      if (id === 'aoTimeline') Skeleton.into(el, 'cards', { count: 3 })
+      else if (id === 'aoProcRanking') Skeleton.into(el, 'rows', { count: 4, cols: 2 })
+      else Skeleton.into(el, 'rows', { count: 2, cols: 2 })
+    } else {
+      el.innerHTML = '<div class="ao-loading"><div class="ao-spinner"></div></div>'
+    }
   }
   spin('aoTimeline')
   spin('aoProcRanking')
@@ -1199,7 +1206,7 @@ async function _aoRenderCashflowToday() {
     kpiGrid.parentNode.insertBefore(host, kpiGrid)
   }
 
-  host.innerHTML = '<div style="font-size:11px;color:#9ca3af;font-weight:600">Carregando saldo do dia...</div>'
+  host.innerHTML = '<div class="sk sk-line sk-w40" style="height:14px"></div>'
 
   try {
     var todayISO = new Date().toISOString().slice(0, 10)

@@ -201,7 +201,7 @@
         <button class="avatar-btn dropdown-trigger" data-dropdown="avatar">
           <div class="avatar-circle" id="headerAvatarInitials">MP</div>
           <div class="avatar-info">
-            <span class="avatar-name" id="headerUserName">Carregando...</span>
+            <span class="avatar-name" id="headerUserName"><span class="sk" style="width:80px;height:12px;display:inline-block"></span></span>
             <span class="avatar-role" id="headerUserRole">-</span>
           </div>
           <i data-feather="chevron-down" class="dropdown-arrow-sm"></i>
@@ -210,7 +210,7 @@
           <div class="dropdown-user-header">
             <div class="avatar-circle avatar-circle-lg" id="headerAvatarInitialsLg">MP</div>
             <div>
-              <p class="dropdown-user-name" id="headerUserNameLg">Carregando...</p>
+              <p class="dropdown-user-name" id="headerUserNameLg"><span class="sk" style="width:100px;height:14px;display:inline-block"></span></p>
               <p class="dropdown-user-email" id="headerUserEmail">-</p>
             </div>
           </div>
@@ -912,11 +912,11 @@
                 </tr>
               </thead>
               <tbody id="leadsTableBody">
-                <tr>
-                  <td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">
-                    Carregando leads...
-                  </td>
-                </tr>
+                <tr><td colspan="7"><div class="sk sk-line sk-w80" style="margin:12px auto"></div></td></tr>
+                <tr><td colspan="7"><div class="sk sk-line sk-w60" style="margin:6px auto"></div></td></tr>
+                <tr><td colspan="7"><div class="sk sk-line sk-w40" style="margin:6px auto"></div></td></tr>
+                <tr><td colspan="7"><div class="sk sk-line sk-w80" style="margin:6px auto"></div></td></tr>
+                <tr><td colspan="7"><div class="sk sk-line sk-w60" style="margin:6px auto 12px"></div></td></tr>
               </tbody>
             </table>
           </div>
@@ -1090,7 +1090,10 @@
                   </tr>
                 </thead>
                 <tbody id="patientsTableBody">
-                  <tr><td colspan="9" style="text-align:center;padding:40px;color:#9CA3AF">Carregando pacientes...</td></tr>
+                  <tr><td colspan="9"><div class="sk sk-line sk-w80" style="margin:12px auto"></div></td></tr>
+                  <tr><td colspan="9"><div class="sk sk-line sk-w60" style="margin:6px auto"></div></td></tr>
+                  <tr><td colspan="9"><div class="sk sk-line sk-w40" style="margin:6px auto"></div></td></tr>
+                  <tr><td colspan="9"><div class="sk sk-line sk-w80" style="margin:6px auto"></div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -2036,7 +2039,9 @@
                   </tr>
                 </thead>
                 <tbody id="orcTableBody">
-                  <tr><td colspan="7" style="text-align:center;padding:40px;color:#9CA3AF">Carregando orcamentos...</td></tr>
+                  <tr><td colspan="7"><div class="sk sk-line sk-w80" style="margin:12px auto"></div></td></tr>
+                  <tr><td colspan="7"><div class="sk sk-line sk-w60" style="margin:6px auto"></div></td></tr>
+                  <tr><td colspan="7"><div class="sk sk-line sk-w40" style="margin:6px auto 12px"></div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -2303,7 +2308,7 @@
                 <span id="aoTimelineLabel" style="font-size:11px;color:var(--text-muted)">hoje</span>
               </div>
               <div id="aoTimeline" class="ao-timeline-scroll">
-                <div class="ao-loading"><div class="ao-spinner"></div><span>Carregando...</span></div>
+                <div style="padding:12px"><div class="sk-card"><div class="sk sk-title"></div><div class="sk sk-line sk-w80"></div><div class="sk sk-line sk-w60"></div></div><div class="sk-card"><div class="sk sk-title"></div><div class="sk sk-line sk-w80"></div><div class="sk sk-line sk-w40"></div></div><div class="sk-card"><div class="sk sk-title"></div><div class="sk sk-line sk-w60"></div></div></div>
               </div>
             </div>
           </div>
@@ -2316,7 +2321,7 @@
                 <span id="aoProcRankingLabel" style="font-size:11px;color:var(--text-muted)">período</span>
               </div>
               <div id="aoProcRanking" class="ao-timeline-scroll">
-                <div class="ao-loading"><div class="ao-spinner"></div><span>Carregando...</span></div>
+                <div style="padding:12px"><div class="sk-row"><div class="sk sk-line sk-w60" style="flex:1"></div><div class="sk sk-line sk-w30" style="flex:0 0 60px"></div></div><div class="sk-row"><div class="sk sk-line sk-w80" style="flex:1"></div><div class="sk sk-line sk-w30" style="flex:0 0 60px"></div></div><div class="sk-row"><div class="sk sk-line sk-w40" style="flex:1"></div><div class="sk sk-line sk-w30" style="flex:0 0 60px"></div></div></div>
               </div>
             </div>
           </div>
@@ -2341,7 +2346,7 @@
                 <span id="aoBirthdaysLabel" style="font-size:11px;color:var(--text-muted)">do período</span>
               </div>
               <div id="aoBirthdays">
-                <div class="ao-loading"><div class="ao-spinner"></div><span>Carregando...</span></div>
+                <div style="padding:8px 12px"><div class="sk-row"><div class="sk sk-avatar"></div><div class="sk sk-line sk-w60" style="flex:1"></div></div><div class="sk-row"><div class="sk sk-avatar"></div><div class="sk sk-line sk-w40" style="flex:1"></div></div></div>
               </div>
             </div>
 
@@ -2352,7 +2357,7 @@
                 <span style="font-size:11px;color:var(--text-muted)">+60 dias</span>
               </div>
               <div id="aoNoReturn">
-                <div class="ao-loading"><div class="ao-spinner"></div><span>Carregando...</span></div>
+                <div style="padding:8px 12px"><div class="sk-row"><div class="sk sk-avatar"></div><div class="sk sk-line sk-w80" style="flex:1"></div></div><div class="sk-row"><div class="sk sk-avatar"></div><div class="sk sk-line sk-w60" style="flex:1"></div></div></div>
               </div>
             </div>
 
@@ -5044,6 +5049,7 @@
   <!-- Mestres de dados clínicos — Supabase (rooms, technologies, professionals, injetaveis, procedimentos) -->
   <script src="js/repositories/rooms.repository.js?v=20260407p" defer></script>
   <script src="js/repositories/technologies.repository.js?v=20260407p" defer></script>
+  <script src="js/utils/skeleton.js?v=20260412a"></script>
   <script src="js/utils/money.js?v=20260411n" defer></script>
   <script src="js/utils/html.js?v=20260411n" defer></script>
   <script src="js/utils/modal.js?v=20260411n" defer></script>

@@ -247,10 +247,11 @@ export function _copyToClipboard(text) {
 
 export function _showLoading(el) {
   if (!el) return
-  el.innerHTML = `<div style="padding:40px;text-align:center;color:#9CA3AF">
-    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="animation:spin 1s linear infinite;display:inline-block"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-    <div style="margin-top:10px;font-size:13px">Carregando...</div>
-  </div>`
+  if (window.Skeleton) {
+    el.innerHTML = '<div style="padding:16px">' + Skeleton.cards(2) + '</div>'
+  } else {
+    el.innerHTML = '<div style="padding:40px;text-align:center"><div class="sk sk-line sk-w60" style="margin:12px auto"></div><div class="sk sk-line sk-w40" style="margin:8px auto"></div></div>'
+  }
 }
 
 export function _showError(el, msg) {

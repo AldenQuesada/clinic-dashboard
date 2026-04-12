@@ -85,7 +85,7 @@ window.formatWaPhone = formatWaPhone
 async function loadProceduresList() {
   const list = document.getElementById('proceduresList')
   if (!list) return
-  list.innerHTML = `<div style="text-align:center;padding:24px;color:#9CA3AF">Carregando...</div>`
+  list.innerHTML = window.Skeleton ? Skeleton.rows(3, 3) : '<div class="sk sk-line sk-w60" style="margin:24px auto"></div>'
 
   try {
     const data = await apiFetch('/procedures?active=all')

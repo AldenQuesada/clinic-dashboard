@@ -2929,6 +2929,56 @@ strong {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Skeleton Loaders ─────────────────────────────────────── */
+@keyframes skShimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.sk {
+  background: linear-gradient(90deg, var(--bg-secondary, #1e2130) 25%, #2a2d40 37%, var(--bg-secondary, #1e2130) 63%);
+  background-size: 800px 100%;
+  animation: skShimmer 1.4s ease infinite;
+  border-radius: 6px;
+  display: inline-block;
+}
+.sk-line  { height: 12px; margin-bottom: 10px; }
+.sk-title { height: 16px; width: 40%; margin-bottom: 14px; }
+.sk-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }
+.sk-block { min-height: 60px; }
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #2d3348);
+}
+.sk-table-wrap { width: 100%; }
+.sk-card {
+  background: var(--bg-secondary, #1e2130);
+  border: 1px solid var(--border, #2d3348);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.sk-card .sk { opacity: 0.7; }
+.sk-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sk-kpi {
+  background: var(--bg-secondary, #1e2130);
+  border: 1px solid var(--border, #2d3348);
+  border-radius: 10px;
+  padding: 16px;
+}
+.sk-text { width: 100%; }
+.sk-w60 { width: 60%; }
+.sk-w80 { width: 80%; }
+.sk-w40 { width: 40%; }
+.sk-w30 { width: 30%; }
+
 /* ── Especialista na timeline ─────────────────────────────── */
 .ao-timeline-specialist {
   font-size: 11px;
