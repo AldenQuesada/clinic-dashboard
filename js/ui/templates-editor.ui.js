@@ -352,25 +352,63 @@
     _dirty[id][field] = value
   }
 
-  async function _onCreate() {
-    var name = prompt('Nome do novo template:')
-    if (!name || !name.trim()) return
-    var slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-    var r = await TemplatesRepository.create({
-      name: name.trim(),
-      slug: slug,
-      category: _activeTab !== 'todos' ? _activeTab : 'geral',
-      content: 'Ola, {nome}! ',
-      is_active: true,
-    })
-    if (r.ok) {
-      _templates.push(r.data)
-      _selectedId = r.data.id
-      _render()
-      if (window._showToast) _showToast('Template criado', name.trim(), 'success')
-    } else {
-      if (window._toastErr) _toastErr('Erro ao criar: ' + (r.error || ''))
+  function _onCreate() {
+    var defaultCat = _activeTab !== 'todos' ? _activeTab : 'agendamento'
+    var catOptions = Object.keys(CATEGORY_META).map(function (k) {
+      return '<option value="' + k + '"' + (k === defaultCat ? ' selected' : '') + '>' + CATEGORY_META[k].label + '</option>'
+    }).join('')
+
+    var overlay = document.createElement('div')
+    overlay.className = 'te-create-overlay'
+    overlay.innerHTML = '<div class="te-create-modal">' +
+      '<h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--text-primary)">Novo Template</h3>' +
+      '<div style="margin-bottom:12px"><label class="te-config-label" style="display:block;margin-bottom:4px">Nome</label>' +
+        '<input type="text" id="teNewName" class="te-config-input" style="width:100%" placeholder="Ex: Lembrete 48h antes" autofocus></div>' +
+      '<div style="margin-bottom:16px"><label class="te-config-label" style="display:block;margin-bottom:4px">Categoria</label>' +
+        '<select id="teNewCat" class="te-config-select" style="width:100%">' + catOptions + '</select></div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button id="teNewCancel" style="padding:8px 16px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--card);color:var(--text-secondary);cursor:pointer">Cancelar</button>' +
+        '<button id="teNewConfirm" style="padding:8px 20px;font-size:13px;font-weight:600;border:none;border-radius:var(--radius-md);background:var(--accent-gold);color:#fff;cursor:pointer">Criar</button>' +
+      '</div>' +
+    '</div>'
+
+    document.body.appendChild(overlay)
+    var nameInput = document.getElementById('teNewName')
+    if (nameInput) nameInput.focus()
+
+    document.getElementById('teNewCancel').onclick = function () { overlay.remove() }
+    overlay.onclick = function (e) { if (e.target === overlay) overlay.remove() }
+
+    document.getElementById('teNewConfirm').onclick = async function () {
+      var name = (document.getElementById('teNewName').value || '').trim()
+      var cat = document.getElementById('teNewCat').value || 'geral'
+      if (!name) { if (window._toastWarn) _toastWarn('Informe o nome do template'); return }
+      var slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+
+      this.disabled = true
+      this.textContent = 'Criando...'
+
+      var r = await TemplatesRepository.create({
+        name: name, slug: slug, category: cat,
+        content: 'Ola, {nome}! ', is_active: true,
+      })
+      overlay.remove()
+
+      if (r.ok) {
+        _templates.push(r.data)
+        _selectedId = r.data.id
+        _activeTab = cat
+        _render()
+        if (window._showToast) _showToast('Template criado', name, 'success')
+      } else {
+        if (window._toastErr) _toastErr('Erro ao criar: ' + (r.error || ''))
+      }
     }
+
+    if (nameInput) nameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') document.getElementById('teNewConfirm').click()
+      if (e.key === 'Escape') overlay.remove()
+    })
   }
 
   async function _onDelete(id) {

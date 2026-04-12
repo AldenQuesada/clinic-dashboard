@@ -153,3 +153,17 @@
 [data-theme="dark"] .te-tab:hover { background:var(--bg-secondary); }
 [data-theme="dark"] .te-var-tag { background:#2e1065; color:#c4b5fd; }
 [data-theme="dark"] .te-var-tag:hover { background:#3b0764; }
+
+/* ── Create modal overlay ────────────────────────────────── */
+.te-create-overlay {
+  position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  animation: te-fade-in 0.15s ease;
+}
+.te-create-modal {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:var(--radius-lg); padding:24px; width:400px; max-width:90vw;
+  box-shadow:var(--shadow-lg);
+}
+@keyframes te-fade-in { from { opacity:0 } to { opacity:1 } }
