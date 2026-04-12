@@ -363,6 +363,7 @@ const watchIds = ['sp_nome', 'sp_salario', 'sp_valor_consulta', /* ... */]</code
       <strong>Seções topo:</strong>
       <a href="#dev-guide">Guia do Desenvolvedor</a> •
       <a href="#regressoes">Regressões pós-Premium</a> •
+      <a href="#data-hygiene">Data Hygiene (incidente)</a> •
       <a href="#migrations">Migrations</a> •
       <a href="#commits">Commits</a>
     </p>
@@ -1056,6 +1057,91 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
     <tr><td><code>npm run perf:budget</code></td><td>Reporta tamanho de cada JS no boot</td></tr>
   </table>
 
+  <!-- ═══ DATA HYGIENE ═══ -->
+  <h2 id="data-hygiene">Data Hygiene — patient fantasma (incidente 2026-04-12)</h2>
+  <p class="muted">Durante auditoria da anamnese descobrimos um registro contaminado
+    que tornava impossível testar o fluxo. Documentado aqui pra referência e
+    pra embasar o refactor arquitetural proposto no fim da seção.</p>
+
+  <div class="feature">
+    <h3>Sintoma</h3>
+    <p>Usuário abria o link da ficha de anamnese e via pré-preenchido o nome
+      <strong>"Emanuelle Garcia de Souza Martins"</strong> em vez do paciente
+      esperado.</p>
+
+    <h3>Diagnóstico via join</h3>
+    <pre><code>id: 9d3a23f6-3e23-4619-91cb-0293df1a3b67
+  ├─ patients.name = "Adilso Carniel"      | phone 5544999160607
+  └─ leads.name    = "Emanuelle Garcia..." | phone 5544997637161</code></pre>
+    <p>Duas pessoas diferentes compartilhando o mesmo UUID em tabelas diferentes.
+      O RPC <code>validate_anamnesis_token</code> faz
+      <code>COALESCE(l.name, p.name)</code> priorizando o lead, por isso o
+      formulário mostrava Emanuelle em vez de Adilso.</p>
+
+    <h3>Auditoria completa (via sub-agent)</h3>
+    <table>
+      <tr><th>Métrica</th><th>Valor</th></tr>
+      <tr><td>Total de leads</td><td>554</td></tr>
+      <tr><td>Total de patients</td><td>3</td></tr>
+      <tr><td>IDs compartilhados</td><td>3</td></tr>
+      <tr><td><strong>CRÍTICOS</strong> (nome + phone divergentes)</td><td><strong>1</strong></td></tr>
+      <tr><td>ALTO / MÉDIO</td><td>0</td></tr>
+      <tr><td>anamnesis_requests afetadas</td><td>3 (todas de teste)</td></tr>
+      <tr><td>appointments afetados</td><td>0</td></tr>
+    </table>
+
+    <h3>Causa provável</h3>
+    <p>Colisão aleatória de UUID é matematicamente impossível (2^122 possibilidades).
+      A explicação plausível: algum script de import ou migração criou leads passando
+      <code>id</code> vindo de outra fonte (ex: export de CRM antigo) que por acaso
+      bateu com um UUID já alocado em <code>patients</code>. O paciente Adilso real
+      já existia em <code>57653fb9...</code>, então o row <code>9d3a23f6</code> em
+      patients era uma duplicata fantasma criada ANTES do lead da Emanuelle.</p>
+
+    <h3>Fix cirúrgico aplicado</h3>
+    <pre><code>-- 1. Remove anamnesis_requests fantasma (3 de teste)
+DELETE FROM anamnesis_requests WHERE patient_id::text = '9d3a23f6-...';
+
+-- 2. Remove patient duplicata (Adilso fantasma)
+DELETE FROM patients WHERE id::text = '9d3a23f6-...';
+
+-- 3. Lead da Emanuelle preservado intacto</code></pre>
+    <p>Adilso real permanece em <code>57653fb9...</code>. Quando Emanuelle virar
+      paciente de verdade, o fluxo cria row nova em <code>patients</code> com seu
+      próprio UUID (sem colisão).</p>
+
+    <h3><span class="badge badge-pending">Follow-up</span> Refactor arquitetural <code>patients.lead_id</code></h3>
+    <p>O design atual de <code>patients.id === leads.id</code> (compartilhamento de
+      namespace de UUID) é fundamentalmente frágil:</p>
+    <ul>
+      <li>Qualquer import/seed/migration pode criar colisão silenciosa</li>
+      <li>O JOIN fica implícito (<code>ON p.id = l.id</code>) e mascara o contrato</li>
+      <li>Impossível ter 2 leads diferentes que viraram patient sem conflito</li>
+      <li>Propagação de erro é difícil de auditar (bug ficou invisível até um paciente reclamar do nome errado)</li>
+    </ul>
+
+    <p><strong>Proposta:</strong></p>
+    <pre><code>-- Nova coluna FK explícita
+ALTER TABLE patients ADD COLUMN lead_id uuid REFERENCES leads(id);
+
+-- patients.id passa a ser gerado independentemente (gen_random_uuid)
+-- lead_id aponta pro lead original (nullable: paciente pode não ter vindo de lead)
+-- UNIQUE (lead_id) pra evitar 2 patients pro mesmo lead
+
+-- Join vira explícito em todos os lugares:
+--   JOIN leads l ON l.id = p.lead_id</code></pre>
+    <p><strong>Impacto:</strong></p>
+    <ul>
+      <li>Elimina a classe inteira de bugs de mismatch de UUID</li>
+      <li>Permite histórico: um lead pode virar patient, virar lead de novo (walk-in), etc</li>
+      <li>Join fica óbvio quando auditado — <code>p.lead_id</code> é autoexplicativo</li>
+      <li>Migração: precisa backfill (set <code>lead_id = id</code> pros existentes) + atualizar todos os consumers</li>
+    </ul>
+    <p><strong>Custo estimado:</strong> ~1 dia de trabalho + testes extensivos.
+      Recomendado antes da camada 2 (anamnese/consentimento) porque vários
+      triggers e RPCs dessa camada dependem desse join.</p>
+  </div>
+
   <!-- ═══ MIGRATIONS ═══ -->
   <h2 id="migrations">Migrations aplicadas</h2>
   <table>
@@ -1134,6 +1220,12 @@ var respPhone = responsavel.phone || responsavel.whatsapp || responsavel.telefon
     <tr><td><span class="commit">4b20f0e</span></td><td>premium: 7 upgrades production-grade</td></tr>
     <tr><td><span class="commit">e4acaa8</span></td><td>fix(agenda): 3 bugs críticos pós-hardening (delegation, state alias, cross-value)</td></tr>
     <tr><td><span class="commit">320d0f4</span></td><td>fix(agenda): pagamento não sincroniza com soma dos procs</td></tr>
+    <tr><td><span class="commit">2df6c39</span></td><td>refactor(schema): canonical appointment schema em todo o sistema</td></tr>
+    <tr><td><span class="commit">2d014cc</span></td><td>fix(agenda): multi-proc alert vira blocking modal</td></tr>
+    <tr><td><span class="commit">dc90566</span></td><td>fix(anamnese): link real + nome correto + dash nao abre mais</td></tr>
+    <tr><td><span class="commit">d0c5b5a</span></td><td>fix(anamnese): dados gerais reaparece — has_general_session no DB</td></tr>
+    <tr><td><span class="commit">a029ec6</span></td><td>fix(anamnese): trigger camelCase + coluna lgpd_consent</td></tr>
+    <tr><td class="muted">db-only</td><td>data hygiene: DELETE patient fantasma 9d3a23f6 + 3 requests de teste</td></tr>
   </table>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
