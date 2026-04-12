@@ -402,10 +402,21 @@ BEGIN
   v_appt_date_br := TO_CHAR((v_appt->>'scheduled_date')::date, 'DD/MM');
   v_appt_dow := TO_CHAR((v_appt->>'scheduled_date')::date, 'Dy');
 
+  DECLARE
+    v_appt_at timestamptz := ((v_appt->>'scheduled_date')::date::text || ' ' || (v_appt->>'start_time'))::timestamp
+                             AT TIME ZONE 'America/Sao_Paulo';
+    v_hours_until numeric := EXTRACT(epoch FROM (v_appt_at - now())) / 3600;
+    v_urgency_warn text := '';
+  BEGIN
+    IF v_hours_until < 24 AND v_hours_until > 0 THEN
+      v_urgency_warn := E'\n⚠️ _Faltam menos de 24h pra consulta!_\n';
+    END IF;
+
   v_preview := '❌ *Vou cancelar:*' || E'\n─────────────\n' ||
                '*' || v_patient_name || '*' || E'\n' ||
                '📆 ' || v_appt_date_br || ' (' || v_appt_dow || ')' || E'\n' ||
-               '⏰ ' || LEFT(v_appt->>'start_time', 5) || E'\n\n' ||
+               '⏰ ' || LEFT(v_appt->>'start_time', 5) ||
+               v_urgency_warn || E'\n' ||
                'Confirma? Responde *sim* ou *cancela*.';
 
   -- Invalida pendings anteriores
@@ -432,6 +443,7 @@ BEGIN
     'pending_id', v_pending_id,
     'response', v_preview
   );
+  END; -- fecha DECLARE v_urgency_warn
 END;
 $$;
 
@@ -1065,6 +1077,7 @@ BEGIN
     WHEN v_text ~* '(quem\s+fez|pacientes?\s+de|fizeram)\s+\w' THEN 'patients_by_procedure'
     WHEN v_text ~* '(devedores|quem\s+me\s+deve[^n])' THEN 'debtors'
     WHEN v_text ~* '(uso\s+da\s+mira|consumo|quanto\s+gastei\s+de\s+voz|dashboard\s+mira)' THEN 'mira_usage'
+    WHEN v_text ~* '(liga|ligar|chamar|telefonar|whatsapp)\s+(pra|para|pro|a|o|da|do)?\s*[a-zA-ZÀ-ú]' THEN 'call_patient'
 
     -- Reads
     WHEN v_text ~* '(agenda|horario|atendimento).*(hoje|do dia)|tenho hoje|tenho agenda hoje|quem.*hoje' THEN 'agenda_today'
@@ -1326,6 +1339,35 @@ BEGIN
   IF p_intent = 'mira_usage' THEN
     v_data := wa_pro_mira_usage(p_phone);
     RETURN _fmt_mira_usage(v_data);
+  END IF;
+
+  IF p_intent = 'call_patient' THEN
+    -- Extrai nome do paciente
+    DECLARE
+      v_call_name text;
+      v_call_data jsonb;
+      v_call_phone text;
+    BEGIN
+      v_call_name := TRIM(REGEXP_REPLACE(p_text,
+        '[[:<:]](liga|ligar|chamar|telefonar|whatsapp|pra|para|pro|a|o|da|do|no|na)[[:>:]]',
+        '', 'gi'));
+      v_call_name := TRIM(REGEXP_REPLACE(v_call_name, '[?!.]+', '', 'g'));
+      IF LENGTH(v_call_name) < 2 THEN
+        RETURN '🔍 Qual paciente? Ex: "liga pra Maria"';
+      END IF;
+      v_call_data := wa_pro_patient_search(p_phone, v_call_name, 1);
+      IF jsonb_array_length(COALESCE(v_call_data->'results', '[]'::jsonb)) = 0 THEN
+        RETURN '🔍 Paciente "' || v_call_name || '" nao encontrado.';
+      END IF;
+      v_call_phone := v_call_data->'results'->0->>'phone';
+      IF v_call_phone IS NULL OR LENGTH(v_call_phone) < 10 THEN
+        RETURN '⚠️ *' || (v_call_data->'results'->0->>'name') || '* nao tem telefone cadastrado.';
+      END IF;
+      -- Gera link wa.me clicavel
+      RETURN '📞 *' || (v_call_data->'results'->0->>'name') || E'*\n' ||
+             'Tel: ' || v_call_phone || E'\n\n' ||
+             '👉 https://wa.me/' || REGEXP_REPLACE(v_call_phone, '[^0-9]', '', 'g');
+    END;
   END IF;
 
   IF p_intent = 'unknown' THEN
