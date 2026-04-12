@@ -141,21 +141,6 @@
       ],
     },
 
-    // ── Captação — Geral (pendente de uso) ────────────────────────
-    {
-      section: 'captacao-geral',
-      icon:    'inbox',
-      label:   'Captação — Geral',
-      roles:   [ROLES.OWNER, ROLES.ADMIN],
-      plans:   [],
-      pages: [
-        { page: 'captacao-overview',  label: 'Visão Geral',           breadcrumb: 'Captação > Visão Geral' },
-        { page: 'leads-reactivation', label: 'Reativação de Leads',   breadcrumb: 'Captação > Reativação de Leads' },
-        { page: 'sdh-history',        label: 'SDR Histórico',         breadcrumb: 'Captação > SDR Histórico' },
-        { page: 'captacao-automacao', label: 'Automação de Captação', breadcrumb: 'Captação > Automação',            plans: [PLANS.PREMIUM] },
-      ],
-    },
-
     // ── Agenda ───────────────────────────────────────────────────
     {
       section: 'agenda',
