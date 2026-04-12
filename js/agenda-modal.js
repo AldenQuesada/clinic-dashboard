@@ -1459,39 +1459,43 @@
       isNew = true
     }
 
+    // Snapshot para rollback
+    const prevAppts = JSON.parse(JSON.stringify(_getAppts()))
+
     _saveAppts(appts)
     closeApptModal()
     _refresh()
 
-    // Sync Supabase (fire-and-forget)
-    if (window.AppointmentsService) {
-      if (editId) {
-        const saved = appts.find(a => a.id === editId)
-        if (saved) AppointmentsService.syncOne(saved)
-      } else if (novoId) {
-        const saved = appts.find(a => a.id === novoId)
-        if (saved) AppointmentsService.syncOne(saved)
-      }
-    }
+    if (window._showToast) _showToast(isNew ? 'Agendamento criado' : 'Agendamento atualizado', nome, 'success')
 
-    // Ao criar novo agendamento: loop fechado
+    // Ao criar novo agendamento: loop fechado (disparado imediatamente)
     if (isNew) {
       const apptCompleto = Object.assign({}, apptData, { id: novoId, profissionalNome: profs[profIdx] && profs[profIdx].nome || '' })
-      // 1. Mensagem de confirmacao (WhatsApp)
       _enviarMsg(apptCompleto)
-      // 2. Agendar automacoes temporais (D-1, D-0, 30min)
       if (typeof scheduleAutomations === 'function') scheduleAutomations(apptCompleto)
-      // 3. Tag 'agendado'
       if (typeof _applyStatusTag === 'function' && apptCompleto.pacienteId) {
         _applyStatusTag(apptCompleto, 'agendado', 'criacao')
       }
-      // 4. Status legado
       if (apptCompleto.pacienteId) {
         _setLeadStatus(apptCompleto.pacienteId, 'scheduled', ['patient', 'attending'])
       }
-      // 5. Hook SDR unificado: interacao + regras + pipeline (fire-and-forget)
       if (window.SdrService && apptCompleto.pacienteId) {
         SdrService.onLeadScheduled(apptCompleto.pacienteId, apptCompleto)
+      }
+    }
+
+    // Sync Supabase (optimistic — revert on failure)
+    if (window.AppointmentsService) {
+      const savedId = editId || novoId
+      const saved = appts.find(a => a.id === savedId)
+      if (saved) {
+        AppointmentsService.syncOneAwait(saved).then(function (result) {
+          if (!result.ok && !result.queued) {
+            _saveAppts(prevAppts)
+            _refresh()
+            if (window._showToast) _showToast('Erro ao sincronizar', result.error || 'Falha no servidor — revertido', 'error')
+          }
+        })
       }
     }
   }
