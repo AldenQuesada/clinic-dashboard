@@ -50,6 +50,9 @@
       if (extras && extras.name) params.p_name = extras.name
       if (extras && extras.metadata) params.p_metadata = extras.metadata
       if (extras && extras.type !== undefined) params.p_type = extras.type
+      if (extras && extras.delay_hours !== undefined) params.p_delay_hours = extras.delay_hours
+      if (extras && extras.delay_minutes !== undefined) params.p_delay_minutes = extras.delay_minutes
+      if (extras && extras.trigger_phase !== undefined) params.p_trigger_phase = extras.trigger_phase
       const { data, error } = await _sb().rpc('wa_template_update', params)
       if (error) return _err(error.message || String(error))
       if (data && data.ok === false) return _err(data.error)

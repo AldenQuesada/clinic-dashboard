@@ -57,6 +57,19 @@
 
   var ALL_VARS = Object.keys(PREVIEW_VARS)
 
+  function _fmtDelay(day, hours, mins) {
+    var parts = []
+    var d = parseInt(day) || 0
+    var h = parseInt(hours) || 0
+    var m = parseInt(mins) || 0
+    if (d === 0 && h === 0 && m === 0) return 'imediata'
+    if (d < 0) parts.push(Math.abs(d) + 'd antes')
+    else if (d > 0) parts.push(d + 'd depois')
+    if (h > 0) parts.push(h + 'h')
+    if (m > 0) parts.push(m + 'min')
+    return parts.join(' ') || 'imediata'
+  }
+
   function _root() { return document.getElementById('templates-editor-root') }
   function _esc(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
   function _catMeta(c) { return CATEGORY_META[c] || CATEGORY_META.geral }
@@ -171,11 +184,12 @@
       var meta = _catMeta(t.category || 'geral')
       var sel = t.id === _selectedId ? ' te-item-selected' : ''
       var inactive = _getActive(t) ? '' : ' te-item-inactive'
+      var delay = _fmtDelay(t.day, t.delay_hours, t.delay_minutes)
       html += '<div class="te-item' + sel + inactive + '" data-action="select" data-id="' + _esc(t.id) + '">' +
         '<div class="te-item-dot" style="background:' + meta.color + '"></div>' +
         '<div class="te-item-info">' +
           '<div class="te-item-name">' + _esc(t.name) + '</div>' +
-          '<div class="te-item-cat">' + meta.label + '</div>' +
+          '<div class="te-item-cat">' + meta.label + (delay ? ' · ' + delay : '') + '</div>' +
         '</div>' +
         '<div class="te-item-status">' + (_getActive(t) ? '<span class="te-badge-on">ON</span>' : '<span class="te-badge-off">OFF</span>') + '</div>' +
       '</div>'
@@ -278,21 +292,23 @@
       return '<option value="' + o.v + '"' + (typeVal === o.v ? ' selected' : '') + '>' + (o.icon ? o.icon + ' ' : '') + o.l + '</option>'
     }).join('')
 
-    var dayOptions = [
-      { v: '', l: 'Nao programada' },
-      { v: '-7', l: '7 dias antes (D-7)' },
-      { v: '-5', l: '5 dias antes (D-5)' },
-      { v: '-3', l: '3 dias antes (D-3)' },
-      { v: '-2', l: '2 dias antes (D-2)' },
-      { v: '-1', l: '1 dia antes (D-1)' },
-      { v: '0',  l: 'Dia da consulta (D-0)' },
-      { v: '1',  l: '1 dia depois (D+1)' },
-      { v: '3',  l: '3 dias depois (D+3)' },
-      { v: '7',  l: '7 dias depois (D+7)' },
-      { v: '14', l: '14 dias depois (D+14)' },
-      { v: '30', l: '30 dias depois (D+30)' },
-    ].map(function (o) {
-      return '<option value="' + o.v + '"' + (String(dayVal) === o.v ? ' selected' : '') + '>' + o.l + '</option>'
+    var delayHours = d.delay_hours !== undefined ? d.delay_hours : (tpl.delay_hours || 0)
+    var delayMins = d.delay_minutes !== undefined ? d.delay_minutes : (tpl.delay_minutes || 0)
+    var triggerPhase = d.trigger_phase !== undefined ? d.trigger_phase : (tpl.trigger_phase || '')
+
+    var PHASE_OPTIONS = [
+      { v: '',           l: 'Nenhuma (manual)' },
+      { v: 'lead',       l: 'Lead Novo' },
+      { v: 'agendado',   l: 'Agendado' },
+      { v: 'confirmado', l: 'Confirmado' },
+      { v: 'na_clinica', l: 'Na Clinica' },
+      { v: 'em_consulta',l: 'Em Consulta' },
+      { v: 'paciente',   l: 'Paciente (pos-consulta)' },
+      { v: 'orcamento',  l: 'Orcamento' },
+      { v: 'perdido',    l: 'Perdido (recuperacao)' },
+    ]
+    var phaseOptions = PHASE_OPTIONS.map(function (o) {
+      return '<option value="' + o.v + '"' + (triggerPhase === o.v ? ' selected' : '') + '>' + o.l + '</option>'
     }).join('')
 
     var configHtml = '<div class="te-config">' +
@@ -305,13 +321,24 @@
         '<input type="text" class="te-config-input" data-action="edit-name" data-id="' + _esc(tpl.id) + '" value="' + _esc(nameVal) + '">' +
       '</div>' +
       '<div class="te-config-row">' +
+        '<label class="te-config-label">Fase</label>' +
+        '<select class="te-config-select" data-action="edit-trigger-phase" data-id="' + _esc(tpl.id) + '" style="flex:1">' + phaseOptions + '</select>' +
+      '</div>' +
+      '<div class="te-config-row">' +
+        '<label class="te-config-label">Delay</label>' +
+        '<div style="display:flex;gap:6px;align-items:center;flex:1">' +
+          '<input type="number" class="te-config-input" data-action="edit-day" data-id="' + _esc(tpl.id) + '" value="' + (dayVal || 0) + '" min="-30" max="365" style="width:60px;text-align:center" title="Dias">' +
+          '<span style="font-size:11px;color:var(--text-muted)">dias</span>' +
+          '<input type="number" class="te-config-input" data-action="edit-delay-hours" data-id="' + _esc(tpl.id) + '" value="' + delayHours + '" min="0" max="23" style="width:50px;text-align:center" title="Horas">' +
+          '<span style="font-size:11px;color:var(--text-muted)">h</span>' +
+          '<input type="number" class="te-config-input" data-action="edit-delay-minutes" data-id="' + _esc(tpl.id) + '" value="' + delayMins + '" min="0" max="59" style="width:50px;text-align:center" title="Minutos">' +
+          '<span style="font-size:11px;color:var(--text-muted)">min</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="te-config-row">' +
         '<label class="te-config-label">Status</label>' +
         '<label class="te-toggle"><input type="checkbox" class="te-toggle-input" data-action="toggle" data-id="' + _esc(tpl.id) + '"' + (isActive ? ' checked' : '') + '><span class="te-toggle-track"></span></label>' +
         '<span class="te-config-hint">' + (isActive ? 'Ativo' : 'Inativo') + '</span>' +
-      '</div>' +
-      '<div class="te-config-row">' +
-        '<label class="te-config-label">Envio</label>' +
-        '<select class="te-config-select" data-action="edit-day" data-id="' + _esc(tpl.id) + '">' + dayOptions + '</select>' +
       '</div>' +
       '<div class="te-config-row">' +
         '<label class="te-config-label">Categoria</label>' +
@@ -376,7 +403,10 @@
     }
     root.onchange = function (e) {
       var a = e.target.dataset.action, id = e.target.dataset.id
-      if (a === 'edit-day') _onEditField(id, 'day', e.target.value === '' ? null : parseInt(e.target.value))
+      if (a === 'edit-day') _onEditField(id, 'day', parseInt(e.target.value) || 0)
+      else if (a === 'edit-delay-hours') _onEditField(id, 'delay_hours', parseInt(e.target.value) || 0)
+      else if (a === 'edit-delay-minutes') _onEditField(id, 'delay_minutes', parseInt(e.target.value) || 0)
+      else if (a === 'edit-trigger-phase') _onEditField(id, 'trigger_phase', e.target.value)
       else if (a === 'edit-type') _onEditField(id, 'type', e.target.value)
       else if (a === 'edit-category') _onEditField(id, 'category', e.target.value)
       else if (a === 'toggle') _onToggle(id, e.target.checked)
@@ -584,6 +614,9 @@
     if (d && d.category) extras.category = d.category
     if (d && d.name) extras.name = d.name
     if (d && d.type !== undefined) extras.type = d.type
+    if (d && d.delay_hours !== undefined) extras.delay_hours = d.delay_hours
+    if (d && d.delay_minutes !== undefined) extras.delay_minutes = d.delay_minutes
+    if (d && d.trigger_phase !== undefined) extras.trigger_phase = d.trigger_phase
     // Persist media in metadata
     if (d && (d.media_url !== undefined || d.media_position)) {
       var meta = Object.assign({}, tpl.metadata || {})
@@ -600,6 +633,9 @@
       if (extras.category) tpl.category = extras.category
       if (extras.name) tpl.name = extras.name
       if (extras.type !== undefined) tpl.type = extras.type
+      if (extras.delay_hours !== undefined) tpl.delay_hours = extras.delay_hours
+      if (extras.delay_minutes !== undefined) tpl.delay_minutes = extras.delay_minutes
+      if (extras.trigger_phase !== undefined) tpl.trigger_phase = extras.trigger_phase
       delete _dirty[id]
       _saving[id] = 'ok'
       _render()
