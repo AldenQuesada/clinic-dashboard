@@ -43,7 +43,7 @@
   // ── WhatsApp message captions — pulled from Banco de Mensagens ──
   // ── Clinic name (dynamic from ClinicContext) ────────────────
   FM._clinicName = function () {
-    if (window.ClinicContext) return window.ClinicContext.getSetting('clinic_name', 'Clinica Mirian de Paula')
+    if (window.ClinicContext) return window.ClinicContext.getSetting('nome', 'Clinica Mirian de Paula')
     return 'Clinica Mirian de Paula'
   }
   FM._profName = function () {
