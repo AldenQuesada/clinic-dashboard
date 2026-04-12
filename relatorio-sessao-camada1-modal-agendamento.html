@@ -2230,12 +2230,58 @@ INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
     <tr><td><code>20260671</code></td><td>Fix <code>wa_outbox_enqueue_appt</code> com <code>p_appt_ref</code> e <code>p_lead_id</code></td></tr>
     <tr><td><code>20260672</code></td><td>Fix uuid=text em complaints RPCs</td></tr>
     <tr><td><code>20260673</code></td><td>Fix uuid=text em legal_doc e anamnesis RPCs</td></tr>
+    <tr><td><code>20260674</code></td><td>Campanhas por fase: <code>delay_hours</code>, <code>delay_minutes</code>, <code>trigger_phase</code> + RPC <code>wa_templates_for_phase</code></td></tr>
+    <tr><td><code>20260675</code></td><td>Fix <code>create_anamnesis_request</code> enum + <code>validate_anamnesis_token</code> uuid casts</td></tr>
   </table>
+
+  <h3>Campanhas por fase — sessao 2026-04-12</h3>
+  <p>Cada categoria de template e uma campanha vinculada a uma fase do funil.
+  Quando o paciente entra na fase, todos os templates ativos com <code>trigger_phase</code>
+  correspondente sao enfileirados no <code>wa_outbox</code> com o delay configurado.</p>
+
+  <table>
+    <tr><th>Fase</th><th>Trigger</th><th>Exemplo de sequencia</th></tr>
+    <tr><td>Lead Novo</td><td><code>lead</code></td><td>Boas-vindas quiz → Follow-up D1/D2/D3</td></tr>
+    <tr><td>Agendado</td><td><code>agendado</code></td><td>Confirmacao (novo/retorno) → Lembrete vespera</td></tr>
+    <tr><td>Na Clinica</td><td><code>na_clinica</code></td><td>Menu da clinica (imediata) → Boas-vindas</td></tr>
+    <tr><td>Paciente</td><td><code>paciente</code></td><td>Pos-consulta (+1d) → Retorno (+7d)</td></tr>
+    <tr><td>Orcamento</td><td><code>orcamento</code></td><td>Follow-up orcamento</td></tr>
+    <tr><td>Perdido</td><td><code>perdido</code></td><td>Recuperacao valor → Recuperacao promo</td></tr>
+  </table>
+
+  <p><strong>Delay granular:</strong> cada template tem 3 campos — <code>day</code> (dias),
+  <code>delay_hours</code> (horas), <code>delay_minutes</code> (minutos).
+  Exemplos: imediata (0/0/0), +30min (0/0/30), D-1 (-1/0/0), +1 dia 2h (1/2/0).</p>
+
+  <p><strong>Conexao engine:</strong> <code>AutomationsEngine.processStatusChange()</code>
+  → <code>_enqueueCampaignForPhase(appt, newStatus)</code>
+  → RPC <code>wa_templates_for_phase(phase)</code> → enfileira tudo no <code>wa_outbox</code>.</p>
+
+  <h3>Teste end-to-end validado (2026-04-12)</h3>
+  <ul>
+    <li>Template <code>scheduling_confirm_novo</code> editado pelo usuario</li>
+    <li>Mensagem renderizada com variaveis reais ({nome}, {clinica}, {endereco}, {link_anamnese})</li>
+    <li>Link da ficha de anamnese funcional (create_anamnesis_request → validate_anamnesis_token)</li>
+    <li>Enviada via wa_outbox → n8n processor → Evolution API → WhatsApp do paciente</li>
+    <li>Formatacao WhatsApp correta (*bold*, quebras de linha)</li>
+  </ul>
+
+  <h3>Bugs corrigidos durante testes</h3>
+  <ul>
+    <li><code>_getClinicaNome()</code> lia chave errada (<code>clinic_settings</code> → <code>clinicai_clinic_settings</code>)</li>
+    <li>21 templates com <code>\n</code> literal em vez de quebra real — fix global no banco</li>
+    <li><code>create_anamnesis_request</code>: enum <code>'pending'</code> nao existe → corrigido para <code>'sent'</code></li>
+    <li><code>validate_anamnesis_token</code>: <code>uuid = text</code> em 3 JOINs → casts adicionados</li>
+    <li>Duplicacao de mensagens: campanha + confirmacao disparavam juntas → campanha removida do <code>processAppointment</code></li>
+    <li>SyntaxError <code>}]</code> em agenda-modal.js quebrava TODAS as funcoes do modal</li>
+    <li>Consulta/Procedimento nao abria: <code>_toggleSection</code> CSS conflitava com <code>display:none</code> inline</li>
+  </ul>
 
   <h3>Arquivos-chave</h3>
   <ul>
-    <li><code>js/ui/templates-editor.ui.js</code> — UI completa (lista + editor + phone preview + CRUD)</li>
+    <li><code>js/ui/templates-editor.ui.js</code> — UI completa (lista + editor + phone preview + CRUD + campanhas)</li>
     <li><code>js/repositories/templates.repository.js</code> — RPCs: list, update, create, remove</li>
+    <li><code>js/agenda-automations.engine.js</code> — <code>_enqueueCampaignForPhase()</code></li>
     <li><code>css/templates-editor.css</code> — estilos 2 colunas + dark mode</li>
     <li><code>menu-clinica.html</code> — pagina do menu integrada ao sistema</li>
   </ul>
