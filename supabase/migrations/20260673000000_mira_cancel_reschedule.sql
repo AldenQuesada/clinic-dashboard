@@ -140,7 +140,10 @@ BEGIN
   v_name := REGEXP_REPLACE(v_name, '([0-9]{1,2})/([0-9]{1,2})(/[0-9]{2,4})?', '', 'g');
   v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}\s*[:h]?(oras?)?\s*[0-9]{0,2}', '', 'g');
   v_name := REGEXP_REPLACE(v_name,
-    '[[:<:]](pra|para|as|às|no|na|da|de|do|de manha|a tarde|a noite)[[:>:]]',
+    '(de manha|da manha|da tarde|da noite|a tarde|a noite)[[:>:]]',
+    '', 'gi');
+  v_name := REGEXP_REPLACE(v_name,
+    '[[:<:]](pra|para|as|às|no|na|dia)[[:>:]]',
     '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '[,.;!?]', '', 'g');
   v_name := TRIM(REGEXP_REPLACE(v_name, '\s+', ' ', 'g'));
@@ -232,9 +235,15 @@ BEGIN
     v_minute := (REGEXP_MATCH(v_right, '([0-9]{1,2}):([0-9]{2})'))[2]::int;
   ELSIF v_right ~ '([0-9]{1,2})\s*h(oras?)?' THEN
     v_hour := (REGEXP_MATCH(v_right, '([0-9]{1,2})\s*h(oras?)?'))[1]::int;
-  ELSIF v_right ~ '[[:<:]]manha[[:>:]]|de manha' THEN v_hour := 9;
-  ELSIF v_right ~ '[[:<:]](tarde)[[:>:]]|a tarde' THEN v_hour := 14;
-  ELSIF v_right ~ '[[:<:]](noite)[[:>:]]' THEN v_hour := 19;
+  ELSIF v_right ~ '[[:<:]]manha[[:>:]]|de manha|da manha' THEN v_hour := 9;
+  ELSIF v_right ~ '[[:<:]](tarde)[[:>:]]|a tarde|da tarde' THEN v_hour := 14;
+  ELSIF v_right ~ '[[:<:]](noite)[[:>:]]|a noite|da noite' THEN v_hour := 19;
+  ELSIF v_right ~ '[[:<:]](meio[- ]?dia)[[:>:]]' THEN v_hour := 12;
+  ELSIF v_right ~ '[[:<:]](uma|1)\s+(da tarde|hora)' THEN v_hour := 13;
+  ELSIF v_right ~ '[[:<:]](duas|2)\s+(da tarde|horas)' THEN v_hour := 14;
+  ELSIF v_right ~ '[[:<:]](tres|três|3)\s+(da tarde|horas)' THEN v_hour := 15;
+  ELSIF v_right ~ '[[:<:]](quatro|4)\s+(da tarde|horas)' THEN v_hour := 16;
+  ELSIF v_right ~ '[[:<:]](cinco|5)\s+(da tarde|horas)' THEN v_hour := 17;
   END IF;
 
   -- Nome: do lado esquerdo, limpa tokens
@@ -248,7 +257,10 @@ BEGIN
   v_name := REGEXP_REPLACE(v_name, '([0-9]{1,2})/([0-9]{1,2})(/[0-9]{2,4})?', '', 'g');
   v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}\s*[:h]?(oras?)?\s*[0-9]{0,2}', '', 'g');
   v_name := REGEXP_REPLACE(v_name,
-    '[[:<:]](pra|para|as|às|no|na|da|de|do|de manha|a tarde|a noite)[[:>:]]',
+    '(de manha|da manha|da tarde|da noite|a tarde|a noite)[[:>:]]',
+    '', 'gi');
+  v_name := REGEXP_REPLACE(v_name,
+    '[[:<:]](pra|para|as|às|no|na|dia)[[:>:]]',
     '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '[,.;!?]', '', 'g');
   v_name := TRIM(REGEXP_REPLACE(v_name, '\s+', ' ', 'g'));
@@ -525,14 +537,13 @@ BEGIN
 
   v_appt := v_targets->'items'->0;
 
-  -- Checa conflito no novo horario (outro appointment do mesmo pro, mesma data, mesmo horario)
+  -- Checa conflito no novo horario (qualquer profissional da clinica — agenda compartilhada)
   SELECT COUNT(*) INTO v_conflict
   FROM public.appointments
   WHERE clinic_id = v_clinic_id
     AND deleted_at IS NULL
     AND status IN ('agendado', 'pre_consulta')
     AND id != (v_appt->>'id')
-    AND professional_id = (v_appt->>'professional_id')::uuid
     AND scheduled_date = v_new_date
     AND start_time = v_new_time::time;
 

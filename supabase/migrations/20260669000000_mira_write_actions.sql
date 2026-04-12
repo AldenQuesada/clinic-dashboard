@@ -81,16 +81,32 @@ BEGIN
     v_minute := (REGEXP_MATCH(v_t, '([0-9]{1,2}):([0-9]{2})'))[2]::int;
   ELSIF v_t ~ '([0-9]{1,2})\s*h(oras?)?' THEN
     v_hour := (REGEXP_MATCH(v_t, '([0-9]{1,2})\s*h(oras?)?'))[1]::int;
-  ELSIF v_t ~ '[[:<:]]manha[[:>:]]|de manha' THEN v_hour := 9;
-  ELSIF v_t ~ '[[:<:]](tarde)[[:>:]]|a tarde' THEN v_hour := 14;
-  ELSIF v_t ~ '[[:<:]](noite)[[:>:]]' THEN v_hour := 19;
+  -- Numeros por extenso PRIMEIRO (antes do generico "tarde/manha")
+  ELSIF v_t ~ '[[:<:]](meio[- ]?dia)[[:>:]]' THEN v_hour := 12;
+  ELSIF v_t ~ '[[:<:]](uma|1)\s+(da tarde|hora)' THEN v_hour := 13;
+  ELSIF v_t ~ '[[:<:]](duas|2)\s+(da tarde|horas)' THEN v_hour := 14;
+  ELSIF v_t ~ '[[:<:]](tres|três|3)\s+(da tarde|horas)' THEN v_hour := 15;
+  ELSIF v_t ~ '[[:<:]](quatro|4)\s+(da tarde|horas)' THEN v_hour := 16;
+  ELSIF v_t ~ '[[:<:]](cinco|5)\s+(da tarde|horas)' THEN v_hour := 17;
+  ELSIF v_t ~ '[[:<:]](seis|6)\s+(da tarde|da noite|horas)' THEN v_hour := 18;
+  ELSIF v_t ~ '[[:<:]](sete|7)\s+(da manha|da noite|horas)' THEN v_hour := 7;
+  ELSIF v_t ~ '[[:<:]](oito|8)\s+(da manha|horas)' THEN v_hour := 8;
+  ELSIF v_t ~ '[[:<:]](nove|9)\s+(da manha|horas)' THEN v_hour := 9;
+  ELSIF v_t ~ '[[:<:]](dez|10)\s+(da manha|horas)' THEN v_hour := 10;
+  ELSIF v_t ~ '[[:<:]](onze|11)\s+horas' THEN v_hour := 11;
+  -- Genéricos (sem numero antes)
+  ELSIF v_t ~ '[[:<:]]manha[[:>:]]|de manha|da manha' THEN v_hour := 9;
+  ELSIF v_t ~ '[[:<:]](tarde)[[:>:]]|a tarde|da tarde' THEN v_hour := 14;
+  ELSIF v_t ~ '[[:<:]](noite)[[:>:]]|a noite|da noite' THEN v_hour := 19;
   END IF;
 
   -- Nome: remove trigger + data + hora + preps
   v_name := REGEXP_REPLACE(v_t, '^(marca|marcar|agenda|agendar|criar consulta|criar appointment|nova consulta|novo agendamento)[\s:]+((uma?|a|o)\s+)?(paciente|consulta)?\s*(,\s*)?(a\s+|o\s+|da\s+|do\s+)?', '', 'i');
   v_name := REGEXP_REPLACE(v_name, '[[:<:]](hoje|amanha|amanhã|depois de amanha|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado)[[:>:]]', '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}\s*[:h]?(oras?)?\s*[0-9]{0,2}', '', 'g');
-  v_name := REGEXP_REPLACE(v_name, '[[:<:]](pra|para|as|às|no|na|da|de|do|dia|de manha|a tarde|a noite)[[:>:]]', '', 'gi');
+  -- Remove preposicoes de tempo (mas preserva "de/da/do" em nomes como "Maria de Fatima")
+  v_name := REGEXP_REPLACE(v_name, '(de manha|da manha|da tarde|da noite|a tarde|a noite)', '', 'gi');
+  v_name := REGEXP_REPLACE(v_name, '[[:<:]](pra|para|as|às|no|na|dia)[[:>:]]', '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '[,.;!?]', '', 'g');
   v_name := TRIM(REGEXP_REPLACE(v_name, '\s+', ' ', 'g'));
   IF LENGTH(v_name) > 0 THEN
