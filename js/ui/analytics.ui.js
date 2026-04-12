@@ -40,13 +40,12 @@
   }
 
   async function _loadData() {
+    var token = (typeof getToken === 'function' && getToken()) || (window.ClinicEnv?.SUPABASE_KEY || '')
     var headers = {
       'apikey': window.ClinicEnv?.SUPABASE_KEY || '',
-      'Authorization': 'Bearer ' + (window.ClinicEnv?.SUPABASE_KEY || ''),
+      'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/json'
     }
-    var session = JSON.parse(sessionStorage.getItem('sb-session') || '{}')
-    if (session.access_token) headers['Authorization'] = 'Bearer ' + session.access_token
     var base = (window.ClinicEnv?.SUPABASE_URL || '') + '/rest/v1/rpc/'
 
     async function rpc(name, params) {

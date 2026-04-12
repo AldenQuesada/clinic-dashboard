@@ -25,9 +25,8 @@
 
   function _headers() {
     const h = { 'apikey': _key(), 'Content-Type': 'application/json' }
-    const session = JSON.parse(sessionStorage.getItem('sb-session') || '{}')
-    if (session.access_token) h['Authorization'] = 'Bearer ' + session.access_token
-    else h['Authorization'] = 'Bearer ' + _key()
+    const token = (typeof getToken === 'function' && getToken()) || _key()
+    h['Authorization'] = 'Bearer ' + token
     return h
   }
 

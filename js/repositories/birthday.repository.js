@@ -25,8 +25,8 @@
 
   function _headers() {
     var h = { 'apikey': _key(), 'Content-Type': 'application/json' }
-    var s = JSON.parse(sessionStorage.getItem('sb-session') || '{}')
-    h['Authorization'] = 'Bearer ' + (s.access_token || _key())
+    var token = (typeof getToken === 'function' && getToken()) || _key()
+    h['Authorization'] = 'Bearer ' + token
     return h
   }
 
