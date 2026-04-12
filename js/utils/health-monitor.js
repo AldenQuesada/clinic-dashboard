@@ -7,7 +7,10 @@
   var _lastAlert = {}
 
   function _check(name, url, method) {
-    return fetch(url, { method: method || 'HEAD', signal: AbortSignal.timeout(8000) })
+    var headers = {}
+    var key = window.ClinicEnv?.SUPABASE_KEY
+    if (key) { headers['apikey'] = key; headers['Authorization'] = 'Bearer ' + key }
+    return fetch(url, { method: method || 'HEAD', headers: headers, signal: AbortSignal.timeout(8000) })
       .then(function (r) { return { name: name, ok: r.ok, status: r.status } })
       .catch(function (e) { return { name: name, ok: false, status: 0, error: e.message } })
   }
