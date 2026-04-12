@@ -2365,6 +2365,39 @@ AGENDAMENTO (tudo ate o check final de finalizacao)
     <li>Lead na clinica / em consulta → ainda <strong>Agendamento</strong></li>
   </ul>
 
+  <h3>Validacao do codigo (2026-04-12)</h3>
+  <p>Auditoria verificou que o fluxo esta implementado corretamente. 3 bugs corrigidos:</p>
+  <table>
+    <tr><th>Bug</th><th>Onde</th><th>Antes</th><th>Correcao</th></tr>
+    <tr>
+      <td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>apptTransition()</code> L380</td>
+      <td>Mudava fase para <code>'paciente'</code> quando status = finalizado — <strong>antes</strong> do modal</td>
+      <td>Removido. Fase muda APENAS no <code>confirmFinalize()</code></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>confirmFinalize()</code> rota <code>'nenhum'</code></td>
+      <td>Ia para <code>'paciente'</code> mesmo sem procedimento</td>
+      <td>Nao muda fase (compareceu mas nao realizou)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-warn">ALTO</span></td>
+      <td><code>agenda-validation.js</code> L517</td>
+      <td>Cancelamento → fase <code>'cancelado'</code> (invalida)</td>
+      <td>Corrigido para <code>'perdido'</code></td>
+    </tr>
+  </table>
+
+  <h3>Rotas do modal de finalizacao — validadas</h3>
+  <table>
+    <tr><th>Rota</th><th>Cenario</th><th>Fase do lead</th></tr>
+    <tr><td><code>paciente</code></td><td>Fez procedimento → check final</td><td><code>paciente</code></td></tr>
+    <tr><td><code>pac_orcamento</code></td><td>Fez procedimento + gerou orcamento</td><td><code>paciente</code></td></tr>
+    <tr><td><code>orcamento</code></td><td>So avaliacao → saiu com orcamento</td><td><code>orcamento</code></td></tr>
+    <tr><td><code>nenhum</code></td><td>Nao fez (pressao alta, dor, urgencia)</td><td>Mantem fase atual</td></tr>
+  </table>
+
   <h3>3 Camadas de dispatch de campanhas</h3>
   <table>
     <tr><th>Camada</th><th>Trigger</th><th>Arquivo</th><th>O que dispara</th></tr>
