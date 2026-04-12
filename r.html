@@ -38,24 +38,177 @@ body{background:#0A0A0A;color:#F5F5F5;font-family:-apple-system,'SF Pro Display'
   })
   .then(function(r) { return r.json() })
   .then(function(data) {
-    if (data && data.ok && data.url) {
-      // Validar dominio: so redirecionar para o proprio dominio
-      try {
-        var target = new URL(data.url, window.location.origin);
-        if (target.origin !== window.location.origin) {
-          console.warn('[Redirect] Dominio externo bloqueado:', target.origin);
-          showError();
-          return;
-        }
-      } catch (e) {
-        // URL relativa — ok
-      }
-      window.location.replace(data.url);
-    } else {
-      showError();
+    if (!data || !data.ok || !data.url) { showError(); return; }
+
+    var pixels = data.pixels || {};
+    var hasPixels = !!(
+      pixels.meta_pixel_id ||
+      pixels.google_ads_id ||
+      pixels.google_analytics_id ||
+      pixels.tiktok_pixel_id ||
+      pixels.custom_head
+    );
+
+    if (!hasPixels) {
+      doRedirect(data.url);
+      return;
     }
+
+    firePixels(pixels, data.url);
   })
   .catch(function() { showError(); });
+
+  // ── Fire all configured pixels ──────────────────────────────
+  function firePixels(px, url) {
+    var fired = 0;
+    var total = 0;
+
+    // Count expected pixels
+    if (px.meta_pixel_id) total++;
+    if (px.google_ads_id) total++;
+    if (px.google_analytics_id) total++;
+    if (px.tiktok_pixel_id) total++;
+
+    // Safety timeout: redirect after 3s max even if pixels fail
+    var timeout = setTimeout(function() { doRedirect(url); }, 3000);
+
+    function checkDone() {
+      fired++;
+      if (fired >= total) {
+        clearTimeout(timeout);
+        // Small delay to ensure pixel beacons are sent
+        setTimeout(function() { doRedirect(url); }, 300);
+      }
+    }
+
+    // If only custom_head and no standard pixels, redirect after injection
+    if (total === 0) {
+      injectCustomHead(px.custom_head);
+      setTimeout(function() { doRedirect(url); }, 800);
+      return;
+    }
+
+    // ── Meta Pixel ──────────────────────────────────────────
+    if (px.meta_pixel_id) {
+      try {
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
+        n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
+        s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(
+        window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', px.meta_pixel_id);
+        fbq('track', 'PageView');
+        if (px.meta_event && px.meta_event !== 'PageView') {
+          fbq('track', px.meta_event);
+        }
+        // noscript fallback image
+        var img = new Image();
+        img.src = 'https://www.facebook.com/tr?id=' + encodeURIComponent(px.meta_pixel_id) + '&ev=PageView&noscript=1';
+        img.onload = img.onerror = checkDone;
+      } catch(e) { checkDone(); }
+    }
+
+    // ── Google Ads / Analytics (gtag.js) ────────────────────
+    if (px.google_ads_id || px.google_analytics_id) {
+      try {
+        var gtagId = px.google_ads_id || px.google_analytics_id;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(gtagId);
+        s.onload = function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){ dataLayer.push(arguments); }
+          gtag('js', new Date());
+
+          if (px.google_analytics_id) {
+            gtag('config', px.google_analytics_id, { send_page_view: true });
+            if (px.ga_event) {
+              gtag('event', px.ga_event);
+            }
+          }
+
+          if (px.google_ads_id) {
+            gtag('config', px.google_ads_id);
+            if (px.google_ads_label) {
+              gtag('event', 'conversion', {
+                send_to: px.google_ads_id + '/' + px.google_ads_label
+              });
+            }
+          }
+
+          // Google Ads e Analytics compartilham o mesmo script
+          if (px.google_ads_id) checkDone();
+          if (px.google_analytics_id) checkDone();
+        };
+        s.onerror = function() {
+          if (px.google_ads_id) checkDone();
+          if (px.google_analytics_id) checkDone();
+        };
+        document.head.appendChild(s);
+      } catch(e) {
+        if (px.google_ads_id) checkDone();
+        if (px.google_analytics_id) checkDone();
+      }
+    }
+
+    // ── TikTok Pixel ────────────────────────────────────────
+    if (px.tiktok_pixel_id) {
+      try {
+        !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];
+        ttq.methods=["page","track","identify","instances","debug","on","off",
+        "once","ready","alias","group","enableCookie","disableCookie"];
+        ttq.setAndDefer=function(t,e){t[e]=function(){
+        t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+        for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+        ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)
+        ttq.setAndDefer(e,ttq.methods[n]);return e};ttq.load=function(e,n){
+        var i="https://analytics.tiktok.com/i18n/pixel/events.js";
+        ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};
+        ttq._t[e+\"_\"+n]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};
+        var o=d.createElement("script");o.type="text/javascript";o.async=!0;
+        o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];
+        a.parentNode.insertBefore(o,a)}}(window,document,"ttq");
+        ttq.load(px.tiktok_pixel_id);
+        ttq.page();
+        if (px.tiktok_event) {
+          ttq.track(px.tiktok_event);
+        }
+        // Beacon image fallback
+        var img = new Image();
+        img.src = 'https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=' + encodeURIComponent(px.tiktok_pixel_id);
+        img.onload = img.onerror = checkDone;
+      } catch(e) { checkDone(); }
+    }
+
+    // ── Custom head tags ────────────────────────────────────
+    if (px.custom_head) {
+      injectCustomHead(px.custom_head);
+    }
+  }
+
+  // ── Inject custom HTML/script into head ─────────────────
+  function injectCustomHead(html) {
+    if (!html) return;
+    var container = document.createElement('div');
+    container.innerHTML = html;
+    var scripts = container.querySelectorAll('script');
+    scripts.forEach(function(oldScript) {
+      var newScript = document.createElement('script');
+      if (oldScript.src) { newScript.src = oldScript.src; newScript.async = true; }
+      else { newScript.textContent = oldScript.textContent; }
+      document.head.appendChild(newScript);
+    });
+    // Non-script elements (noscript, img, etc.)
+    var nonScripts = container.querySelectorAll(':not(script)');
+    nonScripts.forEach(function(el) {
+      document.head.appendChild(el.cloneNode(true));
+    });
+  }
+
+  function doRedirect(url) {
+    window.location.replace(url);
+  }
 
   function showError() {
     document.getElementById('spinner').style.display = 'none';
