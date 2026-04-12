@@ -1,0 +1,83 @@
+{
+  "name": "ClinicAI - Health Check",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 5 }] }
+      },
+      "id": "health-cron",
+      "name": "Every 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pinga 3 servicos: Evolution, Supabase REST, e checa outbox atrasada\nconst results = { ts: new Date().toISOString(), services: {} };\n\n// 1. Evolution API\ntry {\n  const evo = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'http://n8n_evolution-api:8080/instance/connectionState/mira-mirian',\n    headers: { apikey: '429683C4C977415CAAFCCE10F7D57E11' },\n    timeout: 10000\n  });\n  results.services.evolution = {\n    ok: evo?.instance?.state === 'open',\n    state: evo?.instance?.state || 'unknown'\n  };\n} catch(e) {\n  results.services.evolution = { ok: false, error: e.message.slice(0, 100) };\n}\n\n// 2. Supabase REST (ping simples)\ntry {\n  const sb = await this.helpers.httpRequest({\n    method: 'POST',\n    url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_my_quota',\n    headers: {\n      'Content-Type': 'application/json',\n      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0'\n    },\n    body: { p_phone: '5544998787673' },\n    timeout: 10000\n  });\n  results.services.supabase = { ok: true };\n} catch(e) {\n  results.services.supabase = { ok: false, error: e.message.slice(0, 100) };\n}\n\n// 3. Outbox atrasada (msgs queued ha mais de 10min = processor pode ter parado)\ntry {\n  const ob = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/wa_outbox?status=eq.queued&scheduled_at=lt.' + new Date(Date.now() - 10*60*1000).toISOString() + '&select=id&limit=1',\n    headers: {\n      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0',\n      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0'\n    },\n    timeout: 10000\n  });\n  results.services.outbox = {\n    ok: !ob || ob.length === 0,\n    stale_count: ob ? ob.length : 0\n  };\n} catch(e) {\n  results.services.outbox = { ok: true, note: 'check failed but not critical' };\n}\n\n// Verifica se algum falhou\nconst failed = Object.entries(results.services).filter(([k,v]) => !v.ok);\nresults.has_failure = failed.length > 0;\nresults.failed_services = failed.map(([k]) => k);\n\nreturn [{ json: results }];"
+      },
+      "id": "health-check-code",
+      "name": "Check Services",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            { "id": "fail-check", "leftValue": "={{ $json.has_failure }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "health-has-failure",
+      "name": "Has Failure?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://n8n_evolution-api:8080/message/sendText/mira-mirian",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"5544998787673\",\n  \"text\": \"🚨 *ALERTA — ClinicAI Health Check*\\n─────────────\\nServicos com problema: *{{ $json.failed_services.join(', ') }}*\\n\\n{{ Object.entries($json.services).filter(([k,v]) => !v.ok).map(([k,v]) => '❌ ' + k + ': ' + (v.error || v.state || 'down')).join('\\n') }}\\n\\n⏰ {{ $json.ts }}\"\n}",
+        "options": {}
+      },
+      "id": "health-alert-send",
+      "name": "Send Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ezmaPVK9AyfxTg4c", "name": "Mira — Evolution API" }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "health-noop",
+      "name": "All OK",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [900, 420]
+    }
+  ],
+  "connections": {
+    "Every 5min": { "main": [[{ "node": "Check Services", "type": "main", "index": 0 }]] },
+    "Check Services": { "main": [[{ "node": "Has Failure?", "type": "main", "index": 0 }]] },
+    "Has Failure?": { "main": [
+      [{ "node": "Send Alert", "type": "main", "index": 0 }],
+      [{ "node": "All OK", "type": "main", "index": 0 }]
+    ]}
+  },
+  "settings": { "executionOrder": "v1" }
+}
