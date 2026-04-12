@@ -1,0 +1,39 @@
+name: Mira Tests
+
+on:
+  push:
+    paths:
+      - 'supabase/migrations/*mira*.sql'
+      - 'scripts/mira-tests.cjs'
+      - 'js/services/mira.service.js'
+      - 'js/repositories/mira.repository.js'
+      - 'n8n/mira-*.json'
+  pull_request:
+    paths:
+      - 'supabase/migrations/*mira*.sql'
+      - 'scripts/mira-tests.cjs'
+  workflow_dispatch:
+
+jobs:
+  test-mira:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pg
+        run: npm install --no-save pg
+
+      - name: Run Mira test suite
+        env:
+          SUPABASE_DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: node scripts/mira-tests.cjs
+
+      - name: Report success
+        if: success()
+        run: echo "All 39+ Mira tests passing"

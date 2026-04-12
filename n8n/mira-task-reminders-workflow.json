@@ -1,0 +1,102 @@
+{
+  "name": "ClinicAI - Mira Task Reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "*/5 * * * *" }
+          ]
+        }
+      },
+      "id": "tr-cron",
+      "name": "Cron every 5min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_pending_task_reminders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "id": "tr-fetch",
+      "name": "Fetch Pending",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "credentials": {
+        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst items = Array.isArray(data) ? data : [];\nif (items.length === 0) return [];\nreturn items.map(r => ({ json: {\n  task_id: r.task_id,\n  phone: r.phone,\n  instance: r.instance_id,\n  title: r.title,\n  due_at: r.due_at,\n  message: '⏰ *Lembrete*\\n─────────────\\n📝 ' + r.title + '\\n\\n_Definido pra agora._'\n} }));"
+      },
+      "id": "tr-split",
+      "name": "Split Tasks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://n8n_evolution-api:8080/message/sendText/{{ $json.instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.phone }}\",\n  \"text\": {{ JSON.stringify($json.message) }}\n}",
+        "options": {}
+      },
+      "id": "tr-send",
+      "name": "Send Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ezmaPVK9AyfxTg4c", "name": "Mira — Evolution API" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_mark_reminder_sent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_task_id\": \"{{ $('Split Tasks').item.json.task_id }}\"\n}",
+        "options": {}
+      },
+      "id": "tr-mark",
+      "name": "Mark Sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "credentials": {
+        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+      }
+    }
+  ],
+  "connections": {
+    "Cron every 5min": { "main": [[{ "node": "Fetch Pending", "type": "main", "index": 0 }]] },
+    "Fetch Pending":   { "main": [[{ "node": "Split Tasks", "type": "main", "index": 0 }]] },
+    "Split Tasks":     { "main": [[{ "node": "Send Reminder", "type": "main", "index": 0 }]] },
+    "Send Reminder":   { "main": [[{ "node": "Mark Sent", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

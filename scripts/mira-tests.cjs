@@ -14,10 +14,10 @@
 const pg = require('pg');
 
 const DB = {
-  host: 'db.oqboitkpcvuaudouwvkl.supabase.co',
+  host: process.env.SUPABASE_DB_HOST || 'db.oqboitkpcvuaudouwvkl.supabase.co',
   port: 5432,
   user: 'postgres',
-  password: 'Rosangela*121776',
+  password: process.env.SUPABASE_DB_PASSWORD || 'Rosangela*121776',
   database: 'postgres',
   ssl: { rejectUnauthorized: false },
 };
