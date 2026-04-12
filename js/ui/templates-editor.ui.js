@@ -124,7 +124,9 @@
         '<h2 class="te-title">Templates de Mensagem</h2>' +
         '<p class="te-subtitle">' + _templates.filter(function(t){return _getActive(t)}).length +
           ' de ' + _templates.length + ' templates ativos</p>' +
-      '</div></div>' +
+      '</div>' +
+      '<button class="te-new-btn" data-action="create">+ Novo Template</button>' +
+      '</div>' +
       tabs +
       '<div class="te-layout">' +
         '<div class="te-sidebar">' + list + '</div>' +
@@ -224,24 +226,58 @@
     '</div>'
 
     // Config section
+    var d = _dirty[tpl.id] || {}
+    var dayVal = d.day !== undefined ? d.day : (tpl.day != null ? tpl.day : '')
+    var catVal = d.category || tpl.category || 'geral'
+    var nameVal = d.name || tpl.name || ''
+
+    var catOptions = Object.keys(CATEGORY_META).map(function (k) {
+      return '<option value="' + k + '"' + (catVal === k ? ' selected' : '') + '>' + CATEGORY_META[k].label + '</option>'
+    }).join('')
+
+    var dayOptions = [
+      { v: '', l: 'Nao programada' },
+      { v: '-3', l: '3 dias antes (D-3)' },
+      { v: '-2', l: '2 dias antes (D-2)' },
+      { v: '-1', l: '1 dia antes (D-1)' },
+      { v: '0',  l: 'No dia (D-0)' },
+      { v: '1',  l: '1 dia depois (D+1)' },
+      { v: '2',  l: '2 dias depois (D+2)' },
+      { v: '3',  l: '3 dias depois (D+3)' },
+      { v: '7',  l: '7 dias depois (D+7)' },
+      { v: '14', l: '14 dias depois (D+14)' },
+      { v: '30', l: '30 dias depois (D+30)' },
+    ].map(function (o) {
+      return '<option value="' + o.v + '"' + (String(dayVal) === o.v ? ' selected' : '') + '>' + o.l + '</option>'
+    }).join('')
+
     var configHtml = '<div class="te-config">' +
+      '<div class="te-config-row">' +
+        '<label class="te-config-label">Nome</label>' +
+        '<input type="text" class="te-config-input" data-action="edit-name" data-id="' + _esc(tpl.id) + '" value="' + _esc(nameVal) + '">' +
+      '</div>' +
       '<div class="te-config-row">' +
         '<label class="te-config-label">Status</label>' +
         '<label class="te-toggle"><input type="checkbox" class="te-toggle-input" data-action="toggle" data-id="' + _esc(tpl.id) + '"' + (isActive ? ' checked' : '') + '><span class="te-toggle-track"></span></label>' +
-        '<span class="te-config-hint">' + (isActive ? 'Ativo — sera enviado automaticamente' : 'Inativo — nao sera enviado') + '</span>' +
+        '<span class="te-config-hint">' + (isActive ? 'Ativo' : 'Inativo') + '</span>' +
+      '</div>' +
+      '<div class="te-config-row">' +
+        '<label class="te-config-label">Envio</label>' +
+        '<select class="te-config-select" data-action="edit-day" data-id="' + _esc(tpl.id) + '">' + dayOptions + '</select>' +
+      '</div>' +
+      '<div class="te-config-row">' +
+        '<label class="te-config-label">Categoria</label>' +
+        '<select class="te-config-select" data-action="edit-category" data-id="' + _esc(tpl.id) + '">' + catOptions + '</select>' +
       '</div>' +
       '<div class="te-config-row">' +
         '<label class="te-config-label">Slug</label>' +
         '<code class="te-slug">' + _esc(tpl.slug) + '</code>' +
       '</div>' +
-      '<div class="te-config-row">' +
-        '<label class="te-config-label">Categoria</label>' +
-        '<span class="te-cat-badge" style="background:' + _catMeta(tpl.category||'geral').color + '15;color:' + _catMeta(tpl.category||'geral').color + '">' + _catMeta(tpl.category||'geral').label + '</span>' +
-      '</div>' +
     '</div>'
 
-    // Save button
+    // Action buttons
     var saveBtn = '<div class="te-save-row">' +
+      '<button class="te-delete-btn" data-action="delete" data-id="' + _esc(tpl.id) + '" title="Excluir template">Excluir</button>' +
       '<button class="te-save-btn' + (saving === 'ok' ? ' te-save-btn-success' : '') + '" data-action="save" data-id="' + _esc(tpl.id) + '"' + (saving === true ? ' disabled' : '') + '>' +
         (saving === true ? 'Salvando...' : saving === 'ok' ? 'Salvo' : 'Salvar alteracoes') +
       '</button>' +
@@ -274,9 +310,19 @@
       else if (action === 'fmt') { _applyFmt(el.dataset.fmt) }
       else if (action === 'emoji-toggle') { var p = document.getElementById('teEmojiPicker'); if (p) p.style.display = p.style.display === 'none' ? '' : 'none' }
       else if (action === 'emoji') { _insertAtCursor(el.dataset.emoji); var pk = document.getElementById('teEmojiPicker'); if (pk) pk.style.display = 'none' }
+      else if (action === 'create') { _onCreate() }
+      else if (action === 'delete') { _onDelete(el.dataset.id) }
     }
     root.oninput = function (e) {
-      if (e.target.dataset.action === 'edit') _onEdit(e.target.dataset.id, e.target.value)
+      var a = e.target.dataset.action, id = e.target.dataset.id
+      if (a === 'edit') _onEdit(id, e.target.value)
+      else if (a === 'edit-name') _onEditField(id, 'name', e.target.value)
+    }
+    root.onchange = function (e) {
+      var a = e.target.dataset.action, id = e.target.dataset.id
+      if (a === 'edit-day') _onEditField(id, 'day', e.target.value === '' ? null : parseInt(e.target.value))
+      else if (a === 'edit-category') _onEditField(id, 'category', e.target.value)
+      else if (a === 'toggle') _onToggle(id, e.target.checked)
     }
   }
 
@@ -297,6 +343,50 @@
     chat.innerHTML = text ?
       '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + text + '</div><div class="bc-wa-bubble-time">' + ts + ' <svg width="14" height="8" viewBox="0 0 16 8" fill="none" stroke="#53bdeb" stroke-width="1.5"><polyline points="1 4 4 7 9 2"/><polyline points="5 4 8 7 13 2"/></svg></div></div>' :
       '<div class="bc-wa-empty">Escreva a mensagem ao lado</div>'
+  }
+
+  function _onEditField(id, field, value) {
+    var tpl = _templates.find(function(t){return t.id===id})
+    if (!tpl) return
+    if (!_dirty[id]) _dirty[id] = { content: tpl.content, is_active: tpl.is_active }
+    _dirty[id][field] = value
+  }
+
+  async function _onCreate() {
+    var name = prompt('Nome do novo template:')
+    if (!name || !name.trim()) return
+    var slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+    var r = await TemplatesRepository.create({
+      name: name.trim(),
+      slug: slug,
+      category: _activeTab !== 'todos' ? _activeTab : 'geral',
+      content: 'Ola, {nome}! ',
+      is_active: true,
+    })
+    if (r.ok) {
+      _templates.push(r.data)
+      _selectedId = r.data.id
+      _render()
+      if (window._showToast) _showToast('Template criado', name.trim(), 'success')
+    } else {
+      if (window._toastErr) _toastErr('Erro ao criar: ' + (r.error || ''))
+    }
+  }
+
+  async function _onDelete(id) {
+    var tpl = _templates.find(function(t){return t.id===id})
+    if (!tpl) return
+    if (!confirm('Excluir "' + tpl.name + '"? Essa acao nao pode ser desfeita.')) return
+    var r = await TemplatesRepository.remove(id)
+    if (r.ok) {
+      _templates = _templates.filter(function(t){return t.id!==id})
+      delete _dirty[id]
+      if (_selectedId === id) _selectedId = _templates.length ? _templates[0].id : null
+      _render()
+      if (window._showToast) _showToast('Template excluido', tpl.name, 'success')
+    } else {
+      if (window._toastErr) _toastErr('Erro ao excluir: ' + (r.error || ''))
+    }
   }
 
   function _onToggle(id, checked) {
@@ -339,11 +429,19 @@
     if (!tpl) return
     var content = d ? d.content : tpl.content
     var isActive = d ? d.is_active : tpl.is_active
+    var extras = {}
+    if (d && d.day !== undefined) extras.day = d.day
+    if (d && d.category) extras.category = d.category
+    if (d && d.name) extras.name = d.name
     _saving[id] = true
     _render()
-    var r = await TemplatesRepository.update(id, content, isActive)
+    var r = await TemplatesRepository.update(id, content, isActive, Object.keys(extras).length ? extras : undefined)
     if (r.ok) {
-      tpl.content = content; tpl.is_active = isActive; delete _dirty[id]
+      tpl.content = content; tpl.is_active = isActive
+      if (extras.day !== undefined) tpl.day = extras.day
+      if (extras.category) tpl.category = extras.category
+      if (extras.name) tpl.name = extras.name
+      delete _dirty[id]
       _saving[id] = 'ok'
       _render()
       if (window._showToast) _showToast('Template salvo', tpl.name, 'success')

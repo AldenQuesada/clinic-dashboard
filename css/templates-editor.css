@@ -101,6 +101,35 @@
   background:var(--accent-gold); border:none; border-radius:var(--radius-md);
   cursor:pointer; transition:background 0.15s;
 }
+/* ── New template button ──────────────────────────────────── */
+.te-new-btn {
+  padding:8px 18px; font-size:13px; font-weight:600; color:#fff;
+  background:var(--accent-gold); border:none; border-radius:var(--radius-md);
+  cursor:pointer; transition:background 0.15s; white-space:nowrap; align-self:flex-start;
+}
+.te-new-btn:hover { background:#B45309; }
+
+/* ── Delete button ───────────────────────────────────────── */
+.te-delete-btn {
+  padding:8px 16px; font-size:12px; font-weight:600; color:var(--danger);
+  background:transparent; border:1px solid var(--danger); border-radius:var(--radius-md);
+  cursor:pointer; transition:background 0.15s;
+}
+.te-delete-btn:hover { background:#FEF2F2; }
+
+/* ── Config inputs ───────────────────────────────────────── */
+.te-config-input {
+  flex:1; padding:5px 10px; font-size:13px; border:1px solid var(--border);
+  border-radius:var(--radius-sm); background:var(--card); color:var(--text-primary);
+  font-family:inherit;
+}
+.te-config-input:focus { outline:none; border-color:var(--accent-gold); }
+.te-config-select {
+  padding:5px 10px; font-size:12px; border:1px solid var(--border);
+  border-radius:var(--radius-sm); background:var(--card); color:var(--text-primary);
+  cursor:pointer;
+}
+
 .te-save-btn:hover { background:#B45309; }
 .te-save-btn:disabled { opacity:0.5; cursor:not-allowed; }
 .te-save-btn-success { background:#059669; }

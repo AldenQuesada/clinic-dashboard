@@ -42,16 +42,51 @@
 
   // ── Atualizar template ────────────────────────────────────────
 
-  async function update(id, content, isActive) {
+  async function update(id, content, isActive, extras) {
     try {
-      const { data, error } = await _sb().rpc('wa_template_update', {
-        p_id:        id,
-        p_content:   content,
-        p_is_active: isActive,
-      })
+      var params = { p_id: id, p_content: content, p_is_active: isActive }
+      if (extras && extras.day !== undefined) params.p_day = extras.day
+      if (extras && extras.category) params.p_category = extras.category
+      if (extras && extras.name) params.p_name = extras.name
+      const { data, error } = await _sb().rpc('wa_template_update', params)
       if (error) return _err(error.message || String(error))
       if (data && data.ok === false) return _err(data.error)
       return _ok(data)
+    } catch (err) {
+      return _err(err.message || String(err))
+    }
+  }
+
+  // ── Criar template ──────────────────────────────────────────
+
+  async function create(tpl) {
+    try {
+      const { data, error } = await _sb().from('wa_message_templates').insert({
+        clinic_id: '00000000-0000-0000-0000-000000000001',
+        slug:      tpl.slug,
+        name:      tpl.name,
+        category:  tpl.category || 'geral',
+        content:   tpl.content || '',
+        type:      tpl.type || '',
+        day:       tpl.day || null,
+        is_active: tpl.is_active !== false,
+        active:    tpl.is_active !== false,
+        sort_order: tpl.sort_order || 50,
+      }).select().single()
+      if (error) return _err(error.message || String(error))
+      return _ok(data)
+    } catch (err) {
+      return _err(err.message || String(err))
+    }
+  }
+
+  // ── Deletar template ─────────────────────────────────────────
+
+  async function remove(id) {
+    try {
+      const { error } = await _sb().from('wa_message_templates').delete().eq('id', id)
+      if (error) return _err(error.message || String(error))
+      return _ok(null)
     } catch (err) {
       return _err(err.message || String(err))
     }
@@ -61,6 +96,8 @@
   window.TemplatesRepository = Object.freeze({
     list,
     update,
+    create,
+    remove,
   })
 
 })()
