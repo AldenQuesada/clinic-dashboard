@@ -131,7 +131,7 @@ BEGIN
     '[[:<:]](hoje|amanha|amanhã|depois de amanha|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado|domingo)[[:>:]]',
     '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '([0-9]{1,2})/([0-9]{1,2})(/[0-9]{2,4})?', '', 'g');
-  v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}[:h]?[0-9]{0,2}', '', 'g');
+  v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}\s*[:h]?(oras?)?\s*[0-9]{0,2}', '', 'g');
   v_name := REGEXP_REPLACE(v_name,
     '[[:<:]](pra|para|as|às|no|na|da|de|do|de manha|a tarde|a noite)[[:>:]]',
     '', 'gi');
@@ -217,8 +217,8 @@ BEGIN
   IF v_right ~ '([0-9]{1,2}):([0-9]{2})' THEN
     v_hour   := (REGEXP_MATCH(v_right, '([0-9]{1,2}):([0-9]{2})'))[1]::int;
     v_minute := (REGEXP_MATCH(v_right, '([0-9]{1,2}):([0-9]{2})'))[2]::int;
-  ELSIF v_right ~ '([0-9]{1,2})h' THEN
-    v_hour := (REGEXP_MATCH(v_right, '([0-9]{1,2})h'))[1]::int;
+  ELSIF v_right ~ '([0-9]{1,2})\s*h(oras?)?' THEN
+    v_hour := (REGEXP_MATCH(v_right, '([0-9]{1,2})\s*h(oras?)?'))[1]::int;
   ELSIF v_right ~ '[[:<:]]manha[[:>:]]|de manha' THEN v_hour := 9;
   ELSIF v_right ~ '[[:<:]](tarde)[[:>:]]|a tarde' THEN v_hour := 14;
   ELSIF v_right ~ '[[:<:]](noite)[[:>:]]' THEN v_hour := 19;
@@ -233,7 +233,7 @@ BEGIN
     '[[:<:]](hoje|amanha|amanhã|depois de amanha|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado|domingo)[[:>:]]',
     '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '([0-9]{1,2})/([0-9]{1,2})(/[0-9]{2,4})?', '', 'g');
-  v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}[:h]?[0-9]{0,2}', '', 'g');
+  v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}\s*[:h]?(oras?)?\s*[0-9]{0,2}', '', 'g');
   v_name := REGEXP_REPLACE(v_name,
     '[[:<:]](pra|para|as|às|no|na|da|de|do|de manha|a tarde|a noite)[[:>:]]',
     '', 'gi');
