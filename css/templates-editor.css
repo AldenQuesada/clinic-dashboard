@@ -3,18 +3,13 @@
    ============================================================ */
 
 .te-page { max-width: 1400px; position: relative; z-index: 1; padding-bottom: 60px; }
+/* Pagina cobre TODA a area do .content — impede grafico da overview vazar por baixo */
 #page-settings-templates {
   background: var(--bg);
-  min-height: calc(100vh - var(--header-height, 64px));
+  min-height: calc(100vh - var(--header-height, 64px) - 56px);
   position: relative;
   z-index: 2;
-}
-/* Impede conteudo de outras paginas vazar por baixo */
-#page-settings-templates::after {
-  content: '';
-  display: block;
-  height: 100px;
-  background: var(--bg);
+  overflow: hidden;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
