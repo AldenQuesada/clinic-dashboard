@@ -23,14 +23,40 @@
   var _dirty       = {}
   var _saving      = {}
 
+  // Tags do funil — grupos principais
   var CATEGORY_META = {
-    onboarding:   { label: 'Captacao',       color: '#7C3AED', icon: 'zap' },
-    follow_up:    { label: 'Follow-up',      color: '#2563EB', icon: 'refresh-cw' },
-    agendamento:  { label: 'Agendamento',    color: '#059669', icon: 'calendar' },
-    pos_consulta: { label: 'Pos-consulta',   color: '#0891B2', icon: 'heart' },
-    recuperacao:  { label: 'Recuperacao',     color: '#D97706', icon: 'user-plus' },
-    broadcasting: { label: 'Broadcasting',   color: '#DC2626', icon: 'radio' },
-    geral:        { label: 'Geral',          color: '#6B7280', icon: 'message-circle' },
+    pre_agendamento:     { label: 'Pre-agendamento',     color: '#7C3AED' },
+    agendamento:         { label: 'Agendamento',         color: '#059669' },
+    paciente:            { label: 'Paciente',            color: '#0891B2' },
+    orcamento:           { label: 'Orcamento',           color: '#D97706' },
+    paciente_orcamento:  { label: 'Paciente + Orcamento',color: '#2563EB' },
+    perdido:             { label: 'Perdido',             color: '#9CA3AF' },
+  }
+
+  // Status por grupo de tag
+  var STATUS_POR_GRUPO = {
+    pre_agendamento: [
+      'Lead Novo','Em Conversa','Lead Frio','Lead Morno','Lead Quente',
+      'Sem Resposta','Qualificado','Desqualificado','Follow-up','Prioritario'
+    ],
+    agendamento: [
+      'Agendado','Aguardando Confirmacao','Confirmado','Reagendado',
+      'Cancelado','Falta (No-show)','Encaixe','Prioridade na Agenda'
+    ],
+    paciente: [
+      'Paciente Ativo','Consulta Realizada','Procedimento Realizado',
+      'Pos-consulta','Pos-procedimento','Aguardando Retorno',
+      'Avaliacao Pendente','Avaliacao Realizada'
+    ],
+    orcamento: [
+      'Orcamento em Aberto','Orcamento Enviado','Em Negociacao',
+      'Follow-up Pendente','Aprovado — Agendar'
+    ],
+    paciente_orcamento: [
+      'Orcamento Aberto','Orcamento Enviado','Em Negociacao',
+      'Follow-up','Fechado'
+    ],
+    perdido: ['Perdido'],
   }
 
   var PREVIEW_VARS = {
@@ -302,20 +328,13 @@
     var delayMins = d.delay_minutes !== undefined ? d.delay_minutes : (tpl.delay_minutes || 0)
     var triggerPhase = d.trigger_phase !== undefined ? d.trigger_phase : (tpl.trigger_phase || '')
 
-    var PHASE_OPTIONS = [
-      { v: '',           l: 'Nenhuma (manual)' },
-      { v: 'lead',       l: 'Lead Novo' },
-      { v: 'agendado',   l: 'Agendado' },
-      { v: 'confirmado', l: 'Confirmado' },
-      { v: 'na_clinica', l: 'Na Clinica' },
-      { v: 'em_consulta',l: 'Em Consulta' },
-      { v: 'paciente',   l: 'Paciente (pos-consulta)' },
-      { v: 'orcamento',  l: 'Orcamento' },
-      { v: 'perdido',    l: 'Perdido (recuperacao)' },
-    ]
-    var phaseOptions = PHASE_OPTIONS.map(function (o) {
-      return '<option value="' + o.v + '"' + (triggerPhase === o.v ? ' selected' : '') + '>' + o.l + '</option>'
-    }).join('')
+    // Status dinamico baseado na categoria do template
+    var statusList = STATUS_POR_GRUPO[catVal] || []
+    var statusOptions = '<option value="">Todos (dispara na tag)</option>' +
+      statusList.map(function (s) {
+        var sv = s.toLowerCase().replace(/[^a-z0-9]+/g, '_')
+        return '<option value="' + sv + '"' + (triggerPhase === sv ? ' selected' : '') + '>' + s + '</option>'
+      }).join('')
 
     var configHtml = '<div class="te-config">' +
       '<div class="te-config-row">' +
@@ -327,8 +346,8 @@
         '<input type="text" class="te-config-input" data-action="edit-name" data-id="' + _esc(tpl.id) + '" value="' + _esc(nameVal) + '">' +
       '</div>' +
       '<div class="te-config-row">' +
-        '<label class="te-config-label">Fase</label>' +
-        '<select class="te-config-select" data-action="edit-trigger-phase" data-id="' + _esc(tpl.id) + '" style="flex:1">' + phaseOptions + '</select>' +
+        '<label class="te-config-label">Status</label>' +
+        '<select class="te-config-select" data-action="edit-trigger-phase" data-id="' + _esc(tpl.id) + '" style="flex:1">' + statusOptions + '</select>' +
       '</div>' +
       '<div class="te-config-row">' +
         '<label class="te-config-label">Delay</label>' +
@@ -345,10 +364,6 @@
         '<label class="te-config-label">Status</label>' +
         '<label class="te-toggle"><input type="checkbox" class="te-toggle-input" data-action="toggle" data-id="' + _esc(tpl.id) + '"' + (isActive ? ' checked' : '') + '><span class="te-toggle-track"></span></label>' +
         '<span class="te-config-hint">' + (isActive ? 'Ativo' : 'Inativo') + '</span>' +
-      '</div>' +
-      '<div class="te-config-row">' +
-        '<label class="te-config-label">Categoria</label>' +
-        '<select class="te-config-select" data-action="edit-category" data-id="' + _esc(tpl.id) + '">' + catOptions + '</select>' +
       '</div>' +
       '<div class="te-config-row">' +
         '<label class="te-config-label">Slug</label>' +
