@@ -1100,16 +1100,10 @@ ul {
 .page {
   display: none;
   animation: fadeIn 200ms ease;
-  visibility: hidden;
-  height: 0;
-  overflow: hidden;
 }
 
 .page.active {
   display: block;
-  visibility: visible;
-  height: auto;
-  overflow: visible;
   width: 100%;
   box-sizing: border-box;
 }
