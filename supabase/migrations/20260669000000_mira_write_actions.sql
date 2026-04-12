@@ -64,6 +64,13 @@ BEGIN
       (REGEXP_MATCH(v_t, '([0-9]{1,2})/([0-9]{1,2})'))[2]::int,
       (REGEXP_MATCH(v_t, '([0-9]{1,2})/([0-9]{1,2})'))[1]::int
     );
+  ELSIF v_t ~ '[[:<:]]dia\s+([0-9]{1,2})[[:>:]]' THEN
+    -- "dia 17" → dia N do mes atual (ou proximo se ja passou)
+    DECLARE v_day int := (REGEXP_MATCH(v_t, '[[:<:]]dia\s+([0-9]{1,2})[[:>:]]'))[1]::int;
+    BEGIN
+      v_date := MAKE_DATE(EXTRACT(year FROM v_today)::int, EXTRACT(month FROM v_today)::int, v_day);
+      IF v_date < v_today THEN v_date := v_date + interval '1 month'; END IF;
+    END;
   ELSE
     v_date := v_today + 1;  -- default: amanha
   END IF;
@@ -83,7 +90,7 @@ BEGIN
   v_name := REGEXP_REPLACE(v_t, '^(marca|marcar|agenda|agendar|criar consulta|criar appointment|nova consulta|novo agendamento)[\s:]+((uma?|a|o)\s+)?(paciente|consulta)?\s*(,\s*)?(a\s+|o\s+|da\s+|do\s+)?', '', 'i');
   v_name := REGEXP_REPLACE(v_name, '[[:<:]](hoje|amanha|amanhã|depois de amanha|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado)[[:>:]]', '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}\s*[:h]?(oras?)?\s*[0-9]{0,2}', '', 'g');
-  v_name := REGEXP_REPLACE(v_name, '[[:<:]](pra|para|as|às|no|na|da|de|do|de manha|a tarde|a noite)[[:>:]]', '', 'gi');
+  v_name := REGEXP_REPLACE(v_name, '[[:<:]](pra|para|as|às|no|na|da|de|do|dia|de manha|a tarde|a noite)[[:>:]]', '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '[,.;!?]', '', 'g');
   v_name := TRIM(REGEXP_REPLACE(v_name, '\s+', ' ', 'g'));
   IF LENGTH(v_name) > 0 THEN

@@ -123,6 +123,13 @@ BEGIN
     -- Se ja passou, assume proximo ano
     IF v_date < v_today THEN v_date := v_date + interval '1 year'; END IF;
     v_has_date := true;
+  ELSIF v_t ~ '[[:<:]]dia\s+([0-9]{1,2})[[:>:]]' THEN
+    DECLARE v_day_c int := (REGEXP_MATCH(v_t, '[[:<:]]dia\s+([0-9]{1,2})[[:>:]]'))[1]::int;
+    BEGIN
+      v_date := MAKE_DATE(EXTRACT(year FROM v_today)::int, EXTRACT(month FROM v_today)::int, v_day_c);
+      IF v_date < v_today THEN v_date := v_date + interval '1 month'; END IF;
+    END;
+    v_has_date := true;
   END IF;
 
   -- Nome: remove tokens de data, hora, preposicoes
@@ -211,6 +218,12 @@ BEGIN
       (REGEXP_MATCH(v_right, '([0-9]{1,2})/([0-9]{1,2})'))[1]::int
     );
     IF v_date < v_today THEN v_date := v_date + interval '1 year'; END IF;
+  ELSIF v_right ~ '[[:<:]]dia\s+([0-9]{1,2})[[:>:]]' THEN
+    DECLARE v_day_r int := (REGEXP_MATCH(v_right, '[[:<:]]dia\s+([0-9]{1,2})[[:>:]]'))[1]::int;
+    BEGIN
+      v_date := MAKE_DATE(EXTRACT(year FROM v_today)::int, EXTRACT(month FROM v_today)::int, v_day_r);
+      IF v_date < v_today THEN v_date := v_date + interval '1 month'; END IF;
+    END;
   END IF;
 
   -- Hora do destino (do lado direito)
