@@ -28,7 +28,7 @@
     var checks = []
 
     if (env.SUPABASE_URL) {
-      checks.push(_check('Supabase', env.SUPABASE_URL + '/rest/v1/', 'HEAD'))
+      checks.push(_check('Supabase', env.SUPABASE_URL + '/auth/v1/health', 'GET'))
     }
 
     var results = await Promise.all(checks)
