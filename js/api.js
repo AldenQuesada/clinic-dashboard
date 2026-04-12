@@ -1713,6 +1713,7 @@ async function _enviarMsgAgendamento(appt) {
       profissional:      profNome,
       linha_procedimento: linhaProc,
       link_anamnese:     linkAnam || '',
+      menu_clinica:      (window.location.origin || '') + '/menu-clinica.html',
     })
     // Se template de novo e link falhou, remove a linha do link
     if (isNovo && !linkAnam) {

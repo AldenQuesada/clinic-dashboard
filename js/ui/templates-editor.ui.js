@@ -48,6 +48,7 @@
     '{link}':              'https://clinica.com.br/agendar',
     '{link_anamnese}':     'https://clinica.com.br/form-render.html?slug=abc123',
     '{linha_procedimento}': '\n💆 *Procedimento:* Bioestimulador de Colageno',
+    '{menu_clinica}':       'https://clinicai-dashboard.px1hdq.easypanel.host/menu-clinica.html',
   }
 
   var EMOJIS = '😊😍🔥✨💜🌟❤️👏🎉💪👋🙏💋😉🥰💎🌸⭐📍📅⏰📞💰🎁✅❌⚡🏆💡🤝👨‍⚕️💆🪞💄🌺💫'.match(/./gu) || []
