@@ -949,6 +949,18 @@ BEGIN
     END;
   END IF;
 
+  -- Cadastro avulso (sem agendamento)
+  IF NOT v_ctx_resolved AND v_ctx_phone IS NOT NULL
+     AND v_ctx_intent = 'awaiting_patient_registration_only' THEN
+    DECLARE v_reg_result jsonb;
+    BEGIN
+      v_reg_result := wa_pro_stage_register_only(p_phone, v_text);
+      v_response := COALESCE(v_reg_result->>'response', '⚠️ ' || COALESCE(v_reg_result->>'error', 'erro'));
+      v_intent := CASE WHEN (v_reg_result->>'ok')::boolean THEN 'register_patient' ELSE 'register_patient_error' END;
+      v_ctx_resolved := true;
+    END;
+  END IF;
+
   IF NOT v_ctx_resolved THEN
   -- Intent parse (ordem importa!)
   v_intent := CASE
@@ -958,6 +970,9 @@ BEGIN
     -- Confirmacao/negacao curtas (2-step com pending)
     WHEN v_text ~* '^\s*(sim|ok|confirma|confirmar|confirmado|pode|pode ser|isso|isso mesmo|yes|👍|ja)\s*[!?.]*\s*$' THEN 'confirm_pending'
     WHEN v_text ~* '^\s*(n|nao|não|negativo|aborta|esquece|deixa|deixa pra la|deixa pra lá)\s*[!?.]*\s*$' THEN 'cancel_pending'
+
+    -- Write: cadastro avulso (sem agendamento)
+    WHEN v_text ~* '(cadastr|novo\s+paciente|nova\s+paciente|registr)' THEN 'register_patient_start'
 
     -- Write: verbo + objeto
     WHEN v_text ~* '^\s*(cancela|cancelar|desmarca|desmarcar|remove\s+a|remover\s+a|tira|tirar)\s+\S' THEN 'cancel_appointment'
@@ -1013,10 +1028,10 @@ BEGIN
 
   -- Se stage_create_appointment salvou awaiting_patient_registration,
   -- preserva esse contexto (nao sobrescreve)
-  IF v_intent = 'create_appointment' THEN
+  IF v_intent IN ('create_appointment', 'register_patient_start') THEN
     SELECT last_intent INTO v_ctx_intent
     FROM wa_pro_context WHERE phone = p_phone LIMIT 1;
-    IF v_ctx_intent = 'awaiting_patient_registration' THEN
+    IF v_ctx_intent IN ('awaiting_patient_registration', 'awaiting_patient_registration_only') THEN
       -- Stage ja salvou o contexto certo, nao sobrescrever
       NULL;
     ELSE
@@ -1136,6 +1151,21 @@ BEGIN
     v_data := wa_pro_stage_create_appointment(p_phone, p_text);
     RETURN COALESCE(v_data->>'response', v_data->>'preview',
       '⚠️ ' || COALESCE(v_data->>'error', 'erro'));
+  END IF;
+
+  IF p_intent = 'register_patient_start' THEN
+    -- Salva contexto pra receber dados no proximo turno (sem date/time)
+    PERFORM _save_context(
+      p_phone,
+      COALESCE(public._sdr_clinic_id(), '00000000-0000-0000-0000-000000000001'::uuid),
+      (wa_pro_resolve_phone(p_phone)->>'professional_id')::uuid,
+      'awaiting_patient_registration_only', p_text,
+      'patient', NULL, NULL,
+      jsonb_build_object('standalone', true)
+    );
+    RETURN '📋 Pra cadastrar, me manda os dados:' || E'\n' ||
+           '*Nome completo, CPF, Telefone e Sexo*' || E'\n\n' ||
+           '_Ex: Joao da Silva Pereira, 123.456.789-00, 44999887766, masculino_';
   END IF;
 
   IF p_intent = 'cancel_appointment' THEN

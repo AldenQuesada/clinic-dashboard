@@ -534,6 +534,42 @@ BEGIN
   END IF;
 
   -- ══════════════════════════════════════
+  -- CREATE PATIENT ONLY (sem agendamento)
+  -- ══════════════════════════════════════
+  IF v_pending.action_type = 'create_patient_only' THEN
+    v_lead_id := gen_random_uuid()::text;
+    INSERT INTO public.leads (
+      id, clinic_id, name, phone, cpf, sexo,
+      status, phase, temperature, priority,
+      lead_score, data, source_type, channel_mode, is_active, is_in_recovery, funnel
+    ) VALUES (
+      v_lead_id,
+      v_pending.clinic_id,
+      v_pending.payload->>'patient_name',
+      v_pending.payload->>'phone',
+      REGEXP_REPLACE(v_pending.payload->>'cpf', '[^0-9]', '', 'g'),
+      v_pending.payload->>'sexo',
+      'novo', 'lead', 'warm', 'normal',
+      50, '{}'::jsonb, 'whatsapp', 'whatsapp', true, false, 'aquisicao'
+    );
+
+    UPDATE public.wa_pro_pending_actions
+    SET confirmed_at = now(), executed_at = now(),
+        result = jsonb_build_object('lead_id', v_lead_id)
+    WHERE id = v_pending.id;
+
+    RETURN jsonb_build_object(
+      'ok', true,
+      'lead_id', v_lead_id,
+      'response', E'✅ *Paciente cadastrado!*\n─────────────\n' ||
+                  '*' || (v_pending.payload->>'patient_name') || E'*\n' ||
+                  'CPF: ' || (v_pending.payload->>'cpf') || E'\n' ||
+                  'Tel: ' || (v_pending.payload->>'phone') || E'\n\n' ||
+                  '_Pronto pra agendar quando quiser._'
+    );
+  END IF;
+
+  -- ══════════════════════════════════════
   -- CANCEL APPOINTMENT
   -- ══════════════════════════════════════
   IF v_pending.action_type = 'cancel_appointment' THEN
@@ -703,6 +739,108 @@ GRANT EXECUTE ON FUNCTION public.wa_pro_confirm_pending(text) TO authenticated, 
 -- Abordagem: execute_and_format checa context internamente.
 -- Mais simples: handle_message ja carrega ctx_intent. Adiciona
 -- ao bloco de context resolution.
+
+-- ============================================================
+-- RPC: wa_pro_stage_register_only (cadastro sem agendamento)
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.wa_pro_stage_register_only(
+  p_phone text,
+  p_text  text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_auth       jsonb := public.wa_pro_resolve_phone(p_phone);
+  v_clinic_id  uuid;
+  v_prof_id    uuid;
+  v_parsed     jsonb;
+  v_name       text;
+  v_cpf        text;
+  v_pat_phone  text;
+  v_sexo       text;
+  v_missing    text[];
+  v_pending_id uuid;
+  v_preview    text;
+  v_dup_id     text;
+  v_dup_name   text;
+BEGIN
+  IF NOT (v_auth->>'ok')::boolean THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'unauthorized');
+  END IF;
+  v_clinic_id := (v_auth->>'clinic_id')::uuid;
+  v_prof_id   := (v_auth->>'professional_id')::uuid;
+
+  v_parsed   := _parse_patient_registration(p_text);
+  v_name     := v_parsed->>'name';
+  v_cpf      := v_parsed->>'cpf';
+  v_pat_phone := v_parsed->>'phone';
+  v_sexo     := v_parsed->>'sexo';
+
+  SELECT array_agg(x) INTO v_missing FROM jsonb_array_elements_text(v_parsed->'missing') x;
+  IF v_missing IS NOT NULL AND array_length(v_missing, 1) > 0 THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'incomplete_data',
+      'response', '⚠️ Faltou: *' || array_to_string(v_missing, ', ') || '*.' || E'\n\n' ||
+                  'Manda tudo junto: *Nome, CPF, Telefone e Sexo*');
+  END IF;
+
+  -- CPF duplicado
+  SELECT id, name INTO v_dup_id, v_dup_name FROM public.leads
+  WHERE clinic_id = v_clinic_id AND cpf = v_cpf AND deleted_at IS NULL LIMIT 1;
+  IF v_dup_id IS NOT NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'cpf_duplicate',
+      'response', '⚠️ CPF ' || v_cpf || ' ja cadastrado como *' || v_dup_name || '*.');
+  END IF;
+
+  -- Telefone duplicado
+  SELECT id, name INTO v_dup_id, v_dup_name FROM public.leads
+  WHERE clinic_id = v_clinic_id AND deleted_at IS NULL
+    AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 8) = RIGHT(v_pat_phone, 8)
+  LIMIT 1;
+  IF v_dup_id IS NOT NULL THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'phone_duplicate',
+      'response', '⚠️ Telefone ja cadastrado como *' || v_dup_name || '*.');
+  END IF;
+
+  v_preview := '📋 *Vou cadastrar:*' || E'\n─────────────\n' ||
+               'Nome: *' || v_name || '*' || E'\n' ||
+               'CPF: ' || v_cpf || E'\n' ||
+               'Tel: ' || v_pat_phone || E'\n' ||
+               'Sexo: ' || INITCAP(v_sexo) || E'\n\n' ||
+               'Confirma? Responde *sim* ou *cancela*.';
+
+  UPDATE public.wa_pro_pending_actions
+  SET expires_at = now()
+  WHERE phone = p_phone AND confirmed_at IS NULL AND expires_at > now();
+
+  INSERT INTO public.wa_pro_pending_actions (
+    clinic_id, professional_id, phone, action_type, payload, preview
+  ) VALUES (
+    v_clinic_id, v_prof_id, p_phone, 'create_patient_only',
+    jsonb_build_object(
+      'patient_name', v_name,
+      'cpf', v_cpf,
+      'phone', v_pat_phone,
+      'sexo', v_sexo
+    ),
+    v_preview
+  ) RETURNING id INTO v_pending_id;
+
+  RETURN jsonb_build_object('ok', true, 'pending_id', v_pending_id, 'response', v_preview);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.wa_pro_stage_register_only(text, text) TO authenticated, anon;
+
+
+-- ============================================================
+-- Adiciona branch create_patient_only no confirm_pending
+-- (ja tem create_patient_and_appointment — este e sem appointment)
+-- ============================================================
+-- Precisa reescrever confirm_pending com o branch extra.
+-- Adicionado inline no bloco IF/ELSIF do confirm.
 
 COMMENT ON FUNCTION public._parse_patient_registration(text)
   IS 'Extrai nome, CPF, telefone e sexo de texto livre';
