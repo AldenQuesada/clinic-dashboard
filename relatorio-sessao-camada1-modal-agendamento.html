@@ -85,7 +85,7 @@
     <div class="stat"><div class="num">12</div><div class="label">Features</div></div>
     <div class="stat"><div class="num">15</div><div class="label">Hardenings</div></div>
     <div class="stat"><div class="num">7</div><div class="label">Premium</div></div>
-    <div class="stat"><div class="num">4</div><div class="label">Regressões fix</div></div>
+    <div class="stat"><div class="num">5</div><div class="label">Bugs Anamnese</div></div>
   </div>
 
   <!-- ═══ DEVELOPER GUIDE ═══ -->
@@ -364,6 +364,7 @@ const watchIds = ['sp_nome', 'sp_salario', 'sp_valor_consulta', /* ... */]</code
       <a href="#dev-guide">Guia do Desenvolvedor</a> •
       <a href="#regressoes">Regressões pós-Premium</a> •
       <a href="#data-hygiene">Data Hygiene (incidente)</a> •
+      <a href="#anamnese-journey">Jornada Anamnese</a> •
       <a href="#migrations">Migrations</a> •
       <a href="#commits">Commits</a>
     </p>
@@ -1142,6 +1143,262 @@ ALTER TABLE patients ADD COLUMN lead_id uuid REFERENCES leads(id);
       triggers e RPCs dessa camada dependem desse join.</p>
   </div>
 
+  <!-- ═══ JORNADA ANAMNESE ═══ -->
+  <h2 id="anamnese-journey">Jornada da Anamnese — 5 bugs encontrados e corrigidos</h2>
+  <p class="muted">Quando fomos testar o envio da Ficha de Anamnese pelo WhatsApp,
+    encontramos uma cascata de 5 bugs que iam desde o link gerado errado até
+    a resposta final do paciente não persistir. Todos corrigidos em sequência.
+    Documentação aqui pra não cair nas mesmas armadilhas de novo.</p>
+
+  <div class="feature">
+    <h3>BUG A#1 — Link mock apontando pra rota inexistente</h3>
+    <p><strong>Sintoma:</strong> paciente clica no link da ficha de anamnese
+      recebida por WhatsApp, abre o <strong>dashboard do sistema</strong> em
+      vez do formulário.</p>
+    <p><strong>Causa:</strong> <code>_gerarLinkAnamnese()</code> em <code>api.js:1724</code>
+      era um <strong>mock</strong> com comentário "em produção apontaria para
+      formulário real". Gerava URL <code>/anamnese?t=btoa(…)</code> — rota que
+      não existe. Nginx <code>try_files</code> não achava, caía no SPA fallback
+      <code>/index.html</code>, que é o dashboard.</p>
+    <p><strong>Solução:</strong> função virou <code>async</code> e agora chama
+      <code>create_anamnesis_request</code> RPC real. Cacheia o template default
+      via <code>_getAnamneseDefaultTemplateId()</code>. Retorna URL canônica:</p>
+    <pre><code>/form-render.html?slug=&lt;public_slug&gt;#token=&lt;raw_token&gt;</code></pre>
+    <p>Commit: <span class="commit">dc90566</span></p>
+
+    <h3>BUG A#2 — Template WhatsApp truncava nome</h3>
+    <p><strong>Sintoma:</strong> "Olá, <strong>*Mirian de*</strong>!" em vez de
+      "Olá, <em>Mirian</em>!". Paciente vê nome cortado/estranho que parece
+      não personalizado.</p>
+    <p><strong>Causa:</strong> <code>_nomeEnxuto()</code> pegava os 2 primeiros
+      pedaços do nome com split por espaço. Para "Mirian de Paula" retornava
+      "Mirian de" — o markdown bold do WhatsApp ficava <code>*Mirian de*</code>.</p>
+    <p><strong>Solução:</strong> retorna só o primeiro nome.</p>
+    <pre><code>const primeiro = nomeCompleto.trim().split(/\s+/)[0] || ''
+return primeiro</code></pre>
+    <p>Commit: <span class="commit">dc90566</span></p>
+
+    <h3>BUG A#3 — Tela de Dados Gerais não aparecia</h3>
+    <p><strong>Sintoma:</strong> paciente clica e cai direto na primeira pergunta,
+      sem a tela inicial que pré-preenche nome, CPF, telefone, endereço do
+      cadastro.</p>
+    <p><strong>Causa:</strong> a config <code>has_general_session</code> era lida
+      em <code>form-render.js</code> de 4 lugares, todos com fallback <code>false</code>:</p>
+    <ol>
+      <li><code>snapshot.has_general_session</code> — snapshot nunca era populado</li>
+      <li><code>tplSettingsObj.has_general_session</code> — só existia com override passado</li>
+      <li><code>localSettings.has_general_session</code> — em <code>localStorage</code> do <strong>admin</strong>, que o paciente nunca tem</li>
+      <li>Default → <code>false</code></li>
+    </ol>
+    <p>Ou seja: a config de mostrar/não mostrar Dados Gerais estava <strong>em
+      localStorage do navegador do admin que criou o template</strong>. Paciente
+      nunca ia ver.</p>
+    <p><strong>Solução em 2 camadas:</strong></p>
+    <ol>
+      <li><strong>Migration 20260665</strong>: nova coluna
+        <code>anamnesis_templates.has_general_session boolean DEFAULT true</code>.
+        Backfill pra todos os templates existentes.</li>
+      <li><strong>form-render.js Branch B</strong>: busca a coluna direto do DB
+        como fonte primária. Cadeia de fallback invertida com default <code>true</code>
+        em vez de <code>false</code>.</li>
+    </ol>
+    <pre><code>const tplRows = await _get('/anamnesis_templates', {
+  'id': 'eq.' + tplId,
+  'select': 'id,name,has_general_session'   // ← coluna nova
+})
+
+hasGeneralSession = dbHasGeneral != null
+  ? dbHasGeneral                               // ← prioridade DB
+  : (snapshot?.has_general_session != null
+      ? snapshot.has_general_session
+      : ... default true)</code></pre>
+    <p>Commit: <span class="commit">d0c5b5a</span></p>
+
+    <h3>BUG A#4 — Trigger camelCase em tabela snake_case</h3>
+    <p><strong>Sintoma:</strong> paciente completa o form, clica enviar, erro
+      <code>record "new" has no field "updatedAt"</code> com o form travado.
+      Nada é salvo.</p>
+    <p><strong>Causa:</strong> <code>update_updated_at_column()</code> é uma função
+      global que faz <code>NEW."updatedAt" = now()</code> (<em>camelCase</em>).
+      Criada pras tabelas do Prisma (<code>patients</code>, <code>leads</code>) que usam camelCase.
+      Mas o trigger <code>trg_anamnesis_responses_updated_at</code> estava aplicando
+      ela em <code>anamnesis_responses</code>, que tem coluna <code>updated_at</code>
+      (snake_case). <strong>Qualquer UPDATE</strong> na tabela quebrava.</p>
+    <p>Isso derrubava inteiro o <code>complete_anamnesis_form</code> RPC, porque ele
+      faz <code>UPDATE anamnesis_responses SET status='completed'</code>.</p>
+    <p><strong>Solução (migration 20260666):</strong></p>
+    <pre><code>-- Nova fn snake_case
+CREATE FUNCTION update_updated_at_column_snake()
+RETURNS trigger AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Bloco DO dinâmico: substitui TODOS os triggers em
+-- tabelas anamnesis_* que usavam a fn antiga
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT ... WHERE relname LIKE 'anamnesis_%'
+                        AND proname='update_updated_at_column'
+  LOOP
+    EXECUTE format('DROP TRIGGER %I ON public.%I', r.tgname, r.relname);
+    EXECUTE format('CREATE TRIGGER %I BEFORE UPDATE ON public.%I
+                    FOR EACH ROW EXECUTE FUNCTION
+                    update_updated_at_column_snake()', r.tgname, r.relname);
+  END LOOP;
+END $$;</code></pre>
+    <p>Também na mesma migration: <code>ALTER TABLE anamnesis_responses ADD COLUMN
+      lgpd_consent jsonb</code> (coluna que o frontend tentava salvar mas não existia
+      — estava gerando erro <code>PGRST204 "Could not find the 'lgpd_consent' column"</code>).</p>
+    <p>Commit: <span class="commit">a029ec6</span></p>
+
+    <h3>BUG A#5 — Trigger duplicado com bug de tipo</h3>
+    <p><strong>Sintoma:</strong> mesmo depois do bug A#4 corrigido, completar o form
+      ainda dava erro <code>42883: operator does not exist: uuid = text</code> com
+      hint sobre cast explícito.</p>
+    <p><strong>Causa:</strong> a tabela <code>anamnesis_responses</code> tinha
+      <strong>DOIS triggers</strong> fazendo exatamente o mesmo trabalho (criar um
+      <code>medical_records</code> row quando o form completa):</p>
+    <table>
+      <tr><th>Trigger</th><th>Função</th><th>Status</th></tr>
+      <tr><td><code>trg_anamnesis_to_medical_record</code></td><td><code>fn_anamnesis_to_medical_record</code></td><td><span class="badge badge-bug">ANTIGO, BUGADO</span></td></tr>
+      <tr><td><code>trg_anamnesis_to_prontuario</code></td><td><code>_create_prontuario_from_anamnesis</code></td><td><span class="badge badge-ok">NOVO, OK</span></td></tr>
+    </table>
+    <p>O antigo tinha esta linha:</p>
+    <pre><code>WHERE patient_id = NEW.patient_id::text
+-- ↑ medical_records.patient_id é UUID
+-- ↑ NEW.patient_id::text força text
+-- PG não sabe comparar uuid = text → ERRO</code></pre>
+    <p><strong>Solução (migration 20260667):</strong></p>
+    <pre><code>DROP TRIGGER trg_anamnesis_to_medical_record ON anamnesis_responses;</code></pre>
+    <p>O trigger novo (<code>_create_prontuario_from_anamnesis</code>) é bem
+      mais robusto: <code>id</code> determinístico via
+      <code>md5('prontuario_anamnese_' + response_id)::uuid</code>, <code>EXCEPTION
+      WHEN others</code> que protege a transação principal, conteúdo formatado
+      com todas as respostas. Mantido intacto.</p>
+    <p>Commit: <span class="commit">80baeb4</span></p>
+  </div>
+
+  <div class="feature">
+    <h3>BUG A#6 — ID fantasma em patients (incidente crítico de dados)</h3>
+    <p>Bug paralelo descoberto durante os testes dos 5 anteriores. Documentado
+      completo na seção <a href="#data-hygiene">Data Hygiene</a>.</p>
+    <p><strong>Resumo:</strong> UUID <code>9d3a23f6...</code> existia em
+      <code>patients</code> (como duplicata do Adilso Carniel) E em <code>leads</code>
+      (como Emanuelle Garcia). O RPC <code>validate_anamnesis_token</code> fazia
+      <code>COALESCE(l.name, p.name)</code> priorizando lead → formulário mostrava
+      "Emanuelle" pro Adilso.</p>
+    <p><strong>Solução:</strong></p>
+    <ol>
+      <li><code>DELETE FROM anamnesis_requests WHERE patient_id::text = '9d3a23f6-...'</code> (3 requests de teste)</li>
+      <li><code>DELETE FROM patients WHERE id::text = '9d3a23f6-...'</code> (duplicata fantasma)</li>
+      <li>Lead da Emanuelle preservado intacto</li>
+      <li>Adilso real (em <code>57653fb9-...</code>) continua íntegro</li>
+      <li>Follow-up registrado: refactor <code>patients.lead_id</code> como FK explícita</li>
+    </ol>
+    <p>Commit: db-only (sem git)</p>
+  </div>
+
+  <div class="feature">
+    <h3>BUG A#7 — Imagens do formulário pequenas demais</h3>
+    <p><strong>Sintoma:</strong> as imagens de escolha visual dentro do formulário
+      ficavam pequenas com padding/margem grandes, desperdiçando espaço da tela.</p>
+    <p><strong>Causa:</strong> 2 tipos de imagem no form-render.html, cada um com
+      layout diferente:</p>
+    <ul>
+      <li><code>.img-grid-*</code> — grade de escolhas visuais (já era razoável)</li>
+      <li><code>.field-desc-block</code> — bloco descritivo com imagem + texto lateral
+        (imagem só 38% width, horizontal)</li>
+    </ul>
+    <p><strong>Solução em 2 rounds:</strong></p>
+    <ol>
+      <li><strong>Round 1 (commit <span class="commit">964ec1e</span>):</strong>
+        .img-grid-* recebe margem negativa -16px horizontal pra cancelar padding
+        do session-card, <code>max-height 420 → 640</code>, <code>min-height 240</code>,
+        <code>object-fit contain → cover</code>, padding do card 8 → 0</li>
+      <li><strong>Round 2 (commit <span class="commit">b30c407</span>):</strong>
+        usuário reportou que "a primeira imagem não aumentou". Era o
+        <code>.field-desc-block</code> que ainda era horizontal. Virou
+        <em>coluna</em>: imagem full-width em cima (mesma margem negativa),
+        texto com padding abaixo. Mesmos valores de altura da img-grid.</li>
+    </ol>
+    <p>Também no round 2: Instagram default atualizado de
+      <code>dra.miriandepaula</code> para
+      <code>https://www.instagram.com/miriandpaula/</code> (handle correto
+      confirmado pelo usuário).</p>
+  </div>
+
+  <h3>Resumo — Jornada completa de envio → entrega → submit</h3>
+  <table>
+    <tr><th>#</th><th>Etapa</th><th>Antes</th><th>Depois</th></tr>
+    <tr>
+      <td>A1</td><td>Geração do link</td>
+      <td>Link mock → dashboard</td>
+      <td>Link real via RPC → form-render.html</td>
+    </tr>
+    <tr>
+      <td>A2</td><td>Template WhatsApp</td>
+      <td>Nome truncado "Mirian de"</td>
+      <td>Primeiro nome "Mirian"</td>
+    </tr>
+    <tr>
+      <td>A3</td><td>Tela Dados Gerais</td>
+      <td>Nunca aparecia (localStorage admin)</td>
+      <td>Aparece (coluna no DB + fallback true)</td>
+    </tr>
+    <tr>
+      <td>A4</td><td>UPDATE na tabela</td>
+      <td>Erro camelCase "updatedAt"</td>
+      <td>Fn snake_case correta</td>
+    </tr>
+    <tr>
+      <td>A4b</td><td>Coluna lgpd_consent</td>
+      <td>PGRST204 missing column</td>
+      <td>Coluna jsonb criada</td>
+    </tr>
+    <tr>
+      <td>A5</td><td>Complete RPC</td>
+      <td>Erro 42883 uuid = text</td>
+      <td>Trigger duplicado removido</td>
+    </tr>
+    <tr>
+      <td>A6</td><td>Identidade do paciente</td>
+      <td>Mostrava "Emanuelle" (wrong lead)</td>
+      <td>Mostra nome real (fantasma removido)</td>
+    </tr>
+    <tr>
+      <td>A7</td><td>Imagens</td>
+      <td>38% width lateral / 420px max-height</td>
+      <td>Full-width bleed / 640px max-height</td>
+    </tr>
+  </table>
+
+  <div class="feature">
+    <h3>Status atual: fluxo completo funcionando</h3>
+    <ol>
+      <li>Secretária cria agendamento no modal</li>
+      <li><code>_enviarMsgAgendamento</code> (async) puxa o template default, cria
+        <code>anamnesis_request</code> com slug + token reais</li>
+      <li>Mensagem WhatsApp enfileirada em <code>wa_outbox</code> (template com primeiro nome)</li>
+      <li>Paciente recebe, clica no link → <code>form-render.html</code> carrega
+        (não abre dashboard)</li>
+      <li><code>validate_anamnesis_token</code> retorna dados do paciente + snapshot</li>
+      <li>Tela <strong>Dados Gerais</strong> aparece com nome, CPF, telefone,
+        endereço pré-preenchidos</li>
+      <li>Paciente avança pelas sessões (imagens full-width agora)</li>
+      <li>Confirma LGPD → <code>complete_anamnesis_form</code> RPC roda sem erros</li>
+      <li>Status vira <code>completed</code>, trigger cria <code>medical_records</code>
+        automaticamente com respostas formatadas</li>
+      <li>Tela final mostra botão Instagram <code>@miriandpaula</code> com auto-redirect 10s</li>
+    </ol>
+    <p><strong>Follow-up amanhã:</strong> editor da tela final (mensagem customizável,
+      imagem hero, lista de próximos passos, múltiplos botões de redes sociais, animação
+      de sucesso) — task <strong>#51</strong>.</p>
+  </div>
+
   <!-- ═══ MIGRATIONS ═══ -->
   <h2 id="migrations">Migrations aplicadas</h2>
   <table>
@@ -1174,6 +1431,26 @@ ALTER TABLE patients ADD COLUMN lead_id uuid REFERENCES leads(id);
     <tr>
       <td><code>20260663000000_wa_outbox_for_appt.sql</code></td>
       <td>+ RPC <code>wa_outbox_list_for_appt(p_appt_ref)</code> retorna mensagens WhatsApp enfileiradas para um agendamento (feedback inline pós-save)</td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260664000000_appointments_canonical_schema.sql</code></td>
+      <td>+ colunas <code>procedimentos jsonb</code> e <code>pagamentos jsonb</code> em appointments<br>+ indices GIN<br>+ RPC <code>appt_set_canonical</code> complementar</td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260665000000_anamnesis_has_general_session.sql</code></td>
+      <td>+ coluna <code>has_general_session boolean DEFAULT true</code> em anamnesis_templates<br>+ backfill para templates existentes</td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260666000000_anamnese_fix_trigger_and_lgpd.sql</code></td>
+      <td>+ fn <code>update_updated_at_column_snake</code><br>+ substitui triggers em <code>anamnesis_*</code> automaticamente<br>+ coluna <code>lgpd_consent jsonb</code> em <code>anamnesis_responses</code></td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
+    <tr>
+      <td><code>20260667000000_drop_old_anamnesis_trigger.sql</code></td>
+      <td>DROP trigger duplicado <code>trg_anamnesis_to_medical_record</code> (bug uuid = text).<br>Função depreciada via COMMENT.</td>
       <td><span class="badge badge-ok">Aplicada</span></td>
     </tr>
   </table>
@@ -1226,6 +1503,10 @@ ALTER TABLE patients ADD COLUMN lead_id uuid REFERENCES leads(id);
     <tr><td><span class="commit">d0c5b5a</span></td><td>fix(anamnese): dados gerais reaparece — has_general_session no DB</td></tr>
     <tr><td><span class="commit">a029ec6</span></td><td>fix(anamnese): trigger camelCase + coluna lgpd_consent</td></tr>
     <tr><td class="muted">db-only</td><td>data hygiene: DELETE patient fantasma 9d3a23f6 + 3 requests de teste</td></tr>
+    <tr><td><span class="commit">a029ec6</span></td><td>fix(anamnese): trigger camelCase + coluna lgpd_consent</td></tr>
+    <tr><td><span class="commit">80baeb4</span></td><td>fix(anamnese): drop trigger duplicado buggado fn_anamnesis_to_medical_record</td></tr>
+    <tr><td><span class="commit">964ec1e</span></td><td>style(form-render): imagens bleed-to-edge + mais altura</td></tr>
+    <tr><td><span class="commit">b30c407</span></td><td>fix(form-render): imagem description block full-width + instagram correto</td></tr>
   </table>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
