@@ -19,7 +19,7 @@
   var _templates   = []
   var _loading     = false
   var _selectedId  = null
-  var _activeTab   = 'todos'
+  var _activeTab   = 'pre_agendamento'
   var _dirty       = {}
   var _saving      = {}
 
@@ -180,17 +180,13 @@
   }
 
   function _renderTabs() {
-    var cats = ['todos']
-    var catSet = {}
-    _templates.forEach(function (t) {
-      var c = t.category || 'pre_agendamento'
-      if (!catSet[c]) { catSet[c] = true; cats.push(c) }
-    })
+    // Tabs fixas = exatamente os 6 grupos de tags do sistema
+    var cats = Object.keys(CATEGORY_META)
     var html = '<div class="te-tabs">'
     cats.forEach(function (c) {
-      var meta = c === 'todos' ? { label: 'Todos', color: '#6B7280' } : _catMeta(c)
+      var meta = _catMeta(c)
       var active = _activeTab === c ? ' te-tab-active' : ''
-      var count = c === 'todos' ? _templates.length : _templates.filter(function(t){return (t.category||'geral')===c}).length
+      var count = _templates.filter(function(t){return (t.category||'pre_agendamento')===c}).length
       html += '<button class="te-tab' + active + '" data-action="tab" data-tab="' + c + '">' +
         meta.label + ' <span class="te-tab-count">' + count + '</span></button>'
     })
@@ -203,7 +199,7 @@
   }
 
   function _filteredTemplates() {
-    var list = _activeTab === 'todos' ? _templates.slice() : _templates.filter(function (t) { return (t.category || 'pre_agendamento') === _activeTab })
+    var list = _templates.filter(function (t) { return (t.category || 'pre_agendamento') === _activeTab })
     list.sort(function (a, b) { return _totalMinutes(a) - _totalMinutes(b) })
     return list
   }
@@ -516,7 +512,7 @@
   }
 
   function _onCreate() {
-    var defaultCat = _activeTab !== 'todos' ? _activeTab : 'agendamento'
+    var defaultCat = _activeTab || 'agendamento'
     var catOptions = Object.keys(CATEGORY_META).map(function (k) {
       return '<option value="' + k + '"' + (k === defaultCat ? ' selected' : '') + '>' + CATEGORY_META[k].label + '</option>'
     }).join('')
