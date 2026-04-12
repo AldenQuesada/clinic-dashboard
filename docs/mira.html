@@ -229,6 +229,7 @@
     <a href="#flow">Fluxo ponta a ponta</a>
     <a href="#workflow">Workflow reativo n8n</a>
     <a href="#proactive">Workflows proativos (4 cron)</a>
+    <a href="#appt-automations">Automações de Agendamento</a>
 
     <a class="section">Backend</a>
     <a href="#rpcs">RPCs</a>
@@ -689,6 +690,91 @@ Desvio: 3,2σ (>2σ = notavel)</pre>
 <div class="callout info">
   <div class="title info">Por que 2σ</div>
   Numa distribuição normal, 2σ captura ~2.5% dos dias (top ou bottom). É o sweet spot: alerta só os dias realmente atípicos, sem barulho constante.
+</div>
+
+</section>
+
+<!-- ============ APPOINTMENT AUTOMATIONS ============ -->
+<section id="appt-automations">
+<h2>Automações de Agendamento (Mira cria → WhatsApp sai)</h2>
+
+<p>Quando a Mira cria um appointment (via confirmação de pendente no WhatsApp), o paciente deve receber automaticamente <b>3 mensagens</b> ao longo do fluxo. Isso replica o que o engine JS do dashboard (<code>js/agenda-automations.engine.js</code>) faz quando um agendamento é criado pelo modal da Agenda — mas server-side, porque Mira insere via SQL e bypassa a camada JS.</p>
+
+<h3>As 3 mensagens</h3>
+<table>
+  <tr><th>#</th><th>Quando</th><th>Trigger</th><th>Template</th></tr>
+  <tr><td>1</td><td>Imediatamente após criar</td><td><code>on_status</code> com status=<code>agendado</code></td><td>"Confirmação Agendamento"</td></tr>
+  <tr><td>2</td><td>D-1 às 9h (configurável)</td><td><code>d_before</code> com <code>days:1</code>, <code>hour:9</code></td><td>"Confirmação D-1"</td></tr>
+  <tr><td>3</td><td>Dia da consulta às 8h (configurável)</td><td><code>d_zero</code> com <code>hour:8</code></td><td>"Chegou o Dia"</td></tr>
+</table>
+
+<div class="callout warn">
+  <div class="title warn">min_before NÃO vai pro paciente</div>
+  O trigger <code>min_before</code> (30 min / 10 min antes) existe em <code>wa_agenda_automations</code> mas é <b>alerta interno</b> para a equipe. A Mira filtra isso explicitamente. Só dispara <code>on_status</code> + <code>d_before</code> + <code>d_zero</code>.
+</div>
+
+<h3>Onde a mensagem vem</h3>
+<p>Texto bruto mora em <code>wa_agenda_automations.content_template</code> (tabela já existente do dashboard). Suporta placeholders:</p>
+<pre>{{nome}}          → patient_name
+{{data}}          → DD/MM/YYYY
+{{hora}}          → HH:MM (5 chars)
+{{profissional}}  → professional_profiles.display_name
+{{procedimento}}  → procedure_name (default "Consulta")
+{{clinica}}       → "Clinica Mirian de Paula"</pre>
+
+<p>Helper SQL <code>_render_appt_template(template, appt record)</code> faz o replace. A mensagem renderizada cai em <code>wa_outbox</code> com <code>scheduled_at</code> calculado pelo trigger (now() para confirmação, D-1 às 9h, D-zero às 8h). O <b>Outbox Processor</b> cron do n8n (<code>x5f4MApEcSUX5hca</code>, roda a cada 2min) pega mensagens com <code>scheduled_at &lt;= now()</code> e envia via Evolution.</p>
+
+<h3>Paciente NOVO vs RETORNO — link da ficha de anamnese</h3>
+<p>Só a <b>confirmação inicial</b> (#1) recebe tratamento diferenciado. A detecção é simples:</p>
+
+<pre>SELECT count(*) FROM appointments
+WHERE clinic_id = v_appt.clinic_id
+  AND patient_id = v_appt.patient_id
+  AND status = 'finalizado'
+  AND deleted_at IS NULL
+  AND id != p_appt_id;
+
+v_is_new := (v_prior_count = 0);</pre>
+
+<table>
+  <tr><th>Condição</th><th>Tratamento</th></tr>
+  <tr><td><code>prior_count = 0</code> → paciente novo</td><td>Confirmação + bloco com link da ficha de anamnese</td></tr>
+  <tr><td><code>prior_count &gt; 0</code> → retorno</td><td>Confirmação padrão, sem link</td></tr>
+</table>
+
+<p>O bloco extra concatenado no fim do template de confirmação:</p>
+<pre>
+Para agilizar, preencha sua *Ficha de Anamnese* antes da consulta (≈5 min):
+
+👉 https://clinicai-dashboard.px1hdq.easypanel.host/anamnese?t=TOKEN
+
+Isso ajuda a gente a entender seu historico e oferecer o melhor atendimento. 💜</pre>
+
+<h3>Formato do token de anamnese</h3>
+<p>Helper <code>_anamnese_link(appt_id, lead_id)</code>:</p>
+<pre>raw   := appt_id || '|' || lead_id || '|' || (epoch_ms)::text
+token := base64(raw)   -- sem quebras de linha
+url   := 'https://clinicai-dashboard.px1hdq.easypanel.host/anamnese?t=' || token</pre>
+
+<p>O timestamp no token permite rastreabilidade e eventual expiração. O frontend decodifica e valida que o <code>lead_id</code> confere com o appointment antes de abrir a ficha.</p>
+
+<h3>RPC principal</h3>
+<pre>wa_pro_fire_appointment_automations(p_appt_id text) RETURNS jsonb
+-- Chamada no fim de wa_pro_confirm_pending após INSERT no appointments
+-- Retorna:
+-- {
+--   ok: true,
+--   appt_id: ...,
+--   patient_phone: ...,
+--   is_new_patient: true/false,
+--   prior_visits: N,
+--   queued_count: 1..3,
+--   rules: [{rule, scheduled_at, has_anamnese_link?}]
+-- }</pre>
+
+<div class="callout info">
+  <div class="title info">Por que replicar server-side?</div>
+  O engine <code>agenda-automations.engine.js</code> roda no navegador — só dispara quando o dashboard está aberto criando appointments. Mira cria via SQL direto, então nunca acionaria o engine JS. A função <code>wa_pro_fire_appointment_automations</code> é a cópia SQL do mesmo comportamento, lendo a mesma tabela <code>wa_agenda_automations</code>, garantindo que a equipe continue editando templates pelo dashboard e as mudanças valem pros dois caminhos (dashboard ou Mira).
 </div>
 
 </section>
@@ -1434,6 +1520,8 @@ SELECT wa_pro_evening_digest('5544998787673');
   <tr><td>20260665</td><td><code>mira_markdown_toggle.sql</code></td><td><b>Markdown:</b> _strip_markdown + permissions.markdown flag + fix authenticate lê permissions do DB</td></tr>
   <tr><td>20260666</td><td><code>mira_proactive.sql</code></td><td><b>WOW:</b> daily_digest, evening_digest, pre_consult_alerts, anomaly_check, active_recipients + helpers _today_br/_now_br</td></tr>
   <tr><td>20260667</td><td><code>mira_multiturn_context.sql</code></td><td><b>Multi-turn:</b> context consumption, resolve referências (1/2/primeira/segunda), regex patient name multi-palavra, param p_exact_id</td></tr>
+  <tr><td>20260671</td><td><code>mira_appointment_automations.sql</code></td><td><b>Appointment automations:</b> <code>_render_appt_template</code> + <code>wa_pro_fire_appointment_automations</code> + <code>wa_pro_confirm_pending</code> dispara as 3 mensagens (on_status, d_before, d_zero) — sem min_before</td></tr>
+  <tr><td>20260672</td><td><code>mira_anamnese_new_patient.sql</code></td><td><b>New patient:</b> <code>_anamnese_link</code> helper + detecção <code>is_new_patient</code> (prior finalized count=0) + anexa bloco da ficha só na confirmação inicial do paciente novo</td></tr>
 </table>
 
 </section>
@@ -1456,7 +1544,11 @@ SELECT wa_pro_evening_digest('5544998787673');
 ├── 20260662000000_mira_handle_message.sql
 ├── 20260663000000_mira_tier2_tools.sql
 ├── 20260664000000_mira_rls_hardening.sql
-└── 20260665000000_mira_markdown_toggle.sql</pre>
+├── 20260665000000_mira_markdown_toggle.sql
+├── 20260666000000_mira_proactive.sql
+├── 20260667000000_mira_multiturn_context.sql
+├── 20260671000000_mira_appointment_automations.sql
+└── 20260672000000_mira_anamnese_new_patient.sql</pre>
 
 <h3>Frontend / Dashboard</h3>
 <pre>js/repositories/mira.repository.js   (166 lines)  — RPC wrappers
