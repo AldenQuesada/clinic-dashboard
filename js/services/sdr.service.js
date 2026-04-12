@@ -138,6 +138,14 @@
     } else {
       _updateLeadPhaseLocal(leadId, toPhase)
       window.RulesService?.evaluateRules(leadId, 'phase_changed', { to_phase: toPhase })
+      // Camada 2: dispara campanha de mensagens para a nova fase
+      if (window.AutomationsEngine && window.AutomationsEngine.dispatchCampaignForLead) {
+        var leads = window.LeadsService ? LeadsService.getLocal() : []
+        var lead = leads.find(function(l) { return l.id === leadId })
+        if (lead) {
+          AutomationsEngine.dispatchCampaignForLead(leadId, toPhase, lead.name || '', lead.phone || lead.whatsapp || '')
+        }
+      }
     }
     return result
   }
