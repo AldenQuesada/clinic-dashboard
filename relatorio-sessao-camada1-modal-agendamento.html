@@ -370,6 +370,7 @@ const watchIds = ['sp_nome', 'sp_salario', 'sp_valor_consulta', /* ... */]</code
       <a href="#fraquezas-resolved">Fraquezas resolvidas</a> •
       <a href="#audit-final">Auditoria final Agenda</a> •
       <a href="#templates-mensagem">Templates de Mensagem</a> •
+      <a href="#fluxo-paciente">Fluxo do Paciente</a> •
       <a href="#migrations">Migrations</a> •
       <a href="#commits">Commits</a>
     </p>
@@ -2281,9 +2282,116 @@ INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
   <ul>
     <li><code>js/ui/templates-editor.ui.js</code> — UI completa (lista + editor + phone preview + CRUD + campanhas)</li>
     <li><code>js/repositories/templates.repository.js</code> — RPCs: list, update, create, remove</li>
-    <li><code>js/agenda-automations.engine.js</code> — <code>_enqueueCampaignForPhase()</code></li>
+    <li><code>js/agenda-automations.engine.js</code> — 3 camadas de dispatch</li>
     <li><code>css/templates-editor.css</code> — estilos 2 colunas + dark mode</li>
     <li><code>menu-clinica.html</code> — pagina do menu integrada ao sistema</li>
+  </ul>
+
+  <!-- ═══ FLUXO DO PACIENTE — REGRA DE NEGOCIO ═══ -->
+  <h2 id="fluxo-paciente">Fluxo do Paciente — Regra de Negocio</h2>
+
+  <div class="callout callout-blue" style="border-left:4px solid #3B82F6;padding:16px 20px;margin:16px 0 24px;border-radius:0 8px 8px 0;background:#EFF6FF">
+    <strong>Regra inegociavel:</strong> Paciente NAO e quem agendou. Paciente e quem REALIZOU
+    o procedimento e foi finalizado no modal de finalizacao. Mesmo com agendamento de
+    procedimento, o lead pode ter pressao elevada, dor, urgencia, ou simplesmente fazer
+    uma avaliacao que gera orcamento — nenhum desses e paciente.
+  </div>
+
+  <h3>Fluxo completo por Tags</h3>
+  <pre>
+PRE-AGENDAMENTO
+  Lead Novo → Em Conversa → Lead Frio/Morno/Quente → Qualificado
+  "Vamos agendar?"
+         │
+         ▼ agendou
+AGENDAMENTO (tudo ate o check final de finalizacao)
+  Agendado → Lembrete D-1 → Paciente responde SIM → Confirmado
+                           → Paciente responde NAO → Cancelado
+  Confirmado → Na Clinica (menu + boas-vindas)
+            → Em Consulta (avaliacao ou procedimento)
+            → Modal de Finalizacao
+                    │                          │
+            Fez procedimento?           So avaliacao?
+            Check final = SIM           Gerou orcamento?
+                    │                          │
+                    ▼                          ▼
+              PACIENTE                    ORCAMENTO
+    Pos-procedimento (+1d)         Orcamento Enviado
+    Cuidados (+3d)                 Em Negociacao
+    Aguardando Retorno (+7d)       Follow-up Pendente
+    Retorno (+30d)                 Aprovado → volta pro AGENDAMENTO
+                                         │ nao aprovou
+                                         ▼
+                                      PERDIDO
+                                   Recuperacao valor
+                                   Recuperacao promo
+  </pre>
+
+  <h3>Transicoes criticas</h3>
+  <table>
+    <tr><th>De</th><th>Para</th><th>Trigger</th><th>Condicao</th></tr>
+    <tr>
+      <td>Agendamento</td><td><strong>Paciente</strong></td>
+      <td>Modal de finalizacao</td>
+      <td>Procedimento realizado + check final confirmado</td>
+    </tr>
+    <tr>
+      <td>Agendamento</td><td><strong>Orcamento</strong></td>
+      <td>Modal de finalizacao</td>
+      <td>Consulta de avaliacao → orcamento gerado</td>
+    </tr>
+    <tr>
+      <td>Agendamento</td><td><strong>Agendamento</strong></td>
+      <td>Modal de finalizacao</td>
+      <td>Nao fez procedimento (pressao alta, dor, urgencia)</td>
+    </tr>
+    <tr>
+      <td>Orcamento</td><td><strong>Agendamento</strong></td>
+      <td>Orcamento aprovado</td>
+      <td>Paciente aprovou → agenda procedimento</td>
+    </tr>
+    <tr>
+      <td>Orcamento</td><td><strong>Perdido</strong></td>
+      <td>Timeout ou recusa</td>
+      <td>Nao aprovou dentro do prazo</td>
+    </tr>
+  </table>
+
+  <h3>O que NAO e Paciente</h3>
+  <ul>
+    <li>Lead que agendou mas nao veio → <strong>Agendamento</strong> (falta/no-show)</li>
+    <li>Lead que veio mas nao fez procedimento → <strong>Agendamento</strong></li>
+    <li>Lead que fez avaliacao e saiu com orcamento → <strong>Orcamento</strong></li>
+    <li>Lead na clinica / em consulta → ainda <strong>Agendamento</strong></li>
+  </ul>
+
+  <h3>3 Camadas de dispatch de campanhas</h3>
+  <table>
+    <tr><th>Camada</th><th>Trigger</th><th>Arquivo</th><th>O que dispara</th></tr>
+    <tr>
+      <td>1</td><td>Status do agendamento muda</td>
+      <td><code>agenda-smart.js</code> → <code>processStatusChange()</code></td>
+      <td>Templates com trigger_phase = status slug</td>
+    </tr>
+    <tr>
+      <td>2</td><td>Fase do lead muda no funil</td>
+      <td><code>sdr.service.js</code> → <code>dispatchCampaignForLead()</code></td>
+      <td>Templates com trigger_phase = phase slug</td>
+    </tr>
+    <tr>
+      <td>3</td><td>Tag aplicada ao lead</td>
+      <td><code>tags-engine.js</code> → <code>dispatchCampaignForTag()</code></td>
+      <td>Templates com trigger_phase = tag slug</td>
+    </tr>
+  </table>
+
+  <h3>Auto-confirmacao por WhatsApp</h3>
+  <p>Trigger <code>trg_wa_auto_confirm</code> em <code>wa_messages</code>:</p>
+  <ul>
+    <li>Paciente responde SIM/sim/confirmo/ok → status = confirmado + resposta editavel (<code>auto_reply_confirmed</code>)</li>
+    <li>Paciente responde NAO/nao/cancela → status = cancelado + resposta editavel (<code>auto_reply_cancelled</code>)</li>
+    <li>Busca agendamento futuro por telefone (right 8 digits)</li>
+    <li>So mensagens curtas (&lt;50 chars) para nao confundir com conversa</li>
   </ul>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
