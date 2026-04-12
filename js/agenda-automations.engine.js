@@ -301,7 +301,7 @@
       pacienteNome: appt ? appt.pacienteNome : '',
       createdAt:   new Date().toISOString(),
     })
-    try { localStorage.setItem('clinic_op_tasks', JSON.stringify(tasks)) } catch (e) { /* quota */ }
+    try { localStorage.setItem('clinic_op_tasks', JSON.stringify(tasks)); if (window.sbSave) sbSave('clinic_op_tasks', tasks) } catch (e) { /* quota */ }
   }
 
   // ── Alexa: scheduled (client-side queue) ────────────────────

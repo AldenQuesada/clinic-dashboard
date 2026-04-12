@@ -177,7 +177,7 @@ const WA_TPLS = {
 const QUEUE_KEY = 'clinicai_automations_queue'
 
 function _getQueue()    { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]') } catch(e) { return [] } }
-function _saveQueue(q)  { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)) } catch(e) { if (e.name === 'QuotaExceededError') { _clearOldLogs(); try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)) } catch(e2) { /* quota full */ } } } }
+function _saveQueue(q)  { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); if (window.sbSave) sbSave(QUEUE_KEY, q) } catch(e) { if (e.name === 'QuotaExceededError') { _clearOldLogs(); try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)) } catch(e2) { /* quota full */ } } } }
 function _clearOldLogs() { try { var logs = JSON.parse(localStorage.getItem('clinicai_auto_logs')||'[]'); if (logs.length > 100) localStorage.setItem('clinicai_auto_logs', JSON.stringify(logs.slice(-50))); } catch(e) { /* silencioso */ } }
 
 // ── Inline validation alert (replaces browser alert()) ──────
@@ -276,7 +276,7 @@ function _execAuto(item) {
   if (item.type === 'engine_task' && item.payload) {
     var tasks = JSON.parse(localStorage.getItem('clinic_op_tasks') || '[]')
     tasks.push({ id:'task_auto_'+Date.now(), tipo:'automacao', titulo:item.payload.title||'', responsavel:item.payload.assignee||'sdr', status:'pendente', prioridade:item.payload.priority||'normal', prazo:item.payload.deadlineHours ? new Date(Date.now()+item.payload.deadlineHours*3600000).toISOString() : null, apptId:item.apptId, createdAt:new Date().toISOString() })
-    try { localStorage.setItem('clinic_op_tasks', JSON.stringify(tasks)) } catch(e) { /* quota */ }
+    try { localStorage.setItem('clinic_op_tasks', JSON.stringify(tasks)); if (window.sbSave) sbSave('clinic_op_tasks', tasks) } catch(e) { /* quota */ }
     _logAuto(appt.id, item.type, 'executado')
     return
   }

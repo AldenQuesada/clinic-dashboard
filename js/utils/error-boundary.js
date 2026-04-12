@@ -50,21 +50,30 @@
       console.error('[error_boundary:' + source + ']', msg, ctx)
     }
 
-    // Envio remoto (opcional)
+    // Envio remoto: Supabase clinic_data + endpoint customizado
+    var payload = {
+      source: source,
+      message: msg,
+      stack: (err && err.stack || '').slice(0, 2000),
+      ts: new Date().toISOString(),
+      url: window.location.href,
+      ua: navigator.userAgent,
+    }
+    if (window._sbShared) {
+      try {
+        var logs = JSON.parse(localStorage.getItem('clinicai_error_log') || '[]')
+        logs.push(payload)
+        if (logs.length > 50) logs = logs.slice(-50)
+        localStorage.setItem('clinicai_error_log', JSON.stringify(logs))
+        if (window.sbSave) sbSave('clinicai_error_log', logs)
+      } catch (e2) { /* quota */ }
+    }
     if (_remoteEndpoint) {
       try {
         fetch(_remoteEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source: source,
-            message: msg,
-            stack: err && err.stack,
-            ctx: ctx,
-            ts: new Date().toISOString(),
-            url: window.location.href,
-            ua: navigator.userAgent,
-          }),
+          body: JSON.stringify(payload),
         }).catch(function() { /* fail silently */ })
       } catch (e) { /* */ }
     }

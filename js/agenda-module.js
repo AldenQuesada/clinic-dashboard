@@ -373,14 +373,16 @@ function agendaEventoSalvar() {
     descricao:  document.getElementById('evDesc')?.value?.trim() || '',
     criadoEm:   new Date().toISOString(),
   })
-  store.set('clinicai_agenda_events', events)
+  if (window.sbSave) sbSave('clinicai_agenda_events', events)
+  else store.set('clinicai_agenda_events', events)
   document.getElementById('agendaEventoModal')?.remove()
   renderAgendaEventos()
 }
 
 function agendaEventoRemover(id) {
   const events = JSON.parse(localStorage.getItem('clinicai_agenda_events') || '[]').filter(e=>e.id!==id)
-  store.set('clinicai_agenda_events', events)
+  if (window.sbSave) sbSave('clinicai_agenda_events', events)
+  else store.set('clinicai_agenda_events', events)
   renderAgendaEventos()
 }
 
