@@ -422,6 +422,159 @@ function assertIncludes(haystack, needle, msg) {
   });
 
   // ========================================
+  // Cancel + Reschedule (Bloco D #1 — migration 20260673)
+  // ========================================
+  console.log('\n━━━ cancel + reschedule ━━━\n');
+
+  const CR_CLINIC = '00000000-0000-0000-0000-000000000001';
+  // Resolve um paciente real e o professional cadastrado p/ MIRIAN_OWN
+  const crSetup = await c.query(`
+    SELECT
+      (SELECT id FROM leads WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1) AS patient_id,
+      (SELECT name FROM leads WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1) AS patient_name,
+      (SELECT professional_id FROM wa_numbers WHERE number_type = 'professional_private'
+         AND phone LIKE '%' || RIGHT($1, 8) LIMIT 1) AS prof_id
+  `, [MIRIAN_OWN]);
+  const CR_PATIENT = crSetup.rows[0].patient_id;
+  const CR_PATIENT_NAME = crSetup.rows[0].patient_name;
+  const CR_PROF = crSetup.rows[0].prof_id;
+  const firstNameToken = (CR_PATIENT_NAME || '').split(' ')[0];
+
+  async function crCleanup() {
+    await c.query("DELETE FROM wa_pro_pending_actions WHERE phone = $1", [MIRIAN_OWN]);
+    await c.query("DELETE FROM wa_outbox WHERE appt_ref LIKE 'appt_crtest_%'");
+    await c.query("DELETE FROM appointments WHERE id LIKE 'appt_crtest_%'");
+  }
+  async function crSeed() {
+    await crCleanup();
+    const id1 = 'appt_crtest_a_' + Date.now();
+    const id2 = 'appt_crtest_b_' + Date.now();
+    await c.query(`
+      INSERT INTO appointments (id, clinic_id, patient_id, patient_name, professional_id,
+        scheduled_date, start_time, end_time, procedure_name, status, origem)
+      VALUES
+        ($1, $2, $3, $4, $5, CURRENT_DATE + 3, '14:00', '15:00', 'Consulta', 'agendado', 'test'),
+        ($6, $2, $3, $4, $5, CURRENT_DATE + 5, '10:00', '11:00', 'Consulta', 'agendado', 'test')
+    `, [id1, CR_CLINIC, CR_PATIENT, CR_PATIENT_NAME, CR_PROF, id2]);
+    return { id1, id2 };
+  }
+
+  if (CR_PATIENT && CR_PROF) {
+    await test('cancel: stage ambiguo (2 futuras sem data) → ambiguous', async () => {
+      await crSeed();
+      const r = await rpc('wa_pro_stage_cancel_appointment', { p_phone: MIRIAN_OWN, p_query: 'cancela a ' + firstNameToken });
+      assertEq(r.ok, false, 'deve falhar');
+      assertEq(r.error, 'ambiguous');
+      assertIncludes(r.response, 'Encontrei');
+    });
+
+    await test('cancel: stage com data específica → pending criada', async () => {
+      const { id1 } = await crSeed();
+      const d3 = await c.query("SELECT TO_CHAR(CURRENT_DATE + 3, 'DD/MM') as d");
+      const r = await rpc('wa_pro_stage_cancel_appointment', { p_phone: MIRIAN_OWN, p_query: 'cancela a ' + firstNameToken + ' ' + d3.rows[0].d });
+      assert(r.ok, 'stage deveria ok: ' + JSON.stringify(r));
+      const p = await c.query("SELECT action_type, payload FROM wa_pro_pending_actions WHERE id = $1", [r.pending_id]);
+      assertEq(p.rows[0].action_type, 'cancel_appointment');
+      assertEq(p.rows[0].payload.appointment_id, id1);
+    });
+
+    await test('cancel: confirm → status=cancelado + outbox futura limpa', async () => {
+      const { id1 } = await crSeed();
+      const d3 = await c.query("SELECT TO_CHAR(CURRENT_DATE + 3, 'DD/MM') as d");
+      await rpc('wa_pro_stage_cancel_appointment', { p_phone: MIRIAN_OWN, p_query: 'cancela a ' + firstNameToken + ' ' + d3.rows[0].d });
+      // popula outbox futura
+      await c.query(`
+        INSERT INTO wa_outbox (clinic_id, lead_id, phone, content, content_type, scheduled_at, business_hours, priority, max_attempts, status, appt_ref)
+        VALUES ($1, $3, '5511999999999', 'msg futura', 'text', now() + interval '2 days', true, 2, 3, 'queued', $2)
+      `, [CR_CLINIC, id1, CR_PATIENT]);
+      const r = await rpc('wa_pro_confirm_pending', { p_phone: MIRIAN_OWN });
+      assert(r.ok, 'confirm falhou: ' + JSON.stringify(r));
+      const appt = await c.query("SELECT status FROM appointments WHERE id = $1", [id1]);
+      assertEq(appt.rows[0].status, 'cancelado');
+      const n = await c.query("SELECT count(*)::int as c FROM wa_outbox WHERE appt_ref = $1 AND status = 'queued' AND scheduled_at > now()", [id1]);
+      assertEq(n.rows[0].c, 0, 'outbox futura nao limpa');
+    });
+
+    await test('cancel: confirmar 2x → no_pending (idempotente)', async () => {
+      const r = await rpc('wa_pro_confirm_pending', { p_phone: MIRIAN_OWN });
+      assertEq(r.ok, false);
+      assertEq(r.error, 'no_pending');
+    });
+
+    await test('cancel: appointment ja cancelado → appointment_not_found', async () => {
+      // Nao re-seed — id1 do teste anterior esta cancelado
+      const { id1 } = await crSeed();
+      const d3 = await c.query("SELECT TO_CHAR(CURRENT_DATE + 3, 'DD/MM') as d");
+      await c.query("UPDATE appointments SET status = 'cancelado' WHERE id = $1", [id1]);
+      const r = await rpc('wa_pro_stage_cancel_appointment', { p_phone: MIRIAN_OWN, p_query: 'cancela a ' + firstNameToken + ' ' + d3.rows[0].d });
+      assertEq(r.ok, false);
+      assertEq(r.error, 'appointment_not_found');
+    });
+
+    await test('reschedule: sem destino → destination_missing', async () => {
+      await crSeed();
+      const r = await rpc('wa_pro_stage_reschedule_appointment', { p_phone: MIRIAN_OWN, p_query: 'reagenda a ' + firstNameToken });
+      assertEq(r.ok, false);
+      assertEq(r.error, 'destination_missing');
+    });
+
+    await test('reschedule: ontem (passado) → past_date', async () => {
+      await crSeed();
+      const r = await rpc('wa_pro_stage_reschedule_appointment', { p_phone: MIRIAN_OWN, p_query: 'reagenda a ' + firstNameToken + ' pra ontem 14h' });
+      assertEq(r.ok, false);
+      assertEq(r.error, 'past_date');
+    });
+
+    await test('reschedule: OK → UPDATE scheduled_date + outbox regenerado', async () => {
+      const { id1 } = await crSeed();
+      // Cancela o 2 pra nao ser ambiguo — resta so id1
+      await c.query("UPDATE appointments SET status = 'cancelado' WHERE id LIKE 'appt_crtest_b_%'");
+      // Pega uma data no futuro: hoje + 30 dias
+      const future = await c.query("SELECT TO_CHAR(CURRENT_DATE + 30, 'DD/MM') as d");
+      const r1 = await rpc('wa_pro_stage_reschedule_appointment', { p_phone: MIRIAN_OWN, p_query: 'reagenda a ' + firstNameToken + ' pra ' + future.rows[0].d + ' 16h' });
+      assert(r1.ok, 'stage falhou: ' + JSON.stringify(r1));
+      const r2 = await rpc('wa_pro_confirm_pending', { p_phone: MIRIAN_OWN });
+      assert(r2.ok, 'confirm falhou: ' + JSON.stringify(r2));
+      const appt = await c.query("SELECT scheduled_date, start_time, status FROM appointments WHERE id = $1", [id1]);
+      assert(appt.rows[0].scheduled_date.toISOString().substring(0,10).endsWith(future.rows[0].d.split('/').reverse().join('-')) ||
+             appt.rows[0].scheduled_date.toISOString().slice(5,10) === future.rows[0].d.split('/').reverse().join('-'),
+             'data nao atualizou: ' + appt.rows[0].scheduled_date);
+      assertEq(appt.rows[0].start_time.substring(0,5), '16:00');
+      assertEq(appt.rows[0].status, 'agendado');
+    });
+
+    await test('handle_message: "cancela a X 20/04" roteia cancel_appointment', async () => {
+      await crSeed();
+      const r = await rpc('wa_pro_handle_message', { p_phone: MIRIAN_OWN, p_text: 'cancela a ' + firstNameToken + ' 20/04' });
+      assertEq(r.intent, 'cancel_appointment');
+    });
+
+    await test('handle_message: "tenho agenda hoje?" NAO roteia create', async () => {
+      const r = await rpc('wa_pro_handle_message', { p_phone: MIRIAN_OWN, p_text: 'tenho agenda hoje?' });
+      assertEq(r.intent, 'agenda_today');
+    });
+
+    await test('handle_message: "reagenda ... pra 15/05 15h" roteia reschedule', async () => {
+      const r = await rpc('wa_pro_handle_message', { p_phone: MIRIAN_OWN, p_text: 'reagenda a ' + firstNameToken + ' pra 15/05 15h' });
+      assertEq(r.intent, 'reschedule_appointment');
+    });
+
+    await test('handle_message: "sim" roteia confirm_pending', async () => {
+      // Garante que ha uma pending via stage cancel
+      await crSeed();
+      const d3 = await c.query("SELECT TO_CHAR(CURRENT_DATE + 3, 'DD/MM') as d");
+      await rpc('wa_pro_stage_cancel_appointment', { p_phone: MIRIAN_OWN, p_query: 'cancela a ' + firstNameToken + ' ' + d3.rows[0].d });
+      const r = await rpc('wa_pro_handle_message', { p_phone: MIRIAN_OWN, p_text: 'sim' });
+      assertEq(r.intent, 'confirm_pending');
+      assertIncludes(r.response, '❌');
+    });
+
+    await crCleanup();
+  } else {
+    console.log('  (skip cancel+reschedule: paciente ou professional nao encontrado)');
+  }
+
+  // ========================================
   // Resultado
   // ========================================
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━');

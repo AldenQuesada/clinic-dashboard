@@ -230,6 +230,7 @@
     <a href="#workflow">Workflow reativo n8n</a>
     <a href="#proactive">Workflows proativos (4 cron)</a>
     <a href="#appt-automations">Automações de Agendamento</a>
+    <a href="#write-actions">Ações de Escrita (2-step)</a>
 
     <a class="section">Backend</a>
     <a href="#rpcs">RPCs</a>
@@ -776,6 +777,118 @@ url   := 'https://clinicai-dashboard.px1hdq.easypanel.host/anamnese?t=' || token
   <div class="title info">Por que replicar server-side?</div>
   O engine <code>agenda-automations.engine.js</code> roda no navegador — só dispara quando o dashboard está aberto criando appointments. Mira cria via SQL direto, então nunca acionaria o engine JS. A função <code>wa_pro_fire_appointment_automations</code> é a cópia SQL do mesmo comportamento, lendo a mesma tabela <code>wa_agenda_automations</code>, garantindo que a equipe continue editando templates pelo dashboard e as mudanças valem pros dois caminhos (dashboard ou Mira).
 </div>
+
+</section>
+
+<!-- ============ WRITE ACTIONS ============ -->
+<section id="write-actions">
+<h2>Ações de Escrita (2-step com confirmação)</h2>
+
+<p>Nada é executado sem a Dra. Mirian confirmar. Toda escrita passa por <code>wa_pro_pending_actions</code> (TTL 5 min): stage cria um preview, Mirian responde <em>sim</em>, e só então o RPC executa.</p>
+
+<h3>Verbos reconhecidos</h3>
+<table>
+  <tr><th>Intenção</th><th>Regex gatilho</th><th>Stage RPC</th><th>Action type</th></tr>
+  <tr>
+    <td>Criar</td>
+    <td><code>^(marca|marcar|agendar|nova consulta|novo agendamento)\s+</code></td>
+    <td><code>wa_pro_stage_create_appointment</code></td>
+    <td><code>create_appointment</code></td>
+  </tr>
+  <tr>
+    <td>Cancelar</td>
+    <td><code>^(cancela|cancelar|desmarca|desmarcar|tira|tirar)\s+</code></td>
+    <td><code>wa_pro_stage_cancel_appointment</code></td>
+    <td><code>cancel_appointment</code></td>
+  </tr>
+  <tr>
+    <td>Reagendar</td>
+    <td><code>^(reagenda|reagendar|remarca|remarcar|muda|mudar|mover)\s+</code></td>
+    <td><code>wa_pro_stage_reschedule_appointment</code></td>
+    <td><code>reschedule_appointment</code></td>
+  </tr>
+  <tr>
+    <td>Confirmar pending</td>
+    <td><code>^(sim|ok|confirma|pode|isso|yes|👍)$</code></td>
+    <td>—</td>
+    <td>roteia pra <code>wa_pro_confirm_pending</code></td>
+  </tr>
+  <tr>
+    <td>Negar pending</td>
+    <td><code>^(n|nao|negativo|aborta|esquece|deixa)$</code></td>
+    <td>—</td>
+    <td>roteia pra <code>wa_pro_cancel_pending</code></td>
+  </tr>
+</table>
+
+<div class="callout warn">
+  <div class="title warn">"agenda" não é verbo de create</div>
+  O substantivo <code>agenda</code> foi deliberadamente removido dos gatilhos de criação pra evitar colisão com leituras (<em>"tenho agenda hoje?"</em>). Use <code>marca</code>, <code>marcar</code>, <code>agendar</code> ou <code>nova consulta</code>.
+</div>
+
+<h3>Fluxo completo: cancelamento</h3>
+<pre>Mirian: "cancela a Maria amanha"
+   │
+   ▼ wa_pro_stage_cancel_appointment(phone, query)
+   ├─ _parse_cancel_appointment → { name: "Maria", ref_date: amanha }
+   ├─ wa_pro_patient_search (fuzzy pg_trgm)
+   ├─ _find_target_appointments(clinic, patient, prof, scope, ref_date)
+   │       ├─ 0 → error 'appointment_not_found'
+   │       ├─ 1 → prossegue
+   │       └─ N → error 'ambiguous' + lista enumerada
+   └─ INSERT wa_pro_pending_actions (action_type='cancel_appointment')
+
+Mirian: "sim"
+   │
+   ▼ wa_pro_confirm_pending(phone)
+   ├─ IF action_type='cancel_appointment':
+   │   1. UPDATE appointments SET status='cancelado'
+   │      WHERE id=? AND status IN ('agendado','pre_consulta')  ← idempotência
+   │      GET DIAGNOSTICS → se 0 rows, retorna 'already_changed'
+   │   2. DELETE wa_outbox WHERE appt_ref=? AND status='queued'
+   │      AND scheduled_at > now()                              ← só futuras
+   │   3. Lê template de cancelamento em wa_agenda_automations
+   │      (on_status + status='cancelado'). Se inexistente, fallback hardcoded.
+   │   4. INSERT wa_outbox (msg "consulta cancelada" pro paciente)
+   │   5. UPDATE wa_pro_pending_actions SET confirmed_at, result
+   └─ retorna "❌ Cancelado! Maria, 20/04 14h. 📨 Aviso enviado"</pre>
+
+<h3>Reagendamento</h3>
+<p>Faz <code>UPDATE</code> no mesmo <code>appointments.id</code> (preserva token de anamnese, orçamento vinculado e FKs), depois <code>DELETE</code> das mensagens futuras na <code>wa_outbox</code> e chama <code>wa_pro_fire_appointment_automations</code> de novo pra regenerar confirmação + D-1 + D-zero com as datas novas.</p>
+
+<pre>UPDATE appointments
+SET scheduled_date = new_date,
+    start_time = new_time::time,
+    end_time = (new_time + 1h)::time,
+    updated_at = now()
+WHERE id = ? AND status IN ('agendado', 'pre_consulta');
+
+DELETE FROM wa_outbox
+WHERE appt_ref = ? AND status = 'queued' AND scheduled_at > now();
+
+SELECT wa_pro_fire_appointment_automations(appt_id);</pre>
+
+<h3>Blindagens ativas</h3>
+<table>
+  <tr><th>Proteção</th><th>Como</th></tr>
+  <tr><td>Idempotência</td><td><code>WHERE status IN ('agendado','pre_consulta')</code> + <code>GET DIAGNOSTICS rows</code>. Segundo "sim" bate em 0 rows → erro <code>already_changed</code>.</td></tr>
+  <tr><td>Race com dashboard</td><td>UPDATE atômico dentro de função PL/pgSQL = transação. Se outro caminho alterou antes, o guard de status pega.</td></tr>
+  <tr><td>Scope enforcement</td><td><code>_find_target_appointments</code> aplica filtro <code>professional_id = v_prof_id</code> quando <code>access_scope='own'</code>. Não vaza existência — retorna <code>appointment_not_found</code>.</td></tr>
+  <tr><td>Reagendar pro passado</td><td>Stage calcula <code>v_new_at AT TIME ZONE 'America/Sao_Paulo'</code>, rejeita se <code>&lt;= now()</code>. Teste usa "ontem 14h" como canário.</td></tr>
+  <tr><td>Conflito de horário</td><td>Stage checa <code>COUNT(*)</code> de outro appointment do mesmo professional, mesma data/hora. Se &gt;0 → <code>slot_conflict</code>.</td></tr>
+  <tr><td>Outbox cleanup</td><td><code>DELETE ... WHERE status='queued'</code> preserva mensagens já em <code>sending</code>/<code>sent</code>. Se o cron já pegou 2s antes do cancel, a msg sai — comportamento correto (WhatsApp é one-way).</td></tr>
+  <tr><td>Disambiguação</td><td>&gt;1 match retorna <code>_render_appt_choices</code> enumerado. Usuário refaz com data específica: <em>"cancela a Maria 20/04"</em>.</td></tr>
+  <tr><td>Invalidação de pending</td><td>Stage faz <code>UPDATE ... SET expires_at = now()</code> em pendings anteriores antes de inserir o novo. Evita confirmação ambígua.</td></tr>
+  <tr><td>Token de anamnese sobrevive</td><td>Reschedule mantém o mesmo <code>appointments.id</code>, então links base64 já enviados continuam válidos.</td></tr>
+</table>
+
+<h3>Limitações conhecidas (pra próximos sprints)</h3>
+<ul>
+  <li>Política <strong>&lt; 24h</strong> (bloquear cancelamento último minuto) — fica pra flag <code>cashflow_config.cancel_min_hours</code>.</li>
+  <li><em>"cancela todos da Maria"</em> (bulk) — rejeitado deliberadamente, perigoso demais.</li>
+  <li>Estorno automático de <code>cashflow_entry</code> vinculada a appointment cancelado — política clínica (Mirian decide manualmente).</li>
+  <li>Disambiguação via multi-turn (<em>"cancela a Maria"</em> → <em>"1"</em>) — hoje pede reformulação com data. Multi-turn context existe (20260667) mas só pra <code>patient_balance</code>. Extensão pra appointments é próximo sprint.</li>
+</ul>
 
 </section>
 
@@ -1522,6 +1635,7 @@ SELECT wa_pro_evening_digest('5544998787673');
   <tr><td>20260667</td><td><code>mira_multiturn_context.sql</code></td><td><b>Multi-turn:</b> context consumption, resolve referências (1/2/primeira/segunda), regex patient name multi-palavra, param p_exact_id</td></tr>
   <tr><td>20260671</td><td><code>mira_appointment_automations.sql</code></td><td><b>Appointment automations:</b> <code>_render_appt_template</code> + <code>wa_pro_fire_appointment_automations</code> + <code>wa_pro_confirm_pending</code> dispara as 3 mensagens (on_status, d_before, d_zero) — sem min_before</td></tr>
   <tr><td>20260672</td><td><code>mira_anamnese_new_patient.sql</code></td><td><b>New patient:</b> <code>_anamnese_link</code> helper + detecção <code>is_new_patient</code> (prior finalized count=0) + anexa bloco da ficha só na confirmação inicial do paciente novo</td></tr>
+  <tr><td>20260673</td><td><code>mira_cancel_reschedule.sql</code></td><td><b>Bloco D #1 — Cancel + Reschedule:</b> <code>_parse_cancel_appointment</code> + <code>_parse_reschedule_appointment</code> + <code>_find_target_appointments</code> (scope-aware) + 2 novos stage RPCs + extensão de <code>wa_pro_confirm_pending</code> (guard de status, outbox cleanup, template lookup). Intents regex: cancelar, reagendar, marcar, sim/não curtos. Idempotente, disambiguado, preserva anamnese token</td></tr>
 </table>
 
 </section>
@@ -1548,7 +1662,8 @@ SELECT wa_pro_evening_digest('5544998787673');
 ├── 20260666000000_mira_proactive.sql
 ├── 20260667000000_mira_multiturn_context.sql
 ├── 20260671000000_mira_appointment_automations.sql
-└── 20260672000000_mira_anamnese_new_patient.sql</pre>
+├── 20260672000000_mira_anamnese_new_patient.sql
+└── 20260673000000_mira_cancel_reschedule.sql</pre>
 
 <h3>Frontend / Dashboard</h3>
 <pre>js/repositories/mira.repository.js   (166 lines)  — RPC wrappers
