@@ -266,9 +266,9 @@
       '</div>' : '') +
     '</div>'
 
-    // Variables
-    var varsHtml = '<div class="te-vars-row">Variaveis: ' +
-      ALL_VARS.map(function(v){ return '<span class="te-var-tag" data-action="insert-var" data-var="' + _esc(v) + '">' + _esc(v) + '</span>' }).join('') +
+    // Variables — inline com toolbar
+    var varsHtml = '<div class="te-vars-row">' +
+      ALL_VARS.map(function(v){ return '<span class="te-var-tag" data-action="insert-var" data-var="' + _esc(v) + '">' + _esc(v.replace(/[{}]/g, '')) + '</span>' }).join('') +
     '</div>'
 
     // Config section
