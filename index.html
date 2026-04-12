@@ -470,80 +470,14 @@
         <!-- Three Columns Section -->
         <div class="three-col-section">
 
-          <!-- Kanban Mini -->
+          <!-- Aniversariantes -->
           <div class="col-card">
             <div class="col-card-header">
-              <h3 class="col-card-title">Kanban Rápido</h3>
-              <a href="#" class="col-card-link">Ver completo <i data-feather="arrow-right"></i></a>
+              <h3 class="col-card-title">Aniversariantes</h3>
+              <span class="col-card-link" id="birthday-period-label">Esta semana</span>
             </div>
-            <div class="mini-kanban">
-
-              <div class="mini-kanban-col">
-                <div class="mini-kanban-col-header mini-kanban-col-header-blue">
-                  <span>Qualificação</span>
-                  <span class="mini-kanban-badge">12</span>
-                </div>
-                <div class="mini-kanban-card">
-                  <div class="mk-card-top">
-                    <span class="mk-card-name">Juliana Ferreira</span>
-                    <span class="mk-tag mk-tag-purple">Full Face</span>
-                  </div>
-                  <span class="mk-card-value">R$ 4.800</span>
-                </div>
-                <div class="mini-kanban-card">
-                  <div class="mk-card-top">
-                    <span class="mk-card-name">Renata Sousa</span>
-                    <span class="mk-tag mk-tag-blue">Protocolo</span>
-                  </div>
-                  <span class="mk-card-value">R$ 1.200</span>
-                </div>
-                <div class="mk-more">+10 leads</div>
-              </div>
-
-              <div class="mini-kanban-col">
-                <div class="mini-kanban-col-header mini-kanban-col-header-gold">
-                  <span>Agendamento</span>
-                  <span class="mini-kanban-badge">8</span>
-                </div>
-                <div class="mini-kanban-card">
-                  <div class="mk-card-top">
-                    <span class="mk-card-name">Carla Mendes</span>
-                    <span class="mk-tag mk-tag-purple">Full Face</span>
-                  </div>
-                  <span class="mk-card-value">R$ 5.200</span>
-                </div>
-                <div class="mini-kanban-card">
-                  <div class="mk-card-top">
-                    <span class="mk-card-name">Viviane Lima</span>
-                    <span class="mk-tag mk-tag-gold">Combo</span>
-                  </div>
-                  <span class="mk-card-value">R$ 3.600</span>
-                </div>
-                <div class="mk-more">+6 leads</div>
-              </div>
-
-              <div class="mini-kanban-col">
-                <div class="mini-kanban-col-header mini-kanban-col-header-emerald">
-                  <span>Fechamento</span>
-                  <span class="mini-kanban-badge">6</span>
-                </div>
-                <div class="mini-kanban-card">
-                  <div class="mk-card-top">
-                    <span class="mk-card-name">Patricia Alves</span>
-                    <span class="mk-tag mk-tag-emerald">Upsell</span>
-                  </div>
-                  <span class="mk-card-value">R$ 7.400</span>
-                </div>
-                <div class="mini-kanban-card">
-                  <div class="mk-card-top">
-                    <span class="mk-card-name">Sabrina Torres</span>
-                    <span class="mk-tag mk-tag-purple">Full Face</span>
-                  </div>
-                  <span class="mk-card-value">R$ 4.800</span>
-                </div>
-                <div class="mk-more">+4 leads</div>
-              </div>
-
+            <div id="dashboard-birthdays" class="agenda-timeline" style="min-height:120px">
+              <div style="text-align:center;padding:24px;color:var(--text-muted,#888);font-size:13px">Carregando...</div>
             </div>
           </div>
 
@@ -5080,6 +5014,7 @@
   <script src="js/components/interaction-panel.js?v=bc9fe64e" defer></script>
   <script src="js/components/kanban-board.js?v=27db30ce" defer></script>
   <script src="js/captacao-kanbans.js?v=8112c3fa" defer></script>
+  <script src="js/dashboard-birthdays.js?v=1" defer></script>
   <script src="js/leads-context.js?v=3b084e9f" defer></script>
   <script>
   // Quiz assets — cache-busting via ASSET_VERSION
