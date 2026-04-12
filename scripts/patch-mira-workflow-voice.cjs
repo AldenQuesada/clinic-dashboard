@@ -178,80 +178,76 @@ const downloadMediaNode = {
 };
 
 // ============================================================
-// 6. Transcribe (Groq Whisper)
-//    POST https://api.groq.com/openai/v1/audio/transcriptions
-//    multipart: file=base64->binary, model=whisper-large-v3-turbo, language=pt
+// 6a. Prepare Binary — base64 da Evolution → binary attachment
+// ============================================================
+const prepareBinaryNode = {
+  parameters: {
+    jsCode: `
+const prev = $('Cap Duration').first().json;
+const down = $input.first().json;
+const base64 = down.base64 || down.buffer || down.data;
+if (!base64) {
+  return [{ json: { ...prev, voiceStatus: 'failed', voiceError: 'no base64', transcript: '' } }];
+}
+const binaryData = await this.helpers.prepareBinaryData(
+  Buffer.from(base64, 'base64'),
+  'audio.ogg',
+  prev.audioMime || 'audio/ogg; codecs=opus'
+);
+return [{ json: { ...prev }, binary: { file: binaryData } }];
+`.trim()
+  },
+  id: 'mira-prepare-binary',
+  name: 'Prepare Binary',
+  type: 'n8n-nodes-base.code',
+  typeVersion: 2,
+  position: [1780, 80]
+};
+
+// ============================================================
+// 6b. Transcribe Groq — HTTP Request nativo com binary upload
 // ============================================================
 const transcribeNode = {
   parameters: {
-    jsCode: `
-// Converte base64 da Evolution pra multipart e chama Groq Whisper
-const prev = $('Cap Duration').first().json;
-const down = $input.first().json;
-
-// Evolution retorna { base64: '...', mimetype: '...' } ou similar
-const base64 = down.base64 || down.buffer || down.data;
-if (!base64) {
-  return [{ json: {
-    ...prev,
-    voiceStatus: 'failed',
-    voiceError: 'no base64 from evolution',
-    transcript: ''
-  } }];
-}
-
-const buffer = Buffer.from(base64, 'base64');
-const GROQ_KEY = $env.GROQ_API_KEY || '{{GROQ_API_KEY_PLACEHOLDER}}';
-
-if (!GROQ_KEY || GROQ_KEY.includes('PLACEHOLDER')) {
-  return [{ json: {
-    ...prev,
-    voiceStatus: 'failed',
-    voiceError: 'GROQ_API_KEY nao configurada',
-    transcript: ''
-  } }];
-}
-
-// multipart/form-data manual (n8n sem ambiente node_modules completo)
-const boundary = '----n8nmira' + Math.random().toString(36).slice(2);
-const CRLF = '\\r\\n';
-const parts = [];
-parts.push(Buffer.from('--' + boundary + CRLF));
-parts.push(Buffer.from('Content-Disposition: form-data; name="file"; filename="audio.ogg"' + CRLF));
-parts.push(Buffer.from('Content-Type: ' + (prev.audioMime || 'audio/ogg') + CRLF + CRLF));
-parts.push(buffer);
-parts.push(Buffer.from(CRLF + '--' + boundary + CRLF));
-parts.push(Buffer.from('Content-Disposition: form-data; name="model"' + CRLF + CRLF));
-parts.push(Buffer.from('whisper-large-v3-turbo'));
-parts.push(Buffer.from(CRLF + '--' + boundary + CRLF));
-parts.push(Buffer.from('Content-Disposition: form-data; name="language"' + CRLF + CRLF));
-parts.push(Buffer.from('pt'));
-parts.push(Buffer.from(CRLF + '--' + boundary + CRLF));
-parts.push(Buffer.from('Content-Disposition: form-data; name="response_format"' + CRLF + CRLF));
-parts.push(Buffer.from('json'));
-parts.push(Buffer.from(CRLF + '--' + boundary + '--' + CRLF));
-const body = Buffer.concat(parts);
-
-const resp = await this.helpers.httpRequest({
-  method: 'POST',
-  url: 'https://api.groq.com/openai/v1/audio/transcriptions',
-  headers: {
-    'Authorization': 'Bearer ' + GROQ_KEY,
-    'Content-Type': 'multipart/form-data; boundary=' + boundary
+    method: 'POST',
+    url: 'https://api.groq.com/openai/v1/audio/transcriptions',
+    authentication: 'genericCredentialType',
+    genericAuthType: 'httpHeaderAuth',
+    sendBody: true,
+    contentType: 'multipart-form-data',
+    bodyParameters: {
+      parameters: [
+        { name: 'file', parameterType: 'formBinaryData', inputDataFieldName: 'file' },
+        { name: 'model', value: 'whisper-large-v3-turbo' },
+        { name: 'language', value: 'pt' },
+        { name: 'response_format', value: 'json' }
+      ]
+    },
+    options: { timeout: 20000 }
   },
-  body: body,
-  returnFullResponse: false,
-  timeout: 20000
-});
+  id: 'mira-transcribe',
+  name: 'Transcribe Groq',
+  type: 'n8n-nodes-base.httpRequest',
+  typeVersion: 4.2,
+  position: [2000, 80],
+  credentials: {
+    httpHeaderAuth: { id: 'CebXP7V0EGP2es2f', name: 'Mira — Groq Whisper' }
+  }
+};
 
-const transcript = (resp && resp.text) || '';
-
-// Custo estimado: Groq whisper-large-v3-turbo = $0.04/h
+// ============================================================
+// 6c. Parse Transcript — extrai texto + calcula custo
+// ============================================================
+const parseTranscriptNode = {
+  parameters: {
+    jsCode: `
+const prev = $('Cap Duration').first().json;
+const groqResp = $input.first().json;
+const transcript = (groqResp && groqResp.text) || '';
 const costUsd = Number(((prev.audioDurationS || 0) / 3600 * 0.04).toFixed(6));
-
 return [{ json: {
   ...prev,
-  voiceStatus: 'ok',
+  voiceStatus: transcript.length > 0 ? 'ok' : 'empty',
   transcript: transcript.trim(),
   costUsd,
   provider: 'groq',
@@ -259,11 +255,11 @@ return [{ json: {
 } }];
 `.trim()
   },
-  id: 'mira-transcribe',
-  name: 'Transcribe Groq',
+  id: 'mira-parse-transcript',
+  name: 'Parse Transcript',
   type: 'n8n-nodes-base.code',
   typeVersion: 2,
-  position: [1780, 80]
+  position: [2220, 80]
 };
 
 // ============================================================
@@ -298,7 +294,7 @@ const processVoiceNode = {
 // 8. Insere os novos nodes antes do Tier 1
 // ============================================================
 const existingNodes = wf.nodes.filter(n =>
-  !['Is Audio?', 'Cap Duration', 'Skip Transcribe?', 'Download Media', 'Transcribe Groq', 'Process Voice'].includes(n.name)
+  !['Is Audio?', 'Cap Duration', 'Skip Transcribe?', 'Download Media', 'Prepare Binary', 'Transcribe Groq', 'Parse Transcript', 'Process Voice'].includes(n.name)
 );
 wf.nodes = [
   ...existingNodes,
@@ -306,7 +302,9 @@ wf.nodes = [
   capDurationNode,
   skipTranscribeIfNode,
   downloadMediaNode,
+  prepareBinaryNode,
   transcribeNode,
+  parseTranscriptNode,
   processVoiceNode
 ];
 
@@ -339,9 +337,15 @@ wf.connections['Skip Transcribe?'] = {
   ]
 };
 wf.connections['Download Media'] = {
+  main: [[{ node: 'Prepare Binary', type: 'main', index: 0 }]]
+};
+wf.connections['Prepare Binary'] = {
   main: [[{ node: 'Transcribe Groq', type: 'main', index: 0 }]]
 };
 wf.connections['Transcribe Groq'] = {
+  main: [[{ node: 'Parse Transcript', type: 'main', index: 0 }]]
+};
+wf.connections['Parse Transcript'] = {
   main: [[{ node: 'Process Voice', type: 'main', index: 0 }]]
 };
 // Process Voice termina o fluxo de audio — ja tem intent+response, vai direto pro Merge

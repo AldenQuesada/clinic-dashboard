@@ -110,8 +110,13 @@ BEGIN
     v_clinic_id := '00000000-0000-0000-0000-000000000001'::uuid;
   END IF;
 
-  -- Valida transcript
+  -- Valida transcript + strip vocativo "Mira" do inicio
+  -- (comum em audio: "Mira marca a Maria amanha")
   v_clean := TRIM(COALESCE(p_transcript, ''));
+  v_clean := REGEXP_REPLACE(v_clean,
+    '^\s*(oi\s+|hey\s+|ei\s+|ô\s+|oh\s+)?(mira|miri)[,!.\s]*\s*',
+    '', 'i');
+  v_clean := TRIM(v_clean);
   IF LENGTH(v_clean) < 3 THEN
     INSERT INTO public.wa_pro_transcripts (
       clinic_id, professional_id, phone, message_id, audio_mime, duration_s,
