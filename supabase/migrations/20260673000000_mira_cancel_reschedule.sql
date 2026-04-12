@@ -1239,7 +1239,31 @@ BEGIN
       RETURN '🔍 Diga o nome do paciente. Ex: "quem e Maria Silva?"';
     END IF;
     v_data := wa_pro_patient_search(p_phone, v_patient_q, 5);
-    RETURN _fmt_patient_list(v_data);
+    IF jsonb_array_length(COALESCE(v_data->'results', '[]'::jsonb)) = 0 THEN
+      RETURN '🔍 Nenhum paciente encontrado para "' || v_patient_q || '".';
+    END IF;
+    -- Sempre mostra perfil completo do primeiro match
+    DECLARE
+      v_profile jsonb;
+      v_result text;
+      v_n int := jsonb_array_length(v_data->'results');
+      v_other jsonb;
+      v_i int := 0;
+    BEGIN
+      v_profile := wa_pro_patient_profile(p_phone, v_data->'results'->0->>'id');
+      v_result := _fmt_patient_profile(v_profile);
+      -- Se tem mais matches, lista os outros abaixo
+      IF v_n > 1 THEN
+        v_result := v_result || E'\n\n───\nTambem encontrei: ';
+        FOR v_other IN SELECT * FROM jsonb_array_elements(v_data->'results') OFFSET 1 LOOP
+          v_i := v_i + 1;
+          IF v_i > 4 THEN EXIT; END IF;
+          IF v_i > 1 THEN v_result := v_result || ', '; END IF;
+          v_result := v_result || '*' || (v_other->>'name') || '*';
+        END LOOP;
+      END IF;
+      RETURN v_result;
+    END;
   END IF;
 
   IF p_intent = 'patient_balance' THEN
