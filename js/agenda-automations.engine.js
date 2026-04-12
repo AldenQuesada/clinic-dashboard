@@ -120,6 +120,9 @@
         _scheduleAlexa(rule, vars, scheduledAt, appt)
       }
     })
+
+    // Campanha por fase "agendado" — enfileira templates vinculados
+    _enqueueCampaignForPhase(appt, 'agendado')
   }
 
   // ══════════════════════════════════════════════════════════
@@ -130,18 +133,68 @@
   async function processStatusChange(appt, newStatus) {
     await _ensureLoaded()
     var svc = _svc()
-    if (!svc) return
 
-    var rules = svc.getByStatus(newStatus)
-    if (!rules.length) return
+    // 1. Regras manuais de automacao (existentes)
+    if (svc) {
+      var rules = svc.getByStatus(newStatus)
+      var phone = (_getPhone(appt) || '').replace(/\D/g, '')
+      var vars = _apptVars(appt)
+      vars.status = newStatus
+      rules.forEach(function (rule) {
+        _executeRule(rule, vars, phone, appt)
+      })
+    }
 
+    // 2. Campanha por fase: busca templates vinculados a esta fase
+    _enqueueCampaignForPhase(appt, newStatus)
+  }
+
+  async function _enqueueCampaignForPhase(appt, phase) {
+    if (!window._sbShared) return
     var phone = (_getPhone(appt) || '').replace(/\D/g, '')
-    var vars = _apptVars(appt)
-    vars.status = newStatus
+    if (!phone) return
 
-    rules.forEach(function (rule) {
-      _executeRule(rule, vars, phone, appt)
-    })
+    try {
+      var res = await window._sbShared.rpc('wa_templates_for_phase', { p_phase: phase })
+      if (res.error || !res.data) return
+      var templates = Array.isArray(res.data) ? res.data : []
+      if (!templates.length) return
+
+      var vars = _apptVars(appt)
+      var _cfg = {}; try { _cfg = JSON.parse(localStorage.getItem('clinicai_clinic_settings') || '{}') } catch(e) {}
+      var _end = [_cfg.rua, _cfg.num].filter(Boolean).join(', ')
+      if (_cfg.comp) _end += ' - ' + _cfg.comp
+      if (_cfg.cidade) _end += ' - ' + _cfg.cidade
+      vars.endereco = _end || ''
+      vars.endereco_clinica = _end || ''
+      vars.link_maps = _cfg.maps || ''
+      vars.menu_clinica = (window.location.origin || '') + '/menu-clinica.html'
+      vars.link = _cfg.site || ''
+
+      var now = new Date()
+      templates.forEach(function (tpl) {
+        var content = (tpl.content || '').replace(/\{(\w+)\}/g, function (_, k) {
+          return vars[k] != null ? String(vars[k]) : ''
+        })
+        if (!content.trim()) return
+
+        var scheduledAt = new Date(now)
+        var days = parseInt(tpl.day) || 0
+        var hours = parseInt(tpl.delay_hours) || 0
+        var mins = parseInt(tpl.delay_minutes) || 0
+        scheduledAt.setDate(scheduledAt.getDate() + days)
+        scheduledAt.setHours(scheduledAt.getHours() + hours)
+        scheduledAt.setMinutes(scheduledAt.getMinutes() + mins)
+
+        _enqueueWA(phone, content, appt, scheduledAt, 'campaign:' + phase + ':' + (tpl.slug || tpl.name))
+      })
+
+      if (templates.length && window._showToast) {
+        _showToast('Campanha disparada', templates.length + ' mensagen' + (templates.length > 1 ? 's' : '') + ' agendada' + (templates.length > 1 ? 's' : '') + ' para fase "' + phase + '"', 'info')
+      }
+    } catch (e) {
+      console.error('[Engine] campanha fase erro:', e)
+    }
   }
 
   // ══════════════════════════════════════════════════════════
