@@ -1670,10 +1670,10 @@
       redirectLabel = (tplSettings && tplSettings.redirect_label) || localStorage.getItem('anm_redirect_label') || 'Conheca nossos tratamentos'
     } catch(e) {}
 
-    // Default: Instagram or clinic website
+    // Default: Instagram oficial da Mirian
     if (!redirectUrl) {
-      redirectUrl   = 'https://www.instagram.com/dra.miriandepaula/'
-      redirectLabel = 'Siga-nos no Instagram'
+      redirectUrl   = 'https://www.instagram.com/miriandpaula/'
+      redirectLabel = 'Siga @miriandpaula no Instagram'
     }
 
     var redirectBtn = redirectUrl
