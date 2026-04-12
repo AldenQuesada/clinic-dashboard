@@ -98,7 +98,7 @@
 
   function _root() { return document.getElementById('templates-editor-root') }
   function _esc(s) { return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') }
-  function _catMeta(c) { return CATEGORY_META[c] || CATEGORY_META.geral }
+  function _catMeta(c) { return CATEGORY_META[c] || CATEGORY_META.pre_agendamento }
 
   function _selected() {
     if (!_selectedId) return null
@@ -183,7 +183,7 @@
     var cats = ['todos']
     var catSet = {}
     _templates.forEach(function (t) {
-      var c = t.category || 'geral'
+      var c = t.category || 'pre_agendamento'
       if (!catSet[c]) { catSet[c] = true; cats.push(c) }
     })
     var html = '<div class="te-tabs">'
@@ -203,7 +203,7 @@
   }
 
   function _filteredTemplates() {
-    var list = _activeTab === 'todos' ? _templates.slice() : _templates.filter(function (t) { return (t.category || 'geral') === _activeTab })
+    var list = _activeTab === 'todos' ? _templates.slice() : _templates.filter(function (t) { return (t.category || 'pre_agendamento') === _activeTab })
     list.sort(function (a, b) { return _totalMinutes(a) - _totalMinutes(b) })
     return list
   }
@@ -212,7 +212,7 @@
     if (!items.length) return '<div class="te-empty-list">Nenhum template nesta categoria</div>'
     var html = ''
     items.forEach(function (t) {
-      var meta = _catMeta(t.category || 'geral')
+      var meta = _catMeta(t.category || 'pre_agendamento')
       var sel = t.id === _selectedId ? ' te-item-selected' : ''
       var inactive = _getActive(t) ? '' : ' te-item-inactive'
       var delay = _fmtDelay(t.day, t.delay_hours, t.delay_minutes)
@@ -300,7 +300,7 @@
     // Config section
     var d = _dirty[tpl.id] || {}
     var dayVal = d.day !== undefined ? d.day : (tpl.day != null ? tpl.day : '')
-    var catVal = d.category || tpl.category || 'geral'
+    var catVal = d.category || tpl.category || 'pre_agendamento'
     var nameVal = d.name || tpl.name || ''
 
     var catOptions = Object.keys(CATEGORY_META).map(function (k) {
@@ -544,7 +544,7 @@
 
     document.getElementById('teNewConfirm').onclick = async function () {
       var name = (document.getElementById('teNewName').value || '').trim()
-      var cat = document.getElementById('teNewCat').value || 'geral'
+      var cat = document.getElementById('teNewCat').value || 'pre_agendamento'
       if (!name) { if (window._toastWarn) _toastWarn('Informe o nome do template'); return }
       var slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
 

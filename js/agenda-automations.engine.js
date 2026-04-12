@@ -155,8 +155,12 @@
     var phone = (_getPhone(appt) || '').replace(/\D/g, '')
     if (!phone) return
 
+    // Normalizar: "Agendado" → "agendado", "Na Clinica" → "na_clinica"
+    var phaseSlug = (phase || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+    if (!phaseSlug) return
+
     try {
-      var res = await window._sbShared.rpc('wa_templates_for_phase', { p_phase: phase })
+      var res = await window._sbShared.rpc('wa_templates_for_phase', { p_phase: phaseSlug })
       if (res.error || !res.data) return
       var templates = Array.isArray(res.data) ? res.data : []
       if (!templates.length) return
@@ -187,11 +191,11 @@
         scheduledAt.setHours(scheduledAt.getHours() + hours)
         scheduledAt.setMinutes(scheduledAt.getMinutes() + mins)
 
-        _enqueueWA(phone, content, appt, scheduledAt, 'campaign:' + phase + ':' + (tpl.slug || tpl.name))
+        _enqueueWA(phone, content, appt, scheduledAt, 'campaign:' + phaseSlug + ':' + (tpl.slug || tpl.name))
       })
 
       if (templates.length && window._showToast) {
-        _showToast('Campanha disparada', templates.length + ' mensagen' + (templates.length > 1 ? 's' : '') + ' agendada' + (templates.length > 1 ? 's' : '') + ' para fase "' + phase + '"', 'info')
+        _showToast('Campanha disparada', templates.length + ' mensagen' + (templates.length > 1 ? 's' : '') + ' agendada' + (templates.length > 1 ? 's' : '') + ' para "' + phaseSlug + '"', 'info')
       }
     } catch (e) {
       console.error('[Engine] campanha fase erro:', e)
