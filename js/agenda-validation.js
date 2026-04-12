@@ -514,7 +514,7 @@ function confirmCancelWithReason(apptId, statusAlvo) {
   // Mudar fase do lead pra cancelado/perdido
   if (appts[idx].pacienteId && window.SdrService && SdrService.changePhase) {
     if (statusAlvo === 'cancelado') {
-      SdrService.changePhase(appts[idx].pacienteId, 'cancelado', 'cancelamento: ' + motivo)
+      SdrService.changePhase(appts[idx].pacienteId, 'perdido', 'cancelamento: ' + motivo)
     }
     // No-show: manter fase atual (lead pode reagendar), criar task de recuperacao
   }

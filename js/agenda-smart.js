@@ -373,11 +373,11 @@ function apptTransition(id, newStatus, by) {
     if (newStatus === 'finalizado') AutomationsEngine.processFinalize(appt).catch(function(e) { console.error('[Agenda] Engine.processFinalize falhou:', e) })
   }
 
-  // Hook SDR unificado: disparar regras + mudar fase do lead
+  // Hook SDR unificado: disparar regras (fase muda APENAS no confirmFinalize, nao aqui)
   if (appt.pacienteId && window.SdrService) {
     if (newStatus === 'finalizado') {
       SdrService.onLeadAttended(appt.pacienteId)
-      if (SdrService.changePhase) SdrService.changePhase(appt.pacienteId, 'paciente', 'finalizacao-auto')
+      // NAO mudar fase aqui — fase muda no confirmFinalize() apos check do modal
     }
   }
 
@@ -2048,19 +2048,21 @@ function confirmFinalize(id) {
   }
   if (parceria)   _logAuto(id, 'fluxo_parceria', 'pendente')
 
-  // Bloco 4: Routing — muda fase do lead + aplica tags
-  // Regra: sempre sai como paciente ou orcamento. Nunca fica em compareceu/agendado.
-  if (apptFinal.pacienteId) {
-    if (route === 'orcamento') {
-      if (window.SdrService && SdrService.changePhase) {
-        SdrService.changePhase(apptFinal.pacienteId, 'orcamento', 'finalizacao')
-      }
-    } else {
-      // paciente, pac_orcamento, nenhum — todos vao pra paciente
-      if (window.SdrService && SdrService.changePhase) {
-        SdrService.changePhase(apptFinal.pacienteId, 'paciente', 'finalizacao')
-      }
+  // Bloco 4: Routing — muda fase do lead baseado no resultado da consulta
+  // Regra de negocio:
+  //   procedimento realizado → paciente
+  //   avaliacao + orcamento → orcamento
+  //   paciente + orcamento → paciente (ja fez procedimento)
+  //   nenhum (nao fez, pressao alta, urgencia) → mantem fase atual
+  if (apptFinal.pacienteId && window.SdrService && SdrService.changePhase) {
+    if (route === 'paciente' || route === 'pac_orcamento') {
+      SdrService.changePhase(apptFinal.pacienteId, 'paciente', 'finalizacao')
+    } else if (route === 'orcamento') {
+      SdrService.changePhase(apptFinal.pacienteId, 'orcamento', 'finalizacao')
     }
+    // route === 'nenhum' → NAO muda fase (compareceu mas nao realizou procedimento)
+  }
+  if (apptFinal.pacienteId) {
 
     // Aplicar tags
     if (route === 'paciente' && window.TagEngine) {
