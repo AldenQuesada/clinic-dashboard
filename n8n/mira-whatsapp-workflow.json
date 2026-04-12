@@ -12,25 +12,43 @@
       "name": "Webhook - Receive",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "mira-webhook"
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst data = body.data || body;\nconst instance = body.instance || '';\nconst event = body.event || 'messages.upsert';\n\nif (event !== 'messages.upsert') return [{ json: { skip: true, reason: 'not messages.upsert' } }];\nconst key = data.key || {};\nif (key.fromMe) return [{ json: { skip: true, reason: 'fromMe' } }];\nconst rawJid = key.remoteJid || '';\nif (rawJid.includes('@g.us') || rawJid.includes('@broadcast') || rawJid.includes('@newsletter')) {\n  return [{ json: { skip: true, reason: 'group/broadcast' } }];\n}\nconst msg = data.message || {};\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nif (!text) return [{ json: { skip: true, reason: 'no text' } }];\n\nlet phoneSource = '';\nif (rawJid.includes('@lid') && key.senderPn) phoneSource = key.senderPn;\nelse if (key.senderPn) phoneSource = key.senderPn;\nelse if (key.participantPn) phoneSource = key.participantPn;\nelse phoneSource = rawJid;\nconst phone = phoneSource.replace(/@.*/, '').replace(/\\D/g, '');\n\nif (!phone || phone.length < 10) return [{ json: { skip: true, reason: 'no phone' } }];\nreturn [{ json: { skip: false, phone, text: text.trim().slice(0, 500), instance } }];"
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst data = body.data || body;\nconst instance = body.instance || '';\nconst event = body.event || 'messages.upsert';\n\nif (event !== 'messages.upsert') return [{ json: { skip: true, reason: 'not messages.upsert' } }];\nconst key = data.key || {};\nif (key.fromMe) return [{ json: { skip: true, reason: 'fromMe' } }];\nconst rawJid = key.remoteJid || '';\nif (rawJid.includes('@g.us') || rawJid.includes('@broadcast') || rawJid.includes('@newsletter')) {\n  return [{ json: { skip: true, reason: 'group/broadcast' } }];\n}\n\n// Phone extraction (mesma logica)\nlet phoneSource = '';\nif (rawJid.includes('@lid') && key.senderPn) phoneSource = key.senderPn;\nelse if (key.senderPn) phoneSource = key.senderPn;\nelse if (key.participantPn) phoneSource = key.participantPn;\nelse phoneSource = rawJid;\nconst phone = phoneSource.replace(/@.*/, '').replace(/\\D/g, '');\nif (!phone || phone.length < 10) return [{ json: { skip: true, reason: 'no phone' } }];\n\nconst msg = data.message || {};\n\n// Detecta audio (voice notes do WhatsApp, opus)\nconst audioMsg = msg.audioMessage || msg.ephemeralMessage?.message?.audioMessage;\nif (audioMsg) {\n  const durationS = parseInt(audioMsg.seconds || 0, 10);\n  return [{ json: {\n    skip: false,\n    type: 'audio',\n    phone,\n    instance,\n    text: '',\n    messageId: key.id || null,\n    audioMime: audioMsg.mimetype || 'audio/ogg',\n    audioDurationS: durationS\n  } }];\n}\n\n// Texto\nconst text = msg.conversation || msg.extendedTextMessage?.text || '';\nif (!text) return [{ json: { skip: true, reason: 'no text' } }];\n\nreturn [{ json: {\n  skip: false,\n  type: 'text',\n  phone,\n  instance,\n  text: text.trim().slice(0, 500),\n  messageId: key.id || null\n} }];"
       },
       "id": "mira-parse-node",
       "name": "Parse Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
-            { "id": "skip-check", "leftValue": "={{ $json.skip }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
+            {
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
           ],
           "combinator": "and"
         },
@@ -40,7 +58,10 @@
       "name": "Should Skip?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -52,7 +73,10 @@
       "name": "Respond Skip",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [900, 180]
+      "position": [
+        900,
+        180
+      ]
     },
     {
       "parameters": {
@@ -62,7 +86,12 @@
         "genericAuthType": "httpCustomAuth",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
         },
         "sendBody": true,
         "specifyBody": "json",
@@ -73,17 +102,35 @@
       "name": "Tier 1 — Handle Message",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [900, 420],
+      "position": [
+        900,
+        420
+      ],
       "credentials": {
-        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+        "httpCustomAuth": {
+          "id": "X79lxjrmGuRpBo7r",
+          "name": "Mira — Supabase Service"
+        }
       }
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
-            { "id": "unknown-check", "leftValue": "={{ $json.intent }}", "rightValue": "unknown", "operator": { "type": "string", "operation": "equals" } }
+            {
+              "id": "unknown-check",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "unknown",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
           ],
           "combinator": "and"
         },
@@ -93,7 +140,10 @@
       "name": "Need Tier 2?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1120, 420]
+      "position": [
+        1120,
+        420
+      ]
     },
     {
       "parameters": {
@@ -104,8 +154,14 @@
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "anthropic-version", "value": "2023-06-01" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -117,9 +173,15 @@
       "name": "Tier 2 — Claude Haiku",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 300],
+      "position": [
+        1340,
+        300
+      ],
       "credentials": {
-        "httpHeaderAuth": { "id": "m7L9XAPfYqbrnMoB", "name": "Mira — Claude API" }
+        "httpHeaderAuth": {
+          "id": "m7L9XAPfYqbrnMoB",
+          "name": "Mira — Claude API"
+        }
       }
     },
     {
@@ -130,14 +192,29 @@
       "name": "Parse Claude Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1560, 300]
+      "position": [
+        1560,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
           "conditions": [
-            { "id": "tool-check", "leftValue": "={{ $json.needsTool }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
+            {
+              "id": "tool-check",
+              "leftValue": "={{ $json.needsTool }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
           ],
           "combinator": "and"
         },
@@ -147,7 +224,10 @@
       "name": "Needs Tool?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1780, 300]
+      "position": [
+        1780,
+        300
+      ]
     },
     {
       "parameters": {
@@ -157,7 +237,12 @@
         "genericAuthType": "httpCustomAuth",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
         },
         "sendBody": true,
         "specifyBody": "json",
@@ -168,9 +253,15 @@
       "name": "Execute Tool",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2000, 220],
+      "position": [
+        2000,
+        220
+      ],
       "credentials": {
-        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+        "httpCustomAuth": {
+          "id": "X79lxjrmGuRpBo7r",
+          "name": "Mira — Supabase Service"
+        }
       }
     },
     {
@@ -181,7 +272,10 @@
       "name": "Merge",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2220, 420]
+      "position": [
+        2220,
+        420
+      ]
     },
     {
       "parameters": {
@@ -191,7 +285,12 @@
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
-          "parameters": [ { "name": "Content-Type", "value": "application/json" } ]
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
         },
         "sendBody": true,
         "specifyBody": "json",
@@ -202,9 +301,15 @@
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2440, 420],
+      "position": [
+        2440,
+        420
+      ],
       "credentials": {
-        "httpHeaderAuth": { "id": "ezmaPVK9AyfxTg4c", "name": "Mira — Evolution API" }
+        "httpHeaderAuth": {
+          "id": "ezmaPVK9AyfxTg4c",
+          "name": "Mira — Evolution API"
+        }
       }
     },
     {
@@ -217,30 +322,399 @@
       "name": "Respond OK",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [2660, 420]
+      "position": [
+        2660,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "audio-check",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "audio",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "mira-is-audio-if",
+      "name": "Is Audio?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const j = $input.first().json;\nconst dur = parseInt(j.audioDurationS || 0, 10);\nconst MAX_S = 60;\nif (dur > MAX_S) {\n  // Flag pra skip download + transcription; process_voice vai responder \"muito longo\"\n  return [{ json: { ...j, voiceStatus: 'too_long', skipTranscribe: true } }];\n}\nreturn [{ json: { ...j, voiceStatus: 'ok', skipTranscribe: false } }];"
+      },
+      "id": "mira-cap-duration",
+      "name": "Cap Duration",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "skip-trans",
+              "leftValue": "={{ $json.skipTranscribe }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "mira-skip-trans-if",
+      "name": "Skip Transcribe?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://n8n_evolution-api:8080/chat/getBase64FromMediaMessage/{{ $json.instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"message\": {\n    \"key\": {\n      \"id\": \"{{ $json.messageId }}\"\n    }\n  },\n  \"convertToMp4\": false\n}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "mira-download-media",
+      "name": "Download Media",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ezmaPVK9AyfxTg4c",
+          "name": "Mira — Evolution API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Converte base64 da Evolution pra multipart e chama Groq Whisper\nconst prev = $('Cap Duration').first().json;\nconst down = $input.first().json;\n\n// Evolution retorna { base64: '...', mimetype: '...' } ou similar\nconst base64 = down.base64 || down.buffer || down.data;\nif (!base64) {\n  return [{ json: {\n    ...prev,\n    voiceStatus: 'failed',\n    voiceError: 'no base64 from evolution',\n    transcript: ''\n  } }];\n}\n\nconst buffer = Buffer.from(base64, 'base64');\nconst GROQ_KEY = $env.GROQ_API_KEY || '{{GROQ_API_KEY_PLACEHOLDER}}';\n\nif (!GROQ_KEY || GROQ_KEY.includes('PLACEHOLDER')) {\n  return [{ json: {\n    ...prev,\n    voiceStatus: 'failed',\n    voiceError: 'GROQ_API_KEY nao configurada',\n    transcript: ''\n  } }];\n}\n\n// multipart/form-data manual (n8n sem ambiente node_modules completo)\nconst boundary = '----n8nmira' + Math.random().toString(36).slice(2);\nconst CRLF = '\\r\\n';\nconst parts = [];\nparts.push(Buffer.from('--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"file\"; filename=\"audio.ogg\"' + CRLF));\nparts.push(Buffer.from('Content-Type: ' + (prev.audioMime || 'audio/ogg') + CRLF + CRLF));\nparts.push(buffer);\nparts.push(Buffer.from(CRLF + '--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"model\"' + CRLF + CRLF));\nparts.push(Buffer.from('whisper-large-v3-turbo'));\nparts.push(Buffer.from(CRLF + '--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"language\"' + CRLF + CRLF));\nparts.push(Buffer.from('pt'));\nparts.push(Buffer.from(CRLF + '--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"response_format\"' + CRLF + CRLF));\nparts.push(Buffer.from('json'));\nparts.push(Buffer.from(CRLF + '--' + boundary + '--' + CRLF));\nconst body = Buffer.concat(parts);\n\nconst resp = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.groq.com/openai/v1/audio/transcriptions',\n  headers: {\n    'Authorization': 'Bearer ' + GROQ_KEY,\n    'Content-Type': 'multipart/form-data; boundary=' + boundary\n  },\n  body: body,\n  returnFullResponse: false,\n  timeout: 20000\n});\n\nconst transcript = (resp && resp.text) || '';\n\n// Custo estimado: Groq whisper-large-v3-turbo = $0.04/h\nconst costUsd = Number(((prev.audioDurationS || 0) / 3600 * 0.04).toFixed(6));\n\nreturn [{ json: {\n  ...prev,\n  voiceStatus: 'ok',\n  transcript: transcript.trim(),\n  costUsd,\n  provider: 'groq',\n  model: 'whisper-large-v3-turbo'\n} }];"
+      },
+      "id": "mira-transcribe",
+      "name": "Transcribe Groq",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_process_voice",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_phone\": \"{{ $json.phone }}\",\n  \"p_transcript\": {{ JSON.stringify($json.transcript || '') }},\n  \"p_duration_s\": {{ $json.audioDurationS || 0 }},\n  \"p_message_id\": {{ JSON.stringify($json.messageId || '') }},\n  \"p_audio_mime\": {{ JSON.stringify($json.audioMime || '') }},\n  \"p_model\": \"whisper-large-v3-turbo\",\n  \"p_provider\": \"groq\",\n  \"p_cost_usd\": {{ $json.costUsd || 0 }},\n  \"p_status\": \"{{ $json.voiceStatus || 'ok' }}\",\n  \"p_error\": {{ JSON.stringify($json.voiceError || null) }}\n}",
+        "options": {}
+      },
+      "id": "mira-process-voice",
+      "name": "Process Voice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        80
+      ],
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "X79lxjrmGuRpBo7r",
+          "name": "Mira — Supabase Service"
+        }
+      }
     }
   ],
   "connections": {
-    "Webhook - Receive": { "main": [[{ "node": "Parse Message", "type": "main", "index": 0 }]] },
-    "Parse Message":    { "main": [[{ "node": "Should Skip?", "type": "main", "index": 0 }]] },
-    "Should Skip?":     { "main": [
-      [{ "node": "Respond Skip", "type": "main", "index": 0 }],
-      [{ "node": "Tier 1 — Handle Message", "type": "main", "index": 0 }]
-    ]},
-    "Tier 1 — Handle Message": { "main": [[{ "node": "Need Tier 2?", "type": "main", "index": 0 }]] },
-    "Need Tier 2?": { "main": [
-      [{ "node": "Tier 2 — Claude Haiku", "type": "main", "index": 0 }],
-      [{ "node": "Merge", "type": "main", "index": 0 }]
-    ]},
-    "Tier 2 — Claude Haiku": { "main": [[{ "node": "Parse Claude Response", "type": "main", "index": 0 }]] },
-    "Parse Claude Response": { "main": [[{ "node": "Needs Tool?", "type": "main", "index": 0 }]] },
-    "Needs Tool?": { "main": [
-      [{ "node": "Execute Tool", "type": "main", "index": 0 }],
-      [{ "node": "Merge", "type": "main", "index": 0 }]
-    ]},
-    "Execute Tool": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
-    "Merge": { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] },
-    "Send WhatsApp": { "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]] }
+    "Webhook - Receive": {
+      "main": [
+        [
+          {
+            "node": "Parse Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message": {
+      "main": [
+        [
+          {
+            "node": "Should Skip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Skip?": {
+      "main": [
+        [
+          {
+            "node": "Respond Skip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Audio?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tier 1 — Handle Message": {
+      "main": [
+        [
+          {
+            "node": "Need Tier 2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Need Tier 2?": {
+      "main": [
+        [
+          {
+            "node": "Tier 2 — Claude Haiku",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tier 2 — Claude Haiku": {
+      "main": [
+        [
+          {
+            "node": "Parse Claude Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Claude Response": {
+      "main": [
+        [
+          {
+            "node": "Needs Tool?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Tool?": {
+      "main": [
+        [
+          {
+            "node": "Execute Tool",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Tool": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Audio?": {
+      "main": [
+        [
+          {
+            "node": "Cap Duration",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tier 1 — Handle Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cap Duration": {
+      "main": [
+        [
+          {
+            "node": "Skip Transcribe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Transcribe?": {
+      "main": [
+        [
+          {
+            "node": "Process Voice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Media": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Groq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Groq": {
+      "main": [
+        [
+          {
+            "node": "Process Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Voice": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1" }
+  "settings": {
+    "executionOrder": "v1"
+  }
 }

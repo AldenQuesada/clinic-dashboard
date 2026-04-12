@@ -231,6 +231,7 @@
     <a href="#proactive">Workflows proativos (4 cron)</a>
     <a href="#appt-automations">Automações de Agendamento</a>
     <a href="#write-actions">Ações de Escrita (2-step)</a>
+    <a href="#voice-task">Voice → Task</a>
 
     <a class="section">Backend</a>
     <a href="#rpcs">RPCs</a>
@@ -888,6 +889,114 @@ SELECT wa_pro_fire_appointment_automations(appt_id);</pre>
   <li><em>"cancela todos da Maria"</em> (bulk) — rejeitado deliberadamente, perigoso demais.</li>
   <li>Estorno automático de <code>cashflow_entry</code> vinculada a appointment cancelado — política clínica (Mirian decide manualmente).</li>
   <li>Disambiguação via multi-turn (<em>"cancela a Maria"</em> → <em>"1"</em>) — hoje pede reformulação com data. Multi-turn context existe (20260667) mas só pra <code>patient_balance</code>. Extensão pra appointments é próximo sprint.</li>
+</ul>
+
+</section>
+
+<!-- ============ VOICE → TASK ============ -->
+<section id="voice-task">
+<h2>Voice → Task (áudio do WhatsApp vira comando)</h2>
+
+<p>Dra. Mirian pode mandar áudio em vez de digitar. O áudio é baixado da Evolution, transcrito pela <strong>Groq Whisper</strong> (<code>whisper-large-v3-turbo</code>), e o texto entra no mesmo pipeline de texto — todas as intents (ler agenda, cancelar, reagendar, marcar) funcionam automaticamente.</p>
+
+<h3>Por que Groq em vez de OpenAI</h3>
+<table>
+  <tr><th></th><th>OpenAI <code>whisper-1</code></th><th>Groq <code>whisper-large-v3-turbo</code></th></tr>
+  <tr><td>Latência (áudio 15s)</td><td>5–10s</td><td><strong>0.5–1.5s</strong></td></tr>
+  <tr><td>Custo</td><td>$0.36/h</td><td><strong>$0.04/h</strong> (9x mais barato)</td></tr>
+  <tr><td>Qualidade PT-BR</td><td>Excelente</td><td><strong>Idêntica</strong> (mesmo Whisper por baixo)</td></tr>
+  <tr><td>API</td><td>—</td><td>Drop-in OpenAI-compatible</td></tr>
+</table>
+<p>Pra ~100 áudios de 15s/dia: ~$0.20/mês. Praticamente grátis.</p>
+
+<h3>Fluxo completo</h3>
+<pre>Dra Mirian grava voz no WhatsApp
+   │
+   ▼ Evolution → webhook n8n
+   ▼ Parse Message detecta audioMessage
+   │   { type: 'audio', phone, messageId, audioMime, audioDurationS }
+   │
+   ▼ Should Skip? (group/broadcast/fromMe)
+   ▼ Is Audio? ── false ──► Tier 1 — Handle Message (caminho texto normal)
+   │
+   └─ true
+      │
+      ▼ Cap Duration (60s)  ── se &gt;60s ──► skipTranscribe=true
+      ▼ Skip Transcribe? ── true ──► Process Voice (status='too_long')
+      │                   └─ false ──▼
+      ▼ Download Media      GET http://n8n_evolution-api:8080/chat/
+      │                         getBase64FromMediaMessage/{instance}
+      │                     body: { message: { key: { id } } }
+      │
+      ▼ Transcribe Groq     POST https://api.groq.com/openai/v1/
+      │                         audio/transcriptions
+      │                     multipart: file=base64→buffer, model=whisper-large-v3-turbo,
+      │                     language=pt, response_format=json
+      │                     → { text: "cancela a Maria amanha" }
+      │
+      ▼ Process Voice       SELECT wa_pro_process_voice(phone, transcript, duration_s,
+      │                              message_id, audio_mime, model, provider, cost_usd,
+      │                              status, error)
+      │                     → dedupe por message_id
+      │                     → INSERT wa_pro_transcripts
+      │                     → wa_pro_handle_message(phone, transcript) ← reaproveita tudo
+      │                     → response = "🎙️ _ouvi:_ \"...\"\n\n&lt;response do handle&gt;"
+      │
+      ▼ Merge + Send WhatsApp (mesmo caminho do texto)</pre>
+
+<h3>Por que o fluxo converge em <code>wa_pro_handle_message</code></h3>
+<p>Toda a lógica de intents (read, write, disambiguação, multi-turn, permissões, rate limit, audit) fica no <code>handle_message</code>. A transcrição apenas traduz voz em texto e entra como se fosse digitado. Consequência: as <strong>3 intents de escrita</strong> (create/cancel/reschedule) passam pelo mesmo padrão stage→confirm, então a Mira sempre pede "sim" antes de executar. Whisper errar nome próprio nunca quebra nada — a confirmação pega.</p>
+
+<h3>Tabela <code>wa_pro_transcripts</code></h3>
+<table>
+  <tr><th>Coluna</th><th>Uso</th></tr>
+  <tr><td><code>message_id</code></td><td>UNIQUE — dedupe de webhooks duplicados da Evolution</td></tr>
+  <tr><td><code>duration_s</code></td><td>Input pra cálculo de custo + cap de 60s</td></tr>
+  <tr><td><code>transcript</code></td><td>Texto transcrito pela Groq</td></tr>
+  <tr><td><code>model</code>, <code>provider</code></td><td><code>whisper-large-v3-turbo</code> / <code>groq</code></td></tr>
+  <tr><td><code>cost_usd</code></td><td>Calculado no n8n (<code>duration/3600 × 0.04</code>)</td></tr>
+  <tr><td><code>status</code></td><td><code>ok</code> | <code>too_long</code> | <code>empty</code> | <code>failed</code></td></tr>
+  <tr><td><code>intent_resolved</code></td><td>Intent que o handle_message decidiu — debug de transcrições ruins</td></tr>
+</table>
+
+<h3>View <code>wa_pro_voice_usage</code></h3>
+<p>Aggrega mensalmente por profissional: total de transcrições, sucessos, erros por tipo, total de segundos, custo em USD. Pra monitorar consumo e detectar abuse.</p>
+
+<h3>Blindagens</h3>
+<table>
+  <tr><th>Risco</th><th>Blindagem</th></tr>
+  <tr><td>Whisper confunde nome próprio ("Maria" → "Marília")</td><td>Confirmação 2-step obrigatória pra escrita. Fuzzy <code>pg_trgm</code> tolera grafias próximas</td></tr>
+  <tr><td>Áudio muito longo → custo alto</td><td>Cap 60s no n8n ANTES de mandar pra Groq. Retorna "audio muito longo"</td></tr>
+  <tr><td>Evolution não retorna mídia</td><td>Timeout 15s → <code>voiceStatus='failed'</code> → Mira responde "nao consegui baixar, manda por texto?"</td></tr>
+  <tr><td>Groq timeout/rate limit</td><td>Timeout 20s no Code node → <code>voiceStatus='failed'</code></td></tr>
+  <tr><td>Transcript vazio/ruído</td><td>Rejeita se &lt;3 chars → "nao entendi, fala mais alto?"</td></tr>
+  <tr><td>Webhook duplicado da Evolution</td><td><code>UNIQUE INDEX</code> em <code>message_id</code> + check explícito antes de processar</td></tr>
+  <tr><td>Áudio em outra língua</td><td>Força <code>language=pt</code> no request Groq</td></tr>
+  <tr><td>Número não autorizado</td><td>Loga a transcrição mas <strong>não</strong> chama <code>handle_message</code>. Audit preservado</td></tr>
+  <tr><td>Chave vazando no repo</td><td>Chave lida de <code>$env.GROQ_API_KEY</code> no container n8n. Nunca hardcoded</td></tr>
+  <tr><td>Whisper erra intent</td><td>Resposta prefixa com <code>🎙️ ouvi: "..."</code> pra Mirian ver o que foi transcrito e corrigir</td></tr>
+</table>
+
+<h3>Setup no n8n (uma vez)</h3>
+<ol>
+  <li>No container do n8n, adicionar env var <code>GROQ_API_KEY=gsk_...</code> (docker-compose ou painel do Easypanel)</li>
+  <li>Reiniciar o container pra env var entrar</li>
+  <li>Importar o workflow atualizado <code>n8n/mira-whatsapp-workflow.json</code> (sobrescreve o existente)</li>
+  <li>Ativar</li>
+</ol>
+
+<div class="callout warn">
+  <div class="title warn">Node code usa <code>$env</code> diretamente</div>
+  n8n Code nodes acessam env vars do container via <code>$env.GROQ_API_KEY</code>. Se a var não existe, o node retorna <code>voiceStatus='failed'</code> com erro explícito — não trava o workflow.
+</div>
+
+<h3>Exemplos de áudios que funcionam</h3>
+<ul>
+  <li>🎙️ <em>"tenho agenda hoje?"</em> → lista agenda</li>
+  <li>🎙️ <em>"marca a Maria amanhã quatorze horas"</em> → preview + "sim"</li>
+  <li>🎙️ <em>"cancela a Josceli vinte de abril"</em> → preview + "sim"</li>
+  <li>🎙️ <em>"reagenda a Maria pra terça quinze horas"</em> → preview + "sim"</li>
+  <li>🎙️ <em>"quanto faturei essa semana?"</em> → resumo</li>
 </ul>
 
 </section>
@@ -1636,6 +1745,7 @@ SELECT wa_pro_evening_digest('5544998787673');
   <tr><td>20260671</td><td><code>mira_appointment_automations.sql</code></td><td><b>Appointment automations:</b> <code>_render_appt_template</code> + <code>wa_pro_fire_appointment_automations</code> + <code>wa_pro_confirm_pending</code> dispara as 3 mensagens (on_status, d_before, d_zero) — sem min_before</td></tr>
   <tr><td>20260672</td><td><code>mira_anamnese_new_patient.sql</code></td><td><b>New patient:</b> <code>_anamnese_link</code> helper + detecção <code>is_new_patient</code> (prior finalized count=0) + anexa bloco da ficha só na confirmação inicial do paciente novo</td></tr>
   <tr><td>20260673</td><td><code>mira_cancel_reschedule.sql</code></td><td><b>Bloco D #1 — Cancel + Reschedule:</b> <code>_parse_cancel_appointment</code> + <code>_parse_reschedule_appointment</code> + <code>_find_target_appointments</code> (scope-aware) + 2 novos stage RPCs + extensão de <code>wa_pro_confirm_pending</code> (guard de status, outbox cleanup, template lookup). Intents regex: cancelar, reagendar, marcar, sim/não curtos. Idempotente, disambiguado, preserva anamnese token</td></tr>
+  <tr><td>20260674</td><td><code>mira_voice_transcripts.sql</code></td><td><b>Bloco D #2 — Voice → Task:</b> tabela <code>wa_pro_transcripts</code> com UNIQUE index em <code>message_id</code> (dedupe), RPC <code>wa_pro_process_voice</code> que loga + chama <code>handle_message</code>, view <code>wa_pro_voice_usage</code> pra monitorar custo. Workflow n8n estendido com branch áudio: Is Audio? → Cap Duration → Skip Transcribe? → Download Media (Evolution) → Transcribe Groq (<code>whisper-large-v3-turbo</code>) → Process Voice → Merge</td></tr>
 </table>
 
 </section>
@@ -1663,7 +1773,8 @@ SELECT wa_pro_evening_digest('5544998787673');
 ├── 20260667000000_mira_multiturn_context.sql
 ├── 20260671000000_mira_appointment_automations.sql
 ├── 20260672000000_mira_anamnese_new_patient.sql
-└── 20260673000000_mira_cancel_reschedule.sql</pre>
+├── 20260673000000_mira_cancel_reschedule.sql
+└── 20260674000000_mira_voice_transcripts.sql</pre>
 
 <h3>Frontend / Dashboard</h3>
 <pre>js/repositories/mira.repository.js   (166 lines)  — RPC wrappers

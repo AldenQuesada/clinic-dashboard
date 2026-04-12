@@ -575,6 +575,96 @@ function assertIncludes(haystack, needle, msg) {
   }
 
   // ========================================
+  // Voice → Task (Bloco D #2 — migration 20260674)
+  // ========================================
+  console.log('\n━━━ voice → task ━━━\n');
+
+  async function voiceCleanup() {
+    await c.query("DELETE FROM wa_pro_transcripts WHERE message_id LIKE 'mtest_v_%'");
+    await c.query("DELETE FROM wa_pro_pending_actions WHERE phone = $1", [MIRIAN_OWN]);
+  }
+  await voiceCleanup();
+
+  await test('voice: transcript < 3 chars → empty rejected + log', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: MIRIAN_OWN, p_transcript: 'oi', p_duration_s: 5, p_message_id: 'mtest_v_empty'
+    });
+    assertEq(r.ok, false);
+    assertEq(r.error, 'transcript_empty');
+    const log = await c.query("SELECT status FROM wa_pro_transcripts WHERE message_id = 'mtest_v_empty'");
+    assertEq(log.rows[0].status, 'empty');
+  });
+
+  await test('voice: status=too_long → rejeita com cap msg', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: MIRIAN_OWN, p_transcript: 'audio longo', p_duration_s: 120,
+      p_message_id: 'mtest_v_long', p_status: 'too_long'
+    });
+    assertEq(r.ok, false);
+    assertEq(r.error, 'too_long');
+    assertIncludes(r.response, 'max 60s');
+  });
+
+  await test('voice: status=failed → fallback graceful', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: MIRIAN_OWN, p_transcript: 'placeholder', p_duration_s: 10,
+      p_message_id: 'mtest_v_fail', p_status: 'failed', p_error: 'groq_timeout'
+    });
+    assertEq(r.ok, false);
+    assertEq(r.error, 'transcription_failed');
+  });
+
+  await test('voice: read intent (transcript "tenho agenda hoje") roteia', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: MIRIAN_OWN, p_transcript: 'tenho agenda hoje', p_duration_s: 3,
+      p_message_id: 'mtest_v_read'
+    });
+    assert(r.ok, 'falhou: ' + JSON.stringify(r));
+    assertEq(r.intent, 'agenda_today');
+    assertIncludes(r.response, '🎙️');
+    assertIncludes(r.response, 'ouvi:');
+  });
+
+  await test('voice: write intent (cancel) entra no stage 2-step', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: MIRIAN_OWN, p_transcript: 'cancela a Maria 20/04', p_duration_s: 4,
+      p_message_id: 'mtest_v_cancel'
+    });
+    assert(r.ok, 'falhou: ' + JSON.stringify(r));
+    assertEq(r.intent, 'cancel_appointment');
+  });
+
+  await test('voice: dedupe por message_id', async () => {
+    const p1 = { p_phone: MIRIAN_OWN, p_transcript: 'tenho amanha', p_duration_s: 2, p_message_id: 'mtest_v_dup' };
+    await rpc('wa_pro_process_voice', p1);
+    const r2 = await rpc('wa_pro_process_voice', p1);
+    assertEq(r2.duplicate, true);
+    const n = await c.query("SELECT count(*)::int as c FROM wa_pro_transcripts WHERE message_id = 'mtest_v_dup'");
+    assertEq(n.rows[0].c, 1);
+  });
+
+  await test('voice: numero nao autorizado → log + unauthorized', async () => {
+    const r = await rpc('wa_pro_process_voice', {
+      p_phone: UNKNOWN, p_transcript: 'tenho agenda hoje', p_duration_s: 3, p_message_id: 'mtest_v_unauth'
+    });
+    assertEq(r.ok, false);
+    assertEq(r.error, 'unauthorized');
+    const log = await c.query("SELECT intent_resolved FROM wa_pro_transcripts WHERE message_id = 'mtest_v_unauth'");
+    assertEq(log.rows[0].intent_resolved, 'unauthorized');
+  });
+
+  await test('voice: view wa_pro_voice_usage agrega', async () => {
+    const r = await c.query(`
+      SELECT transcriptions FROM wa_pro_voice_usage
+      WHERE month = date_trunc('month', CURRENT_DATE)::date
+      LIMIT 1
+    `);
+    assert(r.rows.length > 0, 'view vazia');
+  });
+
+  await voiceCleanup();
+
+  // ========================================
   // Resultado
   // ========================================
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━');
