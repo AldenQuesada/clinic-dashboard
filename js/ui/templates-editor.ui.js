@@ -338,7 +338,11 @@
       else if (action === 'delete') { _onDelete(el.dataset.id) }
       else if (action === 'media-upload') { var fi = document.getElementById('teMediaFile'); if (fi) fi.click() }
       else if (action === 'media-remove') { _onEditField(el.dataset.id, 'media_url', ''); _render() }
-      else if (action === 'media-pos') { _onEditField(el.dataset.id, 'media_position', el.value); _render() }
+      else if (action === 'media-pos') {
+        _onEditField(el.dataset.id, 'media_position', el.value)
+        var ta = document.getElementById('teContent')
+        if (ta) _updatePhonePreview(ta.value)
+      }
     }
     root.oninput = function (e) {
       var a = e.target.dataset.action, id = e.target.dataset.id
@@ -350,7 +354,10 @@
       if (a === 'edit-day') _onEditField(id, 'day', e.target.value === '' ? null : parseInt(e.target.value))
       else if (a === 'edit-category') _onEditField(id, 'category', e.target.value)
       else if (a === 'toggle') _onToggle(id, e.target.checked)
-      else if (a === 'media-url') { _onEditField(id, 'media_url', e.target.value); _render() }
+      else if (a === 'media-url') {
+        _onEditField(id, 'media_url', e.target.value)
+        _render()
+      }
       else if (e.target.id === 'teMediaFile') { _handleMediaUpload(e.target) }
     }
   }
@@ -366,12 +373,31 @@
   function _updatePhonePreview(content) {
     var chat = document.getElementById('tePhoneChat')
     if (!chat) return
-    var text = _fmtWa(_previewContent(content))
+    var tpl = _selected()
+    var d = tpl ? (_dirty[tpl.id] || {}) : {}
+    var mediaUrl = d.media_url !== undefined ? d.media_url : (tpl && tpl.metadata && tpl.metadata.media_url || '')
+    var mediaPos = d.media_position || (tpl && tpl.metadata && tpl.metadata.media_position || 'above')
+
     var now = new Date()
-    var ts = (now.getHours()<10?'0':'') + now.getHours() + ':' + (now.getMinutes()<10?'0':'') + now.getMinutes()
-    chat.innerHTML = text ?
-      '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + text + '</div><div class="bc-wa-bubble-time">' + ts + ' <svg width="14" height="8" viewBox="0 0 16 8" fill="none" stroke="#53bdeb" stroke-width="1.5"><polyline points="1 4 4 7 9 2"/><polyline points="5 4 8 7 13 2"/></svg></div></div>' :
-      '<div class="bc-wa-empty">Escreva a mensagem ao lado</div>'
+    var ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
+    var checkSvg = '<svg width="14" height="8" viewBox="0 0 16 8" fill="none" stroke="#53bdeb" stroke-width="1.5"><polyline points="1 4 4 7 9 2"/><polyline points="5 4 8 7 13 2"/></svg>'
+
+    var imgBubble = ''
+    if (mediaUrl) {
+      imgBubble = '<div class="bc-wa-bubble bc-wa-img-bubble"><img src="' + _esc(mediaUrl) + '" class="bc-wa-preview-img"><div class="bc-wa-bubble-time">' + ts + ' ' + checkSvg + '</div></div>'
+    }
+
+    var textBubble = ''
+    var text = _fmtWa(_previewContent(content))
+    if (text) {
+      textBubble = '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + text + '</div><div class="bc-wa-bubble-time">' + ts + ' ' + checkSvg + '</div></div>'
+    }
+
+    if (!textBubble && !imgBubble) {
+      chat.innerHTML = '<div class="bc-wa-empty">Escreva a mensagem ao lado</div>'
+    } else {
+      chat.innerHTML = (mediaPos === 'below') ? textBubble + imgBubble : imgBubble + textBubble
+    }
   }
 
   async function _handleMediaUpload(fileInput) {
