@@ -372,9 +372,16 @@ BEGIN
                        ELSE '* encontrada.' END);
   END IF;
 
-  -- Disambiguacao: >1 match sem data
+  -- Disambiguacao: >1 match → salva context pra multi-turn
   IF (v_targets->>'count')::int > 1 THEN
+    PERFORM _save_context(
+      p_phone, v_clinic_id, v_prof_id,
+      'cancel_disambig', p_query,
+      'patient', v_patient_id, v_patient_name,
+      v_targets->'items'
+    );
     RETURN jsonb_build_object('ok', false, 'error', 'ambiguous',
+      'intent', 'cancel_disambig',
       'response', _render_appt_choices(v_targets->'items', v_patient_name));
   END IF;
 
@@ -505,7 +512,14 @@ BEGIN
   END IF;
 
   IF (v_targets->>'count')::int > 1 THEN
+    PERFORM _save_context(
+      p_phone, v_clinic_id, v_prof_id,
+      'reschedule_disambig', p_query,
+      'patient', v_patient_id, v_patient_name,
+      jsonb_build_object('items', v_targets->'items', 'new_date', v_new_date, 'new_time', v_new_time)
+    );
     RETURN jsonb_build_object('ok', false, 'error', 'ambiguous',
+      'intent', 'reschedule_disambig',
       'response', _render_appt_choices(v_targets->'items', v_patient_name));
   END IF;
 
@@ -949,6 +963,61 @@ BEGIN
     END;
   END IF;
 
+  -- Multi-turn: cancel/reschedule disambig ("1", "2", "primeira")
+  IF NOT v_ctx_resolved AND v_ctx_phone IS NOT NULL
+     AND v_ctx_intent IN ('cancel_disambig', 'reschedule_disambig') THEN
+    DECLARE
+      v_disambig_opts jsonb;
+      v_disambig_num int;
+      v_disambig_item jsonb;
+      v_disambig_result jsonb;
+    BEGIN
+      SELECT last_entity_options INTO v_disambig_opts
+      FROM wa_pro_context WHERE phone = p_phone LIMIT 1;
+
+      -- Resolve items (cancel_disambig tem array direto, reschedule tem {items, new_date, new_time})
+      DECLARE v_items jsonb;
+      BEGIN
+        IF jsonb_typeof(v_disambig_opts) = 'array' THEN
+          v_items := v_disambig_opts;
+        ELSE
+          v_items := v_disambig_opts->'items';
+        END IF;
+
+        IF v_items IS NOT NULL AND v_text ~* '^\s*[0-9]+\.?\s*$' THEN
+          v_disambig_num := (REGEXP_REPLACE(v_text, '[^0-9]', '', 'g'))::int;
+          IF v_disambig_num >= 1 AND v_disambig_num <= jsonb_array_length(v_items) THEN
+            v_disambig_item := v_items -> (v_disambig_num - 1);
+          END IF;
+        ELSIF v_items IS NOT NULL AND v_text ~* '(primeir[oa])' AND jsonb_array_length(v_items) >= 1 THEN
+          v_disambig_item := v_items -> 0;
+        ELSIF v_items IS NOT NULL AND v_text ~* '(segund[oa])' AND jsonb_array_length(v_items) >= 2 THEN
+          v_disambig_item := v_items -> 1;
+        ELSIF v_items IS NOT NULL AND v_text ~* '(terceir[oa])' AND jsonb_array_length(v_items) >= 3 THEN
+          v_disambig_item := v_items -> 2;
+        END IF;
+
+        IF v_disambig_item IS NOT NULL THEN
+          IF v_ctx_intent = 'cancel_disambig' THEN
+            -- Stage cancel direto com o appointment escolhido
+            v_disambig_result := wa_pro_stage_cancel_appointment(p_phone,
+              'cancela ' || (v_disambig_item->>'patient_name') || ' ' ||
+              TO_CHAR((v_disambig_item->>'scheduled_date')::date, 'DD/MM'));
+          ELSE
+            -- Reschedule: usa new_date/new_time do context
+            v_disambig_result := wa_pro_stage_reschedule_appointment(p_phone,
+              'reagenda ' || (v_disambig_item->>'patient_name') || ' pra ' ||
+              TO_CHAR((v_disambig_opts->>'new_date')::date, 'DD/MM') || ' ' ||
+              (v_disambig_opts->>'new_time'));
+          END IF;
+          v_response := COALESCE(v_disambig_result->>'response', '⚠️ erro');
+          v_intent := CASE v_ctx_intent WHEN 'cancel_disambig' THEN 'cancel_appointment' ELSE 'reschedule_appointment' END;
+          v_ctx_resolved := true;
+        END IF;
+      END;
+    END;
+  END IF;
+
   -- Cadastro avulso (sem agendamento)
   IF NOT v_ctx_resolved AND v_ctx_phone IS NOT NULL
      AND v_ctx_intent = 'awaiting_patient_registration_only' THEN
@@ -1037,10 +1106,11 @@ BEGIN
 
   -- Se stage_create_appointment salvou awaiting_patient_registration,
   -- preserva esse contexto (nao sobrescreve)
-  IF v_intent IN ('create_appointment', 'register_patient_start') THEN
+  IF v_intent IN ('create_appointment', 'register_patient_start', 'cancel_appointment', 'reschedule_appointment') THEN
     SELECT last_intent INTO v_ctx_intent
     FROM wa_pro_context WHERE phone = p_phone LIMIT 1;
-    IF v_ctx_intent IN ('awaiting_patient_registration', 'awaiting_patient_registration_only') THEN
+    IF v_ctx_intent IN ('awaiting_patient_registration', 'awaiting_patient_registration_only',
+                        'cancel_disambig', 'reschedule_disambig') THEN
       -- Stage ja salvou o contexto certo, nao sobrescrever
       NULL;
     ELSE

@@ -443,14 +443,75 @@
     },
     {
       "parameters": {
-        "jsCode": "// Converte base64 da Evolution pra multipart e chama Groq Whisper\nconst prev = $('Cap Duration').first().json;\nconst down = $input.first().json;\n\n// Evolution retorna { base64: '...', mimetype: '...' } ou similar\nconst base64 = down.base64 || down.buffer || down.data;\nif (!base64) {\n  return [{ json: {\n    ...prev,\n    voiceStatus: 'failed',\n    voiceError: 'no base64 from evolution',\n    transcript: ''\n  } }];\n}\n\nconst buffer = Buffer.from(base64, 'base64');\nconst GROQ_KEY = $env.GROQ_API_KEY || '{{GROQ_API_KEY_PLACEHOLDER}}';\n\nif (!GROQ_KEY || GROQ_KEY.includes('PLACEHOLDER')) {\n  return [{ json: {\n    ...prev,\n    voiceStatus: 'failed',\n    voiceError: 'GROQ_API_KEY nao configurada',\n    transcript: ''\n  } }];\n}\n\n// multipart/form-data manual (n8n sem ambiente node_modules completo)\nconst boundary = '----n8nmira' + Math.random().toString(36).slice(2);\nconst CRLF = '\\r\\n';\nconst parts = [];\nparts.push(Buffer.from('--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"file\"; filename=\"audio.ogg\"' + CRLF));\nparts.push(Buffer.from('Content-Type: ' + (prev.audioMime || 'audio/ogg') + CRLF + CRLF));\nparts.push(buffer);\nparts.push(Buffer.from(CRLF + '--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"model\"' + CRLF + CRLF));\nparts.push(Buffer.from('whisper-large-v3-turbo'));\nparts.push(Buffer.from(CRLF + '--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"language\"' + CRLF + CRLF));\nparts.push(Buffer.from('pt'));\nparts.push(Buffer.from(CRLF + '--' + boundary + CRLF));\nparts.push(Buffer.from('Content-Disposition: form-data; name=\"response_format\"' + CRLF + CRLF));\nparts.push(Buffer.from('json'));\nparts.push(Buffer.from(CRLF + '--' + boundary + '--' + CRLF));\nconst body = Buffer.concat(parts);\n\nconst resp = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://api.groq.com/openai/v1/audio/transcriptions',\n  headers: {\n    'Authorization': 'Bearer ' + GROQ_KEY,\n    'Content-Type': 'multipart/form-data; boundary=' + boundary\n  },\n  body: body,\n  returnFullResponse: false,\n  timeout: 20000\n});\n\nconst transcript = (resp && resp.text) || '';\n\n// Custo estimado: Groq whisper-large-v3-turbo = $0.04/h\nconst costUsd = Number(((prev.audioDurationS || 0) / 3600 * 0.04).toFixed(6));\n\nreturn [{ json: {\n  ...prev,\n  voiceStatus: 'ok',\n  transcript: transcript.trim(),\n  costUsd,\n  provider: 'groq',\n  model: 'whisper-large-v3-turbo'\n} }];"
+        "jsCode": "const prev = $('Cap Duration').first().json;\nconst down = $input.first().json;\nconst base64 = down.base64 || down.buffer || down.data;\nif (!base64) {\n  return [{ json: { ...prev, voiceStatus: 'failed', voiceError: 'no base64', transcript: '' } }];\n}\nconst binaryData = await this.helpers.prepareBinaryData(\n  Buffer.from(base64, 'base64'),\n  'audio.ogg',\n  prev.audioMime || 'audio/ogg; codecs=opus'\n);\nreturn [{ json: { ...prev }, binary: { file: binaryData } }];"
       },
-      "id": "mira-transcribe",
-      "name": "Transcribe Groq",
+      "id": "mira-prepare-binary",
+      "name": "Prepare Binary",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1780,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/audio/transcriptions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "parameterType": "formBinaryData",
+              "inputDataFieldName": "file"
+            },
+            {
+              "name": "model",
+              "value": "whisper-large-v3-turbo"
+            },
+            {
+              "name": "language",
+              "value": "pt"
+            },
+            {
+              "name": "response_format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "mira-transcribe",
+      "name": "Transcribe Groq",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        80
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "CebXP7V0EGP2es2f",
+          "name": "Mira — Groq Whisper"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Cap Duration').first().json;\nconst groqResp = $input.first().json;\nconst transcript = (groqResp && groqResp.text) || '';\nconst costUsd = Number(((prev.audioDurationS || 0) / 3600 * 0.04).toFixed(6));\nreturn [{ json: {\n  ...prev,\n  voiceStatus: transcript.length > 0 ? 'ok' : 'empty',\n  transcript: transcript.trim(),\n  costUsd,\n  provider: 'groq',\n  model: 'whisper-large-v3-turbo'\n} }];"
+      },
+      "id": "mira-parse-transcript",
+      "name": "Parse Transcript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
         80
       ]
     },
@@ -488,6 +549,51 @@
           "name": "Mira — Supabase Service"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "voice-unknown",
+              "leftValue": "={{ $json.intent }}",
+              "rightValue": "unknown",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "mira-voice-tier2-if",
+      "name": "Voice Need Tier 2?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const v = $input.first().json;\nconst parsed = $('Parse Message').first().json;\nreturn [{ json: {\n  ...parsed,\n  text: v.transcript || '',\n  phone: parsed.phone,\n  instance: parsed.instance,\n  intent: 'unknown'\n} }];"
+      },
+      "id": "mira-voice-set-text",
+      "name": "Voice Set Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        0
+      ]
     }
   ],
   "connections": {
@@ -684,7 +790,7 @@
       "main": [
         [
           {
-            "node": "Transcribe Groq",
+            "node": "Prepare Binary",
             "type": "main",
             "index": 0
           }
@@ -695,7 +801,7 @@
       "main": [
         [
           {
-            "node": "Process Voice",
+            "node": "Parse Transcript",
             "type": "main",
             "index": 0
           }
@@ -706,7 +812,58 @@
       "main": [
         [
           {
+            "node": "Voice Need Tier 2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Binary": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Groq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Transcript": {
+      "main": [
+        [
+          {
+            "node": "Process Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Need Tier 2?": {
+      "main": [
+        [
+          {
+            "node": "Voice Set Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Set Text": {
+      "main": [
+        [
+          {
+            "node": "Tier 2 — Claude Haiku",
             "type": "main",
             "index": 0
           }

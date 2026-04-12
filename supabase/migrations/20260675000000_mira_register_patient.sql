@@ -14,6 +14,32 @@
 --   - Context multi-turn: guarda date/time/name do pedido original
 
 -- ============================================================
+-- Helper: resolve o professional_id ALVO pra appointments
+-- Se remetente tem scope='own' → ele mesmo atende
+-- Se scope='full'/'team' → busca o profissional com mais appointments
+-- (na clinica da Dra Mirian, ela e a unica que atende)
+-- ============================================================
+CREATE OR REPLACE FUNCTION public._resolve_target_professional(
+  p_clinic_id uuid,
+  p_sender_prof_id uuid,
+  p_sender_scope text
+)
+RETURNS uuid
+LANGUAGE plpgsql IMMUTABLE
+AS $$
+BEGIN
+  -- O remetente E sempre o profissional alvo.
+  -- Na Mira, quem manda mensagem e quem quer agendar pra si.
+  -- O admin (Quesada) nao manda mensagens pra Mira via WhatsApp
+  -- porque a instancia Evolution E o WhatsApp dele (fromMe=true filtrado).
+  RETURN p_sender_prof_id;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public._resolve_target_professional(uuid, uuid, text) TO authenticated, anon;
+
+
+-- ============================================================
 -- Parser: extrai nome, CPF, telefone e sexo de texto livre
 -- Input: "João da Silva, 123.456.789-00, 44999887766, masculino"
 -- ============================================================

@@ -294,8 +294,50 @@ const processVoiceNode = {
 // 8. Insere os novos nodes antes do Tier 1
 // ============================================================
 const existingNodes = wf.nodes.filter(n =>
-  !['Is Audio?', 'Cap Duration', 'Skip Transcribe?', 'Download Media', 'Prepare Binary', 'Transcribe Groq', 'Parse Transcript', 'Process Voice'].includes(n.name)
+  !['Is Audio?', 'Cap Duration', 'Skip Transcribe?', 'Download Media', 'Prepare Binary', 'Transcribe Groq', 'Parse Transcript', 'Process Voice', 'Voice Need Tier 2?', 'Voice Set Text'].includes(n.name)
 );
+
+// Node: Voice Need Tier 2? — checa se intent=unknown apos process_voice
+const voiceNeedTier2Node = {
+  parameters: {
+    conditions: {
+      options: { caseSensitive: true, leftValue: '', typeValidation: 'strict' },
+      conditions: [
+        { id: 'voice-unknown', leftValue: '={{ $json.intent }}', rightValue: 'unknown', operator: { type: 'string', operation: 'equals' } }
+      ],
+      combinator: 'and'
+    },
+    options: {}
+  },
+  id: 'mira-voice-tier2-if',
+  name: 'Voice Need Tier 2?',
+  type: 'n8n-nodes-base.if',
+  typeVersion: 2,
+  position: [2440, 80]
+};
+
+// Node: Voice Set Text — injeta transcript como text pra Tier 2 usar
+const voiceSetTextNode = {
+  parameters: {
+    jsCode: `
+const v = $input.first().json;
+const parsed = $('Parse Message').first().json;
+return [{ json: {
+  ...parsed,
+  text: v.transcript || '',
+  phone: parsed.phone,
+  instance: parsed.instance,
+  intent: 'unknown'
+} }];
+`.trim()
+  },
+  id: 'mira-voice-set-text',
+  name: 'Voice Set Text',
+  type: 'n8n-nodes-base.code',
+  typeVersion: 2,
+  position: [2660, 0]
+};
+
 wf.nodes = [
   ...existingNodes,
   isAudioNode,
@@ -305,7 +347,9 @@ wf.nodes = [
   prepareBinaryNode,
   transcribeNode,
   parseTranscriptNode,
-  processVoiceNode
+  processVoiceNode,
+  voiceNeedTier2Node,
+  voiceSetTextNode
 ];
 
 // ============================================================
@@ -348,9 +392,19 @@ wf.connections['Transcribe Groq'] = {
 wf.connections['Parse Transcript'] = {
   main: [[{ node: 'Process Voice', type: 'main', index: 0 }]]
 };
-// Process Voice termina o fluxo de audio — ja tem intent+response, vai direto pro Merge
+// Process Voice → checa se precisa Tier 2
 wf.connections['Process Voice'] = {
-  main: [[{ node: 'Merge', type: 'main', index: 0 }]]
+  main: [[{ node: 'Voice Need Tier 2?', type: 'main', index: 0 }]]
+};
+// Se intent=unknown → seta text e vai pro Tier 2; senao → Merge
+wf.connections['Voice Need Tier 2?'] = {
+  main: [
+    [{ node: 'Voice Set Text', type: 'main', index: 0 }],
+    [{ node: 'Merge', type: 'main', index: 0 }]
+  ]
+};
+wf.connections['Voice Set Text'] = {
+  main: [[{ node: 'Tier 2 — Claude Haiku', type: 'main', index: 0 }]]
 };
 
 fs.writeFileSync(OUTPUT, JSON.stringify(wf, null, 2) + '\n', 'utf8');
