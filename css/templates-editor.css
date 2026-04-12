@@ -167,3 +167,10 @@
   box-shadow:var(--shadow-lg);
 }
 @keyframes te-fade-in { from { opacity:0 } to { opacity:1 } }
+
+/* ── Media section ───────────────────────────────────────── */
+.te-media-section { margin:10px 0 4px; }
+.te-media-row { display:flex; gap:8px; align-items:center; }
+.te-media-preview { position:relative; display:inline-block; margin:8px 0; }
+.te-media-preview img { display:block; }
+.te-media-pos { display:flex; gap:4px; align-items:center; margin-bottom:4px; }

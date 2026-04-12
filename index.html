@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="css/short-links.css?v=409f52c4" />
   <link rel="stylesheet" href="css/modal-system.css?v=f85a1b29" />
   <link rel="stylesheet" href="css/page-builder.css?v=c8c372ea" />
-  <link rel="stylesheet" href="css/templates-editor.css?v=8c7c6406" />
+  <link rel="stylesheet" href="css/templates-editor.css?v=1a972582" />
   <link rel="stylesheet" href="css/inbox.css?v=375412b0" />
   <link rel="stylesheet" href="css/analytics.css?v=72a3ead0" />
   <link rel="stylesheet" href="css/face-mapping.css?v=5ee967fb" />
@@ -2148,6 +2148,18 @@
       <!-- ==================== PAGE: TEMPLATES DE MENSAGEM ==================== -->
       <div class="page" id="page-settings-templates">
         <div id="templates-editor-root"></div>
+      </div>
+
+      <!-- ==================== PAGE: MENU DA CLINICA ==================== -->
+      <div class="page" id="page-clinic-menu">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <h2 style="font-size:20px;font-weight:800;color:var(--text-primary);margin:0 0 4px">Menu da Clinica</h2>
+            <p style="font-size:13px;color:var(--text-secondary);margin:0">Cardapio de bebidas e snacks para pacientes</p>
+          </div>
+          <a href="menu-clinica.html" target="_blank" style="padding:8px 16px;font-size:12px;font-weight:600;color:#fff;background:var(--accent-gold);border-radius:var(--radius-md);text-decoration:none">Abrir em nova aba</a>
+        </div>
+        <iframe src="menu-clinica.html" style="width:100%;height:calc(100vh - 160px);border:1px solid var(--border);border-radius:var(--radius-lg);background:#fff"></iframe>
       </div>
 
       <!-- ==================== PAGE: FICHAS DE ANAMNESE ==================== -->
@@ -4926,7 +4938,7 @@
   <!-- Nav Config → Sidebar (devem carregar antes de app.js e auth.js)
        nav-config.js  — fonte única da verdade para o menu (seções, ícones, roles, plans)
        sidebar.js     — renderiza o nav, gerencia navegação e permissões por papel/plano -->
-  <script src="js/nav-config.js?v=0c774484" defer></script>
+  <script src="js/nav-config.js?v=eff31e29" defer></script>
   <script src="js/sidebar.js?v=12f3e826" defer></script>
   <script src="js/multi-tab-launcher.js?v=266f3883" defer></script>
 
@@ -5029,8 +5041,8 @@
   <script src="js/broadcast.ui.js?v=39a669df" defer></script>
   <script src="js/broadcast-dashboard.ui.js?v=06efed73" defer></script>
   <script src="js/broadcast-events.ui.js?v=d7c05ae8" defer></script>
-  <script src="js/repositories/templates.repository.js?v=77118930" defer></script>
-  <script src="js/ui/templates-editor.ui.js?v=585b75f8" defer></script>
+  <script src="js/repositories/templates.repository.js?v=eae310df" defer></script>
+  <script src="js/ui/templates-editor.ui.js?v=4f9785b2" defer></script>
   <script src="js/repositories/inbox.repository.js?v=dff81839" defer></script>
   <script src="js/services/inbox.service.js?v=ff1f4cd5" defer></script>
   <script src="js/repositories/broadcast.repository.js?v=5786416e" defer></script>

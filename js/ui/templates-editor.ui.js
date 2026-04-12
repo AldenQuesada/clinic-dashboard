@@ -192,6 +192,10 @@
     var timeStr = (now.getHours() < 10 ? '0' : '') + now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes()
 
     // Phone preview
+    var imgBubble = mediaUrl ? '<div class="bc-wa-bubble bc-wa-img-bubble"><img class="bc-wa-preview-img" src="' + _esc(mediaUrl) + '" alt="media"></div>' : ''
+    var textBubble = previewText ? '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + previewText + '</div><div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="8" viewBox="0 0 16 8" fill="none" stroke="#53bdeb" stroke-width="1.5"><polyline points="1 4 4 7 9 2"/><polyline points="5 4 8 7 13 2"/></svg></div></div>' : ''
+    var chatContent = (mediaPos === 'below') ? (textBubble + imgBubble) : (imgBubble + textBubble)
+
     var phone = '<div class="bc-phone">' +
       '<div class="bc-phone-notch"><span class="bc-phone-notch-time">' + timeStr + '</span></div>' +
       '<div class="bc-wa-header">' +
@@ -199,7 +203,7 @@
         '<div><div class="bc-wa-name">Clinica Mirian de Paula</div><div class="bc-wa-status">online</div></div>' +
       '</div>' +
       '<div class="bc-wa-chat" id="tePhoneChat">' +
-        (previewText ? '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + previewText + '</div><div class="bc-wa-bubble-time">' + timeStr + ' <svg width="14" height="8" viewBox="0 0 16 8" fill="none" stroke="#53bdeb" stroke-width="1.5"><polyline points="1 4 4 7 9 2"/><polyline points="5 4 8 7 13 2"/></svg></div></div>' : '<div class="bc-wa-empty">Escreva a mensagem ao lado</div>') +
+        (chatContent || '<div class="bc-wa-empty">Escreva a mensagem ao lado</div>') +
       '</div>' +
       '<div class="bc-wa-bottom"><div class="bc-wa-input-mock">Mensagem</div><div class="bc-wa-send-mock"><svg width="16" height="16" fill="#fff" viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg></div></div>' +
       '<div class="bc-phone-home"></div>' +
@@ -218,6 +222,25 @@
       '<div class="te-emoji-picker" id="teEmojiPicker" style="display:none"><div class="bc-emoji-picker">' +
         EMOJIS.map(function(e){ return '<button class="bc-emoji-btn" data-action="emoji" data-emoji="' + e + '">' + e + '</button>' }).join('') +
       '</div></div>' +
+    '</div>'
+
+    // Media section
+    var mediaUrl = (d && d.media_url !== undefined) ? d.media_url : (tpl.metadata && tpl.metadata.media_url || '')
+    var mediaPos = (d && d.media_position) ? d.media_position : (tpl.metadata && tpl.metadata.media_position || 'above')
+    var mediaHtml = '<div class="te-media-section">' +
+      '<div class="te-media-row">' +
+        '<button type="button" class="bc-media-upload-btn" data-action="media-upload" style="font-size:12px;padding:6px 12px">Enviar imagem</button>' +
+        '<input type="file" id="teMediaFile" accept="image/*" style="display:none">' +
+        '<input type="text" class="te-config-input" data-action="media-url" data-id="' + _esc(tpl.id) + '" placeholder="https://... (URL da imagem)" value="' + _esc(mediaUrl) + '" style="flex:1;font-size:12px">' +
+      '</div>' +
+      (mediaUrl ? '<div class="te-media-preview">' +
+        '<img src="' + _esc(mediaUrl) + '" alt="preview" style="max-height:120px;border-radius:8px">' +
+        '<button class="bc-media-remove" data-action="media-remove" data-id="' + _esc(tpl.id) + '" title="Remover" style="position:absolute;top:4px;right:4px">x</button>' +
+      '</div>' +
+      '<div class="te-media-pos">' +
+        '<label style="font-size:11px;cursor:pointer"><input type="radio" name="teMediaPos" value="above"' + (mediaPos === 'above' ? ' checked' : '') + ' data-action="media-pos" data-id="' + _esc(tpl.id) + '"> Acima do texto</label>' +
+        '<label style="font-size:11px;cursor:pointer;margin-left:12px"><input type="radio" name="teMediaPos" value="below"' + (mediaPos === 'below' ? ' checked' : '') + ' data-action="media-pos" data-id="' + _esc(tpl.id) + '"> Abaixo do texto</label>' +
+      '</div>' : '') +
     '</div>'
 
     // Variables
@@ -288,6 +311,7 @@
         '<h3 class="te-editor-title">' + _esc(tpl.name) + '</h3>' +
         toolbar +
         '<textarea class="te-content-area" id="teContent" data-action="edit" data-id="' + _esc(tpl.id) + '" rows="10">' + _esc(content) + '</textarea>' +
+        mediaHtml +
         varsHtml +
         configHtml +
         saveBtn +
@@ -312,6 +336,9 @@
       else if (action === 'emoji') { _insertAtCursor(el.dataset.emoji); var pk = document.getElementById('teEmojiPicker'); if (pk) pk.style.display = 'none' }
       else if (action === 'create') { _onCreate() }
       else if (action === 'delete') { _onDelete(el.dataset.id) }
+      else if (action === 'media-upload') { var fi = document.getElementById('teMediaFile'); if (fi) fi.click() }
+      else if (action === 'media-remove') { _onEditField(el.dataset.id, 'media_url', ''); _render() }
+      else if (action === 'media-pos') { _onEditField(el.dataset.id, 'media_position', el.value); _render() }
     }
     root.oninput = function (e) {
       var a = e.target.dataset.action, id = e.target.dataset.id
@@ -323,6 +350,42 @@
       if (a === 'edit-day') _onEditField(id, 'day', e.target.value === '' ? null : parseInt(e.target.value))
       else if (a === 'edit-category') _onEditField(id, 'category', e.target.value)
       else if (a === 'toggle') _onToggle(id, e.target.checked)
+      else if (a === 'media-url') { _onEditField(id, 'media_url', e.target.value); _render() }
+    }
+
+    // File upload handler (delegated)
+    var fileInput = document.getElementById('teMediaFile')
+    if (fileInput) {
+      fileInput.onchange = async function () {
+        if (!fileInput.files || !fileInput.files[0]) return
+        var file = fileInput.files[0]
+        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+          if (window._toastWarn) _toastWarn('Selecione imagem ou video'); return
+        }
+        var tpl = _selected()
+        if (!tpl) return
+        var env = window.ClinicEnv || {}
+        var sbUrl = env.SUPABASE_URL || 'https://oqboitkpcvuaudouwvkl.supabase.co'
+        var sbKey = env.SUPABASE_KEY || ''
+        var ts = Date.now()
+        var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        var path = 'templates/' + ts + '-' + safeName
+        try {
+          var resp = await fetch(sbUrl + '/storage/v1/object/media/' + path, {
+            method: 'POST',
+            headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': file.type, 'x-upsert': 'true' },
+            body: file
+          })
+          if (!resp.ok) throw new Error('Upload falhou: ' + resp.status)
+          var publicUrl = sbUrl + '/storage/v1/object/public/media/' + path
+          _onEditField(tpl.id, 'media_url', publicUrl)
+          _render()
+          if (window._showToast) _showToast('Midia enviada', safeName, 'success')
+        } catch (err) {
+          if (window._toastErr) _toastErr('Erro no upload: ' + err.message)
+        }
+        fileInput.value = ''
+      }
     }
   }
 
@@ -471,6 +534,13 @@
     if (d && d.day !== undefined) extras.day = d.day
     if (d && d.category) extras.category = d.category
     if (d && d.name) extras.name = d.name
+    // Persist media in metadata
+    if (d && (d.media_url !== undefined || d.media_position)) {
+      var meta = Object.assign({}, tpl.metadata || {})
+      if (d.media_url !== undefined) meta.media_url = d.media_url
+      if (d.media_position) meta.media_position = d.media_position
+      extras.metadata = meta
+    }
     _saving[id] = true
     _render()
     var r = await TemplatesRepository.update(id, content, isActive, Object.keys(extras).length ? extras : undefined)
