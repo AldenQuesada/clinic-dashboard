@@ -279,7 +279,7 @@
         // Parse primeiro — precisa dos dados pra fingerprint
         var txs = parseOFX(content)
         if (txs.length === 0) {
-          alert('Nenhuma transacao encontrada no arquivo. Verifique se e um OFX valido.')
+          _toastWarn('Nenhuma transacao encontrada no arquivo. Verifique se e um OFX valido.')
           return
         }
         _state.transactions = txs
@@ -299,7 +299,7 @@
         _renderPreviewStep()
       } catch (err) {
         console.error('[OfxImport] erro ao parsear:', err)
-        alert('Erro ao parsear OFX: ' + err.message)
+        _toastErr('Erro ao parsear OFX: ' + err.message)
       }
     }
     reader.readAsText(file, 'UTF-8')

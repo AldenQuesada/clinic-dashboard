@@ -185,7 +185,7 @@ function cancelRoomForm() { closeRoomModal() }
 
 async function saveRoom() {
   const nome = document.getElementById('sr_nome')?.value?.trim()
-  if (!nome) { alert('Informe o nome da sala'); return }
+  if (!nome) { _toastWarn('Informe o nome da sala'); return }
 
   const existingId = document.getElementById('sr_index')?.value
   const id = (existingId && existingId !== '-1') ? existingId : null
@@ -199,7 +199,7 @@ async function saveRoom() {
   if (window.RoomsRepository) {
     const r = await window.RoomsRepository.upsert({ id, nome, alexa_device_name: alexaDevice || null })
     if (!r.ok) {
-      alert(r.error || 'Erro ao salvar sala')
+      _toastErr(r.error || 'Erro ao salvar sala')
       if (btn) { btn.disabled = false; btn.textContent = 'Salvar' }
       return
     }
@@ -253,7 +253,7 @@ function removeRoom(idOrIndex) {
     async () => {
       if (window.RoomsRepository && room?.id) {
         const res = await window.RoomsRepository.softDelete(room.id)
-        if (!res.ok) { alert(res.error || 'Erro ao excluir sala'); return }
+        if (!res.ok) { _toastErr(res.error || 'Erro ao excluir sala'); return }
       } else {
         // fallback localStorage
         const rooms = JSON.parse(localStorage.getItem(ROOMS_KEY) || '[]')

@@ -584,7 +584,7 @@ function patientsToggleAll(masterCb) {
 // ── Export CSV ──────────────────────────────────────────────
 function exportPatientsCsv() {
   var patients = _patientsAll.length ? _patientsAll : []
-  if (!patients.length) { alert('Nenhum paciente para exportar'); return }
+  if (!patients.length) { _toastWarn('Nenhum paciente para exportar'); return }
 
   var sep = ';'
   var rows = [['Nome', 'Telefone', 'Email', 'Status', 'Temperatura', 'Queixas', 'Data Nascimento', 'CPF', 'Sexo', 'Data Cadastro'].join(sep)]
@@ -1099,7 +1099,7 @@ async function saveNewPatient() {
   if (dup) {
     btn.textContent = '✓ Cadastrar Paciente'
     btn.disabled = false
-    alert('Lead já cadastrado!\n\n' + dup.tipo + ' já existe na base.\nNome: ' + (dup.lead.name || 'Lead existente'))
+    _toastWarn('Lead já cadastrado!\n\n' + dup.tipo + ' já existe na base.\nNome: ' + (dup.lead.name || 'Lead existente'))
     npGoStep(1)
     return
   }
@@ -1177,7 +1177,7 @@ async function saveNewPatient() {
   } catch (err) {
     btn.textContent = '✓ Cadastrar Paciente'
     btn.disabled = false
-    alert('Erro ao cadastrar: ' + (err.message || 'Tente novamente'))
+    _toastErr('Erro ao cadastrar: ' + (err.message || 'Tente novamente'))
   }
 }
 

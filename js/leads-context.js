@@ -351,7 +351,7 @@
           if (window.SheetsImportService) {
             _showSheetsImportModal(function () { _load() })
           } else {
-            alert('SheetsImportService não disponível.')
+            _toastErr('SheetsImportService não disponível.')
           }
         })
       }
@@ -816,7 +816,7 @@
         _selectedIds.forEach(function(id) {
           if (window.SdrService) SdrService.assignTag(tag, 'lead', id, 'bulk')
         })
-        alert(count + ' leads tagueados com: ' + tag)
+        _toastWarn(count + ' leads tagueados com: ' + tag)
       }
 
       _$('BulkDel').onclick = function() {
@@ -899,7 +899,7 @@
 
     function _exportLeads(format) {
       var leads = _filteredAll
-      if (!leads.length) { alert('Nenhum lead para exportar'); return }
+      if (!leads.length) { _toastWarn('Nenhum lead para exportar'); return }
 
       var esc = window.escHtml || function(s) { return String(s || '') }
       var PHASE_LABELS = { lead:'Lead', agendado:'Agendado', reagendado:'Reagendado', compareceu:'Compareceu', paciente:'Paciente', orcamento:'Orcamento', perdido:'Perdido' }

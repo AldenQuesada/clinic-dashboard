@@ -362,7 +362,7 @@ function agendaEventoNovo(tipo) {
 function agendaEventoSalvar() {
   const nome  = document.getElementById('evNome')?.value?.trim()
   const tipo  = document.getElementById('evTipo')?.value
-  if (!nome) { alert('Informe o nome do evento.'); return }
+  if (!nome) { if (window._showToast) _showToast('Atenção', 'Informe o nome do evento.', 'warn'); return }
   const events = JSON.parse(localStorage.getItem('clinicai_agenda_events') || '[]')
   events.push({
     id:         'ev_'+Date.now(),

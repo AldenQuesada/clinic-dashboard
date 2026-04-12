@@ -802,13 +802,13 @@
 
   async function _handleSave() {
     _readForm()
-    if (!_form.name.trim()) { alert('Nome obrigatorio'); return }
+    if (!_form.name.trim()) { _toastWarn('Nome obrigatorio'); return }
     var needsWaContent = _channelIncludes(_form.channel, 'whatsapp')
     var needsAlexaContent = _channelIncludes(_form.channel, 'alexa')
     var isAlertOnly = _form.channel === 'alert'
     var isAlexaOnly = _form.channel === 'alexa'
-    if (!isAlertOnly && !isAlexaOnly && needsWaContent && !_form.content_template.trim()) { alert('Mensagem WhatsApp obrigatoria'); return }
-    if (needsAlexaContent && !_form.alexa_message.trim()) { alert('Mensagem Alexa obrigatoria'); return }
+    if (!isAlertOnly && !isAlexaOnly && needsWaContent && !_form.content_template.trim()) { _toastWarn('Mensagem WhatsApp obrigatoria'); return }
+    if (needsAlexaContent && !_form.alexa_message.trim()) { _toastWarn('Mensagem Alexa obrigatoria'); return }
 
     _saving = true; _render()
 
@@ -826,7 +826,7 @@
       if (window._showToast) _showToast('Salvo', _form.name + ' salva com sucesso', 'success')
       await _load()
     } else {
-      alert('Erro: ' + (res.error||'desconhecido'))
+      _toastErr('Erro: ' + (res.error||'desconhecido'))
       _render()
     }
   }

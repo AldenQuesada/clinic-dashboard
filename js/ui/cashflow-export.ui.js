@@ -47,12 +47,12 @@
       limit:     5000,
     })
     if (!res || !res.ok) {
-      alert('Erro ao buscar dados pra exportar')
+      _toastErr('Erro ao buscar dados pra exportar')
       return
     }
     var entries = res.data || []
     if (entries.length === 0) {
-      alert('Nenhuma transacao no periodo selecionado.')
+      _toastWarn('Nenhuma transacao no periodo selecionado.')
       return
     }
 
@@ -210,7 +210,7 @@
 
     var w = window.open('', '_blank', 'width=900,height=700')
     if (!w) {
-      alert('Permita pop-ups para exportar PDF')
+      _toastWarn('Permita pop-ups para exportar PDF')
       return
     }
     w.document.write(html)
@@ -224,7 +224,7 @@
     if (existing) existing.remove()
 
     var res = await window.CashflowService.getDasEstimate(year, month)
-    if (!res || !res.ok) { alert('Erro ao calcular DAS'); return }
+    if (!res || !res.ok) { _toastErr('Erro ao calcular DAS'); return }
     var d = res.data || {}
     var fmt = window.CashflowService.fmtCurrency
 

@@ -155,7 +155,7 @@ function saveCustomProtocol() {
   const obj   = document.getElementById('cpObjetivo')?.value?.trim()
   const valor = parseFloat(document.getElementById('cpValor')?.value || '0')
 
-  if (!nome) { alert('Informe o nome do procedimento'); return }
+  if (!nome) { _toastWarn('Informe o nome do procedimento'); return }
 
   _currentCustomProtocols.push({ nome, intervalMonths: meses, objetivo: obj || '', valor: valor || 0 })
 
@@ -424,8 +424,8 @@ async function saveBudget(leadId) {
   const valor  = parseFloat(document.getElementById('bValor')?.value || '0')
   const status = document.getElementById('bStatus')?.value || 'draft'
   const valid  = document.getElementById('bValidUntil')?.value || null
-  if (!proc) { alert('Informe o procedimento'); return }
-  if (isNaN(valor) || valor < 0) { alert('Valor inválido'); return }
+  if (!proc) { _toastWarn('Informe o procedimento'); return }
+  if (isNaN(valor) || valor < 0) { _toastWarn('Valor inválido'); return }
 
   const btn = document.getElementById('bSaveBtn')
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...' }
@@ -439,7 +439,7 @@ async function saveBudget(leadId) {
       items:       [{ description: proc, quantity: 1, unit_price: valor }],
     })
     if (!result.ok) {
-      alert('Erro ao salvar: ' + (result.error || 'Tente novamente'))
+      _toastErr('Erro ao salvar: ' + (result.error || 'Tente novamente'))
       if (btn) { btn.disabled = false; btn.textContent = 'Adicionar' }
       return
     }
@@ -457,7 +457,7 @@ async function removeBudget(leadId, budgetId) {
   if (window.BudgetsService) {
     const result = await window.BudgetsService.delete(budgetId)
     if (!result.ok) {
-      alert('Erro ao excluir: ' + (result.error || 'Tente novamente'))
+      _toastErr('Erro ao excluir: ' + (result.error || 'Tente novamente'))
       return
     }
     _budgetCache[leadId] = null  // invalida cache
@@ -1545,7 +1545,7 @@ async function _lmChangePhase(leadId, toPhase, reason) {
   try {
     var result = await window.SdrService.changePhase(leadId, toPhase, reason || null)
     if (result && result.ok === false) {
-      alert(result.error || 'Erro ao mudar fase')
+      _toastErr(result.error || 'Erro ao mudar fase')
       if (actionsEl) actionsEl.style.opacity = '1'
       return
     }
@@ -1568,7 +1568,7 @@ async function _lmChangePhase(leadId, toPhase, reason) {
     if (typeof loadLeads === 'function') loadLeads()
   } catch (e) {
     console.error('[LeadModal] Erro ao mudar fase:', e)
-    alert('Erro ao mudar fase. Tente novamente.')
+    _toastErr('Erro ao mudar fase. Tente novamente.')
     if (actionsEl) actionsEl.style.opacity = '1'
   }
 }

@@ -271,9 +271,9 @@
       var custom = prompt('Quantos dias entre sess\u00f5es?')
       if (!custom) return
       interval = parseInt(custom)
-      if (isNaN(interval) || interval <= 0) { alert('Valor inv\u00e1lido'); return }
+      if (isNaN(interval) || interval <= 0) { _toastWarn('Valor inv\u00e1lido'); return }
     }
-    if (!proc.trim()) { alert('Selecione o procedimento'); return }
+    if (!proc.trim()) { _toastWarn('Selecione o procedimento'); return }
 
     try {
       await saveComplaint({
@@ -289,7 +289,7 @@
       var el = document.getElementById('lmComplaintsCard')
       if (el) el.innerHTML = renderCard(_qtLeadId, complaints)
     } catch (e) {
-      alert('Erro: ' + e.message)
+      _toastErr('Erro: ' + e.message)
     }
   }
 
@@ -521,7 +521,7 @@
       _loadAndRenderFull(panelId, leadId)
     } catch (e) {
       console.error('[ComplaintsPanel] Add error:', e.message)
-      alert('Erro ao adicionar queixa: ' + e.message)
+      _toastErr('Erro ao adicionar queixa: ' + e.message)
     }
   }
 
@@ -559,7 +559,7 @@
       _loadAndRenderFull(panelId, leadId)
     } catch (e) {
       console.error('[ComplaintsPanel] Treat error:', e.message)
-      alert('Erro ao registrar tratamento: ' + e.message)
+      _toastErr('Erro ao registrar tratamento: ' + e.message)
     }
   }
 
@@ -573,7 +573,7 @@
       _loadAndRenderFull(panelId, leadId)
     } catch (e) {
       console.error('[ComplaintsPanel] Resolve error:', e.message)
-      alert('Erro ao resolver queixa: ' + e.message)
+      _toastErr('Erro ao resolver queixa: ' + e.message)
     }
   }
 

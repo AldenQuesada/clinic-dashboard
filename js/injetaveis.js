@@ -2368,8 +2368,8 @@ function injShowAddCusto() {
 function injConfirmAddCusto() {
   const novoValor = parseFloat(document.getElementById('if_custo_novo_valor')?.value)
   const novaData  = document.getElementById('if_custo_nova_data')?.value
-  if (!novoValor || novoValor <= 0) { alert('Informe o novo valor de custo.'); return }
-  if (!novaData) { alert('Informe a data do aumento de preço.'); return }
+  if (!novoValor || novoValor <= 0) { _toastWarn('Informe o novo valor de custo.'); return }
+  if (!novaData) { _toastWarn('Informe a data do aumento de preço.'); return }
   if (!Array.isArray(_injFormData.historico_custos)) _injFormData.historico_custos = []
   _injFormData.historico_custos.push({ custo: novoValor, data: novaData })
   _injFormData.custo_unit = novoValor
@@ -2690,7 +2690,7 @@ async function saveInjForm() {
     // Edição direta — salva sem perguntar
     if (window.InjetaveisRepository && _isUuid(_injEditId)) {
       const r = await window.InjetaveisRepository.upsert(_injFormDataToSb(_injEditId, _injFormData))
-      if (!r.ok) { alert(r.error || 'Erro ao salvar'); return }
+      if (!r.ok) { _toastErr(r.error || 'Erro ao salvar'); return }
       _injCache = null
     } else {
       const injs = getInj()
@@ -2724,7 +2724,7 @@ async function injAddToClinic() {
 
   if (window.InjetaveisRepository) {
     const r = await window.InjetaveisRepository.upsert(_injFormDataToSb(null, tpl))
-    if (!r.ok) { alert(r.error || 'Erro ao cadastrar'); return }
+    if (!r.ok) { _toastErr(r.error || 'Erro ao cadastrar'); return }
     _injCache = null
   } else {
     const injs = getInj()
@@ -2932,7 +2932,7 @@ ${fin ? `
 </html>`
 
   const win = window.open('', '_blank', 'width=900,height=800')
-  if (!win) { alert('Permita popups para imprimir.'); return }
+  if (!win) { _toastWarn('Permita popups para imprimir.'); return }
   win.document.write(html)
   win.document.close()
 }
@@ -2946,7 +2946,7 @@ async function deleteInj(id) {
   if (!confirm(`Confirmar exclusão definitiva de "${inj.nome}"? Esta ação não pode ser desfeita.`)) return
   if (window.InjetaveisRepository && _isUuid(id)) {
     const r = await window.InjetaveisRepository.softDelete(id)
-    if (!r.ok) { alert(r.error || 'Erro ao excluir'); return }
+    if (!r.ok) { _toastErr(r.error || 'Erro ao excluir'); return }
     _injCache = null
   } else {
     saveInj(getInj().filter(i => i.id !== id))
@@ -3290,7 +3290,7 @@ function repoItemAdd(catId) {
   const fab   = document.getElementById('ri_fab')?.value?.trim()
   const uni   = document.getElementById('ri_uni')?.value?.trim()
   const apres = document.getElementById('ri_apres')?.value?.trim()
-  if (!nome || !fab) { alert('Nome e Fabricante são obrigatórios.'); return }
+  if (!nome || !fab) { _toastWarn('Nome e Fabricante são obrigatórios.'); return }
   const rd = getRepoData()
   if (!rd[catId]) rd[catId] = { itens: [] }
   if (!rd[catId].itens) rd[catId].itens = []
@@ -3302,7 +3302,7 @@ function repoItemAdd(catId) {
   } else {
     // Modo adição: evita duplicata exata
     if (rd[catId].itens.some(i => i.nome.toLowerCase() === nome.toLowerCase() && i.fabricante.toLowerCase() === fab.toLowerCase())) {
-      alert('Este produto já existe nesta categoria.'); return
+      _toastWarn('Este produto já existe nesta categoria.'); return
     }
     rd[catId].itens.push({ nome, fabricante: fab, unidade: uni || '', apresentacao: apres || '' })
   }

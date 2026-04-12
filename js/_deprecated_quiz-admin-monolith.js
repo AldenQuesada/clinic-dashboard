@@ -674,7 +674,7 @@
       _renderQuizList()
       _selectQuiz(0)
     } catch (err) {
-      alert('Erro ao criar quiz: ' + (err.message || err))
+      _toastErr('Erro ao criar quiz: ' + (err.message || err))
     }
   }
 
@@ -721,7 +721,7 @@
       _renderQuizList()
     } catch (err) {
       if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar' }
-      alert('Erro ao salvar: ' + (err.message || err))
+      _toastErr('Erro ao salvar: ' + (err.message || err))
     }
   }
 

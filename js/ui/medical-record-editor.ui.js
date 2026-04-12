@@ -634,7 +634,7 @@
     })
 
     if (!result.ok) {
-      alert(result.error || 'Erro ao editar registro.')
+      _toastErr(result.error || 'Erro ao editar registro.')
       return
     }
 
@@ -655,7 +655,7 @@
 
     const result = await svc.remove(recordId, rec)
     if (!result.ok) {
-      alert(result.error || 'Erro ao remover registro.')
+      _toastErr(result.error || 'Erro ao remover registro.')
       return
     }
 

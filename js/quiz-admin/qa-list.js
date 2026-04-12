@@ -60,7 +60,7 @@
           quiz.active = !inp.checked
           inp.checked = !inp.checked
           _renderQuizList()
-          alert('Erro ao atualizar: ' + (err.message || err))
+          _toastErr('Erro ao atualizar: ' + (err.message || err))
         })
         _renderQuizList()
         var activeQuiz = QA.quiz()
@@ -87,7 +87,7 @@
           }
           _renderQuizList()
         }).catch(function(err) {
-          alert('Erro ao excluir: ' + (err.message || err))
+          _toastErr('Erro ao excluir: ' + (err.message || err))
         })
       }
     })

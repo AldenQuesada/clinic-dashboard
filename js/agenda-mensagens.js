@@ -632,8 +632,8 @@
 
   window._waMsgSave = function () {
     const msg = _state.editMsg;
-    if (!msg.name.trim()) { alert('Informe um nome para a mensagem.'); return; }
-    if (!msg.message.trim()) { alert('A mensagem não pode estar vazia.'); return; }
+    if (!msg.name.trim()) { if (window._showToast) _showToast('Atenção', 'Informe um nome para a mensagem.', 'warn'); return; }
+    if (!msg.message.trim()) { if (window._showToast) _showToast('Atenção', 'A mensagem nao pode estar vazia.', 'warn'); return; }
     const msgs = _getMessages();
     if (_state.editId) {
       const idx = msgs.findIndex(function (m) { return m.id === _state.editId; });

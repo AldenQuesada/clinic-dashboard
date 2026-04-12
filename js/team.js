@@ -568,7 +568,7 @@ function saveCommissionRow(userId) {
   const procedure = procSel === '__outro__' ? procTxt : procSel
   const value   = parseFloat(document.getElementById('comm_pct')?.value || '0')
   const type    = document.getElementById('comm_type')?.value || 'percent'
-  if (!procedure || !value) { alert('Preencha procedimento e valor'); return }
+  if (!procedure || !value) { _toastWarn('Preencha procedimento e valor'); return }
 
   const profile = _getCurrentProfile(userId)
   profile.commissions = [...(profile.commissions || []), { procedure, value, type }]
@@ -599,7 +599,7 @@ function saveGoalRow(userId) {
   const bonusPct   = parseFloat(document.getElementById('goal_bonus_pct')?.value || '0')
   const bonusFixed = parseFloat(document.getElementById('goal_bonus_fixed')?.value || '0')
   const description = document.getElementById('goal_desc')?.value?.trim()
-  if (!target) { alert('Informe a meta mensal'); return }
+  if (!target) { _toastWarn('Informe a meta mensal'); return }
 
   const profile = _getCurrentProfile(userId)
   profile.goals = [...(profile.goals || []), { target, bonusPercent: bonusPct||null, bonusFixed: bonusFixed||null, description: description||'' }]
@@ -689,7 +689,7 @@ async function saveUserModal(userId) {
     renderTeamStats()
   } catch (e) {
     if (btn) { btn.textContent = '💾 Salvar Alterações'; btn.disabled = false }
-    alert('Erro ao salvar: ' + e.message)
+    _toastErr('Erro ao salvar: ' + e.message)
   }
 }
 window.saveUserModal = saveUserModal
@@ -750,10 +750,10 @@ function showResetPasswordModal(userId) {
 
 async function confirmResetPassword(userId) {
   const pw = document.getElementById('newPwInput')?.value?.trim()
-  if (!pw || pw.length < 6) { alert('Senha deve ter mínimo 6 caracteres'); return }
+  if (!pw || pw.length < 6) { _toastWarn('Senha deve ter mínimo 6 caracteres'); return }
   await apiFetch(`/users/${userId}/reset-password`, { method: 'PUT', body: { newPassword: pw } })
   document.getElementById('resetPwModal')?.remove()
-  alert('Senha redefinida com sucesso!')
+  _toastWarn('Senha redefinida com sucesso!')
 }
 window.showResetPasswordModal  = showResetPasswordModal
 window.confirmResetPassword    = confirmResetPassword

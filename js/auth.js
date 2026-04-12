@@ -340,7 +340,7 @@ window.doLogin = doLogin
 
 // showRegisterModal — compat.
 window.showRegisterModal = function () {
-  alert('Solicite acesso ao administrador da clínica.')
+  if (window._showToast) _showToast('Acesso', 'Solicite acesso ao administrador da clinica.', 'info'); else alert('Solicite acesso ao administrador da clinica.')
 }
 
 // Export getCurrentProfile

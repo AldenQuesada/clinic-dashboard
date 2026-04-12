@@ -256,7 +256,7 @@
         staffWrap.style.outline = '2px solid #ef4444'
         staffWrap.style.borderRadius = '8px'
       }
-      alert('Campos obrigatorios faltando: ' + errors.join(', '))
+      _toastErr('Campos obrigatorios faltando: ' + errors.join(', '))
       return
     }
 
@@ -297,7 +297,7 @@
       if (window.QAList) QAList.render()
     } catch (err) {
       if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar' }
-      alert('Erro ao salvar: ' + (err.message || err))
+      _toastErr('Erro ao salvar: ' + (err.message || err))
     }
   }
 
@@ -477,7 +477,7 @@
       } catch (err) {
         btn.disabled = false
         btn.textContent = 'Criar Quiz'
-        alert('Erro ao criar quiz: ' + (err.message || err))
+        _toastErr('Erro ao criar quiz: ' + (err.message || err))
       }
     }
   }

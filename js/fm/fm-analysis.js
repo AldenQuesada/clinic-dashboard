@@ -246,7 +246,7 @@
       if (FM._photoUrls['45']) {
         FM._activeAngle = '45'
       } else {
-        alert('Vetores faciais requer foto de 45\u00B0. Faca o upload primeiro.')
+        _toastWarn('Vetores faciais requer foto de 45\u00B0. Faca o upload primeiro.')
         FM._editorMode = 'zones'
         return
       }
@@ -258,7 +258,7 @@
       } else if (FM._photoUrls['lateral']) {
         FM._activeAngle = 'lateral'
       } else {
-        alert('Analise requer foto frontal ou lateral.')
+        _toastWarn('Analise requer foto frontal ou lateral.')
         FM._editorMode = 'zones'
         return
       }

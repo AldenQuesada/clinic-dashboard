@@ -38,6 +38,7 @@
   function _fmtDate(iso)     { return window._apptFmtDate ? window._apptFmtDate(iso) : iso }
   function _refresh()        { if (window._apptRefresh) window._apptRefresh() }
   function _statusCfg()      { return window._apptStatusCfg || {} }
+  function _warn(msg)        { if (window._showToast) _showToast('Atenção', msg, 'warn'); else alert(msg) }
   function _checkConflict(a, all) { return window._apptCheckConflict ? window._apptCheckConflict(a, all) : { conflict: false } }
   function _setLeadStatus(id, s, skip) { if (window._apptSetLeadStatus) window._apptSetLeadStatus(id, s, skip) }
   function _enviarMsg(appt)  { if (window._apptEnviarMsg) window._apptEnviarMsg(appt) }
@@ -1241,18 +1242,18 @@
   // ── saveAppt ──────────────────────────────────────────────────
   function saveAppt() {
     const nome = document.getElementById('appt_paciente_q') && document.getElementById('appt_paciente_q').value.trim()
-    if (!nome) { alert('Selecione o paciente'); return }
+    if (!nome) { _warn('Selecione o paciente'); return }
     const data   = document.getElementById('appt_data') && document.getElementById('appt_data').value
     const inicio = document.getElementById('appt_inicio') && document.getElementById('appt_inicio').value
-    if (!data || !inicio) { alert('Informe data e horário'); return }
+    if (!data || !inicio) { _warn('Informe data e horario'); return }
 
     // Validar horario passado (camada obrigatoria — independe do AgendaValidator)
     var todayIso = new Date().toISOString().slice(0, 10)
     var editId0 = document.getElementById('appt_id') && document.getElementById('appt_id').value
     if (!editId0) {
-      if (data < todayIso) { alert('Nao e possivel agendar em data passada.'); return }
+      if (data < todayIso) { _warn('Nao e possivel agendar em data passada.'); return }
       if (data === todayIso && new Date(data + 'T' + inicio + ':00') < new Date()) {
-        alert('Nao e possivel agendar em horario que ja passou.'); return
+        _warn('Nao e possivel agendar em horario que ja passou.'); return
       }
     }
 
@@ -1264,51 +1265,51 @@
 
     // Validação tipo de atendimento (Consulta vs Procedimento — exclusivos)
     const tipoAtend = (document.getElementById('appt_tipo') && document.getElementById('appt_tipo').value) || ''
-    if (!tipoAtend) { alert('Selecione o tipo de atendimento (Consulta ou Procedimento).'); return }
+    if (!tipoAtend) { _warn('Selecione o tipo de atendimento (Consulta ou Procedimento).'); return }
 
     const tipoAvalEl = document.querySelector('input[name="appt_tipo_aval"]:checked')
     const tipoAvalVal = tipoAvalEl && tipoAvalEl.value || ''
     const cortesiaMotivo = (document.getElementById('appt_cortesia_motivo') && document.getElementById('appt_cortesia_motivo').value.trim()) || ''
 
     if (tipoAtend === 'avaliacao') {
-      if (!tipoAvalVal) { alert('Indique se a consulta é Cortesia ou Paga.'); return }
+      if (!tipoAvalVal) { _warn('Indique se a consulta e Cortesia ou Paga.'); return }
       if (tipoAvalVal === 'cortesia' && !cortesiaMotivo) {
-        alert('Informe o motivo da cortesia.'); return
+        _warn('Informe o motivo da cortesia.'); return
       }
     }
     if (tipoAtend === 'procedimento' && (!_apptProcs || _apptProcs.length === 0)) {
-      alert('Adicione ao menos um procedimento.'); return
+      _warn('Adicione ao menos um procedimento.'); return
     }
     if (tipoAtend === 'procedimento') {
       var procSemMotivo = _apptProcs.find(function(p) { return p.cortesia && !(p.cortesiaMotivo && p.cortesiaMotivo.trim()) })
-      if (procSemMotivo) { alert('Informe o motivo da cortesia em "' + procSemMotivo.nome + '".'); return }
+      if (procSemMotivo) { _warn('Informe o motivo da cortesia em "' + procSemMotivo.nome + '".'); return }
       var procSemIntervalo = _apptProcs.find(function(p) { return p.retornoTipo === 'retorno' && (!p.retornoIntervalo || p.retornoIntervalo <= 0) })
-      if (procSemIntervalo) { alert('Selecione o intervalo de retorno em "' + procSemIntervalo.nome + '".'); return }
+      if (procSemIntervalo) { _warn('Selecione o intervalo de retorno em "' + procSemIntervalo.nome + '".'); return }
     }
 
     // Validação pagamentos (Consulta Paga OU Procedimento)
     const valorTotal = parseFloat((document.getElementById('appt_valor') && document.getElementById('appt_valor').value) || '0') || 0
     const consultaPaga = tipoAtend === 'avaliacao' && tipoAvalVal === 'paga'
     const procWithItems = tipoAtend === 'procedimento' && _apptProcs.length > 0
-    if (consultaPaga && valorTotal <= 0) { alert('Informe o valor da consulta.'); return }
+    if (consultaPaga && valorTotal <= 0) { _warn('Informe o valor da consulta.'); return }
     if (consultaPaga || procWithItems) {
-      if (!_apptPagamentos.length) { alert('Adicione ao menos uma forma de pagamento.'); return }
+      if (!_apptPagamentos.length) { _warn('Adicione ao menos uma forma de pagamento.'); return }
       var faltaForma = _apptPagamentos.find(function(p) { return !p.forma })
-      if (faltaForma) { alert('Selecione a forma de cada pagamento.'); return }
+      if (faltaForma) { _warn('Selecione a forma de cada pagamento.'); return }
       var faltaParcelas = _apptPagamentos.find(function(p) {
         return _apptFormaTemParcelas(p.forma) && (!p.parcelas || p.parcelas < 1)
       })
-      if (faltaParcelas) { alert('Informe o numero de parcelas para pagamento parcelado/credito.'); return }
+      if (faltaParcelas) { _warn('Informe o numero de parcelas para pagamento parcelado/credito.'); return }
       var parcelasExcede = _apptPagamentos.find(function(p) {
         return _apptFormaTemParcelas(p.forma) && p.parcelas > 24
       })
-      if (parcelasExcede) { alert('Numero maximo de parcelas: 24.'); return }
+      if (parcelasExcede) { _warn('Numero maximo de parcelas: 24.'); return }
       var M = window.Money
       var somaPag = M ? M.sum(_apptPagamentos.map(function(p) { return p.valor })) : _apptPagamentos.reduce(function(s, p) { return s + (parseFloat(p.valor) || 0) }, 0)
       var totalEsperado = _apptValorTotalPagar()
       var matches = M ? M.eq(somaPag, totalEsperado) : Math.abs(somaPag - totalEsperado) < 0.01
       if (!matches) {
-        alert('A soma dos pagamentos (' + (M ? M.format(somaPag) : 'R$ ' + somaPag.toFixed(2)) + ') deve ser igual ao total (' + (M ? M.format(totalEsperado) : 'R$ ' + totalEsperado.toFixed(2)) + ').'); return
+        _warn('A soma dos pagamentos (' + (M ? M.format(somaPag) : 'R$ ' + somaPag.toFixed(2)) + ') deve ser igual ao total (' + (M ? M.format(totalEsperado) : 'R$ ' + totalEsperado.toFixed(2)) + ').'); return
       }
     }
 
@@ -1402,7 +1403,7 @@
       // Fallback: validação básica legada
       const provisional = Object.assign({}, apptData, { id: editId || '__new__' })
       const { conflict, reason: confReason } = _checkConflict(provisional, appts)
-      if (conflict) { alert('Conflito de horário: ' + confReason); return }
+      if (conflict) { _warn('Conflito de horario: ' + confReason); return }
     }
 
     // Verificar se edição é permitida
@@ -1526,8 +1527,7 @@
     // Guarda: status que bloqueiam reagendamento
     var blocked = ['finalizado', 'cancelado', 'no_show']
     if (blocked.indexOf(a.status) !== -1) {
-      if (window.Modal) Modal.alert({ title: 'Não é possível reagendar', message: 'Atendimentos com status "' + a.status + '" não podem ser reagendados.', tone: 'warn' })
-      else alert('Atendimentos com status "' + a.status + '" não podem ser reagendados.')
+      _warn('Atendimentos com status "' + a.status + '" nao podem ser reagendados.')
       return
     }
 
@@ -1595,21 +1595,18 @@
     var motivo    = ((document.getElementById('rg_motivo') || {}).value || '').trim()
 
     if (!novaData || !novaHora) {
-      if (window.Modal) Modal.alert({ title: 'Campos obrigatórios', message: 'Informe a nova data e hora.', tone: 'warn' })
-      else alert('Informe a nova data e hora.')
+      _warn('Informe a nova data e hora.')
       return
     }
 
     // Validação: data/hora no futuro
     var todayIso = new Date().toISOString().slice(0, 10)
     if (novaData < todayIso) {
-      if (window.Modal) Modal.alert({ title: 'Data inválida', message: 'Não é possível reagendar para data passada.', tone: 'warn' })
-      else alert('Não é possível reagendar para data passada.')
+      _warn('Nao e possivel reagendar para data passada.')
       return
     }
     if (novaData === todayIso && new Date(novaData + 'T' + novaHora + ':00') < new Date()) {
-      if (window.Modal) Modal.alert({ title: 'Horário inválido', message: 'Não é possível reagendar para horário que já passou.', tone: 'warn' })
-      else alert('Não é possível reagendar para horário que já passou.')
+      _warn('Nao e possivel reagendar para horario que ja passou.')
       return
     }
 
@@ -1624,8 +1621,7 @@
       var errs = AgendaValidator.validateDragDrop(a, novaData, novaHora, novaHoraFim)
       if (errs && errs.length) {
         if (window.showValidationErrors) showValidationErrors(errs, 'Reagendamento não permitido')
-        else if (window.Modal) Modal.alert({ title: 'Reagendamento não permitido', message: errs.join('\n'), tone: 'error' })
-        else alert(errs[0])
+        else _warn(errs.join('. '))
         return
       }
     } else {
@@ -1633,8 +1629,7 @@
       var provisional = Object.assign({}, a, { data: novaData, horaInicio: novaHora, horaFim: novaHoraFim })
       var conf = _checkConflict(provisional, appts)
       if (conf && conf.conflict) {
-        if (window.Modal) Modal.alert({ title: 'Conflito de horário', message: conf.reason || 'Outro agendamento no mesmo horário.', tone: 'error' })
-        else alert('Conflito de horário: ' + (conf.reason || ''))
+        _warn('Conflito de horario: ' + (conf.reason || 'Outro agendamento no mesmo horario.'))
         return
       }
     }

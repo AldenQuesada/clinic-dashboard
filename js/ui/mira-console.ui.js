@@ -378,13 +378,13 @@
       perms[cb.getAttribute('data-area')] = cb.checked
     })
 
-    if (!profId) { alert('Selecione um profissional'); return }
-    if (!phone || phone.length < 10) { alert('Telefone invalido'); return }
+    if (!profId) { _toastWarn('Selecione um profissional'); return }
+    if (!phone || phone.length < 10) { _toastWarn('Telefone invalido'); return }
     if (!perms.agenda && !perms.pacientes && !perms.financeiro) {
-      alert('Marque ao menos uma area de permissao'); return
+      _toastWarn('Marque ao menos uma area de permissao'); return
     }
 
-    if (!window.MiraService) { alert('MiraService nao carregado'); return }
+    if (!window.MiraService) { _toastWarn('MiraService nao carregado'); return }
     var res = await window.MiraService.registerNumber({
       phone: phone,
       professional_id: profId,
@@ -393,12 +393,12 @@
       permissions: perms,
     })
     if (res && res.ok) {
-      alert('Numero cadastrado com sucesso!')
+      _toastWarn('Numero cadastrado com sucesso!')
       var b = document.getElementById('miraRegBackdrop')
       if (b) b.remove()
       _loadNumbers()
     } else {
-      alert('Erro ao cadastrar: ' + (res && res.error || 'desconhecido'))
+      _toastErr('Erro ao cadastrar: ' + (res && res.error || 'desconhecido'))
     }
   }
 

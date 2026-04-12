@@ -245,7 +245,7 @@ function cancelTechForm() { closeTechModal() }
 
 async function saveTechnology() {
   const nome = document.getElementById('st_nome')?.value?.trim()
-  if (!nome) { alert('Informe o nome'); return }
+  if (!nome) { _toastWarn('Informe o nome'); return }
 
   const existingId = document.getElementById('st_index')?.value
   const id = (existingId && existingId !== '-1') ? existingId : null
@@ -277,7 +277,7 @@ async function saveTechnology() {
       sala_id,
     })
     if (!r.ok) {
-      alert(r.error || 'Erro ao salvar tecnologia')
+      _toastErr(r.error || 'Erro ao salvar tecnologia')
       if (btn) { btn.disabled = false; btn.textContent = 'Salvar' }
       return
     }
@@ -334,7 +334,7 @@ function removeTechnology(idOrIndex) {
     async () => {
       if (window.TechnologiesRepository && tech?.id) {
         const r = await window.TechnologiesRepository.softDelete(tech.id)
-        if (!r.ok) { alert(r.error || 'Erro ao excluir'); return }
+        if (!r.ok) { _toastErr(r.error || 'Erro ao excluir'); return }
       } else {
         // fallback localStorage
         const techs = JSON.parse(localStorage.getItem(TECH_KEY) || '[]')

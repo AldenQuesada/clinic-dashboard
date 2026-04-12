@@ -301,7 +301,7 @@
   function applyCustomPeriod() {
     _customFrom = document.getElementById('orcDateFrom')?.value || null
     _customTo = document.getElementById('orcDateTo')?.value || null
-    if (!_customFrom) { alert('Selecione a data inicial'); return }
+    if (!_customFrom) { _toastWarn('Selecione a data inicial'); return }
     _render()
   }
 
@@ -318,7 +318,7 @@
 
   function exportCsv() {
     var data = _all.length ? _all : []
-    if (!data.length) { alert('Nenhum orcamento para exportar'); return }
+    if (!data.length) { _toastWarn('Nenhum orcamento para exportar'); return }
     var sep = ';'
     var rows = [['Nome', 'Telefone', 'Email', 'Status', 'Tags', 'Data Cadastro'].join(sep)]
     data.forEach(function(l) {

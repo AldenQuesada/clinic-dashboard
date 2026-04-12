@@ -174,7 +174,7 @@
         if (typeof window.showLeadModal === 'function') {
           window.showLeadModal({})
         } else {
-          alert('Modal de novo lead não disponível.')
+          if (window._showToast) _showToast('Erro', 'Modal de novo lead nao disponivel.', 'error')
         }
       })
     }

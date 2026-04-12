@@ -458,7 +458,7 @@ function csUpdateLogoLabel(i) {
 function csLogoUpload(input, i) {
   const file = input.files[0]
   if (!file) return
-  if (file.size > 3 * 1024 * 1024) { alert('Arquivo muito grande. Máximo 3MB.'); input.value = ''; return }
+  if (file.size > 3 * 1024 * 1024) { if (window._showToast) _showToast('Atenção', 'Arquivo muito grande. Maximo 3MB.', 'warn'); else alert('Arquivo muito grande. Maximo 3MB.'); input.value = ''; return }
   const reader = new FileReader()
   reader.onload = (e) => {
     const img = new Image()

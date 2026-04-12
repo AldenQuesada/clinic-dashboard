@@ -134,11 +134,11 @@
         b.disabled = false
         b.textContent = 'Sincronizar agora'
         if (res && res.ok) {
-          alert('Sync solicitado. Novas transacoes vao aparecer em breve.')
+          _toastWarn('Sync solicitado. Novas transacoes vao aparecer em breve.')
           _loadConnections()
           if (window.CashflowUI && window.CashflowUI.reload) window.CashflowUI.reload()
         } else {
-          alert('Falha ao sincronizar. Verifique se o n8n esta configurado.')
+          _toastErr('Falha ao sincronizar. Verifique se o n8n esta configurado.')
         }
       })
     })
@@ -157,15 +157,15 @@
       await window.PluggyService.openConnectWidget({
         clientUserId: 'clinic-' + (window.ClinicEnv && window.ClinicEnv.CLINIC_ID || 'default'),
         onSuccess: function(itemData) {
-          alert('Banco conectado com sucesso! Transacoes serao sincronizadas em alguns minutos.')
+          _toastWarn('Banco conectado com sucesso! Transacoes serao sincronizadas em alguns minutos.')
           _loadConnections()
         },
         onError: function(err) {
-          alert('Erro ao conectar: ' + (err && err.message || 'desconhecido'))
+          _toastErr('Erro ao conectar: ' + (err && err.message || 'desconhecido'))
         },
       })
     } catch (e) {
-      alert('Erro: ' + e.message + '\n\nVerifique se o proxy n8n esta configurado e se as credenciais Pluggy estao definidas nas variaveis de ambiente.')
+      _toastErr('Erro: ' + e.message + '\n\nVerifique se o proxy n8n esta configurado e se as credenciais Pluggy estao definidas nas variaveis de ambiente.')
     }
   }
 

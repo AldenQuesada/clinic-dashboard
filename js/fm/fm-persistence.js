@@ -225,7 +225,7 @@
 
   FM._saveToSupabase = function () {
     if (!FM._lead || !FM._lead.id) {
-      alert('Nenhum paciente selecionado.')
+      _toastWarn('Nenhum paciente selecionado.')
       return
     }
 

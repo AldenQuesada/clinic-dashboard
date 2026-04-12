@@ -159,7 +159,7 @@
       if (window.OfxImportUI && window.OfxImportUI.open) {
         window.OfxImportUI.open()
       } else {
-        alert('Modulo de importacao OFX nao carregado. Recarregue a pagina (Ctrl+Shift+R).')
+        _toastWarn('Modulo de importacao OFX nao carregado. Recarregue a pagina (Ctrl+Shift+R).')
       }
     })
     document.getElementById('cfReconcileBtn').addEventListener('click', _runReconcile)
@@ -167,7 +167,7 @@
       if (window.PluggyConnectUI && window.PluggyConnectUI.open) {
         window.PluggyConnectUI.open()
       } else {
-        alert('Modulo de conexao bancaria ainda nao carregado. Recarregue a pagina.')
+        _toastWarn('Modulo de conexao bancaria ainda nao carregado. Recarregue a pagina.')
       }
     })
     document.getElementById('cfConfigBtn').addEventListener('click', _openConfigModal)
@@ -188,7 +188,7 @@
           var fmt = b.getAttribute('data-fmt')
           var d = new Date(_state.startDate + 'T00:00:00')
           var y = d.getFullYear(), m = d.getMonth() + 1
-          if (!window.CashflowExportUI) { alert('Modulo de export nao carregado'); return }
+          if (!window.CashflowExportUI) { _toastWarn('Modulo de export nao carregado'); return }
           if (fmt === 'csv') await window.CashflowExportUI.exportCsv(y, m)
           else if (fmt === 'pdf') await window.CashflowExportUI.exportPdfMensal(y, m)
           else if (fmt === 'das') await window.CashflowExportUI.showDasModal(y, m)
@@ -246,8 +246,8 @@
       apply.addEventListener('click', function() {
         var s = document.getElementById('cfCustomStart').value
         var e = document.getElementById('cfCustomEnd').value
-        if (!s || !e) { alert('Selecione data inicial e final'); return }
-        if (s > e) { alert('Data inicial deve ser anterior a data final'); return }
+        if (!s || !e) { _toastWarn('Selecione data inicial e final'); return }
+        if (s > e) { _toastWarn('Data inicial deve ser anterior a data final'); return }
         _state.period = 'custom'
         _state.startDate = s
         _state.endDate = e
@@ -1170,7 +1170,7 @@
       _closeConfigModal()
       _loadData()
     } else {
-      alert('Erro ao salvar config: ' + (res && res.error || 'desconhecido'))
+      _toastErr('Erro ao salvar config: ' + (res && res.error || 'desconhecido'))
     }
   }
 
@@ -1222,7 +1222,7 @@
     var existing = document.getElementById('cfDebtorsModal')
     if (existing) existing.remove()
     if (!list || list.length === 0) {
-      alert('Nenhum paciente em aberto.')
+      _toastWarn('Nenhum paciente em aberto.')
       return
     }
     var fmt  = window.CashflowService.fmtCurrency
@@ -1577,7 +1577,7 @@
     var appointmentId = document.getElementById('cfLinkAppointmentId').value
 
     if (!patientId) {
-      alert('Selecione um paciente primeiro')
+      _toastWarn('Selecione um paciente primeiro')
       return
     }
 
@@ -1597,7 +1597,7 @@
       _closeLinkModal()
       _loadData()
     } else {
-      alert('Erro ao vincular: ' + (res && res.error || 'desconhecido'))
+      _toastErr('Erro ao vincular: ' + (res && res.error || 'desconhecido'))
     }
   }
 
@@ -1641,7 +1641,7 @@
         + 'Sugestoes (review): ' + (d.auto_low || 0) + '\n'
         + 'Sem match: ' + (d.no_match || 0) + '\n'
         + 'Confirmados pelo banco: ' + (d.pending_confirmed || 0)
-      alert(msg)
+      _toastWarn(msg)
     }
 
     await _loadData()
@@ -1740,7 +1740,7 @@
   async function _delete(id) {
     var res = await window.CashflowService.deleteEntry(id)
     if (res && res.ok) _loadData()
-    else alert('Erro ao excluir: ' + (res && res.error || 'desconhecido'))
+    else _toastErr('Erro ao excluir: ' + (res && res.error || 'desconhecido'))
   }
 
   // ── Modal Novo Lancamento ─────────────────────────────────
@@ -1917,7 +1917,7 @@
     }
 
     if (!data.transaction_date || !data.amount || data.amount <= 0) {
-      alert('Preencha data e valor (maior que zero)')
+      _toastWarn('Preencha data e valor (maior que zero)')
       return
     }
 
@@ -1926,7 +1926,7 @@
       _closeModal()
       _loadData()
     } else {
-      alert('Erro ao salvar: ' + (res && res.error || 'desconhecido'))
+      _toastErr('Erro ao salvar: ' + (res && res.error || 'desconhecido'))
     }
   }
 

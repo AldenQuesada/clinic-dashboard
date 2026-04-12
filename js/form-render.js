@@ -1310,7 +1310,7 @@
 
     var maxSize = f.field_type === 'image_upload' ? 10 * 1024 * 1024 : 25 * 1024 * 1024 // 10MB images, 25MB files
     if (file.size > maxSize) {
-      alert('Arquivo muito grande. Maximo: ' + (maxSize / 1024 / 1024) + 'MB')
+      _toastWarn('Arquivo muito grande. Maximo: ' + (maxSize / 1024 / 1024) + 'MB')
       inputEl.value = ''
       return
     }

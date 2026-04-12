@@ -180,8 +180,8 @@ async function saveProcedure() {
   const desc      = document.getElementById('sprc_descricao')?.value?.trim()
   const id        = document.getElementById('sprc_id')?.value
 
-  if (!nome) { alert('Informe o nome do procedimento'); return }
-  if (!categoria) { alert('Informe a categoria'); return }
+  if (!nome) { _showToast('Atenção', 'Informe o nome do procedimento', 'warn'); return }
+  if (!categoria) { _showToast('Atenção', 'Informe a categoria', 'warn'); return }
 
   const btn = document.getElementById('saveProcedureBtn')
   btn.textContent = 'Salvando...'
@@ -204,7 +204,7 @@ async function saveProcedure() {
   } catch (e) {
     btn.textContent = id ? 'Atualizar' : 'Salvar'
     btn.disabled = false
-    alert('Erro: ' + e.message)
+    _showToast('Erro', e.message, 'error')
   }
 }
 
@@ -1237,7 +1237,7 @@ function _applyDrag(pd) {
     const errs = AgendaValidator.validateDragDrop(a, pd.iso, pd.slot, pd.newFim)
     if (errs.length) {
       if (window.showValidationErrors) showValidationErrors(errs, 'Remarcação não permitida')
-      else alert(errs[0])
+      else _showToast('Atenção', errs[0], 'warn')
       refreshCurrentAgenda()
       return
     }
@@ -1246,7 +1246,7 @@ function _applyDrag(pd) {
     const provisional = { ...a, data: pd.iso, horaInicio: pd.slot, horaFim: pd.newFim, profissionalIdx: pd.profIdx }
     const { conflict, reason } = checkConflict(provisional, appts)
     if (conflict) {
-      alert('Conflito de horário: ' + reason)
+      _showToast('Atenção', 'Conflito de horario: ' + reason, 'warn')
       refreshCurrentAgenda()
       return
     }
@@ -1498,10 +1498,10 @@ function selectApptPatient(id, nome) {
 
 function saveAppt() {
   const nome = document.getElementById('appt_paciente_q')?.value?.trim()
-  if (!nome) { alert('Selecione o paciente'); return }
+  if (!nome) { _showToast('Atenção', 'Selecione o paciente', 'warn'); return }
   const data  = document.getElementById('appt_data')?.value
   const inicio = document.getElementById('appt_inicio')?.value
-  if (!data || !inicio) { alert('Informe data e horário'); return }
+  if (!data || !inicio) { _showToast('Atenção', 'Informe data e horario', 'warn'); return }
 
   const duracao = parseInt(document.getElementById('appt_duracao')?.value || '60')
   const fim     = addMinutes(inicio, duracao)
@@ -1547,7 +1547,7 @@ function saveAppt() {
     // Fallback: validação básica legada
     const provisional = { ...apptData, id: editId || '__new__' }
     const { conflict, reason: confReason } = checkConflict(provisional, appts)
-    if (conflict) { alert('Conflito de horário: ' + confReason); return }
+    if (conflict) { _showToast('Atenção', 'Conflito de horario: ' + confReason, 'warn'); return }
   }
 
   // Verificar se edição é permitida
@@ -2668,6 +2668,9 @@ window.agendaMesModal       = agendaMesModal
 window.abrirFecharDia       = abrirFecharDia
 window._showToast           = _showToast
 window._dismissToast        = _dismissToast
+window._toastWarn = function(m) { _showToast('Atenção', m, 'warn') }
+window._toastErr  = function(m) { _showToast('Erro', m, 'error') }
+window._toastOk   = function(m) { _showToast('Sucesso', m, 'success') }
 // showRegisterModal → definida em auth.js (redireciona para login.html)
 
 // ─── Inicialização ────────────────────────────────────────────

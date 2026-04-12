@@ -335,7 +335,7 @@ function anamnPatientInput(val) {
 async function anamneseCreateRequest() {
   const leadId = document.getElementById('anmNRPatientId').value.trim()
   const exp    = document.getElementById('anmNRExpires').value
-  if (!leadId) { alert('Selecione um paciente'); return }
+  if (!leadId) { if (window._showToast) _showToast('Atenção', 'Selecione um paciente', 'warn'); return }
   try {
     // Garante que o lead existe na tabela patients do Supabase (upsert seguro)
     const patientId = await _upsertLeadAsPatient(leadId)

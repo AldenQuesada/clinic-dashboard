@@ -104,7 +104,7 @@ function cancelInjForm() {
 
 function saveInjectable() {
   const nome = document.getElementById('si_nome')?.value?.trim()
-  if (!nome) { alert('Informe o nome do produto'); return }
+  if (!nome) { _toastWarn('Informe o nome do produto'); return }
   const items = getInjectables()
   const idx = parseInt(document.getElementById('si_index')?.value ?? '-1')
   const item = {

@@ -230,7 +230,7 @@
   async function _markDone(alertId) {
     try {
     var res = await QA.repo().markAlertDone(alertId)
-    if (!res.ok) { alert('Erro ao marcar alerta: ' + (res.error || '')); return }
+    if (!res.ok) { _toastErr('Erro ao marcar alerta: ' + (res.error || '')); return }
     if (res.ok) {
       // Update local state
       var alert = _alerts.find(function(a) { return a.id === alertId })
@@ -245,7 +245,7 @@
       _renderAlerts()
       refreshBadge()
     }
-    } catch(err) { alert('Erro: ' + (err.message || err)) }
+    } catch(err) { _toastErr('Erro: ' + (err.message || err)) }
   }
 
   // ── Badge (campaninha) ─────────────────────────────────────────

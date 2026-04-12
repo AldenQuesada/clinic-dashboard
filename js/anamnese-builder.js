@@ -1794,7 +1794,7 @@ async function anamnSaveField() {
   const key   = g('anmFKey').value.trim()
   const label = g('anmFLabel').value.trim()
   const ftype = g('anmFType').value || (_state.editField?.field_type || 'text')
-  if (!key || !label) { alert('Campo chave e label são obrigatórios'); return }
+  if (!key || !label) { _toastWarn('Campo chave e label são obrigatórios'); return }
 
   const condKey = g('anmFCondKey').value.trim()
   const condOp  = g('anmFCondOp').value

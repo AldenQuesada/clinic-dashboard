@@ -475,7 +475,7 @@ function removeProfSkill(skill) {
 // ── Salvar profissional ────────────────────────────────────────
 async function saveProfessional() {
   const nome = document.getElementById('sp_nome')?.value?.trim()
-  if (!nome) { alert('Informe o nome'); return }
+  if (!nome) { _toastWarn('Informe o nome'); return }
 
   // Validar senha se preenchida
   const senha  = document.getElementById('sp_senha')?.value  || ''
@@ -532,7 +532,7 @@ async function saveProfessional() {
       sala_id,
     }
     const r = await window.ProfessionalsRepository.upsert(profPayload)
-    if (!r.ok) { alert(r.error || 'Erro ao salvar profissional'); return }
+    if (!r.ok) { _toastErr(r.error || 'Erro ao salvar profissional'); return }
 
     // Sincroniza tecnologias (aparelhos)
     const profId = r.data?.id || existing?.id
@@ -948,7 +948,7 @@ function profSaveComissao() {
   const procedure = procSel === '__outro__' ? procTxt : procSel
   const value   = parseFloat(document.getElementById('prof_comm_val')?.value || '0')
   const type    = document.getElementById('prof_comm_tipo')?.value || 'percent'
-  if (!procedure || !value) { alert('Preencha procedimento e valor'); return }
+  if (!procedure || !value) { _toastWarn('Preencha procedimento e valor'); return }
   _profCommDraft.push({ procedure, value, type })
   document.getElementById('profAddComissaoForm').style.display = 'none'
   document.getElementById('prof_comm_val').value = ''
@@ -960,7 +960,7 @@ function profSaveMeta() {
   const bonusPct   = parseFloat(document.getElementById('prof_meta_bonus_pct')?.value   || '0')
   const bonusFixed = parseFloat(document.getElementById('prof_meta_bonus_fixed')?.value || '0')
   const description = document.getElementById('prof_meta_desc')?.value?.trim()
-  if (!target) { alert('Informe a meta mensal'); return }
+  if (!target) { _toastWarn('Informe a meta mensal'); return }
   _profGoalsDraft.push({ target, bonusPercent: bonusPct||null, bonusFixed: bonusFixed||null, description: description||'' })
   document.getElementById('profAddMetaForm').style.display = 'none'
   _profRenderComissao()
@@ -978,7 +978,7 @@ function removeProfessional(index) {
     async () => {
       if (window.ProfessionalsRepository && prof?.id) {
         const r = await window.ProfessionalsRepository.softDelete(prof.id)
-        if (!r.ok) { alert(r.error || 'Erro ao excluir'); return }
+        if (!r.ok) { _toastErr(r.error || 'Erro ao excluir'); return }
       } else {
         const p = _getProfessionalsLocal()
         p.splice(index, 1)

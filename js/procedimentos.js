@@ -1580,8 +1580,8 @@ function procOpenForm(id) {
 function pfNext() {
   _pfCollect()
   if (_pfStep === 1) {
-    if (!_pfData.nome?.trim()) { alert('Informe o nome do procedimento.'); return }
-    if (!_pfData.categoria)    { alert('Selecione a categoria.'); return }
+    if (!_pfData.nome?.trim()) { _toastWarn('Informe o nome do procedimento.'); return }
+    if (!_pfData.categoria)    { _toastWarn('Selecione a categoria.'); return }
   }
   if (_pfStep < PF_STEPS.length) { _pfStep++; _pfRender() }
 }
@@ -1675,8 +1675,8 @@ function pfRemoveListItem(fieldKey, idx) {
 async function procSaveForm() {
   _pfCollect()
   const nome = _pfData.nome?.trim()
-  if (!nome)          { alert('Informe o nome do procedimento.'); _pfStep = 1; _pfRender(); return }
-  if (!_pfData.categoria) { alert('Selecione a categoria.');     _pfStep = 1; _pfRender(); return }
+  if (!nome)          { _toastWarn('Informe o nome do procedimento.'); _pfStep = 1; _pfRender(); return }
+  if (!_pfData.categoria) { _toastWarn('Selecione a categoria.');     _pfStep = 1; _pfRender(); return }
 
   const existing = _procFormId ? _getProc(_procFormId) : null
   const proc = {
@@ -1711,7 +1711,7 @@ async function procSaveForm() {
   try {
     await _saveProc(proc)
   } catch (e) {
-    alert(e.message || 'Erro ao salvar')
+    _toastErr(e.message || 'Erro ao salvar')
     return
   }
   procCloseModal()
@@ -1725,7 +1725,7 @@ async function procDelete(id) {
   try {
     await _deleteProc(id)
   } catch (e) {
-    alert(e.message || 'Erro ao excluir')
+    _toastErr(e.message || 'Erro ao excluir')
     return
   }
   renderProcedimentos()

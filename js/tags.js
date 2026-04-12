@@ -962,7 +962,7 @@ function tagsOpenTagForm(id, groupId) {
 function tagsSaveTagForm(existingId) {
   try {
     const nome  = document.getElementById('tf_nome')?.value?.trim()
-    if (!nome) { alert('Informe o nome da tag.'); return }
+    if (!nome) { _toastWarn('Informe o nome da tag.'); return }
 
     const calOn  = document.getElementById('tf_cal_on')?.checked
     const incomp = (document.getElementById('tf_incomp')?.value||'').split(',').map(s=>s.trim()).filter(Boolean)
@@ -1096,9 +1096,9 @@ function tagsOpenTplForm(type, id) {
 
 function tagsSaveTplForm(type, existingId) {
   const nome = document.getElementById('ttf_nome')?.value?.trim()
-  if (!nome) { alert('Informe o nome.'); return }
+  if (!nome) { _toastWarn('Informe o nome.'); return }
   const corpo = document.getElementById('ttf_corpo')?.value?.trim()
-  if (!corpo) { alert('Informe o corpo.'); return }
+  if (!corpo) { _toastWarn('Informe o corpo.'); return }
 
   const id = existingId || ('tpl_'+nome.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').slice(0,30)+'_'+Date.now().toString(36))
 
@@ -1158,7 +1158,7 @@ function tagsOpenFlowForm(id) {
 
 function tagsSaveFlowForm(existingId) {
   const nome = document.getElementById('ffm_nome')?.value?.trim()
-  if (!nome) { alert('Informe o nome.'); return }
+  if (!nome) { _toastWarn('Informe o nome.'); return }
   const flow = {
     id:         existingId || ('flow_'+nome.toLowerCase().replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').slice(0,25)+'_'+Date.now().toString(36)),
     nome,
@@ -1297,7 +1297,7 @@ function tagsOpenBudgetForm() {
 
 function tagsSaveBudgetForm() {
   const entity = document.getElementById('bdf_entity')?.value?.trim()
-  if (!entity) { alert('Informe o paciente.'); return }
+  if (!entity) { _toastWarn('Informe o paciente.'); return }
   const budget = {
     id:                 TagEngine.uid(),
     entity_id:          entity,
@@ -1763,7 +1763,7 @@ function _coUpdateRoutePreview() {
 // ── Finalizar checkout ────────────────────────────────────────
 function tagsFinalizeCheckout(entityId) {
   const entityName = document.getElementById('co_name')?.value?.trim()
-  if (!entityName) { alert('Informe o nome do paciente.'); return }
+  if (!entityName) { _toastWarn('Informe o nome do paciente.'); return }
 
   const hasProcsDone = _coProcs.filter(p=>p.feito).length > 0
   const hasBudget    = document.querySelector('input[name="co_has_budget"]:checked')?.value === 'sim'
@@ -1781,7 +1781,7 @@ function tagsFinalizeCheckout(entityId) {
   const vars  = { nome: entityName }
 
   if (!hasProcsDone && !hasBudget) {
-    alert('Marque pelo menos um procedimento realizado ou indique que saiu com orçamento.')
+    _toastWarn('Marque pelo menos um procedimento realizado ou indique que saiu com orçamento.')
     return
   }
 
@@ -1834,7 +1834,7 @@ function tagsFinalizeCheckout(entityId) {
                   : 'Orçamento'
 
   setTimeout(() => {
-    alert(`Saída registrada!\n${entityName} movido(a) para: ${destGroup}.`)
+    _toastWarn(`Saída registrada!\n${entityName} movido(a) para: ${destGroup}.`)
     if (!hasProcsDone && hasBudget && window.loadOrcamentos) loadOrcamentos()
     else if (hasProcsDone && hasBudget && window.renderPatientsBudget) renderPatientsBudget()
   }, 100)
