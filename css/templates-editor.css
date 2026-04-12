@@ -2,7 +2,7 @@
    Templates Editor UI v2 — 2-column layout + phone preview
    ============================================================ */
 
-.te-page { max-width: 1400px; position: relative; z-index: 1; padding-bottom: 60px; }
+.te-page { max-width: 1400px; position: relative; z-index: 1; padding-bottom: 20px; }
 /* Pagina cobre TODA a area do .content — impede grafico da overview vazar por baixo */
 #page-settings-templates {
   background: var(--bg);
@@ -13,7 +13,7 @@
 }
 
 /* ── Header ──────────────────────────────────────────────── */
-.te-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.te-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:10px; }
 .te-header-left { flex:1; }
 .te-title { font-size:20px; font-weight:800; color:var(--text-primary); margin:0 0 4px; }
 .te-subtitle { font-size:13px; color:var(--text-secondary); margin:0; }
