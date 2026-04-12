@@ -1007,10 +1007,13 @@ function marcarCompareceu(id) {
 
 // ── Templates de mensagens WhatsApp ──────────────────────────
 function _nomeEnxuto(nomeCompleto) {
+  // Retorna apenas o primeiro nome. Truncar no 2o nome quebrava casos
+  // como "Mirian de Paula" → "Mirian de" (markdown WA ficava "*Mirian de*")
+  // ou "Alden Julio Quesada" → "Alden Julio". Primeiro nome é sempre
+  // pessoal e não quebra template.
   if (!nomeCompleto) return ''
-  const partes = nomeCompleto.trim().split(/\s+/)
-  if (partes.length <= 1) return partes[0]
-  return partes[0] + ' ' + partes[1]
+  const primeiro = nomeCompleto.trim().split(/\s+/)[0] || ''
+  return primeiro
 }
 
 function _getClinicaNome() {
@@ -1639,7 +1642,7 @@ function _setLeadStatus(leadId, newStatus, skipIf = []) {
 }
 
 // ── Mensagem automática ao criar agendamento ──────────────────
-function _enviarMsgAgendamento(appt) {
+async function _enviarMsgAgendamento(appt) {
   // Busca telefone: 1) do appt, 2) do lead no localStorage
   let telefone = appt.pacientePhone || ''
   if (!telefone) {
@@ -1656,7 +1659,10 @@ function _enviarMsgAgendamento(appt) {
   const clinica   = _getClinicaNome()
   const nomeEnx   = _nomeEnxuto(appt.pacienteNome || 'Paciente')
   const dataFmt   = _fmtDataPtBr(appt.data)
-  const linkAnam  = _gerarLinkAnamnese(appt.id, appt.pacienteId)
+  // Link REAL de anamnese via RPC create_anamnesis_request
+  // Se falhar (sem template, sem paciente, RPC down), linkAnam vira null
+  // e o template omite a linha da anamnese
+  const linkAnam  = await _gerarLinkAnamnese(appt.id, appt.pacienteId)
   const profNome  = appt.profissionalNome || ''
   const proc      = appt.procedimento || ''
 
@@ -1692,19 +1698,18 @@ function _enviarMsgAgendamento(appt) {
 function _tplMsgAgendamento({ nome, clinica, data, hora, procedimento, profissional, link_anamnese }) {
   const linhaProc  = procedimento  ? `\n💆‍♀️ *Procedimento:* ${procedimento}` : ''
   const linhaProf  = profissional  ? `\n👩‍⚕️ *Profissional:* ${profissional}` : ''
+  // Bloco da anamnese: só inclui se tiver link REAL. Caso contrário
+  // omite por completo (evita enviar "👉 null" ou link quebrado).
+  const blocoAnam  = link_anamnese
+    ? `\n\nPara garantirmos o melhor atendimento personalizado, pedimos que preencha sua *Ficha de Anamnese* antes da consulta:\n\n👉 ${link_anamnese}\n\nO preenchimento é rápido (≈5 min) e nos ajuda a entender melhor o seu histórico e objetivos. 😊`
+    : ''
 
   return `Olá, *${nome}*! 🌸
 
 Seu agendamento na *${clinica}* foi confirmado com sucesso! ✅
 ${linhaProc}${linhaProf}
 📅 *Data:* ${data}
-🕐 *Horário:* ${hora}
-
-Para garantirmos o melhor atendimento personalizado, pedimos que preencha sua *Ficha de Anamnese* antes da consulta:
-
-👉 ${link_anamnese}
-
-O preenchimento é rápido (≈5 min) e nos ajuda a entender melhor o seu histórico e objetivos. 😊
+🕐 *Horário:* ${hora}${blocoAnam}
 
 Qualquer dúvida estamos à disposição!
 *Equipe ${clinica}* 💜`
@@ -1721,11 +1726,69 @@ function _fmtDataPtBr(isoDate) {
   } catch { return isoDate }
 }
 
-function _gerarLinkAnamnese(apptId, pacienteId) {
-  // Gera link mock de anamnese — em produção apontaria para formulário real
-  const base = window.location.origin || 'http://localhost:3002'
-  const token = btoa(`${apptId}|${pacienteId || ''}|${Date.now()}`).replace(/=/g,'')
-  return `${base}/anamnese?t=${token}`
+// Cache do template default (buscado 1x por sessão)
+let _anamneseDefaultTemplateId = null
+async function _getAnamneseDefaultTemplateId() {
+  if (_anamneseDefaultTemplateId) return _anamneseDefaultTemplateId
+  if (!window._sbShared) return null
+  try {
+    const { data, error } = await window._sbShared
+      .from('anamnesis_templates')
+      .select('id')
+      .eq('is_active', true)
+      .order('created_at', { ascending: true })
+      .limit(1)
+    if (error || !data || !data.length) return null
+    _anamneseDefaultTemplateId = data[0].id
+    return _anamneseDefaultTemplateId
+  } catch (e) { return null }
+}
+
+/**
+ * Gera link REAL de anamnese pra ser enviado ao paciente via WhatsApp.
+ * Cria uma anamnesis_request no Supabase e retorna a URL no formato
+ * canônico: form-render.html?slug=X#token=Y
+ *
+ * Retorna null se não conseguir criar (ex: sem template, sem paciente).
+ * Caller deve tratar o null (pular a linha do link na mensagem).
+ *
+ * @param {string} apptId
+ * @param {string} pacienteId — UUID do lead/paciente
+ * @returns {Promise<string|null>}
+ */
+async function _gerarLinkAnamnese(apptId, pacienteId) {
+  if (!window._sbShared || !pacienteId) return null
+  try {
+    const tplId = await _getAnamneseDefaultTemplateId()
+    if (!tplId) { console.warn('[Anamnese] Sem template default ativo'); return null }
+
+    // Garante que o lead existe em patients (a RPC create_anamnesis_request
+    // exige patient_id real, não lead_id)
+    let patientId = pacienteId
+    if (window._upsertLeadAsPatient) {
+      try { patientId = await window._upsertLeadAsPatient(pacienteId) } catch (e) { patientId = pacienteId }
+    }
+
+    // Clinic ID: vem do auth
+    const { data: { user } } = await window._sbShared.auth.getUser()
+    const clinicId = user?.user_metadata?.clinic_id || null
+
+    const { data, error } = await window._sbShared.rpc('create_anamnesis_request', {
+      p_clinic_id:   clinicId,
+      p_patient_id:  patientId,
+      p_template_id: tplId,
+      p_expires_at:  new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    })
+    if (error) { console.warn('[Anamnese] create_request falhou:', error.message); return null }
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row || !row.public_slug || !row.raw_token) return null
+
+    const base = window.location.origin || ''
+    return `${base}/form-render.html?slug=${row.public_slug}#token=${row.raw_token}`
+  } catch (e) {
+    console.warn('[Anamnese] _gerarLinkAnamnese exception:', e)
+    return null
+  }
 }
 
 // ── Preview do WhatsApp (painel slide-in) ─────────────────────
