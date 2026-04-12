@@ -841,6 +841,11 @@ DECLARE
   v_options_to_save jsonb;
   v_entity_id  text;
   v_entity_name text;
+  v_ref_num    int;
+  v_ref_opts   jsonb;
+  v_ctx_intent text;
+  v_ctx_phone  text;
+  v_ctx_resolved boolean := false;
 BEGIN
   -- Sanitize
   v_text := TRIM(COALESCE(p_text, ''));
@@ -886,14 +891,39 @@ BEGIN
   LIMIT 1;
 
   -- Se texto eh uma referencia e ultimo intent esperava desambiguacao
-  IF v_context IS NOT NULL AND v_context.last_intent = 'patient_balance_disambig' THEN
-    v_resolved := _resolve_reference(v_text, v_context);
+  -- (SELECT campos individuais — record PG nao propaga nullable corretamente)
+  SELECT phone, last_intent, last_entity_options
+  INTO v_ctx_phone, v_ctx_intent, v_ref_opts
+  FROM wa_pro_context WHERE phone = p_phone AND expires_at > now() LIMIT 1;
+
+  IF v_ctx_phone IS NOT NULL AND v_ctx_intent = 'patient_balance_disambig' THEN
+
+    IF v_ref_opts IS NOT NULL THEN
+      IF v_text ~* '^\s*[0-9]+\.?\s*$' THEN
+        v_ref_num := (REGEXP_REPLACE(v_text, '[^0-9]', '', 'g'))::int;
+        IF v_ref_num >= 1 AND v_ref_num <= jsonb_array_length(v_ref_opts) THEN
+          v_resolved := v_ref_opts -> (v_ref_num - 1);
+        END IF;
+      ELSIF v_text ~* '(primeir[oa])' AND jsonb_array_length(v_ref_opts) >= 1 THEN
+        v_resolved := v_ref_opts -> 0;
+      ELSIF v_text ~* '(segund[oa])' AND jsonb_array_length(v_ref_opts) >= 2 THEN
+        v_resolved := v_ref_opts -> 1;
+      ELSIF v_text ~* '(terceir[oa])' AND jsonb_array_length(v_ref_opts) >= 3 THEN
+        v_resolved := v_ref_opts -> 2;
+      END IF;
+    END IF;
+
     IF v_resolved IS NOT NULL THEN
-      v_rewritten := v_resolved->>'name';
-      v_text := 'quanto ' || v_rewritten || ' me deve';
+      v_patient_data := wa_pro_patient_balance(p_phone, v_resolved->>'name', v_resolved->>'id');
+      v_response := _fmt_patient_balance(v_patient_data);
+      v_intent := 'patient_balance';
+      v_entity_id := v_resolved->>'id';
+      v_entity_name := v_resolved->>'name';
+      v_ctx_resolved := true;
     END IF;
   END IF;
 
+  IF NOT v_ctx_resolved THEN
   -- Intent parse (ordem importa!)
   v_intent := CASE
     WHEN v_text ~* '^\s*(/?ajuda|/?help|comandos|menu|opcoes|opções)\s*$'                                    THEN 'help'
@@ -946,6 +976,7 @@ BEGIN
   ELSE
     v_response := wa_pro_execute_and_format(v_intent, v_text, p_phone, v_prof_name);
   END IF;
+  END IF; -- NOT v_ctx_resolved
 
   IF NOT v_markdown THEN
     v_response := _strip_markdown(v_response);
@@ -993,7 +1024,8 @@ BEGIN
     'professional', v_prof_name,
     'elapsed_ms',  v_elapsed,
     'markdown',    v_markdown,
-    'has_context', v_context IS NOT NULL,
+    'has_context', v_context.phone IS NOT NULL,
+    'resolved_from_context', v_ctx_resolved,
     'quota', jsonb_build_object(
       'used', (v_rl->>'count')::int,
       'max',  (v_rl->>'max')::int
@@ -1126,7 +1158,7 @@ BEGIN
   END IF;
 
   -- PACIENTES
-  v_patient_q := TRIM(REGEXP_REPLACE(p_text, '\b(quem|e|é|paciente|cliente|telefone|contato|whats|whatsapp|de|do|da|quanto|saldo|deve|devendo|me|a|o|esta|está|eh)\b', ' ', 'gi'));
+  v_patient_q := TRIM(REGEXP_REPLACE(p_text, '[[:<:]](quem|e|é|paciente|cliente|telefone|contato|whats|whatsapp|de|do|da|quanto|saldo|deve|devendo|me|a|o|esta|está|eh)[[:>:]]', ' ', 'gi'));
   v_patient_q := REGEXP_REPLACE(v_patient_q, '[?!.]+', '', 'g');
   v_patient_q := TRIM(REGEXP_REPLACE(v_patient_q, '\s+', ' ', 'g'));
 
