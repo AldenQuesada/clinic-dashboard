@@ -2,7 +2,8 @@
    Templates Editor UI v2 — 2-column layout + phone preview
    ============================================================ */
 
-.te-page { max-width: 1400px; }
+.te-page { max-width: 1400px; position: relative; z-index: 1; padding-bottom: 40px; }
+#page-settings-templates { background: var(--bg); min-height: calc(100vh - var(--header-height, 64px)); }
 
 /* ── Header ──────────────────────────────────────────────── */
 .te-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
@@ -28,7 +29,7 @@
 /* ── Sidebar (list) ──────────────────────────────────────── */
 .te-sidebar {
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
-  overflow-y:auto; max-height:calc(100vh - 220px);
+  overflow-y:auto; max-height:calc(100vh - 200px);
 }
 .te-item {
   display:flex; align-items:center; gap:10px; padding:12px 14px;
@@ -51,7 +52,7 @@
 /* ── Main editor area ────────────────────────────────────── */
 .te-main {
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
-  padding:20px; overflow-y:auto; max-height:calc(100vh - 220px);
+  padding:20px; overflow-y:auto; max-height:calc(100vh - 200px);
 }
 .te-no-selection { display:flex; align-items:center; justify-content:center; height:400px; color:var(--text-muted); font-size:14px; }
 
