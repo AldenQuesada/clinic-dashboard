@@ -364,6 +364,48 @@
         </div>
         <!-- END KPI Cards -->
 
+        <!-- Three Columns Section (Aniversariantes + Agenda + Alertas) -->
+        <div class="three-col-section">
+
+          <!-- Aniversariantes -->
+          <div class="col-card">
+            <div class="col-card-header">
+              <h3 class="col-card-title">Aniversariantes</h3>
+              <span class="col-card-link" id="birthday-period-label">Esta semana</span>
+            </div>
+            <div id="dashboard-birthdays" class="agenda-timeline" style="min-height:120px">
+              <div style="text-align:center;padding:24px;color:var(--text-muted,#888);font-size:13px">Carregando...</div>
+            </div>
+          </div>
+
+          <!-- Agenda do Dia -->
+          <div class="col-card">
+            <div class="col-card-header">
+              <h3 class="col-card-title">Agenda de Hoje</h3>
+              <a href="#" class="col-card-link">Abrir agenda <i data-feather="arrow-right"></i></a>
+            </div>
+            <div id="dashboard-agenda-today" class="agenda-timeline" style="min-height:120px">
+              <div style="text-align:center;padding:24px;color:var(--text-muted,#888);font-size:13px">Carregando...</div>
+            </div>
+          </div>
+
+          <!-- Alertas IA -->
+          <div class="col-card">
+            <div class="col-card-header">
+              <h3 class="col-card-title">
+                <span class="col-card-title-icon"><i data-feather="cpu"></i></span>
+                Alertas Inteligentes
+              </h3>
+              <span class="ai-badge">IA</span>
+            </div>
+            <div id="dashboard-alerts" class="alerts-list" style="min-height:120px">
+              <div style="text-align:center;padding:24px;color:var(--text-muted,#888);font-size:13px">Carregando...</div>
+            </div>
+          </div>
+
+        </div>
+        <!-- END Three Columns -->
+
         <!-- Charts Row -->
         <div class="charts-row">
 
@@ -466,152 +508,6 @@
 
         </div>
         <!-- END Charts Row -->
-
-        <!-- Three Columns Section -->
-        <div class="three-col-section">
-
-          <!-- Aniversariantes -->
-          <div class="col-card">
-            <div class="col-card-header">
-              <h3 class="col-card-title">Aniversariantes</h3>
-              <span class="col-card-link" id="birthday-period-label">Esta semana</span>
-            </div>
-            <div id="dashboard-birthdays" class="agenda-timeline" style="min-height:120px">
-              <div style="text-align:center;padding:24px;color:var(--text-muted,#888);font-size:13px">Carregando...</div>
-            </div>
-          </div>
-
-          <!-- Agenda do Dia -->
-          <div class="col-card">
-            <div class="col-card-header">
-              <h3 class="col-card-title">Agenda de Hoje</h3>
-              <a href="#" class="col-card-link">Abrir agenda <i data-feather="arrow-right"></i></a>
-            </div>
-            <div class="agenda-timeline">
-
-              <div class="timeline-item">
-                <div class="timeline-time">08:30</div>
-                <div class="timeline-dot timeline-dot-emerald"></div>
-                <div class="timeline-content">
-                  <div class="timeline-name">Marina Cardoso</div>
-                  <div class="timeline-proc">Análise Facial + Full Face</div>
-                  <span class="timeline-status timeline-status-confirmed">Confirmado</span>
-                </div>
-              </div>
-
-              <div class="timeline-item">
-                <div class="timeline-time">09:15</div>
-                <div class="timeline-dot timeline-dot-emerald"></div>
-                <div class="timeline-content">
-                  <div class="timeline-name">Fernanda Oliveira</div>
-                  <div class="timeline-proc">Protocolo Lifting + Bioestimulador</div>
-                  <span class="timeline-status timeline-status-confirmed">Confirmado</span>
-                </div>
-              </div>
-
-              <div class="timeline-item">
-                <div class="timeline-time">10:00</div>
-                <div class="timeline-dot timeline-dot-warning"></div>
-                <div class="timeline-content">
-                  <div class="timeline-name">Beatriz Santos</div>
-                  <div class="timeline-proc">Consulta Inicial — Full Face</div>
-                  <span class="timeline-status timeline-status-pending">Pendente</span>
-                </div>
-              </div>
-
-              <div class="timeline-item">
-                <div class="timeline-time">11:30</div>
-                <div class="timeline-dot timeline-dot-emerald"></div>
-                <div class="timeline-content">
-                  <div class="timeline-name">Camila Rodrigues</div>
-                  <div class="timeline-proc">Manutenção — Toxina Botulínica</div>
-                  <span class="timeline-status timeline-status-confirmed">Confirmado</span>
-                </div>
-              </div>
-
-              <div class="timeline-item">
-                <div class="timeline-time">14:00</div>
-                <div class="timeline-dot timeline-dot-danger"></div>
-                <div class="timeline-content">
-                  <div class="timeline-name">Andressa Lima</div>
-                  <div class="timeline-proc">Consulta Inicial — Protocolos</div>
-                  <span class="timeline-status timeline-status-noshow">No-show</span>
-                </div>
-              </div>
-
-              <div class="timeline-item">
-                <div class="timeline-time">15:30</div>
-                <div class="timeline-dot timeline-dot-warning"></div>
-                <div class="timeline-content">
-                  <div class="timeline-name">Larissa Pereira</div>
-                  <div class="timeline-proc">Avaliação Pós-procedimento</div>
-                  <span class="timeline-status timeline-status-pending">Pendente</span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Alertas IA -->
-          <div class="col-card">
-            <div class="col-card-header">
-              <h3 class="col-card-title">
-                <span class="col-card-title-icon"><i data-feather="cpu"></i></span>
-                Alertas Inteligentes
-              </h3>
-              <span class="ai-badge">IA</span>
-            </div>
-            <div class="alerts-list">
-
-              <div class="alert-item alert-item-danger">
-                <div class="alert-icon alert-icon-danger"><i data-feather="alert-circle"></i></div>
-                <div class="alert-content">
-                  <p class="alert-title">3 leads sem resposta há 24h</p>
-                  <p class="alert-desc">Juliana F., Camila R., Priscila M. — ação necessária</p>
-                  <button class="alert-action">Responder agora</button>
-                </div>
-              </div>
-
-              <div class="alert-item alert-item-warning">
-                <div class="alert-icon alert-icon-warning"><i data-feather="clock"></i></div>
-                <div class="alert-content">
-                  <p class="alert-title">5 consultas sem confirmação amanhã</p>
-                  <p class="alert-desc">Enviar mensagem de confirmação automática</p>
-                  <button class="alert-action">Enviar confirmação</button>
-                </div>
-              </div>
-
-              <div class="alert-item alert-item-success">
-                <div class="alert-icon alert-icon-success"><i data-feather="trending-up"></i></div>
-                <div class="alert-content">
-                  <p class="alert-title">SDR Full Face: 91% de eficácia hoje</p>
-                  <p class="alert-desc">Melhor taxa dos últimos 30 dias — parabéns!</p>
-                </div>
-              </div>
-
-              <div class="alert-item alert-item-blue">
-                <div class="alert-icon alert-icon-blue"><i data-feather="refresh-cw"></i></div>
-                <div class="alert-content">
-                  <p class="alert-title">12 pacientes em janela de recompra</p>
-                  <p class="alert-desc">Intervalo ideal para novo procedimento (90-120 dias)</p>
-                  <button class="alert-action">Ver pacientes</button>
-                </div>
-              </div>
-
-              <div class="alert-item alert-item-purple">
-                <div class="alert-icon alert-icon-purple"><i data-feather="camera"></i></div>
-                <div class="alert-content">
-                  <p class="alert-title">Nova análise facial aguarda revisão</p>
-                  <p class="alert-desc">Carla Mendes — enviada há 2 horas</p>
-                  <button class="alert-action">Revisar análise</button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-        <!-- END Three Columns -->
 
         <!-- Activity Feed -->
         <div class="activity-card">
