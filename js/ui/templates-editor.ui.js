@@ -261,14 +261,32 @@
       return '<option value="' + k + '"' + (catVal === k ? ' selected' : '') + '>' + CATEGORY_META[k].label + '</option>'
     }).join('')
 
+    var TYPE_OPTIONS = [
+      { v: '',              l: 'Sem objetivo', icon: '' },
+      { v: 'confirmacao',   l: 'Confirmacao',             icon: '✓' },
+      { v: 'lembrete',      l: 'Lembrete',                icon: '⏰' },
+      { v: 'engajamento',   l: 'Engajamento',             icon: '⚡' },
+      { v: 'boas_vindas',   l: 'Boas-Vindas',             icon: '👋' },
+      { v: 'consent_img',   l: 'Consentimento de Imagem', icon: '📸' },
+      { v: 'consent_info',  l: 'Consentimento Informado', icon: '📋' },
+      { v: 'report_imagem', l: 'Report Facial — Imagem',  icon: '📊' },
+      { v: 'report_html',   l: 'Report Facial — HTML',    icon: '📎' },
+      { v: 'recuperacao',   l: 'Recuperacao',              icon: '🔄' },
+    ]
+    var typeVal = d.type !== undefined ? d.type : (tpl.type || '')
+    var typeOptions = TYPE_OPTIONS.map(function (o) {
+      return '<option value="' + o.v + '"' + (typeVal === o.v ? ' selected' : '') + '>' + (o.icon ? o.icon + ' ' : '') + o.l + '</option>'
+    }).join('')
+
     var dayOptions = [
       { v: '', l: 'Nao programada' },
+      { v: '-7', l: '7 dias antes (D-7)' },
+      { v: '-5', l: '5 dias antes (D-5)' },
       { v: '-3', l: '3 dias antes (D-3)' },
       { v: '-2', l: '2 dias antes (D-2)' },
       { v: '-1', l: '1 dia antes (D-1)' },
-      { v: '0',  l: 'No dia (D-0)' },
+      { v: '0',  l: 'Dia da consulta (D-0)' },
       { v: '1',  l: '1 dia depois (D+1)' },
-      { v: '2',  l: '2 dias depois (D+2)' },
       { v: '3',  l: '3 dias depois (D+3)' },
       { v: '7',  l: '7 dias depois (D+7)' },
       { v: '14', l: '14 dias depois (D+14)' },
@@ -278,6 +296,10 @@
     }).join('')
 
     var configHtml = '<div class="te-config">' +
+      '<div class="te-config-row">' +
+        '<label class="te-config-label">Objetivo</label>' +
+        '<select class="te-config-select" data-action="edit-type" data-id="' + _esc(tpl.id) + '" style="flex:1">' + typeOptions + '</select>' +
+      '</div>' +
       '<div class="te-config-row">' +
         '<label class="te-config-label">Nome</label>' +
         '<input type="text" class="te-config-input" data-action="edit-name" data-id="' + _esc(tpl.id) + '" value="' + _esc(nameVal) + '">' +
@@ -355,6 +377,7 @@
     root.onchange = function (e) {
       var a = e.target.dataset.action, id = e.target.dataset.id
       if (a === 'edit-day') _onEditField(id, 'day', e.target.value === '' ? null : parseInt(e.target.value))
+      else if (a === 'edit-type') _onEditField(id, 'type', e.target.value)
       else if (a === 'edit-category') _onEditField(id, 'category', e.target.value)
       else if (a === 'toggle') _onToggle(id, e.target.checked)
       else if (a === 'media-url') {
@@ -560,6 +583,7 @@
     if (d && d.day !== undefined) extras.day = d.day
     if (d && d.category) extras.category = d.category
     if (d && d.name) extras.name = d.name
+    if (d && d.type !== undefined) extras.type = d.type
     // Persist media in metadata
     if (d && (d.media_url !== undefined || d.media_position)) {
       var meta = Object.assign({}, tpl.metadata || {})
@@ -575,6 +599,7 @@
       if (extras.day !== undefined) tpl.day = extras.day
       if (extras.category) tpl.category = extras.category
       if (extras.name) tpl.name = extras.name
+      if (extras.type !== undefined) tpl.type = extras.type
       delete _dirty[id]
       _saving[id] = 'ok'
       _render()

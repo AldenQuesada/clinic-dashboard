@@ -49,6 +49,7 @@
       if (extras && extras.category) params.p_category = extras.category
       if (extras && extras.name) params.p_name = extras.name
       if (extras && extras.metadata) params.p_metadata = extras.metadata
+      if (extras && extras.type !== undefined) params.p_type = extras.type
       const { data, error } = await _sb().rpc('wa_template_update', params)
       if (error) return _err(error.message || String(error))
       if (data && data.ok === false) return _err(data.error)
