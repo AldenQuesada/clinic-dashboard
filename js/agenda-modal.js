@@ -212,6 +212,10 @@
     // Auto-preencher sala do profissional selecionado
     apptAutoSala()
 
+    // Restaurar draft se novo (sem id) e existe draft salvo
+    if (!id) _restoreDraft()
+    _bindDraftListeners()
+
     // Carregar procedimentos da BD (async, popula select quando pronto)
     _cachedClinicProcs = null
     _loadClinicProcs().then(function(procs) { _populateProcSelect(procs) })
@@ -219,6 +223,7 @@
 
   // ── closeApptModal ────────────────────────────────────────────
   function closeApptModal() {
+    _saveDraft()
     const m = document.getElementById('apptModal')
     if (m) m.style.display = 'none'
     document.body.style.overflow = ''
@@ -267,9 +272,6 @@
   }
 
   // ── Estado consolidado do modal de agendamento ───────────────
-  // Single object pra facilitar reset coordenado e debugging.
-  // Arrays permanecem mutáveis in-place (push/splice) para manter
-  // as refs existentes válidas em closures.
   var _apptState = {
     procs: [],
     pagamentos: [],
@@ -279,6 +281,91 @@
     _apptState.procs.length = 0
     _apptState.pagamentos.length = 0
     _apptState.multiProcChoice = null
+  }
+
+  // ── Auto-save draft ─────────────────────────────────────────
+  var DRAFT_KEY = 'clinicai_appt_draft'
+  var _draftTimer = null
+
+  function _draftFieldIds() {
+    return ['appt_paciente_q','appt_paciente_id','appt_paciente_phone','appt_data',
+            'appt_inicio','appt_duracao','appt_prof','appt_sala','appt_proc',
+            'appt_tipo','appt_origem','appt_valor','appt_obs',
+            'appt_cortesia_motivo','appt_indicado_por','appt_indicado_por_id',
+            'appt_tipo_paciente','appt_status']
+  }
+
+  function _saveDraft() {
+    var editId = document.getElementById('appt_id')
+    if (editId && editId.value) return
+    var draft = {}
+    _draftFieldIds().forEach(function (fid) {
+      var el = document.getElementById(fid)
+      if (el) draft[fid] = el.value || ''
+    })
+    var rad = document.querySelector('input[name="appt_tipo_aval"]:checked')
+    draft._tipoAval = rad ? rad.value : ''
+    draft._confirmacao = !!(document.getElementById('appt_confirmacao') || {}).checked
+    draft._consentimento = !!(document.getElementById('appt_consentimento') || {}).checked
+    draft._procs = JSON.parse(JSON.stringify(_apptState.procs))
+    draft._pagamentos = JSON.parse(JSON.stringify(_apptState.pagamentos))
+    draft._ts = Date.now()
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)) } catch (e) { /* quota */ }
+  }
+
+  function _scheduleDraftSave() {
+    if (_draftTimer) clearTimeout(_draftTimer)
+    _draftTimer = setTimeout(_saveDraft, 2000)
+  }
+
+  function _clearDraft() {
+    localStorage.removeItem(DRAFT_KEY)
+    if (_draftTimer) { clearTimeout(_draftTimer); _draftTimer = null }
+  }
+
+  function _restoreDraft() {
+    try {
+      var raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return false
+      var d = JSON.parse(raw)
+      if (Date.now() - d._ts > 3600000) { _clearDraft(); return false }
+      _draftFieldIds().forEach(function (fid) {
+        var el = document.getElementById(fid)
+        if (el && d[fid]) el.value = d[fid]
+      })
+      if (d._tipoAval) {
+        var rad = document.querySelector('input[name="appt_tipo_aval"][value="' + d._tipoAval + '"]')
+        if (rad) rad.checked = true
+      }
+      var confEl = document.getElementById('appt_confirmacao')
+      if (confEl) confEl.checked = !!d._confirmacao
+      var consEl = document.getElementById('appt_consentimento')
+      if (consEl) consEl.checked = !!d._consentimento
+      if (Array.isArray(d._procs) && d._procs.length) {
+        _apptState.procs.length = 0
+        d._procs.forEach(function (p) { _apptState.procs.push(p) })
+        _renderApptProcs()
+      }
+      if (Array.isArray(d._pagamentos) && d._pagamentos.length) {
+        _apptState.pagamentos.length = 0
+        d._pagamentos.forEach(function (p) { _apptState.pagamentos.push(p) })
+        if (typeof apptRenderPagamentos === 'function') apptRenderPagamentos()
+      }
+      if (d.appt_tipo) apptSetTipo(d.appt_tipo)
+      if (d._tipoAval) apptSetAval(d._tipoAval)
+      apptTipoChange()
+      apptUpdateEndTime()
+      if (window._showToast) _showToast('Rascunho restaurado', 'Dados do agendamento anterior foram recuperados', 'info')
+      return true
+    } catch (e) { _clearDraft(); return false }
+  }
+
+  function _bindDraftListeners() {
+    var modal = document.getElementById('apptModal')
+    if (!modal || modal._draftBound) return
+    modal._draftBound = true
+    modal.addEventListener('input', _scheduleDraftSave)
+    modal.addEventListener('change', _scheduleDraftSave)
   }
 
   // ── Toggle Consulta / Procedimento ─────────────────────────
@@ -1467,6 +1554,7 @@
     closeApptModal()
     _refresh()
 
+    _clearDraft()
     if (window._showToast) _showToast(isNew ? 'Agendamento criado' : 'Agendamento atualizado', nome, 'success')
 
     // Ao criar novo agendamento: loop fechado (disparado imediatamente)
