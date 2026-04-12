@@ -372,6 +372,40 @@
     modal._draftBound = true
     modal.addEventListener('input', _scheduleDraftSave)
     modal.addEventListener('change', _scheduleDraftSave)
+    modal.addEventListener('change', _inlineValidate)
+  }
+
+  function _inlineValidate(e) {
+    var id = e.target.id
+    if (id === 'appt_data') {
+      var val = e.target.value
+      var today = new Date().toISOString().slice(0, 10)
+      var editId = (document.getElementById('appt_id') || {}).value
+      if (!editId && val && val < today) {
+        e.target.style.borderColor = 'var(--danger)'
+        e.target.title = 'Data no passado'
+      } else {
+        e.target.style.borderColor = ''
+        e.target.title = ''
+      }
+    }
+    if (id === 'appt_inicio') {
+      var dataEl = document.getElementById('appt_data')
+      var today2 = new Date().toISOString().slice(0, 10)
+      var editId2 = (document.getElementById('appt_id') || {}).value
+      if (!editId2 && dataEl && dataEl.value === today2) {
+        var now = new Date()
+        var parts = e.target.value.split(':')
+        var chosen = new Date(today2 + 'T' + e.target.value + ':00')
+        if (chosen < now) {
+          e.target.style.borderColor = 'var(--danger)'
+          e.target.title = 'Horario ja passou'
+        } else {
+          e.target.style.borderColor = ''
+          e.target.title = ''
+        }
+      }
+    }
   }
 
   // ── Toggle Consulta / Procedimento ─────────────────────────

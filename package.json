@@ -9,7 +9,8 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit -p tsconfig.checkjs.json",
     "audit:schema": "node scripts/audit-schema.cjs",
-    "perf:budget": "node scripts/perf-budget.cjs"
+    "perf:budget": "node scripts/perf-budget.cjs",
+    "cache:bust": "node scripts/cache-bust.cjs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.0.0",

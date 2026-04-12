@@ -80,4 +80,19 @@
   }
 
   window.Skeleton = Object.freeze({ line, rows, cards, kpis, tableRows, into })
+
+  function guardClick(btn, asyncFn) {
+    if (!btn || btn.disabled || btn._guarded) return
+    btn._guarded = true
+    var origText = btn.textContent
+    btn.disabled = true
+    btn.style.opacity = '0.6'
+    Promise.resolve(asyncFn()).finally(function () {
+      btn.disabled = false
+      btn.style.opacity = ''
+      btn._guarded = false
+      btn.textContent = origText
+    })
+  }
+  window.guardClick = guardClick
 })()

@@ -1958,6 +1958,12 @@
       }
 
       const btnConfirm = document.getElementById('btn-lgpd-confirm')
+      if (window._lastFormSubmit && Date.now() - window._lastFormSubmit < 30000) {
+        if (btnConfirm) { btnConfirm.disabled = true; btnConfirm.textContent = 'Aguarde 30s...' }
+        setTimeout(function() { if (btnConfirm) { btnConfirm.disabled = false; btnConfirm.textContent = 'Enviar Formulário' } }, 30000 - (Date.now() - window._lastFormSubmit))
+        return
+      }
+      window._lastFormSubmit = Date.now()
       if (btnConfirm) { btnConfirm.disabled = true; btnConfirm.textContent = 'Enviando...' }
 
       // ── 1. Salva sessões pendentes ───────────────────────────────────────
