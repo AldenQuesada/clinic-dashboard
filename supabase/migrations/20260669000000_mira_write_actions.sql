@@ -159,7 +159,25 @@ BEGIN
   DECLARE
     v_patient_id text := v_match_list->'results'->0->>'id';
     v_patient_name text := v_match_list->'results'->0->>'name';
+    v_conflict_name text;
   BEGIN
+    -- Checa conflito de horario (qualquer profissional da clinica —
+    -- agenda compartilhada, e quem manda msg pode nao ser o pro alvo)
+    SELECT patient_name INTO v_conflict_name
+    FROM public.appointments
+    WHERE clinic_id = v_clinic_id
+      AND deleted_at IS NULL
+      AND status IN ('agendado', 'pre_consulta')
+      AND scheduled_date = v_date
+      AND start_time = v_time::time
+    LIMIT 1;
+
+    IF v_conflict_name IS NOT NULL THEN
+      RETURN jsonb_build_object('ok', false, 'error', 'slot_conflict',
+        'response', '⚠️ Ja tem consulta em ' || TO_CHAR(v_date, 'DD/MM') || ' ' || v_time ||
+                    ' (*' || v_conflict_name || '*). Escolhe outro horario.');
+    END IF;
+
     v_preview := '📅 Vou criar:' || E'\n─────────────\n' ||
                  '*' || v_patient_name || '*' || E'\n' ||
                  '📆 ' || TO_CHAR(v_date, 'DD/MM (Dy)') || E'\n' ||
