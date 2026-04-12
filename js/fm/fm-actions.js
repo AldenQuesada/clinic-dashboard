@@ -6,6 +6,33 @@
 
   var FM = window._FM
 
+  // ── API Health Check ────────────────────────────────────────
+  FM._checkApiHealth = function () {
+    var url = FM.FACIAL_API_URL
+    if (!url) { FM._apiAvailable = false; return }
+    fetch(url + '/docs', { method: 'HEAD', signal: AbortSignal.timeout(5000) })
+      .then(function (r) {
+        FM._apiAvailable = r.ok
+        if (!r.ok) FM._showApiBanner()
+      })
+      .catch(function () {
+        FM._apiAvailable = false
+        FM._showApiBanner()
+      })
+  }
+
+  FM._showApiBanner = function () {
+    var root = document.getElementById('facialAnalysisRoot')
+    if (!root) return
+    if (root.querySelector('.fm-api-banner')) return
+    var banner = document.createElement('div')
+    banner.className = 'fm-api-banner'
+    banner.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+      + ' <span>API de analise offline — scanner, remove-bg, simulacao e heatmaps indisponiveis. Marcacao manual e report funcionam normalmente.</span>'
+      + '<button onclick="this.parentElement.remove()" style="background:none;border:none;color:inherit;cursor:pointer;font-size:18px;padding:0 4px">&times;</button>'
+    root.insertBefore(banner, root.firstChild)
+  }
+
   // ── Client-side trim + save for remove-bg results ─────────
   // Trims fully-black rows/cols from the edges, adds small margin,
   // then saves to the correct store (antes or after)
@@ -126,6 +153,9 @@
       setTimeout(FM._initCanvas, 50)
       if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
     }, 100)
+
+    // Health check da API Python (uma vez por init)
+    FM._checkApiHealth()
   }
 
   FM.openFromModal = function (lead) {

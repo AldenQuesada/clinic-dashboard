@@ -34,9 +34,11 @@
   }
 
   // ── Python Facial API URL ──────────────────────────────────
-  // Local dev: http://localhost:8100
-  // Production: set via FM.FACIAL_API_URL = 'https://facial-api.easypanel.host'
-  FM.FACIAL_API_URL = localStorage.getItem('fm_api_url') || 'http://localhost:8107'
+  // Priority: ClinicEnv > localStorage > default localhost
+  FM.FACIAL_API_URL = (window.ClinicEnv && window.ClinicEnv.FACIAL_API_URL)
+    || localStorage.getItem('fm_api_url')
+    || 'http://localhost:8107'
+  FM._apiAvailable = null  // null = unknown, true/false after health check
 
   // ── WhatsApp message captions — pulled from Banco de Mensagens ──
   FM._getWACaption = function (type) {
@@ -50,9 +52,8 @@
   FM.WA_IMAGE_CAPTION = null  // loaded dynamically from banco de mensagens
   FM.WA_REPORT_CAPTION = null
 
-  // Auto-fix stale localStorage URL (old port references)
-  if (FM.FACIAL_API_URL && FM.FACIAL_API_URL.indexOf('localhost') !== -1 && FM.FACIAL_API_URL.indexOf(':8107') === -1) {
-    FM.FACIAL_API_URL = 'http://localhost:8107'
+  // Persist to localStorage for override (only if not from ClinicEnv)
+  if (!(window.ClinicEnv && window.ClinicEnv.FACIAL_API_URL)) {
     localStorage.setItem('fm_api_url', FM.FACIAL_API_URL)
   }
 

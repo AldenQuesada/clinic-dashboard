@@ -24,6 +24,11 @@
     // OpenAI API key: loaded from localStorage (set via Settings > Integracoes)
     // Never committed to git. Set via: localStorage.setItem('clinicai_openai_key', 'sk-...')
     OPENAI_KEY: null,
+    // Facial Analysis Python API — null = offline-first (features avancadas desabilitadas)
+    // Para ativar: deploy Dockerfile em api/ e setar URL aqui
+    // Local: 'http://localhost:8107'
+    // VPS:   'https://facial-api.px1hdq.easypanel.host'
+    FACIAL_API_URL: null,
     // Cache-buster: incrementar a cada deploy para forçar recarga dos scripts
     ASSET_VERSION: '20260410a',
   })
