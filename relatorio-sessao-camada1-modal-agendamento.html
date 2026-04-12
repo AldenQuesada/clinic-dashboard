@@ -1377,6 +1377,60 @@ END $$;</code></pre>
   </table>
 
   <div class="feature">
+    <h3>A#8 — Templates por tipoPaciente (novo / retorno)</h3>
+    <p><strong>Regra de negócio:</strong> paciente <em>novo</em> recebe WhatsApp de
+      confirmação <strong>com</strong> link da Ficha de Anamnese. Paciente
+      <em>retorno</em> recebe <strong>sem</strong> o link (já preencheu antes).</p>
+
+    <h4>Migration <span class="commit">20260668</span></h4>
+    <p>2 templates novos em <code>wa_message_templates</code>, type
+      <code>confirmacao</code>, category <code>agendamento</code>:</p>
+    <ul>
+      <li><code>scheduling_confirm_novo</code> — com <code>{link_anamnese}</code></li>
+      <li><code>scheduling_confirm_retorno</code> — sem link</li>
+    </ul>
+    <p>Ambos editáveis em <strong>Settings → Templates de Mensagem</strong>
+      sem nenhuma mudança de UI (o editor existente lê direto da tabela).</p>
+
+    <h4>Ramificação em <code>_enviarMsgAgendamento</code></h4>
+    <pre><code>const isNovo = (appt.tipoPaciente || 'novo') !== 'retorno'
+const slug   = isNovo
+  ? 'scheduling_confirm_novo'
+  : 'scheduling_confirm_retorno'
+
+// Link só é gerado pra paciente novo
+const linkAnam = isNovo
+  ? await _gerarLinkAnamnese(appt.id, appt.pacienteId)
+  : null
+
+const dbTpl   = await _getWaTemplate(slug)      // cache 1x/sessão
+mensagem      = _waTplRender(dbTpl, { nome, clinica, data, hora, ... })</code></pre>
+
+    <h4>Variáveis disponíveis nos templates</h4>
+    <table>
+      <tr><th>Placeholder</th><th>Valor</th></tr>
+      <tr><td><code>{nome}</code></td><td>Primeiro nome do paciente</td></tr>
+      <tr><td><code>{clinica}</code></td><td>Nome da clínica</td></tr>
+      <tr><td><code>{data}</code></td><td>Data formatada em português</td></tr>
+      <tr><td><code>{hora}</code></td><td>HH:MM</td></tr>
+      <tr><td><code>{profissional}</code></td><td>Nome do profissional</td></tr>
+      <tr><td><code>{procedimento}</code></td><td>Nome do procedimento (se houver)</td></tr>
+      <tr><td><code>{linha_procedimento}</code></td><td>Linha completa formatada com ícone (só se procedimento existir)</td></tr>
+      <tr><td><code>{link_anamnese}</code></td><td>URL completa pra form-render (só no template <code>novo</code>)</td></tr>
+    </table>
+
+    <h4>Fallbacks seguros</h4>
+    <ul>
+      <li><strong>Template não existe no DB</strong> → cai no <code>_tplMsgAgendamento</code>
+        hardcoded legacy (código anterior, ainda funcional)</li>
+      <li><strong>Template novo + link falha</strong> (sem template anamnese, RPC down) →
+        regex remove a linha do link pra não enviar "👉 " vazio</li>
+    </ul>
+
+    <p>Commit: <span class="commit">9ec42c9</span></p>
+  </div>
+
+  <div class="feature">
     <h3>Status atual: fluxo completo funcionando</h3>
     <ol>
       <li>Secretária cria agendamento no modal</li>
@@ -1453,6 +1507,11 @@ END $$;</code></pre>
       <td>DROP trigger duplicado <code>trg_anamnesis_to_medical_record</code> (bug uuid = text).<br>Função depreciada via COMMENT.</td>
       <td><span class="badge badge-ok">Aplicada</span></td>
     </tr>
+    <tr>
+      <td><code>20260668000000_wa_templates_novo_retorno.sql</code></td>
+      <td>+ 2 templates WhatsApp: <code>scheduling_confirm_novo</code> (com link anamnese) e <code>scheduling_confirm_retorno</code> (sem link)<br>+ UNIQUE index <code>(clinic_id, slug)</code> em <code>wa_message_templates</code></td>
+      <td><span class="badge badge-ok">Aplicada</span></td>
+    </tr>
   </table>
 
   <!-- ═══ ARQUIVOS ═══ -->
@@ -1507,6 +1566,7 @@ END $$;</code></pre>
     <tr><td><span class="commit">80baeb4</span></td><td>fix(anamnese): drop trigger duplicado buggado fn_anamnesis_to_medical_record</td></tr>
     <tr><td><span class="commit">964ec1e</span></td><td>style(form-render): imagens bleed-to-edge + mais altura</td></tr>
     <tr><td><span class="commit">b30c407</span></td><td>fix(form-render): imagem description block full-width + instagram correto</td></tr>
+    <tr><td><span class="commit">9ec42c9</span></td><td>feat(agenda): templates whatsapp por tipoPaciente (novo/retorno)</td></tr>
   </table>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
