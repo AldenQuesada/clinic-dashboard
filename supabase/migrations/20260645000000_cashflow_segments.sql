@@ -133,7 +133,7 @@ BEGIN
       COUNT(*) AS qtd,
       COUNT(DISTINCT c.patient_id) AS pacientes
     FROM public.cashflow_entries c
-    LEFT JOIN public.leads l ON l.id = c.patient_id
+    LEFT JOIN public.leads l ON l.id = c.patient_id::text
     WHERE c.clinic_id = v_clinic_id
       AND c.deleted_at IS NULL
       AND c.direction = 'credit'

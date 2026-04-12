@@ -89,7 +89,7 @@ BEGIN
       MAX(c.transaction_date) AS last_visit,
       (v_now - MAX(c.transaction_date)) AS recency_days
     FROM public.cashflow_entries c
-    LEFT JOIN public.leads l ON l.id = c.patient_id
+    LEFT JOIN public.leads l ON l.id = c.patient_id::text
     WHERE c.clinic_id = v_clinic_id
       AND c.deleted_at IS NULL
       AND c.direction = 'credit'
@@ -233,7 +233,7 @@ BEGIN
       MAX(c.transaction_date) AS last_visit,
       (v_now - MAX(c.transaction_date)) AS recency_days
     FROM public.cashflow_entries c
-    LEFT JOIN public.leads l ON l.id = c.patient_id
+    LEFT JOIN public.leads l ON l.id = c.patient_id::text
     WHERE c.clinic_id = v_clinic_id
       AND c.deleted_at IS NULL
       AND c.direction = 'credit'
