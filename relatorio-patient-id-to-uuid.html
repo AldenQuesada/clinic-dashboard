@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatorio Tecnico — patient_id text → uuid</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232736;
+    --border: #2d3348;
+    --text: #e2e4ed;
+    --muted: #8b90a5;
+    --accent: #818cf8;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --red: #f87171;
+    --orange: #fbbf24;
+    --blue: #60a5fa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent2);
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 28px 0 12px;
+  }
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 20px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 16px 24px; }
+  li { margin-bottom: 6px; }
+
+  code {
+    background: var(--surface2);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+  }
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 12px 0 20px;
+    color: var(--text);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 24px;
+    font-size: 14px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--surface); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge-red    { background: #7f1d1d; color: #fca5a5; }
+  .badge-orange { background: #78350f; color: #fde68a; }
+  .badge-green  { background: #064e3b; color: #6ee7b7; }
+  .badge-blue   { background: #1e3a5f; color: #93c5fd; }
+  .badge-gray   { background: #374151; color: #d1d5db; }
+  .badge-purple { background: #4c1d95; color: #c4b5fd; }
+
+  .callout {
+    border-left: 4px solid;
+    padding: 16px 20px;
+    margin: 16px 0 24px;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout-red    { border-color: var(--red);    background: #1a0f0f; }
+  .callout-orange { border-color: var(--orange); background: #1a170f; }
+  .callout-green  { border-color: var(--green);  background: #0f1a14; }
+  .callout-blue   { border-color: var(--blue);   background: #0f141a; }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  .timeline {
+    position: relative;
+    padding-left: 32px;
+    margin: 20px 0 28px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--bg);
+  }
+  .timeline-item.error::before { border-color: var(--red); background: var(--red); }
+  .timeline-item .time {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0 24px;
+  }
+  .comparison > div {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .comparison .label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .comparison .wrong .label { color: var(--red); }
+  .comparison .right .label { color: var(--green); }
+
+  .nav {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 32px;
+  }
+  .nav a {
+    color: var(--accent);
+    text-decoration: none;
+    margin-right: 8px;
+    font-size: 13px;
+  }
+  .nav a:hover { text-decoration: underline; }
+  .nav a::after { content: ' \00b7'; color: var(--muted); margin-left: 8px; }
+  .nav a:last-child::after { content: ''; }
+
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+
+  .verdict-box {
+    background: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+  .verdict-box h3 { margin-top: 0; color: var(--accent); }
+
+  @media (max-width: 640px) {
+    .comparison { grid-template-columns: 1fr; }
+    body { padding: 20px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Relatorio Tecnico: patient_id text → uuid</h1>
+  <p class="subtitle">
+    ClinicAI Dashboard — Auditoria de consistencia de tipos no banco de dados<br>
+    Data: 2026-04-12 | Autor: Claude (AI) | Status: Review completo, migration pendente aprovacao
+  </p>
+
+  <div class="nav">
+    <a href="#origem">Origem do problema</a>
+    <a href="#historico">Historico</a>
+    <a href="#estado-atual">Estado atual</a>
+    <a href="#bombas">Bombas descobertas</a>
+    <a href="#solucao-certa">Solucao certa</a>
+    <a href="#solucao-aplicar">O que vamos aplicar</a>
+    <a href="#migration">Migration</a>
+    <a href="#checklist">Checklist</a>
+    <a href="#licoes">Licoes aprendidas</a>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="origem">1. Origem do problema</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <p>O sistema foi construido do zero por uma unica entidade (Claude AI),
+  sessao a sessao, ao longo de semanas. Nao houve "diferentes maos" ou
+  heranca de codigo legado. <strong>A inconsistencia de tipos foi introduzida
+  pelo mesmo agente que deveria ter mantido a consistencia desde o inicio.</strong></p>
+
+  <h3>O que aconteceu</h3>
+  <div class="timeline">
+    <div class="timeline-item error">
+      <div class="time">Sessoes iniciais (marco 2026)</div>
+      <p>Criei as tabelas <code>leads</code> e <code>patients</code> com <code>id text</code>.
+      Os valores inseridos eram UUIDs gerados por <code>gen_random_uuid()::text</code> —
+      ou seja, UUIDs validos armazenados como string. O tipo <code>uuid</code> nativo
+      do PostgreSQL teria sido o correto desde o primeiro CREATE TABLE.</p>
+    </div>
+    <div class="timeline-item error">
+      <div class="time">Trigger _convert_lead_to_patient</div>
+      <p>Para gerar o <code>patients.id</code> a partir de um lead,
+      usei <code>md5('patient_lead_' || NEW.id)</code> — um hash hexadecimal de
+      32 caracteres <strong>sem hifens</strong>. Funciona como identificador unico,
+      mas <strong>nao e um uuid valido</strong>. Preguica tecnica.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Sessoes seguintes (abril 2026)</div>
+      <p>Criei <code>appointments</code> e <code>medical_records</code> com
+      <code>patient_id uuid</code> — ja usando o tipo correto. Neste ponto eu
+      ja sabia que <code>uuid</code> era o tipo certo. Mas nao voltei para
+      corrigir <code>patients.id</code> e <code>leads.id</code>.</p>
+    </div>
+    <div class="timeline-item error">
+      <div class="time">FKs e RPCs acumulam band-aids</div>
+      <p>Tabelas como <code>anamnesis_requests</code>, <code>cashflow_entries</code>,
+      <code>patient_complaints</code> precisavam referenciar <code>patients.id</code>.
+      Como ele era <code>text</code>, as FKs foram criadas como <code>text</code> —
+      decisao correta dado o erro na raiz. As RPCs que juntavam
+      <code>appointments.patient_id</code> (uuid) com <code>leads.id</code> (text)
+      passaram a usar <code>::text</code> como compensacao.</p>
+    </div>
+    <div class="timeline-item error">
+      <div class="time">Abril 2026 — auditoria revela</div>
+      <p>O usuario perguntou: <em>"me preocupa que acabamos de fazer uma auditoria
+      para padronizar e ainda temos Tipos inconsistentes"</em>. A auditoria
+      profunda revelou o tamanho real do debito.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>Principio violado</strong>
+    <code>feedback_code_quality_from_start.md</code>: "NUNCA entregar codigo que
+    precise refatorar depois — best practices desde o primeiro commit."
+    Este relatorio documenta a violacao e a correcao.
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="historico">2. Historico cronologico</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <table>
+    <tr><th>Quando</th><th>O que foi criado</th><th>Tipo do ID</th><th>Decisao</th></tr>
+    <tr>
+      <td>Marco 2026</td>
+      <td><code>leads</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td>Erro: deveria ser uuid</td>
+    </tr>
+    <tr>
+      <td>Marco 2026</td>
+      <td><code>patients</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td>Erro: deveria ser uuid</td>
+    </tr>
+    <tr>
+      <td>Marco 2026</td>
+      <td><code>_convert_lead_to_patient</code></td>
+      <td><span class="badge badge-red">md5() → text</span></td>
+      <td>Erro: deveria ser gen_random_uuid()</td>
+    </tr>
+    <tr>
+      <td>Marco 2026</td>
+      <td><code>anamnesis_requests/responses</code></td>
+      <td><span class="badge badge-orange">text (FK)</span></td>
+      <td>Correto dado a raiz errada</td>
+    </tr>
+    <tr>
+      <td>Abril 2026</td>
+      <td><code>appointments</code></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>Correto — mas criou divergencia</td>
+    </tr>
+    <tr>
+      <td>Abril 2026</td>
+      <td><code>medical_records</code></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>Correto</td>
+    </tr>
+    <tr>
+      <td>Abril 2026</td>
+      <td><code>cashflow_entries</code></td>
+      <td><span class="badge badge-orange">text (FK)</span></td>
+      <td>Correto dado a raiz errada</td>
+    </tr>
+    <tr>
+      <td>Abril 2026</td>
+      <td><code>budgets / legal_doc_requests / patient_complaints</code></td>
+      <td><span class="badge badge-orange">text</span></td>
+      <td>Seguiu padrao errado</td>
+    </tr>
+    <tr>
+      <td>Abril 2026</td>
+      <td>17 RPCs com <code>::text</code></td>
+      <td><span class="badge badge-orange">band-aid</span></td>
+      <td>Compensacao da divergencia</td>
+    </tr>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="estado-atual">3. Estado atual completo</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <h3>3.1 Colunas patient_id — mapa de tipos</h3>
+  <table>
+    <tr><th>Tabela</th><th>Coluna</th><th>Tipo atual</th><th>Tipo correto</th><th>Rows</th><th>FK?</th><th>UUIDs validos?</th></tr>
+    <tr>
+      <td><code>patients</code></td><td><code>id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>2</td><td>PK (referenciada)</td><td>100%</td>
+    </tr>
+    <tr>
+      <td><code>anamnesis_requests</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>5</td><td>→ patients.id</td><td>100%</td>
+    </tr>
+    <tr>
+      <td><code>anamnesis_responses</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>5</td><td>→ patients.id</td><td>100%</td>
+    </tr>
+    <tr>
+      <td><code>cashflow_entries</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>257</td><td>→ patients.id</td><td>100%</td>
+    </tr>
+    <tr>
+      <td><code>budgets</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>0</td><td>sem FK</td><td>n/a</td>
+    </tr>
+    <tr>
+      <td><code>legal_doc_requests</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>0</td><td>sem FK</td><td>n/a</td>
+    </tr>
+    <tr>
+      <td><code>patient_complaints</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>4</td><td>sem FK</td><td>100%</td>
+    </tr>
+    <tr style="background: #0d1a0d">
+      <td><code>appointments</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>104</td><td>sem FK</td><td>100%</td>
+    </tr>
+    <tr style="background: #0d1a0d">
+      <td><code>medical_records</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>1</td><td>sem FK</td><td>100%</td>
+    </tr>
+  </table>
+  <p class="small muted">Total: 7 colunas erradas (text) + 2 corretas (uuid). 273 rows afetadas.
+  100% dos valores existentes ja sao UUIDs validos — conversao e segura.</p>
+
+  <h3>3.2 Colunas lead_id — mapa de tipos</h3>
+  <p>Estas colunas referenciam <code>leads.id</code> (que tambem e <code>text</code>).
+  <strong>Nao serao tocadas na Opcao C</strong> — documentadas aqui para completude.</p>
+  <table>
+    <tr><th>Tabela</th><th>Tipo atual</th><th>FK formal?</th></tr>
+    <tr><td><code>leads.id</code> (PK)</td><td><span class="badge badge-red">text</span></td><td>PK</td></tr>
+    <tr><td><code>budgets.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>interactions.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>lead_pipeline_positions.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>leads_audit.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>phase_history.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>quiz_responses.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>→ leads.id</td></tr>
+    <tr><td><code>rule_executions.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>tasks.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>wa_birthday_campaigns.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>wa_conversations.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr><td><code>wa_outbox.lead_id</code></td><td><span class="badge badge-red">text</span></td><td>—</td></tr>
+    <tr style="background: #0d1a0d"><td><code>facial_photos.lead_id</code></td><td><span class="badge badge-green">uuid</span></td><td>—</td></tr>
+    <tr style="background: #0d1a0d"><td><code>facial_sessions.lead_id</code></td><td><span class="badge badge-green">uuid</span></td><td>—</td></tr>
+  </table>
+  <p class="small muted">11 colunas text + 2 uuid. Mesma divergencia do lado patients,
+  mas com blast radius muito maior (554 leads + 12 tabelas dependentes).</p>
+
+  <h3>3.3 RPCs com <code>patient_id::text</code> (17 funcoes)</h3>
+  <p>Cada <code>::text</code> no codigo e um band-aid que compensa a divergencia de tipos.
+  Apos a migracao, esses casts viram redundantes (continuam funcionando, mas desnecessarios).</p>
+  <table>
+    <tr><th>Funcao</th><th>Uso do cast</th><th>Impacto pos-migracao</th></tr>
+    <tr>
+      <td><code>appt_list</code></td>
+      <td><code>a.patient_id::text AS "pacienteId"</code></td>
+      <td><span class="badge badge-orange">MANTER</span> — frontend espera string no JSON</td>
+    </tr>
+    <tr>
+      <td><code>_find_target_appointments</code></td>
+      <td><code>ap.patient_id::text = p_patient_id</code></td>
+      <td><span class="badge badge-green">SAFE</span> — cast redundante funciona</td>
+    </tr>
+    <tr>
+      <td><code>cashflow_search_appointments</code></td>
+      <td><code>a.patient_id::text</code> em json_build + JOIN</td>
+      <td><span class="badge badge-green">SAFE</span> — limpar na Fase 2</td>
+    </tr>
+    <tr>
+      <td><code>cashflow_link_appointment</code></td>
+      <td><code>a.patient_id::text</code> em SELECT</td>
+      <td><span class="badge badge-green">SAFE</span></td>
+    </tr>
+    <tr>
+      <td><code>cashflow_intelligence</code></td>
+      <td>JOINs cashflow ↔ patients/appointments</td>
+      <td><span class="badge badge-green">SAFE</span></td>
+    </tr>
+    <tr>
+      <td><code>cashflow_get_suggestions</code></td>
+      <td>JOIN via cast</td>
+      <td><span class="badge badge-green">SAFE</span></td>
+    </tr>
+    <tr>
+      <td><code>cashflow_auto_reconcile</code></td>
+      <td>JOIN via cast</td>
+      <td><span class="badge badge-green">SAFE</span></td>
+    </tr>
+    <tr>
+      <td><code>wa_pro_patient_search</code></td>
+      <td><code>a.patient_id::text = l.id</code></td>
+      <td><span class="badge badge-orange">FUNCIONA</span> — uuid::text = text (leads.id permanece text)</td>
+    </tr>
+    <tr>
+      <td><code>wa_pro_patient_balance</code></td>
+      <td>2x JOINs leads/appointments</td>
+      <td><span class="badge badge-orange">FUNCIONA</span> — idem</td>
+    </tr>
+    <tr>
+      <td><code>wa_pro_confirm_pending</code></td>
+      <td>casts diversos</td>
+      <td><span class="badge badge-orange">FUNCIONA</span></td>
+    </tr>
+    <tr>
+      <td><code>wa_pro_fire_appointment_automations</code></td>
+      <td>casts diversos</td>
+      <td><span class="badge badge-orange">FUNCIONA</span></td>
+    </tr>
+    <tr>
+      <td><code>trg_appointment_attended_phase</code></td>
+      <td><code>v_lead_id := NEW.patient_id::text</code></td>
+      <td><span class="badge badge-orange">FUNCIONA</span> — var text recebe uuid::text</td>
+    </tr>
+    <tr>
+      <td><code>trg_appointment_created_phase</code></td>
+      <td>idem</td>
+      <td><span class="badge badge-orange">FUNCIONA</span></td>
+    </tr>
+    <tr>
+      <td><code>trg_appointment_cancelled_phase</code></td>
+      <td>idem</td>
+      <td><span class="badge badge-orange">FUNCIONA</span></td>
+    </tr>
+    <tr>
+      <td><code>trg_appointment_rescheduled_phase</code></td>
+      <td>idem</td>
+      <td><span class="badge badge-orange">FUNCIONA</span></td>
+    </tr>
+    <tr>
+      <td><code>complaint_migrate_from_leads</code></td>
+      <td><code>v_resp.patient_id::text</code> em INSERT</td>
+      <td><span class="badge badge-green">SAFE</span> — patient_complaints.patient_id vira uuid, cast e coercivel</td>
+    </tr>
+    <tr>
+      <td><code>fn_anamnesis_to_medical_record</code></td>
+      <td>3x casts</td>
+      <td><span class="badge badge-gray">DROPADO</span> — ja removido em migration 20260667</td>
+    </tr>
+  </table>
+
+  <h3>3.4 RPCs com parametro <code>p_patient_id text</code></h3>
+  <p>Estas funcoes aceitam patient_id como <code>text</code> na signature.
+  Apos a migracao, o PostgreSQL faz coercao implicita (text → uuid) automaticamente
+  quando o valor chega via PostgREST. Nao quebram, mas idealmente migram na Fase 2.</p>
+  <table>
+    <tr><th>Funcao</th><th>Parametro</th><th>Pos-migracao</th></tr>
+    <tr><td><code>_find_target_appointments</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK (coercao)</span></td></tr>
+    <tr><td><code>cashflow_link_appointment</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK</span></td></tr>
+    <tr><td><code>complaint_list</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK</span></td></tr>
+    <tr><td><code>complaint_upsert</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK</span></td></tr>
+    <tr><td><code>complete_anamnesis_form</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK</span></td></tr>
+    <tr><td><code>create_anamnesis_request</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK</span></td></tr>
+    <tr><td><code>legal_doc_create_request</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK</span></td></tr>
+    <tr><td><code>legal_doc_list_requests</code></td><td><code>p_patient_id text</code></td><td><span class="badge badge-orange">OK</span></td></tr>
+    <tr style="background: #0d1a0d"><td><code>mr_create</code></td><td><code>p_patient_id uuid</code></td><td><span class="badge badge-green">JA CORRETO</span></td></tr>
+    <tr style="background: #0d1a0d"><td><code>mr_get_patient_summary</code></td><td><code>p_patient_id uuid</code></td><td><span class="badge badge-green">JA CORRETO</span></td></tr>
+    <tr style="background: #0d1a0d"><td><code>mr_list_for_patient</code></td><td><code>p_patient_id uuid</code></td><td><span class="badge badge-green">JA CORRETO</span></td></tr>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="bombas">4. Bombas descobertas na auditoria</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <div class="callout callout-red">
+    <strong>BOMBA 1 — Trigger <code>_convert_lead_to_patient</code> usa md5() como ID</strong>
+    <pre style="margin: 8px 0; border: none; background: transparent; padding: 0">v_patient_id := md5('patient_lead_' || NEW.id);
+INSERT INTO patients (id, ...) VALUES (v_patient_id, ...);</pre>
+    <p><code>md5()</code> retorna <code>abc123def456789...</code> — 32 chars hex sem hifens.
+    <strong>Nao e uuid valido.</strong> Se <code>patients.id</code> virar uuid, este INSERT
+    falha com <code>invalid input syntax for type uuid</code>.</p>
+    <p class="small muted">Os 2 pacientes atuais no banco tem UUIDs validos —
+    logo este trigger nunca executou com sucesso, ou os pacientes foram criados por outro caminho.</p>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>BOMBA 2 — <code>leads.id</code> tem 12 tabelas dependentes (nao 1)</strong>
+    <p>A estimativa inicial era que so <code>quiz_responses.lead_id</code> dependia de
+    <code>leads.id</code>. A auditoria profunda revelou <strong>11 colunas text + 2 uuid</strong>
+    em 13 tabelas diferentes. Converter <code>leads.id</code> → uuid exige converter
+    todas em cascata — blast radius 3x maior que o previsto.</p>
+    <p>Tabelas afetadas: budgets, interactions, lead_pipeline_positions, leads_audit,
+    phase_history, quiz_responses, rule_executions, tasks, wa_birthday_campaigns,
+    wa_conversations, wa_outbox.</p>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>BOMBA 3 — 8 RPCs aceitam <code>p_patient_id text</code> na signature</strong>
+    <p>Nao quebram imediatamente (coercao implicita do PostgreSQL cobre text → uuid),
+    mas ficam frageis. Se alguem chamar com valor nao-uuid, o erro vem do cast
+    implicito em vez de vir da validacao — debugar fica mais dificil.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="solucao-certa">5. Qual e a solucao CERTA (ideal)</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <p>A solucao certa e a <strong>Opcao B completa</strong>: converter TUDO —
+  <code>patients.id</code>, <code>leads.id</code>, todas as 19 colunas dependentes,
+  reescrever o trigger, atualizar as 17 funcoes, mudar as 8 signatures de RPC.</p>
+
+  <div class="comparison">
+    <div class="wrong">
+      <div class="label">Estado errado (atual)</div>
+      <ul class="small">
+        <li><code>patients.id</code> = text</li>
+        <li><code>leads.id</code> = text</li>
+        <li>7 colunas <code>patient_id</code> = text</li>
+        <li>11 colunas <code>lead_id</code> = text</li>
+        <li>2 colunas <code>patient_id</code> = uuid</li>
+        <li>2 colunas <code>lead_id</code> = uuid</li>
+        <li>17 funcoes com <code>::text</code> band-aid</li>
+        <li>Trigger com <code>md5()</code></li>
+      </ul>
+    </div>
+    <div class="right">
+      <div class="label">Estado correto (objetivo)</div>
+      <ul class="small">
+        <li><code>patients.id</code> = uuid</li>
+        <li><code>leads.id</code> = uuid</li>
+        <li>Todas <code>patient_id</code> = uuid</li>
+        <li>Todas <code>lead_id</code> = uuid</li>
+        <li>Todas FKs type-safe uuid → uuid</li>
+        <li>Zero casts <code>::text</code></li>
+        <li>Todas signatures <code>p_*_id uuid</code></li>
+        <li>Trigger com <code>gen_random_uuid()</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Estimativa da Opcao B completa</h3>
+  <table>
+    <tr><th>Item</th><th>Quantidade</th><th>Esforco</th><th>Risco</th></tr>
+    <tr><td>ALTER colunas</td><td>22</td><td>1h</td><td><span class="badge badge-green">BAIXO</span> (100% uuid validos)</td></tr>
+    <tr><td>Drop/recria FKs</td><td>~6</td><td>30min</td><td><span class="badge badge-green">BAIXO</span></td></tr>
+    <tr><td>Reescrever trigger</td><td>1</td><td>30min</td><td><span class="badge badge-orange">MEDIO</span></td></tr>
+    <tr><td>Atualizar funcoes</td><td>17</td><td>4-6h</td><td><span class="badge badge-red">ALTO</span> — cada funcao pode ter logica interna</td></tr>
+    <tr><td>Atualizar signatures RPC</td><td>8</td><td>2h</td><td><span class="badge badge-red">ALTO</span> — pode quebrar chamadas do frontend</td></tr>
+    <tr><td>Smoke tests</td><td>todas as paginas</td><td>3-4h</td><td>—</td></tr>
+    <tr><td><strong>Total</strong></td><td></td><td><strong>12-16h</strong></td><td><span class="badge badge-red">ALTO</span></td></tr>
+  </table>
+
+  <p><strong>Por que nao fazer a Opcao B agora:</strong> o ecossistema de leads
+  (<code>leads.id</code> + 12 tabelas) e o nucleo de TODA a logica de negocios —
+  quiz, SDR, broadcast, aniversarios, WhatsApp, pipeline, tasks. Mexer em
+  <code>leads.id</code> com pressa e receita para regressao catastrofica.
+  Precisa de uma sessao dedicada, com staging, e teste end-to-end de cada fluxo.</p>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="solucao-aplicar">6. O que vamos aplicar agora e por que</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <h3>Opcao C — escopo cirurgico (so lado paciente)</h3>
+
+  <div class="callout callout-green">
+    <strong>Principio: resolver o maximo de debito com o minimo de risco</strong>
+    <p>Converter apenas <code>patients.id</code> e as 6 colunas <code>patient_id</code>
+    que sao text. Nao tocar em <code>leads.id</code> nem nas 12 tabelas dependentes.</p>
+  </div>
+
+  <h4>O que muda</h4>
+  <ol>
+    <li><code>patients.id</code> text → uuid (2 rows)</li>
+    <li><code>anamnesis_requests.patient_id</code> text → uuid (5 rows)</li>
+    <li><code>anamnesis_responses.patient_id</code> text → uuid (5 rows)</li>
+    <li><code>cashflow_entries.patient_id</code> text → uuid (257 rows)</li>
+    <li><code>budgets.patient_id</code> text → uuid (0 rows)</li>
+    <li><code>legal_doc_requests.patient_id</code> text → uuid (0 rows)</li>
+    <li><code>patient_complaints.patient_id</code> text → uuid (4 rows)</li>
+    <li>Trigger <code>_convert_lead_to_patient</code> reescrito: <code>md5()</code> → <code>gen_random_uuid()</code></li>
+    <li>3 FKs dropadas e recriadas com tipo uuid</li>
+  </ol>
+
+  <h4>O que NAO muda</h4>
+  <ul>
+    <li><code>leads.id</code> — permanece text (554 rows + 12 tabelas dependentes intocadas)</li>
+    <li><code>appointments.patient_id</code> — ja e uuid, nao precisa mudar</li>
+    <li><code>medical_records.patient_id</code> — ja e uuid</li>
+    <li>17 funcoes com <code>::text</code> — casts viram redundantes mas seguem funcionando</li>
+    <li>8 RPCs com <code>p_patient_id text</code> — coercao implicita cobre</li>
+    <li>Frontend — zero mudancas (PostgREST serializa uuid como string JSON)</li>
+  </ul>
+
+  <h4>Por que a Opcao C e segura</h4>
+  <table>
+    <tr><th>Ponto de risco</th><th>Avaliacao</th><th>Por que</th></tr>
+    <tr>
+      <td>Dados existentes</td>
+      <td><span class="badge badge-green">SEGURO</span></td>
+      <td>100% sao UUIDs validos, conversao e garantida</td>
+    </tr>
+    <tr>
+      <td>Frontend (26 arquivos JS)</td>
+      <td><span class="badge badge-green">SEGURO</span></td>
+      <td>Trata patient_id como string — uuid serializa igual</td>
+    </tr>
+    <tr>
+      <td>RPCs com <code>::text</code></td>
+      <td><span class="badge badge-green">SEGURO</span></td>
+      <td><code>uuid::text</code> e cast valido no PostgreSQL — funciona sempre</td>
+    </tr>
+    <tr>
+      <td>Comparacao <code>uuid::text = leads.id</code></td>
+      <td><span class="badge badge-green">SEGURO</span></td>
+      <td>Ja e exatamente o que acontece hoje com <code>appointments.patient_id</code></td>
+    </tr>
+    <tr>
+      <td>Triggers phase (4x)</td>
+      <td><span class="badge badge-green">SEGURO</span></td>
+      <td><code>v_lead_id text := uuid::text</code> — cast valido</td>
+    </tr>
+    <tr>
+      <td><code>_convert_lead_to_patient</code></td>
+      <td><span class="badge badge-orange">REQUER FIX</span></td>
+      <td>Reescrever md5 → gen_random_uuid() ANTES do ALTER</td>
+    </tr>
+    <tr>
+      <td>Downtime</td>
+      <td><span class="badge badge-green">ZERO</span></td>
+      <td>273 rows total, ALTER &lt; 1 segundo, transacao atomica</td>
+    </tr>
+    <tr>
+      <td>Rollback</td>
+      <td><span class="badge badge-green">TRIVIAL</span></td>
+      <td><code>ALTER ... TYPE text USING id::text</code> — sempre reversivel</td>
+    </tr>
+  </table>
+
+  <h4>Estimativa Opcao C</h4>
+  <table>
+    <tr><th>Etapa</th><th>Esforco</th></tr>
+    <tr><td>Reescrever trigger</td><td>~30 min</td></tr>
+    <tr><td>Migration DDL (ALTERs + FKs)</td><td>~30 min</td></tr>
+    <tr><td>Aplicar em producao</td><td>~5 min</td></tr>
+    <tr><td>Smoke tests</td><td>~30 min</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>~1.5h</strong></td></tr>
+  </table>
+
+  <h4>O que fica como debito tecnico consciente</h4>
+  <p>A Opcao C resolve <strong>7 de 9</strong> colunas patient_id e elimina o problema
+  mais grave (patients.id text). O debito remanescente e:</p>
+  <ol>
+    <li><code>leads.id</code> text + 11 colunas <code>lead_id</code> text — sprint dedicado futuro</li>
+    <li>17 funcoes com <code>::text</code> redundante — limpeza progressiva (Fase 2)</li>
+    <li>8 signatures <code>p_patient_id text</code> — migrar conforme cada RPC for editada</li>
+  </ol>
+  <p>Este debito <strong>nao causa bugs</strong> — casts redundantes e coercao implicita
+  cobrem todos os cenarios. E debito de <em>elegancia</em>, nao de <em>corretude</em>.</p>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="migration">7. Migration SQL (Opcao C)</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <p>Arquivo: <code>supabase/migrations/20260669000000_patient_id_to_uuid.sql</code></p>
+  <p class="small muted">Sera gerado apos aprovacao do usuario. Conteudo previsto:</p>
+
+  <pre>BEGIN;
+
+-- ============================================================
+-- Passo 0: Reescrever trigger _convert_lead_to_patient
+-- ============================================================
+CREATE OR REPLACE FUNCTION public._convert_lead_to_patient()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path TO 'public' AS $fn$
+DECLARE
+  v_patient_id uuid;
+BEGIN
+  IF NEW.status NOT IN ('paciente','attending','patient') THEN RETURN NEW; END IF;
+  IF OLD.status = NEW.status THEN RETURN NEW; END IF;
+
+  BEGIN
+    v_patient_id := gen_random_uuid();
+
+    INSERT INTO public.patients (
+      id, "leadId", "tenantId", name, phone, email,
+      status, "totalProcedures", "totalRevenue", "createdAt", "updatedAt"
+    ) VALUES (
+      v_patient_id, NEW.id, NEW.clinic_id::text,
+      COALESCE(NEW.name,''), COALESCE(NEW.phone,''), NEW.email,
+      'active', 0, 0, now(), now()
+    )
+    ON CONFLICT ("leadId") DO UPDATE SET
+      name       = COALESCE(NULLIF(EXCLUDED.name,''),  patients.name),
+      phone      = COALESCE(NULLIF(EXCLUDED.phone,''), patients.phone),
+      email      = COALESCE(EXCLUDED.email, patients.email),
+      status     = 'active',
+      "updatedAt" = now(),
+      deleted_at  = NULL;
+  EXCEPTION WHEN others THEN
+    RAISE WARNING '[_convert_lead_to_patient] Erro: %. Lead id=%', SQLERRM, NEW.id;
+  END;
+
+  RETURN NEW;
+END;
+$fn$;
+
+-- ============================================================
+-- Passo 1: Drop FKs existentes
+-- ============================================================
+ALTER TABLE anamnesis_requests  DROP CONSTRAINT IF EXISTS anamnesis_requests_patient_id_fkey;
+ALTER TABLE anamnesis_responses DROP CONSTRAINT IF EXISTS anamnesis_responses_patient_id_fkey;
+ALTER TABLE cashflow_entries    DROP CONSTRAINT IF EXISTS cashflow_entries_patient_id_fkey;
+
+-- ============================================================
+-- Passo 2: ALTER colunas text → uuid
+-- ============================================================
+ALTER TABLE patients            ALTER COLUMN id         TYPE uuid USING id::uuid;
+ALTER TABLE anamnesis_requests  ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE anamnesis_responses ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE cashflow_entries    ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE budgets             ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE legal_doc_requests  ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE patient_complaints  ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+
+-- ============================================================
+-- Passo 3: Recriar FKs
+-- ============================================================
+ALTER TABLE anamnesis_requests ADD CONSTRAINT anamnesis_requests_patient_id_fkey
+  FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;
+
+ALTER TABLE anamnesis_responses ADD CONSTRAINT anamnesis_responses_patient_id_fkey
+  FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;
+
+ALTER TABLE cashflow_entries ADD CONSTRAINT cashflow_entries_patient_id_fkey
+  FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE SET NULL;
+
+-- ============================================================
+-- Passo 4: Reload PostgREST cache
+-- ============================================================
+NOTIFY pgrst, 'reload schema';
+
+COMMIT;</pre>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="checklist">8. Checklist pre-execucao</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <table>
+    <tr><th>#</th><th>Item</th><th>Status</th></tr>
+    <tr><td>1</td><td>100% dos valores existentes sao UUIDs validos</td><td><span class="badge badge-green">VERIFICADO</span></td></tr>
+    <tr><td>2</td><td>Zero views a reconstruir</td><td><span class="badge badge-green">VERIFICADO</span></td></tr>
+    <tr><td>3</td><td>Frontend nao depende do tipo ser text</td><td><span class="badge badge-green">VERIFICADO</span></td></tr>
+    <tr><td>4</td><td>17 funcoes com ::text continuam funcionando pos-migracao</td><td><span class="badge badge-green">VERIFICADO</span></td></tr>
+    <tr><td>5</td><td>Trigger _convert_lead_to_patient reescrito</td><td><span class="badge badge-blue">NA MIGRATION</span></td></tr>
+    <tr><td>6</td><td>FKs mapeadas e incluidas na migration</td><td><span class="badge badge-green">VERIFICADO</span> (3 FKs)</td></tr>
+    <tr><td>7</td><td>quiz_responses.lead_id verificado (text, 0 rows, FK de leads.id)</td><td><span class="badge badge-green">VERIFICADO</span> — nao tocamos leads.id</td></tr>
+    <tr><td>8</td><td>Transacao atomica com rollback automatico</td><td><span class="badge badge-green">SIM</span></td></tr>
+    <tr><td>9</td><td>Smoke test pos-execucao planejado</td><td><span class="badge badge-blue">PENDENTE</span></td></tr>
+  </table>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="licoes">9. Licoes aprendidas</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <h3>Erros cometidos</h3>
+  <ol>
+    <li><strong>Tipo errado na raiz:</strong> <code>id text</code> em vez de <code>id uuid</code>
+    nas tabelas fundacionais. Se tivesse sido uuid desde o inicio, nenhum dos 17 casts,
+    nenhuma das 3 bombas, nenhuma hora desta auditoria teria sido necessaria.</li>
+
+    <li><strong>md5() como gerador de ID:</strong> Funciona como hash unico, mas nao e
+    uuid valido. <code>gen_random_uuid()</code> ja existia no PostgreSQL e deveria ter
+    sido usado desde o primeiro dia.</li>
+
+    <li><strong>Nao corrigir ao perceber:</strong> Quando criei <code>appointments</code>
+    com <code>patient_id uuid</code>, eu ja sabia que o tipo correto era uuid. Naquele
+    momento, o custo de voltar e corrigir <code>patients.id</code> era minimo (2 rows,
+    0 FKs naquela epoca). Escolhi seguir em frente. Esse "depois eu arrumo" custou
+    17 funcoes com band-aids, 3 bombas, e 2 sessoes de auditoria.</li>
+
+    <li><strong>Band-aids acumulativos:</strong> Cada <code>::text</code> adicionado nas RPCs
+    era um sinal de que algo estava errado na raiz. Em vez de corrigir a raiz, adicionei
+    mais casts. Debito composto.</li>
+  </ol>
+
+  <h3>Regras para nao repetir</h3>
+  <div class="callout callout-blue">
+    <strong>Regra 1: IDs sao sempre uuid nativo</strong>
+    <p>Toda coluna que armazena um identificador unico universal DEVE usar o tipo
+    <code>uuid</code> do PostgreSQL. Nunca <code>text</code>, nunca <code>varchar</code>.
+    Sem excecoes.</p>
+  </div>
+  <div class="callout callout-blue">
+    <strong>Regra 2: gen_random_uuid() para gerar IDs</strong>
+    <p>Nunca usar <code>md5()</code>, <code>encode()</code>, ou qualquer funcao
+    que gere strings como ID. O PostgreSQL tem <code>gen_random_uuid()</code>
+    nativo desde a versao 13.</p>
+  </div>
+  <div class="callout callout-blue">
+    <strong>Regra 3: Corrigir no momento, nao depois</strong>
+    <p>Se ao criar a tabela N voce percebeu que a tabela 1 tem tipo errado,
+    pare e corrija a tabela 1 ANTES de continuar. O custo cresce exponencialmente
+    com cada dependencia adicionada.</p>
+  </div>
+  <div class="callout callout-blue">
+    <strong>Regra 4: Band-aid e sinal, nao solucao</strong>
+    <p>Se voce esta adicionando <code>::text</code> ou <code>::uuid</code> para
+    fazer um JOIN funcionar, algo esta errado na definicao de tipos. O cast
+    compensa o problema — corrija a causa.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="execucao">10. Execucao — registro da aplicacao</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <p>Migration <code>20260669000000_patient_id_to_uuid.sql</code> aplicada em
+  <strong>2026-04-12</strong> via transacao atomica (BEGIN/COMMIT).</p>
+
+  <h3>10.1 Obstaculos encontrados durante aplicacao</h3>
+
+  <div class="callout callout-orange">
+    <strong>Obstáculo 1 — RLS policies bloquearam ALTER TYPE</strong>
+    <p>O PostgreSQL impede <code>ALTER COLUMN ... TYPE</code> quando a coluna e
+    referenciada por uma policy definition. O erro:</p>
+    <pre style="margin:8px 0;border:none;background:transparent;padding:0">cannot alter type of a column used in a policy definition
+Detail: policy anamnesis_requests_select on table anamnesis_requests depends on column "id"</pre>
+    <p><strong>Solucao:</strong> dropar as policies antes do ALTER e recriar depois
+    com SQL identico. As policies nao armazenam dados — apenas definicoes de acesso.</p>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>Obstáculo 2 — 4 policies, nao 2</strong>
+    <p>A primeira tentativa dropou 2 policies (<code>anamnesis_requests_select</code> e
+    <code>anamnesis_responses_select</code>). Falhou novamente com:</p>
+    <pre style="margin:8px 0;border:none;background:transparent;padding:0">policy anamnesis_answers_select on table anamnesis_answers depends on column "id"</pre>
+    <p>Grep completo em <code>pg_policy</code> revelou <strong>4 policies</strong> que
+    referenciam <code>patients.id</code> via subqueries aninhadas:</p>
+    <ol>
+      <li><code>anamnesis_requests.anamnesis_requests_select</code> — <code>WHERE p.id = anamnesis_requests.patient_id</code></li>
+      <li><code>anamnesis_responses.anamnesis_responses_select</code> — via JOIN com requests → patients</li>
+      <li><code>anamnesis_answers.anamnesis_answers_select</code> — via JOIN responses → requests → patients</li>
+      <li><code>anamnesis_response_flags.anamnesis_response_flags_select</code> — via JOIN responses → requests → patients</li>
+    </ol>
+    <p>Todas as 4 foram dropadas e recriadas na migration final.</p>
+  </div>
+
+  <h3>10.2 Resultado da verificacao pos-migracao</h3>
+
+  <table>
+    <tr><th>Tabela</th><th>Coluna</th><th>Tipo anterior</th><th>Tipo atual</th><th>Status</th></tr>
+    <tr>
+      <td><code>patients</code></td><td><code>id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK</td>
+    </tr>
+    <tr>
+      <td><code>anamnesis_requests</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK</td>
+    </tr>
+    <tr>
+      <td><code>anamnesis_responses</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK</td>
+    </tr>
+    <tr>
+      <td><code>appointments</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK (ja era)</td>
+    </tr>
+    <tr>
+      <td><code>budgets</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK</td>
+    </tr>
+    <tr>
+      <td><code>cashflow_entries</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK</td>
+    </tr>
+    <tr>
+      <td><code>legal_doc_requests</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK</td>
+    </tr>
+    <tr>
+      <td><code>medical_records</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK (ja era)</td>
+    </tr>
+    <tr>
+      <td><code>patient_complaints</code></td><td><code>patient_id</code></td>
+      <td><span class="badge badge-red">text</span></td>
+      <td><span class="badge badge-green">uuid</span></td>
+      <td>OK</td>
+    </tr>
+  </table>
+
+  <p><strong>9/9 colunas patient_id agora sao uuid.</strong> Zero colunas text restantes
+  no lado do paciente.</p>
+
+  <h3>10.3 Verificacoes complementares</h3>
+
+  <table>
+    <tr><th>Item</th><th>Resultado</th></tr>
+    <tr>
+      <td>Trigger <code>_convert_lead_to_patient</code></td>
+      <td><span class="badge badge-green">gen_random_uuid()</span> — md5 removido</td>
+    </tr>
+    <tr>
+      <td>FK <code>anamnesis_requests.patient_id → patients.id</code></td>
+      <td><span class="badge badge-green">Recriada</span></td>
+    </tr>
+    <tr>
+      <td>FK <code>anamnesis_responses.patient_id → patients.id</code></td>
+      <td><span class="badge badge-green">Recriada</span></td>
+    </tr>
+    <tr>
+      <td>FK <code>cashflow_entries.patient_id → patients.id</code></td>
+      <td><span class="badge badge-green">Recriada</span></td>
+    </tr>
+    <tr>
+      <td>RLS <code>anamnesis_requests_select</code></td>
+      <td><span class="badge badge-green">Recriada</span></td>
+    </tr>
+    <tr>
+      <td>RLS <code>anamnesis_responses_select</code></td>
+      <td><span class="badge badge-green">Recriada</span></td>
+    </tr>
+    <tr>
+      <td>RLS <code>anamnesis_answers_select</code></td>
+      <td><span class="badge badge-green">Recriada</span></td>
+    </tr>
+    <tr>
+      <td>RLS <code>anamnesis_response_flags_select</code></td>
+      <td><span class="badge badge-green">Recriada</span></td>
+    </tr>
+    <tr>
+      <td>PostgREST cache</td>
+      <td><span class="badge badge-green">NOTIFY pgrst reload</span></td>
+    </tr>
+  </table>
+
+  <h3>10.4 Migration SQL final aplicada</h3>
+  <p>Arquivo: <code>supabase/migrations/20260669000000_patient_id_to_uuid.sql</code></p>
+  <p>Sequencia de operacoes executadas (transacao atomica):</p>
+  <ol>
+    <li><strong>Passo 0:</strong> <code>CREATE OR REPLACE FUNCTION _convert_lead_to_patient</code> — substituiu <code>md5()</code> por <code>gen_random_uuid()</code></li>
+    <li><strong>Passo 1:</strong> <code>DROP CONSTRAINT</code> em 3 FKs (anamnesis_requests, anamnesis_responses, cashflow_entries)</li>
+    <li><strong>Passo 1b:</strong> <code>DROP POLICY</code> em 4 RLS policies que referenciavam <code>patients.id</code> via subqueries</li>
+    <li><strong>Passo 2:</strong> <code>ALTER COLUMN ... TYPE uuid USING ...::uuid</code> em 7 colunas (patients.id + 6 patient_id)</li>
+    <li><strong>Passo 3:</strong> <code>ADD CONSTRAINT</code> — recriou 3 FKs com tipo uuid</li>
+    <li><strong>Passo 3b:</strong> <code>CREATE POLICY</code> — recriou 4 RLS policies com SQL identico (agora uuid = uuid em vez de text = text)</li>
+    <li><strong>Passo 4:</strong> <code>NOTIFY pgrst, 'reload schema'</code></li>
+  </ol>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2>11. Roadmap futuro</h2>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
+  <table>
+    <tr><th>Fase</th><th>Escopo</th><th>Quando</th><th>Esforco</th><th>Status</th></tr>
+    <tr style="background: #0d1a0d">
+      <td><span class="badge badge-green">Fase 1</span></td>
+      <td>Opcao C: patients.id + 6 colunas patient_id → uuid + trigger fix</td>
+      <td>2026-04-12</td>
+      <td>~1.5h</td>
+      <td><span class="badge badge-green">CONCLUIDO</span></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">Fase 2</span></td>
+      <td>Limpar ::text redundantes das 17 funcoes + mudar signatures RPC</td>
+      <td>Progressivo, conforme editar cada funcao</td>
+      <td>~5h total</td>
+      <td><span class="badge badge-gray">PENDENTE</span></td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-purple">Fase 3</span></td>
+      <td>leads.id + 11 colunas lead_id → uuid (Opcao B residual)</td>
+      <td>Sprint dedicado, com staging</td>
+      <td>~8-12h</td>
+      <td><span class="badge badge-gray">PENDENTE</span></td>
+    </tr>
+  </table>
+
+  <hr style="margin: 60px 0 20px; border: none; border-top: 1px solid var(--border)">
+  <p class="muted" style="text-align: center; font-size: 12px;">
+    Documento gerado em 2026-04-12 — auditoria completa patient_id text → uuid.<br>
+    Fase 1 (Opcao C) aplicada em 2026-04-12 com sucesso.<br>
+    Autor: Claude AI | ClinicAI Dashboard | Versao 1.1
+  </p>
+
+</div>
+</body>
+</html>

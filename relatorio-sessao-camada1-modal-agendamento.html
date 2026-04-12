@@ -365,6 +365,7 @@ const watchIds = ['sp_nome', 'sp_salario', 'sp_valor_consulta', /* ... */]</code
       <a href="#regressoes">Regressões pós-Premium</a> •
       <a href="#data-hygiene">Data Hygiene (incidente)</a> •
       <a href="#anamnese-journey">Jornada Anamnese</a> •
+      <a href="#opcao-b">Opção B (patient_id → uuid)</a> •
       <a href="#migrations">Migrations</a> •
       <a href="#commits">Commits</a>
     </p>
@@ -1568,6 +1569,372 @@ mensagem      = _waTplRender(dbTpl, { nome, clinica, data, hora, ... })</code></
     <tr><td><span class="commit">b30c407</span></td><td>fix(form-render): imagem description block full-width + instagram correto</td></tr>
     <tr><td><span class="commit">9ec42c9</span></td><td>feat(agenda): templates whatsapp por tipoPaciente (novo/retorno)</td></tr>
   </table>
+
+  <!-- ═══ JORNADA OPÇÃO B ═══ -->
+  <h2 id="opcao-b">Jornada da Opção B — <code>patient_id</code> text → uuid</h2>
+
+  <p class="muted">
+    Auditoria disparada por: <em>"me preocupa que acabamos de fazer uma auditoria para padronizar
+    e ainda temos Tipos inconsistentes: patient_id é text em algumas tabelas e uuid?"</em> —
+    executada em 2026-04-11, <strong>sem aplicar nenhuma mudança</strong> (review-only).
+  </p>
+
+  <h3>1. Estado atual mapeado</h3>
+  <p><strong>7 colunas <code>patient_id</code> em <code>text</code>:</strong></p>
+  <table>
+    <tr><th>Tabela</th><th>Coluna</th><th>Rows</th><th>FK?</th></tr>
+    <tr><td>patients</td><td>id</td><td>2</td><td>—</td></tr>
+    <tr><td>leads</td><td>id</td><td>554</td><td>FK de <code>quiz_responses.lead_id</code></td></tr>
+    <tr><td>anamnesis_requests</td><td>patient_id</td><td>5</td><td>→ patients.id</td></tr>
+    <tr><td>anamnesis_responses</td><td>patient_id</td><td>5</td><td>→ patients.id</td></tr>
+    <tr><td>cashflow_entries</td><td>patient_id</td><td>257</td><td>→ patients.id</td></tr>
+    <tr><td>budgets</td><td>patient_id</td><td>0</td><td>—</td></tr>
+    <tr><td>legal_doc_requests</td><td>patient_id</td><td>0</td><td>—</td></tr>
+    <tr><td>patient_complaints</td><td>patient_id</td><td>4</td><td>—</td></tr>
+  </table>
+
+  <p><strong>2 colunas <code>patient_id</code> em <code>uuid</code>:</strong></p>
+  <ul>
+    <li><code>appointments.patient_id</code> (104 rows) — <em>sem FK</em></li>
+    <li><code>medical_records.patient_id</code> (1 row) — <em>sem FK</em></li>
+  </ul>
+
+  <p><strong>Validação de valores:</strong> 100% dos valores atuais em TODAS as 9 colunas
+  são UUIDs bem formados (<code>^[0-9a-f]{8}-...{12}$</code>). <strong>Zero inválidos.</strong>
+  Isso significa que o <code>ALTER COLUMN ... TYPE uuid USING ...::uuid</code> vai funcionar sem coerção.</p>
+
+  <h3>2. Por que existe <code>::text</code> no código</h3>
+  <p>A raiz não é descuido — é que <strong><code>leads.id</code> e <code>patients.id</code>
+  compartilham o mesmo UUID por convenção</strong> (quando um lead vira paciente,
+  <code>trg_lead_to_patient</code> preserva o ID). Como <code>leads.id</code> é <code>text</code>
+  e <code>appointments.patient_id</code> já é <code>uuid</code>, as RPCs fazem cast explícito
+  para comparar os dois:</p>
+  <pre>-- wa_pro_patient_search (RPC Mira):
+WHERE a.patient_id::text = l.id
+
+-- wa_pro_patient_balance:
+WHERE a.patient_id::text = l.id AND a.professional_id = v_prof_id
+
+-- _find_target_appointments (automações):
+WHERE ap.patient_id::text = p_patient_id
+
+-- trg_appointment_attended_phase:
+v_lead_id := NEW.patient_id::text;
+
+-- fn_anamnesis_to_medical_record (trigger antigo, já dropado em 20260667):
+WHERE patient_id = NEW.patient_id::text</pre>
+
+  <p>Ou seja: <strong>o <code>::text</code> compensa o fato de <code>leads.id</code> ser text.</strong>
+  Se converteremos <code>leads.id</code> junto, o sistema fica consistente sem quebrar.</p>
+
+  <h3>3. Ponto de risco descoberto — FK de <code>quiz_responses</code></h3>
+  <p><code>quiz_responses.lead_id</code> tem FK para <code>leads.id</code>. Se
+  <code>quiz_responses.lead_id</code> for <code>text</code>, ele precisa ser convertido
+  junto com a FK. O audit mostrou que as migrations <code>20260551/20260556/20260557/20260563/20260566/20260570-20260581</code>
+  já fazem <code>SET lead_id = v_lead_id::uuid</code> em <code>quiz_responses</code>, então
+  a coluna provavelmente já é <code>uuid</code> ou aceita tanto — precisa verificar antes do ALTER.</p>
+
+  <h3>4. Funções com <code>patient_id::text</code> (17 encontradas)</h3>
+  <p>Categorizadas por tipo de cast e impacto pós-migração:</p>
+
+  <table>
+    <tr><th>Categoria</th><th>Função</th><th>Uso</th><th>Pós-migração</th></tr>
+    <tr>
+      <td rowspan="5"><span class="badge badge-info">SAFE</span><br><small>cast vira redundante mas segue funcionando</small></td>
+      <td><code>_find_target_appointments</code></td>
+      <td><code>ap.patient_id::text = p_patient_id</code></td>
+      <td>p_patient_id precisa virar uuid OU manter cast</td>
+    </tr>
+    <tr>
+      <td><code>cashflow_search_appointments</code></td>
+      <td>join via <code>a.patient_id::text</code></td>
+      <td>remover cast na limpeza</td>
+    </tr>
+    <tr>
+      <td><code>cashflow_link_appointment</code></td>
+      <td>select <code>a.patient_id::text</code></td>
+      <td>remover cast na limpeza</td>
+    </tr>
+    <tr>
+      <td><code>cashflow_intelligence</code>, <code>cashflow_get_suggestions</code>, <code>cashflow_auto_reconcile</code></td>
+      <td>3 joins cashflow_entries ↔ patients/appointments</td>
+      <td>remover cast na limpeza</td>
+    </tr>
+    <tr>
+      <td><code>appt_list</code></td>
+      <td><code>a.patient_id::text AS pacienteId</code></td>
+      <td><strong>⚠ intencional</strong> — frontend espera string. Manter cast no retorno.</td>
+    </tr>
+    <tr>
+      <td rowspan="3"><span class="badge badge-warn">REVIEW</span><br><small>precisa leitura linha a linha</small></td>
+      <td><code>wa_pro_patient_search</code></td>
+      <td><code>a.patient_id::text = l.id</code></td>
+      <td>Depois que leads.id virar uuid, vira <code>a.patient_id = l.id</code></td>
+    </tr>
+    <tr>
+      <td><code>wa_pro_patient_balance</code></td>
+      <td>2x joins leads/appointments</td>
+      <td>Idem acima</td>
+    </tr>
+    <tr>
+      <td><code>wa_pro_confirm_pending</code>, <code>wa_pro_fire_appointment_automations</code></td>
+      <td>casts diversos</td>
+      <td>Auditar separadamente antes do deploy</td>
+    </tr>
+    <tr>
+      <td rowspan="4"><span class="badge badge-ok">TRIGGERS — cuidado</span></td>
+      <td><code>trg_appointment_attended_phase</code></td>
+      <td><code>v_lead_id := NEW.patient_id::text</code></td>
+      <td>Se <code>v_lead_id</code> for declarado <code>text</code>, quebra. Mudar para <code>uuid</code>.</td>
+    </tr>
+    <tr>
+      <td><code>trg_appointment_created_phase</code></td>
+      <td>idem</td>
+      <td>idem</td>
+    </tr>
+    <tr>
+      <td><code>trg_appointment_cancelled_phase</code></td>
+      <td>idem</td>
+      <td>idem</td>
+    </tr>
+    <tr>
+      <td><code>trg_appointment_rescheduled_phase</code></td>
+      <td>idem</td>
+      <td>idem</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-pending">JÁ DROPADO</span></td>
+      <td><code>fn_anamnesis_to_medical_record</code></td>
+      <td>trigger antigo</td>
+      <td>Já removido em 20260667 (substituído por <code>_create_prontuario_from_anamnesis</code>)</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-warn">REVIEW</span></td>
+      <td><code>complaint_migrate_from_leads</code></td>
+      <td><code>v_resp.patient_id::text</code></td>
+      <td>Cast numa variable local — seguro se o INSERT receber text ainda. Revisar signature.</td>
+    </tr>
+  </table>
+
+  <h3>5. Frontend (<code>js/</code>) — uso como string</h3>
+  <p>Grep: <strong>135 ocorrências em 26 arquivos</strong>. Todos os consumidores tratam
+  <code>pacienteId</code> como string — compatível com <code>uuid</code> (PostgREST
+  serializa uuid como string JSON automaticamente). <strong>Zero mudança no frontend
+  prevista.</strong> Os arquivos críticos que lêem/escrevem patient_id:</p>
+  <ul>
+    <li><code>js/api.js</code> (21x) — cria/lê appointments</li>
+    <li><code>js/agenda-smart.js</code> (18x) — finalização, pagamentos</li>
+    <li><code>js/agenda-modal.js</code> (13x) — modal de criação</li>
+    <li><code>js/components/lead-modal.js</code> (12x) — detalhes do lead</li>
+    <li><code>js/agenda-validation.js</code> (10x) — validação</li>
+    <li><code>js/repositories/*.repository.js</code> — RPCs diretas</li>
+  </ul>
+  <p class="muted">Nenhum uso que dependa da column ser <code>text</code> (nenhum <code>LIKE</code>
+  em patient_id, nenhum <code>LEFT(patient_id, n)</code>, nenhuma concatenação string).</p>
+
+  <h3>6. Triggers relevantes (lista completa)</h3>
+  <p>22 triggers em tabelas afetadas. Os que envolvem <code>patient_id</code>:</p>
+  <ul>
+    <li><code>trg_anamnesis_to_prontuario</code> → <code>_create_prontuario_from_anamnesis</code> (ok, usa tipos corretos)</li>
+    <li><code>trg_appt_normalize_patient_phone</code> (não toca patient_id)</li>
+    <li><code>trg_audit_appt_financial</code> → <code>fn_audit_appt_financial</code> (revisar se loga patient_id)</li>
+    <li><code>trg_lead_phase_on_appointment_*</code> (4x) → todas usam <code>patient_id::text</code> — REVIEW</li>
+    <li><code>trg_lead_to_patient</code> → preserva ID na conversão — REVIEW (muda a signature)</li>
+  </ul>
+
+  <h3>7. Views referenciando patient_id/leads/patients</h3>
+  <p><strong>Zero views</strong> referenciam as tabelas alvo. Isso reduz drasticamente o risco —
+  não há materialized views ou views normais para reconstruir.</p>
+
+  <h3>8. Plano de migração proposto (DDL puro, 2 fases)</h3>
+
+  <p><strong>Fase 1 — DDL (transação única, ~30 linhas SQL):</strong></p>
+  <pre>BEGIN;
+-- 1. Drop FKs que serão recriadas depois
+ALTER TABLE anamnesis_requests  DROP CONSTRAINT anamnesis_requests_patient_id_fkey;
+ALTER TABLE anamnesis_responses DROP CONSTRAINT anamnesis_responses_patient_id_fkey;
+ALTER TABLE cashflow_entries    DROP CONSTRAINT cashflow_entries_patient_id_fkey;
+ALTER TABLE quiz_responses      DROP CONSTRAINT quiz_responses_lead_id_fkey;
+
+-- 2. Converter colunas (100% dos valores já são UUIDs válidos)
+ALTER TABLE patients           ALTER COLUMN id         TYPE uuid USING id::uuid;
+ALTER TABLE leads              ALTER COLUMN id         TYPE uuid USING id::uuid;
+ALTER TABLE anamnesis_requests ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE anamnesis_responses ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE cashflow_entries   ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE budgets            ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE legal_doc_requests ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+ALTER TABLE patient_complaints ALTER COLUMN patient_id TYPE uuid USING patient_id::uuid;
+-- quiz_responses.lead_id: verificar tipo antes, provavelmente já é uuid
+
+-- 3. Recriar FKs
+ALTER TABLE anamnesis_requests  ADD CONSTRAINT anamnesis_requests_patient_id_fkey
+  FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;
+ALTER TABLE anamnesis_responses ADD CONSTRAINT anamnesis_responses_patient_id_fkey
+  FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE;
+ALTER TABLE cashflow_entries    ADD CONSTRAINT cashflow_entries_patient_id_fkey
+  FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE SET NULL;
+ALTER TABLE quiz_responses      ADD CONSTRAINT quiz_responses_lead_id_fkey
+  FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL;
+
+-- 4. Recarregar cache do PostgREST
+NOTIFY pgrst, 'reload schema';
+COMMIT;</pre>
+
+  <p><strong>Por que só DDL na Fase 1:</strong> o PostgreSQL aceita
+  <code>uuid_column::text</code> como cast explícito válido (é sempre-conversível).
+  Então todas as 17 funções com <code>patient_id::text</code> <strong>continuam funcionando</strong>
+  — o cast vira redundante, não inválido. Única exceção: variáveis locais declaradas
+  como <code>text</code> recebendo <code>uuid::text</code> — ainda funciona, pois cast pra text é válido.</p>
+
+  <p><strong>O que quebra na Fase 1 (risco real):</strong></p>
+  <ul>
+    <li><strong>Comparações <code>uuid = text_var</code></strong> (sem cast explícito) — PostgreSQL exige cast. Nenhuma encontrada na auditoria.</li>
+    <li><strong>RPCs que recebem <code>p_patient_id text</code> e fazem <code>WHERE id = p_patient_id</code></strong> após mudança da coluna — precisa cast <code>p_patient_id::uuid</code>. Auditar signatures.</li>
+    <li><strong>Inserts/updates vindos do frontend</strong> — JSON strings são coagíveis para uuid automaticamente no PostgREST (testado em <code>appointments.patient_id</code> já é uuid e funciona).</li>
+  </ul>
+
+  <p><strong>Fase 2 — Limpeza do código (opcional, pode ser progressiva):</strong></p>
+  <ul>
+    <li>Remover <code>::text</code> redundantes das 17 funções, uma por uma</li>
+    <li>Atualizar signatures que aceitam <code>p_patient_id text</code> para <code>uuid</code></li>
+    <li>Declarar variáveis locais <code>v_lead_id</code>, <code>v_patient_id</code> como <code>uuid</code></li>
+    <li>Cada função pode ser atualizada independentemente — não há acoplamento</li>
+  </ul>
+
+  <h3>9. Rollback</h3>
+  <p>Se Fase 1 falhar no meio, a transação reverte tudo (BEGIN/COMMIT). Se falhar depois
+  do COMMIT (bug pós-deploy), o rollback é o mesmo SQL invertido (<code>ALTER ... TYPE text USING id::text</code>)
+  — também 100% seguro porque uuid sempre se converte para text.</p>
+
+  <h3>10. Checklist pré-execução</h3>
+  <ol>
+    <li><span class="badge badge-pending">TODO</span> Verificar tipo atual de <code>quiz_responses.lead_id</code> (<code>\d quiz_responses</code>)</li>
+    <li><span class="badge badge-pending">TODO</span> Auditar signatures de RPCs que aceitam <code>p_patient_id</code> como parâmetro</li>
+    <li><span class="badge badge-pending">TODO</span> Revisar <code>trg_lead_to_patient</code> — pode estar fazendo INSERT cruzado com cast</li>
+    <li><span class="badge badge-pending">TODO</span> Backup completo do schema antes da Fase 1 (<code>pg_dump --schema-only</code>)</li>
+    <li><span class="badge badge-pending">TODO</span> Testar em staging/local antes de produção</li>
+    <li><span class="badge badge-pending">TODO</span> Rodar <code>_find_target_appointments</code> + <code>wa_pro_patient_search</code> pós-migração para smoke test</li>
+    <li><span class="badge badge-pending">TODO</span> Confirmar que <code>quiz_responses.lead_id</code> não tem valores órfãos (<code>SELECT count(*) FROM quiz_responses WHERE lead_id NOT IN (SELECT id FROM leads)</code>)</li>
+  </ol>
+
+  <h3 id="opcao-b-revisao">11-bis. REVISÃO 2026-04-12 — descobertas na auditoria profunda</h3>
+  <p>Após executar os itens 1-3 do checklist, 3 bombas apareceram que mudam o plano:</p>
+
+  <p><strong style="color:#b91c1c">🔴 BOMBA 1 — <code>trg_lead_to_patient</code> usa <code>md5()</code> como patient.id</strong></p>
+  <pre>-- definição atual:
+v_patient_id := md5('patient_lead_' || NEW.id);
+INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
+  <p><code>md5()</code> retorna hex de 32 chars <strong>sem hífens</strong> (<code>abc123def456...</code>).
+  <strong>Não é um uuid válido.</strong> Se convertermos <code>patients.id</code> para uuid,
+  este trigger quebra em TODA conversão futura de lead → paciente. Precisa ser reescrito
+  para <code>gen_random_uuid()</code> ou derivar determinísticamente com UUID v5.
+  <em>Nota:</em> os 2 pacientes atuais não vieram deste trigger (são UUIDs válidos) —
+  ou o trigger nunca rodou com sucesso, ou foram criados manualmente.</p>
+
+  <p><strong style="color:#b91c1c">🔴 BOMBA 2 — <code>leads.id</code> tem 12 tabelas dependentes, não 1</strong></p>
+  <p>Eu tinha mapeado só <code>quiz_responses.lead_id</code>. Grep completo em <code>information_schema.columns</code>:</p>
+  <table>
+    <tr><th>Tabela</th><th>Tipo</th></tr>
+    <tr><td>budgets.lead_id</td><td>text</td></tr>
+    <tr><td>interactions.lead_id</td><td>text</td></tr>
+    <tr><td>lead_pipeline_positions.lead_id</td><td>text</td></tr>
+    <tr><td>leads_audit.lead_id</td><td>text</td></tr>
+    <tr><td>phase_history.lead_id</td><td>text</td></tr>
+    <tr><td>quiz_responses.lead_id</td><td>text (0 rows)</td></tr>
+    <tr><td>rule_executions.lead_id</td><td>text</td></tr>
+    <tr><td>tasks.lead_id</td><td>text</td></tr>
+    <tr><td>wa_birthday_campaigns.lead_id</td><td>text</td></tr>
+    <tr><td>wa_conversations.lead_id</td><td>text</td></tr>
+    <tr><td>wa_outbox.lead_id</td><td>text</td></tr>
+    <tr><td>facial_photos.lead_id</td><td>uuid ✓</td></tr>
+    <tr><td>facial_sessions.lead_id</td><td>uuid ✓</td></tr>
+  </table>
+  <p>Converter <code>leads.id</code> exige converter as 11 colunas <code>text</code> em cascata.
+  O blast radius <strong>mais que dobrou</strong>.</p>
+
+  <p><strong style="color:#d97706">🟡 BOMBA 3 — 11 RPCs aceitam <code>p_patient_id text</code></strong></p>
+  <p>Lista:</p>
+  <ul>
+    <li><code>_find_target_appointments(..., p_patient_id text, ...)</code></li>
+    <li><code>cashflow_link_appointment(..., p_patient_id text)</code></li>
+    <li><code>complaint_list(p_patient_id text)</code></li>
+    <li><code>complaint_upsert(..., p_patient_id text, ...)</code></li>
+    <li><code>complete_anamnesis_form(..., p_patient_id text, ...)</code></li>
+    <li><code>create_anamnesis_request(..., p_patient_id text, ...)</code></li>
+    <li><code>legal_doc_create_request(..., p_patient_id text, ...)</code></li>
+    <li><code>legal_doc_list_requests(p_patient_id text, ...)</code></li>
+    <li><code>mr_create(p_patient_id uuid, ...)</code> ✓ <em>já uuid</em></li>
+    <li><code>mr_get_patient_summary(p_patient_id uuid)</code> ✓</li>
+    <li><code>mr_list_for_patient(p_patient_id uuid, ...)</code> ✓</li>
+  </ul>
+  <p>Nenhuma dessas RPCs faz <code>WHERE id = p_patient_id</code> direto (grep retornou vazio),
+  então PostgreSQL fará coerção implícita automática — mas é frágil.
+  Idealmente, signatures mudam para <code>p_patient_id uuid</code> na Fase 2.</p>
+
+  <h3 id="opcao-c">12. Nova proposta — Opção C (escopo cirúrgico)</h3>
+  <p><strong>Não tocar em <code>leads.id</code>.</strong> Converter apenas o lado do paciente.
+  Isso reduz o escopo de 22 colunas para 8, de 13 tabelas para 7, e elimina a necessidade
+  de reescrever o ecossistema de leads.</p>
+
+  <p><strong>Escopo Opção C:</strong></p>
+  <ul>
+    <li><code>patients.id</code> (2 rows) → uuid</li>
+    <li><code>anamnesis_requests.patient_id</code> (5) → uuid</li>
+    <li><code>anamnesis_responses.patient_id</code> (5) → uuid</li>
+    <li><code>cashflow_entries.patient_id</code> (257) → uuid</li>
+    <li><code>budgets.patient_id</code> (0) → uuid</li>
+    <li><code>legal_doc_requests.patient_id</code> (0) → uuid</li>
+    <li><code>patient_complaints.patient_id</code> (4) → uuid</li>
+  </ul>
+
+  <p><strong>Pré-requisito obrigatório (blocker):</strong></p>
+  <p>Reescrever <code>_convert_lead_to_patient</code> ANTES do ALTER. Opções:</p>
+  <ul>
+    <li><strong>A)</strong> Trocar <code>md5()</code> por <code>gen_random_uuid()</code>
+      — perde a determinismo, mas é a solução limpa.</li>
+    <li><strong>B)</strong> Usar UUID v5 determinístico:
+      <code>uuid_generate_v5(uuid_ns_url(), 'lead:' || NEW.id)</code> — mantém determinismo
+      e gera uuid válido. Requer extensão <code>uuid-ossp</code>.</li>
+    <li><strong>C)</strong> Matar o trigger — usar <code>gen_random_uuid()</code> no INSERT
+      direto via RPC (já é o padrão moderno).</li>
+  </ul>
+
+  <p><strong>Risco Opção C:</strong></p>
+  <ul>
+    <li><span class="badge badge-ok">BAIXO</span> Dados (100% uuid válidos hoje)</li>
+    <li><span class="badge badge-ok">BAIXO</span> Frontend (trata como string)</li>
+    <li><span class="badge badge-ok">BAIXO</span> <code>leads.id</code> intocado — 12 tabelas dependentes seguem funcionando sem mudança</li>
+    <li><span class="badge badge-warn">MÉDIO</span> <code>wa_pro_patient_search</code> / <code>wa_pro_patient_balance</code> comparam <code>a.patient_id::text = l.id</code> — cast continua válido pós-migração (<code>uuid::text = text</code>)</li>
+    <li><span class="badge badge-warn">MÉDIO</span> <code>_convert_lead_to_patient</code> precisa ser reescrito ANTES</li>
+    <li><span class="badge badge-ok">BAIXO</span> 11 RPCs com <code>p_patient_id text</code> — PostgreSQL coerção implícita cobre, migração Fase 2 pode limpar</li>
+  </ul>
+
+  <p><strong>Esforço Opção C:</strong> ~1h fix no trigger + ~1h migration DDL + ~30min smoke test = <strong>~2.5h total</strong>.</p>
+
+  <p><strong>Opção B (original, converter leads.id também):</strong> estimativa realista subiu
+  de 4h para <strong>~12-16h</strong>, com risco ALTO de regressão nos fluxos de quiz,
+  broadcast, aniversários, tasks, SDR — todos usam <code>lead_id text</code> e têm lógica
+  de negócio densa. <strong>Não recomendado agora.</strong></p>
+
+  <h3>13. Veredito FINAL (legado — antes da descoberta das 3 bombas)</h3>
+  <p><strong>Migração viável, mas não trivial.</strong> Os principais riscos são:</p>
+  <ul>
+    <li><span class="badge badge-ok">BAIXO</span> Dados (100% uuid válidos)</li>
+    <li><span class="badge badge-ok">BAIXO</span> Frontend (tratamento como string funciona igual)</li>
+    <li><span class="badge badge-ok">BAIXO</span> Views (nenhuma a reconstruir)</li>
+    <li><span class="badge badge-warn">MÉDIO</span> 17 funções com <code>::text</code> — casts viram redundantes (seguem funcionando)</li>
+    <li><span class="badge badge-warn">MÉDIO</span> 4 triggers <code>trg_appointment_*_phase</code> atribuem <code>patient_id::text</code> a <code>v_lead_id</code> — funciona se var for text</li>
+    <li><span class="badge badge-fail">ALTO</span> <code>trg_lead_to_patient</code> — não auditado ainda, pode ter lógica de INSERT com cast</li>
+    <li><span class="badge badge-fail">ALTO</span> RPCs com parâmetro <code>p_patient_id text</code> — vão quebrar se não adicionarmos cast <code>::uuid</code></li>
+  </ul>
+
+  <p><strong>Recomendação:</strong> Antes de executar, completar itens 1-3 do checklist
+  (verificar <code>quiz_responses.lead_id</code>, auditar signatures de RPCs, revisar
+  <code>trg_lead_to_patient</code>). Só assim os riscos ALTOS viram BAIXOS.</p>
+
+  <p><strong>Esforço estimado Fase 1:</strong> 2-4 horas (migration + smoke tests).
+  <strong>Esforço Fase 2:</strong> 1 hora por função × 17 = espalhável ao longo de sprints futuros.</p>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
   <h2>Próximos passos</h2>
