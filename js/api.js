@@ -1641,6 +1641,32 @@ function _setLeadStatus(leadId, newStatus, skipIf = []) {
   }
 }
 
+// ── Cache de templates WA (1x por sessão) ────────────────────
+let _waTemplatesCache = null
+async function _getWaTemplate(slug) {
+  if (!window._sbShared) return null
+  if (!_waTemplatesCache) {
+    try {
+      const { data, error } = await window._sbShared
+        .from('wa_message_templates')
+        .select('slug, content, is_active')
+        .eq('is_active', true)
+      if (error) return null
+      _waTemplatesCache = {}
+      ;(data || []).forEach(t => { if (t.slug) _waTemplatesCache[t.slug] = t.content })
+    } catch (e) { return null }
+  }
+  return _waTemplatesCache[slug] || null
+}
+
+// Substitui {placeholders} no template string
+function _waTplRender(tpl, vars) {
+  if (!tpl) return ''
+  return tpl.replace(/\{(\w+)\}/g, function(_, k) {
+    return (vars && vars[k] != null) ? String(vars[k]) : ''
+  })
+}
+
 // ── Mensagem automática ao criar agendamento ──────────────────
 async function _enviarMsgAgendamento(appt) {
   // Busca telefone: 1) do appt, 2) do lead no localStorage
@@ -1659,23 +1685,52 @@ async function _enviarMsgAgendamento(appt) {
   const clinica   = _getClinicaNome()
   const nomeEnx   = _nomeEnxuto(appt.pacienteNome || 'Paciente')
   const dataFmt   = _fmtDataPtBr(appt.data)
-  // Link REAL de anamnese via RPC create_anamnesis_request
-  // Se falhar (sem template, sem paciente, RPC down), linkAnam vira null
-  // e o template omite a linha da anamnese
-  const linkAnam  = await _gerarLinkAnamnese(appt.id, appt.pacienteId)
   const profNome  = appt.profissionalNome || ''
   const proc      = appt.procedimento || ''
 
-  const mensagem  = _tplMsgAgendamento({
-    nome:       nomeEnx,
-    clinica,
-    data:       dataFmt,
-    hora:       appt.horaInicio,
-    procedimento: proc,
-    profissional: profNome,
-    link_anamnese: linkAnam,
-    telefone
-  })
+  // ═ Escolhe variante baseado em tipoPaciente ═
+  // novo    → scheduling_confirm_novo (com link da anamnese)
+  // retorno → scheduling_confirm_retorno (sem link)
+  const isNovo = (appt.tipoPaciente || 'novo') !== 'retorno'
+  const slug = isNovo ? 'scheduling_confirm_novo' : 'scheduling_confirm_retorno'
+
+  // Só gera link da anamnese se for paciente novo (retorno já preencheu)
+  const linkAnam = isNovo ? await _gerarLinkAnamnese(appt.id, appt.pacienteId) : null
+
+  // Monta o conteúdo da linha procedimento (usada nos 2 templates)
+  const linhaProc = proc ? `💆‍♀️ *Procedimento:* ${proc}` : ''
+
+  // Busca template do DB; se falhar, cai no hardcoded legado
+  const dbTpl = await _getWaTemplate(slug)
+  let mensagem
+  if (dbTpl) {
+    mensagem = _waTplRender(dbTpl, {
+      nome:              nomeEnx,
+      clinica:           clinica,
+      data:              dataFmt,
+      hora:              appt.horaInicio,
+      procedimento:      proc,
+      profissional:      profNome,
+      linha_procedimento: linhaProc,
+      link_anamnese:     linkAnam || '',
+    })
+    // Se template de novo e link falhou, remove a linha do link
+    if (isNovo && !linkAnam) {
+      mensagem = mensagem.replace(/\n*Para garantirmos[\s\S]*?5 min\)[^\n]*\n*/m, '\n\n')
+    }
+  } else {
+    // Fallback: template hardcoded legado
+    mensagem = _tplMsgAgendamento({
+      nome:       nomeEnx,
+      clinica,
+      data:       dataFmt,
+      hora:       appt.horaInicio,
+      procedimento: proc,
+      profissional: profNome,
+      link_anamnese: linkAnam,
+      telefone
+    })
+  }
 
   // Enviar via wa_outbox (real, nao simulado)
   if (telefone && window._sbShared) {
