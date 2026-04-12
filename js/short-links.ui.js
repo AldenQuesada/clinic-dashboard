@@ -98,6 +98,7 @@
         html += '<div class="sl-item-right">'
         html += '<div class="sl-item-clicks">' + _ico('bar-chart-2', 14) + ' <span>' + (l.clicks || 0) + '</span></div>'
         html += '<button class="sl-item-btn sl-copy-btn" data-copy="' + _esc(short) + '" title="Copiar">' + _ico('copy', 14) + '</button>'
+        html += '<button class="sl-item-btn sl-open-btn" data-open="' + _esc(short) + '" title="Abrir link">' + _ico('external-link', 14) + '</button>'
         html += '<button class="sl-item-btn sl-del-btn" data-del="' + _esc(l.code) + '" title="Excluir">' + _ico('trash-2', 14) + '</button>'
         html += '</div>'
         html += '</div>'
@@ -144,6 +145,13 @@
           document.body.appendChild(inp); inp.select(); document.execCommand('copy')
           document.body.removeChild(inp); _toast('Link copiado!', 'success')
         })
+      })
+    })
+
+    // Open in new tab
+    document.querySelectorAll('[data-open]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        window.open(btn.dataset.open, '_blank')
       })
     })
 
