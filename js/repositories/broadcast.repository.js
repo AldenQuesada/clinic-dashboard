@@ -20,24 +20,15 @@
   if (window._clinicaiBroadcastRepoLoaded) return
   window._clinicaiBroadcastRepoLoaded = true
 
-  const _url = () => window.ClinicEnv?.SUPABASE_URL || ''
-  const _key = () => window.ClinicEnv?.SUPABASE_KEY || ''
-
-  function _headers() {
-    const h = { 'apikey': _key(), 'Content-Type': 'application/json' }
-    const token = (typeof getToken === 'function' && getToken()) || _key()
-    h['Authorization'] = 'Bearer ' + token
-    return h
-  }
+  function _sb() { return window._sbShared || null }
 
   async function _rpc(name, params = {}) {
     try {
-      const r = await fetch(_url() + '/rest/v1/rpc/' + name, {
-        method: 'POST', headers: _headers(), body: JSON.stringify(params)
-      })
-      if (!r.ok) { const e = await r.text(); return { ok: false, data: null, error: e } }
-      const data = await r.json()
-      return { ok: true, data, error: null }
+      const sb = _sb()
+      if (!sb) return { ok: false, data: null, error: 'Supabase not ready' }
+      const res = await sb.rpc(name, params)
+      if (res.error) return { ok: false, data: null, error: res.error.message }
+      return { ok: true, data: res.data, error: null }
     } catch (e) { return { ok: false, data: null, error: e.message } }
   }
 

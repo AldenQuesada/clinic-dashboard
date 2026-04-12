@@ -11,18 +11,14 @@
   if (window._clinicaiShortLinksLoaded) return
   window._clinicaiShortLinksLoaded = true
 
-  var _url = function () { return window.ClinicEnv?.SUPABASE_URL || '' }
-  var _key = function () { return window.ClinicEnv?.SUPABASE_KEY || '' }
-  function _h() {
-    var h = { 'apikey': _key(), 'Content-Type': 'application/json' }
-    var token = (typeof getToken === 'function' && getToken()) || _key()
-    h['Authorization'] = 'Bearer ' + token
-    return h
-  }
+  function _sb() { return window._sbShared || null }
   async function _rpc(name, params) {
     try {
-      var r = await fetch(_url() + '/rest/v1/rpc/' + name, { method: 'POST', headers: _h(), body: JSON.stringify(params || {}) })
-      return await r.json()
+      var sb = _sb()
+      if (!sb) return null
+      var res = await sb.rpc(name, params || {})
+      if (res.error) { console.warn('[ShortLinks] RPC ' + name + ':', res.error.message); return null }
+      return res.data
     } catch (e) { return null }
   }
   function _esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML }

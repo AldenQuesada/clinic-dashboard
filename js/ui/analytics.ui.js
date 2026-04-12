@@ -40,18 +40,14 @@
   }
 
   async function _loadData() {
-    var token = (typeof getToken === 'function' && getToken()) || (window.ClinicEnv?.SUPABASE_KEY || '')
-    var headers = {
-      'apikey': window.ClinicEnv?.SUPABASE_KEY || '',
-      'Authorization': 'Bearer ' + token,
-      'Content-Type': 'application/json'
-    }
-    var base = (window.ClinicEnv?.SUPABASE_URL || '') + '/rest/v1/rpc/'
+    var sb = window._sbShared
+    if (!sb) return
 
     async function rpc(name, params) {
       try {
-        var r = await fetch(base + name, { method: 'POST', headers: headers, body: JSON.stringify(params || {}) })
-        return await r.json()
+        var res = await sb.rpc(name, params || {})
+        if (res.error) { console.warn('[Analytics] RPC ' + name + ':', res.error.message); return null }
+        return res.data
       } catch(e) { return null }
     }
 
