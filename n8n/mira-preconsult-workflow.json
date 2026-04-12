@@ -1,0 +1,113 @@
+{
+  "name": "ClinicAI - Mira Pre-Consult Alerts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "*/5 8-21 * * 1-6" }
+          ]
+        }
+      },
+      "id": "pc-cron",
+      "name": "Cron every 5min 8am-9pm Mon-Sat",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_active_digest_recipients",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "id": "pc-list",
+      "name": "List Recipients",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "credentials": {
+        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst items = Array.isArray(data) ? data : [];\nreturn items.map(r => ({ json: r }));"
+      },
+      "id": "pc-split-pros",
+      "name": "Split Recipients",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/wa_pro_pre_consult_alerts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_phone\": \"{{ $json.phone }}\"\n}",
+        "options": {}
+      },
+      "id": "pc-fetch",
+      "name": "Fetch Alerts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "credentials": {
+        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Expande cada alerta individualmente + adiciona instance_id\nconst res = $input.first().json;\nconst recipient = $('Split Recipients').item.json;\nconst alerts = res.alerts || [];\nif (alerts.length === 0) return [];\nreturn alerts.map(a => ({ json: {\n  phone: a.phone,\n  instance: recipient.instance_id,\n  message: a.message,\n  appointment_id: a.appointment_id\n} }));"
+      },
+      "id": "pc-expand",
+      "name": "Expand Alerts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://n8n_evolution-api:8080/message/sendText/{{ $json.instance }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.phone }}\",\n  \"text\": {{ JSON.stringify($json.message) }}\n}",
+        "options": {}
+      },
+      "id": "pc-send",
+      "name": "Send WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ezmaPVK9AyfxTg4c", "name": "Mira — Evolution API" }
+      }
+    }
+  ],
+  "connections": {
+    "Cron every 5min 8am-9pm Mon-Sat": { "main": [[{ "node": "List Recipients", "type": "main", "index": 0 }]] },
+    "List Recipients": { "main": [[{ "node": "Split Recipients", "type": "main", "index": 0 }]] },
+    "Split Recipients": { "main": [[{ "node": "Fetch Alerts", "type": "main", "index": 0 }]] },
+    "Fetch Alerts": { "main": [[{ "node": "Expand Alerts", "type": "main", "index": 0 }]] },
+    "Expand Alerts": { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

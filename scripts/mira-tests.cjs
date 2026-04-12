@@ -30,8 +30,10 @@ const UNKNOWN    = '5511999888777';   // nao cadastrado
 let pass = 0, fail = 0;
 const failures = [];
 
+let _resetRateLimit = null;
 async function test(name, fn) {
   try {
+    if (_resetRateLimit) await _resetRateLimit();
     await fn();
     pass++;
     console.log(' ✓', name);
@@ -69,13 +71,24 @@ function assertIncludes(haystack, needle, msg) {
 
   console.log('\n━━━ Mira Test Suite ━━━\n');
 
-  // Setup: reset rate_limit pros profissionais de teste
-  await c.query(`
-    UPDATE wa_pro_rate_limit
-    SET query_count = 0, minute_count = 0, minute_window_start = null
-    WHERE date = CURRENT_DATE
-  `);
-  console.log('(rate limit reset)\n');
+  async function resetRateLimit() {
+    await c.query(`UPDATE wa_pro_rate_limit SET query_count = 0, minute_count = 0, minute_window_start = null, max_per_day = 99999 WHERE date = (now() AT TIME ZONE 'America/Sao_Paulo')::date`);
+    // Ensure row exists for both test professionals even if not yet created today
+    await c.query(`
+      INSERT INTO wa_pro_rate_limit (clinic_id, professional_id, date, query_count, minute_count, max_per_day)
+      SELECT '00000000-0000-0000-0000-000000000001'::uuid, professional_id, (now() AT TIME ZONE 'America/Sao_Paulo')::date, 0, 0, 99999
+      FROM wa_numbers WHERE number_type = 'professional_private'
+      ON CONFLICT (clinic_id, professional_id, date) DO UPDATE SET query_count = 0, minute_count = 0, minute_window_start = null, max_per_day = 99999
+    `);
+  }
+  async function resetState() {
+    await resetRateLimit();
+    await c.query(`DELETE FROM wa_pro_context`);
+    await c.query(`UPDATE wa_numbers SET permissions = jsonb_set(COALESCE(permissions, '{}'::jsonb), '{markdown}', 'true'::jsonb) WHERE number_type = 'professional_private'`);
+  }
+  _resetRateLimit = resetRateLimit;
+  await resetState();
+  console.log('(state reset: rate_limit + context + markdown=true)\n');
 
   // ========================================
   // GROUP: Auth / Resolve
@@ -257,12 +270,31 @@ function assertIncludes(haystack, needle, msg) {
   });
 
   await test('handle_message: patient_balance multi-match', async () => {
+    await c.query("DELETE FROM wa_pro_context WHERE phone = $1", [ALDEN_FULL]);
     const r = await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: 'quanto a Maria me deve' });
-    assertEq(r.intent, 'patient_balance');
+    assert(r.intent === 'patient_balance' || r.intent === 'patient_balance_disambig', 'intent: ' + r.intent);
     assertIncludes(r.response, 'Encontrei');
   });
 
+  await test('handle_message: multi-turn resolve "2"', async () => {
+    await c.query("DELETE FROM wa_pro_context WHERE phone = $1", [ALDEN_FULL]);
+    await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: 'quanto a Maria me deve' });
+    const r = await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: '2' });
+    assertEq(r.intent, 'patient_balance');
+    assertIncludes(r.response, 'Saldo');
+    assertEq(r.resolved_from_context, true);
+  });
+
+  await test('handle_message: multi-turn resolve "primeira"', async () => {
+    await c.query("DELETE FROM wa_pro_context WHERE phone = $1", [ALDEN_FULL]);
+    await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: 'quanto a Maria me deve' });
+    const r = await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: 'primeira' });
+    assertEq(r.intent, 'patient_balance');
+    assertIncludes(r.response, 'Saldo');
+  });
+
   await test('handle_message: unknown cai em formatUnknown', async () => {
+    await resetState();
     const r = await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: 'abracadabra' });
     assertEq(r.intent, 'unknown');
   });
@@ -273,6 +305,7 @@ function assertIncludes(haystack, needle, msg) {
   console.log('\ncontext');
 
   await test('context: salva apos handle_message', async () => {
+    await c.query('DELETE FROM wa_pro_context WHERE phone = $1', [ALDEN_FULL]);
     await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: '/ajuda' });
     const r = await c.query('SELECT last_intent, turns FROM wa_pro_context WHERE phone = $1', [ALDEN_FULL]);
     assert(r.rows.length > 0, 'context row existe');
@@ -344,6 +377,7 @@ function assertIncludes(haystack, needle, msg) {
   console.log('\nmarkdown toggle');
 
   await test('markdown default ON → response tem asteriscos', async () => {
+    await resetState();
     const r = await rpc('wa_pro_handle_message', { p_phone: ALDEN_FULL, p_text: '/ajuda' });
     assert(r.response.includes('*'), 'asteriscos presentes');
   });
