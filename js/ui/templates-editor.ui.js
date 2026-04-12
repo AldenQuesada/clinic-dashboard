@@ -351,41 +351,7 @@
       else if (a === 'edit-category') _onEditField(id, 'category', e.target.value)
       else if (a === 'toggle') _onToggle(id, e.target.checked)
       else if (a === 'media-url') { _onEditField(id, 'media_url', e.target.value); _render() }
-    }
-
-    // File upload handler (delegated)
-    var fileInput = document.getElementById('teMediaFile')
-    if (fileInput) {
-      fileInput.onchange = async function () {
-        if (!fileInput.files || !fileInput.files[0]) return
-        var file = fileInput.files[0]
-        if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-          if (window._toastWarn) _toastWarn('Selecione imagem ou video'); return
-        }
-        var tpl = _selected()
-        if (!tpl) return
-        var env = window.ClinicEnv || {}
-        var sbUrl = env.SUPABASE_URL || 'https://oqboitkpcvuaudouwvkl.supabase.co'
-        var sbKey = env.SUPABASE_KEY || ''
-        var ts = Date.now()
-        var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-        var path = 'templates/' + ts + '-' + safeName
-        try {
-          var resp = await fetch(sbUrl + '/storage/v1/object/media/' + path, {
-            method: 'POST',
-            headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': file.type, 'x-upsert': 'true' },
-            body: file
-          })
-          if (!resp.ok) throw new Error('Upload falhou: ' + resp.status)
-          var publicUrl = sbUrl + '/storage/v1/object/public/media/' + path
-          _onEditField(tpl.id, 'media_url', publicUrl)
-          _render()
-          if (window._showToast) _showToast('Midia enviada', safeName, 'success')
-        } catch (err) {
-          if (window._toastErr) _toastErr('Erro no upload: ' + err.message)
-        }
-        fileInput.value = ''
-      }
+      else if (e.target.id === 'teMediaFile') { _handleMediaUpload(e.target) }
     }
   }
 
@@ -406,6 +372,37 @@
     chat.innerHTML = text ?
       '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + text + '</div><div class="bc-wa-bubble-time">' + ts + ' <svg width="14" height="8" viewBox="0 0 16 8" fill="none" stroke="#53bdeb" stroke-width="1.5"><polyline points="1 4 4 7 9 2"/><polyline points="5 4 8 7 13 2"/></svg></div></div>' :
       '<div class="bc-wa-empty">Escreva a mensagem ao lado</div>'
+  }
+
+  async function _handleMediaUpload(fileInput) {
+    if (!fileInput.files || !fileInput.files[0]) return
+    var file = fileInput.files[0]
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+      if (window._toastWarn) _toastWarn('Selecione imagem ou video'); return
+    }
+    var tpl = _selected()
+    if (!tpl) return
+    var env = window.ClinicEnv || {}
+    var sbUrl = env.SUPABASE_URL || 'https://oqboitkpcvuaudouwvkl.supabase.co'
+    var sbKey = env.SUPABASE_KEY || ''
+    var ts = Date.now()
+    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    var path = 'templates/' + ts + '-' + safeName
+    try {
+      var resp = await fetch(sbUrl + '/storage/v1/object/media/' + path, {
+        method: 'POST',
+        headers: { 'apikey': sbKey, 'Authorization': 'Bearer ' + sbKey, 'Content-Type': file.type, 'x-upsert': 'true' },
+        body: file
+      })
+      if (!resp.ok) throw new Error('Upload falhou: ' + resp.status)
+      var publicUrl = sbUrl + '/storage/v1/object/public/media/' + path
+      _onEditField(tpl.id, 'media_url', publicUrl)
+      _render()
+      if (window._showToast) _showToast('Midia enviada', safeName, 'success')
+    } catch (err) {
+      if (window._toastErr) _toastErr('Erro no upload: ' + err.message)
+    }
+    fileInput.value = ''
   }
 
   function _onEditField(id, field, value) {
