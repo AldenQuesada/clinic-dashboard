@@ -1737,7 +1737,9 @@ async function _enviarMsgAgendamento(appt) {
     window._sbShared.rpc('wa_outbox_enqueue_appt', {
       p_phone: telefone,
       p_content: mensagem,
-      p_lead_name: nomeEnx
+      p_lead_name: nomeEnx,
+      p_appt_ref: appt.id || null,
+      p_lead_id: appt.pacienteId || ''
     }).then(function(res) {
       if (res.error) console.error('[Agenda] wa_outbox_enqueue falhou:', res.error.message)
       else _showToast('WhatsApp enviado', 'Confirmacao para ' + nomeEnx, 'info')
