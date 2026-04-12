@@ -455,7 +455,9 @@
       })
     } else {
     // ── Branch B: busca template vivo ────────────────────────────────────────
-    const tplRows = await _get('/anamnesis_templates', { 'id': 'eq.' + tplId, 'select': 'id,name' })
+    // Busca has_general_session do DB (coluna canônica). Fallback pra
+    // snapshot parcial → tplSettingsOverride → localStorage admin → default true.
+    const tplRows = await _get('/anamnesis_templates', { 'id': 'eq.' + tplId, 'select': 'id,name,has_general_session' })
     if (!tplRows || !tplRows.length) {
       showStateScreen('error', 'Formulário não encontrado', 'Este link pode ter expirado ou o formulário não existe.')
       return
@@ -464,11 +466,16 @@
 
     const localSettings  = _getTplSettings(tplId)
     const tplSettingsObj = tplSettingsOverride || {}
+    const dbHasGeneral = (tplRows[0] && tplRows[0].has_general_session != null) ? tplRows[0].has_general_session : null
     hasGeneralSession = IS_TEST
       ? true
-      : (tplSettingsObj.has_general_session != null
-          ? tplSettingsObj.has_general_session
-          : (localSettings.has_general_session || false))
+      : (dbHasGeneral != null
+          ? dbHasGeneral
+          : ((snapshot && snapshot.has_general_session != null)
+              ? snapshot.has_general_session
+              : (tplSettingsObj.has_general_session != null
+                  ? tplSettingsObj.has_general_session
+                  : (localSettings.has_general_session != null ? localSettings.has_general_session : true))))
 
     const sessRows = await _get('/anamnesis_template_sessions', {
       'template_id': 'eq.' + tplId,
