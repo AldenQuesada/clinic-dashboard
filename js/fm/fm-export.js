@@ -83,7 +83,7 @@
   FM._exportReport = function () {
     // Allow export even without analysis (doctor can edit inline)
     if (!FM._photoUrls || Object.keys(FM._photoUrls).length === 0) {
-      _toastWarn('Envie pelo menos uma foto para gerar o report.')
+      FM._showToast('Envie pelo menos uma foto para gerar o report.', 'warn')
       return
     }
 

@@ -72,6 +72,7 @@
   _defAngleProp('_metric2Points', [])
   _defAngleProp('_metric2Midline', null)
   _defAngleProp('_metric2Angles', null)
+  _defAngleProp('_afterMetricAngles', null)
   _defAngleProp('_metric2NextPointId', 1)
   _defAngleProp('_metric2NextLineId', 1)
 

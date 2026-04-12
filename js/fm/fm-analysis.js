@@ -246,7 +246,7 @@
       if (FM._photoUrls['45']) {
         FM._activeAngle = '45'
       } else {
-        _toastWarn('Vetores faciais requer foto de 45\u00B0. Faca o upload primeiro.')
+        FM._showToast('Vetores faciais requer foto de 45\u00B0. Faca o upload primeiro.', 'warn')
         FM._editorMode = 'zones'
         return
       }
@@ -258,7 +258,7 @@
       } else if (FM._photoUrls['lateral']) {
         FM._activeAngle = 'lateral'
       } else {
-        _toastWarn('Analise requer foto frontal ou lateral.')
+        FM._showToast('Analise requer foto frontal ou lateral.', 'warn')
         FM._editorMode = 'zones'
         return
       }
@@ -592,7 +592,7 @@
           FM._refreshToolbar()
         }
       })
-      .catch(function () {})
+      .catch(function () { /* collagen score optional — API offline */ })
     }
     img.src = FM._photoUrls[angle]
   }

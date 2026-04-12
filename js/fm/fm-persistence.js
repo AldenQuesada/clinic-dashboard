@@ -170,6 +170,7 @@
           var arr = new Uint8Array(binary.length)
           for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
           var blob = new Blob([arr], { type: 'image/jpeg' })
+          if (FM._photoUrls[angle]) URL.revokeObjectURL(FM._photoUrls[angle])
           FM._photoUrls[angle] = URL.createObjectURL(blob)
           FM._photos[angle] = blob
         }
@@ -187,6 +188,7 @@
           var aBin = atob(afterPhotos[ang].split(',')[1])
           var aArr = new Uint8Array(aBin.length)
           for (var j = 0; j < aBin.length; j++) aArr[j] = aBin.charCodeAt(j)
+          if (FM._afterPhotoByAngle[ang]) URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
           FM._afterPhotoByAngle[ang] = URL.createObjectURL(new Blob([aArr], { type: 'image/jpeg' }))
         } catch (e) { /* silent */ }
       })
@@ -225,7 +227,7 @@
 
   FM._saveToSupabase = function () {
     if (!FM._lead || !FM._lead.id) {
-      _toastWarn('Nenhum paciente selecionado.')
+      FM._showToast('Nenhum paciente selecionado.', 'warn')
       return
     }
 
@@ -284,6 +286,36 @@
         btn.style.borderColor = ''
       }, 2000)
     }
+  }
+
+  // ── Photo cache helpers (Supabase) ──────────────────────────
+  FM._hashPhoto = async function (b64) {
+    try {
+      var data = new TextEncoder().encode(b64)
+      var buf = await crypto.subtle.digest('SHA-256', data)
+      return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0') }).join('')
+    } catch (e) { return null }
+  }
+
+  FM._getCachedPhoto = async function (hash) {
+    if (!hash || !window._sbShared) return null
+    try {
+      var res = await window._sbShared.rpc('get_facial_photo', { p_hash: hash })
+      if (res.data && res.data.found) return res.data.photo_b64
+    } catch (e) { /* silent */ }
+    return null
+  }
+
+  FM._cachePhoto = async function (angle, hash, b64) {
+    if (!hash || !b64 || !window._sbShared) return
+    var clinicId = null
+    try { clinicId = JSON.parse(localStorage.getItem('clinicai_clinic_id') || 'null') } catch (e) {}
+    var leadId = FM._lead ? (FM._lead.id || FM._lead.lead_id) : null
+    try {
+      await window._sbShared.rpc('upsert_facial_photo', {
+        p_clinic_id: clinicId, p_lead_id: leadId, p_angle: angle, p_hash: hash, p_photo_b64: b64,
+      })
+    } catch (e) { /* silent — cache is best-effort */ }
   }
 
 })()

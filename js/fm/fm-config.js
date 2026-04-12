@@ -9,6 +9,11 @@
   window._FM = {}
   var FM = window._FM
 
+  // Polyfill: AbortController (older browsers)
+  if (typeof AbortController === 'undefined') {
+    window.AbortController = function () { this.signal = {}; this.abort = function () {} }
+  }
+
   // Polyfill: CanvasRenderingContext2D.roundRect (Safari, older browsers)
   if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {

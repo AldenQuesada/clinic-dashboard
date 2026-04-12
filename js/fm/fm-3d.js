@@ -253,6 +253,7 @@
     }
     script.onerror = function () {
       console.error('[FaceMapping] Failed to load Three.js')
+      FM._showToast('Visualizacao 3D indisponivel (CDN offline)', 'warn')
     }
     document.head.appendChild(script)
   }
