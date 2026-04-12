@@ -1009,24 +1009,26 @@
   }
 
   function apptResetPagamentos() {
-    _apptPagamentos = [{ forma: '', valor: 0, status: 'aberto', parcelas: 1, valorParcela: 0, comentario: '' }]
+    _apptPagamentos.length = 0
+    _apptPagamentos.push({ forma: '', valor: 0, status: 'aberto', parcelas: 1, valorParcela: 0, comentario: '' })
     apptRenderPagamentos()
   }
 
   function apptLoadPagamentos(arr, fallbackForma, fallbackValor) {
+    _apptPagamentos.length = 0
     if (Array.isArray(arr) && arr.length > 0) {
-      _apptPagamentos = arr.map(function(p) {
-        return {
+      arr.forEach(function(p) {
+        _apptPagamentos.push({
           forma:        p.forma || '',
           valor:        parseFloat(p.valor) || 0,
           status:       p.status === 'pago' ? 'pago' : 'aberto',
           parcelas:     parseInt(p.parcelas) || 1,
           valorParcela: parseFloat(p.valorParcela) || 0,
           comentario:   p.comentario || '',
-        }
+        })
       })
     } else {
-      _apptPagamentos = [{
+      _apptPagamentos.push({
         forma: fallbackForma || '',
         valor: parseFloat(fallbackValor) || 0,
         status: 'aberto',
@@ -1578,13 +1580,19 @@
         appts[idx] = Object.assign({}, appts[idx], apptData)
         // Audit log de edição — registra todos os campos alterados
         if (!appts[idx].historicoAlteracoes) appts[idx].historicoAlteracoes = []
-        var _auditFields = ['data','horaInicio','horaFim','profissionalIdx','profissionalNome','salaIdx','procedimento','tipoConsulta','tipoAvaliacao','origem','valor','formaPagamento','status','confirmacaoEnviada','consentimentoImagem','obs']
+        var _auditFields = ['data','horaInicio','horaFim','profissionalIdx','profissionalNome','salaIdx','procedimento','tipoConsulta','tipoAvaliacao','origem','valor','formaPagamento','statusPagamento','status','confirmacaoEnviada','consentimentoImagem','obs','pacienteId','indicadoPor','tipoPaciente','cortesiaMotivo','valorCortesia','qtdProcsCortesia']
         var _oldVals = {}, _newVals = {}, _hasChanges = false
         _auditFields.forEach(function(f) {
           if (String(old[f] || '') !== String(apptData[f] || '')) {
             _oldVals[f] = old[f]; _newVals[f] = apptData[f]; _hasChanges = true
           }
         })
+        var _oldProcsJson = JSON.stringify(old.procedimentos || [])
+        var _newProcsJson = JSON.stringify(apptData.procedimentos || [])
+        if (_oldProcsJson !== _newProcsJson) { _oldVals.procedimentos = old.procedimentos; _newVals.procedimentos = apptData.procedimentos; _hasChanges = true }
+        var _oldPagsJson = JSON.stringify(old.pagamentos || [])
+        var _newPagsJson = JSON.stringify(apptData.pagamentos || [])
+        if (_oldPagsJson !== _newPagsJson) { _oldVals.pagamentos = old.pagamentos; _newVals.pagamentos = apptData.pagamentos; _hasChanges = true }
         if (_hasChanges) {
           appts[idx].historicoAlteracoes.push({
             action_type: 'edicao',
