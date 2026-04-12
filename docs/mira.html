@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mira — Documentação Completa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-2: #13131a;
+    --bg-3: #1a1a24;
+    --panel: #15151d;
+    --border: #26262f;
+    --border-2: #36363f;
+    --text: #e5e7eb;
+    --text-muted: #9ca3af;
+    --text-dim: #6b7280;
+    --accent: #8b5cf6;
+    --accent-2: #a78bfa;
+    --accent-soft: #4c1d95;
+    --ok: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --code-bg: #0f0f15;
+    --code-border: #2a2a35;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'Inter', -apple-system, sans-serif; font-size: 14px; line-height: 1.65; }
+  code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { color: var(--accent); }
+  h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.02em; color: #fff; margin: 0; }
+  h1 { font-size: 32px; line-height: 1.1; }
+  h2 { font-size: 24px; line-height: 1.2; margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); padding-bottom: 6px; }
+  h3 { font-size: 18px; line-height: 1.3; margin-top: 32px; color: var(--accent-2); }
+  h4 { font-size: 15px; line-height: 1.3; margin-top: 24px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.04em; }
+  p { margin: 12px 0; }
+  ul, ol { margin: 12px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+
+  .layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  aside {
+    background: var(--bg-2);
+    border-right: 1px solid var(--border);
+    padding: 32px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  aside .logo {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  aside .subtitle { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 24px; }
+  aside nav { display: flex; flex-direction: column; gap: 2px; }
+  aside nav a {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  aside nav a:hover { background: var(--bg-3); color: var(--text); }
+  aside nav a.section { margin-top: 16px; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; padding: 6px 12px 4px; pointer-events: none; }
+
+  /* Main */
+  main {
+    padding: 48px 56px 120px;
+    max-width: 980px;
+  }
+  .lead {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 8px 0 32px;
+    padding: 16px 20px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+  }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--bg-2); color: #cbd5e1; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  tr:hover td { background: rgba(139, 92, 246, 0.04); }
+  td code { font-size: 12px; }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 12px 0;
+  }
+  p > code, li > code, td > code {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 12px;
+    color: #e5e7eb;
+  }
+  .hl-keyword { color: #c084fc; }
+  .hl-string { color: #86efac; }
+  .hl-number { color: #fbbf24; }
+  .hl-comment { color: #6b7280; font-style: italic; }
+  .hl-fn { color: #67e8f9; }
+
+  /* Callouts */
+  .callout {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+  }
+  .callout.ok { border-left-color: var(--ok); }
+  .callout.warn { border-left-color: var(--warn); }
+  .callout.danger { border-left-color: var(--danger); }
+  .callout.info { border-left-color: var(--info); }
+  .callout .title { font-weight: 700; color: #fff; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .callout .title.ok { color: var(--ok); }
+  .callout .title.warn { color: var(--warn); }
+  .callout .title.danger { color: var(--danger); }
+  .callout .title.info { color: var(--info); }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--bg-3);
+    color: var(--text-muted);
+    border: 1px solid var(--border-2);
+  }
+  .badge.ok { background: rgba(16, 185, 129, 0.1); color: var(--ok); border-color: rgba(16, 185, 129, 0.3); }
+  .badge.warn { background: rgba(245, 158, 11, 0.1); color: var(--warn); border-color: rgba(245, 158, 11, 0.3); }
+  .badge.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
+  .badge.accent { background: rgba(139, 92, 246, 0.15); color: var(--accent-2); border-color: rgba(139, 92, 246, 0.35); }
+
+  /* Flow diagram */
+  .flow {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .flow b { color: var(--accent-2); font-weight: 600; }
+
+  /* Stats grid */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 20px 0; }
+  .stat {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .stat .value { font-size: 28px; font-weight: 800; color: var(--accent-2); line-height: 1; }
+  .stat .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 6px; }
+
+  /* KV list */
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 12px 0; font-size: 13px; }
+  .kv .k { color: var(--text-muted); font-weight: 500; }
+  .kv .v { color: var(--text); }
+
+  /* Nodes list */
+  .node-list { display: grid; gap: 10px; margin: 16px 0; }
+  .node-item {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .node-item .name { font-weight: 700; color: #fff; font-size: 13px; }
+  .node-item .type { font-size: 11px; color: var(--text-dim); font-family: monospace; }
+  .node-item .desc { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+  hr { border: 0; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* Small helpers */
+  .muted { color: var(--text-muted); }
+  .dim { color: var(--text-dim); }
+  .small { font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <div class="logo">Mira</div>
+  <div class="subtitle">Assistente WhatsApp</div>
+  <nav>
+    <a class="section">Visão geral</a>
+    <a href="#overview">Resumo executivo</a>
+    <a href="#status">Status atual</a>
+    <a href="#concepts">Conceitos</a>
+
+    <a class="section">Arquitetura</a>
+    <a href="#architecture">Topologia</a>
+    <a href="#ssot">SSOT</a>
+    <a href="#data-model">Modelo de dados</a>
+    <a href="#flow">Fluxo ponta a ponta</a>
+    <a href="#workflow">Workflow n8n</a>
+
+    <a class="section">Backend</a>
+    <a href="#rpcs">RPCs</a>
+    <a href="#intents">Intents Tier 1</a>
+    <a href="#tier2">Tier 2 Haiku</a>
+    <a href="#tools">Tools</a>
+    <a href="#fuzzy">Fuzzy search</a>
+    <a href="#auth">Autenticação</a>
+    <a href="#rate-limit">Rate limit</a>
+    <a href="#context">Contexto multi-turno</a>
+    <a href="#permissions">Permissões</a>
+
+    <a class="section">Segurança</a>
+    <a href="#rls">RLS hardening</a>
+    <a href="#credentials">Credentials</a>
+    <a href="#sanitization">Sanitização</a>
+    <a href="#audit">Audit log</a>
+
+    <a class="section">Qualidade</a>
+    <a href="#tests">Test suite</a>
+    <a href="#validations">Validações</a>
+    <a href="#bugs">Bugs históricos</a>
+
+    <a class="section">Operação</a>
+    <a href="#migrations">Migrations</a>
+    <a href="#files">Arquivos</a>
+    <a href="#howto">Como adicionar intent</a>
+    <a href="#cost">Custo</a>
+    <a href="#roadmap">Roadmap Bloco C</a>
+  </nav>
+</aside>
+
+<main>
+
+<!-- ============ OVERVIEW ============ -->
+<section id="overview">
+<h1>Mira — Documentação Completa</h1>
+<div class="lead">
+  Mira é a assistente interna via WhatsApp dos profissionais da clínica. Ela responde consultas sobre agenda, pacientes e financeiro em linguagem natural, com isolamento de escopo por profissional, rate limit, contexto multi-turno e fallback conversacional via Claude Haiku.
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="value">14</div><div class="label">RPCs wa_pro_*</div></div>
+  <div class="stat"><div class="value">12</div><div class="label">Intents Tier 1</div></div>
+  <div class="stat"><div class="value">8</div><div class="label">Tools Tier 2</div></div>
+  <div class="stat"><div class="value">11</div><div class="label">Nodes n8n</div></div>
+  <div class="stat"><div class="value">37</div><div class="label">Testes (0 falhas)</div></div>
+  <div class="stat"><div class="value">10</div><div class="label">Migrations</div></div>
+</div>
+
+<h3 id="status">Status atual</h3>
+<table>
+  <tr><th>Componente</th><th>Status</th></tr>
+  <tr><td>Autenticação (phone → professional)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Tier 1 regex (11 intents + quota)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Tier 2 Claude Haiku (tool use)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>WhatsApp integration (Evolution + n8n)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Rate limit (10/min + 50/dia)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Context multi-turno (TTL 10min)</td><td><span class="badge warn">Tabela criada, não consumida ainda</span></td></tr>
+  <tr><td>RLS hardening</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Test suite</td><td><span class="badge ok">37/37</span></td></tr>
+</table>
+
+<h3 id="concepts">Conceitos fundamentais</h3>
+<div class="kv">
+  <div class="k">SSOT</div><div class="v"><b>Single Source of Truth</b>. Toda a lógica Tier 1 vive em <code>wa_pro_handle_message</code>. Dashboard e n8n apenas chamam essa RPC. Zero duplicação.</div>
+  <div class="k">Tier 1</div><div class="v">Regex puro em PL/pgSQL. Classifica a mensagem em 1 de 12 intents. ~0ms de latência. Cobre 90% dos casos comuns.</div>
+  <div class="k">Tier 2</div><div class="v">Claude Haiku (claude-haiku-4-5) com tool use. Acionado quando Tier 1 retorna <code>unknown</code>. Decide qual tool chamar. Custo ~R$5-10/mês.</div>
+  <div class="k">Access Scope</div><div class="v"><code>own</code> / <code>team</code> / <code>full</code>. Determina se o profissional vê só seus dados, do time ou da clínica toda.</div>
+  <div class="k">Two Worlds</div><div class="v">Números oficiais da clínica → Lara (atende pacientes). Números privados dos profissionais → Mira (consultas internas). Cross-talk impossível.</div>
+</div>
+
+</section>
+
+<!-- ============ ARCHITECTURE ============ -->
+<section id="architecture">
+<h2>Arquitetura</h2>
+
+<h3>Topologia</h3>
+<div class="flow">
+Profissional (WhatsApp pessoal)
+        │ manda msg
+        ▼
+┌──────────────────────────────┐
+│  Evolution API               │  instância: mira-mirian
+│  (baileys, roda no VPS)      │
+└──────────────┬───────────────┘
+               │ webhook MESSAGES_UPSERT
+               ▼
+┌──────────────────────────────┐
+│  n8n Workflow                │  id: j3i14cyQt3NPiGF2
+│  ClinicAI - Mira WhatsApp    │
+└──────────────┬───────────────┘
+               │
+      ┌────────┴─────────┐
+      ▼                  ▼
+┌───────────┐      ┌────────────┐
+│ Supabase  │ ◄───►│ Claude API │
+│ (Postgres)│      │ Haiku 4.5  │
+└───────────┘      └────────────┘
+       │
+       ▼
+  wa_pro_* RPCs (SECURITY DEFINER)
+  leads / appointments / cashflow
+</div>
+
+<h3 id="ssot">SSOT — Single Source of Truth</h3>
+<p>Antes da refatoração, <b>a mesma lógica Tier 1 existia em 2 lugares</b>:</p>
+<ol>
+  <li><code>js/services/mira.service.js</code> (dashboard console)</li>
+  <li>Code node "Mira Brain" dentro do workflow n8n (115 linhas JS inline)</li>
+</ol>
+<p>Qualquer correção (regex, formatter, nova intent) precisava ser feita nos 2 lugares. Um bug no regex <code>patient_balance</code> foi corrigido no dashboard mas ficou esquecido no n8n durante 1 sessão.</p>
+
+<div class="callout ok">
+  <div class="title ok">Solução</div>
+  Toda a lógica foi movida pra uma RPC única <code>wa_pro_handle_message(phone, text)</code> no Postgres. Dashboard e n8n agora apenas chamam essa RPC. Fonte única de verdade, zero drift.
+</div>
+
+<h3 id="data-model">Modelo de dados</h3>
+<h4>Tabelas</h4>
+<table>
+  <tr><th>Tabela</th><th>Propósito</th><th>RLS</th></tr>
+  <tr>
+    <td><code>wa_numbers</code></td>
+    <td>Registro dos números WhatsApp. <code>number_type</code> = <code>professional_private</code> ou <code>clinic_official</code>. Inclui <code>professional_id</code>, <code>access_scope</code> e <code>permissions</code> (JSONB).</td>
+    <td>Admin only</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_audit_log</code></td>
+    <td>Log de toda query enviada pra Mira: query original, intent, response_summary, success, response_ms. Base pra métricas e debug.</td>
+    <td>service_role only</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_rate_limit</code></td>
+    <td>Contadores de queries por dia + janela de 1 minuto. Campos <code>query_count</code>, <code>max_per_day</code>, <code>minute_count</code>, <code>minute_window_start</code>, <code>blocked</code>.</td>
+    <td>service_role only</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_context</code></td>
+    <td>Multi-turno. Uma linha por <code>phone</code>. Guarda <code>last_intent</code>, <code>last_entity_id/name</code>, <code>turns</code>, <code>expires_at</code> (TTL 10min).</td>
+    <td>service_role only</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_messages</code></td>
+    <td>Reservado pra histórico de mensagens (não usado ativamente ainda).</td>
+    <td>service_role only</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_config</code></td>
+    <td>Key-value configs da Mira (futuro: API keys rotacionáveis, feature flags).</td>
+    <td>service_role only</td>
+  </tr>
+</table>
+
+<h4>Campos críticos em <code>wa_numbers</code></h4>
+<pre>phone            text     -- formato: 5544998787673 (país + DDD + número)
+number_type      text     -- 'professional_private' | 'clinic_official'
+professional_id  uuid     -- FK para professional_profiles
+access_scope     text     -- 'own' | 'team' | 'full'
+permissions      jsonb    -- {agenda, pacientes, financeiro, markdown}
+instance_id      text     -- nome da instância Evolution
+api_url, api_key text     -- endpoint Evolution</pre>
+
+<h3 id="flow">Fluxo ponta a ponta</h3>
+<div class="flow">
+1. <b>Profissional</b> digita "tenho agenda hoje?" no WhatsApp dele
+                                  │
+2. <b>Evolution</b> recebe, dispara webhook POST pra n8n
+                                  │
+3. <b>n8n / Webhook Receive</b>   │
+                                  ▼
+4. <b>n8n / Parse Message</b>    extrai phone (LID fallback), text, filtra grupos
+                                  │
+5. <b>n8n / Should Skip?</b>     se group/fromMe/broadcast → Respond Skip
+                                  │
+6. <b>n8n / Tier 1 Handle</b>    HTTP POST Supabase RPC wa_pro_handle_message
+                                  │
+          ┌──────────────────────┤
+          ▼                      │
+7a. RPC sanitiza, autentica, rate limit, regex intent
+          │                      │
+          ▼                      │
+7b. CASE intent → chama RPC especializada (wa_pro_agenda, etc)
+          │                      │
+          ▼                      │
+7c. Formatter SQL (_fmt_agenda, etc) monta texto WhatsApp
+          │                      │
+          ▼                      │
+7d. Salva context, loga audit, retorna {response, intent, quota, ...}
+          │                      │
+          └──────────────────────┤
+                                  ▼
+8. <b>n8n / Need Tier 2?</b>     if intent == 'unknown':
+                                  │
+                      ┌───────────┤
+                      ▼           │
+9a. <b>Claude Haiku</b>  HTTP POST Anthropic com tool_use, 8 tools
+                      │           │
+                      ▼           │
+9b. Parse Claude Response  extrai tool_use block ou text
+                      │           │
+                      ▼           │
+9c. Needs Tool?   if yes: HTTP POST wa_pro_execute_tool
+                      │           │
+                      ▼           │
+9d. Tool formata resposta
+                      │           │
+                      └───────────┤
+                                  ▼
+10. <b>n8n / Merge</b>           consolida {phone, instance, reply}
+                                  │
+                                  ▼
+11. <b>n8n / Send WhatsApp</b>  POST Evolution /message/sendText
+                                  │
+                                  ▼
+12. <b>Profissional recebe</b>  resposta formatada
+</div>
+
+</section>
+
+<!-- ============ WORKFLOW ============ -->
+<section id="workflow">
+<h2>Workflow n8n</h2>
+<div class="kv">
+  <div class="k">ID</div><div class="v"><code>j3i14cyQt3NPiGF2</code></div>
+  <div class="k">Nome</div><div class="v">ClinicAI - Mira WhatsApp Assistant</div>
+  <div class="k">Webhook</div><div class="v"><code>https://flows.aldenquesada.site/webhook/mira-webhook</code></div>
+  <div class="k">Arquivo</div><div class="v"><code>n8n/mira-whatsapp-workflow.json</code> (no repo, sem secrets)</div>
+</div>
+
+<h3>Nodes</h3>
+<div class="node-list">
+  <div class="node-item">
+    <div class="name">1. Webhook - Receive</div>
+    <div class="type">n8n-nodes-base.webhook · POST /mira-webhook</div>
+    <div class="desc">Recebe evento do Evolution API. Response mode: responseNode (final do fluxo).</div>
+  </div>
+  <div class="node-item">
+    <div class="name">2. Parse Message</div>
+    <div class="type">n8n-nodes-base.code</div>
+    <div class="desc">Extrai phone (com fallback LID → senderPn), text, instance. Filtra: messages.upsert, não fromMe, não @g.us/@broadcast/@newsletter, tem texto.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">3. Should Skip?</div>
+    <div class="type">n8n-nodes-base.if</div>
+    <div class="desc">Se skip=true → Respond Skip. Caso contrário → Tier 1.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">4. Respond Skip</div>
+    <div class="type">respondToWebhook</div>
+    <div class="desc">Retorna 200 "skip" pro Evolution (encerra sem processar).</div>
+  </div>
+  <div class="node-item">
+    <div class="name">5. Tier 1 — Handle Message</div>
+    <div class="type">httpRequest · credential: Mira — Supabase Service</div>
+    <div class="desc">POST <code>rest/v1/rpc/wa_pro_handle_message</code> com <code>{p_phone, p_text}</code>. Retorna <code>{ok, response, intent, professional, elapsed_ms, quota}</code>.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">6. Need Tier 2?</div>
+    <div class="type">n8n-nodes-base.if</div>
+    <div class="desc">Check <code>intent === 'unknown'</code>. Se sim → Tier 2. Se não → Merge direto.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">7. Tier 2 — Claude Haiku</div>
+    <div class="type">httpRequest · credential: Mira — Claude API</div>
+    <div class="desc">POST <code>api.anthropic.com/v1/messages</code>. Model <code>claude-haiku-4-5-20251001</code>, max_tokens 512, 8 tools declarados, system prompt em PT-BR.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">8. Parse Claude Response</div>
+    <div class="type">n8n-nodes-base.code</div>
+    <div class="desc">Extrai <code>content[].type === 'tool_use'</code> (tool_name + input). Se não tem tool, pega <code>content[].type === 'text'</code> e retorna como resposta final.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">9. Needs Tool?</div>
+    <div class="type">n8n-nodes-base.if</div>
+    <div class="desc">Se <code>needsTool === true</code> → Execute Tool. Se não → Merge direto (Claude respondeu texto).</div>
+  </div>
+  <div class="node-item">
+    <div class="name">10. Execute Tool</div>
+    <div class="type">httpRequest · credential: Mira — Supabase Service</div>
+    <div class="desc">POST <code>rest/v1/rpc/wa_pro_execute_tool</code> com <code>{p_phone, p_tool_name, p_args}</code>. Dispatcher pra uma das 8 tools.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">11. Merge</div>
+    <div class="type">n8n-nodes-base.code</div>
+    <div class="desc">Consolida phone do Parse Message + reply do node upstream (Tier1/Claude text/Execute Tool).</div>
+  </div>
+  <div class="node-item">
+    <div class="name">12. Send WhatsApp</div>
+    <div class="type">httpRequest · credential: Mira — Evolution API</div>
+    <div class="desc">POST <code>http://n8n_evolution-api:8080/message/sendText/{{instance}}</code> com <code>{number, text}</code>.</div>
+  </div>
+  <div class="node-item">
+    <div class="name">13. Respond OK</div>
+    <div class="type">respondToWebhook</div>
+    <div class="desc">Retorna 200 "ok" pro Evolution.</div>
+  </div>
+</div>
+
+</section>
+
+<!-- ============ RPCs ============ -->
+<section id="rpcs">
+<h2>RPCs</h2>
+
+<h3>Tier 1 — Core</h3>
+<table>
+  <tr><th>RPC</th><th>Args</th><th>Retorna</th><th>SECURITY</th></tr>
+  <tr><td><code>wa_pro_handle_message</code></td><td>phone, text</td><td>{response, intent, quota, elapsed_ms}</td><td>DEFINER</td></tr>
+  <tr><td><code>wa_pro_authenticate</code></td><td>phone</td><td>{ok, professional_id, name, access_scope, permissions}</td><td>DEFINER</td></tr>
+  <tr><td><code>wa_pro_resolve_phone</code></td><td>phone</td><td>{ok, clinic_id, professional_id, wa_number_id, name, access_scope}</td><td>DEFINER</td></tr>
+  <tr><td><code>wa_pro_check_rate_limit</code></td><td>professional_id</td><td>{ok, count, max, remaining} ou {ok:false, reason}</td><td>DEFINER</td></tr>
+  <tr><td><code>wa_pro_my_quota</code></td><td>phone</td><td>{day_used, day_max, day_remaining, minute_used, blocked}</td><td>DEFINER</td></tr>
+  <tr><td><code>wa_pro_execute_and_format</code></td><td>intent, text, phone, prof_name</td><td>text (resposta formatada)</td><td>DEFINER</td></tr>
+</table>
+
+<h3>Query RPCs</h3>
+<table>
+  <tr><th>RPC</th><th>Args</th><th>Retorna</th></tr>
+  <tr><td><code>wa_pro_patient_search</code></td><td>phone, query, limit</td><td>{ok, results[]}</td></tr>
+  <tr><td><code>wa_pro_patient_balance</code></td><td>phone, patient_query</td><td>{ok, patient, total, paid, balance, appointments[]} ou {multiple_matches, matches[]}</td></tr>
+  <tr><td><code>wa_pro_agenda</code></td><td>phone, date</td><td>{ok, date, total, finalized, pending, appointments[]}</td></tr>
+  <tr><td><code>wa_pro_agenda_free_slots</code></td><td>phone, date</td><td>{ok, busy[]}</td></tr>
+  <tr><td><code>wa_pro_finance_summary</code></td><td>phone, start, end</td><td>{ok, bruto, qtd, ticket_medio, delta_pct, previous_bruto}</td></tr>
+  <tr><td><code>wa_pro_finance_commission</code></td><td>phone, start, end</td><td>{ok, bruto, comissao, percentual}</td></tr>
+  <tr><td><code>wa_pro_recent_payments</code></td><td>phone, start, end</td><td>{ok, total, sum, payments[]}</td></tr>
+</table>
+
+<h3>Tier 2 — Tool dispatcher</h3>
+<table>
+  <tr><th>RPC</th><th>Args</th><th>Notas</th></tr>
+  <tr><td><code>wa_pro_execute_tool</code></td><td>phone, tool_name, args JSONB</td><td>Dispatcher pra 8 tools. Parser de período expandido (hoje/ontem/semana/mes/semana_passada/mes_passado).</td></tr>
+</table>
+
+<h3>Helpers de formatação (SQL)</h3>
+<table>
+  <tr><th>Função</th><th>Retorna</th></tr>
+  <tr><td><code>_money(n)</code></td><td>"R$ 1.234,56" (formato BR)</td></tr>
+  <tr><td><code>_br_date(d)</code></td><td>"DD/MM"</td></tr>
+  <tr><td><code>_strip_markdown(t)</code></td><td>remove *bold*, _italic_, ~strike~</td></tr>
+  <tr><td><code>_fmt_agenda(p, label)</code></td><td>texto formatado com appointments</td></tr>
+  <tr><td><code>_fmt_free_slots(p, label)</code></td><td>horários ocupados</td></tr>
+  <tr><td><code>_fmt_patient_list(p)</code></td><td>lista de pacientes</td></tr>
+  <tr><td><code>_fmt_patient_balance(p)</code></td><td>saldo ou multi-match</td></tr>
+  <tr><td><code>_fmt_finance_summary(p, label)</code></td><td>receita + delta</td></tr>
+  <tr><td><code>_fmt_finance_commission(p, label)</code></td><td>comissão</td></tr>
+  <tr><td><code>_fmt_payments_list(p, label)</code></td><td>lista de pagamentos</td></tr>
+</table>
+
+</section>
+
+<!-- ============ INTENTS ============ -->
+<section id="intents">
+<h2>Intents Tier 1 (regex)</h2>
+<p>Ordem importa — o primeiro pattern que casar é usado.</p>
+
+<table>
+  <tr><th>Intent</th><th>Regex</th><th>Exemplos</th></tr>
+  <tr><td><code>help</code></td><td><code>^\s*(/?ajuda|/?help|comandos|menu)\s*$</code></td><td>"/ajuda", "ajuda", "menu"</td></tr>
+  <tr><td><code>greeting</code></td><td><code>^\s*(oi|ola|bom dia|...)\s*[!?.]*\s*$</code></td><td>"oi", "bom dia"</td></tr>
+  <tr><td><code>agenda_today</code></td><td><code>(agenda|horario).*(hoje|do dia) | tenho hoje</code></td><td>"tenho agenda hoje?", "agenda do dia"</td></tr>
+  <tr><td><code>agenda_tomorrow</code></td><td><code>(agenda|horario).*(amanha|amanhã) | tenho amanha</code></td><td>"tenho amanhã?"</td></tr>
+  <tr><td><code>agenda_week</code></td><td><code>(agenda|horario).*(semana) | minha semana</code></td><td>"minha semana"</td></tr>
+  <tr><td><code>agenda_free</code></td><td><code>(horario).*(livre|disponivel) | tem horario</code></td><td>"horários livres hoje"</td></tr>
+  <tr><td><code>payments_list</code></td><td><code>(quem|quais)\s+(me\s+)?(fez|pag\w*).*periodo | quem\s+me\s+pag\w+</code></td><td>"quem me pagou essa semana"</td></tr>
+  <tr><td><code>finance_revenue</code></td><td><code>(faturei|faturamento|receita|recebi).*(hoje|semana|mes)</code></td><td>"quanto faturei essa semana"</td></tr>
+  <tr><td><code>finance_commission</code></td><td><code>(minha\s+)?(comissao|comissão) | quanto\s+ganhei</code></td><td>"minha comissão do mês"</td></tr>
+  <tr><td><code>patient_balance</code></td><td><code>quanto\s+(a\s+)?\w+\s+(me\s+)?deve | saldo\s+(do|da)\s+\w+</code></td><td>"quanto a Maria me deve"</td></tr>
+  <tr><td><code>patient_lookup</code></td><td><code>(paciente|cliente|quem\s+(e|é|eh))\s+\w+</code></td><td>"quem é Maria Silva"</td></tr>
+  <tr><td><code>quota</code></td><td><code>^\s*(minha\s+)?quota\s*$</code></td><td>"minha quota"</td></tr>
+  <tr><td><code>unknown</code></td><td>fallback</td><td>→ dispara Tier 2</td></tr>
+</table>
+
+</section>
+
+<!-- ============ TIER 2 ============ -->
+<section id="tier2">
+<h2>Tier 2 — Claude Haiku</h2>
+
+<p>Quando o Tier 1 retorna <code>unknown</code>, o n8n chama Claude Haiku com <b>tool use</b>. O Claude decide qual tool chamar, com que argumentos, ou responde em texto se nenhuma tool serve.</p>
+
+<h3>System prompt</h3>
+<pre>Voce eh a Mira, assistente WhatsApp da clinica da Dra Mirian.
+Usuario eh um profissional. Escolha a tool apropriada pra responder.
+Se pedirem algo fora das tools, responda em texto curto educadamente
+que voce nao pode ajudar com isso agora.</pre>
+
+<h3 id="tools">Tools disponíveis</h3>
+<table>
+  <tr><th>Tool</th><th>Input</th><th>Descrição</th></tr>
+  <tr><td><code>get_agenda</code></td><td><code>{date_offset: int}</code></td><td>Consulta agenda num dia (0=hoje, 1=amanhã, -1=ontem)</td></tr>
+  <tr><td><code>get_free_slots</code></td><td><code>{date_offset: int}</code></td><td>Horários livres num dia</td></tr>
+  <tr><td><code>search_patients</code></td><td><code>{query: string}</code></td><td>Busca pacientes por nome ou telefone</td></tr>
+  <tr><td><code>get_patient_balance</code></td><td><code>{name: string}</code></td><td>Saldo financeiro de um paciente</td></tr>
+  <tr><td><code>get_finance_summary</code></td><td><code>{period: enum}</code></td><td>Resumo de receita num período</td></tr>
+  <tr><td><code>get_commission</code></td><td><code>{period: enum}</code></td><td>Comissão do profissional</td></tr>
+  <tr><td><code>list_payments</code></td><td><code>{period: enum}</code></td><td>Lista pagamentos recebidos</td></tr>
+  <tr><td><code>get_quota</code></td><td><code>{}</code></td><td>Quota de queries do dia</td></tr>
+</table>
+
+<p>Period enum: <code>hoje | ontem | antes_ontem | semana | semana_passada | mes | mes_passado</code></p>
+
+<h3>Fluxo Tier 2</h3>
+<div class="flow">
+Tier 1 retorna intent=unknown
+         │
+         ▼
+n8n chama Claude Haiku com:
+  - system prompt
+  - tools[] (8 tools)
+  - messages: [{role:user, content: <text>}]
+         │
+         ▼
+Claude retorna content[] com:
+  - type:"tool_use" → {name, input}   ← escolheu tool
+  - type:"text" → texto               ← respondeu texto
+         │
+         ▼
+Parse Claude Response
+         │
+         ▼
+  Has tool? ─no→ usa texto do Claude como reply
+     │
+     yes
+     ▼
+wa_pro_execute_tool(phone, tool, args)
+     │
+     ▼
+Retorna response formatada → envia
+</div>
+
+<h3>Exemplo real validado</h3>
+<pre>User: "ta tudo bem? preciso saber minha meta do mes"
+
+Tier 1 → unknown
+Tier 2 → Claude Haiku
+
+Claude response (text, sem tool):
+  "Tudo bem! 😊
+   Infelizmente, eu não tenho acesso a informações sobre metas
+   mensais no momento. As ferramentas que tenho disponíveis são
+   para consultar agenda, horários livres, dados de pacientes,
+   finanças e comissões.
+   Se você precisa saber sobre sua comissão do mês ou receita do
+   mês, posso ajudar com isso! Quer que eu verifique?"
+
+→ Mensagem enviada direto pro WhatsApp</pre>
+
+</section>
+
+<!-- ============ FUZZY ============ -->
+<section id="fuzzy">
+<h2>Fuzzy Search</h2>
+
+<p>Busca de pacientes usa <code>pg_trgm</code> com <code>word_similarity</code> (não <code>similarity</code>) — melhor pra casos onde a query é mais curta que o nome inteiro.</p>
+
+<h3>Algoritmo de score</h3>
+<pre>score = GREATEST(
+  word_similarity(query, name),
+  0.95 if phone LIKE '%query_digits%',
+  0.85 if name ILIKE '%query%'
+)
+
+WHERE (
+  word_similarity(query, name) > 0.5
+  OR name ILIKE '%query%'
+  OR (query_digits != '' AND phone LIKE '%query_digits%')
+)</pre>
+
+<h3>Exemplos</h3>
+<table>
+  <tr><th>Query</th><th>Match</th><th>Score</th></tr>
+  <tr><td><code>Joscely</code> (typo)</td><td>Josceli Aparecida Marchiori Tijero</td><td>0.75</td></tr>
+  <tr><td><code>Marchiori</code> (sobrenome)</td><td>Josceli Aparecida Marchiori Tijero</td><td>1.0</td></tr>
+  <tr><td><code>44998787</code> (fragmento de phone)</td><td>match por phone LIKE</td><td>0.95</td></tr>
+  <tr><td><code>Maria</code> (ambíguo)</td><td>6 pacientes retornados → pede desambiguação</td><td>1.0 cada</td></tr>
+</table>
+
+<h3>Scope filter (<code>own</code>)</h3>
+<p>Quando o profissional tem <code>access_scope='own'</code>, a busca filtra com <code>EXISTS</code> em appointments:</p>
+<pre>AND (
+  v_scope IN ('full', 'team')
+  OR EXISTS (
+    SELECT 1 FROM appointments a
+    WHERE a.patient_id::text = l.id
+      AND a.professional_id = v_prof_id
+  )
+)</pre>
+<p>Resultado: Mirian (scope=own) vê apenas pacientes com histórico de atendimento com ela. Alden (scope=full) vê todos os leads da clínica.</p>
+
+</section>
+
+<!-- ============ AUTH ============ -->
+<section id="auth">
+<h2>Autenticação</h2>
+
+<p>Fluxo <code>wa_pro_authenticate(phone)</code>:</p>
+<ol>
+  <li>Normaliza phone removendo não-dígitos</li>
+  <li>Busca em <code>wa_numbers</code> por <code>right(8)</code> match (compatível com "9 extra" brasileiro)</li>
+  <li>Verifica <code>is_active = true</code> e <code>number_type = 'professional_private'</code></li>
+  <li>Carrega <code>professional_profiles</code> pelo <code>professional_id</code></li>
+  <li>Verifica <code>is_active = true</code> do profissional</li>
+  <li>Retorna <code>{ok, professional_id, name, access_scope, permissions}</code></li>
+</ol>
+
+<div class="callout info">
+  <div class="title info">Gotcha: LID multi-device</div>
+  Alguns WhatsApps multi-device usam <code>remoteJid = "ID@lid"</code> (ID interno, não número). O parser do n8n tem fallback pra <code>key.senderPn</code> que tem o número real.
+</div>
+
+<div class="callout info">
+  <div class="title info">Gotcha: 9 extra brasileiro</div>
+  Números BR celular têm 13 dígitos (<code>5544998787673</code>) mas Evolution às vezes envia 12 (<code>554498787673</code>). Match por <code>right(8)</code> dos dígitos resolve: os últimos 8 dígitos são idênticos.
+</div>
+
+</section>
+
+<!-- ============ RATE LIMIT ============ -->
+<section id="rate-limit">
+<h2>Rate Limit</h2>
+
+<p>Janela dupla:</p>
+<ul>
+  <li><b>10 queries por minuto</b> (janela deslizante, reseta após 60s sem query)</li>
+  <li><b>50 queries por dia</b> (reseta à meia-noite, configurável via <code>max_per_day</code>)</li>
+</ul>
+
+<p>Também tem <code>blocked</code> boolean pra bloqueio manual pelo admin.</p>
+
+<h3>Respostas</h3>
+<table>
+  <tr><th>Situação</th><th>Resposta</th></tr>
+  <tr><td>Rate limit minuto</td><td>"⏱️ Você está mandando muito rápido. Respira e tenta em 1 minuto."</td></tr>
+  <tr><td>Rate limit dia</td><td>"⛔ Você atingiu o limite de 50 queries hoje."</td></tr>
+  <tr><td>Bloqueado manualmente</td><td>"⛔ Bloqueado pelo admin."</td></tr>
+</table>
+
+<h3>Quota indicator</h3>
+<p>O profissional pode digitar <code>minha quota</code> pra ver quanto já usou. Resposta:</p>
+<pre>📊 Sua quota hoje
+─────────────
+Usadas: 22/50
+Restantes: 28
+Últimos 60s: 4/10</pre>
+
+</section>
+
+<!-- ============ CONTEXT ============ -->
+<section id="context">
+<h2>Contexto Multi-turno</h2>
+
+<p>Tabela <code>wa_pro_context</code> guarda a última interação por telefone com TTL de 10min:</p>
+<pre>phone            TEXT PRIMARY KEY
+professional_id  UUID
+last_intent      TEXT      -- ultima intent executada
+last_entity_type TEXT      -- 'patient' | 'date' | ...
+last_entity_id   TEXT      -- id da entidade referida
+last_entity_name TEXT      -- nome humano
+last_query       TEXT      -- texto bruto
+turns            INT       -- qtd turnos consecutivos
+expires_at       TIMESTAMPTZ DEFAULT now() + interval '10 minutes'</pre>
+
+<div class="callout warn">
+  <div class="title warn">Estado atual</div>
+  A tabela é populada em todo <code>handle_message</code> mas ainda não é <b>consumida</b> nas queries. Próximo passo (Bloco C): usar <code>last_entity_id</code> pra resolver referências tipo "e quanto ela me deve?" após um "quem é Maria?".
+</div>
+
+</section>
+
+<!-- ============ PERMISSIONS ============ -->
+<section id="permissions">
+<h2>Permissões por Área</h2>
+
+<p>Campo <code>wa_numbers.permissions</code> é um JSONB:</p>
+<pre>{
+  "agenda":     true,   // permite consultar agenda
+  "pacientes":  true,   // permite buscar pacientes
+  "financeiro": true,   // permite consultar finanças
+  "markdown":   true    // renderizar *bold* (F12)
+}</pre>
+
+<p>O mapa <code>INTENT_AREA</code> no handler associa cada intent a uma área:</p>
+<table>
+  <tr><th>Intent</th><th>Área</th></tr>
+  <tr><td>agenda_*</td><td>agenda</td></tr>
+  <tr><td>patient_lookup, patient_balance</td><td>pacientes</td></tr>
+  <tr><td>finance_revenue, finance_commission, payments_list</td><td>financeiro</td></tr>
+</table>
+
+<p>Se <code>permissions[area] === false</code>, responde <code>"🔒 Você não tem permissão para consultar {area}"</code>.</p>
+
+</section>
+
+<!-- ============ RLS ============ -->
+<section id="rls">
+<h2>RLS Hardening</h2>
+
+<p>Estratégia: <b>bloquear SELECT direto a tabelas sensíveis pra role <code>anon</code></b>, forçando todo acesso a passar por RPCs SECURITY DEFINER.</p>
+
+<table>
+  <tr><th>Tabela</th><th>Policy</th></tr>
+  <tr><td><code>wa_pro_audit_log</code></td><td>SELECT só pra service_role</td></tr>
+  <tr><td><code>wa_pro_rate_limit</code></td><td>SELECT só pra service_role</td></tr>
+  <tr><td><code>wa_pro_context</code></td><td>SELECT só pra service_role</td></tr>
+  <tr><td><code>wa_pro_messages</code></td><td>SELECT só pra service_role</td></tr>
+  <tr><td><code>wa_numbers</code></td><td>ALL só pra service_role</td></tr>
+</table>
+
+<div class="callout ok">
+  <div class="title ok">Por que funciona</div>
+  As RPCs são <code>SECURITY DEFINER</code>, então executam com permissão do owner (postgres) e bypassam RLS. Cliente anon não consegue <code>SELECT *</code> direto, mas a RPC funciona normalmente.
+</div>
+
+<h3>Teste validado</h3>
+<pre># anon SELECT direto → 401 permission denied
+curl /rest/v1/wa_pro_audit_log?select=* -H "apikey: ANON"
+→ {"code":"42501","message":"permission denied"}
+
+# anon RPC call → funciona (SECURITY DEFINER bypass)
+curl /rest/v1/rpc/wa_pro_handle_message -d '{...}' -H "apikey: ANON"
+→ {"ok":true,"intent":"help","response":"..."}</pre>
+
+</section>
+
+<!-- ============ CREDENTIALS ============ -->
+<section id="credentials">
+<h2>Credentials n8n</h2>
+
+<p>Antes: API keys hardcoded no JSON do workflow (Supabase service key + Evolution apikey visíveis). GitHub secret scanning revogava as keys a cada push.</p>
+
+<p>Agora: <b>3 credentials n8n</b> criadas via API, referenciadas por ID nos nodes HTTP.</p>
+
+<table>
+  <tr><th>Credential</th><th>Tipo</th><th>ID</th><th>Uso</th></tr>
+  <tr><td>Mira — Supabase Service</td><td>httpCustomAuth</td><td><code>X79lxjrmGuRpBo7r</code></td><td>2 headers: <code>apikey</code> + <code>Authorization: Bearer</code></td></tr>
+  <tr><td>Mira — Evolution API</td><td>httpHeaderAuth</td><td><code>ezmaPVK9AyfxTg4c</code></td><td>header <code>apikey</code></td></tr>
+  <tr><td>Mira — Claude API</td><td>httpHeaderAuth</td><td><code>m7L9XAPfYqbrnMoB</code></td><td>header <code>x-api-key</code></td></tr>
+</table>
+
+<p>O JSON do workflow no repo não contém mais secrets. Ao importar o workflow em outro ambiente, as credentials precisam ser recriadas.</p>
+
+</section>
+
+<!-- ============ SANITIZATION ============ -->
+<section id="sanitization">
+<h2>Sanitização de Input</h2>
+<pre>-- F7: primeiros passos do handle_message
+v_text := TRIM(COALESCE(p_text, ''));
+IF LENGTH(v_text) > 500 THEN v_text := LEFT(v_text, 500); END IF;
+v_text := REGEXP_REPLACE(v_text, '[\u0000-\u001f\u007f]', '', 'g');
+
+IF v_text = '' THEN
+  RETURN jsonb_build_object('ok', false, 'response', '🤔 Mensagem vazia.');
+END IF;</pre>
+
+<ul>
+  <li><b>Trim</b> — remove whitespace antes/depois</li>
+  <li><b>Max 500 chars</b> — trunca mensagens absurdamente longas</li>
+  <li><b>Strip control chars</b> — remove <code>\u0000-\u001f</code> e <code>\u007f</code></li>
+  <li><b>Empty check</b> — rejeita antes de fazer auth</li>
+</ul>
+
+</section>
+
+<!-- ============ AUDIT ============ -->
+<section id="audit">
+<h2>Audit Log</h2>
+
+<p>Toda query que passa pelo <code>handle_message</code> é logada em <code>wa_pro_audit_log</code>:</p>
+<pre>clinic_id        UUID
+professional_id  UUID
+phone            TEXT       -- phone do remetente
+query            TEXT       -- texto original (sanitizado)
+intent           TEXT       -- classificação
+rpc_called       TEXT       -- (usado pelo Tier 2 pra registrar tool)
+result_summary   TEXT       -- LEFT(response, 500)
+success          BOOLEAN    -- true se intent != {unauthorized, rate_limited, unknown, empty}
+error_message    TEXT
+response_ms      INT        -- latência
+created_at       TIMESTAMPTZ</pre>
+
+<h3>Métricas úteis</h3>
+<pre>-- Intent distribution
+SELECT intent, count(*) FROM wa_pro_audit_log
+GROUP BY 1 ORDER BY count(*) DESC;
+
+-- Latência p50/p95 por intent
+SELECT intent,
+       percentile_cont(0.5) WITHIN GROUP (ORDER BY response_ms) AS p50,
+       percentile_cont(0.95) WITHIN GROUP (ORDER BY response_ms) AS p95
+FROM wa_pro_audit_log
+GROUP BY 1;
+
+-- Queries que falharam
+SELECT created_at, phone, query, error_message
+FROM wa_pro_audit_log WHERE NOT success
+ORDER BY created_at DESC LIMIT 20;</pre>
+
+</section>
+
+<!-- ============ TESTS ============ -->
+<section id="tests">
+<h2>Test Suite</h2>
+<div class="kv">
+  <div class="k">Arquivo</div><div class="v"><code>scripts/mira-tests.cjs</code></div>
+  <div class="k">Comando</div><div class="v"><code>node scripts/mira-tests.cjs</code></div>
+  <div class="k">Asserts</div><div class="v">37</div>
+  <div class="k">Exit code</div><div class="v">0 se passa tudo, 1 se qualquer falha</div>
+</div>
+
+<h3>Grupos cobertos</h3>
+<table>
+  <tr><th>Grupo</th><th>Asserts</th><th>Cobre</th></tr>
+  <tr><td>auth / resolve</td><td>4</td><td>full/own scope, unauthorized, right(8) BR compat</td></tr>
+  <tr><td>patient_search</td><td>5</td><td>exact, fuzzy typo, query curta, scope own, unauthorized</td></tr>
+  <tr><td>patient_balance</td><td>3</td><td>single match, multi match, not found</td></tr>
+  <tr><td>agenda</td><td>2</td><td>estrutura + free_slots</td></tr>
+  <tr><td>finance</td><td>3</td><td>summary + commission + recent_payments</td></tr>
+  <tr><td>handle_message SSOT</td><td>8</td><td>help, agenda_today, finance_revenue, quota, sanitize, unauthorized, multi-match, unknown</td></tr>
+  <tr><td>context</td><td>1</td><td>linha salva após handle_message</td></tr>
+  <tr><td>audit_log</td><td>1</td><td>response_ms populado</td></tr>
+  <tr><td>quota</td><td>1</td><td>my_quota struct</td></tr>
+  <tr><td>tier 2 execute_tool</td><td>5</td><td>get_agenda, list_payments ontem/semana_passada, unknown tool, unauthorized</td></tr>
+  <tr><td>markdown toggle</td><td>2</td><td>ON default + OFF strip</td></tr>
+  <tr><td>rls hardening</td><td>2</td><td>anon bloqueado SELECT + anon OK via RPC</td></tr>
+</table>
+
+</section>
+
+<!-- ============ VALIDATIONS ============ -->
+<section id="validations">
+<h2>Validações Ponta a Ponta</h2>
+
+<h3>Teste real via WhatsApp (Mirian)</h3>
+<pre>1. Mirian manda "/ajuda"
+   → Tier 1 intent: help
+   → Resposta: "Oi MIRIAN! 👋 Tenho 3 areas: ..."
+   ✓ Validado
+
+2. Mirian manda "Tenho agenda hoje?"
+   → Tier 1 intent: agenda_today
+   → Resposta mostra 1 appointment da própria Mirian (scope own)
+   ✓ Validado
+
+3. Mirian manda "Quanto faturei nesta semana"
+   → Tier 1 intent: finance_revenue
+   → Resposta: R$ 9.000 bruto, 7 atendimentos, delta -51.7% vs semana anterior
+   ✓ Validado
+
+4. Mirian manda "Quem fez pagamento nesta semana?"
+   → Tier 1: unknown
+   → Tier 2 Haiku: escolheu list_payments com period="semana"
+   → Execute tool: lista 3 pagamentos (scope own)
+   ✓ Validado</pre>
+
+<h3>Isolamento de escopo validado</h3>
+<table>
+  <tr><th>Profissional</th><th>Scope</th><th>Query</th><th>Resultado</th></tr>
+  <tr><td>Alden</td><td>full</td><td>"quanto a Maria me deve"</td><td>6 Marias (todas da clínica)</td></tr>
+  <tr><td>Mirian</td><td>own</td><td>"quanto a Maria me deve"</td><td>3 Marias (apenas com appointment com ela)</td></tr>
+</table>
+
+<h3>Tier 2 conversacional validado</h3>
+<pre>Mirian: "ta tudo bem? preciso saber minha meta do mes"
+
+Tier 1 → unknown
+Tier 2 → Claude Haiku (response sem tool)
+       → "Tudo bem! 😊 Infelizmente, eu não tenho acesso a
+          informações sobre metas mensais no momento. As
+          ferramentas que tenho são... Quer que eu verifique
+          sua comissão ou receita?"
+
+Merge → Send WhatsApp (texto direto do Claude)
+✓ Validado</pre>
+
+</section>
+
+<!-- ============ BUGS HISTÓRICOS ============ -->
+<section id="bugs">
+<h2>Bugs Históricos</h2>
+
+<p>Problemas encontrados e corrigidos durante a evolução da Mira. Documentados pra evitar repetição.</p>
+
+<table>
+  <tr><th>Bug</th><th>Causa</th><th>Fix</th></tr>
+  <tr>
+    <td><code>patient_balance</code> retornava sempre o primeiro lead</td>
+    <td><code>phone LIKE '%' || regex_replace(q, '[^0-9]', '') || '%'</code> — quando query é só nome, digits='' → <code>phone LIKE '%%'</code> pega tudo</td>
+    <td>Só aplicar phone LIKE se <code>v_q_digits != ''</code></td>
+  </tr>
+  <tr>
+    <td>Mirian não autenticava ("unauthorized")</td>
+    <td>wa_numbers tinha <code>5544998782003</code> (13 dig), WhatsApp multi-device enviava <code>554498782003</code> (12 dig, sem "9 extra")</td>
+    <td>Match por <code>right(8)</code> dos dígitos, ignora diferença no "9"</td>
+  </tr>
+  <tr>
+    <td>LID multi-device não autenticava</td>
+    <td><code>remoteJid = "ID@lid"</code> (ID interno do WhatsApp, não número)</td>
+    <td>Fallback parser: <code>senderPn</code> → <code>participantPn</code> → <code>remoteJid</code></td>
+  </tr>
+  <tr>
+    <td>Grupos Shopee poluindo webhook</td>
+    <td>Sem filtro de <code>@g.us</code> no parser</td>
+    <td>Skip se <code>remoteJid.includes('@g.us')</code> ou <code>@broadcast</code></td>
+  </tr>
+  <tr>
+    <td>"fetch is not defined" no Code node</td>
+    <td>n8n Code node não tem <code>fetch</code> global</td>
+    <td>Usar <code>this.helpers.httpRequest.bind(this)</code></td>
+  </tr>
+  <tr>
+    <td><code>auth.authenticated</code> e <code>auth.professional_name</code> undefined</td>
+    <td>RPC retorna <code>ok</code> e <code>name</code>, não os campos assumidos</td>
+    <td>Corrigir field names</td>
+  </tr>
+  <tr>
+    <td>"quanto faturei essa semana" caía em <code>patient_balance</code></td>
+    <td>Regex greedy: <code>(quanto|saldo|deve).*[A-Z][a-z]+</code> pegava "faturei"</td>
+    <td>Reordenar intents: finance antes de patient, apertar regex pra exigir "me deve"</td>
+  </tr>
+  <tr>
+    <td>_money formatava "R$ 2.200#00"</td>
+    <td>Faltava último REPLACE pra converter <code>#</code> → <code>,</code> no chain de escape BR</td>
+    <td>3 REPLACEs encadeados: <code>.→#</code>, <code>,→.</code>, <code>#→,</code></td>
+  </tr>
+  <tr>
+    <td>Regex <code>\b</code> não funcionava no PostgreSQL</td>
+    <td>POSIX ERE usa <code>\y</code>, <code>\m</code>, <code>\M</code> ou <code>[[:&lt;:]]...[[:&gt;:]]</code> — não <code>\b</code></td>
+    <td>Trocar pra <code>[[:&lt;:]]...[[:&gt;:]]</code></td>
+  </tr>
+  <tr>
+    <td>Type cast text/uuid entre leads.id e appointments.patient_id</td>
+    <td><code>leads.id</code> é <b>text</b>, <code>appointments.patient_id</code> é <b>uuid</b></td>
+    <td>Cast explícito: <code>a.patient_id::text = l.id</code></td>
+  </tr>
+  <tr>
+    <td>Permissões por área nunca funcionaram</td>
+    <td><code>wa_pro_authenticate</code> hardcodava <code>permissions</code> em vez de ler de <code>wa_numbers.permissions</code></td>
+    <td>Ler do DB: <code>SELECT permissions FROM wa_numbers WHERE ...</code></td>
+  </tr>
+  <tr>
+    <td>pg_trgm <code>similarity()</code> falhava com query curta vs nome longo</td>
+    <td><code>similarity('Joscely Aparecida Marchiori', 'Joscely') = 0.16</code> — diluído</td>
+    <td>Usar <code>word_similarity()</code> que pega o token mais similar: 0.75</td>
+  </tr>
+</table>
+
+</section>
+
+<!-- ============ MIGRATIONS ============ -->
+<section id="migrations">
+<h2>Migrations da Mira</h2>
+
+<table>
+  <tr><th>Número</th><th>Arquivo</th><th>O que faz</th></tr>
+  <tr><td>20260651</td><td><code>mira_schema.sql</code></td><td>Schema inicial: wa_pro_audit_log, wa_pro_messages, wa_pro_rate_limit + extensão wa_numbers</td></tr>
+  <tr><td>20260652</td><td><code>mira_auth_rpcs.sql</code></td><td>5 RPCs auth: authenticate, check_rate_limit, log_query, register_number, list_numbers</td></tr>
+  <tr><td>20260653</td><td><code>mira_query_rpcs.sql</code></td><td>7 RPCs query: resolve_phone, patient_search, patient_balance, agenda, free_slots, finance_summary, finance_commission</td></tr>
+  <tr><td>20260654</td><td><code>mira_permissions.sql</code></td><td>Permissões granulares por área</td></tr>
+  <tr><td>20260655</td><td><code>mira_finance_from_appointments.sql</code></td><td>Finance reads from appointments (não cashflow_entries)</td></tr>
+  <tr><td>20260656</td><td><code>fix_mira_patient_balance.sql</code></td><td><b>Fix:</b> regex empty string no patient_balance</td></tr>
+  <tr><td>20260657</td><td><code>fix_mira_phone_right8.sql</code></td><td><b>Fix:</b> match por right(8) (compat BR "9 extra")</td></tr>
+  <tr><td>20260658</td><td><code>mira_recent_payments_rpc.sql</code></td><td>Nova RPC recent_payments + intent payments_list</td></tr>
+  <tr><td>20260661</td><td><code>mira_hardening.sql</code></td><td><b>Hardening:</b> pg_trgm, context table, rate limit minuto, fuzzy patient_search, multi-match patient_balance, quota, scope filter, response_ms</td></tr>
+  <tr><td>20260662</td><td><code>mira_handle_message.sql</code></td><td><b>SSOT:</b> wa_pro_handle_message + execute_and_format + 7 formatters SQL</td></tr>
+  <tr><td>20260663</td><td><code>mira_tier2_tools.sql</code></td><td><b>Tier 2:</b> execute_tool dispatcher + 8 tools + period parser expandido</td></tr>
+  <tr><td>20260664</td><td><code>mira_rls_hardening.sql</code></td><td><b>RLS:</b> revoke SELECT anon + service_role only policies</td></tr>
+  <tr><td>20260665</td><td><code>mira_markdown_toggle.sql</code></td><td><b>Markdown:</b> _strip_markdown + permissions.markdown flag + fix authenticate lê permissions do DB</td></tr>
+</table>
+
+</section>
+
+<!-- ============ FILES ============ -->
+<section id="files">
+<h2>Arquivos no Repo</h2>
+
+<h3>Backend</h3>
+<pre>supabase/migrations/
+├── 20260651000000_mira_schema.sql
+├── 20260652000000_mira_auth_rpcs.sql
+├── 20260653000000_mira_query_rpcs.sql
+├── 20260654000000_mira_permissions.sql
+├── 20260655000000_mira_finance_from_appointments.sql
+├── 20260656000000_fix_mira_patient_balance.sql
+├── 20260657000000_fix_mira_phone_right8.sql
+├── 20260658000000_mira_recent_payments_rpc.sql
+├── 20260661000000_mira_hardening.sql
+├── 20260662000000_mira_handle_message.sql
+├── 20260663000000_mira_tier2_tools.sql
+├── 20260664000000_mira_rls_hardening.sql
+└── 20260665000000_mira_markdown_toggle.sql</pre>
+
+<h3>Frontend / Dashboard</h3>
+<pre>js/repositories/mira.repository.js   (166 lines)  — RPC wrappers
+js/services/mira.service.js          (477 lines)  — handleMessageSSOT + backward compat
+js/ui/mira-console.ui.js             (406 lines)  — página de teste local</pre>
+
+<h3>n8n</h3>
+<pre>n8n/mira-whatsapp-workflow.json     — workflow v3 com credentials (sem secrets)</pre>
+
+<h3>Tests</h3>
+<pre>scripts/mira-tests.cjs               — 37 asserts</pre>
+
+<h3>Docs</h3>
+<pre>docs/mira.html                       — este arquivo</pre>
+
+</section>
+
+<!-- ============ HOW TO ============ -->
+<section id="howto">
+<h2>Como Adicionar uma Nova Intent</h2>
+
+<ol>
+  <li><b>Decidir</b> se é Tier 1 (regex determinístico) ou deixar pro Tier 2</li>
+  <li><b>Tier 1</b>:
+    <ol>
+      <li>Editar <code>wa_pro_handle_message</code> e adicionar ao CASE <code>v_intent</code></li>
+      <li>Editar <code>wa_pro_execute_and_format</code> e adicionar ao dispatcher</li>
+      <li>Se precisar RPC nova, criar migration</li>
+      <li>Adicionar área em <code>INTENT_AREA</code> se for permissão-sensível</li>
+    </ol>
+  </li>
+  <li><b>Tier 2</b>:
+    <ol>
+      <li>Adicionar tool em <code>wa_pro_execute_tool</code> (novo WHEN no CASE)</li>
+      <li>Atualizar system prompt + tools array no workflow n8n (node "Tier 2 — Claude Haiku")</li>
+    </ol>
+  </li>
+  <li><b>Testes</b>:
+    <ol>
+      <li>Adicionar asserts em <code>scripts/mira-tests.cjs</code></li>
+      <li>Rodar <code>node scripts/mira-tests.cjs</code></li>
+    </ol>
+  </li>
+  <li><b>Help dinâmico</b>: atualizar a string em <code>_fmt_help</code> se for user-facing</li>
+  <li><b>Commit + push</b>: deploy automático via Easypanel</li>
+</ol>
+
+</section>
+
+<!-- ============ COST ============ -->
+<section id="cost">
+<h2>Custo</h2>
+
+<h3>Tier 1 (regex SQL)</h3>
+<p><b>R$ 0,00</b> — roda inline no Postgres. Latência ~0ms.</p>
+
+<h3>Tier 2 (Claude Haiku)</h3>
+<p>Só disparado quando Tier 1 retorna <code>unknown</code>. Estimativa conservadora:</p>
+<table>
+  <tr><th>Métrica</th><th>Valor</th></tr>
+  <tr><td>Queries/mês (estimativa)</td><td>~2.200 (5 prof × 20 queries/dia × 22 dias)</td></tr>
+  <tr><td>% que cai em Tier 2</td><td>~10% (a maioria é intent conhecido)</td></tr>
+  <tr><td>Calls Haiku/mês</td><td>~220</td></tr>
+  <tr><td>Tokens por call</td><td>~500 input + 150 output</td></tr>
+  <tr><td>Custo input (Haiku 4.5)</td><td>~$0.80/M tokens</td></tr>
+  <tr><td>Custo output (Haiku 4.5)</td><td>~$4/M tokens</td></tr>
+  <tr><td><b>Total/mês</b></td><td><b>~US$ 0.25 (R$ 1,30)</b></td></tr>
+</table>
+
+<p>Usa a mesma conta Anthropic da Lara, não é cobrança separada.</p>
+
+<h3>Infraestrutura (já paga)</h3>
+<ul>
+  <li>Supabase: plano existente</li>
+  <li>n8n VPS Easypanel: já rodando</li>
+  <li>Evolution API: já rodando (nova instância <code>mira-mirian</code> é barata)</li>
+</ul>
+
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section id="roadmap">
+<h2>Roadmap — Bloco C (Efeito WOW)</h2>
+
+<p>Todas as fraquezas da auditoria estão fechadas. Próximos passos são sobre experiência:</p>
+
+<table>
+  <tr><th>Feature</th><th>Impacto</th><th>Esforço</th></tr>
+  <tr>
+    <td><b>Daily Digest automático</b><br><span class="muted">"Bom dia Dra Mirian! Hoje tem 5 atendimentos, R$ 2.400 previstos..."</span></td>
+    <td>Alto — cria dependência diária</td>
+    <td>~2-3h</td>
+  </tr>
+  <tr>
+    <td><b>Fechamento noturno</b><br><span class="muted">"Fechamento do dia: R$ 1.800 em 3 atendimentos, +12% vs média"</span></td>
+    <td>Alto — fecha o loop</td>
+    <td>~2h</td>
+  </tr>
+  <tr>
+    <td><b>Alerta pré-consulta</b><br><span class="muted">"Patricia chega em 10min, prontuário: Lifting 5D 2ª sessão"</span></td>
+    <td>Alto — contexto antes da consulta</td>
+    <td>~2h</td>
+  </tr>
+  <tr>
+    <td><b>Voice → Task</b><br><span class="muted">áudio no WhatsApp → Whisper → cria task</span></td>
+    <td>Médio — diferencial</td>
+    <td>~4h</td>
+  </tr>
+  <tr>
+    <td><b>Foto → Face Mapping v2</b><br><span class="muted">foto do rosto → análise visual + sugestão de protocolo</span></td>
+    <td>Médio — integra com sistema existente</td>
+    <td>~3h</td>
+  </tr>
+  <tr>
+    <td><b>Context multi-turno efetivo</b><br><span class="muted">"quanto ela me deve" depois de "quem é Maria Silva Costa"</span></td>
+    <td>Alto — conversação real</td>
+    <td>~2h</td>
+  </tr>
+  <tr>
+    <td><b>Ações de escrita</b><br><span class="muted">"marca Maria pra amanhã 14h" → cria appointment</span></td>
+    <td>Alto mas arriscado</td>
+    <td>~4-5h</td>
+  </tr>
+</table>
+
+<hr>
+
+<p class="dim small">Documento gerado em 2026-04-11. Versão da Mira: Hardening v1 (SSOT + Tier 2). Commits: <code>032ef4a</code> + <code>e400b36</code>.</p>
+
+</section>
+
+</main>
+</div>
+</body>
+</html>
