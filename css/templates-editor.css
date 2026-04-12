@@ -35,13 +35,13 @@
 .te-tab-count { font-size:10px; opacity:0.7; }
 
 /* ── 2-column layout ─────────────────────────────────────── */
-.te-layout { display:grid; grid-template-columns:300px 1fr; gap:20px; min-height:600px; }
+.te-layout { display:grid; grid-template-columns:300px 1fr; gap:20px; }
 @media (max-width: 900px) { .te-layout { grid-template-columns:1fr; } }
 
 /* ── Sidebar (list) ──────────────────────────────────────── */
 .te-sidebar {
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
-  overflow-y:auto; max-height:calc(100vh - 240px);
+  overflow-y:auto; max-height:420px;
 }
 .te-item {
   display:flex; align-items:center; gap:10px; padding:12px 14px;
@@ -64,7 +64,7 @@
 /* ── Main editor area ────────────────────────────────────── */
 .te-main {
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
-  padding:20px; overflow-y:auto; max-height:calc(100vh - 240px);
+  padding:20px; overflow-y:auto; max-height:420px;
 }
 .te-no-selection { display:flex; align-items:center; justify-content:center; height:400px; color:var(--text-muted); font-size:14px; }
 
@@ -72,7 +72,7 @@
 .te-editor-layout { display:grid; grid-template-columns:1fr 280px; gap:24px; }
 @media (max-width: 1100px) { .te-editor-layout { grid-template-columns:1fr; } .te-editor-right { display:flex; justify-content:center; } }
 .te-editor-title { font-size:16px; font-weight:700; color:var(--text-primary); margin:0 0 14px; }
-.te-editor-right { position:sticky; top:20px; align-self:start; max-height:calc(100vh - 280px); overflow:hidden; }
+.te-editor-right { position:sticky; top:20px; align-self:start; max-height:400px; overflow:hidden; }
 
 /* ── Toolbar ─────────────────────────────────────────────── */
 .te-toolbar { margin-bottom:8px; position:relative; }
@@ -166,6 +166,10 @@
 [data-theme="dark"] .te-tab:hover { background:var(--bg-secondary); }
 [data-theme="dark"] .te-var-tag { background:#2e1065; color:#c4b5fd; }
 [data-theme="dark"] .te-var-tag:hover { background:#3b0764; }
+
+/* ── Phone preview compact inside templates editor ───────── */
+.te-editor-right .bc-phone { transform: scale(0.85); transform-origin: top right; }
+.te-editor-right .bc-wa-chat { max-height: 240px; overflow-y: auto; }
 
 /* ── Create modal overlay ────────────────────────────────── */
 .te-create-overlay {

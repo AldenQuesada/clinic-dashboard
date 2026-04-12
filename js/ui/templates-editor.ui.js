@@ -313,7 +313,7 @@
       '<div class="te-editor-left">' +
         '<h3 class="te-editor-title">' + _esc(tpl.name) + '</h3>' +
         toolbar +
-        '<textarea class="te-content-area" id="teContent" data-action="edit" data-id="' + _esc(tpl.id) + '" rows="10">' + _esc(content) + '</textarea>' +
+        '<textarea class="te-content-area" id="teContent" data-action="edit" data-id="' + _esc(tpl.id) + '" rows="6">' + _esc(content) + '</textarea>' +
         mediaHtml +
         varsHtml +
         configHtml +
