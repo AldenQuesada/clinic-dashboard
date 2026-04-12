@@ -979,6 +979,13 @@ BEGIN
     WHEN v_text ~* '^\s*(reagenda|reagendar|remarca|remarcar|remarque|muda|mudar|mover|move)\s+\S' THEN 'reschedule_appointment'
     WHEN v_text ~* '^\s*(marca|marcar|agendar|criar consulta|criar appointment|nova consulta|novo agendamento|agendar\s+uma?\s+(paciente|consulta))\s*[,.]?\s*\S' THEN 'create_appointment'
 
+    -- WOW features (antes dos reads pra nao ser mascarado)
+    WHEN v_text ~* '(como\s+foi|resumo|relatorio).*(dia|hoje)|meu\s+dia' THEN 'day_summary'
+    WHEN v_text ~* '(proximo|próximo)\s+(paciente|consulta|atendimento)|quem\s+.*(proximo|próximo)' THEN 'next_patient'
+    WHEN v_text ~* '(quem\s+fez|pacientes?\s+de|fizeram)\s+\w' THEN 'patients_by_procedure'
+    WHEN v_text ~* '(devedores|quem\s+me\s+deve[^n])' THEN 'debtors'
+    WHEN v_text ~* '(uso\s+da\s+mira|consumo|quanto\s+gastei\s+de\s+voz|dashboard\s+mira)' THEN 'mira_usage'
+
     -- Reads
     WHEN v_text ~* '(agenda|horario|atendimento).*(hoje|do dia)|tenho hoje|tenho agenda hoje|quem.*hoje' THEN 'agenda_today'
     WHEN v_text ~* '(agenda|horario|atendimento).*(amanha|amanhã)|tenho amanha|tenho amanhã' THEN 'agenda_tomorrow'
@@ -990,13 +997,6 @@ BEGIN
     WHEN v_text ~* '(quanto\s+(a\s+|o\s+)?[a-zA-Z]+\s+(me\s+)?deve|saldo\s+(do|da|de)\s+[a-zA-Z]+|devendo\s+[a-zA-Z]+)' THEN 'patient_balance'
     WHEN v_text ~* '(paciente|cliente|quem\s+(e|é|eh))\s+[a-zA-Z]+' THEN 'patient_lookup'
     WHEN v_text ~* '^\s*(minha\s+)?quota\s*$' THEN 'quota'
-
-    -- WOW features
-    WHEN v_text ~* '(como\s+foi|resumo|relatorio).*(dia|hoje)|meu\s+dia' THEN 'day_summary'
-    WHEN v_text ~* '(proximo|próximo)\s+(paciente|consulta|atendimento)|quem\s+.*(proximo|próximo)' THEN 'next_patient'
-    WHEN v_text ~* '(quem\s+fez|pacientes?\s+de|fizeram)\s+' THEN 'patients_by_procedure'
-    WHEN v_text ~* '(devedores|quem\s+me\s+deve[^n])' THEN 'debtors'
-    WHEN v_text ~* '(uso\s+da\s+mira|consumo|quanto\s+gastei\s+de\s+voz|dashboard\s+mira)' THEN 'mira_usage'
 
     ELSE 'unknown'
   END;
