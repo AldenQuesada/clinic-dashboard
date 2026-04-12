@@ -22,7 +22,13 @@
   if (window._clinicaiInboxRepoLoaded) return
   window._clinicaiInboxRepoLoaded = true
 
+  const _url = () => window.ClinicEnv?.SUPABASE_URL || ''
+  const _key = () => window.ClinicEnv?.SUPABASE_KEY || ''
   function _sb() { return window._sbShared || null }
+  function _headers() {
+    var token = (typeof getToken === 'function' && getToken()) || _key()
+    return { 'apikey': _key(), 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+  }
 
   async function _rpc(name, params = {}) {
     try {

@@ -10,6 +10,8 @@
   if (window._pbCoreLoaded) return
   window._pbCoreLoaded = true
 
+  var _url = function () { return window.ClinicEnv?.SUPABASE_URL || '' }
+  var _key = function () { return window.ClinicEnv?.SUPABASE_KEY || '' }
   function _sb() { return window._sbShared || null }
   async function _rpc(name, params) {
     try {
