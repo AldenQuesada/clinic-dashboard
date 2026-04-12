@@ -47,6 +47,63 @@
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── Dark Mode ─────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg: #0f1117;
+  --text-primary: #e2e4ed;
+  --text-secondary: #a1a5b7;
+  --text-muted: #6b7280;
+  --border: #2d3348;
+  --card: #1a1d27;
+  --sidebar-bg: #0a0b10;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 32px rgba(0,0,0,0.5);
+  --shadow-dropdown: 0 8px 28px rgba(0,0,0,0.5);
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --bg-secondary: #1e2130;
+}
+[data-theme="dark"] .header {
+  background: #13141c !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--bg-secondary, #1e2130) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] table th {
+  background: var(--bg-secondary, #1e2130) !important;
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] table td {
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .col-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .card {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .dropdown-menu {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] #apptModal > div {
+  background: var(--card) !important;
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] button {
+  color: var(--text-primary);
+}
+[data-theme="dark"] .ao-timeline-slot {
+  border-color: var(--border) !important;
+}
+
 /* ── Reset & Base ───────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;

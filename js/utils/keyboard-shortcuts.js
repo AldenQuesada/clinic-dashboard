@@ -3,6 +3,23 @@
   if (window._kbShortcutsLoaded) return
   window._kbShortcutsLoaded = true
 
+  // ── Dark mode toggle ──────────────────────────────────────
+  var THEME_KEY = 'clinicai_theme'
+  function _applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem(THEME_KEY, theme)
+    var icon = document.getElementById('themeToggleIcon')
+    if (icon) icon.setAttribute('data-feather', theme === 'dark' ? 'sun' : 'moon')
+    if (window.feather) feather.replace()
+  }
+  function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme') || 'light'
+    _applyTheme(current === 'dark' ? 'light' : 'dark')
+  }
+  var saved = localStorage.getItem(THEME_KEY)
+  if (saved) _applyTheme(saved)
+  window.toggleTheme = toggleTheme
+
   document.addEventListener('keydown', function (e) {
     var tag = (e.target.tagName || '').toLowerCase()
     var inInput = tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable
