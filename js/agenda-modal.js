@@ -1035,7 +1035,7 @@
         parcelas: 1,
         valorParcela: parseFloat(fallbackValor) || 0,
         comentario: '',
-      }]
+      })
     }
     apptRenderPagamentos()
   }

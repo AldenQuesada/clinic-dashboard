@@ -4031,7 +4031,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">PROFISSIONAL</label>
-              <select id="appt_prof" onchange="apptOnProfChange()" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
+              <select id="appt_prof" onchange="if(window.apptOnProfChange)apptOnProfChange()" style="width:100%;padding:7px 10px;border:1.5px solid #DDD6FE;border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;background:#fff"><option value="">Selecione...</option></select>
             </div>
             <div>
               <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:3px">SALA</label>
@@ -5171,7 +5171,7 @@
   <script src="js/api.js?v=c6d3c513" defer></script>
   <!-- Módulos extraídos de api.js — carregam DEPOIS de api.js, sobrescrevem globals -->
   <script src="js/agenda-notifications.js?v=0f89a874" defer></script>
-  <script src="js/agenda-modal.js?v=1659046e" defer></script>
+  <script src="js/agenda-modal.js?v=35cdee48" defer></script>
   <script src="js/agenda-finalize.js?v=44108125" defer></script>
   <!-- injetaveis.js (235 KB) carregado sob demanda via _lazyLoadInjetaveis() -->
   <script src="js/procedimentos.js?v=442f17e7" defer></script>
@@ -5198,25 +5198,25 @@
   <script src="js/sdr.js?v=b2fcc0ef" defer></script>
   <script src="js/tags.js?v=ddc7b323" defer></script>
   <!-- Face Mapping — modular (was face-mapping.js) -->
-  <script src="js/fm/fm-config.js?v=a9c84b94" defer></script>
+  <script src="js/fm/fm-config.js?v=526cbd71" defer></script>
   <script src="js/fm/fm-state.js?v=aaef3173" defer></script>
   <script src="js/fm/fm-persistence.js?v=00d01bb9" defer></script>
   <script src="js/fm/fm-draw.js?v=7ebc0789" defer></script>
-  <script src="js/fm/fm-mouse.js?v=34357187" defer></script>
+  <script src="js/fm/fm-mouse.js?v=0bf739bb" defer></script>
   <script src="js/fm/fm-analysis.js?v=9fdafc90" defer></script>
   <script src="js/fm/fm-render.js?v=7c9cffdc" defer></script>
   <script src="js/fm/fm-actions.js?v=7e390105" defer></script>
-  <script src="js/fm/fm-export.js?v=9ee9c142" defer></script>
+  <script src="js/fm/fm-export.js?v=435ada77" defer></script>
   <script src="js/fm/fm-crop.js?v=9a50bded" defer></script>
   <script src="js/fm/fm-simulation.js?v=634086b8" defer></script>
-  <script src="js/fm/fm-compare.js?v=007b47a5" defer></script>
+  <script src="js/fm/fm-compare.js?v=d22471f0" defer></script>
   <script src="js/fm/fm-3d.js?v=52ffb347" defer></script>
   <script src="js/fm/fm-metrics.js?v=3806313e" defer></script>
   <script src="js/fm/fm-regions.js?v=914508e8" defer></script>
   <script src="js/fm/fm-before-after.js?v=a609e077" defer></script>
   <script src="js/fm/fm-templates.js?v=e23b8e91" defer></script>
-  <script src="js/fm/fm-history.js?v=01caf2e2" defer></script>
-  <script src="js/fm/fm-main.js?v=b9b9cfe3" defer></script>
+  <script src="js/fm/fm-history.js?v=ae8981f9" defer></script>
+  <script src="js/fm/fm-main.js?v=d2c77d24" defer></script>
 
   <!-- html2canvas for report export -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
