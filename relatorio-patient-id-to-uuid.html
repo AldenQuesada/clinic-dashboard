@@ -253,6 +253,8 @@
     <a href="#migration">Migration</a>
     <a href="#checklist">Checklist</a>
     <a href="#licoes">Licoes aprendidas</a>
+    <a href="#fluxo-agendamento">Fluxo lead → agendado</a>
+    <a href="#execucao">Execucao</a>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════ -->
@@ -914,8 +916,87 @@ COMMIT;</pre>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="fluxo-agendamento">10. Rastreamento: fluxo lead → agendado</h2>
   <!-- ═══════════════════════════════════════════════════════ -->
-  <h2 id="execucao">10. Execucao — registro da aplicacao</h2>
+
+  <p>Apos a migracao, rastreamos o fluxo completo para confirmar que o agendamento
+  funciona corretamente com a divergencia <code>appointments.patient_id</code> (uuid) ↔
+  <code>leads.id</code> (text).</p>
+
+  <h3>10.1 Fluxo de ida: frontend → banco</h3>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="time">Passo 1 — Frontend</div>
+      <p>Secretaria seleciona o lead no modal de agendamento. O <code>leads.id</code>
+      (tipo <code>text</code>, valor ex: <code>"e0ccf5c2-ed6a-47cb-be29-f62fc1f18119"</code>)
+      e enviado como <code>pacienteId</code> no JSON.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Passo 2 — RPC appt_upsert</div>
+      <p>A funcao converte o texto para uuid:</p>
+      <pre style="margin:4px 0;border:none;background:transparent;padding:0">v_patient_id := (p_data->>'pacienteId')::uuid;</pre>
+      <p>O cast <code>text → uuid</code> funciona porque todos os <code>leads.id</code>
+      sao UUIDs validos em formato texto. O valor e gravado em
+      <code>appointments.patient_id</code> (coluna uuid). <span class="badge badge-green">OK</span></p>
+    </div>
+    <div class="timeline-item">
+      <div class="time">Passo 3 — Trigger trg_appointment_created_phase</div>
+      <p>O trigger de fase e disparado automaticamente apos o INSERT:</p>
+      <pre style="margin:4px 0;border:none;background:transparent;padding:0">v_lead_id := NEW.patient_id::text;
+-- uuid → text: "e0ccf5c2-ed6a-47cb-be29-f62fc1f18119"
+
+-- Busca o lead:
+SELECT id INTO ... FROM leads WHERE id = v_lead_id;
+-- text = text: match exato ✓</pre>
+      <p>O cast <code>uuid::text</code> gera exatamente o mesmo formato que esta no
+      <code>leads.id</code>. O lead e encontrado e a fase muda para <code>'agendado'</code>.
+      <span class="badge badge-green">OK</span></p>
+    </div>
+  </div>
+
+  <h3>10.2 Numeros reais do banco</h3>
+  <table>
+    <tr><th>Metrica</th><th>Valor</th></tr>
+    <tr><td>Total de appointments</td><td>104</td></tr>
+    <tr><td>Com <code>patient_id</code> preenchido</td><td>89 (86%)</td></tr>
+    <tr><td>Com <code>patient_id</code> null</td><td>15 (14%) — importados via OFX</td></tr>
+    <tr><td>Lead correspondente encontrado (amostra)</td><td><span class="badge badge-green">SIM</span> — match uuid::text = text confirmado</td></tr>
+  </table>
+
+  <h3>10.3 Diagrama do fluxo de tipos</h3>
+  <pre>
+  Frontend (JSON string)
+       │
+       ▼
+  appt_upsert ──── (p_data->>'pacienteId')::uuid ────▶ appointments.patient_id (uuid)
+                                                              │
+                                                     trigger fires
+                                                              │
+                                                              ▼
+  trg_appointment_created_phase ── NEW.patient_id::text ──▶ v_lead_id (text)
+                                                              │
+                                                              ▼
+                                          leads WHERE id = v_lead_id (text = text) ✓
+                                                              │
+                                                              ▼
+                                          _sdr_record_phase_change → fase = 'agendado'
+  </pre>
+
+  <h3>10.4 Veredito</h3>
+  <div class="callout callout-green">
+    <strong>Fluxo lead → agendado: SEGURO</strong>
+    <p>O <code>patient_id</code> sempre entrou como uuid em <code>appointments</code>
+    (mesmo antes da nossa migracao). O <code>::text</code> no trigger compensa o fato
+    de <code>leads.id</code> ainda ser text. Quando fizermos a Fase 3 (converter
+    <code>leads.id → uuid</code>), o cast <code>::text</code> vira desnecessario
+    e pode ser removido — mas nao quebra nada ate la.</p>
+    <p><strong>15 appointments sem patient_id</strong> (null) foram importados do OFX
+    e nao passaram pelo fluxo normal de agendamento. O trigger tem fallback por
+    <code>patient_phone</code> (busca por telefone) para esses casos.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <h2 id="execucao">11. Execucao — registro da aplicacao</h2>
   <!-- ═══════════════════════════════════════════════════════ -->
 
   <p>Migration <code>20260669000000_patient_id_to_uuid.sql</code> aplicada em
@@ -1068,7 +1149,7 @@ Detail: policy anamnesis_requests_select on table anamnesis_requests depends on 
   </ol>
 
   <!-- ═══════════════════════════════════════════════════════ -->
-  <h2>11. Roadmap futuro</h2>
+  <h2>12. Roadmap futuro</h2>
   <!-- ═══════════════════════════════════════════════════════ -->
 
   <table>
