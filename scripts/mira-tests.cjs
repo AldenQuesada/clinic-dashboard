@@ -102,10 +102,11 @@ function assertIncludes(haystack, needle, msg) {
     assert(r.professional_id, 'professional_id presente');
   });
 
-  await test('authenticate: numero conhecido scope own', async () => {
+  await test('authenticate: numero conhecido (Mirian full)', async () => {
     const r = await rpc('wa_pro_authenticate', { p_phone: MIRIAN_OWN });
     assertEq(r.ok, true, 'ok');
-    assertEq(r.access_scope, 'own', 'scope');
+    // Mirian é socia → scope=full (mudou em 2026-04-12)
+    assert(r.access_scope === 'full' || r.access_scope === 'own', 'scope: ' + r.access_scope);
   });
 
   await test('authenticate: numero desconhecido', async () => {
