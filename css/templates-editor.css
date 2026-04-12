@@ -31,7 +31,7 @@
 /* ── Sidebar (list) ──────────────────────────────────────── */
 .te-sidebar {
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
-  overflow-y:auto; max-height:420px;
+  overflow-y:auto; max-height:calc(100vh - 260px);
 }
 .te-item {
   display:flex; align-items:center; gap:10px; padding:12px 14px;
@@ -54,7 +54,7 @@
 /* ── Main editor area ────────────────────────────────────── */
 .te-main {
   background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
-  padding:20px; overflow-y:auto; max-height:420px;
+  padding:20px; overflow-y:auto; max-height:calc(100vh - 260px);
 }
 .te-no-selection { display:flex; align-items:center; justify-content:center; height:400px; color:var(--text-muted); font-size:14px; }
 
@@ -62,7 +62,7 @@
 .te-editor-layout { display:grid; grid-template-columns:1fr 280px; gap:24px; }
 @media (max-width: 1100px) { .te-editor-layout { grid-template-columns:1fr; } .te-editor-right { display:flex; justify-content:center; } }
 .te-editor-title { font-size:16px; font-weight:700; color:var(--text-primary); margin:0 0 14px; }
-.te-editor-right { position:sticky; top:20px; align-self:start; max-height:400px; overflow:hidden; }
+.te-editor-right { position:sticky; top:20px; align-self:start; max-height:calc(100vh - 280px); overflow:hidden; }
 
 /* ── Toolbar ─────────────────────────────────────────────── */
 .te-toolbar { margin-bottom:8px; position:relative; }
@@ -77,10 +77,12 @@
 }
 .te-content-area:focus { outline:none; border-color:var(--accent-gold); box-shadow:0 0 0 3px rgba(217,119,6,0.1); }
 
-/* ── Variables row ───────────────────────────────────────── */
+/* ── Variables row — sticky above textarea ────────────────── */
 .te-vars-row {
-  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
-  font-size:11px; color:var(--text-muted); margin:8px 0 16px;
+  display:flex; flex-wrap:wrap; gap:4px; align-items:center;
+  font-size:10px; color:var(--text-muted); margin:4px 0 6px;
+  position:sticky; top:0; z-index:1; background:var(--card);
+  padding:4px 0;
 }
 .te-var-tag {
   display:inline-flex; padding:2px 8px; border-radius:4px;
@@ -157,9 +159,8 @@
 [data-theme="dark"] .te-var-tag { background:#2e1065; color:#c4b5fd; }
 [data-theme="dark"] .te-var-tag:hover { background:#3b0764; }
 
-/* ── Phone preview compact inside templates editor ───────── */
-.te-editor-right .bc-phone { transform: scale(0.85); transform-origin: top right; }
-.te-editor-right .bc-wa-chat { max-height: 240px; overflow-y: auto; }
+/* ── Phone preview inside templates editor ────────────────── */
+.te-editor-right .bc-wa-chat { max-height: 320px; overflow-y: auto; }
 
 /* ── Create modal overlay ────────────────────────────────── */
 .te-create-overlay {
