@@ -568,8 +568,9 @@
   }
 
   // ── Alerta multi-procedimento ──────────────────────────────
-  // Estado da seleção vive em _apptState.multiProcChoice (unificado)
-  var _multiProcEscHandler = null
+  // BLOCKING modal: decisão obrigatória (não fecha com × / Esc /
+  // click-fora). Única saída é escolher uma das 3 opções e clicar
+  // Confirmar. Estado vive em _apptState.multiProcChoice.
 
   function _checkMultiProcAlert() {
     var durEl = document.getElementById('appt_duracao')
@@ -581,41 +582,28 @@
 
     var alert = document.createElement('div')
     alert.id = 'multiProcAlert'
-    alert.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px'
+    alert.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10001;display:flex;align-items:center;justify-content:center;padding:16px'
     alert.innerHTML =
-      '<div id="multiProcInner" style="background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)">' +
-        '<div style="background:#F59E0B;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px">' +
-          '<div>' +
-            '<div style="font-size:14px;font-weight:800;color:#fff">Mais de 1 procedimento</div>' +
-            '<div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px">' + _apptProcs.length + ' procedimentos na mesma sessao</div>' +
-          '</div>' +
-          '<button type="button" onclick="_multiProcCloseAlert()" aria-label="Fechar" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:700;line-height:1">×</button>' +
+      '<div id="multiProcInner" role="alertdialog" aria-modal="true" aria-labelledby="multiProcTitle" style="background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)">' +
+        '<div style="background:#F59E0B;padding:14px 18px">' +
+          '<div id="multiProcTitle" style="font-size:14px;font-weight:800;color:#fff">Mais de 1 procedimento</div>' +
+          '<div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:2px">' + _apptProcs.length + ' procedimentos na mesma sessao — decisão obrigatória</div>' +
         '</div>' +
         '<div style="padding:16px 18px">' +
-          '<div style="font-size:13px;color:#374151;line-height:1.55;margin-bottom:14px">O tempo pode nao ser suficiente para todos os procedimentos. Deseja aumentar a duracao?</div>' +
+          '<div style="font-size:13px;color:#374151;line-height:1.55;margin-bottom:14px">O tempo pode nao ser suficiente para todos os procedimentos. Escolha uma opção para continuar:</div>' +
           '<div style="display:flex;flex-direction:column;gap:8px" id="multiProcOpts">' +
             _multiProcOpt(60,  'Manter 1h') +
             _multiProcOpt(90,  'Aumentar pra 1h30') +
             _multiProcOpt(120, 'Aumentar pra 2h') +
           '</div>' +
-          '<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">' +
-            '<button type="button" onclick="_multiProcCloseAlert()" style="padding:8px 14px;background:#F3F4F6;color:#6B7280;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">Cancelar</button>' +
-            '<button type="button" id="multiProcConfirmBtn" onclick="_multiProcConfirm()" disabled style="padding:8px 16px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:not-allowed;opacity:.6">Confirmar</button>' +
+          '<div style="display:flex;margin-top:16px">' +
+            '<button type="button" id="multiProcConfirmBtn" onclick="_multiProcConfirm()" disabled style="flex:1;padding:10px 16px;background:#9CA3AF;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:not-allowed;opacity:.6">Selecione uma opção</button>' +
           '</div>' +
         '</div>' +
       '</div>'
 
-    // click-fora fecha
-    alert.addEventListener('click', function(e) {
-      var inner = document.getElementById('multiProcInner')
-      if (inner && !inner.contains(e.target)) _multiProcCloseAlert()
-    })
-
+    // NÃO há click-fora nem Esc — decisão obrigatória.
     document.body.appendChild(alert)
-
-    // ESC fecha
-    _multiProcEscHandler = function(e) { if (e.key === 'Escape') _multiProcCloseAlert() }
-    document.addEventListener('keydown', _multiProcEscHandler)
   }
 
   function _multiProcOpt(dur, label) {
@@ -646,6 +634,7 @@
       btnConfirm.style.background = '#F59E0B'
       btnConfirm.style.cursor = 'pointer'
       btnConfirm.style.opacity = '1'
+      btnConfirm.textContent = 'Confirmar'
     }
   }
 
@@ -679,13 +668,11 @@
     }
   }
 
+  // Chamado APENAS pelo _multiProcConfirm após o usuário escolher.
+  // Não há outro caminho de fechamento — modal é blocking.
   function _multiProcCloseAlert() {
     var alertEl = document.getElementById('multiProcAlert')
     if (alertEl) alertEl.remove()
-    if (_multiProcEscHandler) {
-      document.removeEventListener('keydown', _multiProcEscHandler)
-      _multiProcEscHandler = null
-    }
     _apptState.multiProcChoice = null
   }
 
