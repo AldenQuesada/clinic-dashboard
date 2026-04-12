@@ -28,7 +28,7 @@
     // Para ativar: deploy Dockerfile em api/ e setar URL aqui
     // Local: 'http://localhost:8107'
     // VPS:   'https://facial-api.px1hdq.easypanel.host'
-    FACIAL_API_URL: null,
+    FACIAL_API_URL: 'https://clinicai-facial-api.px1hdq.easypanel.host',
     // Cache-buster: incrementar a cada deploy para forçar recarga dos scripts
     ASSET_VERSION: '20260410a',
   })
