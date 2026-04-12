@@ -114,7 +114,14 @@ BEGIN
   -- (comum em audio: "Mira marca a Maria amanha")
   v_clean := TRIM(COALESCE(p_transcript, ''));
   v_clean := REGEXP_REPLACE(v_clean,
-    '^\s*(oi\s+|hey\s+|ei\s+|ô\s+|oh\s+)?(mira|miri)[,!.\s]*\s*',
+    '^\s*(oi\s+|hey\s+|ei\s+|ô\s+|oh\s+|olha?\s+)?(mira|miri|alexa|siri)[,!.\s]*\s*',
+    '', 'i');
+  -- Strip prefixos conversacionais comuns em voz
+  v_clean := REGEXP_REPLACE(v_clean,
+    '^\s*(olha|olhe|entao|então|bom|bem|ok|ta|tá)[,!.\s]+',
+    '', 'i');
+  v_clean := REGEXP_REPLACE(v_clean,
+    '^\s*(eu\s+quero\s+|quero\s+|preciso\s+|por\s+favor\s+|pode\s+|poderia\s+)',
     '', 'i');
   v_clean := TRIM(v_clean);
   IF LENGTH(v_clean) < 3 THEN

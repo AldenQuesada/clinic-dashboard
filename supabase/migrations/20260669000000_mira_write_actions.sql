@@ -80,7 +80,7 @@ BEGIN
   END IF;
 
   -- Nome: remove trigger + data + hora + preps
-  v_name := REGEXP_REPLACE(v_t, '^(marca|marcar|agenda|agendar|criar consulta|criar appointment|nova consulta)[\s:]+(a\s+|o\s+)?', '', 'i');
+  v_name := REGEXP_REPLACE(v_t, '^(marca|marcar|agenda|agendar|criar consulta|criar appointment|nova consulta|novo agendamento)[\s:]+((uma?|a|o)\s+)?(paciente|consulta)?\s*(,\s*)?(a\s+|o\s+|da\s+|do\s+)?', '', 'i');
   v_name := REGEXP_REPLACE(v_name, '[[:<:]](hoje|amanha|amanhã|depois de amanha|segunda|terca|terça|quarta|quinta|sexta|sabado|sábado)[[:>:]]', '', 'gi');
   v_name := REGEXP_REPLACE(v_name, '[0-9]{1,2}[:h]?[0-9]{0,2}', '', 'g');
   v_name := REGEXP_REPLACE(v_name, '[[:<:]](pra|para|as|às|no|na|da|de|do|de manha|a tarde|a noite)[[:>:]]', '', 'gi');

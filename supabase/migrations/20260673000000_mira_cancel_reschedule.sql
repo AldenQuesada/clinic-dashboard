@@ -936,7 +936,7 @@ BEGIN
     -- Write: verbo + objeto
     WHEN v_text ~* '^\s*(cancela|cancelar|desmarca|desmarcar|remove\s+a|remover\s+a|tira|tirar)\s+\S' THEN 'cancel_appointment'
     WHEN v_text ~* '^\s*(reagenda|reagendar|remarca|remarcar|remarque|muda|mudar|mover|move)\s+\S' THEN 'reschedule_appointment'
-    WHEN v_text ~* '^\s*(marca|marcar|agendar|criar consulta|criar appointment|nova consulta|novo agendamento)\s+\S' THEN 'create_appointment'
+    WHEN v_text ~* '^\s*(marca|marcar|agendar|criar consulta|criar appointment|nova consulta|novo agendamento|agendar\s+uma?\s+(paciente|consulta))\s*[,.]?\s*\S' THEN 'create_appointment'
 
     -- Reads
     WHEN v_text ~* '(agenda|horario|atendimento).*(hoje|do dia)|tenho hoje|tenho agenda hoje|quem.*hoje' THEN 'agenda_today'
