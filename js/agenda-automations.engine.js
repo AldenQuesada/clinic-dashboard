@@ -121,8 +121,9 @@
       }
     })
 
-    // Campanha por fase "agendado" — enfileira templates vinculados
-    _enqueueCampaignForPhase(appt, 'agendado')
+    // Campanha por fase — NAO disparar aqui.
+    // A confirmacao ja e enviada por _enviarMsgAgendamento() no modal.
+    // Campanhas disparam via processStatusChange() quando o status muda.
   }
 
   // ══════════════════════════════════════════════════════════

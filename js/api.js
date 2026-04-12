@@ -1018,9 +1018,11 @@ function _nomeEnxuto(nomeCompleto) {
 
 function _getClinicaNome() {
   try {
-    const cfg = JSON.parse(localStorage.getItem('clinic_settings') || '{}')
-    return cfg.nome || cfg.clinicName || 'nossa clínica'
-  } catch { return 'nossa clínica' }
+    var cfg = JSON.parse(localStorage.getItem('clinicai_clinic_settings') || '{}')
+    if (cfg.nome) return cfg.nome
+    cfg = JSON.parse(localStorage.getItem('clinic_settings') || '{}')
+    return cfg.nome || cfg.clinicName || 'Clinica Mirian de Paula'
+  } catch { return 'Clinica Mirian de Paula' }
 }
 
 function _wppMsgBoasVindas(nome, clinica) {
