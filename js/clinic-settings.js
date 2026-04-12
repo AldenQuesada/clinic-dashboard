@@ -90,12 +90,30 @@ function settingsTab(tab) {
   if (tab === 'professionals') renderProfessionalsList()
   if (tab === 'rooms')         renderRoomsList()
   if (tab === 'technologies')  renderTechnologiesList()
-  if (tab === 'injectables')   { if (window.injSettingsTab) { injSettingsTab('cadastro'); if (window.renderInjetaveis) renderInjetaveis() } else { console.warn('injetaveis.js nao carregou') } }
+  if (tab === 'injectables')   { _lazyLoadInjetaveis() }
   if (tab === 'procedures')    { if (window.renderProcedimentos) { renderProcedimentos() } else { console.warn('procedimentos.js nao carregou') } }
   if (tab === 'clinic')        loadClinicSettings()
   if (tab === 'users')         { if (window.loadUsersAdmin) { loadUsersAdmin(); loadPendingInvites() } }
 }
 window.settingsTab = settingsTab
+
+let _injLoaded = false
+function _lazyLoadInjetaveis() {
+  if (window.injSettingsTab) {
+    injSettingsTab('cadastro')
+    if (window.renderInjetaveis) renderInjetaveis()
+    return
+  }
+  if (_injLoaded) return
+  _injLoaded = true
+  const s = document.createElement('script')
+  s.src = 'js/injetaveis.js?v=20260412a'
+  s.onload = function () {
+    if (window.injSettingsTab) injSettingsTab('cadastro')
+    if (window.renderInjetaveis) renderInjetaveis()
+  }
+  document.head.appendChild(s)
+}
 
 // ── Dados da Clínica ─────────────────────────────────────────
 // Fonte primária: Supabase (via ClinicSettingsService)
