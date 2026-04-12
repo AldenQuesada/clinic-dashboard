@@ -261,20 +261,14 @@
   }
 
   // ── apptTipoChange (legacy compat) ──────────────────────────
-  function _toggleSection(el, show) {
-    if (!el) return
-    if (!el.classList.contains('appt-section-anim')) el.classList.add('appt-section-anim')
-    if (show) { el.classList.remove('hidden'); el.classList.add('visible'); el.style.display = '' }
-    else { el.classList.add('hidden'); el.classList.remove('visible') }
-  }
   function apptTipoChange() {
     var tipo = document.getElementById('appt_tipo') && document.getElementById('appt_tipo').value
     var avalRow = document.getElementById('apptTipoAvalRow')
     var pagaRow = document.getElementById('apptPagaRow')
     var procRow = document.getElementById('apptProcRow')
-    _toggleSection(avalRow, tipo === 'avaliacao')
-    _toggleSection(pagaRow, false)
-    _toggleSection(procRow, tipo === 'procedimento')
+    if (avalRow) avalRow.style.display = (tipo === 'avaliacao') ? '' : 'none'
+    if (pagaRow) pagaRow.style.display = 'none'
+    if (procRow) procRow.style.display = (tipo === 'procedimento') ? '' : 'none'
   }
 
   // ── Estado consolidado do modal de agendamento ───────────────
