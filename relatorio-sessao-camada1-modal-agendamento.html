@@ -369,6 +369,7 @@ const watchIds = ['sp_nome', 'sp_salario', 'sp_valor_consulta', /* ... */]</code
       <a href="#wow-effects">Wow Effects (sessao 12/04)</a> •
       <a href="#fraquezas-resolved">Fraquezas resolvidas</a> •
       <a href="#audit-final">Auditoria final Agenda</a> •
+      <a href="#templates-mensagem">Templates de Mensagem</a> •
       <a href="#migrations">Migrations</a> •
       <a href="#commits">Commits</a>
     </p>
@@ -2176,6 +2177,69 @@ INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
   </table>
   <p><strong>2 bugs reais corrigidos, 10 falsos positivos descartados com evidência, 4 médios aceitáveis.</strong></p>
 
+  <!-- ═══ TEMPLATES DE MENSAGEM — SESSÃO 2026-04-12 ═══ -->
+  <h2 id="templates-mensagem">Templates de Mensagem — sessão 2026-04-12</h2>
+
+  <h3>Redesign completo</h3>
+  <p>A pagina <em>Configurações > Templates de Mensagem</em> foi reescrita do zero com:</p>
+  <ul>
+    <li><strong>Layout 2 colunas:</strong> lista lateral (filtrada por tabs de categoria) + editor com phone preview WhatsApp</li>
+    <li><strong>Toolbar completa:</strong> negrito, italico, riscado, mono, 33 emojis</li>
+    <li><strong>Upload de midia:</strong> imagem via Supabase Storage + URL manual + posicao acima/abaixo + preview no phone</li>
+    <li><strong>CRUD completo:</strong> criar (modal com nome + categoria), editar, excluir, toggle ativo/inativo</li>
+    <li><strong>Campo "Envio":</strong> D-3 a D+30 — define quando a mensagem é enviada relativo à consulta</li>
+    <li><strong>Categoria editavel:</strong> select com Captacao, Agendamento, Pos-consulta, Recuperacao, etc</li>
+    <li><strong>Menu da Clinica:</strong> pagina integrada via iframe em Config > Menu da Clinica</li>
+    <li><strong>Deduplicação:</strong> removida pagina duplicata "Agenda > Mensagens" (localStorage) — fonte unica: Supabase</li>
+  </ul>
+
+  <h3>Fluxo de mensagens de agendamento</h3>
+  <pre>
+  Paciente NOVO → template 'scheduling_confirm_novo' (COM {link_anamnese})
+  Paciente RETORNO → template 'scheduling_confirm_retorno' (SEM link)
+
+  Detecção: apptDetectTipoPaciente() — se tem >=1 finalizado → retorno
+  Envio: _enviarMsgAgendamento() → _getWaTemplate(slug) → _waTplRender(tpl, vars)
+  Queue: wa_outbox_enqueue_appt(phone, msg, nome, appt_id, lead_id)
+  </pre>
+
+  <h3>Tags disponíveis (valores reais)</h3>
+  <table>
+    <tr><th>Tag</th><th>Preview (editor)</th><th>Fonte no envio real</th></tr>
+    <tr><td><code>{nome}</code></td><td>Maria Silva</td><td>Primeiro nome do paciente</td></tr>
+    <tr><td><code>{clinica}</code></td><td>Clinica Mirian de Paula</td><td><code>clinicai_clinic_settings.nome</code></td></tr>
+    <tr><td><code>{data}</code></td><td>terca-feira, 15 de abril de 2026</td><td>Data formatada pt-BR</td></tr>
+    <tr><td><code>{data_consulta}</code></td><td>15/04/2026</td><td>Data DD/MM/AAAA</td></tr>
+    <tr><td><code>{hora}</code> / <code>{hora_consulta}</code></td><td>14:30</td><td><code>appt.horaInicio</code></td></tr>
+    <tr><td><code>{procedimento}</code></td><td>Bioestimulador de Colageno</td><td><code>appt.procedimento</code></td></tr>
+    <tr><td><code>{profissional}</code></td><td>Dra. Mirian de Paula</td><td><code>appt.profissionalNome</code></td></tr>
+    <tr><td><code>{endereco}</code> / <code>{endereco_clinica}</code></td><td>Av. Carneiro Leao, 296 - Sala 806</td><td>Montado de <code>rua + num + comp + cidade</code></td></tr>
+    <tr><td><code>{link_maps}</code></td><td>https://maps.app.goo.gl/...</td><td><code>clinic_settings.maps</code></td></tr>
+    <tr><td><code>{link}</code></td><td>https://miriandpaula.br</td><td><code>clinic_settings.site</code></td></tr>
+    <tr><td><code>{link_anamnese}</code></td><td>URL do deploy/form-render.html</td><td>Gerado via <code>create_anamnesis_request</code> RPC</td></tr>
+    <tr><td><code>{menu_clinica}</code></td><td>URL do menu-clinica.html</td><td><code>location.origin + '/menu-clinica.html'</code></td></tr>
+    <tr><td><code>{valor}</code></td><td>R$ 1.500,00</td><td><code>appt.valor</code> formatado</td></tr>
+    <tr><td><code>{linha_procedimento}</code></td><td>Procedimento: Bioestimulador...</td><td>Condicional (so aparece se tem proc)</td></tr>
+    <tr><td><code>{queixa_principal}</code></td><td>bigode chines</td><td>Da ficha do paciente</td></tr>
+  </table>
+
+  <h3>Migrations relacionadas</h3>
+  <table>
+    <tr><th>Migration</th><th>Conteudo</th></tr>
+    <tr><td><code>20260668</code></td><td>Templates <code>scheduling_confirm_novo</code> e <code>scheduling_confirm_retorno</code></td></tr>
+    <tr><td><code>20260671</code></td><td>Fix <code>wa_outbox_enqueue_appt</code> com <code>p_appt_ref</code> e <code>p_lead_id</code></td></tr>
+    <tr><td><code>20260672</code></td><td>Fix uuid=text em complaints RPCs</td></tr>
+    <tr><td><code>20260673</code></td><td>Fix uuid=text em legal_doc e anamnesis RPCs</td></tr>
+  </table>
+
+  <h3>Arquivos-chave</h3>
+  <ul>
+    <li><code>js/ui/templates-editor.ui.js</code> — UI completa (lista + editor + phone preview + CRUD)</li>
+    <li><code>js/repositories/templates.repository.js</code> — RPCs: list, update, create, remove</li>
+    <li><code>css/templates-editor.css</code> — estilos 2 colunas + dark mode</li>
+    <li><code>menu-clinica.html</code> — pagina do menu integrada ao sistema</li>
+  </ul>
+
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
   <h2>Próximos passos</h2>
 
@@ -2220,7 +2284,8 @@ INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
   <hr style="margin: 60px 0 20px; border: none; border-top: 1px solid var(--border)">
   <p class="muted" style="text-align: center; font-size: 12px;">
     Documento gerado em 2026-04-11 — sessão de auditoria e refatoração da Camada 1.<br>
-    Atualizado em 2026-04-12 — Wow Effects (9/15), Fraquezas (14/15), Auditoria Final (2 bugs corrigidos).<br>
+    Atualizado em 2026-04-12 — Wow Effects (9/15), Fraquezas (14/15), Auditoria Final,
+    Templates de Mensagem (redesign + tags + menu clinica + midia).<br>
     Próxima atualização: conforme Camadas 2-4 forem entregues.
   </p>
 
