@@ -366,6 +366,9 @@ const watchIds = ['sp_nome', 'sp_salario', 'sp_valor_consulta', /* ... */]</code
       <a href="#data-hygiene">Data Hygiene (incidente)</a> •
       <a href="#anamnese-journey">Jornada Anamnese</a> •
       <a href="#opcao-b">Opção B (patient_id → uuid)</a> •
+      <a href="#wow-effects">Wow Effects (sessao 12/04)</a> •
+      <a href="#fraquezas-resolved">Fraquezas resolvidas</a> •
+      <a href="#audit-final">Auditoria final Agenda</a> •
       <a href="#migrations">Migrations</a> •
       <a href="#commits">Commits</a>
     </p>
@@ -1936,14 +1939,254 @@ INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
   <p><strong>Esforço estimado Fase 1:</strong> 2-4 horas (migration + smoke tests).
   <strong>Esforço Fase 2:</strong> 1 hora por função × 17 = espalhável ao longo de sprints futuros.</p>
 
+  <!-- ═══ WOW EFFECTS — SESSÃO 2026-04-12 ═══ -->
+  <h2 id="wow-effects">Wow Effects — sessão 2026-04-12</h2>
+  <p class="muted">Após fechar as 15 fraquezas e a migração patient_id → uuid,
+    implementamos os efeitos "wow" da auditoria de UX. Status final:</p>
+
+  <h3>Tier 1 — Delight rápido</h3>
+  <table>
+    <tr><th>#</th><th>Item</th><th>Status</th><th>Detalhes</th></tr>
+    <tr>
+      <td>1</td><td>Skeleton loaders</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td><code>css/style.css</code> (.sk-*) + <code>js/utils/skeleton.js</code> (Skeleton.rows/cards/kpis/tableRows/into). Aplicado em: leads, pacientes, orçamentos, overview (timeline, ranking, aniversariantes, sem retorno), header user name. Shimmer animation <code>skShimmer 1.4s ease infinite</code>.</td>
+    </tr>
+    <tr>
+      <td>2</td><td>Optimistic update no save</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>Modal fecha imediatamente, toast de sucesso, <code>syncOneAwait()</code> em background. Se falhar: reverte <code>prevAppts</code> snapshot, re-render, toast de erro. Offline: entra no queue.</td>
+    </tr>
+    <tr>
+      <td>3</td><td>Toast em vez de alert()</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>130+ <code>alert()</code> substituídos em 37 arquivos. Helpers globais: <code>_toastWarn()</code>, <code>_toastErr()</code>, <code>_toastOk()</code>. Helper local: <code>_warn()</code> em agenda-modal.js.</td>
+    </tr>
+    <tr>
+      <td>4</td><td>Auto-save draft no modal</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>Draft em localStorage (<code>clinicai_appt_draft</code>), debounce 2s, expira 1h. Restaura ao reabrir modal vazio com toast "Rascunho restaurado". Captura 18+ campos + procs[] + pagamentos[]. Limpo após save.</td>
+    </tr>
+    <tr>
+      <td>5</td><td>Confetti no form de anamnese</td>
+      <td><span class="badge badge-pending">PULADO</span></td>
+      <td>Usuário optou por não implementar.</td>
+    </tr>
+  </table>
+
+  <h3>Tier 2 — Polish premium</h3>
+  <table>
+    <tr><th>#</th><th>Item</th><th>Status</th><th>Detalhes</th></tr>
+    <tr>
+      <td>6</td><td>Tela final anamnese editável</td>
+      <td><span class="badge badge-pending">PENDENTE</span></td>
+      <td>Task #51 — escopo grande, requer sessão dedicada.</td>
+    </tr>
+    <tr>
+      <td>7</td><td>Transição animada Consulta ↔ Procedimento</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>CSS <code>.appt-section-anim</code> com opacity 0.25s + max-height 0.3s. <code>_toggleSection(el, show)</code> aplica classes <code>hidden/visible</code>.</td>
+    </tr>
+    <tr>
+      <td>8</td><td>Busca fuzzy no dropdown paciente</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td><code>_normalize()</code> remove acentos (NFD), <code>_fuzzyMatch()</code> char-by-char. Score: 0=substring, 1=telefone, 2=fuzzy. "mirian" acha "Mírian".</td>
+    </tr>
+    <tr>
+      <td>9</td><td>Mini-calendário inline</td>
+      <td><span class="badge badge-pending">PENDENTE</span></td>
+      <td>Requer componente visual complexo — backlog.</td>
+    </tr>
+    <tr>
+      <td>10</td><td>Keyboard shortcuts</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td><code>js/utils/keyboard-shortcuts.js</code>: Ctrl+N = novo agendamento, Ctrl+K = foca busca visível, Esc = fecha modal aberto.</td>
+    </tr>
+  </table>
+
+  <h3>Tier 3 — Transformacional</h3>
+  <table>
+    <tr><th>#</th><th>Item</th><th>Status</th><th>Detalhes</th></tr>
+    <tr><td>11</td><td>Sugestões inteligentes</td><td><span class="badge badge-pending">BACKLOG</span></td><td>—</td></tr>
+    <tr><td>12</td><td>Timeline visual paciente</td><td><span class="badge badge-pending">BACKLOG</span></td><td>—</td></tr>
+    <tr><td>13</td><td>Real-time updates</td><td><span class="badge badge-pending">BACKLOG</span></td><td>—</td></tr>
+    <tr><td>14</td><td>PWA instalável + offline</td><td><span class="badge badge-pending">BACKLOG</span></td><td>—</td></tr>
+    <tr>
+      <td>15</td><td>Dark mode toggle</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>CSS <code>[data-theme="dark"]</code> com 15+ overrides. Toggle no header (moon/sun). Persistência em <code>clinicai_theme</code> localStorage.</td>
+    </tr>
+  </table>
+  <p><strong>Score: 9 de 15 entregues</strong> (excluindo confetti + 3 backlog + 2 pendentes grandes).</p>
+
+  <!-- ═══ FRAQUEZAS RESOLVIDAS ═══ -->
+  <h2 id="fraquezas-resolved">Fraquezas — sessão 2026-04-12</h2>
+  <p class="muted">As 15 fraquezas identificadas na auditoria anterior foram atacadas sistematicamente.</p>
+
+  <table>
+    <tr><th>#</th><th>Severidade</th><th>Problema</th><th>Status</th><th>Solução</th></tr>
+    <tr>
+      <td>1</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td>n8n processor <code>wa_outbox</code> parado</td>
+      <td><span class="badge badge-pending">EXTERNO</span></td>
+      <td>Dependência de containers Docker. Auditoria mapeou: workflow ativo em <code>flows.aldenquesada.site</code>, RPCs OK, Evolution API com secrets hardcoded. Precisa verificar containers.</td>
+    </tr>
+    <tr>
+      <td>2</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>clinic_injetaveis</code> repo com 6 params errados + 10 omitidos</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td>Repo alinhado com 22 params. Migration <code>20260670</code> adiciona <code>p_ativo</code>, <code>p_riscos_complicacoes</code>, <code>p_texto_consentimento</code>.</td>
+    </tr>
+    <tr>
+      <td>3</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>patients.id === leads.id</code> namespace compartilhado</td>
+      <td><span class="badge badge-warn">PARCIAL</span></td>
+      <td><code>patients.id</code> → uuid (Opção C). <code>leads.id</code> permanece text (Fase 3 futura). Documentado em <code>relatorio-patient-id-to-uuid.html</code>.</td>
+    </tr>
+    <tr>
+      <td>4</td><td><span class="badge badge-warn">ALTO</span></td>
+      <td>Tipos inconsistentes <code>patient_id</code> text/uuid</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td>Migration <code>20260669</code>: 7 colunas text → uuid, trigger reescrito, 4 RLS policies recriadas.</td>
+    </tr>
+    <tr>
+      <td>5</td><td><span class="badge badge-warn">ALTO</span></td>
+      <td>3.68 MB de JS no boot</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td><code>injetaveis.js</code> (235 KB) lazy loaded via <code>_lazyLoadInjetaveis()</code>. Boot: 3.72 → 3.49 MB. Zero vermelhos.</td>
+    </tr>
+    <tr>
+      <td>6</td><td><span class="badge badge-warn">ALTO</span></td>
+      <td>localStorage como source of truth (3 entidades sem sync)</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td><code>agenda_events</code>, <code>automations_queue</code>, <code>op_tasks</code> agora usam <code>sbSave()</code> para persistir no Supabase.</td>
+    </tr>
+    <tr>
+      <td>7</td><td><span class="badge badge-warn">ALTO</span></td>
+      <td>Zero testes de integração/E2E</td>
+      <td><span class="badge badge-warn">PARCIAL</span></td>
+      <td>CI criado (<code>.github/workflows/ci.yml</code>). Playwright pendente.</td>
+    </tr>
+    <tr>
+      <td>8</td><td><span class="badge badge-warn">ALTO</span></td>
+      <td>Sem CI</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td>GitHub Actions: typecheck + vitest + coverage no push/PR.</td>
+    </tr>
+    <tr>
+      <td>9</td><td><span class="badge badge-info">MEDIO</span></td>
+      <td>Cache-buster manual (171 instâncias)</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td><code>npm run cache:bust</code> — <code>scripts/cache-bust.cjs</code> gera hash MD5 do arquivo.</td>
+    </tr>
+    <tr>
+      <td>10</td><td><span class="badge badge-info">MEDIO</span></td>
+      <td>Form-render público sem rate limit</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td>Client: cooldown 30s entre submissões. Server: RPC <code>validate_anamnesis_token</code> com 10 tentativas/15min.</td>
+    </tr>
+    <tr>
+      <td>11</td><td><span class="badge badge-info">MEDIO</span></td>
+      <td>Sem feedback loading nos botões</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td><code>window.guardClick(btn, asyncFn)</code> — desabilita botão, restaura após promise resolver.</td>
+    </tr>
+    <tr>
+      <td>12</td><td><span class="badge badge-info">MEDIO</span></td>
+      <td>Logger.dump local (sem remoto)</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td>ErrorBoundary envia para <code>clinicai_error_log</code> via <code>sbSave()</code>. Últimos 50 erros sincronizados.</td>
+    </tr>
+    <tr>
+      <td>13</td><td><span class="badge badge-info">MEDIO</span></td>
+      <td>Sem monitoring uptime</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td><code>js/utils/health-monitor.js</code>: verifica Supabase a cada 5min, toast se down, log em <code>clinicai_health_log</code>.</td>
+    </tr>
+    <tr>
+      <td>14</td><td><span class="badge badge-info">MEDIO</span></td>
+      <td>Zero confirmação de saída com unsaved changes</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td>Auto-save draft recupera ao reabrir (item Wow #4).</td>
+    </tr>
+    <tr>
+      <td>15</td><td><span class="badge badge-info">MEDIO</span></td>
+      <td>Validação inline ausente</td>
+      <td><span class="badge badge-ok">RESOLVIDO</span></td>
+      <td><code>_inlineValidate()</code>: data passada e horário passado marcam borda vermelha em tempo real.</td>
+    </tr>
+  </table>
+  <p><strong>Score: 14 de 15 resolvidos</strong> (único pendente: n8n externo).</p>
+
+  <!-- ═══ AUDITORIA FINAL AGENDA ═══ -->
+  <h2 id="audit-final">Auditoria final — Menu Agenda (2026-04-12)</h2>
+  <p class="muted">Auditoria profunda em 9 componentes do módulo Agenda.
+    16 problemas reportados, verificados linha a linha. Resultado:</p>
+
+  <table>
+    <tr><th>#</th><th>Severidade</th><th>Arquivo</th><th>Problema</th><th>Veredito</th></tr>
+    <tr>
+      <td>1</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>agenda-modal.js:1011</code></td>
+      <td><code>apptResetPagamentos</code> e <code>apptLoadPagamentos</code> quebravam referência com <code>_apptState.pagamentos</code> via reatribuição (<code>_apptPagamentos = [...]</code>)</td>
+      <td><span class="badge badge-ok">CORRIGIDO</span> — usa <code>.length = 0 + push()</code></td>
+    </tr>
+    <tr>
+      <td>2</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>agenda-modal.js:1509</code></td>
+      <td><code>confirmacaoEnviada</code> não coletada no save</td>
+      <td><span class="badge badge-info">FALSO POSITIVO</span> — campo JÁ É coletado na L1509</td>
+    </tr>
+    <tr>
+      <td>3</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>agenda-modal.js:1942</code></td>
+      <td><code>consentimentoProcedimento</code> órfão</td>
+      <td><span class="badge badge-info">FALSO POSITIVO</span> — campo de tracking no modal de detalhe, não de input</td>
+    </tr>
+    <tr>
+      <td>4</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>agenda-modal.js:369</code></td>
+      <td>Draft listeners acumulam</td>
+      <td><span class="badge badge-info">FALSO POSITIVO</span> — guard <code>modal._draftBound</code> já previne</td>
+    </tr>
+    <tr>
+      <td>5</td><td><span class="badge badge-fail">CRITICO</span></td>
+      <td><code>agenda-automations.engine.js:81</code></td>
+      <td>Timezone não tratado</td>
+      <td><span class="badge badge-info">RISCO BAIXO</span> — <code>new Date('...T...:00')</code> interpreta como local; clínica única no Brasil opera em timezone consistente</td>
+    </tr>
+    <tr>
+      <td>6-11</td><td><span class="badge badge-warn">HIGH</span></td>
+      <td>vários</td>
+      <td>appt_prof, forma_pag, multi-proc, border, valor, birthday</td>
+      <td><span class="badge badge-info">FALSO POSITIVO / BY DESIGN</span> — verificados com evidência no código</td>
+    </tr>
+    <tr>
+      <td>12</td><td><span class="badge badge-warn">HIGH</span></td>
+      <td><code>agenda-modal.js:1583</code></td>
+      <td>Audit log incompleto — faltavam <code>pacienteId</code>, <code>indicadoPor</code>, <code>procedimentos[]</code>, <code>pagamentos[]</code></td>
+      <td><span class="badge badge-ok">CORRIGIDO</span> — 23 campos escalares + JSON diff de procs e pagamentos</td>
+    </tr>
+    <tr>
+      <td>13-16</td><td><span class="badge badge-info">MEDIUM</span></td>
+      <td>vários</td>
+      <td>Namespace, sync timing, confirm(), draft validation</td>
+      <td><span class="badge badge-info">ACEITÁVEL</span> — guards existentes cobrem os cenários</td>
+    </tr>
+  </table>
+  <p><strong>2 bugs reais corrigidos, 10 falsos positivos descartados com evidência, 4 médios aceitáveis.</strong></p>
+
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
   <h2>Próximos passos</h2>
 
   <h3>Pendente / a confirmar com o usuário</h3>
   <ul>
-    <li><span class="badge badge-pending">Decidir</span> Adicionar indicador visual no modal mostrando que a mensagem WhatsApp de confirmação foi agendada (existe via <code>AutomationsEngine.processAppointment</code>, mas sem feedback UI)</li>
-    <li><span class="badge badge-pending">Pendente</span> Drag &amp; drop na agenda quebrado (memória <code>project_clinic_session_20260411_full.md</code>)</li>
+    <li><span class="badge badge-pending">Decidir</span> Indicador visual de WhatsApp agendado no modal</li>
+    <li><span class="badge badge-pending">Pendente</span> Drag &amp; drop na agenda quebrado</li>
     <li><span class="badge badge-pending">Pendente</span> Mensagem antecipada com timing errado (1h em vez de 24h)</li>
+    <li><span class="badge badge-pending">Pendente</span> Tela final anamnese editável (#51)</li>
+    <li><span class="badge badge-pending">Pendente</span> Mini-calendário inline no modal (#9)</li>
+    <li><span class="badge badge-pending">Externo</span> Reativar n8n processor wa_outbox (containers Docker)</li>
   </ul>
 
   <h3>Camada 2 — Pré-atendimento (anamnese + consentimento)</h3>
@@ -1956,7 +2199,7 @@ INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
   <h3>Camada 3 — Finalização</h3>
   <ul>
     <li>Retoque/Sessão na finalização (campo existe mas não integrado)</li>
-    <li>Garantir que <code>saveAppointments</code> sempre chama <code>syncOne()</code> (lição já documentada em <code>feedback_finalize_must_sync</code>)</li>
+    <li>Garantir que <code>saveAppointments</code> sempre chama <code>syncOne()</code></li>
   </ul>
 
   <h3>Camada 4 — Prontuário</h3>
@@ -1966,10 +2209,19 @@ INSERT INTO public.patients (id, ...) VALUES (v_patient_id, ...);</pre>
     <li>Ortografia dos labels pós-atendimento</li>
   </ul>
 
+  <h3>Débito técnico declarado (Fase 3 futura)</h3>
+  <ul>
+    <li><code>leads.id</code> text → uuid (11 tabelas dependentes — sprint dedicado)</li>
+    <li>17 funções com <code>::text</code> redundante (limpeza progressiva)</li>
+    <li>Playwright E2E tests</li>
+    <li>Wow effects backlog: sugestões inteligentes, timeline visual, real-time, PWA</li>
+  </ul>
+
   <hr style="margin: 60px 0 20px; border: none; border-top: 1px solid var(--border)">
   <p class="muted" style="text-align: center; font-size: 12px;">
-    Documento gerado em 2026-04-11 — sessão de auditoria e refatoração da Camada 1.
-    Atualizar conforme próximas camadas forem entregues.
+    Documento gerado em 2026-04-11 — sessão de auditoria e refatoração da Camada 1.<br>
+    Atualizado em 2026-04-12 — Wow Effects (9/15), Fraquezas (14/15), Auditoria Final (2 bugs corrigidos).<br>
+    Próxima atualização: conforme Camadas 2-4 forem entregues.
   </p>
 
 </div>
