@@ -227,7 +227,8 @@
     <a href="#ssot">SSOT</a>
     <a href="#data-model">Modelo de dados</a>
     <a href="#flow">Fluxo ponta a ponta</a>
-    <a href="#workflow">Workflow n8n</a>
+    <a href="#workflow">Workflow reativo n8n</a>
+    <a href="#proactive">Workflows proativos (4 cron)</a>
 
     <a class="section">Backend</a>
     <a href="#rpcs">RPCs</a>
@@ -238,7 +239,15 @@
     <a href="#auth">Autenticação</a>
     <a href="#rate-limit">Rate limit</a>
     <a href="#context">Contexto multi-turno</a>
+    <a href="#multiturn-flow">Multi-turn validado</a>
     <a href="#permissions">Permissões</a>
+    <a href="#timezone">Timezone helpers</a>
+
+    <a class="section">Features WOW</a>
+    <a href="#daily-digest">Daily Digest</a>
+    <a href="#evening-digest">Evening Digest</a>
+    <a href="#preconsult">Pré-consulta</a>
+    <a href="#anomaly">Anomaly detection</a>
 
     <a class="section">Segurança</a>
     <a href="#rls">RLS hardening</a>
@@ -270,25 +279,33 @@
 </div>
 
 <div class="stats">
-  <div class="stat"><div class="value">14</div><div class="label">RPCs wa_pro_*</div></div>
+  <div class="stat"><div class="value">19</div><div class="label">RPCs wa_pro_*</div></div>
   <div class="stat"><div class="value">12</div><div class="label">Intents Tier 1</div></div>
   <div class="stat"><div class="value">8</div><div class="label">Tools Tier 2</div></div>
-  <div class="stat"><div class="value">11</div><div class="label">Nodes n8n</div></div>
-  <div class="stat"><div class="value">37</div><div class="label">Testes (0 falhas)</div></div>
-  <div class="stat"><div class="value">10</div><div class="label">Migrations</div></div>
+  <div class="stat"><div class="value">5</div><div class="label">Workflows n8n</div></div>
+  <div class="stat"><div class="value">39</div><div class="label">Testes (0 falhas)</div></div>
+  <div class="stat"><div class="value">12</div><div class="label">Migrations</div></div>
+  <div class="stat"><div class="value">4</div><div class="label">Cron proativas</div></div>
+  <div class="stat"><div class="value">5/7</div><div class="label">WOW features</div></div>
 </div>
 
 <h3 id="status">Status atual</h3>
 <table>
   <tr><th>Componente</th><th>Status</th></tr>
   <tr><td>Autenticação (phone → professional)</td><td><span class="badge ok">Operacional</span></td></tr>
-  <tr><td>Tier 1 regex (11 intents + quota)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Tier 1 regex (12 intents + quota)</td><td><span class="badge ok">Operacional</span></td></tr>
   <tr><td>Tier 2 Claude Haiku (tool use)</td><td><span class="badge ok">Operacional</span></td></tr>
   <tr><td>WhatsApp integration (Evolution + n8n)</td><td><span class="badge ok">Operacional</span></td></tr>
   <tr><td>Rate limit (10/min + 50/dia)</td><td><span class="badge ok">Operacional</span></td></tr>
-  <tr><td>Context multi-turno (TTL 10min)</td><td><span class="badge warn">Tabela criada, não consumida ainda</span></td></tr>
+  <tr><td>Context multi-turno (TTL 10min)</td><td><span class="badge ok">Operacional — resolve "2", "primeira", etc</span></td></tr>
+  <tr><td>Daily Digest automático (cron 7h)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Evening Digest automático (cron 20h)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Alerta pré-consulta (cron 5min)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Anomaly detection (cron 22h)</td><td><span class="badge ok">Operacional</span></td></tr>
+  <tr><td>Voice → Task</td><td><span class="badge warn">Próximo sprint (media handling)</span></td></tr>
+  <tr><td>Foto → Face Mapping v2</td><td><span class="badge warn">Próximo sprint (media handling)</span></td></tr>
   <tr><td>RLS hardening</td><td><span class="badge ok">Operacional</span></td></tr>
-  <tr><td>Test suite</td><td><span class="badge ok">37/37</span></td></tr>
+  <tr><td>Test suite</td><td><span class="badge ok">39/39</span></td></tr>
 </table>
 
 <h3 id="concepts">Conceitos fundamentais</h3>
@@ -451,7 +468,7 @@ api_url, api_key text     -- endpoint Evolution</pre>
 
 <!-- ============ WORKFLOW ============ -->
 <section id="workflow">
-<h2>Workflow n8n</h2>
+<h2>Workflow n8n (reativo — WhatsApp)</h2>
 <div class="kv">
   <div class="k">ID</div><div class="v"><code>j3i14cyQt3NPiGF2</code></div>
   <div class="k">Nome</div><div class="v">ClinicAI - Mira WhatsApp Assistant</div>
@@ -530,6 +547,152 @@ api_url, api_key text     -- endpoint Evolution</pre>
 
 </section>
 
+<!-- ============ PROACTIVE WORKFLOWS ============ -->
+<section id="proactive">
+<h2>Workflows Proativos (4 cron)</h2>
+
+<div class="callout info">
+  <div class="title info">Mudança de paradigma</div>
+  Até agora a Mira era <b>reativa</b> — só respondia quando perguntada. Agora ela também é <b>proativa</b>: envia mensagens sozinha em momentos-chave do dia via n8n schedule triggers.
+</div>
+
+<h3>Topologia proativa</h3>
+<div class="flow">
+Cron trigger (schedule node)
+         │
+         ▼
+List Recipients (wa_pro_active_digest_recipients)
+         │
+         ▼
+Split em items  [loop por profissional]
+         │
+         ▼
+Build Message (RPC específica: daily/evening/preconsult/anomaly)
+         │
+         ▼
+Merge (phone + instance + message)
+         │
+         ▼
+Send WhatsApp (Evolution sendText)
+</div>
+
+<h3>Workflows ativos</h3>
+<table>
+  <tr><th>Workflow</th><th>ID</th><th>Cron</th><th>RPC</th></tr>
+  <tr>
+    <td><b>Daily Digest</b> 🥇</td>
+    <td><code>6jEtFqw40Rh4dhSI</code></td>
+    <td><code>0 7 * * 1-6</code> (7h Seg-Sáb)</td>
+    <td><code>wa_pro_daily_digest</code></td>
+  </tr>
+  <tr>
+    <td><b>Evening Digest</b> 🥈</td>
+    <td><code>0f1S4Sv9lZuG79vj</code></td>
+    <td><code>0 20 * * 1-6</code> (20h Seg-Sáb)</td>
+    <td><code>wa_pro_evening_digest</code></td>
+  </tr>
+  <tr>
+    <td><b>Pre-Consult Alerts</b> 🩺</td>
+    <td><code>iXkkgrewimdZX4TL</code></td>
+    <td><code>*/5 8-21 * * 1-6</code> (a cada 5min, 8-21h Seg-Sáb)</td>
+    <td><code>wa_pro_pre_consult_alerts</code></td>
+  </tr>
+  <tr>
+    <td><b>Anomaly Check</b> 🎯</td>
+    <td><code>uWBqD6W3Gzic969u</code></td>
+    <td><code>0 22 * * *</code> (22h diário)</td>
+    <td><code>wa_pro_anomaly_check</code></td>
+  </tr>
+</table>
+
+<h3 id="daily-digest">🥇 Daily Digest — 7h</h3>
+<p>A primeira coisa que o profissional vê ao abrir o WhatsApp pela manhã. Inclui:</p>
+<ul>
+  <li>Total de atendimentos do dia</li>
+  <li>Novos vs retornos (via histórico de appointments)</li>
+  <li>Valor total previsto</li>
+  <li>Lista completa da agenda com horário, paciente, procedimento</li>
+  <li>Flag <code>🆕</code> pra pacientes novos</li>
+</ul>
+
+<h4>Exemplo real (validado em produção)</h4>
+<pre>Bom dia ALDEN! ☀️
+
+Hoje voce tem *1 atendimento* (1 retorno)
+💰 Valor previsto: *R$ 200,00*
+
+📅 *Agenda:*
+• 12:30 — Alden Julio
+
+Bom dia e bom trabalho! 💪</pre>
+
+<h3 id="evening-digest">🥈 Evening Digest — 20h</h3>
+<p>Fechamento do dia com sentimento de controle total. Inclui:</p>
+<ul>
+  <li>Faturamento real (só pagos)</li>
+  <li>Qtd de atendimentos finalizados</li>
+  <li><b>Delta vs média dos últimos 30 dias</b> (com ícone 📈/📉)</li>
+  <li>Lista de pendentes de pagamento (pra cobrar)</li>
+  <li>Quantos agendados pra amanhã</li>
+</ul>
+
+<h4>Exemplo real (validado em produção)</h4>
+<pre>🌙 *Fechamento do dia — ALDEN*
+─────────────
+Faturamento: *R$ 200,00*
+Atendimentos: 1
+📉 vs media 30d: -90,0% (R$ 2.000,00)
+
+📅 Amanha: agenda livre.
+
+Boa noite! 😴</pre>
+
+<h3 id="preconsult">🩺 Pré-Consulta — 10min antes</h3>
+<p>Cron a cada 5min verifica se há consultas começando em ~10min (janela 8-13min). Alerta o profissional antes da pessoa entrar no consultório.</p>
+
+<h4>Janela deslizante</h4>
+<pre>-- Só alerta se appointment começa entre 8 e 13 min a partir de agora
+WHERE (v_today + a.start_time::interval) AT TIME ZONE 'America/Sao_Paulo'
+      BETWEEN now() + interval '8 minutes' AND now() + interval '13 minutes'</pre>
+
+<p>Como roda a cada 5min, cada appointment dispara o alerta <b>exatamente 1 vez</b> (a janela de 5min garante isso).</p>
+
+<h4>Formato</h4>
+<pre>⏰ *Patricia* chega em ~10min
+─────────────
+Horario: 14:00
+Procedimento: Lifting 5D
+Valor: R$ 600,00</pre>
+
+<div class="callout ok">
+  <div class="title ok">Impacto</div>
+  "Mirian nunca mais entra numa consulta sem contexto." — Antes de cada atendimento, ela sabe quem é, o que vai fazer, quanto vai cobrar.
+</div>
+
+<h3 id="anomaly">🎯 Anomaly Detection — 22h</h3>
+<p>Todo dia às 22h, compara faturamento do dia vs média + stddev dos últimos 30 dias. Se desvio > 2σ (top/bottom 2.5%), envia alerta.</p>
+
+<h4>Algoritmo</h4>
+<pre>delta_sigma = ABS(today - avg_30d) / stddev_30d
+
+IF delta_sigma > 2 AND today > 0 THEN
+  triggered = true
+END IF</pre>
+
+<h4>Formato</h4>
+<pre>📈 *Dia atipico — positivo!*
+─────────────
+Hoje: *R$ 8.000,00*
+Media 30d: R$ 1.500,00
+Desvio: 3,2σ (>2σ = notavel)</pre>
+
+<div class="callout info">
+  <div class="title info">Por que 2σ</div>
+  Numa distribuição normal, 2σ captura ~2.5% dos dias (top ou bottom). É o sweet spot: alerta só os dias realmente atípicos, sem barulho constante.
+</div>
+
+</section>
+
 <!-- ============ RPCs ============ -->
 <section id="rpcs">
 <h2>RPCs</h2>
@@ -562,6 +725,50 @@ api_url, api_key text     -- endpoint Evolution</pre>
   <tr><th>RPC</th><th>Args</th><th>Notas</th></tr>
   <tr><td><code>wa_pro_execute_tool</code></td><td>phone, tool_name, args JSONB</td><td>Dispatcher pra 8 tools. Parser de período expandido (hoje/ontem/semana/mes/semana_passada/mes_passado).</td></tr>
 </table>
+
+<h3>Proativas (WOW features)</h3>
+<table>
+  <tr><th>RPC</th><th>Args</th><th>Retorna</th><th>Uso</th></tr>
+  <tr>
+    <td><code>wa_pro_daily_digest</code></td>
+    <td>phone</td>
+    <td>{message, total, new, return, value}</td>
+    <td>Cron 7h</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_evening_digest</code></td>
+    <td>phone</td>
+    <td>{message, finalized, paid_value, delta_pct, tomorrow_count}</td>
+    <td>Cron 20h</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_pre_consult_alerts</code></td>
+    <td>phone</td>
+    <td>{alerts[], count}</td>
+    <td>Cron 5min</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_anomaly_check</code></td>
+    <td>phone</td>
+    <td>{triggered, today, avg_30d, stddev, delta_sigma, message}</td>
+    <td>Cron 22h</td>
+  </tr>
+  <tr>
+    <td><code>wa_pro_active_digest_recipients</code></td>
+    <td>-</td>
+    <td>[{phone, instance_id, label, professional_id}]</td>
+    <td>Helper n8n</td>
+  </tr>
+</table>
+
+<h3 id="timezone">Helpers de timezone (BR-aware)</h3>
+<p>Supabase server é UTC. A partir das 21h BR, <code>CURRENT_DATE</code> do server já é o dia seguinte — quebrava os digests noturnos. Criei helpers:</p>
+<table>
+  <tr><th>Função</th><th>Retorna</th></tr>
+  <tr><td><code>_today_br()</code></td><td><code>(now() AT TIME ZONE 'America/Sao_Paulo')::date</code></td></tr>
+  <tr><td><code>_now_br()</code></td><td>timestamp com offset BR</td></tr>
+</table>
+<p>Aplicado em: <code>wa_pro_daily_digest</code>, <code>wa_pro_evening_digest</code>, <code>wa_pro_pre_consult_alerts</code>, <code>wa_pro_anomaly_check</code>, <code>wa_pro_check_rate_limit</code>.</p>
 
 <h3>Helpers de formatação (SQL)</h3>
 <table>
@@ -782,19 +989,64 @@ Restantes: 28
 <h2>Contexto Multi-turno</h2>
 
 <p>Tabela <code>wa_pro_context</code> guarda a última interação por telefone com TTL de 10min:</p>
-<pre>phone            TEXT PRIMARY KEY
-professional_id  UUID
-last_intent      TEXT      -- ultima intent executada
-last_entity_type TEXT      -- 'patient' | 'date' | ...
-last_entity_id   TEXT      -- id da entidade referida
-last_entity_name TEXT      -- nome humano
-last_query       TEXT      -- texto bruto
-turns            INT       -- qtd turnos consecutivos
-expires_at       TIMESTAMPTZ DEFAULT now() + interval '10 minutes'</pre>
+<pre>phone               TEXT PRIMARY KEY
+professional_id     UUID
+last_intent         TEXT      -- ultima intent executada
+last_entity_type    TEXT      -- 'patient' | 'date' | ...
+last_entity_id      TEXT      -- id da entidade referida
+last_entity_name    TEXT      -- nome humano
+last_entity_options JSONB     -- lista de opções quando houve multi-match
+last_query          TEXT
+turns               INT
+expires_at          TIMESTAMPTZ DEFAULT now() + interval '10 minutes'</pre>
 
+<div class="callout ok">
+  <div class="title ok">Operacional</div>
+  O handler lê o context antes de processar. Se o último turno foi <code>patient_balance_disambig</code> (multi-match pedindo desambiguação), e o novo turno é uma referência (número, ordinal), resolve pra ID exato e pula direto pro saldo.
+</div>
+
+<h3 id="multiturn-flow">Fluxo validado</h3>
+<div class="flow">
+Turno 1:                                  Turno 2:
+┌──────────────────────────────┐         ┌────────────┐
+│ "quanto a Maria me deve"     │         │ "2"        │
+└──────────────┬───────────────┘         └─────┬──────┘
+               │                               │
+               ▼                               ▼
+       fuzzy search                    load context
+               │                               │
+               ▼                               ▼
+       6 matches achados               ctx.last_intent =
+               │                       patient_balance_disambig
+               ▼                               │
+       salva options no context        <b>resolve "2" → options[1]</b>
+               │                               │
+               ▼                               ▼
+       <b>intent = patient_balance_disambig</b>   wa_pro_patient_balance(
+               │                         p_exact_id = Maria Célia id)
+               ▼                               │
+       "🤔 Encontrei 6 pacientes...            ▼
+        Qual? 1) Ana 2) Maria Célia..."  "💰 Saldo — Maria Célia
+                                          Total: R$ 0,00..."
+</div>
+
+<h3>Referências reconhecidas</h3>
+<table>
+  <tr><th>Input</th><th>Resolve</th></tr>
+  <tr><td><code>1</code>, <code>2</code>, <code>3</code>, ...</td><td>Índice 0-based na lista</td></tr>
+  <tr><td><code>1.</code>, <code>2.</code></td><td>Com ponto, também</td></tr>
+  <tr><td><code>primeira</code>, <code>primeiro</code></td><td>options[0]</td></tr>
+  <tr><td><code>segunda</code>, <code>segundo</code></td><td>options[1]</td></tr>
+  <tr><td><code>terceira</code>, <code>terceiro</code></td><td>options[2]</td></tr>
+  <tr><td><code>quarta</code>, <code>quarto</code></td><td>options[3]</td></tr>
+  <tr><td><code>quinta</code>, <code>quinto</code></td><td>options[4]</td></tr>
+  <tr><td><code>99</code> (fora do range)</td><td>Cai em fallback unknown</td></tr>
+</table>
+
+<h3>Gotcha: re-fuzzy infinito</h3>
 <div class="callout warn">
-  <div class="title warn">Estado atual</div>
-  A tabela é populada em todo <code>handle_message</code> mas ainda não é <b>consumida</b> nas queries. Próximo passo (Bloco C): usar <code>last_entity_id</code> pra resolver referências tipo "e quanto ela me deve?" após um "quem é Maria?".
+  <div class="title warn">Bug encontrado no caminho</div>
+  Ao resolver "primeira", reescrever <code>v_text := 'quanto Ana Maria me deve'</code> causava NOVO multi-match (outras Anas). Fix: criar param <code>p_exact_id</code> em <code>wa_pro_patient_balance</code> que bypassa fuzzy e busca direto pelo ID. Quando context resolve, usa esse caminho.
 </div>
 
 </section>
@@ -936,9 +1188,12 @@ ORDER BY created_at DESC LIMIT 20;</pre>
 <div class="kv">
   <div class="k">Arquivo</div><div class="v"><code>scripts/mira-tests.cjs</code></div>
   <div class="k">Comando</div><div class="v"><code>node scripts/mira-tests.cjs</code></div>
-  <div class="k">Asserts</div><div class="v">37</div>
+  <div class="k">Asserts</div><div class="v"><b>39</b> (0 falhas)</div>
   <div class="k">Exit code</div><div class="v">0 se passa tudo, 1 se qualquer falha</div>
 </div>
+
+<h3>Setup robusto</h3>
+<p>Antes de cada teste: <code>_resetRateLimit()</code> zera <code>query_count</code>, <code>minute_count</code>, <code>minute_window_start</code>, seta <code>max_per_day = 99999</code>. Setup inicial também reseta <code>wa_pro_context</code> e garante <code>permissions.markdown = true</code> pra todos os profissionais de teste.</p>
 
 <h3>Grupos cobertos</h3>
 <table>
@@ -949,6 +1204,7 @@ ORDER BY created_at DESC LIMIT 20;</pre>
   <tr><td>agenda</td><td>2</td><td>estrutura + free_slots</td></tr>
   <tr><td>finance</td><td>3</td><td>summary + commission + recent_payments</td></tr>
   <tr><td>handle_message SSOT</td><td>8</td><td>help, agenda_today, finance_revenue, quota, sanitize, unauthorized, multi-match, unknown</td></tr>
+  <tr><td><b>multi-turn</b> 🧠</td><td>2</td><td>resolve "2" + resolve "primeira"</td></tr>
   <tr><td>context</td><td>1</td><td>linha salva após handle_message</td></tr>
   <tr><td>audit_log</td><td>1</td><td>response_ms populado</td></tr>
   <tr><td>quota</td><td>1</td><td>my_quota struct</td></tr>
@@ -1003,6 +1259,59 @@ Tier 2 → Claude Haiku (response sem tool)
           sua comissão ou receita?"
 
 Merge → Send WhatsApp (texto direto do Claude)
+✓ Validado</pre>
+
+<h3>Multi-turno validado</h3>
+<pre>>>> quanto a Maria me deve
+🤔 Encontrei *6* pacientes com "Maria". Qual?
+─────────────
+1. *Ana Maria* · 5544998464719
+2. *Maria Célia da silva carrasco* · 5544984393453
+3. *Maria Dolores Medina Golin* · 5544999698095
+4. *Ângela Maria Meneguetti Senhorinho* · 5544999611784
+5. *Irenilde José maria* · 5544988362259
+6. *Claudete Maria  Tura* · 5544988041740
+
+>>> 2                    ← user digita o número
+💰 *Saldo — Maria Célia da silva carrasco*
+─────────────
+Total: *R$ 0,00*
+Pago: R$ 0,00
+Saldo devedor: *R$ 0,00*
+
+>>> primeira             ← ou ordinal
+💰 *Saldo — Ana Maria*
+─────────────
+Total: *R$ 0,00*
+
+>>> terceira             ← funciona até 5ª
+💰 *Saldo — Maria Dolores Medina Golin*
+─────────────
+Total: *R$ 0,00*
+
+>>> 99                   ← out of range
+🤔 Nao entendi ainda.    ← fallback correto
+✓ Validado</pre>
+
+<h3>Proativos validados (via RPC direta)</h3>
+<pre># Daily Digest
+SELECT wa_pro_daily_digest('5544998787673');
+→ "Bom dia ALDEN! ☀️
+    Hoje voce tem *1 atendimento* (1 retorno)
+    💰 Valor previsto: *R$ 200,00*
+    📅 *Agenda:*
+    • 12:30 — Alden Julio
+    Bom dia e bom trabalho! 💪"
+
+# Evening Digest
+SELECT wa_pro_evening_digest('5544998787673');
+→ "🌙 *Fechamento do dia — ALDEN*
+    ─────────────
+    Faturamento: *R$ 200,00*
+    Atendimentos: 1
+    📉 vs media 30d: -90,0% (R$ 2.000,00)
+    📅 Amanha: agenda livre.
+    Boa noite! 😴"
 ✓ Validado</pre>
 
 </section>
@@ -1075,6 +1384,31 @@ Merge → Send WhatsApp (texto direto do Claude)
     <td><code>similarity('Joscely Aparecida Marchiori', 'Joscely') = 0.16</code> — diluído</td>
     <td>Usar <code>word_similarity()</code> que pega o token mais similar: 0.75</td>
   </tr>
+  <tr>
+    <td>Daily digest das 21h em diante retornava "nenhum agendamento"</td>
+    <td>Supabase server é UTC. Após 21h BR, <code>CURRENT_DATE</code> já era o dia seguinte — quebrava queries por data</td>
+    <td>Helpers <code>_today_br()</code> e <code>_now_br()</code> aplicados em todas as RPCs proactive + rate_limit</td>
+  </tr>
+  <tr>
+    <td>Regex <code>patient_balance</code> não pegava nome multi-palavra</td>
+    <td><code>[a-zA-Z]+</code> só captura uma palavra. Ao resolver "Maria Célia" via context, regex falhava</td>
+    <td>Ampliado pra <code>[A-Za-zÀ-ÿ]+[A-Za-zÀ-ÿ\s]*</code> — multi-palavra + acentos latin-1</td>
+  </tr>
+  <tr>
+    <td>Re-fuzzy infinito no multi-turn</td>
+    <td>Ao resolver "primeira" → "Ana Maria", re-busca gerava NOVO multi-match (Maria + outras)</td>
+    <td>Novo param <code>p_exact_id</code> em <code>wa_pro_patient_balance</code> bypassa fuzzy</td>
+  </tr>
+  <tr>
+    <td><code>GOTO</code> não existe em PL/pgSQL</td>
+    <td>Tentei usar pra pular intent parsing após context resolve</td>
+    <td>Flag <code>v_skip_parse boolean</code> + <code>IF NOT v_skip_parse THEN ... END IF</code> wrap</td>
+  </tr>
+  <tr>
+    <td>Rate limit cumulativo nos tests</td>
+    <td><code>check_rate_limit</code> usava <code>CURRENT_DATE</code> (UTC) mas reset dos tests usava BR. Rows diferentes</td>
+    <td><code>wa_pro_check_rate_limit</code> agora usa <code>_today_br()</code></td>
+  </tr>
 </table>
 
 </section>
@@ -1098,6 +1432,8 @@ Merge → Send WhatsApp (texto direto do Claude)
   <tr><td>20260663</td><td><code>mira_tier2_tools.sql</code></td><td><b>Tier 2:</b> execute_tool dispatcher + 8 tools + period parser expandido</td></tr>
   <tr><td>20260664</td><td><code>mira_rls_hardening.sql</code></td><td><b>RLS:</b> revoke SELECT anon + service_role only policies</td></tr>
   <tr><td>20260665</td><td><code>mira_markdown_toggle.sql</code></td><td><b>Markdown:</b> _strip_markdown + permissions.markdown flag + fix authenticate lê permissions do DB</td></tr>
+  <tr><td>20260666</td><td><code>mira_proactive.sql</code></td><td><b>WOW:</b> daily_digest, evening_digest, pre_consult_alerts, anomaly_check, active_recipients + helpers _today_br/_now_br</td></tr>
+  <tr><td>20260667</td><td><code>mira_multiturn_context.sql</code></td><td><b>Multi-turn:</b> context consumption, resolve referências (1/2/primeira/segunda), regex patient name multi-palavra, param p_exact_id</td></tr>
 </table>
 
 </section>
@@ -1128,7 +1464,11 @@ js/services/mira.service.js          (477 lines)  — handleMessageSSOT + backwa
 js/ui/mira-console.ui.js             (406 lines)  — página de teste local</pre>
 
 <h3>n8n</h3>
-<pre>n8n/mira-whatsapp-workflow.json     — workflow v3 com credentials (sem secrets)</pre>
+<pre>n8n/mira-whatsapp-workflow.json        — reativo (WhatsApp → Tier 1 + Tier 2)
+n8n/mira-daily-digest-workflow.json    — 🥇 cron 7h
+n8n/mira-evening-digest-workflow.json  — 🥈 cron 20h
+n8n/mira-preconsult-workflow.json      — 🩺 cron */5min
+n8n/mira-anomaly-workflow.json         — 🎯 cron 22h</pre>
 
 <h3>Tests</h3>
 <pre>scripts/mira-tests.cjs               — 37 asserts</pre>
@@ -1203,52 +1543,82 @@ js/ui/mira-console.ui.js             (406 lines)  — página de teste local</pr
 
 <!-- ============ ROADMAP ============ -->
 <section id="roadmap">
-<h2>Roadmap — Bloco C (Efeito WOW)</h2>
+<h2>Roadmap</h2>
 
-<p>Todas as fraquezas da auditoria estão fechadas. Próximos passos são sobre experiência:</p>
+<h3>Bloco C (Efeito WOW) — 5/7 entregues</h3>
 
 <table>
-  <tr><th>Feature</th><th>Impacto</th><th>Esforço</th></tr>
+  <tr><th>Feature</th><th>Status</th><th>Detalhes</th></tr>
   <tr>
-    <td><b>Daily Digest automático</b><br><span class="muted">"Bom dia Dra Mirian! Hoje tem 5 atendimentos, R$ 2.400 previstos..."</span></td>
-    <td>Alto — cria dependência diária</td>
-    <td>~2-3h</td>
+    <td><b>🥇 Daily Digest automático</b></td>
+    <td><span class="badge ok">Entregue</span></td>
+    <td>Cron 7h Seg-Sáb · workflow <code>6jEtFqw40Rh4dhSI</code></td>
   </tr>
   <tr>
-    <td><b>Fechamento noturno</b><br><span class="muted">"Fechamento do dia: R$ 1.800 em 3 atendimentos, +12% vs média"</span></td>
-    <td>Alto — fecha o loop</td>
-    <td>~2h</td>
+    <td><b>🥈 Fechamento noturno</b></td>
+    <td><span class="badge ok">Entregue</span></td>
+    <td>Cron 20h Seg-Sáb · workflow <code>0f1S4Sv9lZuG79vj</code> · delta 30d</td>
   </tr>
   <tr>
-    <td><b>Alerta pré-consulta</b><br><span class="muted">"Patricia chega em 10min, prontuário: Lifting 5D 2ª sessão"</span></td>
-    <td>Alto — contexto antes da consulta</td>
-    <td>~2h</td>
+    <td><b>🩺 Alerta pré-consulta</b></td>
+    <td><span class="badge ok">Entregue</span></td>
+    <td>Cron a cada 5min · workflow <code>iXkkgrewimdZX4TL</code> · janela 8-13min</td>
   </tr>
   <tr>
-    <td><b>Voice → Task</b><br><span class="muted">áudio no WhatsApp → Whisper → cria task</span></td>
-    <td>Médio — diferencial</td>
+    <td><b>🎯 Anomaly detection</b></td>
+    <td><span class="badge ok">Entregue</span></td>
+    <td>Cron 22h · workflow <code>uWBqD6W3Gzic969u</code> · z-score > 2σ</td>
+  </tr>
+  <tr>
+    <td><b>🧠 Context multi-turno</b></td>
+    <td><span class="badge ok">Entregue</span></td>
+    <td>Resolve "2", "primeira"..."quinta" · bypass fuzzy via <code>p_exact_id</code></td>
+  </tr>
+  <tr>
+    <td><b>🥉 Voice → Task</b></td>
+    <td><span class="badge warn">Próximo sprint</span></td>
+    <td>Requer Whisper API + nova tabela <code>mira_tasks</code> + cron de lembretes</td>
+  </tr>
+  <tr>
+    <td><b>💎 Foto → Face Mapping v2</b></td>
+    <td><span class="badge warn">Próximo sprint</span></td>
+    <td>Requer endpoint HTTP do face-mapping (hoje é só UI) + storage</td>
+  </tr>
+</table>
+
+<h3>Bloco D sugerido (próximo sprint)</h3>
+<table>
+  <tr><th>Feature</th><th>Esforço</th><th>Notas</th></tr>
+  <tr>
+    <td><b>Voice → Task</b></td>
     <td>~4h</td>
+    <td>Whisper API (OpenAI ou Claude) + tabela tasks + cron lembretes</td>
   </tr>
   <tr>
-    <td><b>Foto → Face Mapping v2</b><br><span class="muted">foto do rosto → análise visual + sugestão de protocolo</span></td>
-    <td>Médio — integra com sistema existente</td>
+    <td><b>Foto → Face Mapping v2</b></td>
     <td>~3h</td>
+    <td>Expor face-mapping como endpoint HTTP primeiro</td>
   </tr>
   <tr>
-    <td><b>Context multi-turno efetivo</b><br><span class="muted">"quanto ela me deve" depois de "quem é Maria Silva Costa"</span></td>
-    <td>Alto — conversação real</td>
-    <td>~2h</td>
+    <td><b>Ações de escrita</b></td>
+    <td>~5h</td>
+    <td>"marca Maria amanhã 14h" → cria appointment (com confirmação)</td>
   </tr>
   <tr>
-    <td><b>Ações de escrita</b><br><span class="muted">"marca Maria pra amanhã 14h" → cria appointment</span></td>
-    <td>Alto mas arriscado</td>
-    <td>~4-5h</td>
+    <td><b>CI Tests no GitHub Actions</b></td>
+    <td>~1h</td>
+    <td>Rodar <code>scripts/mira-tests.cjs</code> em cada push</td>
+  </tr>
+  <tr>
+    <td><b>Dashboard de métricas Mira</b></td>
+    <td>~3h</td>
+    <td>Grafana ou página no dashboard mostrando queries/dia, latência p50/p95, intents top</td>
   </tr>
 </table>
 
 <hr>
 
-<p class="dim small">Documento gerado em 2026-04-11. Versão da Mira: Hardening v1 (SSOT + Tier 2). Commits: <code>032ef4a</code> + <code>e400b36</code>.</p>
+<p class="dim small">Documento atualizado em 2026-04-12. Versão da Mira: <b>WOW v1</b> (SSOT + Tier 2 + 4 cron proativos + multi-turn). Commits principais: <code>032ef4a</code> (SSOT), <code>e400b36</code> (hardening), <code>fcc92c5</code> (WOW). Tests: 39/39.</p>
 
 </section>
 
