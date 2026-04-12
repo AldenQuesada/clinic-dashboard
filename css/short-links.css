@@ -1,14 +1,23 @@
 /* ============================================================
-   Short Links — Encurtador de Links + Pixels
+   Short Links — Encurtador de Links + Pixels + Ref Panel
    ============================================================ */
-.sl-module { padding: 20px; max-width: 900px; }
+
+/* ── Layout 2 colunas ────────────────────────────────────── */
+.sl-layout { display: flex; gap: 20px; padding: 20px; align-items: flex-start; }
+.sl-main { flex: 1; min-width: 0; }
+.sl-module { max-width: 100%; }
+
+/* ── Header ──────────────────────────────────────────────── */
 .sl-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .sl-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.sl-header-actions { display: flex; align-items: center; gap: 8px; }
 .sl-subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
 .sl-add-btn { display: flex; align-items: center; gap: 5px; padding: 8px 16px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: all .15s; }
 .sl-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sl-ref-toggle { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: all .15s; }
+.sl-ref-toggle:hover { border-color: #A78BFA; color: #A78BFA; }
 
-/* Form */
+/* ── Form ────────────────────────────────────────────────── */
 .sl-form { padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; }
 .sl-form-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .sl-form-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
@@ -25,13 +34,13 @@
 .sl-btn-save:disabled { opacity: .5; cursor: not-allowed; }
 .sl-btn-cancel { padding: 8px 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
 
-/* Stats */
+/* ── Stats ───────────────────────────────────────────────── */
 .sl-stats { display: flex; gap: 12px; margin-bottom: 16px; }
 .sl-stat { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; text-align: center; min-width: 100px; }
 .sl-stat-val { display: block; font-size: 22px; font-weight: 800; color: var(--accent); }
 .sl-stat-lbl { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-top: 2px; }
 
-/* List */
+/* ── List ────────────────────────────────────────────────── */
 .sl-list { display: flex; flex-direction: column; gap: 6px; }
 .sl-item { display: flex; flex-direction: column; padding: 14px 16px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; gap: 0; transition: border-color .15s; }
 .sl-item:hover { border-color: var(--accent); }
@@ -51,7 +60,7 @@
 .sl-del-btn:hover { color: #EF4444; background: #FEF2F2; }
 .sl-empty { text-align: center; padding: 32px; color: var(--text-muted); font-size: 13px; }
 
-/* Pixel button */
+/* ── Pixel button & badge ────────────────────────────────── */
 .sl-pixel-btn { position: relative; }
 .sl-pixel-btn:hover { color: #A78BFA; background: rgba(167,139,250,.08); }
 .sl-pixel-active { color: #A78BFA; }
@@ -61,7 +70,6 @@
 .sl-pixel-section { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
 .sl-pixel-header { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; }
 .sl-pixel-header span { display: flex; align-items: center; gap: 6px; }
-
 .sl-pixel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; }
 .sl-pixel-field { display: flex; flex-direction: column; gap: 3px; }
 .sl-pixel-field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
@@ -69,15 +77,62 @@
 .sl-pixel-input { font-size: 11px; padding: 6px 8px; }
 .sl-pixel-tip { font-size: 9px; color: var(--text-muted); opacity: .7; }
 .sl-pixel-error { font-size: 10px; color: #EF4444; display: none; }
-
 .sl-pixel-custom { margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
 .sl-pixel-custom label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: center; gap: 4px; }
 .sl-pixel-textarea { font-family: 'SF Mono', Menlo, Monaco, monospace; font-size: 11px; padding: 8px; resize: vertical; min-height: 60px; border-radius: 6px; }
-
-/* Inline pixel editor inside list item */
 .sl-pixel-editor { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); }
 .sl-pixel-editor .sl-form-actions { margin-top: 12px; }
 
+/* ══════════════════════════════════════════════════════════
+   REFERENCE PANEL (right column)
+   ══════════════════════════════════════════════════════════ */
+.sl-ref-panel {
+  width: 320px; min-width: 280px; flex-shrink: 0;
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px; position: sticky; top: 20px;
+  max-height: calc(100vh - 40px); overflow-y: auto;
+}
+.sl-ref-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.sl-ref-panel > .sl-ref-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.4; }
+
+/* Section */
+.sl-ref-section { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.sl-ref-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.sl-ref-section-title { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
+.sl-ref-note { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+.sl-ref-note strong { color: var(--text-secondary); }
+
+/* Table */
+.sl-ref-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.sl-ref-table th { text-align: left; font-size: 9px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.sl-ref-table td { padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,.03); vertical-align: middle; }
+.sl-ref-table code { font-size: 10px; background: rgba(167,139,250,.08); color: #A78BFA; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+.sl-ref-desc-cell { color: var(--text-muted); font-size: 10px; }
+.sl-ref-remove-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px; border-radius: 4px; opacity: .4; transition: all .15s; display: flex; }
+.sl-ref-remove-btn:hover { color: #EF4444; opacity: 1; background: rgba(239,68,68,.08); }
+
+/* Add event row */
+.sl-ref-add { display: flex; gap: 4px; margin-top: 6px; }
+.sl-ref-add-input { flex: 1; font-size: 11px; padding: 5px 8px; }
+.sl-ref-add-btn { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 6px; color: var(--text-muted); cursor: pointer; transition: all .15s; }
+.sl-ref-add-btn:hover { border-color: #A78BFA; color: #A78BFA; }
+
+/* Reset button */
+.sl-ref-reset-btn { background: none; border: none; font-size: 10px; color: var(--text-muted); cursor: pointer; margin-top: 4px; opacity: .5; transition: opacity .15s; }
+.sl-ref-reset-btn:hover { opacity: 1; color: var(--accent); }
+
+/* Suggestions table */
+.sl-ref-suggestions .sl-ref-table code { background: rgba(201,169,110,.08); color: var(--accent); }
+
+/* ── Scrollbar refinement ────────────────────────────────── */
+.sl-ref-panel::-webkit-scrollbar { width: 4px; }
+.sl-ref-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .sl-layout { flex-direction: column; }
+  .sl-ref-panel { width: 100%; position: static; max-height: none; }
+}
 @media (max-width: 640px) {
   .sl-form-row { flex-direction: column; }
   .sl-form-code { max-width: 100%; }
