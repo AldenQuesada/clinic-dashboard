@@ -1126,28 +1126,29 @@ DECLARE
   v_patient_q text;
 BEGIN
   IF p_intent = 'help' THEN
-    RETURN 'Oi ' || v_first_name || E'! 👋\n\n' ||
-           E'Tenho 3 areas:\n' ||
-           E'📋 *Pacientes* — busca, saldo, historico\n' ||
-           E'📅 *Agenda* — sua agenda, horarios livres\n' ||
-           E'💰 *Financeiro* — receita, comissao, pagamentos\n\n' ||
-           E'*Leitura:*\n' ||
-           E'• "tenho agenda hoje?" / "tenho amanha?"\n' ||
+    RETURN 'Oi ' || v_first_name || E'! 👋 Sou a Mira.\n\n' ||
+           E'📅 *Agenda*\n' ||
+           E'• "tenho agenda hoje?"\n' ||
+           E'• "tenho amanha?"\n' ||
+           E'• "tem horario livre?"\n' ||
+           E'• "qual meu proximo paciente?"\n\n' ||
+           E'📋 *Pacientes*\n' ||
            E'• "quem e Maria Silva?"\n' ||
-           E'• "quanto a Camila me deve?"\n' ||
+           E'• "quanto a Maria me deve?"\n' ||
+           E'• "quem fez botox esse mes?"\n' ||
+           E'• "quem me deve mais de 500?"\n\n' ||
+           E'💰 *Financeiro*\n' ||
            E'• "quanto faturei essa semana?"\n' ||
-           E'• "minha comissao do mes"\n\n' ||
-           E'*Escrita (2-step com confirmacao):*\n' ||
+           E'• "minha comissao do mes"\n' ||
+           E'• "quem me pagou essa semana?"\n' ||
+           E'• "como foi meu dia?"\n\n' ||
+           E'✏️ *Agendar / Cancelar / Reagendar*\n' ||
            E'• "marca a Maria amanha 14h"\n' ||
            E'• "cancela a Maria amanha"\n' ||
            E'• "reagenda a Maria pra terca 15h"\n' ||
            E'• "cadastrar novo paciente"\n\n' ||
-           E'*Inteligencia:*\n' ||
-           E'• "como foi meu dia?"\n' ||
-           E'• "qual meu proximo paciente?"\n' ||
-           E'• "quem fez botox esse mes?"\n' ||
-           E'• "quem me deve mais de 500?"\n' ||
-           E'• "uso da mira"';
+           E'🎙️ _Funciona por texto e por voz!_\n' ||
+           E'📊 "uso da mira" — ver consumo';
   END IF;
 
   IF p_intent = 'greeting' THEN
