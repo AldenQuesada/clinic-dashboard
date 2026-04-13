@@ -585,7 +585,10 @@
       }
     }
 
-    // ── Mira Console (WhatsApp Assistente Interno) ─────────────
+    // ── Mira (WhatsApp Assistente Interno) ──────────────────────
+    if (pageId === 'mira-config' && window.MiraConfigUI) {
+      window.MiraConfigUI.init()
+    }
     if (pageId === 'mira-console' && window.MiraConsoleUI) {
       window.MiraConsoleUI.init()
     }

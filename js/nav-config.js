@@ -240,6 +240,19 @@
       ],
     },
 
+    // ── Mira (Assistente Interno) ────────────────────────────────
+    {
+      section: 'mira',
+      icon:    'cpu',
+      label:   'Mira',
+      roles:   [ROLES.OWNER, ROLES.ADMIN],
+      plans:   [],
+      pages: [
+        { page: 'mira-config',  label: 'Configuracao',    breadcrumb: 'Mira > Configuracao',    highlight: true },
+        { page: 'mira-console', label: 'Console de Teste', breadcrumb: 'Mira > Console de Teste' },
+      ],
+    },
+
     // ── Configurações ────────────────────────────────────────────
     {
       section: 'settings',

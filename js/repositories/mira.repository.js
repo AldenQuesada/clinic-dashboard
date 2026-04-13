@@ -149,6 +149,52 @@
     } catch (e) { return _err(e.message || e) }
   }
 
+  // ── Dashboard Config RPCs ─────────────────────────────────────
+
+  async function dashboardStats() {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_dashboard_stats')
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function auditList(limit, offset, phone, intent) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_audit_list', {
+        p_limit: limit || 50,
+        p_offset: offset || 0,
+        p_phone: phone || null,
+        p_intent: intent || null,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function updateNumber(waNumberId, updates) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_update_number', {
+        p_wa_number_id: waNumberId,
+        p_access_scope: updates.access_scope || null,
+        p_permissions:  updates.permissions || null,
+        p_is_active:    updates.is_active != null ? updates.is_active : null,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
+  async function removeNumber(waNumberId) {
+    try {
+      const { data, error } = await _sb().rpc('wa_pro_remove_number', {
+        p_wa_number_id: waNumberId,
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || {})
+    } catch (e) { return _err(e.message || e) }
+  }
+
   window.MiraRepository = Object.freeze({
     authenticate:     authenticate,
     checkRateLimit:   checkRateLimit,
@@ -162,5 +208,9 @@
     agendaFreeSlots:  agendaFreeSlots,
     financeSummary:   financeSummary,
     financeCommission: financeCommission,
+    dashboardStats:   dashboardStats,
+    auditList:        auditList,
+    updateNumber:     updateNumber,
+    removeNumber:     removeNumber,
   })
 })()
