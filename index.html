@@ -758,7 +758,8 @@
           <button onclick="settingsTab('rooms')" id="stab_rooms" class="stab"><i data-feather="grid" style="width:13px;height:13px;vertical-align:-2px"></i> Salas</button>
           <button onclick="settingsTab('injectables')" id="stab_injectables" class="stab"><i data-feather="droplet" style="width:13px;height:13px;vertical-align:-2px"></i> Injetáveis</button>
           <button onclick="settingsTab('procedures')" id="stab_procedures" class="stab"><i data-feather="list" style="width:13px;height:13px;vertical-align:-2px"></i> Procedimentos</button>
-          <button onclick="settingsTab('users')" id="stab_users" class="stab"><i data-feather="shield" style="width:13px;height:13px;vertical-align:-2px"></i> Usuários</button>
+          <button onclick="settingsTab('users')" id="stab_users" class="stab"><i data-feather="shield" style="width:13px;height:13px;vertical-align:-2px"></i> Usuarios</button>
+          <button onclick="settingsTab('permissions')" id="stab_permissions" class="stab"><i data-feather="lock" style="width:13px;height:13px;vertical-align:-2px"></i> Permissoes</button>
         </div>
 
         <!-- Tab: Dados da Clínica -->
@@ -1482,6 +1483,11 @@
               <div style="padding:16px;text-align:center;color:#9CA3AF;font-size:12px;background:#F9FAFB;border-radius:10px">Nenhum convite pendente</div>
             </div>
           </div>
+        </div>
+
+        <!-- Tab: Permissoes por Modulo -->
+        <div id="spage_permissions" style="display:none">
+          <div id="modulePermissionsRoot"></div>
         </div>
 
       </div>
@@ -4565,6 +4571,7 @@
   <script src="js/services/mira.service.js?v=4ec8806a" defer></script>
   <script src="js/ui/mira-console.ui.js?v=72282ff7" defer></script>
   <script src="js/ui/mira-config.ui.js?v=1" defer></script>
+  <script src="js/ui/module-permissions.ui.js?v=1" defer></script>
 
   <!-- Dashboard Analytics — Supabase KPIs (Sprint 6-C) -->
   <script src="js/repositories/dashboard.repository.js?v=7e2f2fbf" defer></script>

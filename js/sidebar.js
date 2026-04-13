@@ -50,15 +50,47 @@
    * @param {{ role?: string, plan?: string }|null}  user   — usuário atual
    * @returns {boolean}
    */
-  function _userCan(item, user) {
+  // Cache de overrides de permissao (carregado uma vez do banco)
+  let _permOverrides = null
+
+  /**
+   * Carrega overrides de permissao do banco (clinic_module_permissions).
+   * Chamado uma vez na inicializacao do sidebar.
+   */
+  async function _loadPermOverrides() {
+    if (_permOverrides) return
+    _permOverrides = {}
+    try {
+      var sb = window._sbShared
+      if (!sb) return
+      var r = await sb.rpc('get_module_permissions')
+      if (r.error || !r.data || !r.data.permissions) return
+      r.data.permissions.forEach(function (p) {
+        _permOverrides[p.module_id + '|' + (p.page_id || '') + '|' + p.role] = p.allowed
+      })
+    } catch (e) { /* silencioso — usa defaults se falhar */ }
+  }
+
+  function _userCan(item, user, sectionId, pageId) {
     if (!user) return true  // sem usuário = modo dev/demo → mostra tudo
 
+    // 1. Checa override do banco (prioridade maxima)
+    if (_permOverrides && user.role) {
+      var key = (sectionId || '') + '|' + (pageId || '') + '|' + user.role
+      if (key in _permOverrides) return _permOverrides[key]
+      // Se tem override de secao, usa ele pra paginas sem override proprio
+      if (pageId) {
+        var sectionKey = (sectionId || '') + '||' + user.role
+        if (sectionKey in _permOverrides) return _permOverrides[sectionKey]
+      }
+    }
+
+    // 2. Fallback: defaults hardcoded no nav-config
     if (item.roles && item.roles.length > 0) {
       if (!item.roles.includes(user.role)) return false
     }
 
     if (item.plans && item.plans.length > 0) {
-      // Suporta plano em user.plan (flat) ou user.tenant.plan (nested — formato do backend)
       const userPlan = user.plan || user.tenant?.plan
       if (!item.plans.includes(userPlan)) return false
     }
@@ -130,15 +162,14 @@
     let html = ''
 
     config.forEach(section => {
-      // ── Filtro de seção ──────────────────────────────────────
-      if (!_userCan(section, user)) return
+      // ── Filtro de seção (com overrides do banco) ──────────────
+      if (!_userCan(section, user, section.section, null)) return
 
       // ── Filtro de páginas ────────────────────────────────────
       const visiblePages = section.pages.filter(page => {
-        // Página herda roles/plans da seção quando não os define explicitamente.
         const effectiveRoles = page.roles !== undefined ? page.roles : section.roles
         const effectivePlans = page.plans !== undefined ? page.plans : section.plans
-        return _userCan({ roles: effectiveRoles, plans: effectivePlans }, user)
+        return _userCan({ roles: effectiveRoles, plans: effectivePlans }, user, section.section, page.page)
       })
 
       // Seção sem páginas visíveis não aparece no menu
@@ -618,7 +649,9 @@
   // 10. INICIALIZAÇÃO
   // ══════════════════════════════════════════════════════════════
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Carrega overrides de permissao do banco (nao bloqueia render)
+    _loadPermOverrides().catch(function () {})
     // Build inicial com o perfil cacheado (null = modo dev → mostra tudo)
     const user = typeof window.getCurrentProfile === 'function' ? window.getCurrentProfile() : null
     buildSidebar(user)
@@ -630,7 +663,10 @@
    * Disparado por auth.js via:
    *   document.dispatchEvent(new CustomEvent('clinicai:auth-success', { detail: profile }))
    */
-  document.addEventListener('clinicai:auth-success', (e) => {
+  document.addEventListener('clinicai:auth-success', async (e) => {
+    // Recarrega permissoes com usuario autenticado
+    _permOverrides = null
+    await _loadPermOverrides()
     const user = e.detail
       || (typeof window.getCurrentProfile === 'function' ? window.getCurrentProfile() : null)
     buildSidebar(user)

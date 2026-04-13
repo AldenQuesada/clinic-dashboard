@@ -70,7 +70,7 @@ window.maskRG    = maskRG
 window.fetchCEP  = fetchCEP
 
 function settingsTab(tab) {
-  ;['clinic','professionals','rooms','technologies','injectables','procedures','users'].forEach(t => {
+  ;['clinic','professionals','rooms','technologies','injectables','procedures','users','permissions'].forEach(t => {
     const page = document.getElementById(`spage_${t}`)
     const btn  = document.getElementById(`stab_${t}`)
     if (!page || !btn) return
@@ -94,6 +94,7 @@ function settingsTab(tab) {
   if (tab === 'procedures')    { if (window.renderProcedimentos) { renderProcedimentos() } else { console.warn('procedimentos.js nao carregou') } }
   if (tab === 'clinic')        loadClinicSettings()
   if (tab === 'users')         { if (window.loadUsersAdmin) { loadUsersAdmin(); loadPendingInvites() } }
+  if (tab === 'permissions')   { if (window.ModulePermissionsUI) { window.ModulePermissionsUI.init() } }
 }
 window.settingsTab = settingsTab
 
