@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ClinicAI — Repositorio de Mudancas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Montserrat,sans-serif;background:#0A0A0A;color:#F5F0E8;min-height:100vh;display:flex}.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:#111;border-right:1px solid rgba(200,169,126,.12);overflow-y:auto;padding:20px 0;z-index:10}.sidebar h2{font-family:Cormorant Garamond,serif;font-size:16px;font-weight:300;font-style:italic;color:#C8A97E;padding:0 16px 16px;border-bottom:1px solid rgba(200,169,126,.1)}.sidebar a{display:block;padding:8px 16px;font-size:11px;color:rgba(245,240,232,.5);text-decoration:none;transition:.2s}.sidebar a:hover{color:#C8A97E;background:rgba(200,169,126,.06)}.sidebar .cat{font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:rgba(200,169,126,.35);padding:16px 16px 4px;font-weight:600}.main{margin-left:220px;max-width:900px;padding:40px 32px}.header{text-align:center;padding-bottom:24px;border-bottom:1px solid rgba(200,169,126,.2);margin-bottom:32px}.header h1{font-family:Cormorant Garamond,serif;font-weight:300;font-style:italic;font-size:28px;color:#C8A97E}.header .subtitle{font-size:10px;color:rgba(245,240,232,.4);letter-spacing:.15em;text-transform:uppercase;margin-top:8px}.stats{display:flex;justify-content:center;gap:24px;margin-top:16px}.stat{text-align:center}.stat .val{font-size:24px;font-weight:700;color:#C8A97E}.stat .lbl{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:rgba(245,240,232,.3)}.sep{height:1px;background:linear-gradient(90deg,transparent,#C8A97E,transparent);margin:28px 0}.section{margin-bottom:32px}.section-title{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(200,169,126,.5);font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}.section-title::after{content:"";flex:1;height:1px;background:rgba(200,169,126,.1)}h3{font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E;margin-bottom:10px}.item{padding:8px 12px;border-left:3px solid rgba(200,169,126,.15);margin-bottom:6px;background:rgba(255,255,255,.02);border-radius:0 6px 6px 0}.item .desc{font-size:11px;color:rgba(245,240,232,.7);line-height:1.5}.item .meta{font-size:9px;color:rgba(245,240,232,.25);margin-top:3px}.item .meta code{background:rgba(200,169,126,.1);padding:1px 5px;border-radius:3px;font-size:8px;color:#C8A97E}.item-feat{border-left-color:#10B981}.item-fix{border-left-color:#F59E0B}.item-docs{border-left-color:#3B82F6}.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:8px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-right:4px}.badge-feat{background:rgba(16,185,129,.15);color:#10B981}.badge-fix{background:rgba(245,158,11,.15);color:#F59E0B}.badge-docs{background:rgba(59,130,246,.15);color:#3B82F6}.footer{text-align:center;padding-top:20px;border-top:1px solid rgba(200,169,126,.12);margin-top:32px}.footer p{font-size:9px;color:rgba(245,240,232,.2)}@media(max-width:768px){.sidebar{display:none}.main{margin-left:0}}</style>
+</head>
+<body>
+<nav class="sidebar">
+  <h2>Repositorio</h2>
+  <a href="#resumo">Resumo</a>
+  <div class="cat">Modulos</div>
+  <a href="#face-mapping">Analise Facial (14)</a>
+  <a href="#auth">Autenticacao (4)</a>
+  <a href="#mira">Mira (23)</a>
+  <a href="#dashboard">Dashboard (3)</a>
+  <a href="#templates">Templates (18)</a>
+  <a href="#database">Banco de Dados (5)</a>
+  <a href="#infra">Infraestrutura</a>
+  <div class="cat">Referencia</div>
+  <a href="#features">Features (36)</a>
+  <a href="#bugs">Bugs (63)</a>
+  <a href="#docs-section">Docs (15)</a>
+</nav>
+<div class="main">
+  <div class="header">
+    <h1>Repositorio de Mudancas</h1>
+    <div class="subtitle">ClinicAI Dashboard — Sprint 12-13 Abril 2026</div>
+    <div class="stats">
+      <div class="stat"><div class="val">121</div><div class="lbl">Commits</div></div>
+      <div class="stat"><div class="val">36</div><div class="lbl">Features</div></div>
+      <div class="stat"><div class="val">63</div><div class="lbl">Bug Fixes</div></div>
+      <div class="stat"><div class="val">15</div><div class="lbl">Docs</div></div>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="face-mapping">
+    <div class="section-title">Analise Facial (Face Mapping)</div>
+    <h3>Auditoria Completa — 4 Fases, 14 commits</h3>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> vetores DEPOIS invertidos (lifting = para cima/fora)</div><div class="meta"><code>3d65167</code> 2026-04-13</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> delete DEPOIS reseta canvas2 state completamente</div><div class="meta"><code>1d71ef5</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> barra tercos/proporcoes fora do canvas (margem +32px)</div><div class="meta"><code>25ddd55</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> canvas2 limita tamanho ao canvas1 (nao ultrapassa)</div><div class="meta"><code>c8b12a9</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> canvas2 vetores na direcao lifting (age=25, jovem)</div><div class="meta"><code>85d9cef</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> nao desenha vetores no canvas2 (DEPOIS e visual only)</div><div class="meta"><code>e6a3376</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> init sempre abre na tela de selecao de angulo</div><div class="meta"><code>c1fdbc8</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> reset metricas canvas2 ao subir nova foto DEPOIS</div><div class="meta"><code>0c1068a</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> deep copy no swap canvas1/canvas2 — isola metricas</div><div class="meta"><code>08cd7e5</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> corrige event listeners perdidos no cache path</div><div class="meta"><code>73e7fa8</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> clinic_name key → 'nome' (match ClinicContext)</div><div class="meta"><code>95d8413</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> auditoria Fase 1+2 — 10 correcoes</div><div class="meta"><code>9172e06</code> 2026-04-12</div></div>
+    <div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[face-mapping]</strong> Fase 4 — nome dinamico, fix flicker, historico completo</div><div class="meta"><code>47dffa7</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[face-mapping]</strong> Fase 3 — API configuravel + health check + banner offline</div><div class="meta"><code>340a74e</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="auth">
+    <div class="section-title">Autenticacao e Health Check</div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[health]</strong> usa /auth/v1/health em vez de /rest/v1/ (sempre 401)</div><div class="meta"><code>e16e8f3</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[health]</strong> adiciona apikey no health check — elimina toast 401 falso</div><div class="meta"><code>15588f1</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[auth]</strong> migra 6 modulos para _sbShared.rpc() — elimina fetch manual com token</div><div class="meta"><code>0c11dcd</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[auth]</strong> corrige 401 em 6 modulos — sb-session nunca era populado</div><div class="meta"><code>6249e14</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="mira">
+    <div class="section-title">Mira (Assistente WhatsApp)</div>
+    <div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> aviso &lt;24h no cancel + click-to-call via wa.me</div><div class="meta"><code>3e3463d</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> health check — monitora Evolution, Supabase e Outbox a cada 5min</div><div class="meta"><code>8fb3dec</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> sprint WOW — 5 features de alto impacto</div><div class="meta"><code>b4be85d</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> perfil completo do paciente com historico, procedimentos, queixas, financeiro</div><div class="meta"><code>837f890</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> cadastro avulso de paciente sem agendamento</div><div class="meta"><code>50b3a31</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> cadastro de paciente novo + agendamento em 1 fluxo</div><div class="meta"><code>06ef1c5</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> Bloco D #2 — voice → task via Groq Whisper</div><div class="meta"><code>1b264b3</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> Bloco D #1 — cancelamento + reagendamento via WhatsApp</div><div class="meta"><code>1b16ac1</code> 2026-04-12</div></div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> commission usa commissions jsonb array em vez de commission_pct</div><div class="meta"><code>354ac63</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> finance_summary e commission puxam do OFX (cashflow_entries)</div><div class="meta"><code>77a0967</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> parser aceita numeros por extenso + preserva preposicoes em nomes</div><div class="meta"><code>6dd2b99</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> 3 prioridades altas — multi-turn cancel + Tier 2 voice + professional_id</div><div class="meta"><code>edddda2</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> /ajuda reorganizado por area (Agenda/Pacientes/Financeiro/Escrita)</div><div class="meta"><code>129c3c8</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> add permission check to patient_profile, register_patient_start area mapping, and 10 new tests</div><div class="meta"><code>679fefd</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> checagem de conflito de horario no create_appointment</div><div class="meta"><code>64a9393</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> parser aceita "dia 17" (Whisper transcreve por extenso)</div><div class="meta"><code>5e7cddc</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> parser aceita "14 horas" (Whisper transcreve por extenso)</div><div class="meta"><code>6aecc88</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> voice strips Alexa/Olha/Entao + parser aceita frases naturais</div><div class="meta"><code>d703b7f</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> corrige 3 bugs preexistentes no multi-turn context</div><div class="meta"><code>7f05a81</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> strip vocativo "Mira" do transcript + fix n8n formBinaryData</div><div class="meta"><code>e90ac4a</code> 2026-04-12</div></div>
+    <div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> <strong>[mira]</strong> atualiza documentacao com OFX, call_patient, multi-turn, health check</div><div class="meta"><code>f246626</code> 2026-04-13</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> <strong>[mira]</strong> checkup final completo — inventario de 21 intents, 45 RPCs, 12 workflows</div><div class="meta"><code>ff9f199</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> <strong>[mira]</strong> guia rapido de comandos + tabela de migrations atualizada</div><div class="meta"><code>130c53b</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="dashboard">
+    <div class="section-title">Dashboard</div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[dashboard]</strong> remove blocos fake comentados que quebravam HTML</div><div class="meta"><code>3dc10cf</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[dashboard]</strong> receita do mes vem do OFX (cashflow_entries) em vez de appointments</div><div class="meta"><code>d7e32d7</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[dashboard]</strong> remove TODOS os dados fake dos KPIs, funil e activity</div><div class="meta"><code>b47fd77</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="templates">
+    <div class="section-title">Templates de Mensagem</div>
+    <div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> select inteligente de timing por contexto</div><div class="meta"><code>fd7b3ef</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> tabs = Tags do funil + Status dinamico por grupo</div><div class="meta"><code>ff69039</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> lista ordenada por dia de envio + numero sequencial</div><div class="meta"><code>ed1edf0</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> campanhas por fase — delay granular + trigger automático</div><div class="meta"><code>028f6fb</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> campo Objetivo (tipo) + opcoes D-5/D-7</div><div class="meta"><code>aec554d</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> CRUD completo + campo day + categoria editavel</div><div class="meta"><code>a458a44</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> redesign completo — 2 colunas + phone preview + toolbar</div><div class="meta"><code>64b28ec</code> 2026-04-12</div></div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> tabs fixas = 6 grupos de tags, sem "Todos"</div><div class="meta"><code>c08e13e</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> tags compactas — menos espaco, mais textarea visivel</div><div class="meta"><code>244ea86</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> variaveis acima do textarea + mais espaco</div><div class="meta"><code>550dbf6</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> remove ::after que invadia o editor</div><div class="meta"><code>c25ef61</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> reduz altura total — cabe na viewport sem vazar</div><div class="meta"><code>46afb53</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> ajuste max-height e overflow para nao vazar por baixo</div><div class="meta"><code>937ed17</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> footer nao sobrepoe mais o editor</div><div class="meta"><code>0b46920</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> valores reais em todas as tags</div><div class="meta"><code>80ed1fc</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> phone preview com midia — padrao broadcast</div><div class="meta"><code>4b32f58</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> media upload handler delegado + preview funcional</div><div class="meta"><code>2f1f868</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> fluxo de criacao com modal inline + auto-navega categoria</div><div class="meta"><code>438bece</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="database">
+    <div class="section-title">Banco de Dados</div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> anamnesis RPCs — enum 'sent' + uuid casts em validate_token</div><div class="meta"><code>c0ac2f7</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> cast patient_id::text no JOIN com leads (text vs uuid)</div><div class="meta"><code>ab8b64a</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> uuid=text em legal_doc e create_anamnesis_request</div><div class="meta"><code>25f1bca</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> uuid=text errors em complaints RPCs pos-migracao</div><div class="meta"><code>30eaa10</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> patient_id text → uuid (Opcao C) + relatorio tecnico completo</div><div class="meta"><code>c7eeef8</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="infra">
+    <div class="section-title">Infraestrutura</div>
+    <div class="item item-feat"><div class="desc"><span class="badge badge-feat">deploy</span> API Facial Python no Easypanel VPS — clinicai-facial-api.px1hdq.easypanel.host</div></div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> Health monitor: /auth/v1/health em vez de /rest/v1/</div></div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> 6 modulos migrados para _sbShared.rpc()</div></div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> cashflow_segments + cashflow_patients_ltv aplicados no banco</div></div>
+    <div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> Migration facial: 2 tabelas + 4 RPCs</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="features">
+    <div class="section-title">Todas as Features (36)</div>
+    <div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> contagem de leads nas tabs + tracking abertura orcamento</div><div class="meta"><code>e974a46</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> select inteligente de timing por contexto</div><div class="meta"><code>fd7b3ef</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> ativa API facial em producao (Easypanel VPS)</div><div class="meta"><code>a93f004</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> webhook Evolution→Supabase direto — sem n8n no inbound</div><div class="meta"><code>c4e9dc6</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[dashboard]</strong> 3 cards (Aniversariantes + Agenda + Alertas) sobem pra segunda posicao</div><div class="meta"><code>50926aa</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[dashboard]</strong> substitui Kanban Mini por Aniversariantes da semana</div><div class="meta"><code>4f5b679</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> auto-confirmar agendamento por resposta WhatsApp</div><div class="meta"><code>3ff885b</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> 3 camadas de dispatch de campanhas — cobertura completa</div><div class="meta"><code>ff52fe8</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> tabs = Tags do funil + Status dinamico por grupo</div><div class="meta"><code>ff69039</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> aviso &lt;24h no cancel + click-to-call via wa.me</div><div class="meta"><code>3e3463d</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> health check — monitora Evolution, Supabase e Outbox a cada 5min</div><div class="meta"><code>8fb3dec</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[face-mapping]</strong> Fase 4 — nome dinamico, fix flicker, historico completo</div><div class="meta"><code>47dffa7</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> lista ordenada por dia de envio + numero sequencial</div><div class="meta"><code>ed1edf0</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[face-mapping]</strong> Fase 3 — API configuravel + health check + banner offline</div><div class="meta"><code>340a74e</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[engine]</strong> campanha por fase conectada ao AutomationsEngine</div><div class="meta"><code>e564ffb</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> campanhas por fase — delay granular + trigger automático</div><div class="meta"><code>028f6fb</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> sprint WOW — 5 features de alto impacto</div><div class="meta"><code>b4be85d</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> campo Objetivo (tipo) + opcoes D-5/D-7</div><div class="meta"><code>aec554d</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> perfil completo do paciente com historico, procedimentos, queixas, financeiro</div><div class="meta"><code>837f890</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> cadastro avulso de paciente sem agendamento</div><div class="meta"><code>50b3a31</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> cadastro de paciente novo + agendamento em 1 fluxo</div><div class="meta"><code>06ef1c5</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> tag {menu_clinica} no sistema de templates</div><div class="meta"><code>b825305</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> menu clinica integrado + upload midia nos templates</div><div class="meta"><code>4763433</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> CRUD completo + campo day + categoria editavel</div><div class="meta"><code>a458a44</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[short-links]</strong> editable reference panel + 2-column layout</div><div class="meta"><code>1cbdb23</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[short-links]</strong> pixel tracking per link — Meta, Google Ads, GA4, TikTok, custom tags</div><div class="meta"><code>ad0c936</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[templates]</strong> redesign completo — 2 colunas + phone preview + toolbar</div><div class="meta"><code>64b28ec</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[short-links]</strong> add open-in-new-tab button with external-link icon</div><div class="meta"><code>b2a6820</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> CI pipeline, cache-bust auto, rate limit, validacao inline, guard click</div><div class="meta"><code>a472075</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[ui]</strong> dark mode toggle com persistencia em localStorage</div><div class="meta"><code>ed6fa30</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[ux]</strong> transicao animada, busca fuzzy, keyboard shortcuts</div><div class="meta"><code>654f94c</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[agenda]</strong> auto-save draft no modal de agendamento</div><div class="meta"><code>c760951</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[agenda]</strong> optimistic update no save do modal de agendamento</div><div class="meta"><code>7853a12</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[ui]</strong> skeleton loaders substituem texto "Carregando..."</div><div class="meta"><code>65e6a04</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> Bloco D #2 — voice → task via Groq Whisper</div><div class="meta"><code>1b264b3</code> 2026-04-12</div></div>
+<div class="item item-feat"><div class="desc"><span class="badge badge-feat">feat</span> <strong>[mira]</strong> Bloco D #1 — cancelamento + reagendamento via WhatsApp</div><div class="meta"><code>1b16ac1</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="bugs">
+    <div class="section-title">Todos os Bugs Corrigidos (63)</div>
+    <div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> vetores DEPOIS invertidos (lifting = para cima/fora)</div><div class="meta"><code>3d65167</code> 2026-04-13</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> delete DEPOIS reseta canvas2 state completamente</div><div class="meta"><code>1d71ef5</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> barra tercos/proporcoes fora do canvas (margem +32px)</div><div class="meta"><code>25ddd55</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> commission usa commissions jsonb array em vez de commission_pct</div><div class="meta"><code>354ac63</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> canvas2 limita tamanho ao canvas1 (nao ultrapassa)</div><div class="meta"><code>c8b12a9</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> finance_summary e commission puxam do OFX (cashflow_entries)</div><div class="meta"><code>77a0967</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> canvas2 vetores na direcao lifting (age=25, jovem)</div><div class="meta"><code>85d9cef</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> nao desenha vetores no canvas2 (DEPOIS e visual only)</div><div class="meta"><code>e6a3376</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> init sempre abre na tela de selecao de angulo</div><div class="meta"><code>c1fdbc8</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> reset metricas canvas2 ao subir nova foto DEPOIS</div><div class="meta"><code>0c1068a</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> deep copy no swap canvas1/canvas2 — isola metricas</div><div class="meta"><code>08cd7e5</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> corrige event listeners perdidos no cache path</div><div class="meta"><code>73e7fa8</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[dashboard]</strong> remove blocos fake comentados que quebravam HTML</div><div class="meta"><code>3dc10cf</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> revert visibility/height hack em .page — quebrava layout de todas as paginas</div><div class="meta"><code>f0350d0</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> tabs fixas = 6 grupos de tags, sem "Todos"</div><div class="meta"><code>c08e13e</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[dashboard]</strong> receita do mes vem do OFX (cashflow_entries) em vez de appointments</div><div class="meta"><code>d7e32d7</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[dashboard]</strong> remove TODOS os dados fake dos KPIs, funil e activity</div><div class="meta"><code>b47fd77</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> validacao fluxo paciente — 3 correcoes criticas</div><div class="meta"><code>91c5028</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> respostas de confirmacao editaveis via templates</div><div class="meta"><code>8fa2de4</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> codigo cruzado — 7 problemas de categorias/phases resolvidos</div><div class="meta"><code>b89445f</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> anamnesis RPCs — enum 'sent' + uuid casts em validate_token</div><div class="meta"><code>c0ac2f7</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> mensagens desconfiguradas — 3 bugs criticos</div><div class="meta"><code>3346d3f</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> parser aceita numeros por extenso + preserva preposicoes em nomes</div><div class="meta"><code>6dd2b99</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[agenda]</strong> consulta/procedimento nao abria — revert _toggleSection</div><div class="meta"><code>8c9a85c</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> clinic_name key → 'nome' (match ClinicContext)</div><div class="meta"><code>95d8413</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[agenda]</strong> SyntaxError em agenda-modal.js quebrava TUDO</div><div class="meta"><code>72ae587</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> 3 prioridades altas — multi-turn cancel + Tier 2 voice + professional_id</div><div class="meta"><code>edddda2</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> tags compactas — menos espaco, mais textarea visivel</div><div class="meta"><code>244ea86</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> variaveis acima do textarea + mais espaco</div><div class="meta"><code>550dbf6</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> /ajuda reorganizado por area (Agenda/Pacientes/Financeiro/Escrita)</div><div class="meta"><code>129c3c8</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[face-mapping]</strong> auditoria Fase 1+2 — 10 correcoes</div><div class="meta"><code>9172e06</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> add permission check to patient_profile, register_patient_start area mapping, and 10 new tests</div><div class="meta"><code>679fefd</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> paginas inativas com height:0 + overflow:hidden + visibility:hidden</div><div class="meta"><code>55e65c7</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> remove ::after que invadia o editor</div><div class="meta"><code>c25ef61</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[health]</strong> usa /auth/v1/health em vez de /rest/v1/ (sempre 401)</div><div class="meta"><code>e16e8f3</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> .page.active min-height full viewport — impede scroll vazar</div><div class="meta"><code>ace51c1</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> content overflow-x hidden + templates page overflow hidden</div><div class="meta"><code>3431bd9</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> reduz altura total — cabe na viewport sem vazar</div><div class="meta"><code>46afb53</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[health]</strong> adiciona apikey no health check — elimina toast 401 falso</div><div class="meta"><code>15588f1</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> restaura _url/_key/_headers em inbox e pb-core (usados fora de _rpc)</div><div class="meta"><code>a7ffa21</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> ajuste max-height e overflow para nao vazar por baixo</div><div class="meta"><code>937ed17</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[auth]</strong> migra 6 modulos para _sbShared.rpc() — elimina fetch manual com token</div><div class="meta"><code>0c11dcd</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> cast patient_id::text no JOIN com leads (text vs uuid)</div><div class="meta"><code>ab8b64a</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> footer nao sobrepoe mais o editor</div><div class="meta"><code>0b46920</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> valores reais em todas as tags</div><div class="meta"><code>80ed1fc</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[auth]</strong> corrige 401 em 6 modulos — sb-session nunca era populado</div><div class="meta"><code>6249e14</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> phone preview com midia — padrao broadcast</div><div class="meta"><code>4b32f58</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> media upload handler delegado + preview funcional</div><div class="meta"><code>2f1f868</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> checagem de conflito de horario no create_appointment</div><div class="meta"><code>64a9393</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[templates]</strong> fluxo de criacao com modal inline + auto-navega categoria</div><div class="meta"><code>438bece</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[nav]</strong> remove duplicata Templates de Mensagem do menu Agenda</div><div class="meta"><code>acde847</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> parser aceita "dia 17" (Whisper transcreve por extenso)</div><div class="meta"><code>5e7cddc</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> uuid=text em legal_doc e create_anamnesis_request</div><div class="meta"><code>25f1bca</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> uuid=text errors em complaints RPCs pos-migracao</div><div class="meta"><code>30eaa10</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> parser aceita "14 horas" (Whisper transcreve por extenso)</div><div class="meta"><code>6aecc88</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[whatsapp]</strong> wa_outbox_enqueue_appt com appt_ref e lead_id</div><div class="meta"><code>926a5db</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> voice strips Alexa/Olha/Entao + parser aceita frases naturais</div><div class="meta"><code>d703b7f</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> corrige 3 bugs preexistentes no multi-turn context</div><div class="meta"><code>7f05a81</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[agenda]</strong> auditoria final — 2 bugs reais corrigidos</div><div class="meta"><code>18997fb</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> localStorage sync, logger remoto, health monitor</div><div class="meta"><code>05d4395</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[mira]</strong> strip vocativo "Mira" do transcript + fix n8n formBinaryData</div><div class="meta"><code>e90ac4a</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[injetaveis]</strong> repo com 6 params errados + 10 omitidos + lazy load 235KB</div><div class="meta"><code>1b32709</code> 2026-04-12</div></div>
+<div class="item item-fix"><div class="desc"><span class="badge badge-fix">fix</span> <strong>[db]</strong> patient_id text → uuid (Opcao C) + relatorio tecnico completo</div><div class="meta"><code>c7eeef8</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="sep"></div>
+  <div class="section" id="docs-section">
+    <div class="section-title">Documentacao (15)</div>
+    <div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> wow effects implementados + cobertura final 42 templates</div><div class="meta"><code>06cbc10</code> 2026-04-13</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> <strong>[mira]</strong> atualiza documentacao com OFX, call_patient, multi-turn, health check</div><div class="meta"><code>f246626</code> 2026-04-13</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> auditoria final WhatsApp — forcas, fraquezas, wow effects</div><div class="meta"><code>1aae3b9</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> select inteligente de timing + link sidebar Tabela Agendamento</div><div class="meta"><code>d269132</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> sidebar de navegacao fixa no relatorio HTML</div><div class="meta"><code>f2fff9f</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> tabela completa mensagens Tag Agendamento — 11 status</div><div class="meta"><code>aa1a945</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> arquitetura WhatsApp sem n8n — inbound + outbound via Supabase</div><div class="meta"><code>6528aea</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> validacao do fluxo paciente — 3 bugs + rotas do modal</div><div class="meta"><code>ef95c8c</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> fluxo do paciente — regra de negocio + 3 camadas + auto-confirm</div><div class="meta"><code>cd9ce01</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> <strong>[mira]</strong> checkup final completo — inventario de 21 intents, 45 RPCs, 12 workflows</div><div class="meta"><code>ff9f199</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> campanhas por fase, teste e2e validado, bugs corrigidos</div><div class="meta"><code>c6a6be8</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> <strong>[mira]</strong> guia rapido de comandos + tabela de migrations atualizada</div><div class="meta"><code>130c53b</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> secao Templates de Mensagem no relatorio HTML</div><div class="meta"><code>9b2513a</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> atualiza relatorio HTML com Wow Effects, Fraquezas e Auditoria Final</div><div class="meta"><code>0672201</code> 2026-04-12</div></div>
+<div class="item item-docs"><div class="desc"><span class="badge badge-docs">docs</span> adiciona rastreamento fluxo lead→agendado no relatorio uuid</div><div class="meta"><code>b39cc50</code> 2026-04-12</div></div>
+  </div>
+
+  <div class="footer">
+    <p>Gerado em 2026-04-13 — ClinicAI Dashboard</p>
+    <p style="margin-top:4px;font-family:Cormorant Garamond,serif;font-style:italic;color:rgba(200,169,126,.3)">Harmonia que revela. Precisao que dura.</p>
+  </div>
+</div>
+</body>
+</html>
