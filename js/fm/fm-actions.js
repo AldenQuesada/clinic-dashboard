@@ -336,10 +336,18 @@
     if (!confirm('Excluir foto DEPOIS (' + ang + ')?')) return
     URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
     delete FM._afterPhotoByAngle[ang]
+    // Also clear sim photo for this angle
+    if (FM._simPhotoByAngle[ang]) {
+      URL.revokeObjectURL(FM._simPhotoByAngle[ang])
+      delete FM._simPhotoByAngle[ang]
+    }
+    // Reset canvas2 state
+    FM._canvas2Src = null
+    FM._img2 = null
+    FM._ctx2 = null
     FM._autoSave()
     FM._render()
     if (FM._activeAngle) setTimeout(FM._initCanvas, 50)
-    if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
   }
 
   FM._deleteExtraPhoto = function (type) {
