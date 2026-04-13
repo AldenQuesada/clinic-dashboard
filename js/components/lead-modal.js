@@ -1878,7 +1878,85 @@ function _lmTabClinico(lead) {
     ? _lmSection('Observações', '<div style="background:#F9FAFB;border-radius:8px;padding:12px 14px;font-size:13px;color:#374151;line-height:1.6">' + lead.notes.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>')
     : ''
 
-  return queixa + expectativas + historico + obs
+  // WOW: Painel completo de queixas (adicionar + tratar + resolver)
+  var complaintsPanel = ''
+  if (window.ComplaintsPanel) {
+    complaintsPanel = '<div style="margin-bottom:16px">' + window.ComplaintsPanel.renderFullPanel(lead) + '</div>'
+  }
+
+  // Procedimentos realizados (historico do Supabase)
+  var procsRealizados = '<div id="lmProcsRealizados" style="margin-bottom:16px">'
+    + '<div style="font-size:12px;font-weight:700;color:#374151;border-bottom:2px solid #F3F4F6;padding-bottom:6px;margin-bottom:10px">Procedimentos Realizados</div>'
+    + '<div style="text-align:center;padding:12px;color:#9CA3AF;font-size:12px">Carregando...</div>'
+    + '</div>'
+
+  // Async load procedures from appointments
+  setTimeout(async function() {
+    var el = document.getElementById('lmProcsRealizados')
+    if (!el || !window._sbShared) return
+
+    var res = await window._sbShared.from('appointments')
+      .select('id,procedimento,procedure_name,professional_name,scheduled_date,data,status,valor,procedimentos,procedimentosRealizados')
+      .or('patient_id.eq.' + (lead.id || '') + ',pacienteId.eq.' + (lead.id || ''))
+      .in('status', ['finalizado', 'em_consulta'])
+      .order('scheduled_date', { ascending: false })
+      .limit(50)
+
+    var appts = res.data || []
+
+    // Fallback por nome
+    if (!appts.length && (lead.name || lead.nome)) {
+      var res2 = await window._sbShared.from('appointments')
+        .select('id,procedimento,procedure_name,professional_name,scheduled_date,data,status,valor,procedimentos,procedimentosRealizados')
+        .ilike('patient_name', '%' + (lead.name || lead.nome || '').trim() + '%')
+        .in('status', ['finalizado', 'em_consulta'])
+        .order('scheduled_date', { ascending: false })
+        .limit(50)
+      appts = res2.data || []
+    }
+
+    if (!appts.length) {
+      el.querySelector('div:last-child').innerHTML = '<div style="text-align:center;padding:16px;color:#9CA3AF;font-size:12px">Nenhum procedimento finalizado registrado.</div>'
+        + '<div style="font-size:11px;color:#9CA3AF;text-align:center;margin-top:4px">Procedimentos aparecem aqui quando agendamentos sao finalizados.</div>'
+      return
+    }
+
+    var totalValor = 0
+    var html = ''
+    appts.forEach(function(a) {
+      var proc = a.procedimento || a.procedure_name || 'Consulta'
+      var prof = a.profissionalNome || a.professional_name || ''
+      var date = (a.data || a.scheduled_date) ? new Date(a.data || a.scheduled_date).toLocaleDateString('pt-BR') : ''
+      var valor = Number(a.valor) || 0
+      totalValor += valor
+      var procs = window.ApptSchema ? window.ApptSchema.getProcs(a) : (a.procedimentos || a.procedimentosRealizados || [])
+
+      html += '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #F3F4F6">'
+        + '<div style="width:6px;height:6px;border-radius:50%;background:#06B6D4;margin-top:6px;flex-shrink:0"></div>'
+        + '<div style="flex:1">'
+        + '<div style="font-size:12px;font-weight:600;color:#111">' + (proc || '').replace(/</g,'&lt;') + '</div>'
+        + '<div style="font-size:11px;color:#9CA3AF">' + date + (prof ? ' · ' + (prof || '').replace(/</g,'&lt;') : '') + (valor ? ' · R$ ' + valor.toFixed(2).replace('.',',') : '') + '</div>'
+      if (procs && procs.length) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">'
+        procs.forEach(function(p) {
+          html += '<span style="font-size:10px;padding:2px 6px;background:#06B6D41A;color:#06B6D4;border-radius:4px">' + ((p.nome || p || '').toString()).replace(/</g,'&lt;') + (p.qtd > 1 ? ' x' + p.qtd : '') + '</span>'
+        })
+        html += '</div>'
+      }
+      html += '</div></div>'
+    })
+
+    // KPI header
+    var kpiHtml = '<div style="display:flex;gap:12px;margin-bottom:12px">'
+      + '<div style="padding:8px 14px;background:#F0FDFA;border-radius:8px;text-align:center;flex:1"><div style="font-size:16px;font-weight:800;color:#06B6D4">' + appts.length + '</div><div style="font-size:9px;color:#6B7280">Realizados</div></div>'
+      + '<div style="padding:8px 14px;background:#F0FDF4;border-radius:8px;text-align:center;flex:1"><div style="font-size:16px;font-weight:800;color:#10B981">R$ ' + totalValor.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,'.') + '</div><div style="font-size:9px;color:#6B7280">Total</div></div>'
+      + '</div>'
+
+    el.innerHTML = '<div style="font-size:12px;font-weight:700;color:#374151;border-bottom:2px solid #F3F4F6;padding-bottom:6px;margin-bottom:10px">Procedimentos Realizados</div>'
+      + kpiHtml + html
+  }, 100)
+
+  return complaintsPanel + procsRealizados + queixa + expectativas + historico + obs
 }
 
 // ── Anamnese digital: helpers ─────────────────────────────────
