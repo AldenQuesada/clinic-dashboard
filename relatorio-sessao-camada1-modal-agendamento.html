@@ -2626,9 +2626,9 @@ OUTBOUND (clinica envia):
   <table>
     <tr><th>#</th><th>Efeito</th><th>Status</th><th>Detalhes</th></tr>
     <tr>
-      <td>1</td><td>Contagem de leads nas tabs</td>
+      <td>1</td><td>Contagem de leads nas tabs + sub-classificacao</td>
       <td><span class="badge badge-ok">FEITO</span></td>
-      <td>Tabs mostram numero real de leads por fase: Pre-agendamento (224) | Agendamento (15) | etc. RPC <code>wa_tag_counts()</code> dinamica.</td>
+      <td>Tabs mostram numero real de leads por fase. Tab Agendamento mostra sub-contagem: <strong>N</strong>ovo (0 finalizados) | <strong>R</strong>etorno (>=1 finalizado) | <strong>O</strong>rcamento (budget ativo). Query dinamica via <code>wa_tag_counts()</code> — cruza leads + appointments + budgets. Sem campo extra, sempre correto.</td>
     </tr>
     <tr>
       <td>2</td><td>Tracking abertura orcamento</td>
