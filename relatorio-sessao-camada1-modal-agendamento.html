@@ -104,6 +104,7 @@
   <a href="#templates-mensagem">Templates de Mensagem</a>
   <a href="#fluxo-paciente">Fluxo do Paciente</a>
   <a href="#tabela-agendamento">Tabela Agendamento</a>
+  <a href="#audit-whatsapp">Auditoria WhatsApp</a>
 
   <h4>Historico</h4>
   <a href="#commits">Commits</a>
@@ -2581,6 +2582,45 @@ OUTBOUND (clinica envia):
   </table>
   <p><strong>Workflows n8n desativados:</strong> CLINICA WHATSAPP (inbound), Outbox Processor (outbound).
   Mantidos inativos como backup.</p>
+
+  <!-- ═══ AUDITORIA FINAL WHATSAPP ═══ -->
+  <h2 id="audit-whatsapp">Auditoria Final — WhatsApp (2026-04-12)</h2>
+
+  <h3>Forcas</h3>
+  <table>
+    <tr><th>#</th><th>Item</th><th>Status</th></tr>
+    <tr><td>1</td><td>Inbound direto Evolution → Supabase (sem n8n)</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>2</td><td>Outbound direto Supabase → Evolution (pg_cron 30s)</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>3</td><td>Auto-confirmacao SIM/NAO com respostas editaveis</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>4</td><td>Envio de imagem + texto via sendMedia</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>5</td><td>Storage bucket para upload de imagens</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>6</td><td>31 templates ativos com trigger automatico</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>7</td><td>Editor 2 colunas + phone preview + toolbar + emojis + CRUD</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>8</td><td>Select inteligente de timing (Imediata / No dia / Dias antes-depois)</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>9</td><td>3 camadas dispatch (status, phase, tag)</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>10</td><td>58 mensagens enviadas, 0 pendentes</td><td><span class="badge badge-ok">OK</span></td></tr>
+  </table>
+
+  <h3>Fraquezas — templates pendentes (usuario cria no editor)</h3>
+  <table>
+    <tr><th>#</th><th>Gap</th><th>Severidade</th><th>Acao</th></tr>
+    <tr><td>1</td><td>Aguardando Confirmacao sem template</td><td><span class="badge badge-bug">ALTO</span></td><td><span class="badge badge-pending">PENDENTE</span> Criar lembrete D-1 com trigger <code>aguardando_confirmacao</code></td></tr>
+    <tr><td>2</td><td>Falta (No-show) sem template</td><td><span class="badge badge-bug">ALTO</span></td><td><span class="badge badge-pending">PENDENTE</span> Criar "Sentimos sua falta" com trigger <code>falta_no_show_</code></td></tr>
+    <tr><td>3</td><td>Encaixe sem template</td><td><span class="badge badge-info">MEDIO</span></td><td><span class="badge badge-pending">PENDENTE</span> Criar confirmacao igual Agendado com trigger <code>encaixe</code></td></tr>
+    <tr><td>4</td><td>Orcamento: 0 templates</td><td><span class="badge badge-bug">ALTO</span></td><td><span class="badge badge-pending">PENDENTE</span> Criar sequencia orcamento (enviado → follow-up → urgencia)</td></tr>
+    <tr><td>5</td><td>Paciente: so 2 templates</td><td><span class="badge badge-info">MEDIO</span></td><td><span class="badge badge-pending">PENDENTE</span> Criar pos-consulta, aguardando retorno, etc</td></tr>
+    <tr><td>6</td><td>Paciente+Orcamento: 0 templates</td><td><span class="badge badge-info">MEDIO</span></td><td><span class="badge badge-pending">PENDENTE</span> Criar follow-up especifico</td></tr>
+  </table>
+
+  <h3>Efeito Wow — oportunidades</h3>
+  <table>
+    <tr><th>#</th><th>Ideia</th><th>Impacto</th></tr>
+    <tr><td>1</td><td>Mensagem de no-show automatica — "Sentimos sua falta" com botao de reagendar</td><td>Alto — recupera pacientes</td></tr>
+    <tr><td>2</td><td>Sequencia de orcamento — 3 msgs (enviado → follow-up 3d → urgencia 7d)</td><td>Alto — fecha mais orcamentos</td></tr>
+    <tr><td>3</td><td>Pos-procedimento com foto antes/depois do face mapping</td><td>Wow — paciente compartilha</td></tr>
+    <tr><td>4</td><td>Aniversario com oferta vinculada ao birthday scanner</td><td>Alto — retencao</td></tr>
+    <tr><td>5</td><td>Dashboard de metricas (enviadas/entregues/respondidas por campanha)</td><td>Medio — visibilidade</td></tr>
+  </table>
 
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
   <h2>Próximos passos</h2>
