@@ -585,6 +585,11 @@
       }
     }
 
+    // ── Equipe e Acessos ─────────────────────────────────────────
+    if (pageId === 'team-manage' && window.TeamManageUI) {
+      window.TeamManageUI.init()
+    }
+
     // ── Mira (WhatsApp Assistente Interno) ──────────────────────
     if (pageId === 'mira-config' && window.MiraConfigUI) {
       window.MiraConfigUI.init()

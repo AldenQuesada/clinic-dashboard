@@ -240,6 +240,18 @@
       ],
     },
 
+    // ── Equipe e Acessos ────────────────────────────────────────
+    {
+      section: 'equipe',
+      icon:    'shield',
+      label:   'Equipe',
+      roles:   [ROLES.OWNER, ROLES.ADMIN],
+      plans:   [],
+      pages: [
+        { page: 'team-manage',  label: 'Gerenciar Equipe',   breadcrumb: 'Equipe > Gerenciar',   highlight: true },
+      ],
+    },
+
     // ── Mira (Assistente Interno) ────────────────────────────────
     {
       section: 'mira',
