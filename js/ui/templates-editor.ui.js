@@ -192,10 +192,18 @@
     cats.forEach(function (c) {
       var meta = _catMeta(c)
       var active = _activeTab === c ? ' te-tab-active' : ''
-      var tplCount = _templates.filter(function(t){return (t.category||'pre_agendamento')===c}).length
       var leadCount = _tagCounts[c] || 0
+      var subDetail = ''
+      if (c === 'agendamento' && leadCount > 0) {
+        var novo = _tagCounts.agendamento_novo || 0
+        var ret = _tagCounts.agendamento_retorno || 0
+        var orc = _tagCounts.agendamento_orcamento || 0
+        subDetail = ' (N:' + novo + ' R:' + ret + ' O:' + orc + ')'
+      }
       html += '<button class="te-tab' + active + '" data-action="tab" data-tab="' + c + '">' +
-        meta.label + ' <span class="te-tab-count" title="' + leadCount + ' leads / ' + tplCount + ' msgs">' + leadCount + '</span></button>'
+        meta.label + ' <span class="te-tab-count">' + leadCount + '</span>' +
+        (subDetail ? '<span class="te-tab-sub">' + subDetail + '</span>' : '') +
+        '</button>'
     })
     html += '</div>'
     return html

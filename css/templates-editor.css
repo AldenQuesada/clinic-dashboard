@@ -23,6 +23,7 @@
 .te-tab:hover { background:#F3F4F6; color:var(--text-primary); }
 .te-tab-active { background:var(--accent-gold); color:#fff; border-color:var(--accent-gold); }
 .te-tab-count { font-size:10px; opacity:0.7; }
+.te-tab-sub { font-size:9px; opacity:0.5; margin-left:2px; }
 
 /* ── 2-column layout ─────────────────────────────────────── */
 .te-layout { display:grid; grid-template-columns:300px 1fr; gap:20px; }
