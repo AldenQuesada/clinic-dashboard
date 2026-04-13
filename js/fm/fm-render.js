@@ -56,6 +56,7 @@
 
     var html = '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid rgba(200,169,126,0.12)">' +
       '<div style="display:flex;align-items:center;gap:12px">' +
+        '<button onclick="FaceMapping._resetToSelector()" style="border:none;background:none;cursor:pointer;color:rgba(200,169,126,0.4);display:flex;align-items:center;padding:4px" title="Voltar">' + FM._icon('arrow-left', 16) + '</button>' +
         '<span style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Analise Facial</span>' +
       '</div>' +
 

@@ -533,7 +533,7 @@
       window._initProntuarioPage()
     }
     if (pageId === 'facial-analysis' && window.FaceMapping) {
-      window.FaceMapping._restorePage()
+      window.FaceMapping._resetToSelector()
     }
 
     // ── Leads contextualizados por funil ────────────────────────

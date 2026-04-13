@@ -169,6 +169,12 @@
     setTimeout(function () { FM._render() }, 100)
   }
 
+  FM._resetToSelector = function () {
+    FM._lead = null
+    FM._selectorFilter = ''
+    FM._restorePage()
+  }
+
   FM._restorePage = function () {
     if (FM._lead) {
       FM._render()

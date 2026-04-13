@@ -15,6 +15,7 @@
     openFromModal: FM.openFromModal,
 
     _restorePage: FM._restorePage,
+    _resetToSelector: FM._resetToSelector,
     _selectAngle: FM._selectAngle,
     _selectZone: FM._selectZone,
     _onTreatmentChange: FM._onTreatmentChange,
