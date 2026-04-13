@@ -292,7 +292,11 @@
         FM._ctx = saveCtx; FM._imgW = saveW; FM._imgH = saveH
       }
 
-      // Force vectors on canvas2 — disabled (DEPOIS is for visual comparison only)
+      // Force vectors on canvas2 — direcao lifting (jovem/rejuvenescido)
+      if (FM._editorMode === 'vectors' && FM._drawAllForceVectors) {
+        FM._drawAllForceVectors(FM._ctx2, 25, FM._imgW2, FM._imgH2)
+        if (FM._drawCollagenBar) FM._drawCollagenBar(FM._ctx2, 10, FM._imgH2 - 18, FM._imgW2 - 20, 8, 25)
+      }
 
       // Draw canvas2's own metrics — always when lines exist in simetria
       var has2Lines = FM._metric2Lines && (FM._metric2Lines.h.length > 0 || FM._metric2Lines.v.length > 0)
