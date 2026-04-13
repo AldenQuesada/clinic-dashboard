@@ -1448,40 +1448,15 @@
         <div id="spage_users" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">
             <div>
-              <div style="font-size:15px;font-weight:800;color:#111">Usuários do Sistema</div>
+              <div style="font-size:15px;font-weight:800;color:#111">Usuarios do Sistema</div>
               <div style="font-size:12px;color:#9CA3AF;margin-top:1px">Gerencie quem tem acesso ao ClinicAI</div>
             </div>
-            <button onclick="openInviteModal()" style="display:flex;align-items:center;gap:7px;padding:9px 16px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer">
-              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Convidar usuário
+            <button onclick="openInviteModal()" class="_ua-btn-gold">
+              <i data-feather="user-plus" style="width:15px;height:15px"></i> Convidar
             </button>
           </div>
-
-          <!-- Legenda de roles -->
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px">
-            <span style="background:#F5F3FF;color:#7C3AED;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">Proprietário</span>
-            <span style="background:#FEF2F2;color:#DC2626;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">Administrador</span>
-            <span style="background:#F0FDF4;color:#16A34A;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">Terapeuta</span>
-            <span style="background:#EFF6FF;color:#2563EB;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">Recepcionista</span>
-            <span style="background:#F9FAFB;color:#6B7280;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">Visualizador</span>
-          </div>
-
           <div id="usersAdminList">
             <div style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">Carregando...</div>
-          </div>
-
-          <!-- Convites pendentes -->
-          <div style="margin-top:28px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div style="font-size:13px;font-weight:700;color:#374151">Convites pendentes</div>
-              <button onclick="loadPendingInvites()" style="background:none;border:none;cursor:pointer;color:#7C3AED;font-size:12px;font-weight:600">
-                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:-1px;margin-right:3px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                Atualizar
-              </button>
-            </div>
-            <div id="pendingInvitesList">
-              <div style="padding:16px;text-align:center;color:#9CA3AF;font-size:12px;background:#F9FAFB;border-radius:10px">Nenhum convite pendente</div>
-            </div>
           </div>
         </div>
 
