@@ -12,6 +12,7 @@
     var root = document.getElementById('facialAnalysisRoot')
     if (!root) return
 
+    if (!FM._lead) { FM._restorePage(); return }
     var name = FM._lead.nome || FM._lead.name || 'Paciente'
 
     // Determine which panel to show on the right — based on _activeTab ONLY
