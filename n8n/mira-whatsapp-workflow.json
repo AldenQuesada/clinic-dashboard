@@ -266,7 +266,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Merge final: pega phone+instance do Parse + reply do Tier 1/2\nconst parsed = $('Parse Message').first().json;\nconst upstream = $input.first().json;\n\n// Se veio da execute_tool, tem .response\n// Se veio do Tier 1, tem .response\n// Se veio do claude text-only, tem .response\nconst reply = upstream.response || '⚠️ Sem resposta';\n\nreturn [{ json: { phone: parsed.phone, instance: parsed.instance, reply } }];"
+        "jsCode": "// Merge final: pega phone+instance do Parse + reply do Tier 1/2\nconst parsed = $('Parse Message').first().json;\nconst upstream = $input.first().json;\n\n// Se veio da execute_tool, tem .response\n// Se veio do Tier 1, tem .response\n// Se veio do claude text-only, tem .response\nconst reply = upstream.response || '';\n\n// Silent: se intent='silent' ou response vazio, NAO envia nada\nif (!reply || reply.trim() === '' || upstream.intent === 'silent') {\n  return [];\n}\n\nreturn [{ json: { phone: parsed.phone, instance: parsed.instance, reply } }];"
       },
       "id": "mira-merge-node",
       "name": "Merge",
