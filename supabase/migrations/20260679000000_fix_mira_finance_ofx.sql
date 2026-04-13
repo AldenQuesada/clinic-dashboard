@@ -99,8 +99,8 @@ BEGIN
     AND deleted_at IS NULL
     AND transaction_date BETWEEN p_start_date AND p_end_date;
 
-  -- Comissao: busca percentual do profissional
-  SELECT COALESCE(commission_pct, 0) INTO v_pct
+  -- Comissao: busca percentual do profissional (commissions e jsonb array)
+  SELECT COALESCE((commissions->0->>'percentage')::numeric, 0) INTO v_pct
   FROM public.professional_profiles
   WHERE id = v_prof_id;
 
