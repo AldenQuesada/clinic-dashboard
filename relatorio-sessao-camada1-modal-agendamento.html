@@ -103,6 +103,7 @@
   <h4>WhatsApp / Mensagens</h4>
   <a href="#templates-mensagem">Templates de Mensagem</a>
   <a href="#fluxo-paciente">Fluxo do Paciente</a>
+  <a href="#tabela-agendamento">Tabela Agendamento</a>
 
   <h4>Historico</h4>
   <a href="#commits">Commits</a>
@@ -2365,7 +2366,7 @@ AGENDAMENTO (tudo ate o check final de finalizacao)
                                    (inicia campanha propria)
   </pre>
 
-  <h3>Tabela de mensagens — Tag Agendamento</h3>
+  <h3 id="tabela-agendamento">Tabela de mensagens — Tag Agendamento</h3>
   <table>
     <tr><th>Status</th><th>Msg?</th><th>Trigger</th><th>Mensagem</th><th>Delay</th></tr>
     <tr>
@@ -2530,6 +2531,30 @@ AGENDAMENTO (tudo ate o check final de finalizacao)
     <li>So mensagens curtas (&lt;50 chars) para nao confundir com conversa</li>
     <li>Respostas editaveis em Config > Templates > Agendamento</li>
   </ul>
+
+  <h3>Editor de timing — select inteligente</h3>
+  <p>O campo "Quando" no editor de templates muda conforme a tag:</p>
+  <table>
+    <tr><th>Tag</th><th>Opcoes do select</th><th>Campos visiveis</th></tr>
+    <tr>
+      <td><strong>Agendamento</strong></td>
+      <td>Imediata | No dia da consulta | Dias antes da consulta</td>
+      <td>"Dias antes" mostra: <code>[N] dia(s) as [HH]:[MM]</code><br>Input so aceita positivo → salva negativo interno</td>
+    </tr>
+    <tr>
+      <td><strong>Paciente / Orcamento / Perdido</strong></td>
+      <td>Imediata | No mesmo dia | Dias depois</td>
+      <td>"Dias depois" mostra: <code>[N] dia(s) as [HH]:[MM]</code></td>
+    </tr>
+  </table>
+  <p><strong>Defaults ao trocar modo:</strong></p>
+  <ul>
+    <li>Imediata → 0 dias, 0h, 0min</li>
+    <li>Dias antes → D-1 as 12:30 (default)</li>
+    <li>No dia → as 10:00 (default)</li>
+    <li>Dias depois → D+1 as 10:00 (default)</li>
+  </ul>
+  <p><strong>Lista lateral:</strong> mostra formatado — "1d antes as 12:30", "no dia as 8:00", "imediata"</p>
 
   <h3>Arquitetura WhatsApp — sem n8n (2026-04-12)</h3>
   <p><strong>n8n eliminado</strong> do fluxo de mensagens. Tudo via Supabase + Evolution API direto:</p>
