@@ -739,6 +739,38 @@
   // ================================================================
   // Exposicao Global
   // ================================================================
+  // ── Request Doc from Lead Modal ────────────────────────────────
+  async function _showRequestDocModalLm(patientId, patientName) {
+    var svc = window.LegalDocumentsService
+    if (!svc) return
+    var templates = svc.getTemplates()
+    if (!templates || !templates.length) templates = await svc.loadTemplates()
+
+    if (!templates || !templates.length) {
+      alert('Nenhum template de documento disponivel')
+      return
+    }
+
+    var choice = templates.map(function(t,i) { return (i+1) + '. ' + t.name }).join('\n')
+    var idx = prompt('Selecione o template:\n' + choice + '\n\nDigite o numero:')
+    if (!idx) return
+    var tmpl = templates[parseInt(idx) - 1]
+    if (!tmpl) return
+
+    var result = await svc.createRequest(tmpl.id, {
+      patient_id: patientId,
+      id: patientId,
+      pacienteNome: patientName,
+      patient_name: patientName,
+    })
+
+    if (result && result.ok) {
+      if (typeof window.showToast === 'function') window.showToast('Documento solicitado', 'success')
+    } else {
+      alert((result && result.error) || 'Erro ao solicitar documento')
+    }
+  }
+
   window.ProntuarioWow = {
     renderPatientHeader: renderPatientHeader,
     renderClinicalAlerts: renderClinicalAlerts,
@@ -753,6 +785,7 @@
     _saveRx: _saveRx,
     _printRx: _printRx,
     _saveSOAP: _saveSOAP,
+    _showRequestDocModalLm: _showRequestDocModalLm,
   }
 
 })()

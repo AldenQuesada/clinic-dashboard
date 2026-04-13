@@ -640,6 +640,7 @@ function _lmSwitchTab(tabId) {
 // ── Renderização de abas ──────────────────────────────────────
 
 function _renderModalTab(tabId, lead) {
+  var W = window.ProntuarioWow
   switch (tabId) {
     case 'geral':
       // Async — renderizar placeholder e atualizar quando pronto
@@ -655,22 +656,71 @@ function _renderModalTab(tabId, lead) {
               cEl.innerHTML = ComplaintsPanel.renderCard(lead.id, complaints)
             })
           }
+          // WOW #3: Alertas clinicos persistentes no topo do Geral
+          if (W) {
+            W.renderClinicalAlerts(lead.id).then(function(alertHtml) {
+              if (alertHtml && el) el.insertAdjacentHTML('afterbegin', alertHtml)
+            })
+          }
         })
         return '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando...</div>'
       }
       return geralPromise
     case 'clinico':    return _lmTabClinico(lead)
     case 'anamnese':   return _lmTabAnamnese(lead)
-    case 'evolucao':   return _lmTabEvolucao(lead)
-    case 'financeiro': return _lmTabFinanceiro(lead)
+    case 'evolucao':
+      // WOW #5 + #6: SOAP + Prescricao no topo da Evolucao
+      var evoBase = _lmTabEvolucao(lead)
+      if (W) {
+        var soapHtml = W.renderSOAPForm('lmContent', lead.id)
+        var rxHtml = W.renderPrescriptionForm('lmContent', lead.id, lead.name || lead.nome || '')
+        return soapHtml + rxHtml + evoBase
+      }
+      return evoBase
+    case 'financeiro':
+      // WOW #7: Financeiro completo com grafico
+      var finBase = _lmTabFinanceiro(lead)
+      if (W) {
+        ;(async function() {
+          var el = document.getElementById('lmContent')
+          if (!el) return
+          var wowFin = await W.renderFinanceComplete(lead.id)
+          // Insere grafico e KPIs WOW antes da tabela existente
+          el.innerHTML = wowFin + '<div style="margin-top:20px;padding-top:16px;border-top:1.5px solid #E5E7EB"><div style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Detalhamento</div>' + finBase + '</div>'
+        })()
+        return '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando financeiro...</div>'
+      }
+      return finBase
     case 'timeline':
+      // WOW #1: Timeline unificada enriquecida
+      if (W) {
+        ;(async function() {
+          var el = document.getElementById('lmContent')
+          if (!el) return
+          var wowTl = await W.renderUnifiedTimeline(lead.id, lead.name || lead.nome || '')
+          // Original timeline abaixo da WOW
+          var origTl = await _lmTabTimeline(lead)
+          el.innerHTML = wowTl + '<div style="margin-top:24px;padding-top:16px;border-top:1.5px solid #E5E7EB"><div style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px">Agendamentos Detalhados</div>' + origTl + '</div>'
+        })()
+        return '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando timeline...</div>'
+      }
       var tlPromise = _lmTabTimeline(lead)
       if (tlPromise && typeof tlPromise.then === 'function') {
         tlPromise.then(function(html) { var el = document.getElementById('lmContent'); if (el) el.innerHTML = html })
         return '<div style="text-align:center;padding:32px;color:#9CA3AF;font-size:12px">Carregando linha do tempo...</div>'
       }
       return tlPromise
-    case 'documentos': return _lmTabDocumentos(lead)
+    case 'documentos':
+      // WOW #7: Botao solicitar documento no topo
+      var docBase = _lmTabDocumentos(lead)
+      if (W) {
+        var requestBtn = '<div style="margin-bottom:12px;display:flex;justify-content:flex-end">'
+          + '<button onclick="if(window.ProntuarioWow)ProntuarioWow._showRequestDocModalLm(\'' + (lead.id||'').replace(/'/g,"\\'") + '\',\'' + ((lead.name||lead.nome||'').replace(/'/g,"\\'")) + '\')" style="padding:7px 14px;background:var(--accent-gold,#C9A96E);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px">'
+          + '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+          + ' Solicitar Documento</button></div>'
+        return requestBtn + docBase
+      }
+      return docBase
     case 'orcamentos': return _lmTabOrcamentos(lead)
     case 'interacoes': return _lmTabInteracoes(lead)
     case 'protocolos': return _lmTabProtocolos(lead)
