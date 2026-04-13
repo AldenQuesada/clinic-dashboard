@@ -2305,10 +2305,13 @@ PRE-AGENDAMENTO
          │
          ▼ agendou
 AGENDAMENTO (tudo ate o check final de finalizacao)
-  Agendado → Lembrete D-1 → Paciente responde SIM → Confirmado
-                           → Paciente responde NAO → Cancelado
+  Agendado → D-1 12:30h Aguardando Confirmacao
+                ↓ responde SIM         ↓ responde NAO        ↓ nao responde
+            Confirmado              Cancelado/Reagenda     Sem Confirmacao
+                                    se reagenda →             ↓ 3 caminhos:
+                                    volta pro Agendado     SIM | Comparece | No-show
   Confirmado → Na Clinica (menu + boas-vindas)
-            → Em Consulta (avaliacao ou procedimento)
+            → Em Consulta (sem mensagem — esta com a dra)
             → Modal de Finalizacao
                     │                          │
             Fez procedimento?           So avaliacao?
@@ -2316,16 +2319,77 @@ AGENDAMENTO (tudo ate o check final de finalizacao)
                     │                          │
                     ▼                          ▼
               PACIENTE                    ORCAMENTO
-    Pos-procedimento (+1d)         Orcamento Enviado
-    Cuidados (+3d)                 Em Negociacao
-    Aguardando Retorno (+7d)       Follow-up Pendente
-    Retorno (+30d)                 Aprovado → volta pro AGENDAMENTO
+    (inicia campanha propria)    (inicia campanha propria)
                                          │ nao aprovou
                                          ▼
                                       PERDIDO
-                                   Recuperacao valor
-                                   Recuperacao promo
+                                   (inicia campanha propria)
   </pre>
+
+  <h3>Tabela de mensagens — Tag Agendamento</h3>
+  <table>
+    <tr><th>Status</th><th>Msg?</th><th>Trigger</th><th>Mensagem</th><th>Delay</th></tr>
+    <tr>
+      <td>Agendado</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Automatico — ao criar agendamento</td>
+      <td>Confirmacao novo (com anamnese) ou retorno (sem link)</td>
+      <td>Imediata</td>
+    </tr>
+    <tr>
+      <td>Aguardando Confirmacao</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Automatico — D-1 12:30h</td>
+      <td>"Confirme respondendo SIM ou NAO"</td>
+      <td>D-1 12:30h</td>
+    </tr>
+    <tr>
+      <td>Confirmado</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Automatico — paciente responde SIM</td>
+      <td>"Obrigada por confirmar!" (template editavel)</td>
+      <td>Imediata</td>
+    </tr>
+    <tr>
+      <td>Reagendado</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Automatico — paciente responde NAO e reagenda</td>
+      <td>"Seu horario foi alterado" (reinicia fluxo)</td>
+      <td>Imediata</td>
+    </tr>
+    <tr>
+      <td>Cancelado</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Automatico — paciente responde NAO</td>
+      <td>"Quer remarcar?" (template editavel)</td>
+      <td>Imediata</td>
+    </tr>
+    <tr>
+      <td>Falta (No-show)</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Manual — secretaria marca na agenda</td>
+      <td>"Sentimos sua falta, quer reagendar?"</td>
+      <td>Imediata</td>
+    </tr>
+    <tr>
+      <td>Encaixe</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Automatico — igual ao Agendado</td>
+      <td>Confirmacao (mesma do Agendado)</td>
+      <td>Imediata</td>
+    </tr>
+    <tr>
+      <td>Na Clinica</td><td><span class="badge badge-ok">SIM</span></td>
+      <td>Manual — secretaria marca na agenda</td>
+      <td>Menu + boas-vindas</td>
+      <td>Imediata</td>
+    </tr>
+    <tr>
+      <td>Em Consulta</td><td><span class="badge badge-fail">NAO</span></td>
+      <td>—</td><td>—</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Prioridade na Agenda</td><td><span class="badge badge-fail">NAO</span></td>
+      <td>—</td><td>So flag visual, sem mensagem</td><td>—</td>
+    </tr>
+    <tr>
+      <td>Finalizado</td><td><span class="badge badge-fail">NAO</span></td>
+      <td>—</td><td>So muda de tag (Paciente / Orcamento / mantem)</td><td>—</td>
+    </tr>
+  </table>
 
   <h3>Transicoes criticas</h3>
   <table>
