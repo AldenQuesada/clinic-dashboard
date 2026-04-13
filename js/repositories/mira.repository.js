@@ -149,49 +149,170 @@
     } catch (e) { return _err(e.message || e) }
   }
 
-  // ── Dashboard Config RPCs ─────────────────────────────────────
+  // ── Dashboard Config (queries diretas, sem RPCs extras) ──────
 
   async function dashboardStats() {
     try {
-      const { data, error } = await _sb().rpc('wa_pro_dashboard_stats')
-      if (error) return _err(error.message || error)
-      return _ok(data || {})
+      var sb = _sb()
+      var today = new Date().toISOString().slice(0, 10)
+      var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+      var monthStart = today.slice(0, 8) + '01'
+      var twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString()
+
+      // Numeros ativos
+      var rNums = await sb.from('wa_numbers')
+        .select('id', { count: 'exact', head: true })
+        .eq('number_type', 'professional_private')
+        .eq('is_active', true)
+      var numbersActive = rNums.count || 0
+
+      // Queries hoje (rate_limit)
+      var rToday = await sb.from('wa_pro_rate_limit')
+        .select('query_count')
+        .eq('date', today)
+      var queriesToday = (rToday.data || []).reduce(function (s, r) { return s + (r.query_count || 0) }, 0)
+
+      // Queries semana
+      var rWeek = await sb.from('wa_pro_audit_log')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', weekAgo)
+      var queriesWeek = rWeek.count || 0
+
+      // Queries mes
+      var rMonth = await sb.from('wa_pro_audit_log')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', monthStart)
+      var queriesMonth = rMonth.count || 0
+
+      // Avg response ms (7 dias)
+      var rMs = await sb.from('wa_pro_audit_log')
+        .select('response_ms')
+        .gte('created_at', weekAgo)
+        .not('response_ms', 'is', null)
+        .limit(500)
+      var msArr = (rMs.data || []).map(function (r) { return r.response_ms }).filter(Boolean)
+      var avgMs = msArr.length > 0 ? Math.round(msArr.reduce(function (s, v) { return s + v }, 0) / msArr.length) : 0
+
+      // Error rate (7 dias)
+      var rErr = await sb.from('wa_pro_audit_log')
+        .select('success')
+        .gte('created_at', weekAgo)
+        .limit(1000)
+      var errRows = rErr.data || []
+      var errorRate = errRows.length > 0
+        ? Math.round(1000 * errRows.filter(function (r) { return r.success === false }).length / errRows.length) / 10
+        : 0
+
+      // Top intents (30 dias)
+      var rIntents = await sb.from('wa_pro_audit_log')
+        .select('intent')
+        .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString())
+        .not('intent', 'is', null)
+        .neq('intent', 'unknown')
+        .limit(2000)
+      var intentMap = {}
+      ;(rIntents.data || []).forEach(function (r) {
+        if (r.intent) intentMap[r.intent] = (intentMap[r.intent] || 0) + 1
+      })
+      var topIntents = Object.keys(intentMap).map(function (k) { return { intent: k, total: intentMap[k] } })
+        .sort(function (a, b) { return b.total - a.total }).slice(0, 8)
+
+      // Queries by day (14 dias)
+      var rDays = await sb.from('wa_pro_audit_log')
+        .select('created_at')
+        .gte('created_at', twoWeeksAgo)
+        .limit(5000)
+      var dayMap = {}
+      ;(rDays.data || []).forEach(function (r) {
+        var d = (r.created_at || '').slice(0, 10)
+        if (d) dayMap[d] = (dayMap[d] || 0) + 1
+      })
+      var queriesByDay = Object.keys(dayMap).sort().map(function (d) { return { day: d, total: dayMap[d] } })
+
+      // Voice count (mes)
+      var rVoice = await sb.from('wa_pro_transcripts')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', monthStart)
+      var voiceCount = rVoice.count || 0
+
+      return _ok({
+        numbers_active: numbersActive,
+        queries_today: queriesToday,
+        queries_week: queriesWeek,
+        queries_month: queriesMonth,
+        avg_response_ms: avgMs,
+        error_rate: errorRate,
+        top_intents: topIntents,
+        queries_by_day: queriesByDay,
+        voice_count_month: voiceCount,
+      })
     } catch (e) { return _err(e.message || e) }
   }
 
   async function auditList(limit, offset, phone, intent) {
     try {
-      const { data, error } = await _sb().rpc('wa_pro_audit_list', {
-        p_limit: limit || 50,
-        p_offset: offset || 0,
-        p_phone: phone || null,
-        p_intent: intent || null,
+      var sb = _sb()
+      var query = sb.from('wa_pro_audit_log')
+        .select('id, phone, intent, query, response, success, response_ms, created_at, professional_id', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset || 0, (offset || 0) + (limit || 50) - 1)
+
+      if (phone) query = query.ilike('phone', '%' + phone.replace(/\D/g, '').slice(-8))
+      if (intent) query = query.eq('intent', intent)
+
+      var r = await query
+      if (r.error) return _err(r.error.message)
+
+      // Enriquecer com nome do profissional
+      var profIds = []
+      ;(r.data || []).forEach(function (row) {
+        if (row.professional_id && profIds.indexOf(row.professional_id) === -1) profIds.push(row.professional_id)
       })
-      if (error) return _err(error.message || error)
-      return _ok(data || {})
+      var profMap = {}
+      if (profIds.length > 0) {
+        var rProf = await sb.from('professional_profiles').select('id, display_name').in('id', profIds)
+        ;(rProf.data || []).forEach(function (p) { profMap[p.id] = p.display_name })
+      }
+
+      var rows = (r.data || []).map(function (row) {
+        row.professional_name = profMap[row.professional_id] || null
+        return row
+      })
+
+      return _ok({ ok: true, rows: rows, total: r.count || 0, limit: limit, offset: offset })
     } catch (e) { return _err(e.message || e) }
   }
 
   async function updateNumber(waNumberId, updates) {
     try {
-      const { data, error } = await _sb().rpc('wa_pro_update_number', {
-        p_wa_number_id: waNumberId,
-        p_access_scope: updates.access_scope || null,
-        p_permissions:  updates.permissions || null,
-        p_is_active:    updates.is_active != null ? updates.is_active : null,
-      })
-      if (error) return _err(error.message || error)
-      return _ok(data || {})
+      var payload = { updated_at: new Date().toISOString() }
+      if (updates.access_scope) payload.access_scope = updates.access_scope
+      if (updates.permissions)  payload.permissions = updates.permissions
+      if (updates.is_active != null) payload.is_active = updates.is_active
+
+      var r = await _sb().from('wa_numbers')
+        .update(payload)
+        .eq('id', waNumberId)
+        .eq('number_type', 'professional_private')
+        .select()
+
+      if (r.error) return _err(r.error.message)
+      if (!r.data || r.data.length === 0) return _ok({ ok: false, error: 'number_not_found' })
+      return _ok({ ok: true })
     } catch (e) { return _err(e.message || e) }
   }
 
   async function removeNumber(waNumberId) {
     try {
-      const { data, error } = await _sb().rpc('wa_pro_remove_number', {
-        p_wa_number_id: waNumberId,
-      })
-      if (error) return _err(error.message || error)
-      return _ok(data || {})
+      var r = await _sb().from('wa_numbers')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', waNumberId)
+        .eq('number_type', 'professional_private')
+        .select()
+
+      if (r.error) return _err(r.error.message)
+      if (!r.data || r.data.length === 0) return _ok({ ok: false, error: 'number_not_found' })
+      return _ok({ ok: true })
     } catch (e) { return _err(e.message || e) }
   }
 
