@@ -531,10 +531,10 @@ function openInviteModal() {
 
   const modal = _createModal('inviteModal', ''
     + '<div style="padding:22px 24px;border-bottom:1px solid #f3f4f6;display:flex;align-items:flex-start;justify-content:space-between">'
-      + '<div><h3 style="margin:0;font-size:18px;font-weight:700;color:#111827">Convidar Membro</h3><p style="margin:3px 0 0;font-size:12px;color:#6b7280">O convite expira em 48h</p></div>'
+      + '<div><h3 style="margin:0;font-size:18px;font-weight:700;color:#111827">Convidar Membro</h3><p style="margin:3px 0 0;font-size:12px;color:#6b7280">O convite expira em 48h. Permissoes ja aplicadas ao aceitar.</p></div>'
       + '<button onclick="_closeModal(\'inviteModal\')" class="_ua-btn-icon">' + _feather('x', 18) + '</button>'
     + '</div>'
-    + '<div style="padding:24px;display:flex;flex-direction:column;gap:16px">'
+    + '<div style="padding:24px;display:flex;flex-direction:column;gap:16px;max-height:70vh;overflow-y:auto">'
       + '<div id="_inviteErr" style="display:none;background:#FEE2E2;color:#DC2626;padding:10px 14px;border-radius:10px;font-size:13px"></div>'
       + '<div id="_inviteOk" style="display:none;background:#D1FAE5;color:#059669;padding:14px;border-radius:10px;font-size:13px;line-height:1.6"></div>'
       + '<div><label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Email</label>'
@@ -542,23 +542,51 @@ function openInviteModal() {
       + '<div><label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px">Nivel de acesso</label>'
         + '<select id="_inviteRole" class="_ua-input">' + roleOpts + '</select></div>'
       + '<div id="_invRoleDesc"></div>'
+      + '<div>'
+        + '<label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:8px">' + _feather('lock', 13) + ' Permissoes de Modulos</label>'
+        + '<div id="_invModulePerms" style="background:#fafafa;border:1px solid #f3f4f6;border-radius:10px;padding:12px"></div>'
+      + '</div>'
     + '</div>'
     + '<div style="padding:16px 24px;border-top:1px solid #f3f4f6;display:flex;gap:8px;justify-content:flex-end">'
       + '<button onclick="_closeModal(\'inviteModal\')" style="background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>'
       + '<button id="_inviteSubmitBtn" class="_ua-btn-gold">Enviar Convite</button>'
     + '</div>')
 
-  // Role description preview
-  function updateDesc() {
+  // Role description + module toggles
+  function updateRoleUI() {
     var sel = document.getElementById('_inviteRole')
     var desc = document.getElementById('_invRoleDesc')
-    if (!sel || !desc) return
-    var rc = ROLE_CONFIG[sel.value] || {}
-    desc.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:' + (rc.bg || '#f3f4f6') + ';border-radius:10px;font-size:12px;color:' + (rc.color || '#6b7280') + ';font-weight:600">' + _feather(rc.icon || 'info', 14) + ' ' + (rc.desc || '') + '</div>'
-    if (window.feather) feather.replace({ root: desc })
+    var permsEl = document.getElementById('_invModulePerms')
+    if (!sel) return
+    var role = sel.value
+    var rc = ROLE_CONFIG[role] || {}
+
+    // Desc
+    if (desc) {
+      desc.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:' + (rc.bg || '#f3f4f6') + ';border-radius:10px;font-size:12px;color:' + (rc.color || '#6b7280') + ';font-weight:600">' + _feather(rc.icon || 'info', 14) + ' ' + (rc.desc || '') + '</div>'
+      if (window.feather) feather.replace({ root: desc })
+    }
+
+    // Module toggles based on role defaults
+    if (permsEl) {
+      var nav = window.NAV_CONFIG || []
+      var html = ''
+      nav.forEach(function (section) {
+        if (section.section === 'settings') return
+        var sRoles = section.roles || []
+        var defaultOn = sRoles.length === 0 || sRoles.indexOf(role) >= 0
+        var icon = MODULE_ICONS[section.section] || 'folder'
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;border-bottom:1px solid #f3f4f6">'
+          + '<div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:#374151">' + _feather(icon, 14) + ' ' + _esc(section.label) + '</div>'
+          + '<label class="_ua-perm-toggle"><input type="checkbox" class="_inv-module-perm" data-module="' + section.section + '"' + (defaultOn ? ' checked' : '') + '><span class="_ua-perm-switch"></span></label>'
+          + '</div>'
+      })
+      permsEl.innerHTML = html
+      if (window.feather) feather.replace({ root: permsEl })
+    }
   }
-  updateDesc()
-  document.getElementById('_inviteRole')?.addEventListener('change', updateDesc)
+  updateRoleUI()
+  document.getElementById('_inviteRole')?.addEventListener('change', updateRoleUI)
   document.getElementById('_inviteEmail')?.focus()
 
   document.getElementById('_inviteSubmitBtn')?.addEventListener('click', async () => {
@@ -573,8 +601,14 @@ function openInviteModal() {
     if (okEl) okEl.style.display = 'none'
     if (btn) { btn.disabled = true; btn.innerHTML = _feather('loader', 14) + ' Enviando...' }
 
+    // Collect module permissions from toggles
+    const modulePerms = []
+    document.querySelectorAll('._inv-module-perm').forEach(cb => {
+      modulePerms.push({ module_id: cb.dataset.module, page_id: null, allowed: cb.checked })
+    })
+
     try {
-      const { data, error } = await _sb().rpc('invite_staff', { p_email: email, p_role: role })
+      const { data, error } = await _sb().rpc('invite_staff', { p_email: email, p_role: role, p_permissions: modulePerms })
       if (error) throw error
       if (!data?.ok) throw new Error(_errMsg(data?.error))
 
