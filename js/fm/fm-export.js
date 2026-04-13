@@ -204,13 +204,9 @@
       // 2-column layout: photo left (~55%), analysis right (~45%)
       html += '<div class="fm-row" style="display:flex;gap:16px;padding:4px 32px 12px 32px">'
 
-      // LEFT: ANTES photo
+      // LEFT: ANTES photo (always canvas to include overlays)
       html += '<div style="flex:1.2;position:relative;border-radius:8px;overflow:hidden;background:#111">'
-      if (ang.id === activeAngle) {
-        html += '<canvas id="fmReportCanvas_antes_' + ang.id + '" style="width:100%;display:block"></canvas>'
-      } else {
-        html += '<img src="' + FM._esc(FM._photoUrls[ang.id]) + '" style="width:100%;display:block" crossorigin="anonymous">'
-      }
+      html += '<canvas id="fmReportCanvas_antes_' + ang.id + '" style="width:100%;display:block"></canvas>'
       html += '<div style="position:absolute;bottom:0;left:0;right:0;padding:6px 12px;background:linear-gradient(transparent,rgba(10,10,10,0.85));display:flex;align-items:center;gap:6px">' +
         '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#EF4444"></span>' +
         '<span style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;color:rgba(245,240,232,0.8)">ANTES</span>' +
@@ -268,7 +264,7 @@
           '</div>'
           html += '<div style="flex:1">' +
             '<div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4)">Saude da Pele</div>' +
-            (FM._skinAge ? '<div style="font-size:11px;color:rgba(245,240,232,0.5);margin-top:1px">Idade estimada: <strong style="color:#F5F0E8">' + FM._skinAge + ' anos</strong></div>' : '') +
+            (FM._skinAge ? '<div style="font-size:11px;color:rgba(245,240,232,0.5);margin-top:1px">Idade estimada: <strong style="color:#F5F0E8">' + Math.round(typeof FM._skinAge === 'object' ? FM._skinAge.estimated_age : FM._skinAge) + ' anos</strong></div>' : '') +
           '</div>'
           html += '</div>'
           html += _skinBar('Rugas', sk.wrinkles)
@@ -584,13 +580,16 @@
     }
 
     // ── Protocolo Lifting 5D,Cashback Fotona ──
+    var _fotonaPrice = (FM._reportConfig && FM._reportConfig.fotona_price_per_session) || 5000
+    var _fotonaSessions = (FM._reportConfig && FM._reportConfig.fotona_sessions) || 3
+    var _fotonaTotal = _fotonaPrice * _fotonaSessions
     html += '<div style="margin-top:16px;padding:16px;background:linear-gradient(135deg,rgba(200,169,126,0.08),rgba(200,169,126,0.03));border:1px solid rgba(200,169,126,0.18);border-radius:10px">'
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
       '<div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:700">FOTONA DYNAMIS NX,CASHBACK</div>' +
       '<span style="font-size:10px;padding:3px 8px;background:rgba(16,185,129,0.15);color:#10B981;border-radius:4px;font-weight:600;letter-spacing:0.1em">INCLUSO NO PROTOCOLO</span>' +
     '</div>'
     html += '<div style="font-size:13px;color:rgba(245,240,232,0.55);line-height:1.6;margin-bottom:10px">' +
-      'Ao fechar o Protocolo Lifting 5D, a paciente recebe de cashback <strong style="color:#C8A97E">3 sessoes de Fotona 4D</strong>,' +
+      'Ao fechar o Protocolo Lifting 5D, a paciente recebe de cashback <strong style="color:#C8A97E">' + _fotonaSessions + ' sessoes de Fotona 4D</strong>,' +
       'o melhor laser do mundo,atuando em todas as camadas do rosto.' +
     '</div>'
 
@@ -601,14 +600,14 @@
         '<div style="font-size:16px;font-weight:800;color:#C8A97E">' + (i + 1) + '</div>' +
         '<div style="font-size:10px;color:rgba(245,240,232,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px">' + m + '</div>' +
         '<div style="font-size:12px;color:rgba(245,240,232,0.55);margin-top:4px">Fotona 4D</div>' +
-        '<div style="font-size:10px;color:#10B981;margin-top:2px">R$ 5.000</div>' +
+        '<div style="font-size:10px;color:#10B981;margin-top:2px">R$ ' + _fotonaPrice.toLocaleString('pt-BR') + '</div>' +
       '</div>'
     })
     html += '</div>'
 
     html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid rgba(200,169,126,0.10)">' +
-      '<span style="font-size:13px;color:rgba(245,240,232,0.5)">Valor total Fotona (3 sessoes)</span>' +
-      '<span style="font-size:16px;font-weight:700;color:#10B981">R$ 15.000 <span style="font-size:11px;color:rgba(245,240,232,0.3);font-weight:400;text-decoration:line-through">pago pelo cashback</span></span>' +
+      '<span style="font-size:13px;color:rgba(245,240,232,0.5)">Valor total Fotona (' + _fotonaSessions + ' sessoes)</span>' +
+      '<span style="font-size:16px;font-weight:700;color:#10B981">R$ ' + _fotonaTotal.toLocaleString('pt-BR') + ' <span style="font-size:11px;color:rgba(245,240,232,0.3);font-weight:400;text-decoration:line-through">pago pelo cashback</span></span>' +
     '</div>'
     html += '</div>'
 
@@ -697,13 +696,42 @@
     html += '<div style="padding:0 32px 4px 32px">'
     html += '<div style="margin-bottom:8px">' + _editable('fmPlanBSubtitle', 'Foco nas areas de maior impacto,sem Fotona', 'font-size:13px;font-style:italic;color:rgba(245,240,232,0.3);display:inline-block;width:100%;') + '</div>'
 
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
-      '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformação') + '</tr></thead><tbody>'
+    // Pre-preencher com top 4 zonas marcadas (maior dose primeiro), senao editavel vazio
+    var planBZones = []
+    var planBAnnLookup = {}
+    FM._annotations.forEach(function (a) {
+      if (!planBAnnLookup[a.zone]) planBAnnLookup[a.zone] = { ml: 0, treatment: a.treatment, product: a.product || '' }
+      planBAnnLookup[a.zone].ml += (a.ml || 0)
+    })
+    Object.keys(planBAnnLookup).forEach(function (zId) {
+      var z = (FM.ZONES || []).find(function (x) { return x.id === zId })
+      if (z) planBZones.push({ zone: z, data: planBAnnLookup[zId] })
+    })
+    planBZones.sort(function (a, b) { return b.data.ml - a.data.ml })
+    var planBTop = planBZones.slice(0, 4)
+    var planBRows = Math.max(4, planBTop.length)
 
-    for (var eb = 0; eb < 4; eb++) {
-      html += '<tr style="background:' + (eb % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + '">' +
-        _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Descreva a transformação...') +
-      '</tr>'
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+      '<thead><tr>' + _thCell('Zona') + _thCell('Procedimento') + _thCell('Dose') + _thCell('Produto') + _thCell('Transformacao') + '</tr></thead><tbody>'
+
+    for (var eb = 0; eb < planBRows; eb++) {
+      var pbItem = planBTop[eb]
+      var bg = eb % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent'
+      if (pbItem) {
+        var pbTr = (FM.TREATMENTS || []).find(function (x) { return x.id === pbItem.data.treatment })
+        var pbPhrase = transformPhrases[pbItem.zone.id] || ''
+        html += '<tr style="background:' + bg + '">' +
+          _tdCell('<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + pbItem.zone.color + ';margin-right:6px;vertical-align:middle"></span>' + FM._esc(pbItem.zone.label)) +
+          _tdCell(pbTr ? pbTr.label : 'Preenchimento') +
+          _tdCell(pbItem.data.ml.toFixed(1) + ' ' + pbItem.zone.unit, 'color:' + (pbItem.zone.unit === 'U' ? '#8B5CF6' : '#3B82F6') + ';font-weight:600') +
+          _tdEditable(pbItem.data.product || 'Produto') +
+          _tdEditable(pbPhrase || 'Descreva a transformacao...') +
+        '</tr>'
+      } else {
+        html += '<tr style="background:' + bg + '">' +
+          _tdEditable('Zona') + _tdEditable('Procedimento') + _tdEditable('Dose') + _tdEditable('Produto') + _tdEditable('Descreva a transformacao...') +
+        '</tr>'
+      }
     }
 
     html += '</tbody></table>'
@@ -718,7 +746,7 @@
     html += '<div style="flex:1;min-width:200px;background:rgba(200,169,126,0.04);border:1px solid rgba(200,169,126,0.12);border-radius:8px;padding:14px 18px">'
     html += '<div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#C8A97E;font-weight:600;margin-bottom:4px">Plano A,Protocolo Lifting 5D</div>'
     html += '<div style="font-size:28px;font-weight:700;color:#F5F0E8">R$ ' + _editable('fmPriceA', '12.000 - 15.000', 'font-size:28px;font-weight:700;max-width:100%;') + '</div>'
-    html += '<div style="font-size:11px;color:#10B981;margin-top:4px">+ Cashback: 3 sessoes Fotona 4D (R$ 15.000)</div>'
+    html += '<div style="font-size:11px;color:#10B981;margin-top:4px">+ Cashback: ' + _fotonaSessions + ' sessoes Fotona 4D (R$ ' + _fotonaTotal.toLocaleString('pt-BR') + ')</div>'
     html += '</div>'
 
     html += '<div style="flex:1;min-width:200px;background:rgba(255,255,255,0.02);border:1px solid rgba(200,169,126,0.08);border-radius:8px;padding:14px 18px">'
@@ -755,7 +783,9 @@
     '</div>'
 
     var profName = FM._profName()
-    var profCRM = localStorage.getItem('fm_professional_crm') || 'CRM/SP 000000'
+    var profCRM = localStorage.getItem('fm_professional_crm')
+      || (window.ClinicContext ? window.ClinicContext.getSetting('professional_crm', '') : '')
+      || 'CRM/PR 38.526'
     var reportId = 'HF-' + Date.now().toString(36).toUpperCase()
 
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;padding:12px 32px 10px 32px">' +
@@ -951,7 +981,7 @@
 
       // Resolve editable placeholder styling
       var patientName = FM._lead ? (FM._lead.nome || FM._lead.name || 'Paciente') : 'Paciente'
-      var waPhone = localStorage.getItem('fm_wa_phone') || '5511999999999'
+      var waPhone = localStorage.getItem('fm_wa_phone') || (window.ClinicContext ? window.ClinicContext.getSetting('whatsapp_phone', '5544997504000') : '5544997504000')
       var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliação facial. Vi a proposta personalizada.')
 
       // Build comparator HTML with base64 images
@@ -1094,15 +1124,73 @@
   // ── Render canvases: copy from main canvases WITH all overlays ──
   FM._renderReportCanvases = function () {
     var activeAngle = FM._activeAngle || 'front'
+    var angles = ['front', '45', 'lateral']
 
-    // ANTES canvas,copy directly from FM._canvas (already has metrics/angles/wireframe)
-    var antesEl = document.getElementById('fmReportCanvas_antes_' + activeAngle)
-    if (antesEl && FM._canvas && FM._canvas.width > 0) {
-      antesEl.width = FM._canvas.width
-      antesEl.height = FM._canvas.height
-      var actx = antesEl.getContext('2d')
-      actx.drawImage(FM._canvas, 0, 0)
-    }
+    angles.forEach(function (angId) {
+      var antesEl = document.getElementById('fmReportCanvas_antes_' + angId)
+      if (!antesEl) return
+
+      if (angId === activeAngle && FM._canvas && FM._canvas.width > 0) {
+        // Active angle: copy directly from live canvas (has all overlays)
+        antesEl.width = FM._canvas.width
+        antesEl.height = FM._canvas.height
+        antesEl.getContext('2d').drawImage(FM._canvas, 0, 0)
+      } else if (FM._photoUrls && FM._photoUrls[angId]) {
+        // Non-active angle: render photo + overlays from stored state
+        var photoUrl = FM._photoUrls[angId]
+        var angStore = FM._angleStore && FM._angleStore[angId]
+        ;(function (el, url, store, aId) {
+          var img = new Image()
+          img.onload = function () {
+            var maxH = 500, scale = Math.min(400 / img.width, maxH / img.height, 1)
+            var w = Math.round(img.width * scale), h = Math.round(img.height * scale)
+            el.width = w; el.height = h
+            var ctx = el.getContext('2d')
+            ctx.drawImage(img, 0, 0, w, h)
+
+            // Draw annotations (polygons) for this angle
+            var anns = (FM._annotations || []).filter(function (a) { return a.angle === aId })
+            anns.forEach(function (ann) {
+              if (!ann.shape || ann.shape.type !== 'polygon' || !ann.shape.points) return
+              var z = (FM.ZONES || []).find(function (x) { return x.id === ann.zone })
+              var color = z ? z.color : '#C8A97E'
+              var pts = ann.shape.points
+              ctx.beginPath()
+              ctx.moveTo(pts[0].x * w, pts[0].y * h)
+              for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x * w, pts[i].y * h)
+              ctx.closePath()
+              ctx.fillStyle = color + '40'
+              ctx.fill()
+              ctx.strokeStyle = color
+              ctx.lineWidth = 1.5
+              ctx.stroke()
+            })
+
+            // Draw metric lines if stored
+            if (store) {
+              var mLines = store._metricLines
+              if (mLines) {
+                ctx.setLineDash([4, 3])
+                if (mLines.h) mLines.h.forEach(function (l) {
+                  var y = l.y * h
+                  ctx.strokeStyle = '#10B981'
+                  ctx.lineWidth = 1
+                  ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke()
+                })
+                if (mLines.v) mLines.v.forEach(function (l) {
+                  var x = l.x * w
+                  ctx.strokeStyle = '#3B82F6'
+                  ctx.lineWidth = 1
+                  ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke()
+                })
+                ctx.setLineDash([])
+              }
+            }
+          }
+          img.src = url
+        })(el, photoUrl, angStore, angId)
+      }
+    })
 
     // DEPOIS canvas,copy directly from FM._canvas2 (already has overlays)
     var depoisEl = document.getElementById('fmReportCanvas_depois_' + activeAngle)
@@ -1432,7 +1520,7 @@
       }
 
       var patientName = FM._lead ? (FM._lead.nome || FM._lead.name || 'Paciente') : 'Paciente'
-      var waPhone = localStorage.getItem('fm_wa_phone') || '5511999999999'
+      var waPhone = localStorage.getItem('fm_wa_phone') || (window.ClinicContext ? window.ClinicContext.getSetting('whatsapp_phone', '5544997504000') : '5544997504000')
       var waText = encodeURIComponent('Ola! Gostaria de agendar minha avaliação facial.')
 
       var fullHtml = '<!DOCTYPE html><html lang="pt-BR"><head>' +
