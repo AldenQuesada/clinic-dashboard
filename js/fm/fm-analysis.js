@@ -879,11 +879,16 @@
     FM._autoSave()
   }
 
+  function _deepCopy(v) {
+    if (v == null || typeof v !== 'object') return v
+    return JSON.parse(JSON.stringify(v))
+  }
+
   function _swapToCanvas2() {
     FM._swap1 = {
       ctx: FM._ctx, imgW: FM._imgW, imgH: FM._imgH,
-      lines: FM._metricLines, points: FM._metricPoints,
-      midline: FM._metricMidline, angles: FM._metricAngles,
+      lines: _deepCopy(FM._metricLines), points: _deepCopy(FM._metricPoints),
+      midline: _deepCopy(FM._metricMidline), angles: _deepCopy(FM._metricAngles),
       drag: FM._metricDrag, nextPt: FM._metricNextPointId, nextLn: FM._metricNextLineId,
       locked: FM._metricLocked
     }
@@ -901,11 +906,11 @@
   }
 
   function _swapToCanvas1() {
-    // Save canvas2 state back
-    FM._metric2Lines = FM._metricLines
-    FM._metric2Points = FM._metricPoints
-    FM._metric2Midline = FM._metricMidline
-    FM._metric2Angles = FM._metricAngles
+    // Save canvas2 state back (deep copy to prevent shared references)
+    FM._metric2Lines = _deepCopy(FM._metricLines)
+    FM._metric2Points = _deepCopy(FM._metricPoints)
+    FM._metric2Midline = _deepCopy(FM._metricMidline)
+    FM._metric2Angles = _deepCopy(FM._metricAngles)
     FM._metric2Drag = FM._metricDrag
     FM._metric2NextPointId = FM._metricNextPointId
     FM._metric2NextLineId = FM._metricNextLineId
