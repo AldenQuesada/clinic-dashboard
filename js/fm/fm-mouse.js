@@ -47,8 +47,8 @@
 
       FM._imgW = Math.round(FM._img.width * scale)
       FM._imgH = Math.round(FM._img.height * scale)
-      // No extra margin — proportions bar draws inside the image area
-      FM._canvas.width = FM._imgW
+      // Extra margin for proportions bar (tercos) drawn outside the photo
+      FM._canvas.width = FM._imgW + 32
       FM._canvas.height = FM._imgH
       // Restore cached scan data for this angle
       var ang = FM._activeAngle || 'front'
@@ -179,7 +179,7 @@
         // Proportions bar on right edge (H guides only, if >= 2)
         if (FM._guideLines.h.length >= 2) {
           var hSorted = FM._guideLines.h.slice().sort(function (a, b) { return a.pos - b.pos })
-          var barX = gW - 18
+          var barX = gW + 8
           var barW = 12
           var firstY = hSorted[0].pos * gH
           var lastY = hSorted[hSorted.length - 1].pos * gH

@@ -58,8 +58,8 @@
       ctx.fill()
     })
 
-    // Color bar on the RIGHT edge of the photo (overlay, inside canvas)
-    var barX = w - 28
+    // Color bar OUTSIDE the photo (right margin area)
+    var barX = w + 8
     var barW = 16
 
     var cSup = _propColor(pSup)
@@ -80,25 +80,27 @@
     ctx.font = '700 11px Montserrat, sans-serif'
     ctx.textAlign = 'right'
 
+    ctx.textAlign = 'center'
     ctx.fillStyle = '#F5F0E8'
-    ctx.fillText('Sup', barX - 6, y1 + sup / 2 - 2)
-    ctx.font = '600 10px Montserrat, sans-serif'
+    ctx.font = '700 9px Montserrat, sans-serif'
+    ctx.fillText('Sup', barX + barW / 2, y1 + sup / 2 - 2)
+    ctx.font = '600 9px Montserrat, sans-serif'
     ctx.fillStyle = cSup
-    ctx.fillText(pSup + '%', barX - 6, y1 + sup / 2 + 12)
+    ctx.fillText(pSup + '%', barX + barW / 2, y1 + sup / 2 + 10)
 
-    ctx.font = '700 11px Montserrat, sans-serif'
+    ctx.font = '700 9px Montserrat, sans-serif'
     ctx.fillStyle = '#F5F0E8'
-    ctx.fillText('Med', barX - 6, y2 + med / 2 - 2)
-    ctx.font = '600 10px Montserrat, sans-serif'
+    ctx.fillText('Med', barX + barW / 2, y2 + med / 2 - 2)
+    ctx.font = '600 9px Montserrat, sans-serif'
     ctx.fillStyle = cMed
-    ctx.fillText(pMed + '%', barX - 6, y2 + med / 2 + 12)
+    ctx.fillText(pMed + '%', barX + barW / 2, y2 + med / 2 + 10)
 
-    ctx.font = '700 11px Montserrat, sans-serif'
+    ctx.font = '700 9px Montserrat, sans-serif'
     ctx.fillStyle = '#F5F0E8'
-    ctx.fillText('Inf', barX - 6, y3 + inf / 2 - 2)
-    ctx.font = '600 10px Montserrat, sans-serif'
+    ctx.fillText('Inf', barX + barW / 2, y3 + inf / 2 - 2)
+    ctx.font = '600 9px Montserrat, sans-serif'
     ctx.fillStyle = cInf
-    ctx.fillText(pInf + '%', barX - 6, y3 + inf / 2 + 12)
+    ctx.fillText(pInf + '%', barX + barW / 2, y3 + inf / 2 + 10)
 
     // Ideal reference
     ctx.font = '400 8px Montserrat, sans-serif'
