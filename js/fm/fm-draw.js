@@ -639,23 +639,31 @@
     if (FM._vecAnimFrame) { cancelAnimationFrame(FM._vecAnimFrame); FM._vecAnimFrame = null }
   }
 
-  FM._drawAllForceVectors = function (ctx, age, w, h, selectedId) {
+  FM._drawAllForceVectors = function (ctx, age, w, h, selectedId, invert) {
     FM._vecDrawnPositions = []
-    var centers = FM._scanData && FM._scanData.zone_centers ? FM._scanData.zone_centers : FM.FORCE_DEFAULT_CENTERS
+    var centers = FM.FORCE_DEFAULT_CENTERS
 
     FM.FORCE_VECTORS.forEach(function (def) {
-      if (def.bilateral) {
-        var cL = centers[def.id + '_esq'] || FM.FORCE_DEFAULT_CENTERS[def.id + '_esq']
-        if (cL) FM._drawForceVectorPair(ctx, def, cL, age, w, h, selectedId === def.id, def.id + '_esq')
+      // For lifting (invert=true): flip dy to point UP instead of DOWN
+      var d = def
+      if (invert) {
+        d = { id: def.id, label: def.label, color: '#10B981',
+          youngDx: def.youngDx, youngDy: -Math.abs(def.youngDy),
+          agedDx: def.agedDx, agedDy: -Math.abs(def.agedDy) }
+      }
 
-        var cR = centers[def.id + '_dir'] || FM.FORCE_DEFAULT_CENTERS[def.id + '_dir']
+      if (def.bilateral) {
+        var cL = centers[def.id + '_esq']
+        if (cL) FM._drawForceVectorPair(ctx, d, cL, invert ? 70 : age, w, h, selectedId === def.id, def.id + '_esq')
+
+        var cR = centers[def.id + '_dir']
         if (cR) {
-          var mirrorDef = { id: def.id, label: def.label, color: def.color, youngDx: -def.youngDx, youngDy: def.youngDy, agedDx: -def.agedDx, agedDy: def.agedDy }
-          FM._drawForceVectorPair(ctx, mirrorDef, cR, age, w, h, selectedId === def.id, def.id + '_dir')
+          var mirrorD = { id: d.id, label: d.label, color: d.color, youngDx: -d.youngDx, youngDy: d.youngDy, agedDx: -d.agedDx, agedDy: d.agedDy }
+          FM._drawForceVectorPair(ctx, mirrorD, cR, invert ? 70 : age, w, h, selectedId === def.id, def.id + '_dir')
         }
       } else {
-        var c = centers[def.id] || FM.FORCE_DEFAULT_CENTERS[def.id]
-        if (c) FM._drawForceVectorPair(ctx, def, c, age, w, h, selectedId === def.id, def.id)
+        var c = centers[def.id]
+        if (c) FM._drawForceVectorPair(ctx, d, c, invert ? 70 : age, w, h, selectedId === def.id, def.id)
       }
     })
   }
