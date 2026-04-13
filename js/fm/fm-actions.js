@@ -138,20 +138,16 @@
     FM._restoreSession(leadId)
     FM._cleanupStorage()
 
-    // Ensure editorMode matches activeTab after restore
-    if (!FM._activeTab || FM._activeTab === 'zones') FM._activeTab = 'simetria'
-    if (FM._activeTab === 'simetria') {
-      FM._editorMode = 'analysis'
-      if (!FM._analysisSubMode || (FM._analysisSubMode !== 'ricketts' && FM._analysisSubMode !== 'metrics')) {
-        FM._analysisSubMode = 'metrics'
-      }
-    }
+    // Always start on angle selection screen (not deep into editor)
+    FM._activeAngle = null
+    FM._activeTab = 'simetria'
+    FM._editorMode = 'analysis'
+    FM._analysisSubMode = 'metrics'
+    FM._viewMode = '1x'
 
     if (window.navigateTo) window.navigateTo('facial-analysis')
     setTimeout(function () {
       FM._render()
-      setTimeout(FM._initCanvas, 50)
-      if (FM._viewMode === '2x') setTimeout(FM._initCanvas2, 100)
     }, 100)
 
     // Health check da API Python (uma vez por init)
