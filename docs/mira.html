@@ -267,6 +267,12 @@
     <a href="#validations">Validações</a>
     <a href="#bugs">Bugs históricos</a>
 
+    <a class="section">Dashboard</a>
+    <a href="#config-page">Pagina de Config</a>
+    <a href="#config-premium">Efeitos Premium</a>
+    <a href="#config-perf">Performance</a>
+    <a href="#global-perf">Otimizacao Global</a>
+
     <a class="section">Operação</a>
     <a href="#migrations">Migrations</a>
     <a href="#files">Arquivos</a>
@@ -2165,9 +2171,158 @@ n8n/mira-anomaly-workflow.json         — 🎯 cron 22h</pre>
   </tr>
 </table>
 
+<h2>Pagina de Configuracao (Dashboard)</h2>
+
+<p>A Mira possui uma pagina de configuracao integrada ao dashboard ClinicAI, acessivel em <b>Sidebar > Mira > Configuracao</b>. Implementada em <code>js/ui/mira-config.ui.js</code>.</p>
+
+<h3>Arquitetura da pagina</h3>
+
+<table>
+  <tr><th>Camada</th><th>Arquivo</th><th>Funcao</th></tr>
+  <tr><td><b>UI</b></td><td><code>js/ui/mira-config.ui.js</code></td><td>Renderizacao, tabs, modais, animacoes</td></tr>
+  <tr><td><b>Repository</b></td><td><code>js/repositories/mira.repository.js</code></td><td>Queries Supabase (RPCs + tabelas diretas)</td></tr>
+  <tr><td><b>Service</b></td><td><code>js/services/mira.service.js</code></td><td>Intent parsing, formatacao, orquestracao</td></tr>
+</table>
+
+<h3>3 Tabs</h3>
+
+<h4>1. Visao Geral</h4>
+<ul>
+  <li><b>6 KPIs</b>: Profissionais ativos, Queries hoje/semana/mes, Tempo medio, Taxa de erro</li>
+  <li><b>Top Intents</b>: barras horizontais com gradiente dourado (30 dias)</li>
+  <li><b>Sparkline</b>: queries por dia com hover scale + tooltip (14 dias)</li>
+  <li><b>Voice</b>: contagem de transcricoes de audio do mes</li>
+</ul>
+
+<h4>2. Profissionais</h4>
+<ul>
+  <li>Tabela com nome, telefone, escopo (OWN/FULL), badges de permissao</li>
+  <li><b>Cadastrar</b>: modal com dropdown de profissionais, telefone auto, escopo, checkboxes de permissao</li>
+  <li><b>Editar</b>: modal para alterar escopo e permissoes (usa <code>wa_pro_register_number</code> upsert)</li>
+  <li><b>Remover</b>: modal de confirmacao com soft-delete</li>
+</ul>
+
+<h4>3. Logs de Uso</h4>
+<ul>
+  <li>Tabela paginada (30/pagina) com filtros por telefone e intent</li>
+  <li>Colunas: quando, profissional, intent (badge), query, tempo de resposta</li>
+  <li>Dados de <code>wa_pro_audit_log</code> com join em <code>professional_profiles</code></li>
+</ul>
+
+<h3>Efeitos Premium (WOW)</h3>
+
+<table>
+  <tr><th>Efeito</th><th>Implementacao</th></tr>
+  <tr><td>Skeleton Loader</td><td>Shimmer animado durante carregamento (<code>@keyframes mcShimmer</code>)</td></tr>
+  <tr><td>KPI Hover</td><td>Glow dourado + translateY(-2px) + box-shadow 24px</td></tr>
+  <tr><td>Modal</td><td>Backdrop blur(4px) + scale/fade animation + Escape key</td></tr>
+  <tr><td>Fade-up Staggered</td><td>Cada elemento com <code>animation-delay</code> incremental (40-60ms)</td></tr>
+  <tr><td>Sparkline</td><td>Hover scaleY(1.08) + cor mais intensa</td></tr>
+  <tr><td>Dot Pulsante</td><td>Indicador verde com <code>@keyframes mcPulse</code></td></tr>
+  <tr><td>Toast</td><td>Slide-in/slide-out lateral com icone contextual</td></tr>
+  <tr><td>Botoes</td><td>Shadow glow + hover lift + gradientes</td></tr>
+  <tr><td>Focus Ring</td><td>Box-shadow 3px dourado em todos os inputs</td></tr>
+  <tr><td>Tabelas</td><td>Hover amarelo suave (#fefce8)</td></tr>
+</table>
+
+<h3>Otimizacao de Performance</h3>
+
+<p>O <code>dashboardStats()</code> faz <b>8 queries ao Supabase em paralelo</b> via <code>Promise.all</code>, reduzindo o tempo de carregamento de ~3s para ~400ms:</p>
+
+<pre><code>var results = await Promise.all([
+  sb.rpc('wa_pro_list_numbers'),                              // numeros
+  sb.from('wa_pro_rate_limit').select('query_count')...,      // rate limit
+  sb.from('wa_pro_audit_log').select(count)...,               // count semana
+  sb.from('wa_pro_audit_log').select(count)...,               // count mes
+  sb.from('wa_pro_audit_log').select('intent,response_ms')...,// detalhado
+  sb.from('wa_pro_audit_log').select('intent')...,            // intents 30d
+  sb.from('wa_pro_audit_log').select('created_at')...,        // by day
+  sb.from('wa_pro_transcripts').select(count)...,             // voice
+])</code></pre>
+
+<p>A query de <code>response_ms</code> + <code>error_rate</code> foi unificada numa unica request (antes eram 2 separadas).</p>
+
+<h3>RLS e Seguranca</h3>
+
+<table>
+  <tr><th>Operacao</th><th>Mecanismo</th><th>Motivo</th></tr>
+  <tr><td>Listar numeros</td><td><code>wa_pro_list_numbers</code> (RPC SECURITY DEFINER)</td><td><code>wa_numbers</code> tem RLS service_role only</td></tr>
+  <tr><td>Cadastrar/Editar</td><td><code>wa_pro_register_number</code> (RPC SECURITY DEFINER)</td><td>Upsert bypassa RLS</td></tr>
+  <tr><td>Audit log</td><td>Query direta em <code>wa_pro_audit_log</code></td><td>RLS permite <code>is_admin()</code></td></tr>
+  <tr><td>Rate limit</td><td>Query direta em <code>wa_pro_rate_limit</code></td><td>RLS permite <code>is_admin()</code></td></tr>
+</table>
+
+<h2>Otimizacao Global de Performance (Promise.all)</h2>
+
+<p>Auditoria completa de todas as paginas do sistema (2026-04-13). Todas as paginas com awaits sequenciais independentes foram paralelizadas:</p>
+
+<table>
+  <tr><th>Arquivo</th><th>Funcao</th><th>Antes</th><th>Depois</th><th>Economia estimada</th></tr>
+  <tr>
+    <td><code>mira.repository.js</code></td>
+    <td><code>dashboardStats()</code></td>
+    <td>9 awaits sequenciais (~3s)</td>
+    <td>Promise.all 8 queries</td>
+    <td><b>~2.5s</b></td>
+  </tr>
+  <tr>
+    <td><code>mira-config.ui.js</code></td>
+    <td><code>_loadNumbers()</code></td>
+    <td>2 awaits sequenciais</td>
+    <td>Promise.all</td>
+    <td><b>~300ms</b></td>
+  </tr>
+  <tr>
+    <td><code>export.service.js</code></td>
+    <td><code>pdf()</code></td>
+    <td>2 script loads sequenciais</td>
+    <td>Promise.all</td>
+    <td><b>~200ms</b></td>
+  </tr>
+  <tr>
+    <td><code>legal-documents.service.js</code></td>
+    <td><code>createRequest()</code></td>
+    <td>loadTemplates + loadClinicData sequenciais</td>
+    <td>Promise.all</td>
+    <td><b>~300ms</b></td>
+  </tr>
+  <tr>
+    <td><code>pluggy.service.js</code></td>
+    <td><code>openConnectWidget()</code></td>
+    <td>loadWidget + getConnectToken sequenciais</td>
+    <td>Promise.all</td>
+    <td><b>~500ms</b></td>
+  </tr>
+  <tr>
+    <td><code>templates-editor.ui.js</code></td>
+    <td><code>init()</code></td>
+    <td>list() + wa_tag_counts sequenciais</td>
+    <td>Promise.all</td>
+    <td><b>~300ms</b></td>
+  </tr>
+  <tr>
+    <td><code>birthday.ui.js</code></td>
+    <td><code>mount()</code></td>
+    <td>loadAll + loadShortLinks sequenciais</td>
+    <td>Promise.all</td>
+    <td><b>~200ms</b></td>
+  </tr>
+</table>
+
+<h4>Paginas ja otimizadas (sem acao necessaria)</h4>
+<ul>
+  <li><code>cashflow.ui.js</code> — ja usa Promise.all (7 queries paralelas)</li>
+  <li><code>analytics.ui.js</code> — ja usa Promise.all (5 RPCs paralelas)</li>
+  <li><code>medical-record-editor.ui.js</code> — ja usa Promise.all</li>
+  <li><code>automations.ui.js</code> — single await (nada pra paralelizar)</li>
+  <li><code>inbox.ui.js</code> — awaits dependentes (retry pattern correto)</li>
+  <li><code>short-links.ui.js</code> — awaits dependentes (create → reload)</li>
+  <li><code>broadcast.ui.js</code> — single await</li>
+</ul>
+
 <hr>
 
-<p class="dim small">Documento atualizado em 2026-04-13. Versao da Mira: <b>WOW v1</b> (SSOT + Tier 2 + 4 cron proativos + multi-turn + OFX finance + call_patient + health check). Commits principais: <code>032ef4a</code> (SSOT), <code>e400b36</code> (hardening), <code>fcc92c5</code> (WOW). Tests: 69/69.</p>
+<p class="dim small">Documento atualizado em 2026-04-13. Versao da Mira: <b>WOW v2</b> (SSOT + Tier 2 + 4 cron proativos + multi-turn + OFX finance + call_patient + health check + <b>pagina de config premium + Promise.all global</b>). Commits principais: <code>032ef4a</code> (SSOT), <code>e400b36</code> (hardening), <code>fcc92c5</code> (WOW), <code>fcacaa1</code> (performance). Tests: 69/69.</p>
 
 </section>
 

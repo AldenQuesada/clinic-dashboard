@@ -424,10 +424,12 @@
     _mounted = true
     _loading = true
     render()
-    await window.BirthdayService.loadAll()
-    if (window.BirthdayTemplatesUI && window.BirthdayTemplatesUI.loadShortLinks) {
-      await window.BirthdayTemplatesUI.loadShortLinks()
-    }
+    await Promise.all([
+      window.BirthdayService.loadAll(),
+      window.BirthdayTemplatesUI && window.BirthdayTemplatesUI.loadShortLinks
+        ? window.BirthdayTemplatesUI.loadShortLinks()
+        : Promise.resolve(),
+    ])
     _loading = false
     render()
   }

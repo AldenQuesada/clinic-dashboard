@@ -136,17 +136,14 @@
     if (_loading) return
     _loading = true
     _render()
-    if (window.TemplatesRepository) {
-      var r = await TemplatesRepository.list()
-      if (r.ok) { _templates = r.data || []; _dirty = {} }
-    }
-    // Carregar contagem de leads por tag
-    if (window._sbShared) {
-      try {
-        var rc = await window._sbShared.rpc('wa_tag_counts')
-        if (rc.data) _tagCounts = rc.data
-      } catch(e) {}
-    }
+    // Carregar templates + contagem de tags em paralelo
+    var results = await Promise.all([
+      window.TemplatesRepository ? TemplatesRepository.list() : Promise.resolve({ ok: false }),
+      window._sbShared ? window._sbShared.rpc('wa_tag_counts').catch(function () { return {} }) : Promise.resolve({}),
+    ])
+    var r = results[0]
+    if (r.ok) { _templates = r.data || []; _dirty = {} }
+    if (results[1].data) _tagCounts = results[1].data
     _loading = false
     if (_templates.length && !_selectedId) _selectedId = _templates[0].id
     _render()

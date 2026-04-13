@@ -117,8 +117,7 @@
       throw new Error('config.columns e config.data são obrigatórios')
     }
 
-    await _loadScript('jspdf')
-    await _loadScript('autotable')
+    await Promise.all([_loadScript('jspdf'), _loadScript('autotable')])
 
     const { jsPDF } = window.jspdf
     const orientation = config.orientation || 'portrait'

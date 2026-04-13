@@ -222,13 +222,13 @@
       }
     }
 
-    // Carregar template se necessario
-    if (!_templates) await loadTemplates()
+    // Carregar template + dados clinica em paralelo
+    await Promise.all([
+      !_templates ? loadTemplates() : Promise.resolve(),
+      _loadClinicData(),
+    ])
     var tmpl = (_templates || []).find(function (t) { return t.id === templateId })
     if (!tmpl) return { ok: false, error: 'Template nao encontrado' }
-
-    // Garantir dados da clinica carregados
-    await _loadClinicData()
 
     // Se template tem profissional definido, usar ele; senao, do agendamento
     if (tmpl.professional_id && !apptOrOpts.professional_id && apptOrOpts.profissionalIdx === undefined) {

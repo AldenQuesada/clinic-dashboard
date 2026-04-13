@@ -84,17 +84,19 @@
    */
   async function openConnectWidget(opts) {
     opts = opts || {}
-    await loadWidget()
+
+    // Carrega widget + token em paralelo
+    var tokenPromise = opts.connectToken
+      ? Promise.resolve(opts.connectToken)
+      : getConnectToken(opts.clientUserId)
+    await Promise.all([loadWidget(), tokenPromise])
 
     if (!window.PluggyConnect) {
       throw new Error('PluggyConnect nao disponivel apos load')
     }
 
-    var token = opts.connectToken
-    if (!token) {
-      token = await getConnectToken(opts.clientUserId)
-      if (!token) throw new Error('Nao foi possivel gerar connect token. Configure o proxy n8n.')
-    }
+    var token = await tokenPromise
+    if (!token) throw new Error('Nao foi possivel gerar connect token. Configure o proxy n8n.')
 
     var pluggy = new window.PluggyConnect({
       connectToken: token,
