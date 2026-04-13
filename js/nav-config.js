@@ -162,7 +162,7 @@
       pages: [
         { page: 'patients-all',                label: 'Pacientes',                    breadcrumb: 'Pacientes > Pacientes' },
         { page: 'orcamentos',                  label: 'Orçamentos',                   breadcrumb: 'Pacientes > Orçamentos' },
-        { page: 'patients-prontuario',         label: 'Prontuario Comercial',         breadcrumb: 'Pacientes > Prontuario Comercial',       roles: [ROLES.OWNER, ROLES.ADMIN, ROLES.THERAPIST] },
+        { page: 'patients-prontuario',         label: 'Prontuario Clinico',           breadcrumb: 'Pacientes > Prontuario Clinico',         roles: [ROLES.OWNER, ROLES.ADMIN, ROLES.THERAPIST] },
         { page: 'patients-docs',               label: 'Documentos do Paciente',       breadcrumb: 'Pacientes > Documentos do Paciente' },
       ],
     },

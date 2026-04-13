@@ -135,6 +135,26 @@
     }
   }
 
+  // ── search (full-text server-side) ─────────────────────────────
+  /**
+   * @param {string} patientId
+   * @param {string} query
+   * @param {number} [limit=20]
+   */
+  async function search(patientId, query, limit = 20) {
+    try {
+      const { data, error } = await _sb().rpc('mr_search', {
+        p_patient_id: patientId,
+        p_query:      query,
+        p_limit:      limit,
+      })
+      if (error) return _err(error.message || String(error))
+      return _ok(data)
+    } catch (err) {
+      return _err(err.message || String(err))
+    }
+  }
+
   // ── Exposição global ──────────────────────────────────────────
   window.MedicalRecordsRepository = Object.freeze({
     listForPatient,
@@ -142,6 +162,7 @@
     update,
     remove,
     getPatientSummary,
+    search,
   })
 
 })()
