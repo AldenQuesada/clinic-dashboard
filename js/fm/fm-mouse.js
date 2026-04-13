@@ -23,16 +23,14 @@
     if (cached && cached.url === url && cached.img.complete) {
       FM._img = cached.img
       _onImgReady()
-      return
+    } else {
+      FM._img = new Image()
+      FM._img.onload = function () {
+        FM._imgCache[ang] = { url: url, img: FM._img }
+        _onImgReady()
+      }
+      FM._img.src = url
     }
-
-    FM._img = new Image()
-    FM._img.onload = function () {
-      FM._imgCache[ang] = { url: url, img: FM._img }
-      _onImgReady()
-    }
-    FM._img.src = url
-    return
 
     function _onImgReady() {
       var area = document.getElementById('fmCanvasArea')
