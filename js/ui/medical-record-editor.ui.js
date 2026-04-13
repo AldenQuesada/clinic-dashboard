@@ -222,7 +222,9 @@
           ${rec.title ? `<span style="font-size:13px;font-weight:600;color:var(--text-primary)">${_esc(rec.title)}</span>` : ''}
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-          ${canEdit   ? `<button title="Editar" onclick="MedicalRecordEditorUI._startEdit('${_esc(containerId)}','${_esc(rec.id)}')" style="width:28px;height:28px;border:1.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">${ICONS.edit}</button>` : ''}
+          ${rec.title && rec.title.includes('[ASSINADO]') ? `<span title="Registro assinado digitalmente" style="width:28px;height:28px;border:1.5px solid #10B98140;border-radius:6px;background:#F0FDF4;color:#10B981;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>` : ''}
+          ${canEdit && !(rec.title && rec.title.includes('[ASSINADO]')) ? `<button title="Editar" onclick="MedicalRecordEditorUI._startEdit('${_esc(containerId)}','${_esc(rec.id)}')" style="width:28px;height:28px;border:1.5px solid var(--border);border-radius:6px;background:transparent;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='transparent'">${ICONS.edit}</button>` : ''}
+          ${canEdit && !(rec.title && rec.title.includes('[ASSINADO]')) && window.ProntuarioWow ? `<button title="Assinar" onclick="ProntuarioWow.signRecord('${_esc(rec.id)}').then(function(){location.reload()})" style="width:28px;height:28px;border:1.5px solid #10B98140;border-radius:6px;background:transparent;color:#10B981;cursor:pointer;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='#F0FDF4'" onmouseout="this.style.background='transparent'"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>` : ''}
           ${canDelete ? `<button title="Excluir" onclick="MedicalRecordEditorUI._confirmDelete('${_esc(containerId)}','${_esc(rec.id)}')" style="width:28px;height:28px;border:1.5px solid var(--border);border-radius:6px;background:transparent;color:#EF4444;cursor:pointer;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='#FEF2F2'" onmouseout="this.style.background='transparent'">${ICONS.trash}</button>` : ''}
         </div>
       </div>
@@ -303,6 +305,7 @@
 
   // ── Render: Tabs ───────────────────────────────────────────────
   const TABS = [
+    { id: 'timeline', label: 'Timeline', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
     { id: 'registros', label: 'Registros', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
     { id: 'procedimentos', label: 'Procedimentos', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
     { id: 'documentos', label: 'Documentos', icon: '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>' },
@@ -868,14 +871,32 @@
     if (!container) return
 
     const state = _state(containerId)
-    if (!state.activeTab) state.activeTab = 'registros'
+    if (!state.activeTab) state.activeTab = 'timeline'
+
+    // Use WOW header if available, fallback to basic summary
+    var headerHtml = ''
+    var alertsHtml = ''
+    if (window.ProntuarioWow) {
+      headerHtml = window.ProntuarioWow.renderPatientHeader(state.patientId, state.patientName)
+    } else {
+      headerHtml = _renderSummary(state)
+    }
 
     container.innerHTML = `
       <div id="mr-root-${_esc(containerId)}">
-        <div id="mr-summary-${_esc(containerId)}">${_renderSummary(state)}</div>
+        <div id="mr-header-${_esc(containerId)}">${headerHtml}</div>
+        <div id="mr-alerts-${_esc(containerId)}"></div>
         ${_renderTabs(state, containerId)}
         <div id="mr-tab-content-${_esc(containerId)}"></div>
       </div>`
+
+    // Load alerts async
+    if (window.ProntuarioWow) {
+      window.ProntuarioWow.renderClinicalAlerts(state.patientId).then(function(html) {
+        var el = document.getElementById('mr-alerts-' + containerId)
+        if (el) el.innerHTML = html
+      })
+    }
 
     _renderTabContent(containerId)
   }
@@ -885,8 +906,23 @@
     var el = document.getElementById('mr-tab-content-' + containerId)
     if (!el) return
 
-    if (state.activeTab === 'registros') {
-      el.innerHTML = _renderTemplateButtons(containerId)
+    if (state.activeTab === 'timeline') {
+      // WOW #1: Timeline Unificada
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Carregando timeline...</div>'
+      if (window.ProntuarioWow) {
+        el.innerHTML = await window.ProntuarioWow.renderUnifiedTimeline(state.patientId, state.patientName)
+      } else {
+        el.innerHTML = '<div style="padding:20px;color:var(--text-muted)">Modulo Timeline nao carregado.</div>'
+      }
+    } else if (state.activeTab === 'registros') {
+      // WOW #5 + #6: Prescricao + SOAP no topo dos registros
+      var wowForms = ''
+      if (window.ProntuarioWow) {
+        wowForms = window.ProntuarioWow.renderSOAPForm(containerId, state.patientId)
+          + window.ProntuarioWow.renderPrescriptionForm(containerId, state.patientId, state.patientName)
+      }
+      el.innerHTML = wowForms
+        + _renderTemplateButtons(containerId)
         + _renderNewForm(state, containerId)
         + _renderSearchBar(state, containerId)
         + _renderTypeFilter(state, containerId)
@@ -898,14 +934,24 @@
       el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Carregando procedimentos...</div>'
       el.innerHTML = await _renderProcedimentosTab(state)
     } else if (state.activeTab === 'fotos') {
-      el.innerHTML = _renderFotosTab(state)
+      // WOW #4 + #9: Galeria Before/After no topo
+      var galleryHtml = ''
+      if (window.ProntuarioWow) {
+        galleryHtml = window.ProntuarioWow.renderBeforeAfterGallery(state.patientId)
+      }
+      el.innerHTML = galleryHtml + _renderFotosTab(state)
       _loadAttachments(state.patientId)
     } else if (state.activeTab === 'whatsapp') {
       el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Carregando mensagens...</div>'
       el.innerHTML = await _renderWhatsappTab(state)
     } else if (state.activeTab === 'financeiro') {
       el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Carregando financeiro...</div>'
-      el.innerHTML = await _renderFinanceiroTab(state)
+      // WOW #7: Financeiro Completo com LTV e grafico
+      if (window.ProntuarioWow) {
+        el.innerHTML = await window.ProntuarioWow.renderFinanceComplete(state.patientId)
+      } else {
+        el.innerHTML = await _renderFinanceiroTab(state)
+      }
     } else if (state.activeTab === 'quiz') {
       el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">Carregando avaliacoes...</div>'
       el.innerHTML = await _renderQuizTab(state)
@@ -918,8 +964,15 @@
   }
 
   function _reRenderSummary(containerId) {
-    const el = document.getElementById(`mr-summary-${containerId}`)
-    if (el) el.innerHTML = _renderSummary(_state(containerId))
+    var state = _state(containerId)
+    // Use WOW header if available
+    if (window.ProntuarioWow) {
+      var el = document.getElementById('mr-header-' + containerId)
+      if (el) el.innerHTML = window.ProntuarioWow.renderPatientHeader(state.patientId, state.patientName)
+    } else {
+      var el = document.getElementById('mr-summary-' + containerId)
+      if (el) el.innerHTML = _renderSummary(state)
+    }
   }
 
   // ── Ações públicas ────────────────────────────────────────────
