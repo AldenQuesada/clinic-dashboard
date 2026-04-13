@@ -801,9 +801,9 @@
     var ctx2 = canvas2.getContext('2d')
     var img2 = new Image()
     img2.onload = function () {
-      var area = document.getElementById('fmCanvasArea')
-      var maxW = area ? (area.clientWidth / 2 - 16) : 400
-      var maxH = area ? area.clientHeight : 600
+      // Match canvas1 dimensions for consistent layout
+      var maxW = FM._imgW || 400
+      var maxH = FM._imgH || 600
 
       var scale = Math.min(maxW / img2.width, maxH / img2.height)
       var w = Math.round(img2.width * scale)
