@@ -693,7 +693,13 @@
       if (btn) { btn.disabled = true; btn.textContent = 'Salvando...' }
 
       var repo = window.MiraRepository
-      var r = await repo.updateNumber(numberId, { access_scope: scope, permissions: permsNew })
+      var r = await repo.updateNumber(numberId, {
+        phone: num.phone,
+        professional_id: num.professional_id,
+        label: num.label,
+        access_scope: scope,
+        permissions: permsNew,
+      })
       if (r.ok && r.data && r.data.ok) {
         _toast('Atualizado!', 'ok')
         document.getElementById('mcModalBackdrop')?.remove()

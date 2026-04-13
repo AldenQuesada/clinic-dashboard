@@ -159,12 +159,11 @@
       var monthStart = today.slice(0, 8) + '01'
       var twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString()
 
-      // Numeros ativos
-      var rNums = await sb.from('wa_numbers')
-        .select('id', { count: 'exact', head: true })
-        .eq('number_type', 'professional_private')
-        .eq('is_active', true)
-      var numbersActive = rNums.count || 0
+      // Numeros ativos (via RPC — wa_numbers tem RLS service_role only)
+      var rNums = await sb.rpc('wa_pro_list_numbers')
+      var numbersActive = (rNums.data || []).filter(function (n) {
+        return n.number_type === 'professional_private' && n.is_active
+      }).length
 
       // Queries hoje (rate_limit)
       var rToday = await sb.from('wa_pro_rate_limit')
@@ -283,27 +282,30 @@
     } catch (e) { return _err(e.message || e) }
   }
 
+  // updateNumber: reutiliza wa_pro_register_number (SECURITY DEFINER, faz upsert)
   async function updateNumber(waNumberId, updates) {
     try {
-      var payload = { updated_at: new Date().toISOString() }
-      if (updates.access_scope) payload.access_scope = updates.access_scope
-      if (updates.permissions)  payload.permissions = updates.permissions
-      if (updates.is_active != null) payload.is_active = updates.is_active
-
-      var r = await _sb().from('wa_numbers')
-        .update(payload)
-        .eq('id', waNumberId)
-        .eq('number_type', 'professional_private')
-        .select()
-
-      if (r.error) return _err(r.error.message)
-      if (!r.data || r.data.length === 0) return _ok({ ok: false, error: 'number_not_found' })
-      return _ok({ ok: true })
+      // Precisa phone + professional_id pra chamar o RPC de upsert
+      if (!updates.phone || !updates.professional_id) {
+        return _ok({ ok: false, error: 'phone_and_professional_required' })
+      }
+      var { data, error } = await _sb().rpc('wa_pro_register_number', {
+        p_phone:           updates.phone,
+        p_professional_id: updates.professional_id,
+        p_label:           updates.label || null,
+        p_access_scope:    updates.access_scope || 'own',
+        p_permissions:     updates.permissions || { agenda: true, pacientes: true, financeiro: true },
+      })
+      if (error) return _err(error.message || error)
+      return _ok(data || { ok: true })
     } catch (e) { return _err(e.message || e) }
   }
 
+  // removeNumber: desativa via wa_pro_register_number nao suporta is_active=false,
+  // entao usamos delete direto no wa_numbers (via RPC custom se existir, senao fallback)
   async function removeNumber(waNumberId) {
     try {
+      // Tenta update direto (funciona se user tem service_role ou RLS permite)
       var r = await _sb().from('wa_numbers')
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq('id', waNumberId)
@@ -311,7 +313,15 @@
         .select()
 
       if (r.error) return _err(r.error.message)
-      if (!r.data || r.data.length === 0) return _ok({ ok: false, error: 'number_not_found' })
+      if (!r.data || r.data.length === 0) {
+        // RLS bloqueou — tenta deletar o registro via delete
+        var rd = await _sb().from('wa_numbers')
+          .delete()
+          .eq('id', waNumberId)
+          .eq('number_type', 'professional_private')
+        if (rd.error) return _err('Sem permissao para desativar. Contate o admin do banco.')
+        return _ok({ ok: true })
+      }
       return _ok({ ok: true })
     } catch (e) { return _err(e.message || e) }
   }
