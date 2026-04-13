@@ -20,6 +20,7 @@
   var _loading     = false
   var _selectedId  = null
   var _activeTab   = 'pre_agendamento'
+  var _tagCounts   = {}
   var _dirty       = {}
   var _saving      = {}
 
@@ -139,6 +140,13 @@
       var r = await TemplatesRepository.list()
       if (r.ok) { _templates = r.data || []; _dirty = {} }
     }
+    // Carregar contagem de leads por tag
+    if (window._sbShared) {
+      try {
+        var rc = await window._sbShared.rpc('wa_tag_counts')
+        if (rc.data) _tagCounts = rc.data
+      } catch(e) {}
+    }
     _loading = false
     if (_templates.length && !_selectedId) _selectedId = _templates[0].id
     _render()
@@ -184,9 +192,10 @@
     cats.forEach(function (c) {
       var meta = _catMeta(c)
       var active = _activeTab === c ? ' te-tab-active' : ''
-      var count = _templates.filter(function(t){return (t.category||'pre_agendamento')===c}).length
+      var tplCount = _templates.filter(function(t){return (t.category||'pre_agendamento')===c}).length
+      var leadCount = _tagCounts[c] || 0
       html += '<button class="te-tab' + active + '" data-action="tab" data-tab="' + c + '">' +
-        meta.label + ' <span class="te-tab-count">' + count + '</span></button>'
+        meta.label + ' <span class="te-tab-count" title="' + leadCount + ' leads / ' + tplCount + ' msgs">' + leadCount + '</span></button>'
     })
     html += '</div>'
     return html
