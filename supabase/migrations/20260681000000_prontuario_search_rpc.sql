@@ -30,7 +30,10 @@ BEGIN
       mr.id, mr.record_type, mr.title, mr.content,
       mr.is_confidential, mr.professional_id,
       mr.created_at, mr.updated_at,
-      p.full_name AS professional_name,
+      CASE WHEN p.id IS NOT NULL
+        THEN (p.first_name || ' ' || COALESCE(p.last_name, ''))
+        ELSE NULL
+      END AS professional_name,
       (mr.professional_id = v_uid) AS is_mine,
       COUNT(*) OVER() AS total_count
     FROM public.medical_records mr
