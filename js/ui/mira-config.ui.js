@@ -110,10 +110,9 @@
   async function _loadNumbers() {
     var repo = window.MiraRepository
     if (!repo) return
-    var r = await repo.listNumbers()
-    if (r.ok) _numbers = (r.data || []).filter(function (n) { return n.number_type === 'professional_private' })
-    var rp = await repo.listProfessionals()
-    if (rp.ok) _profOptions = (rp.data || []).filter(function (p) {
+    var results = await Promise.all([repo.listNumbers(), repo.listProfessionals()])
+    if (results[0].ok) _numbers = (results[0].data || []).filter(function (n) { return n.number_type === 'professional_private' })
+    if (results[1].ok) _profOptions = (results[1].data || []).filter(function (p) {
       var phone = (p.whatsapp || p.telefone || p.phone || '').toString().trim()
       return phone && phone.replace(/\D/g, '').length >= 10
     })

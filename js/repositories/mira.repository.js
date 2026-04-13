@@ -158,91 +158,57 @@
       var weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
       var monthStart = today.slice(0, 8) + '01'
       var twoWeeksAgo = new Date(Date.now() - 14 * 86400000).toISOString()
+      var monthAgo = new Date(Date.now() - 30 * 86400000).toISOString()
 
-      // Numeros ativos (via RPC — wa_numbers tem RLS service_role only)
-      var rNums = await sb.rpc('wa_pro_list_numbers')
-      var numbersActive = (rNums.data || []).filter(function (n) {
-        return n.number_type === 'professional_private' && n.is_active
-      }).length
+      // Todas as queries em paralelo (9 → 1 round-trip efetivo)
+      var results = await Promise.all([
+        sb.rpc('wa_pro_list_numbers'),                                                                           // 0: numeros
+        sb.from('wa_pro_rate_limit').select('query_count').eq('date', today),                                    // 1: rate limit hoje
+        sb.from('wa_pro_audit_log').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo),     // 2: count semana
+        sb.from('wa_pro_audit_log').select('id', { count: 'exact', head: true }).gte('created_at', monthStart),  // 3: count mes
+        sb.from('wa_pro_audit_log').select('intent,response_ms,success').gte('created_at', weekAgo).limit(1000), // 4: semana detalhado (ms + err + intents)
+        sb.from('wa_pro_audit_log').select('intent').gte('created_at', monthAgo).not('intent', 'is', null).neq('intent', 'unknown').limit(2000), // 5: intents 30d
+        sb.from('wa_pro_audit_log').select('created_at').gte('created_at', twoWeeksAgo).limit(5000),             // 6: by day 14d
+        sb.from('wa_pro_transcripts').select('id', { count: 'exact', head: true }).gte('created_at', monthStart),// 7: voice
+      ])
 
-      // Queries hoje (rate_limit)
-      var rToday = await sb.from('wa_pro_rate_limit')
-        .select('query_count')
-        .eq('date', today)
-      var queriesToday = (rToday.data || []).reduce(function (s, r) { return s + (r.query_count || 0) }, 0)
+      // 0: numeros ativos
+      var numbersActive = (results[0].data || []).filter(function (n) { return n.number_type === 'professional_private' && n.is_active }).length
 
-      // Queries semana
-      var rWeek = await sb.from('wa_pro_audit_log')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', weekAgo)
-      var queriesWeek = rWeek.count || 0
+      // 1: queries hoje
+      var queriesToday = (results[1].data || []).reduce(function (s, r) { return s + (r.query_count || 0) }, 0)
 
-      // Queries mes
-      var rMonth = await sb.from('wa_pro_audit_log')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', monthStart)
-      var queriesMonth = rMonth.count || 0
+      // 2-3: counts
+      var queriesWeek = results[2].count || 0
+      var queriesMonth = results[3].count || 0
 
-      // Avg response ms (7 dias)
-      var rMs = await sb.from('wa_pro_audit_log')
-        .select('response_ms')
-        .gte('created_at', weekAgo)
-        .not('response_ms', 'is', null)
-        .limit(500)
-      var msArr = (rMs.data || []).map(function (r) { return r.response_ms }).filter(Boolean)
+      // 4: avg ms + error rate (da mesma query)
+      var weekRows = results[4].data || []
+      var msArr = weekRows.map(function (r) { return r.response_ms }).filter(Boolean)
       var avgMs = msArr.length > 0 ? Math.round(msArr.reduce(function (s, v) { return s + v }, 0) / msArr.length) : 0
-
-      // Error rate (7 dias)
-      var rErr = await sb.from('wa_pro_audit_log')
-        .select('success')
-        .gte('created_at', weekAgo)
-        .limit(1000)
-      var errRows = rErr.data || []
-      var errorRate = errRows.length > 0
-        ? Math.round(1000 * errRows.filter(function (r) { return r.success === false }).length / errRows.length) / 10
+      var errorRate = weekRows.length > 0
+        ? Math.round(1000 * weekRows.filter(function (r) { return r.success === false }).length / weekRows.length) / 10
         : 0
 
-      // Top intents (30 dias)
-      var rIntents = await sb.from('wa_pro_audit_log')
-        .select('intent')
-        .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString())
-        .not('intent', 'is', null)
-        .neq('intent', 'unknown')
-        .limit(2000)
+      // 5: top intents
       var intentMap = {}
-      ;(rIntents.data || []).forEach(function (r) {
-        if (r.intent) intentMap[r.intent] = (intentMap[r.intent] || 0) + 1
-      })
+      ;(results[5].data || []).forEach(function (r) { if (r.intent) intentMap[r.intent] = (intentMap[r.intent] || 0) + 1 })
       var topIntents = Object.keys(intentMap).map(function (k) { return { intent: k, total: intentMap[k] } })
         .sort(function (a, b) { return b.total - a.total }).slice(0, 8)
 
-      // Queries by day (14 dias)
-      var rDays = await sb.from('wa_pro_audit_log')
-        .select('created_at')
-        .gte('created_at', twoWeeksAgo)
-        .limit(5000)
+      // 6: queries by day
       var dayMap = {}
-      ;(rDays.data || []).forEach(function (r) {
-        var d = (r.created_at || '').slice(0, 10)
-        if (d) dayMap[d] = (dayMap[d] || 0) + 1
-      })
+      ;(results[6].data || []).forEach(function (r) { var d = (r.created_at || '').slice(0, 10); if (d) dayMap[d] = (dayMap[d] || 0) + 1 })
       var queriesByDay = Object.keys(dayMap).sort().map(function (d) { return { day: d, total: dayMap[d] } })
 
-      // Voice count (mes)
-      var rVoice = await sb.from('wa_pro_transcripts')
-        .select('id', { count: 'exact', head: true })
-        .gte('created_at', monthStart)
-      var voiceCount = rVoice.count || 0
+      // 7: voice
+      var voiceCount = results[7].count || 0
 
       return _ok({
-        numbers_active: numbersActive,
-        queries_today: queriesToday,
-        queries_week: queriesWeek,
-        queries_month: queriesMonth,
-        avg_response_ms: avgMs,
-        error_rate: errorRate,
-        top_intents: topIntents,
-        queries_by_day: queriesByDay,
+        numbers_active: numbersActive, queries_today: queriesToday,
+        queries_week: queriesWeek, queries_month: queriesMonth,
+        avg_response_ms: avgMs, error_rate: errorRate,
+        top_intents: topIntents, queries_by_day: queriesByDay,
         voice_count_month: voiceCount,
       })
     } catch (e) { return _err(e.message || e) }
