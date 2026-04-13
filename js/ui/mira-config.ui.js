@@ -321,6 +321,7 @@
         + '<td>' + permBadges + '</td>'
         + '<td style="white-space:nowrap">'
           + '<button class="mc-btn-icon mc-prof-edit" data-id="' + n.id + '" title="Editar">' + _feather('edit-2', 14) + '</button>'
+          + '<button class="mc-btn-icon mc-prof-reset-quota" data-prof-id="' + (n.professional_id || '') + '" data-name="' + _esc(n.professional_name || n.label || '') + '" title="Resetar quota do dia" style="color:#F59E0B">' + _feather('refresh-cw', 14) + '</button>'
           + '<button class="mc-btn-icon mc-btn-icon-danger mc-prof-remove" data-id="' + n.id + '" data-name="' + _esc(n.professional_name || n.label || '') + '" title="Remover">' + _feather('trash-2', 14) + '</button>'
         + '</td>'
         + '</tr>'
@@ -394,6 +395,9 @@
     _root.querySelectorAll('.mc-prof-remove').forEach(function (btn) {
       btn.addEventListener('click', function () { _confirmRemove(btn.getAttribute('data-id'), btn.getAttribute('data-name')) })
     })
+    _root.querySelectorAll('.mc-prof-reset-quota').forEach(function (btn) {
+      btn.addEventListener('click', function () { _resetQuota(btn.getAttribute('data-prof-id'), btn.getAttribute('data-name')) })
+    })
 
     var logSearch = document.getElementById('mcLogSearch')
     if (logSearch) {
@@ -414,6 +418,23 @@
       var el = document.getElementById(id)
       if (el) el.addEventListener('keydown', function (e) { if (e.key === 'Enter' && logSearch) logSearch.click() })
     })
+  }
+
+  async function _resetQuota(profId, name) {
+    if (!profId) return
+    if (!confirm('Resetar a quota diaria de ' + name + '?')) return
+    try {
+      var sb = window._sbShared
+      if (!sb) throw new Error('Supabase indisponivel')
+      var today = new Date().toISOString().slice(0, 10)
+      await sb.from('wa_pro_rate_limit')
+        .update({ query_count: 0, minute_count: 0 })
+        .eq('professional_id', profId)
+        .eq('date', today)
+      if (typeof window.showToast === 'function') window.showToast('Quota de ' + name + ' resetada', 'success')
+    } catch (e) {
+      if (typeof window.showToast === 'function') window.showToast('Erro: ' + e.message, 'error')
+    }
   }
 
   async function _reloadLogs() { _loading = true; _render(); await _loadLogs(); _loading = false; _render() }

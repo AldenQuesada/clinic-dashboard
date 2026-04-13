@@ -308,11 +308,24 @@
       return formatFinanceCommission(rc.data, per2.label)
     }
     if (intent === 'finance_coverage' || intent === 'finance_meta') {
-      // Ainda nao tem RPC dedicada — usa summary do mes como base
       var perM = _periodFromText('mes')
       var rcv = await repo.financeSummary(phone, perM.start, perM.end)
       if (!rcv.ok || !rcv.data || rcv.data.ok === false) return formatRpcError(rcv.data)
-      return formatFinanceSummary(rcv.data, perM.label) + '\n\n_Cobertura/meta: detalhamento em fase futura._'
+      var d = rcv.data
+      var receita = d.receita || d.revenue || 0
+      var ticket = d.ticket_medio || d.avg_ticket || 0
+      var delta = d.delta_pct || 0
+      var deltaIcon = delta > 0 ? '📈' : delta < 0 ? '📉' : '➡️'
+      if (intent === 'finance_meta') {
+        return '🎯 *Acompanhamento do Mes*\n\n'
+          + 'Receita acumulada: *R$ ' + receita.toLocaleString('pt-BR') + '*\n'
+          + 'Ticket medio: *R$ ' + ticket.toLocaleString('pt-BR') + '*\n'
+          + deltaIcon + ' ' + (delta > 0 ? '+' : '') + delta.toFixed(1) + '% vs mes anterior'
+      }
+      return '💰 *Cobertura do Mes*\n\n'
+        + 'Receita acumulada: *R$ ' + receita.toLocaleString('pt-BR') + '*\n'
+        + 'Ticket medio: *R$ ' + ticket.toLocaleString('pt-BR') + '*\n'
+        + deltaIcon + ' ' + (delta > 0 ? '+' : '') + delta.toFixed(1) + '% vs mes anterior'
     }
 
     return formatNotImplemented(intent)
