@@ -116,7 +116,7 @@
     '</div>'
 
     // ── Report Card ──
-    var html = '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6);padding-bottom:24px">'
+    var html = '<div id="fmReportCard" style="max-width:794px;width:100%;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6);padding-bottom:24px;box-sizing:border-box">'
 
     // ─── HEADER ───
     html += '<div class="fm-header" style="padding:36px 32px 20px 32px;display:flex;justify-content:space-between;align-items:flex-end">' +
@@ -131,45 +131,41 @@
     '</div>' +
     '<div class="fm-sep" style="height:1px;background:linear-gradient(90deg,transparent,#C8A97E,transparent);margin:0 32px"></div>'
 
-    // ─── SCORE DE HARMONIA GLOBAL ───
-    var harmonyScore = 0, harmonyParts = 0
-    if (FM._scanData && FM._scanData.symmetry && FM._scanData.symmetry.overall != null) { harmonyScore += FM._scanData.symmetry.overall * 0.25; harmonyParts += 0.25 }
-    if (FM._scanData && FM._scanData.thirds) {
-      var tS = FM._scanData.thirds
-      var tercoScore = 100 - (Math.abs(tS.superior - 33) + Math.abs(tS.medio - 33) + Math.abs(tS.inferior - 33))
-      harmonyScore += Math.max(0, tercoScore) * 0.20; harmonyParts += 0.20
-    }
-    if (FM._skinAnalysis && FM._skinAnalysis.overall != null) { harmonyScore += FM._skinAnalysis.overall * 0.20; harmonyParts += 0.20 }
-    if (FM._vecAgeFactor) {
-      var vecScore = 100 - Math.round(FM._vecAgeFactor(FM._vecAge || 25) * 70)
-      harmonyScore += vecScore * 0.20; harmonyParts += 0.20
-    }
-    if (FM._scanData && FM._scanData.measurements && FM._scanData.measurements.golden_ratio != null) {
-      var grDiff = Math.abs(FM._scanData.measurements.golden_ratio - 1.618)
-      var grScore = Math.max(0, 100 - grDiff * 200)
-      harmonyScore += grScore * 0.15; harmonyParts += 0.15
-    }
-    var finalScore = harmonyParts > 0 ? Math.round(harmonyScore / harmonyParts) : null
+    // ─── QUEIXAS DA PACIENTE (empatia primeiro) ───
+    var lead = FM._lead || {}
+    var queixas = lead.queixas_faciais || (lead.customFields || {}).queixas_faciais || (lead.data || {}).queixas_faciais || []
+    if (typeof queixas === 'string') queixas = [queixas]
+    var queixaPrincipal = lead.queixa_principal || lead.chief_complaint || (queixas.length > 0 ? queixas[0] : '')
 
-    if (finalScore !== null) {
-      var hsColor = finalScore >= 80 ? '#10B981' : finalScore >= 60 ? '#F59E0B' : '#EF4444'
-      var hsLabel = finalScore >= 80 ? 'Harmonia Preservada' : finalScore >= 60 ? 'Harmonia em Transição' : 'Harmonia Comprometida'
-      html += '<div style="text-align:center;padding:28px 32px 20px 32px">' +
-        '<div style="display:inline-flex;align-items:center;justify-content:center;width:100px;height:100px;border-radius:50%;border:4px solid ' + hsColor + ';box-shadow:0 0 30px ' + hsColor + '30">' +
-          '<div><div style="font-size:38px;font-weight:800;color:' + hsColor + ';line-height:1">' + finalScore + '</div>' +
-          '<div style="font-size:10px;color:rgba(245,240,232,0.4);letter-spacing:0.1em">/100</div></div>' +
-        '</div>' +
-        '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-style:italic;color:' + hsColor + ';margin-top:10px">' + hsLabel + '</div>' +
-        '<div style="font-size:10px;color:rgba(245,240,232,0.25);margin-top:4px;letter-spacing:0.1em;text-transform:uppercase">Indice de Harmonia Facial</div>' +
-      '</div>'
+    html += _sectionTitle('O que voce sente', 'heart')
+    html += '<div style="padding:4px 32px 12px 32px">'
+    if (queixas.length > 0) {
+      if (queixaPrincipal) {
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">' +
+          '<span style="font-size:10px;padding:3px 10px;background:rgba(239,68,68,0.12);color:#EF4444;border-radius:4px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0">Maior impacto</span>' +
+          '<span style="font-size:14px;font-weight:600;color:#F5F0E8">' + FM._esc(queixaPrincipal) + '</span>' +
+        '</div>'
+      }
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
+      queixas.forEach(function (q) {
+        if (!q) return
+        var isMain = q === queixaPrincipal
+        html += '<span style="padding:5px 12px;border-radius:6px;font-size:13px;' +
+          (isMain ? 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#EF4444;font-weight:600' :
+                    'background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);color:rgba(245,240,232,0.6)') +
+          '">' + FM._esc(q) + '</span>'
+      })
+      html += '</div>'
     }
+    html += _editableBlock('fmReportQueixas', queixas.length > 0 ? 'Observacoes adicionais...' : 'Clique para adicionar as queixas da paciente...')
+    html += '</div>'
 
     // ═══════════════════════════════════════════
-    // ATO 1: "Onde você esta",Diagnostico
+    // DIAGNOSTICO — Fotos ANTES + metricas
     // ═══════════════════════════════════════════
     html += '<div style="text-align:center;padding:12px 32px 4px 32px">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Onde você esta</div>' +
-      '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Diagnostico facial completo</div>' +
+      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Seu diagnostico</div>' +
+      '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">Analise facial personalizada</div>' +
     '</div>'
 
     // Helper: small metric card for analysis panel
@@ -407,57 +403,41 @@
       html += '</div>'
     }
 
-    // ─── Queixas da Paciente (auto-preenchido da anamnese) ───
-    html += _sectionTitle('Queixas da Paciente', 'message-circle')
-    html += '<div style="padding:4px 32px 12px 32px">'
+    // ─── SCORE DE HARMONIA (agora com contexto, apos diagnostico) ───
+    var harmonyScore = 0, harmonyParts = 0
+    if (FM._scanData && FM._scanData.symmetry && FM._scanData.symmetry.overall != null) { harmonyScore += FM._scanData.symmetry.overall * 0.25; harmonyParts += 0.25 }
+    if (FM._scanData && FM._scanData.thirds) {
+      var tS = FM._scanData.thirds
+      var tercoScore = 100 - (Math.abs(tS.superior - 33) + Math.abs(tS.medio - 33) + Math.abs(tS.inferior - 33))
+      harmonyScore += Math.max(0, tercoScore) * 0.20; harmonyParts += 0.20
+    }
+    if (FM._skinAnalysis && FM._skinAnalysis.overall != null) { harmonyScore += FM._skinAnalysis.overall * 0.20; harmonyParts += 0.20 }
+    if (FM._vecAgeFactor) {
+      var vecScore = 100 - Math.round(FM._vecAgeFactor(FM._vecAge || 25) * 70)
+      harmonyScore += vecScore * 0.20; harmonyParts += 0.20
+    }
+    if (FM._scanData && FM._scanData.measurements && FM._scanData.measurements.golden_ratio != null) {
+      var grDiff = Math.abs(FM._scanData.measurements.golden_ratio - 1.618)
+      var grScore = Math.max(0, 100 - grDiff * 200)
+      harmonyScore += grScore * 0.15; harmonyParts += 0.15
+    }
+    var finalScore = harmonyParts > 0 ? Math.round(harmonyScore / harmonyParts) : null
 
-    var lead = FM._lead || {}
-    var queixas = lead.queixas_faciais || (lead.customFields || {}).queixas_faciais || (lead.data || {}).queixas_faciais || []
-    if (typeof queixas === 'string') queixas = [queixas]
-    var queixaPrincipal = lead.queixa_principal || lead.chief_complaint || (queixas.length > 0 ? queixas[0] : '')
-
-    if (queixas.length > 0) {
-      if (queixaPrincipal) {
-        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-          '<span style="font-size:10px;padding:3px 10px;background:rgba(239,68,68,0.12);color:#EF4444;border-radius:4px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;flex-shrink:0">Maior impacto</span>' +
-          '<span style="font-size:14px;font-weight:600;color:#F5F0E8">' + FM._esc(queixaPrincipal) + '</span>' +
-        '</div>'
-      }
-      html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
-      queixas.forEach(function (q) {
-        if (!q) return
-        var isMain = q === queixaPrincipal
-        html += '<span style="padding:5px 12px;border-radius:6px;font-size:13px;' +
-          (isMain ? 'background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#EF4444;font-weight:600' :
-                    'background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.12);color:rgba(245,240,232,0.6)') +
-          '">' + FM._esc(q) + '</span>'
-      })
-      html += '</div>'
+    if (finalScore !== null) {
+      var hsColor = finalScore >= 80 ? '#10B981' : finalScore >= 60 ? '#F59E0B' : '#EF4444'
+      var hsLabel = finalScore >= 80 ? 'Harmonia Preservada' : finalScore >= 60 ? 'Harmonia em Transicao' : 'Harmonia Comprometida'
+      html += '<div style="text-align:center;padding:28px 32px 20px 32px;border-top:1px solid rgba(200,169,126,0.08)">' +
+        '<div style="display:inline-flex;align-items:center;justify-content:center;width:90px;height:90px;border-radius:50%;border:3px solid ' + hsColor + ';box-shadow:0 0 24px ' + hsColor + '30">' +
+          '<div><div style="font-size:32px;font-weight:800;color:' + hsColor + ';line-height:1">' + finalScore + '</div>' +
+          '<div style="font-size:9px;color:rgba(245,240,232,0.4);letter-spacing:0.1em">/100</div></div>' +
+        '</div>' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:16px;font-style:italic;color:' + hsColor + ';margin-top:8px">' + hsLabel + '</div>' +
+        '<div style="font-size:9px;color:rgba(245,240,232,0.25);margin-top:3px;letter-spacing:0.1em;text-transform:uppercase">Indice de Harmonia Facial</div>' +
+      '</div>'
     }
 
-    html += _editableBlock('fmReportQueixas', queixas.length > 0 ? 'Observacoes adicionais da anamnese...' : 'Clique para adicionar as queixas da paciente...')
-    html += '</div>'
-
     // ═══════════════════════════════════════════
-    // ATO 2: "O que aconteceu",Explicacao
-    // ═══════════════════════════════════════════
-    html += '<div class="fm-section" style="text-align:center;padding:20px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">O que aconteceu</div>' +
-      '<div style="font-size:10px;color:rgba(245,240,232,0.25);letter-spacing:0.15em;text-transform:uppercase;margin-top:2px">A ciencia por tras do envelhecimento</div>' +
-    '</div>'
-
-    html += '<div style="padding:12px 32px 16px 32px">' +
-      '<div style="font-family:Cormorant Garamond,serif;font-size:16px;font-style:italic;color:rgba(245,240,232,0.55);line-height:1.8;text-align:center">' +
-        'O envelhecimento e uma quebra do sistema vetorial do rosto. As forcas que sustentavam cada estrutura se inverteram ' +
-        '— a gravidade, a anteriorização e a perda dos ligamentos mudaram a direcao de tudo.' +
-      '</div>' +
-      '<div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:600;color:#C8A97E;text-align:center;margin-top:12px;letter-spacing:0.06em">' +
-        'A harmonização NAO e preencher rugas. E reconstruir vetores.' +
-      '</div>' +
-    '</div>'
-
-    // ═══════════════════════════════════════════
-    // ATO 3: "Para onde vamos",Solucao
+    // SOLUCAO: "Para onde vamos"
     // ═══════════════════════════════════════════
     html += '<div class="fm-section" style="text-align:center;padding:16px 32px 4px 32px;margin-top:8px;border-top:1px solid rgba(200,169,126,0.08)">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:300;font-style:italic;color:#C8A97E" contenteditable="true">Para onde vamos</div>' +
@@ -531,10 +511,12 @@
       annLookup[a.zone].ml += (a.ml || 0)
     })
 
-    // ALL zones with checkbox, dose, frase,all checked by default
-    html += '<div style="display:flex;flex-direction:column;gap:2px">'
-    var zones = FM.ZONES || []
-    zones.forEach(function (z, i) {
+    // Only marked zones (not all 21)
+    var markedZones = (FM.ZONES || []).filter(function (z) { return !!annLookup[z.id] })
+    if (markedZones.length === 0) markedZones = (FM.ZONES || []).slice(0, 4) // fallback: top 4 if nothing marked
+
+    html += '<div class="fm-zone-list" style="display:flex;flex-direction:column;gap:3px">'
+    markedZones.forEach(function (z, i) {
       var ann = annLookup[z.id]
       var avgDose = ann ? ann.ml : ((z.min + z.max) / 2)
       var treatment = ann ? ann.treatment : (z.defaultTx || 'ah')
@@ -543,18 +525,17 @@
       var doseColor = z.unit === 'U' ? '#8B5CF6' : '#3B82F6'
       var phrase = transformPhrases[z.id] || ''
 
-      html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 8px;background:' + (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + ';border-radius:4px">' +
-        '<input type="checkbox" checked style="margin-top:3px;accent-color:#C8A97E;cursor:pointer;flex-shrink:0">' +
-        '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:' + z.color + ';margin-top:5px;flex-shrink:0"></span>' +
+      html += '<div class="fm-zone-row" style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:' + (i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + ';border-radius:6px">' +
+        '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + z.color + ';margin-top:4px;flex-shrink:0"></span>' +
         '<div style="flex:1;min-width:0">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">' +
             '<span style="font-size:13px;font-weight:600;color:#F5F0E8">' + FM._esc(z.label) + '</span>' +
             '<div style="display:flex;align-items:center;gap:6px">' +
               '<span style="font-size:11px;color:rgba(245,240,232,0.4)">' + FM._esc(tLabel) + '</span>' +
               '<span style="font-size:13px;font-weight:700;color:' + doseColor + '">' + parseFloat(avgDose).toFixed(1) + ' ' + z.unit + '</span>' +
             '</div>' +
           '</div>' +
-          (phrase ? '<div style="font-size:10px;font-style:italic;color:rgba(200,169,126,0.45);margin-top:1px">' + phrase + '</div>' : '') +
+          (phrase ? '<div style="font-size:11px;font-style:italic;color:rgba(200,169,126,0.45);margin-top:2px">' + phrase + '</div>' : '') +
         '</div>' +
       '</div>'
     })
@@ -1011,27 +992,34 @@
           'table{width:100%}' +
           '@media(max-width:600px){' +
           'html,body{overflow-x:hidden!important}' +
-          'body{padding:4px 0!important}' +
-          '#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important;font-size:15px!important}' +
+          'body{padding:0!important}' +
+          '#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important}' +
           '#fmReportCard [style*="padding"][style*="32px"]{padding-left:16px!important;padding-right:16px!important}' +
           '#fmReportCard .fm-sep{margin-left:16px!important;margin-right:16px!important}' +
-          '.fm-header{flex-direction:column!important;gap:10px!important;align-items:flex-start!important}' +
-          '.fm-clinic-name{font-size:26px!important}' +
-          '.fm-row{flex-direction:column!important}' +
-          '.fm-section{margin-top:36px!important;padding-top:24px!important}' +
+          '.fm-header{flex-direction:column!important;gap:8px!important;align-items:flex-start!important;padding:20px 16px 14px!important}' +
+          '.fm-clinic-name{font-size:24px!important}' +
+          '.fm-row{flex-direction:column!important;gap:10px!important}' +
+          '.fm-section{margin-top:24px!important;padding-top:16px!important}' +
           '#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}' +
-          '#fmReportCard [style*="font-size:24px"]{font-size:22px!important}' +
+          '#fmReportCard [style*="display:grid"][style*="repeat(3"]{grid-template-columns:1fr 1fr!important}' +
+          '#fmReportCard [style*="font-size:9px"],#fmReportCard [style*="font-size:10px"]{font-size:12px!important}' +
+          '#fmReportCard [style*="font-size:11px"],#fmReportCard [style*="font-size:12px"]{font-size:13px!important}' +
           '#fmReportCard [style*="font-size:13px"]{font-size:14px!important}' +
-          '#fmReportCard [style*="font-size:12px"]{font-size:13px!important}' +
-          '#fmReportCard [style*="font-size:10px"]{font-size:11px!important}' +
-          '#fmReportCard [style*="font-size:11px"]{font-size:12px!important}' +
+          '#fmReportCard [style*="font-size:24px"]{font-size:20px!important}' +
           'table{font-size:13px!important}' +
+          'table td,table th{padding:6px 4px!important}' +
+          '.fm-zone-row{padding:10px 8px!important}' +
+          '.fm-zone-row [style*="font-size:13px"]{font-size:14px!important}' +
+          '.fm-zone-row [style*="font-size:11px"]{font-size:12px!important}' +
+          '.fm-timeline-step{padding-left:28px!important}' +
+          '.fm-timeline-step [style*="font-size:13px"]{font-size:14px!important;line-height:1.7!important}' +
+          '.fm-timeline-step [style*="height:120px"]{height:80px!important}' +
           '}' +
-          '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s}' +
+          '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:16px 32px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s;box-shadow:0 4px 16px rgba(37,211,102,0.3)}' +
           '.fm-cta-btn:hover{transform:scale(1.04)}' +
         '</style>' +
         '</head><body>' +
-        '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6);padding-bottom:24px">' +
+        '<div id="fmReportCard" style="max-width:794px;width:100%;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;box-shadow:0 32px 100px rgba(0,0,0,0.6);padding-bottom:24px;box-sizing:border-box">' +
         content +
         '</div>' +
         comparatorHtml +
@@ -1530,11 +1518,30 @@
         '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">' +
         '<title>Análise Facial, ' + FM._esc(patientName) + '</title>' +
         '<style>body{margin:0;padding:24px 16px;background:#0A0A0A;font-family:Montserrat,sans-serif;color:#F5F0E8}' +
-        '#fmReportCard{max-width:794px;margin:0 auto}[contenteditable]{cursor:text}[contenteditable]:focus{border-color:#C8A97E!important;outline:none}' +
-        'img{max-width:100%;height:auto}table{width:100%}@media(max-width:600px){html,body{overflow-x:hidden!important}body{padding:4px 0!important}#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important;font-size:15px!important}#fmReportCard [style*="padding"][style*="32px"]{padding-left:16px!important;padding-right:16px!important}#fmReportCard .fm-sep{margin-left:16px!important;margin-right:16px!important}.fm-header{flex-direction:column!important;gap:10px!important;align-items:flex-start!important}.fm-clinic-name{font-size:26px!important}.fm-row{flex-direction:column!important}.fm-section{margin-top:36px!important;padding-top:24px!important}#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}#fmReportCard [style*="font-size:13px"]{font-size:14px!important}#fmReportCard [style*="font-size:12px"]{font-size:13px!important}#fmReportCard [style*="font-size:10px"]{font-size:11px!important}#fmReportCard [style*="font-size:11px"]{font-size:12px!important}table{font-size:13px!important}}' +
-        '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:#25D366;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s}' +
+        '#fmReportCard{max-width:794px;width:100%;margin:0 auto;box-sizing:border-box}[contenteditable]{cursor:text}[contenteditable]:focus{border-color:#C8A97E!important;outline:none}' +
+        'img{max-width:100%;height:auto}table{width:100%}' +
+        '@media(max-width:600px){html,body{overflow-x:hidden!important}body{padding:0!important}' +
+        '#fmReportCard{width:100%!important;max-width:100vw!important;box-sizing:border-box!important;overflow:hidden!important;border-radius:0!important}' +
+        '#fmReportCard [style*="padding"][style*="32px"]{padding-left:16px!important;padding-right:16px!important}' +
+        '#fmReportCard .fm-sep{margin-left:16px!important;margin-right:16px!important}' +
+        '.fm-header{flex-direction:column!important;gap:8px!important;align-items:flex-start!important;padding:20px 16px 14px!important}' +
+        '.fm-clinic-name{font-size:24px!important}' +
+        '.fm-row{flex-direction:column!important;gap:10px!important}' +
+        '.fm-section{margin-top:24px!important;padding-top:16px!important}' +
+        '#fmReportCard [style*="display:flex"][style*="gap:24px"]{flex-direction:column!important}' +
+        '#fmReportCard [style*="display:grid"][style*="repeat(3"]{grid-template-columns:1fr 1fr!important}' +
+        '#fmReportCard [style*="font-size:9px"],#fmReportCard [style*="font-size:10px"]{font-size:12px!important}' +
+        '#fmReportCard [style*="font-size:11px"],#fmReportCard [style*="font-size:12px"]{font-size:13px!important}' +
+        '#fmReportCard [style*="font-size:13px"]{font-size:14px!important}' +
+        '#fmReportCard [style*="font-size:24px"]{font-size:20px!important}' +
+        'table{font-size:13px!important}table td,table th{padding:6px 4px!important}' +
+        '.fm-zone-row{padding:10px 8px!important}' +
+        '.fm-timeline-step{padding-left:28px!important}' +
+        '.fm-timeline-step [style*="height:120px"]{height:80px!important}' +
+        '}' +
+        '.fm-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:16px 32px;background:#25D366;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none;font-family:Montserrat,sans-serif;margin:24px auto;transition:transform 0.2s;box-shadow:0 4px 16px rgba(37,211,102,0.3)}' +
         '.fm-cta-btn:hover{transform:scale(1.04)}</style></head><body>' +
-        '<div id="fmReportCard" style="width:794px;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;padding-bottom:24px">' +
+        '<div id="fmReportCard" style="max-width:794px;width:100%;margin:0 auto;background:#0A0A0A;border-radius:4px;font-family:Montserrat,sans-serif;color:#F5F0E8;padding-bottom:24px;box-sizing:border-box">' +
         content + '</div>' +
         '<div style="text-align:center;padding:32px 16px">' +
         '<a class="fm-cta-btn" href="https://wa.me/' + waPhone + '?text=' + waText + '" target="_blank">' +
