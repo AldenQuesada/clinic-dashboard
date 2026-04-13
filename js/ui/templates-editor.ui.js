@@ -84,16 +84,14 @@
   var ALL_VARS = Object.keys(PREVIEW_VARS)
 
   function _fmtDelay(day, hours, mins) {
-    var parts = []
     var d = parseInt(day) || 0
     var h = parseInt(hours) || 0
     var m = parseInt(mins) || 0
     if (d === 0 && h === 0 && m === 0) return 'imediata'
-    if (d < 0) parts.push(Math.abs(d) + 'd antes')
-    else if (d > 0) parts.push(d + 'd depois')
-    if (h > 0) parts.push(h + 'h')
-    if (m > 0) parts.push(m + 'min')
-    return parts.join(' ') || 'imediata'
+    var time = (h > 0 || m > 0) ? ' as ' + h + ':' + (m < 10 ? '0' : '') + m : ''
+    if (d < 0) return Math.abs(d) + 'd antes' + time
+    if (d > 0) return d + 'd depois' + time
+    return 'no dia' + time
   }
 
   function _root() { return document.getElementById('templates-editor-root') }
@@ -346,15 +344,43 @@
         '<select class="te-config-select" data-action="edit-trigger-phase" data-id="' + _esc(tpl.id) + '" style="flex:1">' + statusOptions + '</select>' +
       '</div>' +
       '<div class="te-config-row">' +
-        '<label class="te-config-label">Delay</label>' +
-        '<div style="display:flex;gap:6px;align-items:center;flex:1">' +
-          '<input type="number" class="te-config-input" data-action="edit-day" data-id="' + _esc(tpl.id) + '" value="' + (dayVal || 0) + '" min="-30" max="365" style="width:60px;text-align:center" title="Dias">' +
-          '<span style="font-size:11px;color:var(--text-muted)">dias</span>' +
-          '<input type="number" class="te-config-input" data-action="edit-delay-hours" data-id="' + _esc(tpl.id) + '" value="' + delayHours + '" min="0" max="23" style="width:50px;text-align:center" title="Horas">' +
-          '<span style="font-size:11px;color:var(--text-muted)">h</span>' +
-          '<input type="number" class="te-config-input" data-action="edit-delay-minutes" data-id="' + _esc(tpl.id) + '" value="' + delayMins + '" min="0" max="59" style="width:50px;text-align:center" title="Minutos">' +
-          '<span style="font-size:11px;color:var(--text-muted)">min</span>' +
-        '</div>' +
+        '<label class="te-config-label">Quando</label>' +
+        (function() {
+          var isAgendamento = catVal === 'agendamento'
+          var dayN = parseInt(dayVal) || 0
+          var mode = (dayN === 0 && delayHours === 0 && delayMins === 0) ? 'imediata'
+                   : (dayN === 0) ? 'no_dia'
+                   : (dayN < 0) ? 'dias_antes'
+                   : 'dias_depois'
+
+          var modeOptions = isAgendamento
+            ? '<option value="imediata"' + (mode==='imediata'?' selected':'') + '>Imediata</option>' +
+              '<option value="no_dia"' + (mode==='no_dia'?' selected':'') + '>No dia da consulta</option>' +
+              '<option value="dias_antes"' + (mode==='dias_antes'?' selected':'') + '>Dias antes da consulta</option>'
+            : '<option value="imediata"' + (mode==='imediata'?' selected':'') + '>Imediata</option>' +
+              '<option value="no_dia"' + (mode==='no_dia'?' selected':'') + '>No mesmo dia</option>' +
+              '<option value="dias_depois"' + (mode==='dias_depois'?' selected':'') + '>Dias depois</option>'
+
+          var html = '<div style="display:flex;gap:6px;align-items:center;flex:1;flex-wrap:wrap">' +
+            '<select class="te-config-select" data-action="edit-delay-mode" data-id="' + _esc(tpl.id) + '">' + modeOptions + '</select>'
+
+          if (mode === 'dias_antes') {
+            html += '<input type="number" class="te-config-input" data-action="edit-day" data-id="' + _esc(tpl.id) + '" value="' + Math.abs(dayN) + '" min="1" max="30" style="width:50px;text-align:center">' +
+              '<span style="font-size:11px;color:var(--text-muted)">dia(s)</span>'
+          }
+          if (mode === 'dias_depois') {
+            html += '<input type="number" class="te-config-input" data-action="edit-day-pos" data-id="' + _esc(tpl.id) + '" value="' + Math.abs(dayN) + '" min="1" max="365" style="width:50px;text-align:center">' +
+              '<span style="font-size:11px;color:var(--text-muted)">dia(s)</span>'
+          }
+          if (mode !== 'imediata') {
+            html += '<span style="font-size:11px;color:var(--text-muted)">as</span>' +
+              '<input type="number" class="te-config-input" data-action="edit-delay-hours" data-id="' + _esc(tpl.id) + '" value="' + delayHours + '" min="0" max="23" style="width:45px;text-align:center">' +
+              '<span style="font-size:11px;color:var(--text-muted)">:</span>' +
+              '<input type="number" class="te-config-input" data-action="edit-delay-minutes" data-id="' + _esc(tpl.id) + '" value="' + delayMins + '" min="0" max="59" style="width:45px;text-align:center">'
+          }
+          html += '</div>'
+          return html
+        })() +
       '</div>' +
       '<div class="te-config-row">' +
         '<label class="te-config-label">Status</label>' +
@@ -420,7 +446,16 @@
     }
     root.onchange = function (e) {
       var a = e.target.dataset.action, id = e.target.dataset.id
-      if (a === 'edit-day') _onEditField(id, 'day', parseInt(e.target.value) || 0)
+      if (a === 'edit-delay-mode') {
+        var mode = e.target.value
+        if (mode === 'imediata') { _onEditField(id, 'day', 0); _onEditField(id, 'delay_hours', 0); _onEditField(id, 'delay_minutes', 0) }
+        else if (mode === 'no_dia') { _onEditField(id, 'day', 0); _onEditField(id, 'delay_hours', 10); _onEditField(id, 'delay_minutes', 0) }
+        else if (mode === 'dias_antes') { _onEditField(id, 'day', -1); _onEditField(id, 'delay_hours', 12); _onEditField(id, 'delay_minutes', 30) }
+        else if (mode === 'dias_depois') { _onEditField(id, 'day', 1); _onEditField(id, 'delay_hours', 10); _onEditField(id, 'delay_minutes', 0) }
+        _render(); return
+      }
+      else if (a === 'edit-day') _onEditField(id, 'day', -(parseInt(e.target.value) || 1))
+      else if (a === 'edit-day-pos') _onEditField(id, 'day', parseInt(e.target.value) || 1)
       else if (a === 'edit-delay-hours') _onEditField(id, 'delay_hours', parseInt(e.target.value) || 0)
       else if (a === 'edit-delay-minutes') _onEditField(id, 'delay_minutes', parseInt(e.target.value) || 0)
       else if (a === 'edit-trigger-phase') _onEditField(id, 'trigger_phase', e.target.value)
