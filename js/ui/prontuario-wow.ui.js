@@ -86,6 +86,7 @@
     pagamento:     { label: 'Pagamento',     color: '#10B981', icon: ICO.dollar },
     foto:          { label: 'Foto',          color: '#F97316', icon: ICO.camera },
     quiz:          { label: 'Avaliacao',     color: '#6366F1', icon: ICO.check },
+    analise_facial:{ label: 'Analise Facial', color: '#C8A97E', icon: '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2C8.5 2 6 5 6 9c0 2 .5 3.5 1.5 5C9 16 10 18 10 20h4c0-2 1-4 2.5-6 1-1.5 1.5-3 1.5-5 0-4-2.5-7-6-7z"/><circle cx="9.5" cy="8.5" r=".5" fill="currentColor"/><circle cx="14.5" cy="8.5" r=".5" fill="currentColor"/></svg>' },
   }
 
   // ================================================================
@@ -288,6 +289,57 @@
       events.push({ type: 'foto', date: f.created_at, title: f.file_name, detail: f.file_type || '', source: 'attachments', id: f.id })
     })
 
+    // 6. Facial analysis sessions (Supabase + localStorage)
+    try {
+      var fmRes = await sb.from('facial_sessions')
+        .select('id,session_data,gpt_analysis,updated_at,created_at')
+        .eq('lead_id', patientId)
+        .order('updated_at', { ascending: false })
+        .limit(10)
+      ;(fmRes.data || []).forEach(function(fs) {
+        var sd = null
+        try { sd = typeof fs.session_data === 'string' ? JSON.parse(fs.session_data) : fs.session_data } catch(e) {}
+        var annCount = sd && sd.annotations ? sd.annotations.length : 0
+        var photoCount = sd && sd.photos ? Object.keys(sd.photos).filter(function(k) { return sd.photos[k] }).length : 0
+        var detail = photoCount + ' foto' + (photoCount !== 1 ? 's' : '') + ' · ' + annCount + ' marcacao' + (annCount !== 1 ? 'es' : '')
+        if (sd && sd.annotations && sd.annotations.length > 0) {
+          var zoneNames = []
+          sd.annotations.forEach(function(a) {
+            var name = a.zone || ''
+            if (name && zoneNames.indexOf(name) === -1) zoneNames.push(name)
+          })
+          if (zoneNames.length > 0) detail += ' · ' + zoneNames.slice(0, 4).join(', ') + (zoneNames.length > 4 ? ' +' + (zoneNames.length - 4) : '')
+        }
+        events.push({
+          type: 'analise_facial', date: fs.updated_at || fs.created_at,
+          title: 'Analise Facial', detail: detail,
+          source: 'facial_sessions', id: fs.id,
+          _fmSessionId: fs.id, _fmLeadId: patientId
+        })
+      })
+    } catch(e) {}
+
+    // Fallback: localStorage session if no Supabase sessions found
+    var hasFmFromDb = events.some(function(e) { return e.type === 'analise_facial' })
+    if (!hasFmFromDb) {
+      try {
+        var fmLocal = localStorage.getItem('fm_session_' + patientId)
+        if (fmLocal) {
+          var fmParsed = JSON.parse(fmLocal)
+          if (fmParsed && fmParsed.savedAt) {
+            var annCount2 = fmParsed.annotations ? fmParsed.annotations.length : 0
+            var photoCount2 = fmParsed.photos ? Object.keys(fmParsed.photos).filter(function(k) { return fmParsed.photos[k] }).length : 0
+            events.push({
+              type: 'analise_facial', date: fmParsed.savedAt,
+              title: 'Analise Facial (local)', detail: photoCount2 + ' fotos · ' + annCount2 + ' marcacoes',
+              source: 'localStorage', id: 'local',
+              _fmLeadId: patientId
+            })
+          }
+        }
+      } catch(e) {}
+    }
+
     // Sort by date descending
     events.sort(function(a, b) { return (b.date || '').localeCompare(a.date || '') })
 
@@ -326,6 +378,15 @@
 
       if (ev.detail) {
         html += '<div style="font-size:11px;color:var(--text-secondary);line-height:1.5;white-space:pre-wrap;word-break:break-word">' + _esc(ev.detail) + '</div>'
+      }
+
+      // FM action buttons
+      if (ev.type === 'analise_facial' && ev._fmLeadId) {
+        html += '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">'
+          + '<button onclick="FaceMapping.init(\'' + ev._fmLeadId + '\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #C8A97E40;border-radius:6px;background:transparent;color:#C8A97E;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit">' + ICO.camera + ' Abrir</button>'
+          + '<button onclick="FaceMapping.init(\'' + ev._fmLeadId + '\');setTimeout(function(){FaceMapping._exportReport&&FaceMapping._exportReport()},300)" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid #C8A97E40;border-radius:6px;background:transparent;color:#C8A97E;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit">' + ICO.file + ' Report</button>'
+          + '<button onclick="window._prontuarioFmPresent&&window._prontuarioFmPresent(\'' + ev._fmLeadId + '\')" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid rgba(200,169,126,0.3);border-radius:6px;background:linear-gradient(135deg,#C8A97E,#A8895E);color:#0A0A0A;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit">' + ICO.download + ' Apresentar</button>'
+        + '</div>'
       }
 
       html += '</div></div>'
@@ -702,8 +763,55 @@
       html += '</div></div>'
     }
 
+    // Annotations summary (treatment zones)
+    var fmAnns = fmData.annotations || []
+    if (fmAnns.length > 0) {
+      html += '<div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px">'
+        + '<div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase">Zonas Tratadas</div>'
+        + '<div style="display:flex;flex-direction:column;gap:4px">'
+      fmAnns.forEach(function(ann) {
+        var zoneName = ann.zone || ''
+        var dose = ann.ml ? parseFloat(ann.ml).toFixed(1) : '-'
+        var unit = (ann.unit === 'U' || zoneName.indexOf('glabela') !== -1 || zoneName.indexOf('frontal') !== -1 || zoneName.indexOf('periorbital') !== -1) ? 'U' : 'mL'
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--bg,#F9FAFB);border-radius:4px">'
+          + '<span style="font-size:12px;color:var(--text-primary);font-weight:500">' + _esc(zoneName.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase() })) + '</span>'
+          + '<div style="display:flex;align-items:center;gap:8px">'
+          + (ann.product ? '<span style="font-size:10px;color:var(--text-muted)">' + _esc(ann.product) + '</span>' : '')
+          + '<span style="font-size:12px;font-weight:700;color:' + (unit === 'U' ? '#8B5CF6' : '#3B82F6') + '">' + dose + ' ' + unit + '</span>'
+          + '</div></div>'
+      })
+      html += '</div></div>'
+    }
+
+    // Action buttons
+    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">'
+      + '<button onclick="FaceMapping.init(\'' + patientId + '\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid #C8A97E40;border-radius:8px;background:transparent;color:#C8A97E;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">' + ICO.camera + ' Abrir Analise</button>'
+      + '<button onclick="window._prontuarioFmPresent(\'' + patientId + '\')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,#C8A97E,#A8895E);color:#0A0A0A;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">' + ICO.download + ' Apresentar para Paciente</button>'
+    + '</div>'
+
     html += '</div>'
     return html
+  }
+
+  // ================================================================
+  // Apresentacao FM direto do prontuario
+  // ================================================================
+  window._prontuarioFmPresent = function(leadId) {
+    if (!window.FaceMapping) return
+
+    // Init FM with lead data (loads session)
+    FaceMapping.init(leadId)
+
+    // Wait for FM to load, then open report in presentation mode
+    setTimeout(function() {
+      if (FaceMapping._exportReport) {
+        FaceMapping._exportReport()
+        // Auto-enter presentation mode after report renders
+        setTimeout(function() {
+          if (FaceMapping._presentReport) FaceMapping._presentReport()
+        }, 500)
+      }
+    }, 400)
   }
 
   // ================================================================
