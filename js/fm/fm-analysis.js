@@ -740,6 +740,12 @@
     var file = input.files[0]
     if (!file) return
     var targetAngle = FM._activeAngle || 'front'
+    // Reset canvas2 metrics for this angle (clean slate for new DEPOIS photo)
+    FM._metric2Lines = { h: [], v: [] }
+    FM._metric2Points = []
+    FM._metric2Midline = null
+    FM._metric2Angles = null
+    FM._afterMetricAngles = null
     var reader = new FileReader()
     reader.onload = function () {
       var b64 = reader.result.split(',')[1]
@@ -770,6 +776,7 @@
         FM._autoSave()
         FM._render()
         setTimeout(FM._initCanvas, 100)
+        FM._showToast('API offline — foto salva sem remover fundo', 'warn')
       })
     }
     reader.readAsDataURL(file)
