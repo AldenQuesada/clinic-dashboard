@@ -121,6 +121,8 @@
   FM._lastAnalysis = null  // GPT analysis result
   FM._editorMode = 'zones' // 'zones' | 'vectors' | 'analysis'
   FM._activeTab = 'zones'  // 'simetria' | 'zones' | 'vectors' | 'analysis'
+  FM._selectorLeads = []   // cached leads for patient selector
+  FM._selectorFilter = ''  // search filter for patient selector
   FM._viewMode = '1x'     // '1x' | '2x'
   FM._vectors = []       // [{ id, zone, start:{x,y}, end:{x,y}, curve:0.3 }]
   FM._vecAge = 25        // age slider for force vectors (25-70)

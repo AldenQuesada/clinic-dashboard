@@ -180,37 +180,152 @@
     var root = document.getElementById('facialAnalysisRoot')
     if (!root) return
 
-    var leads = []
-    try { leads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]') } catch (e) {}
-    var recentLeads = leads.slice(0, 20)
+    // Loading state
+    root.innerHTML = '<div class="fm-page">' +
+      '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid rgba(200,169,126,0.12)">' +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+          '<span style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Analise Facial</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="flex:1;display:flex;align-items:center;justify-content:center">' +
+        '<div style="color:rgba(200,169,126,0.4);font-size:12px">Carregando pacientes...</div>' +
+      '</div>' +
+    '</div>'
 
-    var leadOptions = recentLeads.map(function (l) {
+    // Load via LeadsService (never localStorage directly)
+    var svc = window.LeadsService
+    if (!svc) return
+
+    svc.loadAll().then(function (leads) {
+      if (!leads || !leads.length) leads = []
+      FM._selectorLeads = leads
+      FM._renderPatientSelector(leads)
+    }).catch(function () {
+      FM._selectorLeads = []
+      FM._renderPatientSelector([])
+    })
+  }
+
+  // ── Patient Selector (premium dark) ───────────────────────
+
+  FM._renderPatientSelector = function (leads) {
+    var root = document.getElementById('facialAnalysisRoot')
+    if (!root) return
+
+    var filter = (FM._selectorFilter || '').toLowerCase()
+
+    var filtered = leads.filter(function (l) {
+      if (!filter) return true
+      var name = (l.nome || l.name || '').toLowerCase()
+      var phone = (l.phone || l.whatsapp || l.telefone || '')
+      return name.indexOf(filter) !== -1 || phone.indexOf(filter) !== -1
+    })
+
+    var _fmtPhone = function (raw) {
+      if (!raw) return ''
+      var d = raw.replace(/\D/g, '')
+      if (d.length === 13) d = d.slice(2) // remove 55
+      if (d.length === 11) return '(' + d.slice(0,2) + ') ' + d.slice(2,7) + '-' + d.slice(7)
+      if (d.length === 10) return '(' + d.slice(0,2) + ') ' + d.slice(2,6) + '-' + d.slice(6)
+      return raw
+    }
+
+    var cards = filtered.map(function (l) {
       var name = l.nome || l.name || 'Sem nome'
+      var phone = l.phone || l.whatsapp || l.telefone || ''
+      var initial = name.charAt(0).toUpperCase()
+      var hasSession = false
+      try { hasSession = !!localStorage.getItem('fm_session_' + l.id) } catch (e) {}
+
       return '<button onclick="FaceMapping.init(\'' + l.id + '\')" ' +
-        'style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:1px solid #E8EAF0;border-radius:10px;background:#fff;cursor:pointer;text-align:left;transition:border-color .2s" ' +
-        'onmouseover="this.style.borderColor=\'#C8A97E\'" onmouseout="this.style.borderColor=\'#E8EAF0\'">' +
-        '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#C9A96E);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">' + name.charAt(0).toUpperCase() + '</div>' +
-        '<div><div style="font-size:13px;font-weight:600;color:#1A1B2E">' + FM._esc(name) + '</div>' +
-        '<div style="font-size:11px;color:#9CA3AF">' + (l.phone || l.whatsapp || l.telefone || '') + '</div></div>' +
+        'style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 16px;' +
+        'border:1px solid rgba(200,169,126,0.1);border-radius:10px;background:#12121A;' +
+        'cursor:pointer;text-align:left;transition:all .2s" ' +
+        'onmouseover="this.style.borderColor=\'rgba(200,169,126,0.35)\';this.style.background=\'#1A1A24\'" ' +
+        'onmouseout="this.style.borderColor=\'rgba(200,169,126,0.1)\';this.style.background=\'#12121A\'">' +
+        '<div style="width:40px;height:40px;border-radius:50%;' +
+          'background:linear-gradient(135deg,rgba(200,169,126,0.2),rgba(200,169,126,0.08));' +
+          'border:1px solid rgba(200,169,126,0.2);' +
+          'display:flex;align-items:center;justify-content:center;' +
+          'font-size:15px;font-weight:700;color:#C8A97E;flex-shrink:0">' + initial + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13px;font-weight:600;color:rgba(245,240,232,0.85);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + FM._esc(name) + '</div>' +
+          '<div style="font-size:11px;color:rgba(200,169,126,0.35)">' + _fmtPhone(phone) + '</div>' +
+        '</div>' +
+        (hasSession
+          ? '<span style="font-size:8px;font-weight:600;letter-spacing:0.05em;padding:3px 8px;' +
+            'border-radius:12px;background:rgba(16,185,129,0.1);color:#10B981;' +
+            'border:1px solid rgba(16,185,129,0.2);white-space:nowrap">Analisado</span>'
+          : '') +
       '</button>'
     }).join('')
 
+    var emptyMsg = filter
+      ? '<div style="padding:24px;text-align:center;color:rgba(200,169,126,0.3);font-size:12px">' +
+          FM._icon('search', 20) +
+          '<div style="margin-top:8px">Nenhum paciente encontrado para "' + FM._esc(filter) + '"</div>' +
+        '</div>'
+      : '<div style="padding:24px;text-align:center;color:rgba(200,169,126,0.3);font-size:12px">' +
+          FM._icon('users', 20) +
+          '<div style="margin-top:8px">Nenhum paciente cadastrado</div>' +
+        '</div>'
+
     root.innerHTML = '<div class="fm-page">' +
-      '<div class="fm-header"><div class="fm-header-left">' +
-        '<span class="fm-header-title">Analise Facial</span>' +
-      '</div></div>' +
-      '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">' +
-        '<div style="max-width:400px;width:100%;text-align:center">' +
-          FM._icon('image', 40) +
-          '<h3 style="font-size:18px;font-weight:600;color:#1A1B2E;margin:12px 0 4px">Selecione o Paciente</h3>' +
-          '<p style="font-size:13px;color:#9CA3AF;margin-bottom:16px">Escolha um paciente para iniciar a analise facial</p>' +
-          '<div style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;text-align:left">' +
-            (leadOptions || '<p style="font-size:13px;color:#9CA3AF;text-align:center">Nenhum paciente encontrado</p>') +
+      // Header
+      '<div class="fm-header" style="padding:8px 16px;border-bottom:1px solid rgba(200,169,126,0.12)">' +
+        '<div style="display:flex;align-items:center;gap:12px">' +
+          '<span style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:300;font-style:italic;color:#C8A97E">Analise Facial</span>' +
+          '<span style="font-size:10px;color:rgba(200,169,126,0.25)">' + leads.length + ' pacientes</span>' +
+        '</div>' +
+      '</div>' +
+      // Body
+      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:32px 24px;overflow-y:auto;background:#0A0A0A">' +
+        '<div style="max-width:460px;width:100%">' +
+          // Icon + Title
+          '<div style="text-align:center;margin-bottom:24px">' +
+            '<div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:16px;background:rgba(200,169,126,0.06);border:1px solid rgba(200,169,126,0.1);margin-bottom:12px">' +
+              '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C8A97E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+                '<path d="M12 2C8.5 2 6 5 6 9c0 2 .5 3.5 1.5 5C9 16 10 18 10 20h4c0-2 1-4 2.5-6 1-1.5 1.5-3 1.5-5 0-4-2.5-7-6-7z"/>' +
+                '<path d="M9 12c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5"/>' +
+                '<circle cx="9.5" cy="8.5" r="0.5" fill="#C8A97E"/>' +
+                '<circle cx="14.5" cy="8.5" r="0.5" fill="#C8A97E"/>' +
+              '</svg>' +
+            '</div>' +
+            '<h3 style="font-size:18px;font-weight:600;color:rgba(245,240,232,0.85);margin:0 0 4px;font-family:Montserrat,sans-serif">Selecione o Paciente</h3>' +
+            '<p style="font-size:12px;color:rgba(200,169,126,0.3);margin:0">Escolha um paciente para iniciar a analise facial</p>' +
+          '</div>' +
+          // Search
+          '<div style="position:relative;margin-bottom:16px">' +
+            '<div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:rgba(200,169,126,0.3);pointer-events:none">' +
+              FM._icon('search', 16) +
+            '</div>' +
+            '<input id="fmPatientSearch" type="text" placeholder="Buscar paciente por nome ou telefone..." ' +
+              'value="' + FM._esc(FM._selectorFilter || '') + '" ' +
+              'oninput="window._FM._selectorFilter=this.value;window._FM._renderPatientSelector(window._FM._selectorLeads||[])" ' +
+              'style="width:100%;padding:10px 12px 10px 38px;border:1px solid rgba(200,169,126,0.12);' +
+              'border-radius:10px;background:#12121A;color:rgba(245,240,232,0.85);' +
+              'font-size:13px;font-family:Inter,sans-serif;outline:none;' +
+              'transition:border-color .2s;box-sizing:border-box" ' +
+              'onfocus="this.style.borderColor=\'rgba(200,169,126,0.35)\'" ' +
+              'onblur="this.style.borderColor=\'rgba(200,169,126,0.12)\'">' +
+          '</div>' +
+          // List
+          '<div style="display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 340px);overflow-y:auto;' +
+            'scrollbar-width:thin;scrollbar-color:rgba(200,169,126,0.15) transparent">' +
+            (cards || emptyMsg) +
           '</div>' +
         '</div>' +
       '</div>' +
     '</div>'
+
     if (window.feather) window.feather.replace()
+
+    // Focus search and restore cursor
+    var inp = document.getElementById('fmPatientSearch')
+    if (inp && filter) {
+      inp.focus()
+      inp.setSelectionRange(filter.length, filter.length)
+    }
   }
 
   // ── Actions ───────────────────────────────────────────────
