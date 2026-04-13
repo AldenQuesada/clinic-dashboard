@@ -2622,6 +2622,38 @@ OUTBOUND (clinica envia):
     <tr><td>5</td><td>Dashboard de metricas (enviadas/entregues/respondidas por campanha)</td><td>Medio — visibilidade</td></tr>
   </table>
 
+  <h3>Efeitos Wow implementados (2026-04-13)</h3>
+  <table>
+    <tr><th>#</th><th>Efeito</th><th>Status</th><th>Detalhes</th></tr>
+    <tr>
+      <td>1</td><td>Contagem de leads nas tabs</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>Tabs mostram numero real de leads por fase: Pre-agendamento (224) | Agendamento (15) | etc. RPC <code>wa_tag_counts()</code> dinamica.</td>
+    </tr>
+    <tr>
+      <td>2</td><td>Tracking abertura orcamento</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>RPC <code>wa_budget_opened()</code> — paciente abre link → follow-up automatico em 5 min.</td>
+    </tr>
+    <tr>
+      <td>3</td><td>11 templates criados para cobrir fraquezas</td>
+      <td><span class="badge badge-ok">FEITO</span></td>
+      <td>Agendamento +3, Orcamento +3, Paciente +3, Paciente+Orcamento +2. Total: 42 templates.</td>
+    </tr>
+  </table>
+
+  <h3>Cobertura final de templates</h3>
+  <table>
+    <tr><th>Tag</th><th>Templates</th><th>Com trigger</th></tr>
+    <tr><td>Pre-agendamento</td><td>18</td><td>18</td></tr>
+    <tr><td>Agendamento</td><td>11</td><td>9</td></tr>
+    <tr><td>Paciente</td><td>5</td><td>5</td></tr>
+    <tr><td>Orcamento</td><td>3</td><td>3</td></tr>
+    <tr><td>Paciente+Orcamento</td><td>2</td><td>2</td></tr>
+    <tr><td>Perdido</td><td>3</td><td>3</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>42</strong></td><td><strong>40</strong></td></tr>
+  </table>
+
   <!-- ═══ PRÓXIMOS PASSOS ═══ -->
   <h2>Próximos passos</h2>
 
