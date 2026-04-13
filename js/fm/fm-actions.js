@@ -145,8 +145,10 @@
     FM._analysisSubMode = 'metrics'
     FM._viewMode = '1x'
 
+    FM._skipSelectorReset = true
     if (window.navigateTo) window.navigateTo('facial-analysis')
     setTimeout(function () {
+      FM._skipSelectorReset = false
       FM._render()
     }, 100)
 
@@ -165,11 +167,13 @@
     FM._simPhotoByAngle = {}
     FM._angleStore = {}
 
+    FM._skipSelectorReset = true
     if (window.navigateTo) window.navigateTo('facial-analysis')
-    setTimeout(function () { FM._render() }, 100)
+    setTimeout(function () { FM._skipSelectorReset = false; FM._render() }, 100)
   }
 
   FM._resetToSelector = function () {
+    if (FM._skipSelectorReset) return
     FM._lead = null
     FM._selectorFilter = ''
     FM._restorePage()
