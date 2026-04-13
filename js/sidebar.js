@@ -54,8 +54,8 @@
   let _permOverrides = null
 
   /**
-   * Carrega overrides de permissao do banco (clinic_module_permissions).
-   * Chamado uma vez na inicializacao do sidebar.
+   * Carrega permissoes efetivas do usuario logado.
+   * Prioridade: user_module_permissions > clinic_module_permissions > nav-config default
    */
   async function _loadPermOverrides() {
     if (_permOverrides) return
@@ -63,38 +63,56 @@
     try {
       var sb = window._sbShared
       if (!sb) return
-      var r = await sb.rpc('get_module_permissions')
-      if (r.error || !r.data || !r.data.permissions) return
-      r.data.permissions.forEach(function (p) {
-        _permOverrides[p.module_id + '|' + (p.page_id || '') + '|' + p.role] = p.allowed
+      var r = await sb.rpc('get_my_effective_permissions')
+      if (r.error || !r.data) return
+      // role_overrides: {"module|page": true/false}
+      var roleOv = r.data.role_overrides || {}
+      var userOv = r.data.user_overrides || {}
+      // Merge: user > role. Key format in DB: "module|page"
+      // Convert to our format: "module|page|role"
+      var role = r.data.role || ''
+      Object.keys(roleOv).forEach(function (k) {
+        _permOverrides[k + '|' + role] = roleOv[k]
+      })
+      // User overrides (highest priority, stored without role)
+      Object.keys(userOv).forEach(function (k) {
+        _permOverrides['_user_' + k] = userOv[k]
       })
     } catch (e) { /* silencioso — usa defaults se falhar */ }
   }
 
   function _userCan(item, user, sectionId, pageId) {
-    if (!user) return true  // sem usuário = modo dev/demo → mostra tudo
+    if (!user) return true
 
-    // 1. Checa override do banco (prioridade maxima)
-    if (_permOverrides && user.role) {
-      var key = (sectionId || '') + '|' + (pageId || '') + '|' + user.role
-      if (key in _permOverrides) return _permOverrides[key]
-      // Se tem override de secao, usa ele pra paginas sem override proprio
+    if (_permOverrides) {
+      // 1. User-level override (highest priority)
+      var uKey = '_user_' + (sectionId || '') + '|' + (pageId || '')
+      if (uKey in _permOverrides) return _permOverrides[uKey]
+      // User override at section level
       if (pageId) {
-        var sectionKey = (sectionId || '') + '||' + user.role
-        if (sectionKey in _permOverrides) return _permOverrides[sectionKey]
+        var uSectionKey = '_user_' + (sectionId || '') + '|'
+        if (uSectionKey in _permOverrides) return _permOverrides[uSectionKey]
+      }
+
+      // 2. Role-level override
+      if (user.role) {
+        var rKey = (sectionId || '') + '|' + (pageId || '') + '|' + user.role
+        if (rKey in _permOverrides) return _permOverrides[rKey]
+        if (pageId) {
+          var rSectionKey = (sectionId || '') + '||' + user.role
+          if (rSectionKey in _permOverrides) return _permOverrides[rSectionKey]
+        }
       }
     }
 
-    // 2. Fallback: defaults hardcoded no nav-config
+    // 3. Fallback: defaults do nav-config
     if (item.roles && item.roles.length > 0) {
       if (!item.roles.includes(user.role)) return false
     }
-
     if (item.plans && item.plans.length > 0) {
       const userPlan = user.plan || user.tenant?.plan
       if (!item.plans.includes(userPlan)) return false
     }
-
     return true
   }
 

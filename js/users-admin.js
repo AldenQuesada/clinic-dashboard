@@ -140,6 +140,30 @@ function _injectStyles() {
     + '._ua-expired{color:#DC2626;font-size:11px;font-weight:600}'
     + '._ua-section-title{font-size:13px;font-weight:700;color:#374151;margin:24px 0 12px;display:flex;align-items:center;gap:8px}'
     + '._ua-empty{text-align:center;padding:40px;color:#9ca3af;font-size:13px;background:#fafafa;border-radius:12px}'
+    // Module access chips (inline on card)
+    + '._ua-access-grid{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}'
+    + '._ua-access-item{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px;font-size:10px;font-weight:600}'
+    + '._ua-access-on{background:#D1FAE5;color:#059669}'
+    + '._ua-access-off{background:#F3F4F6;color:#d1d5db;text-decoration:line-through}'
+    // Detail panel (expandable)
+    + '._ua-card-wrap{margin-bottom:8px}'
+    + '._ua-detail-panel{background:#fafafa;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 14px 14px;padding:16px 20px}'
+    + '._ua-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}'
+    + '._ua-detail-section{background:#fff;border:1px solid #f3f4f6;border-radius:10px;padding:10px 12px}'
+    + '._ua-detail-header{display:flex;align-items:center;gap:6px;font-size:12px;color:#111827;margin-bottom:6px;justify-content:space-between}'
+    + '._ua-detail-header._ua-detail-off{color:#d1d5db}'
+    + '._ua-detail-page{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#6b7280;padding:3px 0 3px 20px}'
+    + '._ua-detail-page._ua-detail-off{color:#d1d5db}'
+    + '._ua-check-on{color:#10b981;display:flex;align-items:center}'
+    + '._ua-check-off{color:#e5e7eb;display:flex;align-items:center}'
+    // Toggle switches for per-user permissions
+    + '._ua-perm-toggle{position:relative;display:inline-block;width:32px;height:18px;cursor:pointer;flex-shrink:0}'
+    + '._ua-perm-toggle input{opacity:0;width:0;height:0;position:absolute}'
+    + '._ua-perm-switch{position:absolute;inset:0;background:#e5e7eb;border-radius:18px;transition:all .25s}'
+    + '._ua-perm-switch:before{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;left:2px;top:2px;transition:transform .25s;box-shadow:0 1px 2px rgba(0,0,0,.15)}'
+    + '._ua-perm-toggle input:checked + ._ua-perm-switch{background:#10b981}'
+    + '._ua-perm-toggle input:checked + ._ua-perm-switch:before{transform:translateX(14px)}'
+    + '._ua-save-perms{margin-top:12px;text-align:right}'
   document.head.appendChild(s)
 }
 
@@ -147,6 +171,140 @@ function _injectStyles() {
 let _staff = []
 let _invites = []
 let _filter = 'all'
+let _permOverrides = {} // module|page|role → boolean
+let _expandedUser = null // user id com detalhes expandidos
+
+// ── Calcula modulos acessiveis por role ─────────────────────────
+const MODULE_ICONS = {
+  dashboard: 'grid', 'captacao-fullface': 'star', 'captacao-protocolos': 'activity',
+  agenda: 'calendar', patients: 'heart', whatsapp: 'message-circle',
+  growth: 'trending-up', 'app-rejuvenescimento': 'zap', financeiro: 'dollar-sign',
+  ferramentas: 'tool', mira: 'cpu', settings: 'settings',
+}
+
+function _getModulesForRole(role) {
+  var nav = window.NAV_CONFIG || []
+  var modules = []
+  nav.forEach(function (section) {
+    var sRoles = section.roles || []
+    // Check override first
+    var overKey = section.section + '||' + role
+    var allowed = overKey in _permOverrides ? _permOverrides[overKey]
+      : (sRoles.length === 0 || sRoles.indexOf(role) >= 0)
+    modules.push({
+      id: section.section,
+      label: section.label,
+      icon: MODULE_ICONS[section.section] || 'folder',
+      allowed: allowed,
+      pages: (section.pages || []).map(function (p) {
+        var pRoles = p.roles || sRoles
+        var pKey = section.section + '|' + p.page + '|' + role
+        var sKey = section.section + '||' + role
+        var pAllowed = pKey in _permOverrides ? _permOverrides[pKey]
+          : sKey in _permOverrides ? _permOverrides[sKey]
+          : (pRoles.length === 0 || pRoles.indexOf(role) >= 0)
+        return { id: p.page, label: p.label, allowed: pAllowed }
+      })
+    })
+  })
+  return modules
+}
+
+function _renderModuleAccess(role, userId) {
+  var nav = window.NAV_CONFIG || []
+  var userPerms = _userPermsCache[userId] || {}
+  var html = '<div class="_ua-access-grid">'
+  nav.forEach(function (section) {
+    if (section.section === 'settings') return
+    var allowed = _getEffectiveForUser(section.section, null, role, userPerms)
+    var icon = MODULE_ICONS[section.section] || 'folder'
+    var cls = allowed ? '_ua-access-item _ua-access-on' : '_ua-access-item _ua-access-off'
+    html += '<div class="' + cls + '" title="' + _esc(section.label) + '">' + _feather(icon, 12) + ' ' + _esc(section.label) + '</div>'
+  })
+  html += '</div>'
+  return html
+}
+
+// userPerms: { "module|page": true/false } overrides for this specific user
+let _userPermsCache = {} // userId → { "module|page": bool }
+
+async function _loadUserPerms(userId) {
+  if (_userPermsCache[userId]) return _userPermsCache[userId]
+  try {
+    var r = await _sb().rpc('get_user_permissions', { p_user_id: userId })
+    var perms = {}
+    if (r.data && r.data.permissions) {
+      r.data.permissions.forEach(p => { perms[p.module_id + '|' + (p.page_id || '')] = p.allowed })
+    }
+    _userPermsCache[userId] = perms
+    return perms
+  } catch (e) { return {} }
+}
+
+function _getEffectiveForUser(moduleId, pageId, role, userPerms) {
+  var uKey = moduleId + '|' + (pageId || '')
+  if (uKey in userPerms) return userPerms[uKey]
+  // Section-level user override
+  if (pageId) {
+    var uSectionKey = moduleId + '|'
+    if (uSectionKey in userPerms) return userPerms[uSectionKey]
+  }
+  // Role-level override
+  var rKey = moduleId + '|' + (pageId || '') + '|' + role
+  if (rKey in _permOverrides) return _permOverrides[rKey]
+  if (pageId) {
+    var rSectionKey = moduleId + '||' + role
+    if (rSectionKey in _permOverrides) return _permOverrides[rSectionKey]
+  }
+  // Default from nav-config
+  var nav = window.NAV_CONFIG || []
+  var section = nav.find(s => s.section === moduleId)
+  if (!section) return true
+  if (pageId) {
+    var page = section.pages.find(p => p.page === pageId)
+    var pRoles = (page && page.roles) || section.roles || []
+    return pRoles.length === 0 || pRoles.indexOf(role) >= 0
+  }
+  var sRoles = section.roles || []
+  return sRoles.length === 0 || sRoles.indexOf(role) >= 0
+}
+
+function _renderModuleDetail(role, userId, userPerms) {
+  var nav = window.NAV_CONFIG || []
+  var isOwner = role === 'owner'
+  var html = '<div class="_ua-detail-grid">'
+  nav.forEach(function (section) {
+    if (section.section === 'settings') return
+    var sAllowed = _getEffectiveForUser(section.section, null, role, userPerms)
+    var icon = MODULE_ICONS[section.section] || 'folder'
+
+    html += '<div class="_ua-detail-section">'
+      + '<div class="_ua-detail-header">'
+        + '<div style="display:flex;align-items:center;gap:6px">' + _feather(icon, 14) + ' <strong>' + _esc(section.label) + '</strong></div>'
+        + (isOwner ? '<span class="_ua-check-on">' + _feather('check', 12) + '</span>'
+          : '<label class="_ua-perm-toggle"><input type="checkbox" class="_ua-user-perm" data-uid="' + userId + '" data-module="' + section.section + '" data-page=""'
+            + (sAllowed ? ' checked' : '') + '><span class="_ua-perm-switch"></span></label>')
+      + '</div>'
+
+    if (section.pages && section.pages.length > 1) {
+      section.pages.forEach(function (p) {
+        var pAllowed = _getEffectiveForUser(section.section, p.page, role, userPerms)
+        html += '<div class="_ua-detail-page">'
+          + '<span>' + _esc(p.label) + '</span>'
+          + (isOwner ? '<span class="_ua-check-on">' + _feather('check', 10) + '</span>'
+            : '<label class="_ua-perm-toggle"><input type="checkbox" class="_ua-user-perm" data-uid="' + userId + '" data-module="' + section.section + '" data-page="' + p.page + '"'
+              + (pAllowed ? ' checked' : '') + '><span class="_ua-perm-switch"></span></label>')
+          + '</div>'
+      })
+    }
+    html += '</div>'
+  })
+  html += '</div>'
+  if (!isOwner) {
+    html += '<div class="_ua-save-perms"><button class="_ua-btn-gold _ua-save-user-perms" data-uid="' + userId + '" style="padding:7px 16px;font-size:12px">' + _feather('save', 13) + ' Salvar Permissoes</button></div>'
+  }
+  return html
+}
 
 // ── MAIN LOADER ─────────────────────────────────────────────────
 async function loadUsersAdmin() {
@@ -160,7 +318,12 @@ async function loadUsersAdmin() {
     var results = await Promise.all([
       _sb().rpc('list_staff'),
       _sb().rpc('list_pending_invites'),
+      _sb().rpc('get_module_permissions').catch(() => ({ data: { permissions: [] } })),
     ])
+    // Load permission overrides
+    var permsData = (results[2].data && results[2].data.permissions) || []
+    _permOverrides = {}
+    permsData.forEach(p => { _permOverrides[p.module_id + '|' + (p.page_id || '') + '|' + p.role] = p.allowed })
 
     if (results[0].error) throw results[0].error
     if (!results[0].data?.ok) throw new Error(_errMsg(results[0].data?.error))
@@ -231,29 +394,34 @@ function _renderAll(container) {
       const isOwner = u.role === 'owner'
       const canManage = !isSelf && !isOwner
 
-      html += '<div class="_ua-card _ua-fade" style="animation-delay:' + (idx * 40 + 200) + 'ms">'
-        + '<div style="display:flex;align-items:center;gap:14px;min-width:0;flex:1">'
-          + '<div class="_ua-avatar" style="background:' + rc.bg + ';color:' + rc.color + '">' + _initials(u.first_name, u.last_name) + '</div>'
-          + '<div style="min-width:0">'
-            + '<div class="_ua-name">'
-              + (u.is_active ? '<span class="_ua-dot" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>' : '')
-              + _esc(_fullName(u))
-              + (isSelf ? ' <span style="background:#DBEAFE;color:#3b82f6;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:4px">Voce</span>' : '')
-              + (!u.is_active ? ' <span style="background:#FEE2E2;color:#DC2626;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:4px">Inativo</span>' : '')
+      var isExpanded = _expandedUser === u.id
+      html += '<div class="_ua-card-wrap _ua-fade" style="animation-delay:' + (idx * 40 + 200) + 'ms">'
+        + '<div class="_ua-card">'
+          + '<div style="display:flex;align-items:center;gap:14px;min-width:0;flex:1">'
+            + '<div class="_ua-avatar" style="background:' + rc.bg + ';color:' + rc.color + '">' + _initials(u.first_name, u.last_name) + '</div>'
+            + '<div style="min-width:0">'
+              + '<div class="_ua-name">'
+                + (u.is_active ? '<span class="_ua-dot" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>' : '')
+                + _esc(_fullName(u))
+                + (isSelf ? ' <span style="background:#DBEAFE;color:#3b82f6;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:4px">Voce</span>' : '')
+                + (!u.is_active ? ' <span style="background:#FEE2E2;color:#DC2626;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:4px">Inativo</span>' : '')
+              + '</div>'
+              + '<div class="_ua-email">' + _esc(u.email) + '</div>'
+              + '<div class="_ua-module-chips">' + _renderModuleAccess(u.role, u.id) + '</div>'
             + '</div>'
-            + '<div class="_ua-email">' + _esc(u.email) + '</div>'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">'
+            + '<span class="_ua-role-badge" style="color:' + rc.color + ';background:' + rc.bg + '">' + _feather(rc.icon, 12) + ' ' + rc.label + '</span>'
+            + '<button class="_ua-btn-icon _ua-toggle-detail" data-id="' + u.id + '" title="Ver permissoes">' + _feather(isExpanded ? 'chevron-up' : 'chevron-down', 14) + '</button>'
+            + (canManage ? ''
+              + '<button class="_ua-btn-icon _ua-edit-role" data-id="' + u.id + '" data-role="' + u.role + '" data-name="' + _esc(_fullName(u)) + '" title="Alterar acesso">' + _feather('edit-2', 14) + '</button>'
+              + (u.is_active
+                ? '<button class="_ua-btn-icon _ua-btn-icon-danger _ua-deactivate" data-id="' + u.id + '" data-name="' + _esc(_fullName(u)) + '" title="Desativar">' + _feather('user-x', 14) + '</button>'
+                : '<button class="_ua-btn-icon _ua-activate" data-id="' + u.id + '" data-name="' + _esc(_fullName(u)) + '" title="Reativar">' + _feather('user-check', 14) + '</button>')
+             : '')
           + '</div>'
         + '</div>'
-        + '<div style="display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap">'
-          + '<span class="_ua-role-badge" style="color:' + rc.color + ';background:' + rc.bg + '">' + _feather(rc.icon, 12) + ' ' + rc.label + '</span>'
-          + '<span style="font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:4px">' + _feather('clock', 11) + ' ' + _timeAgo(u.created_at) + '</span>'
-          + (canManage ? '<div style="display:flex;gap:4px">'
-            + '<button class="_ua-btn-icon _ua-edit-role" data-id="' + u.id + '" data-role="' + u.role + '" data-name="' + _esc(_fullName(u)) + '" title="Alterar acesso">' + _feather('edit-2', 14) + '</button>'
-            + (u.is_active
-              ? '<button class="_ua-btn-icon _ua-btn-icon-danger _ua-deactivate" data-id="' + u.id + '" data-name="' + _esc(_fullName(u)) + '" title="Desativar">' + _feather('user-x', 14) + '</button>'
-              : '<button class="_ua-btn-icon _ua-activate" data-id="' + u.id + '" data-name="' + _esc(_fullName(u)) + '" title="Reativar">' + _feather('user-check', 14) + '</button>')
-            + '</div>' : '')
-        + '</div>'
+        + '<div class="_ua-detail-panel" id="_ua-detail-' + u.id + '" style="display:' + (isExpanded ? 'block' : 'none') + '"></div>'
         + '</div>'
     })
   }
@@ -297,6 +465,59 @@ function _renderAll(container) {
   })
   container.querySelectorAll('._ua-revoke').forEach(btn => {
     btn.addEventListener('click', () => _confirmAction('revoke', btn.dataset.id, btn.dataset.email))
+  })
+  // Toggle detail panel (load user perms on first expand)
+  container.querySelectorAll('._ua-toggle-detail').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      var uid = btn.dataset.id
+      var panel = document.getElementById('_ua-detail-' + uid)
+      if (!panel) return
+      if (_expandedUser === uid) {
+        _expandedUser = null
+        panel.style.display = 'none'
+        _renderAll(container) // re-render to update chevron
+        return
+      }
+      // Collapse any other
+      _expandedUser = uid
+      // Find user role
+      var user = _staff.find(u => u.id === uid)
+      if (!user) return
+      panel.innerHTML = '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">Carregando permissoes...</div>'
+      panel.style.display = 'block'
+      // Load user-specific permissions
+      var userPerms = await _loadUserPerms(uid)
+      panel.innerHTML = _renderModuleDetail(user.role, uid, userPerms)
+      if (window.feather) feather.replace({ root: panel })
+      // Bind save button
+      panel.querySelectorAll('._ua-save-user-perms').forEach(saveBtn => {
+        saveBtn.addEventListener('click', async () => {
+          var toggles = panel.querySelectorAll('._ua-user-perm')
+          var batch = []
+          toggles.forEach(t => {
+            batch.push({ module_id: t.dataset.module, page_id: t.dataset.page || null, allowed: t.checked })
+          })
+          saveBtn.disabled = true
+          saveBtn.innerHTML = _feather('loader', 13) + ' Salvando...'
+          try {
+            var r = await _sb().rpc('set_user_permissions', { p_user_id: uid, p_permissions: batch })
+            if (r.error) throw new Error(r.error.message)
+            if (r.data && !r.data.ok) throw new Error(r.data.error)
+            _userPermsCache[uid] = null // invalidate cache
+            _toast('Permissoes de ' + _fullName(user) + ' salvas!', 'ok')
+            // Reload to update chips
+            var freshPerms = await _loadUserPerms(uid)
+            panel.innerHTML = _renderModuleDetail(user.role, uid, freshPerms)
+            if (window.feather) feather.replace({ root: panel })
+          } catch (e) {
+            _toast('Erro: ' + e.message, 'error')
+            saveBtn.disabled = false
+            saveBtn.textContent = 'Salvar Permissoes'
+          }
+        })
+      })
+      _renderAll(container) // re-render to update chevron
+    })
   })
 }
 
