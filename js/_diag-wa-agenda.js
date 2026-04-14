@@ -17,8 +17,8 @@
   console.table(r3.data)
 
   console.log('═══ FONTE 4: wa_outbox recente (ultimas 10 msgs enfileiradas) ═══')
-  var r4 = await sb.from('wa_outbox').select('id,phone,scheduled_at,status,content,reason').order('created_at', { ascending: false }).limit(10)
+  var r4 = await sb.from('wa_outbox').select('*').order('created_at', { ascending: false }).limit(10)
   console.table((r4.data || []).map(function (x) {
-    return { id: x.id, phone: x.phone, status: x.status, scheduled_at: x.scheduled_at, reason: x.reason, content: (x.content || '').slice(0, 60) }
+    return { id: x.id, phone: x.phone, status: x.status, scheduled_at: x.scheduled_at, content: (x.content || '').slice(0, 60) }
   }))
 })()
