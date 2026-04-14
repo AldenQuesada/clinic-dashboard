@@ -20,6 +20,14 @@
       '</div>'
   }
 
+  function _refreshCollapseHeights(el) {
+    var node = el && el.closest ? el.closest('.qa-collapse-body') : null
+    while (node) {
+      if (!node.classList.contains('closed')) node.style.maxHeight = 'none'
+      node = node.parentElement ? node.parentElement.closest('.qa-collapse-body') : null
+    }
+  }
+
   function _bindCollapseEvents() {
     document.querySelectorAll('[data-collapse]').forEach(function(header) {
       header.addEventListener('click', function() {
@@ -32,6 +40,12 @@
           body.classList.remove('closed')
           body.style.maxHeight = body.scrollHeight + 'px'
           if (arrow) arrow.classList.add('open')
+          var _onOpenEnd = function(e) {
+            if (e.propertyName !== 'max-height') return
+            body.style.maxHeight = 'none'
+            body.removeEventListener('transitionend', _onOpenEnd)
+          }
+          body.addEventListener('transitionend', _onOpenEnd)
         } else {
           body.style.maxHeight = body.scrollHeight + 'px'
           requestAnimationFrame(function() {
@@ -172,6 +186,7 @@
     var blocks = QA.quiz().schema.intro.text_blocks || []
     if (container) container.innerHTML = _buildTextBlocksUI(blocks)
     _bindTextBlockEvents()
+    _refreshCollapseHeights(container)
     QA.markDirty()
     QA.renderPreview()
   }
@@ -243,11 +258,7 @@
       '</div>'
     }).join('')
     _bindChecklistEvents()
-    // Expand collapse body if it was auto-sized
-    var body = container.closest('.qa-collapse-body')
-    if (body && !body.classList.contains('closed')) {
-      body.style.maxHeight = body.scrollHeight + 'px'
-    }
+    _refreshCollapseHeights(container)
     QA.markDirty(); QA.renderPreview()
   }
 
@@ -340,6 +351,7 @@
     var items = QA.quiz().schema.intro.testimonials || []
     if (container) container.innerHTML = _buildTestimonialsUI(items)
     _bindTestimonialEvents()
+    _refreshCollapseHeights(container)
     QA.markDirty(); QA.renderPreview()
   }
 
@@ -528,6 +540,7 @@
     var carousels = QA.quiz().schema.intro.ba_carousels || []
     wrap.outerHTML = _buildBACarouselUI(carousels)
     _bindBACarouselEvents()
+    _refreshCollapseHeights(document.getElementById('cfg-ba-carousels'))
     QA.markDirty(); QA.renderPreview()
   }
 
@@ -789,6 +802,7 @@
       var list = document.getElementById('cfg-badges-list')
       if (list) list.innerHTML = _buildBadgesEditor(_activeQuiz.schema.intro.badges)
       _attachBadgeListeners()
+      _refreshCollapseHeights(list)
     }
 
     function _attachBadgeListeners() {
