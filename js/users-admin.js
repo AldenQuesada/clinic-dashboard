@@ -318,7 +318,7 @@ async function loadUsersAdmin() {
     var results = await Promise.all([
       _sb().rpc('list_staff'),
       _sb().rpc('list_pending_invites'),
-      _sb().rpc('get_module_permissions').catch(() => ({ data: { permissions: [] } })),
+      _sb().rpc('get_module_permissions').then(r => r, () => ({ data: { permissions: [] } })),
     ])
     // Load permission overrides
     var permsData = (results[2].data && results[2].data.permissions) || []
