@@ -323,6 +323,13 @@
     _activeQuiz.schema.analytics_thresholds = Object.assign({}, def.analytics_thresholds, _activeQuiz.schema.analytics_thresholds || {})
     if (!Array.isArray(_activeQuiz.schema.questions)) _activeQuiz.schema.questions = []
 
+    // Normaliza campos que DEVEM ser array — protege contra schema legado salvo como {}
+    function _ensureArr(obj, key) { if (!obj || !Array.isArray(obj[key])) obj[key] = [] }
+    var intr = _activeQuiz.schema.intro
+    var outr = _activeQuiz.schema.outro
+    ;['badges','checklists','testimonials','before_after','text_blocks'].forEach(function(k) { _ensureArr(intr, k) })
+    ;['badges','checklists','testimonials','before_after','text_blocks'].forEach(function(k) { _ensureArr(outr, k) })
+
     if (window.QuizId && QuizId.ensureIds(_activeQuiz.schema.questions)) {
       _dirty = true
       await _repo().updateTemplate(_activeQuiz.id, { schema: _activeQuiz.schema })
