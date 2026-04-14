@@ -91,7 +91,15 @@ function settingsTab(tab) {
   if (tab === 'rooms')         renderRoomsList()
   if (tab === 'technologies')  renderTechnologiesList()
   if (tab === 'injectables')   { _lazyLoadInjetaveis() }
-  if (tab === 'procedures')    { if (window.renderProcedimentos) { renderProcedimentos() } else { console.warn('procedimentos.js nao carregou') } }
+  if (tab === 'procedures')    {
+    if (window.renderProcedimentos) {
+      renderProcedimentos()
+    } else {
+      console.warn('procedimentos.js nao carregou')
+      const root = document.getElementById('page-procedimentos')
+      if (root) root.innerHTML = '<div style="padding:32px;text-align:center;color:#92400E;background:#FEF3C7;border:1px solid #FDE68A;border-radius:12px;font-size:13px"><div style="font-weight:700;margin-bottom:6px">Modulo nao carregou</div><div style="color:#78350F">O arquivo procedimentos.js nao esta disponivel. Recarregue a pagina (F5). Se persistir, contate o suporte.</div></div>'
+    }
+  }
   if (tab === 'clinic')        loadClinicSettings()
   if (tab === 'users')         { if (window.loadUsersAdmin) { loadUsersAdmin(); loadPendingInvites() } }
   if (tab === 'permissions')   { if (window.ModulePermissionsUI) { window.ModulePermissionsUI.init() } }
@@ -793,6 +801,8 @@ async function saveClinicSettings() {
     }
     if (!result.synced && result.error) {
       console.warn('[ClinicSettings] Salvo localmente, falha no Supabase:', result.error)
+      _showSaveResult('Salvo neste navegador, mas falhou ao sincronizar com o servidor. Tente salvar novamente.', 'warning')
+      return
     }
   } else {
     store.set(CLINIC_KEY, data)
@@ -817,18 +827,18 @@ async function saveClinicSettings() {
 function _showSaveResult(msg, type) {
   const saved = document.getElementById('sc_saved')
   if (!saved) return
-  if (type === 'error') {
-    const orig = saved.style.cssText
-    saved.textContent = msg || 'Erro ao salvar'
-    saved.style.background = '#FEF2F2'
-    saved.style.color      = '#DC2626'
+  if (type === 'error' || type === 'warning') {
+    const isWarn = type === 'warning'
+    saved.textContent = msg || (isWarn ? 'Salvo parcialmente' : 'Erro ao salvar')
+    saved.style.background = isWarn ? '#FEF3C7' : '#FEF2F2'
+    saved.style.color      = isWarn ? '#92400E' : '#DC2626'
     saved.style.display    = 'inline-flex'
     setTimeout(() => {
       saved.style.display    = 'none'
       saved.style.background = ''
       saved.style.color      = ''
       saved.textContent      = 'Salvo!'
-    }, 3500)
+    }, isWarn ? 6000 : 3500)
   } else {
     saved.textContent   = 'Salvo!'
     saved.style.display = 'inline-flex'

@@ -22,7 +22,9 @@
   var _overrides = {} // key: "module|page|role" → boolean
   var _dirty = {}     // mudancas pendentes
 
-  var ROLES_ORDER = ['owner', 'admin', 'therapist', 'receptionist', 'viewer']
+  // Owner sempre tem acesso total — exibido como nota acima da matriz,
+  // nao entra como coluna de toggle.
+  var ROLES_ORDER = ['admin', 'therapist', 'receptionist', 'viewer']
   var ROLE_LABELS = {
     owner:        { short: 'Dono',    icon: 'crown',  color: '#C9A96E' },
     admin:        { short: 'Admin',   icon: 'shield', color: '#7C3AED' },
@@ -115,6 +117,18 @@
       + '</button>'
       + '</div>'
 
+    // Owner banner — sempre acesso total
+    var ownerCfg = ROLE_LABELS.owner
+    html += '<div class="mp-owner-banner" style="border-left:3px solid ' + ownerCfg.color + '">'
+      + '<div class="mp-owner-icon" style="background:' + ownerCfg.color + '22;color:' + ownerCfg.color + '">'
+      +   _feather(ownerCfg.icon, 16)
+      + '</div>'
+      + '<div>'
+      +   '<div class="mp-owner-title" style="color:' + ownerCfg.color + '">' + ownerCfg.short + ' &middot; acesso total</div>'
+      +   '<div class="mp-owner-desc">O dono da clinica sempre tem acesso a todos os modulos e nao pode ser limitado.</div>'
+      + '</div>'
+    + '</div>'
+
     // Legend
     html += '<div class="mp-legend">'
     ROLES_ORDER.forEach(function (r) {
@@ -140,14 +154,13 @@
 
       ROLES_ORDER.forEach(function (role) {
         var allowed = _getEffective(section.section, null, role, section, null)
-        var isOwner = role === 'owner'
         var k = _key(section.section, null, role)
         var isDirty = k in _dirty
 
         html += '<div class="mp-toggle-cell">'
-          + '<label class="mp-toggle' + (isOwner ? ' mp-toggle-locked' : '') + (isDirty ? ' mp-toggle-dirty' : '') + '">'
+          + '<label class="mp-toggle' + (isDirty ? ' mp-toggle-dirty' : '') + '">'
             + '<input type="checkbox" class="mp-check" data-module="' + section.section + '" data-page="" data-role="' + role + '"'
-              + (allowed ? ' checked' : '') + (isOwner ? ' disabled' : '') + '>'
+              + (allowed ? ' checked' : '') + '>'
             + '<span class="mp-switch"></span>'
           + '</label>'
           + '</div>'
@@ -167,14 +180,13 @@
 
           ROLES_ORDER.forEach(function (role) {
             var allowed = _getEffective(section.section, page.page, role, section, page)
-            var isOwner = role === 'owner'
             var k = _key(section.section, page.page, role)
             var isDirty = k in _dirty
 
             html += '<div class="mp-toggle-cell">'
-              + '<label class="mp-toggle' + (isOwner ? ' mp-toggle-locked' : '') + (isDirty ? ' mp-toggle-dirty' : '') + '">'
+              + '<label class="mp-toggle' + (isDirty ? ' mp-toggle-dirty' : '') + '">'
                 + '<input type="checkbox" class="mp-check" data-module="' + section.section + '" data-page="' + page.page + '" data-role="' + role + '"'
-                  + (allowed ? ' checked' : '') + (isOwner ? ' disabled' : '') + '>'
+                  + (allowed ? ' checked' : '') + '>'
                 + '<span class="mp-switch"></span>'
               + '</label>'
               + '</div>'
@@ -279,6 +291,11 @@
       + '.mp-btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,169,110,.4)}'
       + '.mp-btn-gold:disabled{opacity:.4;pointer-events:none;transform:none}'
       + '.mp-dirty-badge{background:rgba(255,255,255,.3);padding:1px 7px;border-radius:10px;font-size:10px;margin-left:4px}'
+
+      + '.mp-owner-banner{display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(135deg,#fdf8ee,#fff);border:1px solid #f0e4cb;border-radius:12px;margin-bottom:12px}'
+      + '.mp-owner-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}'
+      + '.mp-owner-title{font-size:13px;font-weight:800;letter-spacing:.02em}'
+      + '.mp-owner-desc{font-size:11px;color:#6b7280;margin-top:2px;line-height:1.4}'
 
       + '.mp-legend{display:flex;gap:16px;margin-bottom:16px;padding:10px 16px;background:#fafafa;border-radius:10px;border:1px solid #f3f4f6}'
       + '.mp-legend-item{font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}'
