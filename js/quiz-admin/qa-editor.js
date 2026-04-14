@@ -1046,11 +1046,11 @@
     // Media bindings
     _bind('cfg-cover-url', function(v) {
       _activeQuiz.schema.intro.image_url = v
-      var prev = document.getElementById('cfg-cover-prev')
-      if (prev) {
-        if (v) { prev.src = QA.resolveImgUrl(v); prev.style.display = 'block' }
-        else { prev.style.display = 'none' }
-      }
+    })
+    var coverUrlEl = document.getElementById('cfg-cover-url')
+    if (coverUrlEl) coverUrlEl.addEventListener('change', function() {
+      var content = document.getElementById('qa-editor-content')
+      if (content && window.QAEditor) { content.innerHTML = QAEditor.buildConfigTab(); QAEditor.bindConfigEvents() }
     })
 
     var aspectEl = document.getElementById('cfg-cover-aspect')
@@ -1098,17 +1098,11 @@
 
     _bind('cfg-video-url', function(v) {
       _activeQuiz.schema.intro.video_url = v
-      var prev = document.getElementById('cfg-vid-prev')
-      var embed = QA.resolveVideoEmbed(v, false)
-      if (prev) {
-        if (embed) {
-          prev.innerHTML = '<iframe src="' + QA.esc(embed) + '" style="width:100%;height:100%;border:0" allowfullscreen></iframe>'
-          prev.style.display = 'block'
-        } else {
-          prev.innerHTML = ''
-          prev.style.display = 'none'
-        }
-      }
+    })
+    var vidUrlEl = document.getElementById('cfg-video-url')
+    if (vidUrlEl) vidUrlEl.addEventListener('change', function() {
+      var content = document.getElementById('qa-editor-content')
+      if (content && window.QAEditor) { content.innerHTML = QAEditor.buildConfigTab(); QAEditor.bindConfigEvents() }
     })
 
     var autoplayEl = document.getElementById('cfg-video-autoplay')
@@ -1119,11 +1113,11 @@
 
     _bind('cfg-logo-url', function(v) {
       _activeQuiz.schema.intro.logo_url = v
-      var prev = document.getElementById('cfg-logo-prev')
-      if (prev) {
-        if (v) { prev.src = QA.resolveImgUrl(v); prev.style.display = 'block' }
-        else { prev.style.display = 'none' }
-      }
+    })
+    var logoUrlEl = document.getElementById('cfg-logo-url')
+    if (logoUrlEl) logoUrlEl.addEventListener('change', function() {
+      var content = document.getElementById('qa-editor-content')
+      if (content && window.QAEditor) { content.innerHTML = QAEditor.buildConfigTab(); QAEditor.bindConfigEvents() }
     })
 
     var copyBtn = document.getElementById('cfg-copy-link')
