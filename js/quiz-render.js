@@ -829,7 +829,7 @@
     }
 
     // Authority Badges
-    var badges = intro.badges || []
+    var badges = Array.isArray(intro.badges) ? intro.badges : []
     var badgesHtml = ''
     if (badges.length > 0) {
       var badgeIcons = {

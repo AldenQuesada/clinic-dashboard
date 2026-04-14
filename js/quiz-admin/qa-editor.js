@@ -607,9 +607,9 @@
       , {open: true}) +
       _section('Badges (Prova Social)',
         '<div style="font-size:11px;color:#9ca3af;margin-bottom:10px">Badges de autoridade exibidos na tela de inicio.</div>' +
-        '<div id="cfg-badges-list">' + _buildBadgesEditor(intr.badges || []) + '</div>' +
+        '<div id="cfg-badges-list">' + _buildBadgesEditor(Array.isArray(intr.badges) ? intr.badges : []) + '</div>' +
         '<button class="qa-add-btn" id="cfg-badge-add" style="margin-bottom:12px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Adicionar Badge</button>'
-      , {open: (intr.badges||[]).filter(function(b){return b.text}).length > 0, count: (intr.badges||[]).filter(function(b){return b.text}).length}) +
+      , (function(){ var b = Array.isArray(intr.badges) ? intr.badges.filter(function(x){return x.text}) : []; return {open: b.length > 0, count: b.length} })()) +
       _section('Blocos de Texto',
         '<div style="font-size:11px;color:#9ca3af;margin-bottom:10px">Textos em qualquer posicao. <strong>Simples</strong> = cinza. <strong>Destaque</strong> = azul.</div>' +
         '<div id="cfg-text-blocks">' + _buildTextBlocksUI(intr.text_blocks || []) + '</div>' +
@@ -794,7 +794,7 @@
 
   function _bindBadgesEvents() {
     var _activeQuiz = QA.quiz()
-    if (!_activeQuiz.schema.intro.badges) _activeQuiz.schema.intro.badges = []
+    if (!Array.isArray(_activeQuiz.schema.intro.badges)) _activeQuiz.schema.intro.badges = []
 
     function _syncBadges() {
       QA.markDirty()

@@ -318,7 +318,7 @@
     }
 
     // ── Intro preview (default) ───────────────────────────────────
-    var badges = intr.badges || []
+    var badges = Array.isArray(intr.badges) ? intr.badges : []
     var badgesPreviewHtml = ''
     if (badges.length > 0) {
       var badgeIcons = {
