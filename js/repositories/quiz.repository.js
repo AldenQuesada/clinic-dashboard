@@ -370,6 +370,28 @@
     }
   }
 
+  // ── deleteAbandonedSessions ──────────────────────────────
+  /**
+   * Deleta quiz_events das sessoes abandonadas informadas.
+   * @param {string} quizId
+   * @param {string} clinicId
+   * @param {string[]} sessionIds
+   * @returns {Promise<{ok, data: {deleted:number}, error}>}
+   */
+  async function deleteAbandonedSessions(quizId, clinicId, sessionIds) {
+    try {
+      var res = await _sb().rpc('quiz_delete_abandoned_sessions', {
+        p_quiz_id:     quizId,
+        p_clinic_id:   clinicId,
+        p_session_ids: sessionIds || [],
+      })
+      if (res.error) return _err(res.error.message || String(res.error))
+      return _ok(res.data || { deleted: 0 })
+    } catch (err) {
+      return _err(err.message || String(err))
+    }
+  }
+
   // ── Exposição global ──────────────────────────────────────
   window.QuizRepository = Object.freeze({
     getTemplates,
@@ -381,6 +403,7 @@
     getResponses,
     getAnalytics,
     getAbandonedLeads,
+    deleteAbandonedSessions,
     trackEvent,
     getAlerts,
     markAlertDone,

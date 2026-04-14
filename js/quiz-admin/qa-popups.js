@@ -41,7 +41,8 @@
       if (filtered.length === 0) return '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">Nenhum lead neste filtro</div>'
 
       return '<table class="qa-leads-table"><thead><tr>' +
-        '<th>Status</th><th>Nome</th><th>WhatsApp</th><th>Abandonou em</th><th>Progresso</th><th>Data</th>' +
+        '<th style="width:28px"><input type="checkbox" id="qa-ab-check-all" style="cursor:pointer"></th>' +
+        '<th>Status</th><th>Nome</th><th>WhatsApp</th><th>Abandonou em</th><th>Progresso</th><th>Data</th><th style="width:44px"></th>' +
         '</tr></thead><tbody>' +
         filtered.map(function(a) {
           var hasContact = a.contact_name || a.contact_phone
@@ -58,13 +59,16 @@
           var phoneCell = a.contact_phone
             ? '<div style="display:flex;align-items:center;gap:6px;white-space:nowrap"><span class="qa-leads-phone">' + QA.esc(a.contact_phone) + '</span>' + (waLink || '') + '</div>'
             : '<span style="color:#9ca3af">-</span>'
-          return '<tr>' +
+          var sid = QA.esc(a.session_id || '')
+          return '<tr data-sid="' + sid + '">' +
+            '<td><input type="checkbox" class="qa-ab-row-check" data-sid="' + sid + '" style="cursor:pointer"></td>' +
             '<td><span class="qa-abandoned-tag ' + tagClass + '">' + tagLabel + '</span></td>' +
             '<td class="qa-leads-name">' + QA.esc(a.contact_name || '-') + '</td>' +
             '<td>' + phoneCell + '</td>' +
             '<td style="font-size:12px;color:#374151">' + QA.esc(a.last_step_label || 'Step ' + a.last_step) + '</td>' +
             '<td style="white-space:nowrap"><span class="qa-progress-bar"><span class="qa-progress-fill" style="width:' + Math.max(pct, 8) + '%;background:' + progressColor + '"></span></span><span style="font-size:11px;font-weight:700;color:' + progressColor + '">' + stepsNum + '/' + totalQuestions + '</span></td>' +
             '<td class="qa-leads-date">' + dateStr + '</td>' +
+            '<td><button class="qa-ab-del-row" data-sid="' + sid + '" title="Excluir este lead" style="background:transparent;border:0;cursor:pointer;color:#ef4444;padding:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg></button></td>' +
           '</tr>'
         }).join('') +
         '</tbody></table>'
@@ -138,10 +142,13 @@
             '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Aplicar' +
           '</button>' +
         '</div>' +
-        '<div style="padding:8px 20px 0;display:flex;gap:4px">' +
+        '<div style="padding:8px 20px 0;display:flex;gap:4px;align-items:center;flex-wrap:wrap">' +
           '<button class="qa-period-btn active" data-ab-filter="all">Todos (' + currentData.length + ')</button>' +
           '<button class="qa-period-btn" data-ab-filter="recoverable">Recuperáveis (' + recCount + ')</button>' +
           '<button class="qa-period-btn" data-ab-filter="anonymous">Anônimos (' + anonCount + ')</button>' +
+          '<div style="flex:1"></div>' +
+          '<button class="qa-period-btn" id="qa-ab-del-selected" style="color:#ef4444;border-color:#fecaca" disabled>Excluir selecionados (0)</button>' +
+          '<button class="qa-period-btn" id="qa-ab-del-all" style="color:#ef4444;border-color:#fecaca">Excluir todos filtrados</button>' +
         '</div>' +
         '<div class="qa-answers-body" id="qa-ab-body" style="padding:10px 20px 20px">' +
           '<div class="qa-leads-wrap" style="max-height:none">' + _buildTable(currentData, 'all') + '</div>' +
@@ -179,8 +186,82 @@
         btn.classList.add('active')
         currentFilter = btn.getAttribute('data-ab-filter')
         _renderBody(overlay)
+        _refreshSelectionCount(overlay)
       }
     })
+
+    function _filteredSessionIds() {
+      var data = currentData
+      if (currentFilter === 'recoverable') data = data.filter(function(a) { return a.contact_name || a.contact_phone })
+      if (currentFilter === 'anonymous')   data = data.filter(function(a) { return !a.contact_name && !a.contact_phone })
+      return data.map(function(a) { return a.session_id }).filter(Boolean)
+    }
+
+    function _selectedSessionIds() {
+      var ids = []
+      overlay.querySelectorAll('.qa-ab-row-check:checked').forEach(function(cb) {
+        var sid = cb.getAttribute('data-sid')
+        if (sid) ids.push(sid)
+      })
+      return ids
+    }
+
+    function _refreshSelectionCount(ov) {
+      var n = (ov || overlay).querySelectorAll('.qa-ab-row-check:checked').length
+      var btn = (ov || overlay).querySelector('#qa-ab-del-selected')
+      if (btn) {
+        btn.textContent = 'Excluir selecionados (' + n + ')'
+        btn.disabled = n === 0
+      }
+      var all = (ov || overlay).querySelector('#qa-ab-check-all')
+      if (all) {
+        var total = (ov || overlay).querySelectorAll('.qa-ab-row-check').length
+        all.checked = total > 0 && n === total
+        all.indeterminate = n > 0 && n < total
+      }
+    }
+
+    async function _doDelete(sessionIds) {
+      if (!sessionIds || !sessionIds.length) return
+      var msg = sessionIds.length === 1
+        ? 'Excluir este lead abandonado? Esta ação é irreversível.'
+        : 'Excluir ' + sessionIds.length + ' leads abandonados? Esta ação é irreversível.'
+      if (!window.confirm(msg)) return
+      var res = await QA.repo().deleteAbandonedSessions(quizId, QA.clinicId(), sessionIds)
+      if (!res.ok) {
+        alert('Erro ao excluir: ' + (res.error || 'desconhecido'))
+        return
+      }
+      currentData = currentData.filter(function(a) { return sessionIds.indexOf(a.session_id) === -1 })
+      _updateCounts(overlay, currentData)
+      _renderBody(overlay)
+      _refreshSelectionCount(overlay)
+    }
+
+    overlay.addEventListener('change', function(e) {
+      if (e.target.classList && e.target.classList.contains('qa-ab-row-check')) {
+        _refreshSelectionCount(overlay)
+      } else if (e.target.id === 'qa-ab-check-all') {
+        var checked = e.target.checked
+        overlay.querySelectorAll('.qa-ab-row-check').forEach(function(cb) { cb.checked = checked })
+        _refreshSelectionCount(overlay)
+      }
+    })
+
+    overlay.addEventListener('click', function(e) {
+      var delBtn = e.target.closest && e.target.closest('.qa-ab-del-row')
+      if (delBtn) {
+        e.preventDefault()
+        var sid = delBtn.getAttribute('data-sid')
+        if (sid) _doDelete([sid])
+      }
+    })
+
+    var delSelBtn = overlay.querySelector('#qa-ab-del-selected')
+    if (delSelBtn) delSelBtn.onclick = function() { _doDelete(_selectedSessionIds()) }
+
+    var delAllBtn = overlay.querySelector('#qa-ab-del-all')
+    if (delAllBtn) delAllBtn.onclick = function() { _doDelete(_filteredSessionIds()) }
   }
 
   function _showThresholdPopup(metricKey) {
