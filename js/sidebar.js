@@ -520,6 +520,18 @@
     // Persiste a página atual para sobreviver a reloads (F5)
     try { localStorage.setItem('clinicai_last_page', pageId) } catch {}
 
+    // Atualiza ?page= na URL para refletir a página ativa.
+    // Sem isso, um ?page= antigo na URL (ex: bookmark) sequestraria todo F5
+    // independente da navegação subsequente — pois urlPage tem prioridade
+    // sobre localStorage no buildSidebar.
+    try {
+      const url = new URL(window.location.href)
+      if (url.searchParams.get('page') !== pageId) {
+        url.searchParams.set('page', pageId)
+        history.replaceState(null, '', url.pathname + url.search + url.hash)
+      }
+    } catch {}
+
     // Oculta todas as páginas
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
 
