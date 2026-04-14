@@ -29,6 +29,15 @@
   var _svc = function () { return window.AgendaAutomationsService }
   var _initialized = false
 
+  // Slugs que representam fases do ciclo de vida do agendamento.
+  // Tratados exclusivamente por processStatusChange/_enqueueCampaignForPhase —
+  // dispatchCampaignForTag/Lead ignora para evitar duplicacao.
+  var _APPT_LIFECYCLE_SLUGS = {
+    agendado: 1, aguardando_confirmacao: 1, confirmado: 1, aguardando: 1,
+    na_clinica: 1, em_consulta: 1, em_atendimento: 1, finalizado: 1,
+    remarcado: 1, cancelado: 1, no_show: 1, compareceu: 1,
+  }
+
   // ── Init: load rules on first use ──────────────────────────
   async function _ensureLoaded() {
     if (_initialized) return
@@ -562,6 +571,8 @@
     if (!window._sbShared || !leadPhone) return
     var phaseSlug = (phase || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
     if (!phaseSlug) return
+    // Fases de agendamento disparam apenas via processStatusChange (evita duplicacao)
+    if (_APPT_LIFECYCLE_SLUGS[phaseSlug]) return
 
     var phone = leadPhone.replace(/\D/g, '')
     if (!phone) return
@@ -603,6 +614,7 @@
         scheduledAt.setDate(scheduledAt.getDate() + (parseInt(tpl.day) || 0))
         scheduledAt.setHours(scheduledAt.getHours() + (parseInt(tpl.delay_hours) || 0))
         scheduledAt.setMinutes(scheduledAt.getMinutes() + (parseInt(tpl.delay_minutes) || 0))
+        if (scheduledAt.getTime() <= now.getTime()) return
 
         _enqueueWA(phone, content, fakeAppt, scheduledAt, 'campaign:lead:' + phaseSlug + ':' + (tpl.slug || ''))
       })
@@ -620,6 +632,8 @@
     if (!window._sbShared) return
     var phaseSlug = (tagSlug || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
     if (!phaseSlug) return
+    // Tags que sao fases de agendamento disparam apenas via processStatusChange
+    if (_APPT_LIFECYCLE_SLUGS[phaseSlug]) return
 
     // Buscar telefone do lead
     var phone = ''
@@ -659,6 +673,7 @@
         scheduledAt.setDate(scheduledAt.getDate() + (parseInt(tpl.day) || 0))
         scheduledAt.setHours(scheduledAt.getHours() + (parseInt(tpl.delay_hours) || 0))
         scheduledAt.setMinutes(scheduledAt.getMinutes() + (parseInt(tpl.delay_minutes) || 0))
+        if (scheduledAt.getTime() <= now.getTime()) return
 
         _enqueueWA(phone, content, fakeAppt, scheduledAt, 'campaign:tag:' + phaseSlug + ':' + (tpl.slug || ''))
       })
