@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria Lara — WhatsApp AI ClinicAI</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --surface: #12151c;
+    --surface-2: #1a1e28;
+    --border: #232834;
+    --text: #e6e9ef;
+    --muted: #8b94a7;
+    --accent: #6b8aff;
+    --green: #3ddc97;
+    --yellow: #f5c451;
+    --red: #ff6b6b;
+    --orange: #ff9f43;
+    --code: #0f1218;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    font-size: 14px;
+    padding: 0;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 28px 80px; }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+  }
+  .subtitle { color: var(--muted); font-size: 13px; }
+  .meta-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .meta-row strong { color: var(--text); }
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 36px;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2 .num {
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 18px;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+  p { margin-bottom: 10px; color: var(--text); }
+  p.muted { color: var(--muted); }
+  ul, ol { margin: 8px 0 12px 22px; }
+  li { margin-bottom: 4px; }
+  code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    background: var(--code);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: #d6e1ff;
+  }
+  pre {
+    background: var(--code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #d6e1ff;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 12.5px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    background: var(--surface-2);
+    font-weight: 600;
+    color: var(--text);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  tr:hover td { background: var(--surface); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 12px 0;
+  }
+  .grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .pill.ok     { background: rgba(61,220,151,0.12); color: var(--green);  border-color: rgba(61,220,151,0.3); }
+  .pill.warn   { background: rgba(245,196,81,0.12); color: var(--yellow); border-color: rgba(245,196,81,0.3); }
+  .pill.high   { background: rgba(255,159,67,0.12); color: var(--orange); border-color: rgba(255,159,67,0.3); }
+  .pill.crit   { background: rgba(255,107,107,0.12); color: var(--red);   border-color: rgba(255,107,107,0.3); }
+  .pill.info   { background: rgba(107,138,255,0.12); color: var(--accent); border-color: rgba(107,138,255,0.3); }
+  .kv { display: grid; grid-template-columns: 180px 1fr; gap: 6px 14px; font-size: 13px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { color: var(--text); }
+  .callout {
+    border-left: 3px solid var(--accent);
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 13px;
+  }
+  .callout.warn { border-left-color: var(--yellow); }
+  .callout.crit { border-left-color: var(--red); }
+  .callout.ok   { border-left-color: var(--green); }
+  .flow {
+    background: var(--code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    white-space: pre;
+    overflow-x: auto;
+    color: #d6e1ff;
+    line-height: 1.7;
+  }
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+  }
+  .toc ol { margin: 6px 0 0 20px; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 13px; }
+  .toc a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .footer {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+  }
+  .severity-cell { white-space: nowrap; }
+  .section-sub { color: var(--muted); font-size: 12.5px; margin-top: -4px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Auditoria Lara — Sistema WhatsApp com IA</h1>
+  <div class="subtitle">ClinicAI Dashboard — Mapa completo da Lara: infra, dados, lógica, fluxo, bugs.</div>
+  <div class="meta-row">
+    <div><strong>Data:</strong> 2026-04-14</div>
+    <div><strong>Repositório:</strong> clinic-dashboard</div>
+    <div><strong>Workflow n8n:</strong> <code>0cTSZyQ98wGxf1Qx</code></div>
+    <div><strong>Evolution Instance:</strong> <code>Mih</code></div>
+  </div>
+</header>
+
+<div class="toc">
+  <strong>Sumário</strong>
+  <ol>
+    <li><a href="#s1">Visão geral e onde a Lara roda</a></li>
+    <li><a href="#s2">Infraestrutura (n8n, Evolution, Claude, Supabase)</a></li>
+    <li><a href="#s3">Banco de dados — tabelas e RPCs</a></li>
+    <li><a href="#s4">Guards (blindagens)</a></li>
+    <li><a href="#s5">Fluxo de mensagem (sequência completa)</a></li>
+    <li><a href="#s6">Pipeline sequencial (texto + fotos + follow-up)</a></li>
+    <li><a href="#s7">Funcionalidades</a></li>
+    <li><a href="#s8">Frontend — Inbox e telas relacionadas</a></li>
+    <li><a href="#s9">Integrações com o resto do sistema</a></li>
+    <li><a href="#s10">O que funciona</a></li>
+    <li><a href="#s11">Problemas e débitos técnicos</a></li>
+    <li><a href="#s12">Recomendações priorizadas</a></li>
+    <li><a href="#s13">Bugs operacionais reportados (críticos)</a></li>
+    <li><a href="#s14">Sequências de mensagens / templates</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s1"><span class="num">1</span> Visão geral e onde a Lara roda</h2>
+
+<p>Lara é um agente de IA (Claude Sonnet) que atende leads de estética no WhatsApp da clínica. Opera em 3 modos: <strong>onboarder</strong> (primeiro contato), <strong>SDR/closer</strong> (qualifica e agenda), <strong>confirmador/recuperador</strong> (lembretes e no-show).</p>
+
+<div class="card">
+  <dl class="kv">
+    <dt>Webhook receptor</dt>
+    <dd><code>https://flows.aldenquesada.site/webhook/lara-webhook</code></dd>
+    <dt>Workflow n8n</dt>
+    <dd><code>n8n/lara-whatsapp-workflow.json</code> (933 linhas, workflow ID <code>0cTSZyQ98wGxf1Qx</code>)</dd>
+    <dt>Prompt-mestre</dt>
+    <dd><code>.aios-core/agents/lara-prompt.md</code> (202 linhas, 6 personas)</dd>
+    <dt>Modelo IA</dt>
+    <dd><code>claude-sonnet-4-20250514</code>, <code>max_tokens: 500</code>, temperature default</dd>
+    <dt>Canal de saída</dt>
+    <dd>Evolution API v2.3.0 (instância <code>Mih</code>) → <code>https://evolution.aldenquesada.site</code></dd>
+    <dt>Banco</dt>
+    <dd>Supabase (<code>oqboitkpcvuaudouwvkl</code>) — 29 migrations WhatsApp-related</dd>
+    <dt>Jobs agendados</dt>
+    <dd>pg_cron (reativação 1min, nudge 5min, cadências 30min)</dd>
+    <dt>Frontend</dt>
+    <dd>"Central de Atendimento" + páginas de Automações, Broadcast, Agenda de Mensagens</dd>
+  </dl>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s2"><span class="num">2</span> Infraestrutura</h2>
+
+<h3>n8n — Workflow Lara WhatsApp</h3>
+<p class="section-sub">Pipeline sequencial (post-Process AI Response NUNCA paralelo — race condition de timestamps já foi bug grave resolvido em 2026-04-04).</p>
+<table>
+  <thead><tr><th>Bloco</th><th>Node(s)</th><th>Função</th></tr></thead>
+  <tbody>
+    <tr><td>Entrada</td><td>Webhook, Parse Message, Route Message (Switch)</td><td>Recebe Evolution event, parse phone/content/tipo, roteia: skip / secretary / lead</td></tr>
+    <tr><td>Roteamento secretária</td><td>Log Secretary → Respond Secretary</td><td>Quando <code>fromMe=true</code> e source é android/web/ios, loga como humano</td></tr>
+    <tr><td>Contexto + guards</td><td>Get Lead Context → Download Media → Guard Check → Merge Guard → Guard Route</td><td>Carrega histórico, baixa imagem se houver, roda guards</td></tr>
+    <tr><td>IA</td><td>Build Claude Prompt → Claude API</td><td>Monta system prompt com persona/funil/histórico e chama Claude</td></tr>
+    <tr><td>Pós-processo</td><td>Process AI Response → Send WhatsApp → Send Photo → Log Sequential → Save Lead → Respond OK</td><td>Sequencial (ver seção 6)</td></tr>
+    <tr><td>Bloqueio</td><td>Log Inbound Only → Respond OK Paused</td><td>Quando guard bloqueia: só loga inbound, não chama IA</td></tr>
+  </tbody>
+</table>
+
+<h3>Evolution API</h3>
+<div class="kv">
+  <dt>URL</dt>                <dd><code>https://evolution.aldenquesada.site</code></dd>
+  <dt>Instance</dt>           <dd><code>Mih</code></dd>
+  <dt>Endpoints usados</dt>   <dd><code>/message/sendText/Mih</code>, <code>/message/sendMedia/Mih</code></dd>
+  <dt>Eventos webhook</dt>    <dd>MESSAGES_UPSERT, MESSAGES_UPDATE, SEND_MESSAGE, CONNECTION_UPDATE</dd>
+</div>
+
+<h3>Claude API</h3>
+<div class="kv">
+  <dt>Modelo</dt>          <dd><code>claude-sonnet-4-20250514</code></dd>
+  <dt>Max tokens</dt>      <dd>500</dd>
+  <dt>Vision</dt>          <dd>Habilitado (base64) — Lara analisa fotos enviadas pelo lead</dd>
+  <dt>API key</dt>         <dd>Injetada direto no node n8n (não committada — no JSON vem <code>REDACTED-SET-IN-N8N-DIRECTLY</code>)</dd>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s3"><span class="num">3</span> Banco de dados</h2>
+
+<h3>Tabelas principais</h3>
+<table>
+  <thead><tr><th>Tabela</th><th>Conteúdo</th><th>Observações</th></tr></thead>
+  <tbody>
+    <tr><td><code>wa_numbers</code></td><td>Números conectados (instance, api_key, label)</td><td>—</td></tr>
+    <tr><td><code>wa_conversations</code></td><td>1 por lead/número. Campos-chave: <code>ai_enabled</code>, <code>ai_persona</code>, <code>funnel</code>, <code>tags</code>, <code>remote_jid</code>, <code>reactivation_sent</code>, <code>paused_by</code>, <code>last_inbound_at</code></td><td>Unique index parcial: <code>(clinic_id, phone) WHERE status='active'</code> impede duplicatas</td></tr>
+    <tr><td><code>wa_messages</code></td><td>Histórico: direction, sender (lara/humano/lead), content_type, media_url, ai_generated, ai_tokens_used</td><td>Outbound recebe <code>sent_at = now() + Ns</code> para ordem correta</td></tr>
+    <tr><td><code>wa_message_templates</code></td><td>Templates editáveis (slug, category, body)</td><td>Categorias: onboarding / follow_up / agendamento / pos_consulta / recuperacao</td></tr>
+    <tr><td><code>wa_cadences</code></td><td>Steps de follow-up (day, hour, template_slug, ai_mode, send_photo)</td><td>Full Face 1-2-3-5-7-10; Procedimentos 1-5</td></tr>
+    <tr><td><code>wa_outbox</code></td><td>Fila de envio (status, scheduled_at, appt_ref, content)</td><td>Processor n8n roda 2min. Unique parcial recém-adicionado (migration <code>20260679</code>, <strong>pendente aplicar</strong>)</td></tr>
+    <tr><td><code>wa_media</code></td><td>Banco de fotos antes/depois por queixa (geral, olheiras, sulcos, flacidez, contorno, papada, textura, rugas, rejuvenescimento)</td><td>~16 fotos. Regra: 2 por envio, pessoas diferentes</td></tr>
+    <tr><td><code>wa_phone_blacklist</code></td><td>Telefones bloqueados (staff/teste/fornecedores)</td><td>21 seeds. Check em <code>wa_log_message</code> e <code>wa_upsert_lead_from_chat</code></td></tr>
+    <tr><td><code>wa_errors</code></td><td>Log de falhas (source, error_type, phone, payload)</td><td>Observabilidade</td></tr>
+  </tbody>
+</table>
+
+<h3>RPCs principais</h3>
+<table>
+  <thead><tr><th>RPC</th><th>Migration</th><th>Função</th></tr></thead>
+  <tbody>
+    <tr><td><code>wa_guard_check</code></td><td>20260628</td><td>Valida todas as blindagens (ver §4) e retorna decisão: allow / block / emergency / human_handoff</td></tr>
+    <tr><td><code>wa_get_lead_context</code></td><td>20260591</td><td>Retorna lead + últimas 20 msgs + persona + funnel + counts</td></tr>
+    <tr><td><code>wa_log_message_sequential</code></td><td>20260604/605</td><td>Log atômico: inbound + outbound + fotos + follow-up com timestamps incrementais</td></tr>
+    <tr><td><code>wa_detect_funnel_from_message</code></td><td>20260628</td><td>Regex: "quiz Lifting 5D" → fullface; "olheiras"+"palpebras" → olheiras; senão NULL</td></tr>
+    <tr><td><code>wa_auto_reactivate</code></td><td>20260593</td><td>Reativa Lara se secretária parou 2+ min (pg_cron 1min)</td></tr>
+    <tr><td><code>wa_nudge_inactive</code></td><td>— (via cron)</td><td>1 reativação máx por conversa, só horário comercial (seg-sex 8-19h, sab 8-13h)</td></tr>
+    <tr><td><code>wa_run_cadences</code></td><td>—</td><td>Dispara follow-ups programados (pg_cron 30min, 8-20h BRT)</td></tr>
+    <tr><td><code>wa_upsert_lead_from_chat</code></td><td>20260627</td><td>Cria/atualiza lead; retorna NULL se blacklistado</td></tr>
+    <tr><td><code>wa_find_conversation</code></td><td>20260627</td><td>Busca por phone OU remote_jid (tolerante a LID format)</td></tr>
+    <tr><td><code>wa_log_secretary_reply</code></td><td>20260627</td><td>Loga resposta manual (sender=humano); cria conversa nova se não achar match</td></tr>
+    <tr><td><code>wa_inbox_list</code> / <code>assume</code> / <code>release</code></td><td>20260589</td><td>Suporte à Central de Atendimento (listar, assumir, liberar)</td></tr>
+    <tr><td><code>wa_is_phone_blacklisted</code></td><td>20260638</td><td>SECURITY DEFINER, STABLE — helper do guard</td></tr>
+    <tr><td><code>wa_outbox_schedule_automation</code></td><td>20260663 / 20260671</td><td>Enfileira msg de agendamento. Com <code>EXCEPTION WHEN unique_violation</code> após 20260679 (pendente aplicar)</td></tr>
+    <tr><td><code>wa_outbox_on_sent</code></td><td>20260601+</td><td>Marca outbox como enviado</td></tr>
+  </tbody>
+</table>
+
+<h3>Triggers e jobs</h3>
+<ul>
+  <li><code>trg_lead_onboarding</code> — dispara na inserção de lead, cria conversa de onboarding</li>
+  <li><code>trg_reset_reactivation</code> — reseta flag <code>reactivation_sent</code> quando lead envia msg</li>
+  <li><code>pg_cron: wa-auto-reactivate</code> — 1min</li>
+  <li><code>pg_cron: wa_nudge</code> — 5min (horário comercial)</li>
+  <li><code>pg_cron: wa_run_cadences</code> — 30min</li>
+  <li><code>pg_cron: outbox-processor</code> (via workflow n8n dedicado <code>x5f4MApEcSUX5hca</code>) — 2min</li>
+</ul>
+
+<!-- ============================================================= -->
+<h2 id="s4"><span class="num">4</span> Guards (blindagens)</h2>
+<p class="section-sub">Todas implementadas em <code>wa_guard_check()</code>. Ordem de avaliação importa: primeiro bloqueio válido encerra o pipeline.</p>
+
+<table>
+  <thead><tr><th>Guard</th><th>Limite/Trigger</th><th>Ação</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>ai_disabled</td><td>conversa pausada (<code>ai_enabled=false</code>)</td><td>block</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>no_funnel</td><td>conversa sem funil definido</td><td>block</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>phase_excluded</td><td>lead.phase ∈ {paciente, orcamento, perdido}</td><td>block</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>debounce</td><td>5 segundos entre msgs</td><td>block</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>daily_limit</td><td>30 msgs/dia outbound AI</td><td>block + auto-pause</td><td><span class="pill warn">Inconsistência histórica</span></td></tr>
+    <tr><td>spam_repeated / duplicate</td><td>3x mesma msg</td><td>block</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>emergency</td><td>keywords: urgente, sangramento, dor forte, alergia, hospital, febre</td><td>emergency + handoff humano</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>human_handoff / wants_human</td><td>"falar com", "atendente", "gerente"</td><td>pause + flag</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>inappropriate</td><td>xingamentos, termos ofensivos</td><td>pause</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>complaint</td><td>"procon", "advogado", "tribunal"</td><td>handoff</td><td><span class="pill ok">OK</span></td></tr>
+    <tr><td>approaching_limit</td><td>25+ msgs/dia</td><td>flag (não bloqueia)</td><td><span class="pill info">Preventivo</span></td></tr>
+    <tr><td>blacklist</td><td>phone em <code>wa_phone_blacklist</code></td><td>block (não cria lead, não loga)</td><td><span class="pill ok">OK</span></td></tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <strong>Inconsistência de limite:</strong> migration <code>20260592</code> definiu 15 msgs/dia; <code>20260628</code> mudou para 30. Valor atual é 30 — confirmado pelo prompt e regras. Conversas antigas com contador podem ter sido afetadas durante a transição.
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s5"><span class="num">5</span> Fluxo de mensagem (sequência completa)</h2>
+
+<div class="flow">Evolution webhook (MESSAGES_UPSERT)
+     |
+     v
+Parse Message
+  - phone (prefer key.senderPn, fallback body.sender — resolve LID)
+  - content (texto ou Claude Vision se imagem)
+  - pushName, source (android/web/ios)
+     |
+     v
+Route Message (Switch)
+  +- skip        -> Respond Skip           (groups, broadcasts, source=unknown/api)
+  +- secretary   -> Log Secretary          (fromMe=true, source valido)
+  |                  -> Respond Secretary
+  +- lead        -> pipeline abaixo
+     |
+     v
+Get Lead Context (wa_get_lead_context)
+  - lead, historico 20 msgs, persona, conversation_count, funnel
+     |
+     v
+[se primeira msg]  Detect Funnel
+  - "quiz Lifting 5D" -> fullface
+  - "olheiras"+"palpebras" -> olheiras
+  - senao NULL (bloqueia no proximo guard)
+     |
+     v
+Download Media (se imagem/audio)
+     |
+     v
+Guard Check (wa_guard_check)
+     |
+     v
+Merge Guard + Guard Route (Switch)
+  +- blocked    -> Log Inbound Only -> Respond OK Paused
+  +- allow      -> continua
+     |
+     v
+[msg 0]  Fixed response: greeting (zero tokens)
+[msg 1]  Fixed response: welcome + [FOTO:geral] (zero tokens)
+[msg 2+] Build Claude Prompt
+             - system: identidade, regras, persona ativa
+             - compact apos msg 6 (economia de tokens)
+             - context: nome, queixas, idade, funil, score quiz
+     |
+     v
+Claude Sonnet API
+  - texto + possivel [FOTO:queixa]
+  - possivel tag [AGENDAR] / [PRECISA_HUMANO] / [PERGUNTOU_PRECO]
+     |
+     v
+Process AI Response
+  - extrai [FOTO:queixa]
+  - remove legendas ("Resultado real", "Dra. Mirian") via split/filter
+  - extrai follow-up (ultima linha em "?")
+  - auto-detect keywords se Claude nao usou tag
+     |
+     v
+SEQUENCIAL (ver secao 6)
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s6"><span class="num">6</span> Pipeline sequencial (texto + fotos + follow-up)</h2>
+
+<div class="callout crit">
+  <strong>Regra crítica:</strong> após <code>Process AI Response</code>, NUNCA usar conexões paralelas. Causa race condition nos timestamps do <code>wa_log_message_sequential</code>. Bug já corrigido em 2026-04-04 — não reintroduzir.
+</div>
+
+<div class="flow">Process AI Response
+       |
+       v
+Send WhatsApp (texto)               t = now()
+       |
+       v
+Send Photo (se [FOTO:] detectada)
+  - busca wa_media por queixa
+  - filtra JPG, exclui ja enviadas
+  - pega 2 fotos pessoas diferentes
+  - envia via Evolution /message/sendMedia
+  - envia follow-up como msg separada DEPOIS das fotos
+       |
+       v
+Log Sequential (wa_log_message_sequential — RPC batch)
+  - inbound:        t = now()
+  - outbound texto: t = now() + 1s
+  - foto 1:         t = now() + 2s
+  - foto 2:         t = now() + 3s
+  - follow-up:      t = now() + 4s
+       |
+       v
+Save Lead (usa $("Process AI Response").first().json — NAO $json)
+       |
+       v
+Respond OK
+</div>
+
+<p><strong>Erros conhecidos a não repetir:</strong></p>
+<ul>
+  <li>Regex com <code>\n</code> em JSON quebra — usar <code>split(String.fromCharCode(10))</code></li>
+  <li><code>$json</code> após HTTP node retorna response body, não os dados originais — usar <code>$("NodeName").first().json</code></li>
+  <li><code>sleep(4000)</code> fixo é frágil — pipeline sequencial elimina necessidade</li>
+  <li>Concatenar follow-up no texto principal é errado — logar como msg separada via <code>p_follow_up</code></li>
+  <li>API key do Claude em JSON committado é revogada pelo GitHub Secret Scanning — sempre <code>REDACTED</code> no git</li>
+</ul>
+
+<!-- ============================================================= -->
+<h2 id="s7"><span class="num">7</span> Funcionalidades</h2>
+
+<div class="grid">
+  <div class="card">
+    <h3>Cadência (follow-ups)</h3>
+    <p>Steps em <code>wa_cadences</code>, disparados por <code>wa_run_cadences</code> (pg_cron 30min, 8-20h BRT).</p>
+    <p><strong>Full Face:</strong> Day 1 (IMPLICATION+foto) → Day 2 (VALOR) → Day 3 (ESCASSEZ) → Day 5 (PUXÃO) → Day 7 (PORTA ABERTA) → Day 10 (ENCERRAMENTO).</p>
+    <p><strong>Procedimentos:</strong> Day 1-5 versão curta.</p>
+    <p class="muted">Só ativa se lead tem funil setado.</p>
+  </div>
+
+  <div class="card">
+    <h3>Nudge (reativação)</h3>
+    <p><strong>Máximo 1 por conversa</strong> (flag <code>reactivation_sent</code>, resetada em nova msg do lead).</p>
+    <p>Só horário comercial: seg-sex 8-19h, sáb 8-13h, dom OFF.</p>
+    <p class="muted">Reativação automática da secretária: 2min sem resposta e Lara retoma (<code>wa_auto_reactivate</code>).</p>
+  </div>
+
+  <div class="card">
+    <h3>Broadcast</h3>
+    <p>Tabela <code>wa_outbox</code> + workflow dedicado (<code>x5f4MApEcSUX5hca</code>, processor 2min).</p>
+    <p>Anti-bloqueio batch=1, substituição <code>[nome]</code>, throttle configurável.</p>
+  </div>
+
+  <div class="card">
+    <h3>Fotos antes/depois</h3>
+    <p>Tag <code>[FOTO:queixa]</code> no output da Claude. Queixas: geral, olheiras, sulcos, flacidez, contorno, papada, textura, rugas, rejuvenescimento.</p>
+    <p>~16 fotos em <code>wa_media</code>. 2 por envio, pessoas diferentes, exclui já enviadas.</p>
+  </div>
+
+  <div class="card">
+    <h3>PIX automático</h3>
+    <p>CNPJ <code>55.167.164/0001-08</code> — M CLINIC ESTHETIC EXPERT LTDA.</p>
+    <p>Lara pergunta sobre o que é o pagamento, pede comprovante.</p>
+  </div>
+
+  <div class="card">
+    <h3>Detecção de funil</h3>
+    <p><code>wa_detect_funnel_from_message</code> na primeira msg. Trigger-based (não classificador).</p>
+    <p>Sem funil → Lara atende genérico ou é bloqueada pelo guard <code>no_funnel</code> (depende da fase).</p>
+  </div>
+
+  <div class="card">
+    <h3>Modo híbrido</h3>
+    <p>Secretária assume via Inbox: <code>ai_enabled=false</code> + tag <code>human_assumed</code>.</p>
+    <p>Lara reativa se secretária parar 2min (só se <code>paused_by</code> NÃO for manual/human_handoff/inappropriate/auto_limit).</p>
+  </div>
+
+  <div class="card">
+    <h3>Blacklist</h3>
+    <p><code>wa_phone_blacklist</code> — staff, fornecedores, testes. Seed com 21 telefones.</p>
+    <p><code>wa_log_message</code> retorna <code>{success:false, blacklisted:true}</code> sem criar nada.</p>
+  </div>
+
+  <div class="card">
+    <h3>Madrugada</h3>
+    <p>Lara <strong>responde</strong> se lead mandar msg (24/7).</p>
+    <p>Lara <strong>não envia</strong> nudge/reativação fora do horário comercial.</p>
+  </div>
+
+  <div class="card">
+    <h3>Agendamento (handoff)</h3>
+    <p>Lara NUNCA oferece horários. Pergunta: manhã/tarde + dia preferencial. Passa pra equipe.</p>
+    <p>Outbox via <code>wa_outbox_schedule_automation</code> dispara confirmação + lembretes.</p>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s8"><span class="num">8</span> Frontend — Inbox e telas relacionadas</h2>
+
+<table>
+  <thead><tr><th>Arquivo</th><th>Função</th></tr></thead>
+  <tbody>
+    <tr><td><code>js/services/inbox.service.js</code></td><td>Orquestra chamadas ao Repository + Evolution API (POST send text/media)</td></tr>
+    <tr><td><code>js/repositories/inbox.repository.js</code></td><td>CRUD Supabase: <code>wa_inbox_list/assume/release/send</code></td></tr>
+    <tr><td><code>js/ui/inbox.ui.js</code></td><td>Central de Atendimento: filtros (all/urgent/waiting_lara/resolved), busca, real-time refresh, som/notificação, anti-apagar-input durante typing</td></tr>
+    <tr><td><code>js/agenda-mensagens.js</code></td><td>Página de agenda de mensagens automáticas (templates por fase)</td></tr>
+    <tr><td>Página Automações</td><td>3 tabs: Regras CRM, WhatsApp & Lara, Central de Atendimento (docs)</td></tr>
+    <tr><td>Páginas Broadcast</td><td>Editor WhatsApp + phone preview, clonar, phases, templates por fase do funil</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================= -->
+<h2 id="s9"><span class="num">9</span> Integrações</h2>
+
+<div class="grid">
+  <div class="card">
+    <h3>Leads</h3>
+    <ul>
+      <li><code>wa_upsert_lead_from_chat</code> cria/atualiza lead (com blacklist check)</li>
+      <li>Atualiza <code>funnel</code>, <code>temperature</code>, <code>lead_score</code>, <code>ai_persona</code>, <code>phase</code></li>
+      <li>Fase "paciente" só após finalização do procedimento (nunca antes)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Agendamentos</h3>
+    <ul>
+      <li>Outbox enfileira confirmação, lembrete D-1, boas-vindas D0</li>
+      <li>Bloqueio de dispatch tripo via <code>_APPT_LIFECYCLE_SLUGS</code> em agenda-automations.engine.js</li>
+      <li>Migration dedup <code>20260679</code> pendente aplicar</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Quiz</h3>
+    <ul>
+      <li>Score do quiz alimenta <code>lead_score</code> e <code>temperature</code></li>
+      <li>Recovery de quiz abandonado dispara mensagem após 2min</li>
+      <li>Funil do quiz setado via trigger message</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Anamnese / Prontuário</h3>
+    <ul>
+      <li>Queixas faciais alimentam contexto da Lara (não é integração direta — lido no prompt)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Cashflow</h3>
+    <ul>
+      <li>Nenhum RPC de integração direta</li>
+      <li>PIX data embutido no prompt (hardcoded)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Aniversário</h3>
+    <ul>
+      <li>Campanhas de aniversário usam o mesmo outbox + auto-exclusão por lead</li>
+      <li>Já houve conflito (script <code>pause-birthday-activate-lara.cjs</code>)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s10"><span class="num">10</span> O que funciona</h2>
+
+<div class="card">
+  <ul>
+    <li><span class="pill ok">OK</span> Webhook receptor + parse com resolução de LID (<code>senderPn</code>)</li>
+    <li><span class="pill ok">OK</span> Roteamento 3-way (skip / secretary / lead) via Switch node</li>
+    <li><span class="pill ok">OK</span> Guards multi-camada (12+ regras)</li>
+    <li><span class="pill ok">OK</span> Claude Sonnet com Vision integrado</li>
+    <li><span class="pill ok">OK</span> Pipeline sequencial (sem race condition de timestamps)</li>
+    <li><span class="pill ok">OK</span> Prompt-mestre com 6 personas (202 linhas)</li>
+    <li><span class="pill ok">OK</span> Fotos antes/depois com tag <code>[FOTO:]</code> + dedup por conversa</li>
+    <li><span class="pill ok">OK</span> Detecção de funil via trigger message</li>
+    <li><span class="pill ok">OK</span> Modo híbrido secretária/Lara + reativação automática 2min</li>
+    <li><span class="pill ok">OK</span> Cadência Full Face (6 steps) + Procedimentos (5 steps)</li>
+    <li><span class="pill ok">OK</span> Nudge horário comercial + flag <code>reactivation_sent</code></li>
+    <li><span class="pill ok">OK</span> Blacklist de telefones (21 seeds)</li>
+    <li><span class="pill ok">OK</span> Central de Atendimento: assume/release, real-time, som, notificações</li>
+    <li><span class="pill ok">OK</span> Anti-bot de secretária (filtro por <code>source</code>: android/web/ios)</li>
+    <li><span class="pill ok">OK</span> Madrugada: responde se chega msg, não dispara saída</li>
+  </ul>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s11"><span class="num">11</span> Problemas e débitos técnicos</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Problema</th>
+      <th>Localização</th>
+      <th class="severity-cell">Severidade</th>
+      <th>Detalhe</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Evolution API key hardcoded</td>
+      <td><code>js/services/inbox.service.js:29</code></td>
+      <td><span class="pill crit">Crítica</span></td>
+      <td>Valor <code>429683...D57E11</code> em plain text no frontend. Qualquer usuário autenticado pode extrair via DevTools e usar pra enviar mensagens pelo WhatsApp da clínica. Mover para backend proxy ou Supabase function.</td>
+    </tr>
+    <tr>
+      <td>Migration <code>20260679_wa_outbox_dedup</code> não aplicada</td>
+      <td>Banco de produção</td>
+      <td><span class="pill high">Alta</span></td>
+      <td>Unique index parcial + <code>EXCEPTION WHEN unique_violation</code> na <code>wa_outbox_schedule_automation</code>. Sem ela, agendamento ainda pode gerar duplicatas em <code>wa_outbox</code>. Arquivo pronto, falta SQL Editor.</td>
+    </tr>
+    <tr>
+      <td>Duplicação WA em criação de agendamento (fix parcial)</td>
+      <td><code>agenda-automations.engine.js</code> (commit <code>abcccf0</code>)</td>
+      <td><span class="pill high">Alta</span></td>
+      <td>3 dispatches: <code>_applyStatusTag</code> + <code>_setLeadStatus</code> + <code>apptTransition</code>. Fix via <code>_APPT_LIFECYCLE_SLUGS</code> bloqueia tag/lead dispatches para slugs lifecycle. Precisa validar pós-deploy + migration.</td>
+    </tr>
+    <tr>
+      <td>Persona fixa (não avança)</td>
+      <td><code>wa_log_message_sequential</code></td>
+      <td><span class="pill high">Alta</span></td>
+      <td>Persona setada no primeiro contato (onboarder). Não há promoção automática para sdr/closer mesmo com progressão da conversa. Lara segue tom de entrada mesmo em fechamento.</td>
+    </tr>
+    <tr>
+      <td>Histórico limitado a 20 msgs</td>
+      <td><code>wa_get_lead_context</code></td>
+      <td><span class="pill warn">Média</span></td>
+      <td>Conversas longas perdem contexto. Claude pode repetir pergunta já respondida ou quebrar continuidade. Considerar sumarização + últimas N janelas.</td>
+    </tr>
+    <tr>
+      <td>Sem circuit breaker no Claude</td>
+      <td>Workflow n8n</td>
+      <td><span class="pill warn">Média</span></td>
+      <td>Se Claude falhar/demorar, não há retry com backoff nem fallback. Workflow fica travado.</td>
+    </tr>
+    <tr>
+      <td>Detecção de funil só na primeira msg</td>
+      <td><code>wa_detect_funnel_from_message</code></td>
+      <td><span class="pill warn">Média</span></td>
+      <td>Se lead muda interesse ("queria 5D, mas agora quero olheiras"), funil não atualiza. Perde cadência correta.</td>
+    </tr>
+    <tr>
+      <td>Auto-detect de [FOTO:] por keywords</td>
+      <td>Process AI Response</td>
+      <td><span class="pill warn">Média</span></td>
+      <td>Se Claude mencionar "foto" sem tag, keyword-fallback pode gerar envio indesejado.</td>
+    </tr>
+    <tr>
+      <td>Rate limit de Evolution não monitorado</td>
+      <td><code>inbox.service.js</code></td>
+      <td><span class="pill warn">Média</span></td>
+      <td>Envia texto + 2 fotos + follow-up em sequência rápida. Risco de ban em volume alto (broadcast).</td>
+    </tr>
+    <tr>
+      <td>Inconsistência de limite diário</td>
+      <td>Migrations <code>20260592</code> vs <code>20260628</code></td>
+      <td><span class="pill warn">Média</span></td>
+      <td>15 → 30 msgs/dia. Valor atual é 30. Conversas em transição podem ter contadores desalinhados.</td>
+    </tr>
+    <tr>
+      <td>Scripts de reparo recorrentes</td>
+      <td><code>scripts/fix-lara-*.cjs</code>, <code>restore-lara-workflow.cjs</code></td>
+      <td><span class="pill warn">Média</span></td>
+      <td>Existência de scripts como <code>fix-lara-birthday-guard</code>, <code>fix-lara-send-message</code>, <code>activate-lara-recovery</code>, <code>pause-birthday-activate-lara</code> sinaliza instabilidade recorrente entre Lara e outras automações.</td>
+    </tr>
+    <tr>
+      <td>Caption das fotos pode zerar resposta</td>
+      <td>Process Response</td>
+      <td><span class="pill info">Baixa</span></td>
+      <td>Limpeza de captions pode deixar o texto da Lara muito curto se ela só escreveu "Veja: [FOTO:geral]".</td>
+    </tr>
+    <tr>
+      <td>Conversas de blacklistados ainda ativas</td>
+      <td><code>wa_conversations</code></td>
+      <td><span class="pill info">Baixa</span></td>
+      <td>Seed da blacklist não fechou conversas existentes dos 21 telefones. Limpar via script pontual.</td>
+    </tr>
+    <tr>
+      <td>Cache localStorage mostra leads removidos</td>
+      <td>Dashboard</td>
+      <td><span class="pill info">Baixa</span></td>
+      <td>Luciana precisa rodar <code>localStorage.removeItem('clinicai_leads'); location.reload()</code> após purge.</td>
+    </tr>
+    <tr>
+      <td>Migrations com mesmo prefixo de data</td>
+      <td><code>supabase/migrations/</code></td>
+      <td><span class="pill info">Baixa</span></td>
+      <td>Ex: <code>20260603_broadcast_manual_leads</code> + <code>20260603_inbox_media_url</code>. Ordem de execução depende do filesystem sort, não do lexical. Risco em CI.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ============================================================= -->
+<h2 id="s12"><span class="num">12</span> Recomendações priorizadas</h2>
+
+<ol>
+  <li><strong>Crítica — Evolution Key.</strong> Mover de <code>inbox.service.js:29</code> para Edge Function Supabase (proxy) ou secret. Remover do bundle do frontend.</li>
+  <li><strong>Alta — Aplicar migration <code>20260679_wa_outbox_dedup</code>.</strong> SQL Editor do Supabase. Purga duplicatas + unique parcial + EXCEPTION.</li>
+  <li><strong>Alta — Validar fix de duplicação de agendamento.</strong> Criar agendamento novo e verificar se <code>wa_outbox</code> tem 1 msg por template (não 3).</li>
+  <li><strong>Alta — Promoção de persona.</strong> Adicionar lógica em <code>wa_log_message_sequential</code> ou pós-processamento: após N mensagens + sinal de qualificação, trocar de onboarder → sdr/closer.</li>
+  <li><strong>Média — Circuit breaker no Claude.</strong> Adicionar retry node n8n com backoff + fallback para humano após N falhas.</li>
+  <li><strong>Média — Re-detecção de funil.</strong> Rodar <code>wa_detect_funnel</code> em toda msg e atualizar se mudar. Ou classificador leve com Claude a cada 5 msgs.</li>
+  <li><strong>Média — Limpar scripts de reparo.</strong> Consolidar em tooling ou arquivar em <code>scripts/archive/</code>. Documentar causa raiz dos que reaparecem.</li>
+  <li><strong>Média — Dashboard de observabilidade da Lara.</strong> Ler <code>wa_errors</code>, <code>wa_messages</code> e <code>wa_conversations</code> para métricas: mensagens/dia, tokens gastos, taxa de handoff humano, conversões por funil.</li>
+  <li><strong>Baixa — Fechar conversas de blacklistados.</strong> Script pontual atualiza <code>status='archived'</code> para os 21 telefones.</li>
+  <li><strong>Baixa — Padronizar prefixos de migration.</strong> Garantir timestamps únicos em CI.</li>
+</ol>
+
+<!-- ============================================================= -->
+<h2 id="s13"><span class="num">13</span> Bugs operacionais reportados (críticos)</h2>
+<p class="section-sub">Investigação específica dos bugs relatados. Cada bug documenta: sintoma, causa raiz no código, arquivo:linha, severidade e correção proposta.</p>
+
+<!-- BUG A -->
+<div class="card">
+  <h3>A. Lara não respeita o botão "Parar" <span class="pill crit">Crítico</span></h3>
+  <p><strong>Sintoma:</strong> secretária clica "Assumir"/pausar a conversa mas a Lara continua enviando mensagens (especialmente cadência e broadcast).</p>
+  <p><strong>Como o botão funciona (OK):</strong></p>
+  <ul>
+    <li><code>js/ui/inbox.ui.js:446</code> aciona <code>InboxService.assume()</code></li>
+    <li><code>js/repositories/inbox.repository.js:54</code> chama RPC <code>wa_inbox_assume</code></li>
+    <li>RPC seta <code>ai_enabled=false</code> e tag <code>human_assumed</code> em <code>wa_conversations</code></li>
+    <li>O Guard Check do workflow n8n <strong>respeita</strong>: <code>wa_guard_check</code> retorna <code>action='block'</code> quando <code>ai_enabled=false</code> e o workflow desvia para "Log Inbound Only"</li>
+  </ul>
+
+  <p><strong>Onde quebra (causa raiz):</strong></p>
+  <table>
+    <thead><tr><th>Componente</th><th>Arquivo</th><th>Problema</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Cadência (<code>wa_run_cadences</code>)</td>
+        <td><code>supabase/migrations/20260597000000_cadence_engine.sql</code></td>
+        <td><strong>Não verifica <code>ai_enabled</code></strong> antes de inserir na <code>wa_outbox</code>. Agenda follow-ups mesmo pausada.</td>
+      </tr>
+      <tr>
+        <td>Outbox processor</td>
+        <td><code>n8n/outbox-processor-workflow.json</code></td>
+        <td>Busca <code>wa_outbox_fetch_pending</code> apenas por <code>status='pending'</code>. <strong>Não cruza com <code>wa_conversations.ai_enabled</code></strong> antes de enviar.</td>
+      </tr>
+      <tr>
+        <td>Broadcast</td>
+        <td>Mesma engine do outbox</td>
+        <td>Ignora totalmente o estado da conversa. Se você agendou broadcast e depois pausou a conversa, ela recebe assim mesmo.</td>
+      </tr>
+      <tr>
+        <td>Race condition</td>
+        <td>Workflow n8n</td>
+        <td>Se a secretária clica pausar <em>enquanto</em> a msg já entrou no branch "allow", a resposta sai antes do update propagar. Sem lock pessimista.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Correção proposta:</strong></p>
+  <ol>
+    <li>Em <code>wa_run_cadences</code>: adicionar <code>AND c.ai_enabled = true</code> na query que insere na outbox.</li>
+    <li>Em <code>wa_outbox_fetch_pending</code>: JOIN com <code>wa_conversations</code> e filtrar <code>ai_enabled = true OR sender_override = 'humano'</code> (permitir broadcast manual).</li>
+    <li>Na pausa manual: marcar outbox pendente como <code>status='cancelled'</code> para essa conversa (cleanup ativo).</li>
+    <li>Race: adicionar re-check de <code>ai_enabled</code> imediatamente antes do <code>Send WhatsApp</code> no workflow (custo: +1 round-trip Supabase; benefício: elimina race).</li>
+  </ol>
+</div>
+
+<!-- BUG B -->
+<div class="card">
+  <h3>B. Mensagens não chegam no Inbox <span class="pill high">Alta</span></h3>
+  <p><strong>Sintoma:</strong> lead manda msg pelo WhatsApp, mas não aparece no Central de Atendimento.</p>
+
+  <p><strong>Filtros em Parse Message (<code>n8n/lara-whatsapp-workflow.json</code>):</strong></p>
+  <ul>
+    <li><code>fromMe = true</code> sem texto → descartado (linha ~47)</li>
+    <li>Grupo (<code>@g.us</code>) e broadcast (<code>@broadcast</code>) → descartado (linha ~64)</li>
+    <li><code>source = 'api'</code> em send.message → descartado (é a própria Lara respondendo, evita loop)</li>
+    <li><code>source</code> permitidos implicitamente: <strong>android, web, ios</strong>. Valores como <code>desktop</code>, <code>unknown</code>, ou novos da Evolution podem ser filtrados sem intenção.</li>
+  </ul>
+
+  <p><strong>Falhas silenciosas:</strong></p>
+  <ul>
+    <li><code>wa_log_message</code> (migration <code>20260627_inbox_consolidated_v2</code>) não grava em <code>wa_errors</code> se algo dá errado na busca de conversa. Msg pode ser "aceita" pelo webhook mas nunca aparecer.</li>
+    <li>Se o telefone está em <code>wa_phone_blacklist</code>, retorna <code>{success:false, blacklisted:true}</code> silencioso — correto comportamento, mas não há UI que mostre "esta mensagem foi bloqueada por blacklist".</li>
+  </ul>
+
+  <p><strong>Correção proposta:</strong></p>
+  <ol>
+    <li>Logar em <code>wa_errors</code> toda execução de <code>wa_log_message</code> que não criou mensagem (com <code>error_type='silent_drop'</code>).</li>
+    <li>Adicionar <code>desktop</code> ao whitelist de <code>source</code> (WhatsApp Desktop é comum entre secretárias).</li>
+    <li>Dashboard: painel simples lendo <code>wa_errors</code> das últimas 24h.</li>
+  </ol>
+</div>
+
+<!-- BUG C -->
+<div class="card">
+  <h3>C. Conversas duplicadas <span class="pill crit">Crítico</span></h3>
+  <p><strong>Sintoma:</strong> mesmo telefone aparece com 2+ conversas ativas simultâneas.</p>
+
+  <p><strong>Causa raiz:</strong></p>
+  <ul>
+    <li><strong>Não existe unique index em <code>wa_conversations</code></strong> na migration base <code>20260582_messaging_system</code>. Apenas índices comuns (<code>idx_wa_conversations_lead</code>, <code>idx_wa_conversations_status</code>).</li>
+    <li>A memória indicava um unique index parcial <code>(clinic_id, phone) WHERE status='active'</code> — <strong>verificação atual não encontrou essa constraint</strong>. Possivelmente foi removida ou a migration nunca foi consolidada.</li>
+    <li><code>wa_find_conversation</code> faz 3 matches em cascata: phone exato → remote_jid <code>LIKE %jid%</code> → <code>right(phone,8)</code> fuzzy. O fuzzy pode achar a "errada" e então o insert que fica perdido pode criar nova em paralelo.</li>
+    <li>Race: 2 mensagens chegando em ms de intervalo → duas transações rodando <code>wa_find_conversation</code> ao mesmo tempo, ambas retornam NULL, ambas criam conversa.</li>
+  </ul>
+
+  <p><strong>Correção proposta:</strong></p>
+  <pre>CREATE UNIQUE INDEX CONCURRENTLY ux_wa_conversations_phone_active
+  ON wa_conversations (clinic_id, phone)
+  WHERE status = 'active';
+
+-- Em wa_log_message, envolver find+create com:
+INSERT INTO wa_conversations (...)
+VALUES (...)
+ON CONFLICT (clinic_id, phone) WHERE status='active'
+DO UPDATE SET last_inbound_at = now()
+RETURNING id;</pre>
+  <p>Isso elimina race e força 1 conversa ativa por telefone. Migrar duplicatas existentes: merge mensagens na conversa mais antiga, marcar as outras <code>status='merged'</code>.</p>
+</div>
+
+<!-- BUG D -->
+<div class="card">
+  <h3>D. Nem todas as conversas aparecem no Inbox <span class="pill warn">Média</span></h3>
+  <p><strong>Sintoma:</strong> conversas existem no banco mas somem da lista do Inbox.</p>
+
+  <p><strong>Onde filtra:</strong></p>
+  <ul>
+    <li><code>wa_inbox_list</code> (migration <code>20260591</code>): WHERE <code>status='active'</code> — conversas <code>archived/closed/merged</code> não aparecem.</li>
+    <li>Sem paginação/limit na RPC, mas o frontend mantém <code>_conversations</code> em cache (js/ui/inbox.ui.js). Se o realtime subscription falhar, não refresha.</li>
+    <li>Filtros de UI (<code>inbox.ui.js:270-295</code>): "waiting" mostra <code>!ai_enabled</code>, "lara" mostra <code>ai_enabled</code>. Uma conversa resolvida pela secretária com <code>status='archived'</code> some de qualquer filtro exceto "resolved".</li>
+  </ul>
+
+  <p><strong>Gaps identificados:</strong></p>
+  <ul>
+    <li>Sem botão "ver arquivadas" proeminente — secretária pensa que "sumiu".</li>
+    <li>Realtime (Supabase Realtime) pode estar caindo sem reconnect automático, deixando lista defasada até F5.</li>
+    <li>Conversas com <code>remote_jid</code> quebrado (LID format) aparecem "Desconhecido" — hierarquia: <code>lead.name → display_name → phone formatado</code>. Se todos falham, some visualmente.</li>
+  </ul>
+
+  <p><strong>Correção proposta:</strong></p>
+  <ol>
+    <li>Indicador visual de conexão realtime (bolinha verde/vermelha no topo do Inbox).</li>
+    <li>Botão "mostrar arquivadas" no filtro.</li>
+    <li>Fallback: polling a cada 30s se realtime cair.</li>
+    <li>Para "Desconhecido": forçar <code>display_name = phone formatado</code> sempre, nunca deixar null.</li>
+  </ol>
+</div>
+
+<!-- BUG E -->
+<div class="card">
+  <h3>E. Mensagens invertidas no histórico <span class="pill warn">Média</span></h3>
+  <p><strong>Sintoma:</strong> resposta da Lara aparece ANTES da pergunta do lead no chat.</p>
+  <p><strong>Causa raiz (histórica):</strong> inbound e outbound com mesmo <code>sent_at</code>. Corrigido via <code>wa_log_message_sequential</code> com timestamps incrementais (inbound <code>now()</code>, outbound <code>+1s</code>, fotos <code>+2s/+3s</code>, follow-up <code>+4s</code>).</p>
+  <p><strong>Alerta:</strong> se alguém reintroduzir conexões paralelas no workflow n8n após <code>Process AI Response</code>, o bug volta. Regra inegociável: pipeline sequencial.</p>
+</div>
+
+<!-- BUG F -->
+<div class="card">
+  <h3>F. Persona não avança <span class="pill high">Alta</span></h3>
+  <p><strong>Sintoma:</strong> Lara fica no tom "onboarder" mesmo quando o lead já está pronto pra fechar.</p>
+  <p><strong>Causa:</strong> <code>wa_log_message_sequential</code> seta <code>ai_persona</code> na primeira mensagem e nunca mais atualiza. Não há trigger de promoção baseada em N mensagens ou tags <code>[PRONTO_AGENDAR]</code>/<code>[PERGUNTOU_PRECO]</code>.</p>
+  <p><strong>Correção:</strong> após cada mensagem processada, rodar regra simples:</p>
+  <ul>
+    <li>msg_count ≥ 4 + temperature ≥ warm → promover para <code>sdr</code></li>
+    <li>msg_count ≥ 8 + tag <code>perguntou_preco</code> → promover para <code>closer</code></li>
+    <li>fase = <code>scheduled</code> → <code>confirmador</code></li>
+    <li>fase = <code>no_show</code> → <code>recuperador</code></li>
+  </ul>
+</div>
+
+<!-- BUG G -->
+<div class="card">
+  <h3>G. Secretária pelo iMac/WhatsApp Web <span class="pill info">Resolvido mas monitorar</span></h3>
+  <p>Historicamente mensagens enviadas pela secretária via WhatsApp Desktop/Web não apareciam no Inbox. Corrigido removendo fallback perigoso ("conversa mais recente nos últimos 30min"). Agora <code>wa_log_secretary_reply</code> cria conversa nova se não achar match — pode gerar duplicatas se remote_jid estiver ausente. Depende da correção do Bug C.</p>
+</div>
+
+<!-- ============================================================= -->
+<h2 id="s14"><span class="num">14</span> Sequências de mensagens / templates</h2>
+<p class="section-sub">Todos os templates ativos no sistema, organizados por categoria. Corpo em <code>wa_message_templates</code>, placeholders <code>{nome}</code>, <code>{queixa_principal}</code>, <code>{data_consulta}</code>, etc.</p>
+
+<h3>Cadência de onboarding (lead novo do quiz)</h3>
+<p>Configurada em <code>wa_cadences.steps</code>, trigger <code>lead</code>:</p>
+<table>
+  <thead><tr><th>Dia</th><th>Hora</th><th>Template</th><th>AI mode</th></tr></thead>
+  <tbody>
+    <tr><td>0</td><td>imediato</td><td><code>onboarding_welcome</code></td><td>sim</td></tr>
+    <tr><td>1</td><td>10:00</td><td><code>onboarding_followup_1</code></td><td>sim</td></tr>
+    <tr><td>2</td><td>14:00</td><td><code>followup_social_proof</code></td><td>sim</td></tr>
+    <tr><td>3</td><td>10:00</td><td><code>followup_urgency</code></td><td>sim</td></tr>
+    <tr><td>5</td><td>10:00</td><td><code>followup_last</code></td><td><strong>não</strong> (desiste)</td></tr>
+  </tbody>
+</table>
+
+<h3>Cadência Full Face — Lifting 5D (6 steps)</h3>
+<p>Migration <code>20260597_cadence_engine.sql</code>. Ativada quando funil = <code>fullface</code>.</p>
+<table>
+  <thead><tr><th>Dia</th><th>Slug</th><th>Momento</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>ff_followup_day1</code></td><td>IMPLICATION (pergunta que amplia a dor) + foto antes/depois</td></tr>
+    <tr><td>2</td><td><code>ff_followup_day2</code></td><td>VALOR (consulta Anovator A5 + creme exossomos)</td></tr>
+    <tr><td>3</td><td><code>ff_followup_day3</code></td><td>ESCASSEZ (agenda da Dra. concorrida)</td></tr>
+    <tr><td>5</td><td><code>ff_followup_day5</code></td><td>PUXÃO (terceira história real de paciente)</td></tr>
+    <tr><td>7</td><td><code>ff_followup_day7</code></td><td>PORTA ABERTA (volta a decidir quando quiser)</td></tr>
+    <tr><td>10</td><td><code>ff_followup_day10</code></td><td>ENCERRAMENTO (última tentativa suave)</td></tr>
+  </tbody>
+</table>
+
+<h3>Cadência Procedimentos Isolados (4 steps)</h3>
+<p>Funil = <code>procedimentos</code> (olheiras, botox, etc.)</p>
+<table>
+  <thead><tr><th>Dia</th><th>Slug</th><th>Momento</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>proc_followup_day1</code></td><td>Pergunta de qualificação + foto da queixa</td></tr>
+    <tr><td>2</td><td><code>proc_followup_day2</code></td><td>Valor do procedimento + faixa de preço</td></tr>
+    <tr><td>3</td><td><code>proc_followup_day3</code></td><td>Escassez</td></tr>
+    <tr><td>5</td><td><code>proc_followup_day5</code></td><td>Encerramento</td></tr>
+  </tbody>
+</table>
+
+<h3>Templates por categoria (seed <code>20260583</code>)</h3>
+
+<h3>Onboarding</h3>
+<ul>
+  <li><code>onboarding_welcome</code> — "Oi {nome}! Aqui é a Lara... vi que fez nossa avaliação e tem interesse em {queixa_principal}..."</li>
+  <li><code>onboarding_followup_1</code> — "Não conseguimos conversar ontem. A Dra. Mirian tem horários especiais essa semana..."</li>
+</ul>
+
+<h3>Follow-up</h3>
+<ul>
+  <li><code>followup_social_proof</code> — "Olha só o resultado dessa paciente que tinha {queixa_principal} parecida..."</li>
+  <li><code>followup_urgency</code> — "Agenda da Dra. está bem concorrida esse mês..."</li>
+  <li><code>followup_last</code> — "Como não consegui falar, vou encerrar. Se mudar de ideia é só me chamar."</li>
+</ul>
+
+<h3>Agendamento</h3>
+<ul>
+  <li><code>scheduling_confirm</code> — "Sua avaliação está confirmada: {data_consulta} às {hora_consulta}..."</li>
+  <li><code>scheduling_confirm_novo</code> — variação com Ficha de Anamnese anexa (paciente novo) — migration <code>20260668</code></li>
+  <li><code>scheduling_confirm_retorno</code> — variação sem Ficha (paciente retorno) — migration <code>20260668</code></li>
+  <li><code>scheduling_reminder</code> — "Só lembrando que amanhã você tem sua avaliação..."</li>
+  <li><code>scheduling_reschedule</code> — "Sem problemas, vou reagendar..."</li>
+  <li><code>lembrete_24h_ant...</code> — D-1, delay 12h (fonte <code>wa_templates_for_phase</code> 'agendado')</li>
+  <li><code>boas-vindas_no_d...</code> — D0, delay 8h (fonte <code>wa_templates_for_phase</code> 'agendado')</li>
+</ul>
+
+<h3>Pós-consulta</h3>
+<ul>
+  <li><code>post_consultation</code> — "Como foi sua consulta com a Dra. Mirian?..."</li>
+</ul>
+
+<h3>Recuperação</h3>
+<ul>
+  <li><code>recovery_value</code> — "A Dra. publicou conteúdo sobre {queixa_principal}..."</li>
+  <li><code>recovery_promo</code> — "Condições especiais essa semana..."</li>
+</ul>
+
+<h3>SDR (migration <code>20260529</code>)</h3>
+<p>Categorias: <code>confirmacao</code>, <code>lembrete</code>, <code>engajamento</code>, <code>boas_vindas</code>, <code>consent_img</code>, <code>consent_info</code>.</p>
+
+<div class="callout warn">
+  <strong>Gap:</strong> não há engine central documentando "qual template dispara em qual fase". A lógica está espalhada entre <code>wa_cadences</code>, <code>wa_templates_for_phase</code>, e triggers de agendamento. Isso é parte do problema "Lara não respeita parar" — cada sistema tem sua própria fonte de disparo, e pausar uma conversa não cancela as outras.
+</div>
+
+<div class="footer">
+  Gerado automaticamente — base: código em <code>clinic-dashboard/</code>, workflow <code>n8n/lara-whatsapp-workflow.json</code>, prompt <code>.aios-core/agents/lara-prompt.md</code>, 29 migrations WhatsApp-related, e memórias 2026-04-03 a 2026-04-14.
+</div>
+
+</div>
+</body>
+</html>
