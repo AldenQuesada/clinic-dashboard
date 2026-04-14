@@ -129,13 +129,13 @@
       + '</div>'
     + '</div>'
 
-    // Legend
-    html += '<div class="mp-legend">'
+    // Legend — alinhada a direita, acima das colunas de toggle
+    html += '<div class="mp-legend"><div class="mp-legend-spacer"></div><div class="mp-legend-cells">'
     ROLES_ORDER.forEach(function (r) {
       var cfg = ROLE_LABELS[r]
-      html += '<span class="mp-legend-item" style="color:' + cfg.color + '">' + _feather(cfg.icon, 13) + ' ' + cfg.short + '</span>'
+      html += '<span class="mp-legend-item" style="color:' + cfg.color + '">' + _feather(cfg.icon, 12) + ' ' + cfg.short + '</span>'
     })
-    html += '</div>'
+    html += '</div></div>'
 
     // Modules
     html += '<div class="mp-modules">'
@@ -297,8 +297,10 @@
       + '.mp-owner-title{font-size:13px;font-weight:800;letter-spacing:.02em}'
       + '.mp-owner-desc{font-size:11px;color:#6b7280;margin-top:2px;line-height:1.4}'
 
-      + '.mp-legend{display:flex;gap:16px;margin-bottom:16px;padding:10px 16px;background:#fafafa;border-radius:10px;border:1px solid #f3f4f6}'
-      + '.mp-legend-item{font-size:11px;font-weight:700;display:flex;align-items:center;gap:4px}'
+      + '.mp-legend{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:6px 16px}'
+      + '.mp-legend-spacer{flex:1;min-width:180px}'
+      + '.mp-legend-cells{display:flex;gap:0}'
+      + '.mp-legend-item{width:56px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:3px;text-transform:uppercase;letter-spacing:.04em}'
 
       + '.mp-modules{display:flex;flex-direction:column;gap:2px}'
 
