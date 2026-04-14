@@ -553,7 +553,7 @@
       '<div class="qa-form-group"><label class="qa-label">Kanban destino</label><select class="qa-select" id="cfg-kanban">' + kanbanOpts + '</select></div>' +
       '<div class="qa-form-group"><label class="qa-label">Link publico</label>' +
         '<div class="qa-input-row">' +
-          '<span class="qa-link-display" id="cfg-link">' + QA.esc(publicLink) + '</span>' +
+          '<a class="qa-link-display" id="cfg-link" href="' + QA.esc(publicLink) + '" target="_blank" rel="noopener">' + QA.esc(publicLink) + '</a>' +
           '<button class="qa-icon-btn" id="cfg-copy-link" title="Copiar link">' + QA.ICON.copy + '</button>' +
         '</div>' +
       '</div>' +
@@ -1139,7 +1139,9 @@
     var el = document.getElementById('cfg-link')
     var _activeQuiz = QA.quiz()
     if (el && _activeQuiz) {
-      el.textContent = (location.origin || '') + '/quiz-render.html?q=' + encodeURIComponent(_activeQuiz.slug || '')
+      var link = (location.origin || '') + '/quiz-render.html?q=' + encodeURIComponent(_activeQuiz.slug || '')
+      el.textContent = link
+      if (el.tagName === 'A') el.setAttribute('href', link)
     }
   }
 
