@@ -176,6 +176,8 @@
       vars.menu_clinica = (window.location.origin || '') + '/menu-clinica.html'
       vars.link = _cfg.site || ''
 
+      var apptDate = appt.data ? new Date(appt.data + 'T00:00:00') : null
+      if (!apptDate || isNaN(apptDate.getTime())) return
       var now = new Date()
       templates.forEach(function (tpl) {
         var content = (tpl.content || '').replace(/\{(\w+)\}/g, function (_, k) {
@@ -183,13 +185,14 @@
         })
         if (!content.trim()) return
 
-        var scheduledAt = new Date(now)
         var days = parseInt(tpl.day) || 0
         var hours = parseInt(tpl.delay_hours) || 0
         var mins = parseInt(tpl.delay_minutes) || 0
+        var scheduledAt = new Date(apptDate)
         scheduledAt.setDate(scheduledAt.getDate() + days)
-        scheduledAt.setHours(scheduledAt.getHours() + hours)
-        scheduledAt.setMinutes(scheduledAt.getMinutes() + mins)
+        scheduledAt.setHours(hours, mins, 0, 0)
+
+        if (scheduledAt.getTime() <= now.getTime()) return
 
         _enqueueWA(phone, content, appt, scheduledAt, 'campaign:' + phaseSlug + ':' + (tpl.slug || tpl.name))
       })

@@ -363,7 +363,8 @@ function apptTransition(id, newStatus, by) {
     _saveQueue(q)
     if (window._sbShared) {
       window._sbShared.rpc('wa_outbox_cancel_by_appt', { p_appt_ref: id })
-        .catch(function(e) { console.warn('[Agenda] cancel_by_appt falhou:', e) })
+        .then(function(r){ if (r && r.error) console.warn('[Agenda] cancel_by_appt falhou:', r.error) },
+              function(e){ console.warn('[Agenda] cancel_by_appt exception:', e) })
     }
   }
 
