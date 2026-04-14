@@ -541,7 +541,7 @@
       return '<option value="' + QA.esc(o.value) + '"' + (q.kanban_target === o.value ? ' selected' : '') + '>' + QA.esc(o.label) + '</option>'
     }).join('')
 
-    var publicLink = 'quiz-render.html?q=' + encodeURIComponent(q.slug || '')
+    var publicLink = (location.origin || '') + '/quiz-render.html?q=' + encodeURIComponent(q.slug || '')
 
     var meta = sch.meta || {}
 
@@ -1123,7 +1123,7 @@
     var copyBtn = document.getElementById('cfg-copy-link')
     if (copyBtn) {
       copyBtn.onclick = function() {
-        var link = 'quiz-render.html?q=' + encodeURIComponent(_activeQuiz.slug || '')
+        var link = (location.origin || '') + '/quiz-render.html?q=' + encodeURIComponent(_activeQuiz.slug || '')
         if (navigator.clipboard) navigator.clipboard.writeText(link)
         copyBtn.style.color = '#059669'
         setTimeout(function() { copyBtn.style.color = '' }, 1200)
@@ -1139,7 +1139,7 @@
     var el = document.getElementById('cfg-link')
     var _activeQuiz = QA.quiz()
     if (el && _activeQuiz) {
-      el.textContent = 'quiz-render.html?q=' + encodeURIComponent(_activeQuiz.slug || '')
+      el.textContent = (location.origin || '') + '/quiz-render.html?q=' + encodeURIComponent(_activeQuiz.slug || '')
     }
   }
 
