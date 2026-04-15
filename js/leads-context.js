@@ -545,7 +545,7 @@
 
       // Filtrar e ordenar via modulo compartilhado
       var result = LF
-        ? LF.filter(all, { period: _period, search: search, tempVal: tempVal, tagLeadIds: tagLeadIds, queixaSlugs: _queixaFilter, excludePhases: ['agendado', 'reagendado', 'compareceu', 'perdido', 'paciente', 'orcamento'] })
+        ? LF.filter(all, { period: _period, search: search, tempVal: tempVal, tagLeadIds: tagLeadIds, queixaSlugs: _queixaFilter, funnelSlug: (cfg.key === 'protocolos' ? 'procedimentos' : 'fullface'), excludePhases: ['agendado', 'reagendado', 'compareceu', 'perdido', 'paciente', 'orcamento'] })
         : { filtered: all, stats: { total: all.length, hot: 0, warm: 0, cold: 0 } }
 
       var filtered = LF ? LF.sort(result.filtered, _sortField, _sortDir) : result.filtered

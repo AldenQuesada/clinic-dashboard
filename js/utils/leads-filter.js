@@ -89,6 +89,11 @@
       if (opts.queixaSlugs && opts.queixaSlugs.length && window.LeadsQueixa) {
         if (!window.LeadsQueixa.matches(l, opts.queixaSlugs)) return false
       }
+      // Funnel (fullface | procedimentos) — segregacao de paginas Leads Full Face vs Procedimentos
+      if (opts.funnelSlug) {
+        var lf = l.funnel || 'procedimentos'
+        if (lf !== opts.funnelSlug) return false
+      }
       return true
     })
 
