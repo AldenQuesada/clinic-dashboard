@@ -918,8 +918,8 @@
             ts:       Date.now(),
           }))
         } catch (e) {}
-        if (window.navigateTo) window.navigateTo('broadcast-events')
-        else if (window.location) window.location.hash = '#page-broadcast-events'
+        if (window.navigateTo) window.navigateTo('wa-disparos')
+        else if (window.location) window.location.hash = '#page-wa-disparos'
       }
 
       _$('BulkTemp').onclick = function() {
