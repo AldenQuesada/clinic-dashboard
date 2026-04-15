@@ -127,12 +127,29 @@
   @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
 
   /* ========= NAV ARROWS ========= */
-  .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.08); backdrop-filter: blur(8px); cursor: pointer; z-index: 45; display: grid; place-items: center; transition: transform .25s; }
+  .nav-arrow {
+    position: fixed; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.08); backdrop-filter: blur(8px);
+    cursor: pointer; z-index: 45; display: grid; place-items: center; transition: transform .25s;
+  }
   .nav-arrow:hover { transform: translateY(-50%) scale(1.08); }
   .nav-arrow.prev { left: 20px; } .nav-arrow.next { right: 20px; }
   .nav-arrow svg { width: 18px; height: 18px; stroke: var(--ink); }
   .nav-arrow[hidden] { display: none; }
-  @media (max-width: 720px) { .nav-arrow { display: none; } }
+
+  /* Mobile: setas menores no canto inferior pra nao bloquear leitura */
+  @media (max-width: 720px) {
+    .nav-arrow {
+      top: auto; bottom: 18px; transform: none;
+      width: 38px; height: 38px;
+      background: rgba(26,26,26,0.78); border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .nav-arrow:hover, .nav-arrow:active { transform: scale(0.95); }
+    .nav-arrow svg { stroke: #fff; width: 16px; height: 16px; }
+    .nav-arrow.prev { left: 14px; }
+    .nav-arrow.next { right: 14px; }
+  }
 
   /* ========= SWIPE HINT ========= */
   .swipe-hint { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 44; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.85); color: #fff; padding: 10px 18px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; border-radius: 999px; pointer-events: none; opacity: 0; animation: hint 4s ease 1.2s forwards; }
