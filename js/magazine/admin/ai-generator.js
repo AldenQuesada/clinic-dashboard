@@ -148,25 +148,26 @@
       return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
     }
 
-    // Anexa um botão ✨ num wrapper de campo existente. params = {fieldMeta, onClick}
-    function attachButton(labelRow, params) {
-      if (!labelRow) return
-      if (labelRow.querySelector('.ai-spark')) return
-      const btn = document.createElement('button')
-      btn.type = 'button'
-      btn.className = 'ai-spark'
-      btn.title = 'Gerar com IA'
-      btn.textContent = '✨'
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation()
-        if (typeof params.onClick === 'function') params.onClick()
-      })
-      labelRow.appendChild(btn)
-    }
+    return { openForField }
+  }
 
-    return { openForField, attachButton }
+  // Anexa botão ✨ num wrapper de campo existente. params = {fieldMeta, onClick}
+  // Module-level: não depende de instância mounted.
+  function attachButton(labelRow, params) {
+    if (!labelRow) return
+    if (labelRow.querySelector('.ai-spark')) return
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'ai-spark'
+    btn.title = 'Gerar com IA'
+    btn.textContent = '✨'
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      if (params && typeof params.onClick === 'function') params.onClick()
+    })
+    labelRow.appendChild(btn)
   }
 
   window.MagazineAdmin = window.MagazineAdmin || {}
-  window.MagazineAdmin.AIGenerator = { mount, getEndpoint }
+  window.MagazineAdmin.AIGenerator = { mount, getEndpoint, attachButton }
 })()
