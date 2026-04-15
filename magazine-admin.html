@@ -27,6 +27,8 @@
 <script src="js/magazine/admin/ai-generator.js"></script>
 <script src="js/magazine/admin/dispatch-preview.js"></script>
 <script src="js/magazine/admin/edition-review.js"></script>
+<script src="js/magazine/admin/magazine-wow.js"></script>
+<script src="js/magazine/admin/ab-compare.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -890,6 +892,77 @@
   .er-pg { font-family: ui-monospace, monospace; font-size: 10px; background: var(--paper); padding: 2px 6px; border-radius: 3px; color: var(--muted); }
   .er-hint { margin-top: 4px; margin-left: 16px; font-size: 11px; color: var(--muted); line-height: 1.5; }
   .er-ok { padding: 40px 20px; text-align: center; color: var(--ok); font-size: 15px; font-weight: 600; font-family: 'Playfair Display', serif; }
+
+  /* ============================================================================
+   * WOW: Reading time chip, Heatmap overlay, Preview extras (Sprint 6)
+   * ============================================================================ */
+  .reading-time-chip {
+    font-size: 11px; font-family: ui-monospace, monospace; color: var(--ink-soft);
+    padding: 4px 10px; background: var(--bg); border-radius: 999px; border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .preview-toggle button[data-active="1"] { background: var(--accent); color: #fff; }
+
+  .wow-heatmap {
+    position: absolute; inset: 0; pointer-events: none; z-index: 5;
+    mix-blend-mode: multiply; border-radius: 12px; overflow: hidden;
+  }
+  .wow-heatmap svg { width: 100%; height: 100%; display: block; }
+
+  /* Preview frame relative p/ heatmap */
+  .preview-frame { position: relative; }
+
+  /* ============================================================================
+   * A/B Compare overlay
+   * ============================================================================ */
+  .ab-overlay {
+    position: fixed; inset: 0; z-index: 720; background: #1a1a1a;
+    display: none; flex-direction: column;
+  }
+  .ab-overlay[data-open="1"] { display: flex; }
+  .ab-head {
+    height: 56px; flex-shrink: 0; padding: 0 20px; background: #0f0f0f; color: #fff;
+    display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #2a2a2a;
+  }
+  .ab-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; }
+  .ab-selectors { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
+  .ab-selectors label { font-size: 11px; color: #bbb; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ab-selectors select {
+    padding: 5px 10px; border: 1px solid #333; border-radius: 4px;
+    background: #1f1f1f; color: #fff; font-size: 12px; outline: none; font-family: inherit;
+    min-width: 180px;
+  }
+  .ab-actions { display: flex; align-items: center; gap: 6px; }
+  .ab-mode-btn {
+    padding: 5px 12px; border: 1px solid #333; border-radius: 4px;
+    background: transparent; color: #bbb; font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+  .ab-mode-btn:hover { border-color: #888; color: #fff; }
+  .ab-mode-btn[data-active="1"] { background: #fff; color: #000; border-color: #fff; }
+  .ab-close {
+    width: 32px; height: 32px; border: 1px solid #333; border-radius: 4px; margin-left: 6px;
+    background: transparent; color: #ccc; font-size: 18px; cursor: pointer; display: grid; place-items: center;
+  }
+  .ab-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .ab-stage {
+    flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    padding: 16px; min-height: 0; overflow: hidden;
+  }
+  .ab-frame {
+    position: relative; background: var(--paper); border-radius: 8px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: grid; place-items: center;
+  }
+  .ab-frame.desktop { aspect-ratio: 16/10; max-height: 100%; width: 100%; }
+  .ab-frame.mobile  { width: 390px; justify-self: center; }
+  .ab-side-label {
+    position: absolute; top: 8px; left: 8px; z-index: 10;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-family: 'Playfair Display', serif; font-weight: 900; font-size: 13px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .ab-frame iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--paper); }
 </style>
 </head>
 <body>
@@ -916,6 +989,8 @@
     <button class="btn library-btn" id="libraryBtn" data-active="0" title="Biblioteca de fotos da edição">Biblioteca</button>
     <button class="btn" id="reviewBtn" title="Revisar edição · linter cross-page">🔎 Revisar</button>
     <button class="btn" id="dispatchBtn" title="Preview WhatsApp · mensagens do dispatch">💬 WA</button>
+    <button class="btn" id="abBtn" title="A/B · comparar duas páginas lado a lado">A/B</button>
+    <span class="reading-time-chip" id="readingTimeChip" title="Tempo estimado de leitura · 200 palavras/min"></span>
     <button class="btn ghost" id="viewLiveBtn" style="display:none" title="Abrir leitor público">Ver</button>
     <button class="btn ghost" id="archiveBtn" style="display:none">Arquivar</button>
     <button class="btn primary" id="publishBtn" disabled>Publicar</button>
@@ -946,6 +1021,8 @@
           <div class="preview-toggle">
             <button id="viewDesktop" class="active" title="Desktop (16:10)">Desktop</button>
             <button id="viewMobile" title="Mobile (390×720)">Mobile</button>
+            <button id="toggleHeatmap" title="Ligar/desligar heatmap de atenção" data-active="0">🔥</button>
+            <button id="togglePalette" title="Aplicar paleta dinâmica da foto de capa" data-active="0">🎨</button>
             <button id="viewFullscreen" title="Preview em tela cheia (ESC p/ fechar)">⛶</button>
           </div>
           <div class="preview-frame desktop" id="previewFrame">
@@ -992,6 +1069,9 @@
 
 <!-- EDITION REVIEW MODAL -->
 <div id="editionReviewHost"></div>
+
+<!-- A/B COMPARE OVERLAY -->
+<div id="abCompareHost"></div>
 
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
@@ -1048,6 +1128,10 @@
     aiGen: null,
     dispatchPrev: null,
     editionRev: null,
+    abCompare: null,
+    heatmapOn: false,
+    paletteOn: false,
+    dynamicAccent: null, // hex extraído da capa
   }
 
   // ===== DOM =====
@@ -1203,8 +1287,18 @@
     if (metaBtn) metaBtn.style.display = ''
   }
 
+  function updateReadingTime() {
+    const chip = document.getElementById('readingTimeChip')
+    if (!chip) return
+    if (!state.pages.length) { chip.style.display = 'none'; return }
+    const r = window.MagazineAdmin.Wow.readingTime.compute(state.pages)
+    chip.style.display = ''
+    chip.textContent = `📖 ${r.label} · ${r.totalWords} palavras`
+  }
+
   function renderPageList() {
     els.pageCount.textContent = state.pages.length
+    updateReadingTime()
     if (!state.currentEdition) {
       els.pageList.innerHTML = '<div class="empty-state">Selecione ou crie uma edição.</div>'
       return
@@ -1431,6 +1525,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 ${state.magazineCss}
+${state.dynamicAccent ? `:root { --mp-accent: ${state.dynamicAccent} !important; }` : ''}
 html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#f4f1ec;}
 #stage{
   width:${nat.w}px;height:${nat.h}px;
@@ -1906,6 +2001,61 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     document.getElementById('reviewBtn').addEventListener('click', () => {
       if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
       state.editionRev.open(state.currentEdition, state.pages)
+    })
+
+    // A/B Compare
+    state.abCompare = window.MagazineAdmin.ABCompare.mount(document.getElementById('abCompareHost'))
+    document.getElementById('abBtn').addEventListener('click', () => {
+      if (state.pages.length < 2) { toast('Precisa de pelo menos 2 páginas para A/B', 'err'); return }
+      const pages = state.pages.map(p => {
+        const sec = window.MagazineAdmin.Schema.getSectionMeta(p.template_slug)
+        return Object.assign({}, p, { _label: (sec?.name || p.template_slug) })
+      })
+      state.abCompare.open({
+        pages,
+        css: state.magazineCss,
+        renderPage: (page) => {
+          const slots = (page.id === state.currentPageId) ? readSlotsFromForm(page) : (page.slots || {})
+          return window.MagazineRenderer.render(page.template_slug, slots)
+        },
+      })
+    })
+
+    // WOW: heatmap toggle
+    document.getElementById('toggleHeatmap').addEventListener('click', (e) => {
+      state.heatmapOn = !state.heatmapOn
+      e.currentTarget.dataset.active = state.heatmapOn ? '1' : '0'
+      const container = els.previewFrame
+      if (state.heatmapOn) window.MagazineAdmin.Wow.heatmapOverlay.attach(container)
+      else window.MagazineAdmin.Wow.heatmapOverlay.detach(container)
+    })
+
+    // WOW: paleta dinâmica toggle (extrai da capa e aplica no iframe do preview)
+    document.getElementById('togglePalette').addEventListener('click', async (e) => {
+      state.paletteOn = !state.paletteOn
+      e.currentTarget.dataset.active = state.paletteOn ? '1' : '0'
+      if (state.paletteOn) {
+        const cover = state.pages.find(p => /^t0[123]_cover/.test(p.template_slug))
+        const url = cover && cover.slots && (cover.slots.foto_hero || cover.slots.foto_1)
+        if (!url) { toast('Adicione foto de capa primeiro', 'err'); state.paletteOn = false; e.currentTarget.dataset.active = '0'; return }
+        try {
+          const hex = await window.MagazineAdmin.Wow.dynamicPalette.extract(
+            window.MagazineRenderer.normalizeUrl ? window.MagazineRenderer.normalizeUrl(url) : url
+          )
+          if (hex) {
+            state.dynamicAccent = hex
+            toast(`Paleta aplicada: ${hex}`, 'ok')
+            renderPreview()
+          }
+        } catch (err) {
+          toast('Falha ao extrair paleta: ' + err.message, 'err')
+          state.paletteOn = false
+          e.currentTarget.dataset.active = '0'
+        }
+      } else {
+        state.dynamicAccent = null
+        renderPreview()
+      }
     })
 
     // Edition metadata modal
