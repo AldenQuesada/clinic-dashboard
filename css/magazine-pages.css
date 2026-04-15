@@ -41,40 +41,123 @@
 }
 @keyframes dedFade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
-/* ===== t01_cover_hero_dark ===== */
-.mp-t01 { background: var(--mp-dark); color: var(--mp-cream); display: grid; grid-template-rows: auto auto 1fr auto; padding: 56px 64px; gap: 36px; }
-.mp-t01 .head { display: flex; justify-content: space-between; align-items: center; gap: 32px; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 24px; }
-.mp-t01 .head .brand { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 56px; letter-spacing: -0.02em; line-height: 0.9; }
-.mp-t01 .head .edition-label { text-align: right; font-size: 13px; letter-spacing: 4px; text-transform: uppercase; opacity: 0.8; white-space: nowrap; flex-shrink: 0; }
-.mp-t01 .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: stretch; min-height: 0; }
-.mp-t01 .visual { width: 100%; height: 100%; min-height: 0; border: 1px solid rgba(255,255,255,0.08); background: radial-gradient(ellipse at 50% 30%, #2a2a2a, #0f0f0f 70%); overflow: hidden; position: relative; }
-.mp-t01 .txt { padding-bottom: 20px; align-self: end; min-width: 0; display: flex; flex-direction: column; gap: 18px; }
-.mp-t01 .tag { align-self: flex-start; padding: 8px 14px; border: 1px solid var(--mp-accent); color: var(--mp-accent); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
-.mp-t01 .txt h2 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 68px; line-height: 0.95; color: var(--mp-cream); margin: 0; }
-.mp-t01 .txt h2 em { font-style: italic; color: var(--mp-accent); font-weight: 400; }
-.mp-t01 .txt p { font-size: 17px; line-height: 1.55; opacity: 0.8; max-width: 480px; margin: 0; }
-.mp-t01 .foot { border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.6; }
+/* ============================================================================
+ * t01_cover_hero_dark · Mobile-first
+ *
+ * Layout:
+ *   ┌────────────────────────────────────┐
+ *   │ MIRIAN DE PAULA · Beauty · ABR·26  │  head: 3 colunas (dedicatoria, brand, label)
+ *   ├────────────────────────────────────┤
+ *   │                                    │
+ *   │         [FOTO INTEIRA]             │  visual: flex 1, object-fit contain
+ *   │                                    │
+ *   ├────────────────────────────────────┤
+ *   │ [TAG]                              │
+ *   │ Título em *destaque*               │
+ *   │ Subtítulo explicativo              │
+ *   └────────────────────────────────────┘
+ *
+ * Mobile: tudo vertical, foto inteira visível (contain), título abaixo.
+ * Desktop (≥720px): foto | título lateral, lado a lado.
+ * ============================================================================ */
 
-/* Variante Mobile (iframe 390x720) */
-@media (max-width: 500px) {
-  .mp-t01 {
-    padding: var(--t01-pad-top, 64px) var(--t01-pad-x, 24px) 28px;
-    gap: var(--t01-gap, 26px);
+/* ───── Base (mobile-first) ───── */
+.mp-t01 {
+  background: var(--mp-dark);
+  color: var(--mp-cream);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 20px 22px;
+  gap: 14px;
+  overflow: hidden;
+}
+.mp-t01 .head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding-bottom: 10px;
+}
+.mp-t01 .head .dedicatoria {
+  font-family: 'Inter', sans-serif; font-style: normal;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  opacity: 0.75; text-align: left; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  animation: none;
+}
+.mp-t01 .head .brand {
+  font-family: 'Playfair Display', serif; font-weight: 900;
+  font-size: clamp(22px, 6vw, 32px); letter-spacing: -0.02em; line-height: 1;
+  text-align: center; white-space: nowrap;
+}
+.mp-t01 .head .edition-label {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  opacity: 0.8; text-align: right; white-space: nowrap; font-weight: 500;
+}
+.mp-t01 .body {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 14px;
+  min-height: 0;
+}
+.mp-t01 .visual {
+  min-height: 0; overflow: hidden; position: relative;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: radial-gradient(ellipse at 50% 30%, #2a2a2a, #0f0f0f 70%);
+  display: grid; place-items: center;
+}
+.mp-t01 .visual .mp-photo-slot {
+  width: 100%; height: 100%; background: transparent;
+  display: grid; place-items: center;
+}
+.mp-t01 .visual .mp-img {
+  width: auto; height: auto; max-width: 100%; max-height: 100%;
+  object-fit: contain;
+}
+.mp-t01 .txt {
+  display: flex; flex-direction: column; gap: 10px;
+  align-items: flex-start; text-align: left; min-width: 0;
+}
+.mp-t01 .tag {
+  padding: 5px 10px; border: 1px solid var(--mp-accent);
+  color: var(--mp-accent); font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase; font-weight: 600;
+}
+.mp-t01 .txt h2 {
+  font-family: 'Playfair Display', serif; font-weight: 700;
+  font-size: clamp(24px, 6vw, 40px); line-height: 1; color: var(--mp-cream); margin: 0;
+}
+.mp-t01 .txt h2 em { font-style: italic; color: var(--mp-accent); font-weight: 400; }
+.mp-t01 .txt p {
+  font-size: clamp(13px, 2.6vw, 15px); line-height: 1.5; opacity: 0.85;
+  margin: 0; max-width: 60ch;
+}
+
+/* ───── Desktop/tablet (≥720px): foto | título lateral ───── */
+@media (min-width: 720px) {
+  .mp-t01 { padding: 40px 56px; gap: 24px; }
+  .mp-t01 .head { padding-bottom: 18px; gap: 24px; }
+  .mp-t01 .head .dedicatoria { font-size: 11px; letter-spacing: 3px; }
+  .mp-t01 .head .brand { font-size: clamp(32px, 4vw, 48px); }
+  .mp-t01 .head .edition-label { font-size: 11px; letter-spacing: 3px; }
+  .mp-t01 .body {
+    grid-template-rows: 1fr;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 40px;
   }
-  .mp-t01 .head { padding-bottom: 18px; }
-  .mp-t01 .head .brand { font-size: var(--t01-brand-size, 30px); }
-  .mp-t01 .head .edition-label { font-size: 10px; letter-spacing: 2px; }
-  .mp-t01 .hero { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 24px; }
-  .mp-t01 .visual {
-    min-height: var(--t01-visual-h, 380px);
-    max-height: var(--t01-visual-max, 420px);
-    aspect-ratio: auto;
+  .mp-t01 .txt {
+    justify-content: center; gap: 16px; padding: 20px 0;
   }
-  .mp-t01 .txt { padding-bottom: 0; gap: 16px; }
-  .mp-t01 .tag { font-size: 10px; padding: 6px 11px; }
-  .mp-t01 .txt h2 { font-size: var(--t01-title-size, 40px); line-height: 1; }
-  .mp-t01 .txt p { font-size: var(--t01-subtitle-size, 19px); line-height: 1.55; max-width: none; }
-  .mp-t01 .foot { padding-top: 14px; font-size: 9px; letter-spacing: 2px; }
+  .mp-t01 .txt h2 { font-size: clamp(42px, 5vw, 64px); line-height: 0.95; }
+  .mp-t01 .txt p { font-size: clamp(14px, 1.2vw, 16px); }
+}
+
+/* ───── Desktop grande (≥1100px): tipografia maior ───── */
+@media (min-width: 1100px) {
+  .mp-t01 { padding: 56px 72px; gap: 32px; }
+  .mp-t01 .head .brand { font-size: 56px; }
+  .mp-t01 .txt h2 { font-size: 68px; }
 }
 
 /* ===== t02_cover_hero_light ===== */

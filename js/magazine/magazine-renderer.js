@@ -64,11 +64,11 @@
   R.t01_cover_hero_dark = (s) => `
     <div class="mp mp-t01">
       <div class="head">
+        ${s.dedicatoria ? `<div class="dedicatoria">${esc(s.dedicatoria)}</div>` : '<div class="dedicatoria"></div>'}
         <h1 class="brand">Beauty &amp; Health</h1>
         <div class="edition-label">${esc(s.edicao_label || 'Edição')}</div>
       </div>
-      ${s.dedicatoria ? `<div class="dedicatoria">${esc(s.dedicatoria)}</div>` : ''}
-      <div class="hero">
+      <div class="body">
         <div class="visual">${photo(s.foto_hero, '', 'FOTO HERO')}</div>
         <div class="txt">
           ${s.tag ? `<div class="tag">${esc(s.tag)}</div>` : ''}
@@ -76,7 +76,6 @@
           ${s.subtitulo ? `<p>${esc(s.subtitulo)}</p>` : ''}
         </div>
       </div>
-      <div class="foot">Revista digital · Beleza &amp; Saúde</div>
     </div>
   `
 
