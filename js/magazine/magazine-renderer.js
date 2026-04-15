@@ -175,7 +175,7 @@
           <h1>${emify(s.titulo || 'Título da matéria')}</h1>
           ${s.lede ? `<div class="lede">${esc(s.lede)}</div>` : ''}
           <div class="columns">${corpoHtml || '<p>Corpo do texto…</p>'}</div>
-          ${s.byline ? `<div class="byline">Por ${esc(s.byline)}</div>` : ''}
+          ${s.byline ? `<div class="byline">${/^por\s/i.test(s.byline.trim()) ? esc(s.byline) : 'Por ' + esc(s.byline)}</div>` : ''}
         </div>
       </div>`
   }

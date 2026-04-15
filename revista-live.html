@@ -16,10 +16,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/magazine-pages.css?v=20260415z" />
+<link rel="stylesheet" href="css/magazine-pages.css?v=20260416a" />
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/magazine/magazine-renderer.js?v=20260415z"></script>
+<script src="js/magazine/magazine-renderer.js?v=20260416a"></script>
 <style>
   :root {
     --ink: #1a1a1a; --ink-soft: #555; --muted: #8a8178;
@@ -618,13 +618,37 @@
     }, { root: reader, threshold: [0.5] })
     Array.from(reader.children).forEach(p => io.observe(p))
 
-    prev.addEventListener('click', () => reader.children[Math.max(0, currentIdx - 1)]?.scrollIntoView({ inline: 'start', behavior: 'smooth' }))
-    next.addEventListener('click', () => reader.children[Math.min(pages.length - 1, currentIdx + 1)]?.scrollIntoView({ inline: 'start', behavior: 'smooth' }))
+    // Calcula índice atual com base na posição real de scroll (não confia em currentIdx
+    // que pode ficar dessincronizado se IntersectionObserver não disparar)
+    function currentIdxFromScroll() {
+      const w = reader.clientWidth || window.innerWidth
+      if (w <= 0) return currentIdx
+      return Math.round(reader.scrollLeft / w)
+    }
+    function goTo(idx) {
+      const target = reader.children[Math.max(0, Math.min(pages.length - 1, idx))]
+      if (!target) return
+      target.scrollIntoView({ inline: 'start', behavior: 'smooth' })
+      // Atualiza UI imediatamente (não espera observer)
+      setTimeout(() => updateUi(currentIdxFromScroll()), 350)
+    }
+    prev.addEventListener('click', () => goTo(currentIdxFromScroll() - 1))
+    next.addEventListener('click', () => goTo(currentIdxFromScroll() + 1))
 
     window.addEventListener('keydown', e => {
-      if (e.key === 'ArrowRight') next.click()
-      if (e.key === 'ArrowLeft') prev.click()
+      if (e.key === 'ArrowRight') goTo(currentIdxFromScroll() + 1)
+      if (e.key === 'ArrowLeft')  goTo(currentIdxFromScroll() - 1)
     })
+
+    // Sincroniza currentIdx via scroll (fallback caso observer não dispare)
+    let scrollSyncTimer = null
+    reader.addEventListener('scroll', () => {
+      clearTimeout(scrollSyncTimer)
+      scrollSyncTimer = setTimeout(() => {
+        const idx = currentIdxFromScroll()
+        if (idx !== currentIdx) updateUi(idx)
+      }, 120)
+    }, { passive: true })
 
     // ========= Swipe gesture (mobile) =========
     // Complementa o scroll-snap nativo — permite swipe em qualquer área da tela,
@@ -650,12 +674,11 @@
       if (dt > 800) return // swipe lento → ignora (foi scroll)
       if (Math.abs(dx) < 60) return // curto demais
       if (Math.abs(dx) < Math.abs(dy) * 1.8) return // mais vertical que horizontal
+      const i = currentIdxFromScroll()
       if (dx > 0) {
-        // swipe para direita = voltar
-        if (currentIdx > 0) prev.click()
+        if (i > 0) goTo(i - 1)
       } else {
-        // swipe para esquerda = avançar
-        if (currentIdx < pages.length - 1) next.click()
+        if (i < pages.length - 1) goTo(i + 1)
       }
     }, { passive: true })
 
