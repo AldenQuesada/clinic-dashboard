@@ -179,10 +179,15 @@
     background: radial-gradient(ellipse at 50% 30%, #2a2a2a, #0f0f0f 70%);
   }
   .mp-t01 .visual .mp-img { object-fit: contain; }
+  /* Coluna direita de texto:
+     - Alinha ao TOPO da foto (não ao centro geométrico)
+     - Tag no topo (altura do topo da foto)
+     - Título + subtítulo fluem de cima para baixo a partir da tag
+     - transform: none (sem deslocamento artificial) */
   .mp-t01 .txt {
     position: relative; inset: auto;
-    justify-content: center; gap: 18px; padding: 0;
-    transform: translateY(-4%);
+    justify-content: flex-start; align-items: flex-start;
+    gap: 20px; padding: 0; transform: none;
   }
   .mp-t01 .txt h2 { font-size: clamp(42px, 5vw, 64px); line-height: 0.95; }
   .mp-t01 .txt p { font-size: clamp(14px, 1.2vw, 16px); }
