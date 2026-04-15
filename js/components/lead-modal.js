@@ -1797,9 +1797,15 @@ async function _lmTabGeral(lead) {
   if (dob) age = _calcAge(dob) || age
 
   // ── Coluna direita: dados estrategicos ──────────────────────
-  // Queixas: primeiro da anamnese, fallback do lead
-  var qfRaw = lead.queixas_faciais || cf.queixas_faciais || (lead.data || {}).queixas_faciais || []
+  // Queixas: primeiro da anamnese, fallback do lead, fallback do data aninhado do import
+  var _nd   = (lead.data && lead.data.data) || cf.data || {}
+  var qfRaw = lead.queixas_faciais || cf.queixas_faciais || (lead.data || {}).queixas_faciais || _nd.queixas_faciais || []
   var qfArr = Array.isArray(qfRaw) ? qfRaw : []
+  // Se nao achou array, tenta string livre (queixas em texto do import)
+  if (!qfArr.length) {
+    var qStr = cf.queixaPrincipal || cf.queixa || cf.queixas || _nd.queixa || _nd.queixas || lead.queixas || ''
+    if (qStr && typeof qStr === 'string') qfArr = qStr.split(/[,;]/).map(function(s){return s.trim()}).filter(Boolean)
+  }
 
   // Enriquecer queixas com dados da anamnese
   var anamQueixas = anamData['assinale_as_opcoes_que_voce_gostaria_de_melhorar_e']
@@ -1878,14 +1884,22 @@ function _lmTabClinico(lead) {
   var cf  = lead.customFields || {}
   var ana = cf.anamnese || {}
 
-  // Queixas: prefer quiz-collected queixas_faciais, fall back to manual queixaPrincipal
-  var qfRaw = lead.queixas_faciais || (lead.customFields || {}).queixas_faciais || (lead.data || {}).queixas_faciais || []
+  // Queixas: prefer quiz-collected queixas_faciais, fall back to data aninhado do import, fall back to manual queixaPrincipal
+  var _nd2  = (lead.data && lead.data.data) || (lead.customFields && lead.customFields.data) || {}
+  var qfRaw = lead.queixas_faciais || (lead.customFields || {}).queixas_faciais || (lead.data || {}).queixas_faciais || _nd2.queixas_faciais || []
   var qfArr = Array.isArray(qfRaw) ? qfRaw : []
+  // Normaliza: pode ser array de string ou array de objetos {label}
+  qfArr = qfArr.map(function(x){ return typeof x === 'string' ? x : (x && (x.label || x.nome || x.name)) || '' }).filter(Boolean)
+  // Fallback string livre (import)
+  if (!qfArr.length) {
+    var qStr = cf.queixaPrincipal || cf.queixa || cf.queixas || _nd2.queixa || _nd2.queixas || lead.queixas || ''
+    if (qStr && typeof qStr === 'string') qfArr = qStr.split(/[,;]/).map(function(s){return s.trim()}).filter(Boolean)
+  }
   var queixaContent = ''
   if (qfArr.length) {
     queixaContent = '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
       qfArr.map(function(q) {
-        return '<span style="display:inline-block;padding:4px 10px;background:#EEF2FF;color:#4338CA;border-radius:8px;font-size:13px;font-weight:500">' + q.replace(/</g,'&lt;') + '</span>'
+        return '<span style="display:inline-block;padding:4px 10px;background:#EEF2FF;color:#4338CA;border-radius:8px;font-size:13px;font-weight:500">' + String(q).replace(/</g,'&lt;') + '</span>'
       }).join('') + '</div>'
   } else if (cf.queixaPrincipal) {
     queixaContent = '<div style="background:#FFFBEB;border-left:3px solid #F59E0B;padding:12px 14px;border-radius:0 8px 8px 0;font-size:14px;color:#78350F;line-height:1.6">' + cf.queixaPrincipal.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'

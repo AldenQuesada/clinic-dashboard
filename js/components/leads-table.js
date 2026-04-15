@@ -92,11 +92,13 @@ function renderLeadsTable(leads, offset, append) {
       '</td>' +
 
       (function() {
-        var cf = lead.customFields || lead.data || {}
-        var qf = lead.queixas_faciais || cf.queixas_faciais || []
-        var queixa = Array.isArray(qf) && qf.length
-          ? qf.join(', ')
-          : (cf.queixaPrincipal || lead.queixas || '')
+        var cf   = lead.customFields || lead.data || {}
+        var nd   = (lead.data && lead.data.data) || cf.data || {}  // data aninhado do import legado
+        var qf   = lead.queixas_faciais || cf.queixas_faciais || nd.queixas_faciais || []
+        var qfArr = Array.isArray(qf) ? qf : []
+        var queixa = qfArr.length
+          ? qfArr.map(function(x){ return typeof x === 'string' ? x : (x && (x.label || x.nome || x.name)) || '' }).filter(Boolean).join(', ')
+          : (cf.queixaPrincipal || cf.queixa || cf.queixas || nd.queixa || nd.queixas || lead.queixas || lead.queixa || '')
         return '<td style="padding:8px 16px;max-width:200px">' +
           (queixa
             ? '<span style="font-size:11px;color:#374151;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.3">' + queixa.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>'
