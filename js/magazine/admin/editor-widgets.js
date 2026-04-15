@@ -107,7 +107,7 @@
       wrap.appendChild(hint)
     }
 
-    return { wrap, control, counter, label }
+    return { wrap, control, counter, label, labelRow }
   }
 
   // ── Text input ─────────────────────────────────────────────────────────

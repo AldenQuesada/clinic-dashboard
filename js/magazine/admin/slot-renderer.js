@@ -66,9 +66,10 @@
         notifyChange()
       }
 
+      let inputEl = null
       switch (fm.type) {
         case 'textarea':
-          $Widgets().mountTextarea(parts, fm, value, onFieldChange)
+          inputEl = $Widgets().mountTextarea(parts, fm, value, onFieldChange)
           break
         case 'image':
           $Widgets().mountImageInput(parts, fm, value, onFieldChange, handlers.onUpload)
@@ -78,8 +79,27 @@
           break
         case 'text':
         default:
-          $Widgets().mountTextInput(parts, fm, value, onFieldChange)
+          inputEl = $Widgets().mountTextInput(parts, fm, value, onFieldChange)
           break
+      }
+
+      // Botão ✨ IA para campos de texto (curto ou longo)
+      if (inputEl && typeof handlers.onAIField === 'function') {
+        const ai = NS().AIGenerator
+        if (ai) {
+          ai.attachButton(parts.labelRow, {
+            fieldMeta: fm,
+            onClick: () => handlers.onAIField({
+              fieldMeta: fm,
+              inputEl,
+              applyValue: (newVal) => {
+                inputEl.value = newVal
+                onFieldChange(newVal)
+                inputEl.dispatchEvent(new Event('input', { bubbles: true }))
+              },
+            }),
+          })
+        }
       }
     })
 
