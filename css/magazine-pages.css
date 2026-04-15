@@ -55,17 +55,23 @@
 
 /* Variante Mobile (iframe 390x720) */
 @media (max-width: 500px) {
-  .mp-t01 { padding: 32px 24px; gap: 20px; }
-  .mp-t01 .head { padding-bottom: 16px; }
-  .mp-t01 .head .brand { font-size: 26px; }
+  .mp-t01 {
+    padding: var(--t01-pad-top, 64px) var(--t01-pad-x, 24px) 28px;
+    gap: var(--t01-gap, 26px);
+  }
+  .mp-t01 .head { padding-bottom: 18px; }
+  .mp-t01 .head .brand { font-size: var(--t01-brand-size, 30px); }
   .mp-t01 .head .edition-label { font-size: 10px; letter-spacing: 2px; }
-  .mp-t01 .hero { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 22px; }
-  /* Foto hero ocupa ate 45vh (sem passar metade da tela) */
-  .mp-t01 .visual { min-height: 42vh; max-height: 45vh; aspect-ratio: auto; }
-  .mp-t01 .txt { padding-bottom: 0; gap: 14px; }
-  .mp-t01 .tag { font-size: 9px; padding: 5px 10px; }
-  .mp-t01 .txt h2 { font-size: 38px; }
-  .mp-t01 .txt p { font-size: 17px; line-height: 1.5; max-width: none; }
+  .mp-t01 .hero { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 24px; }
+  .mp-t01 .visual {
+    min-height: var(--t01-visual-h, 380px);
+    max-height: var(--t01-visual-max, 420px);
+    aspect-ratio: auto;
+  }
+  .mp-t01 .txt { padding-bottom: 0; gap: 16px; }
+  .mp-t01 .tag { font-size: 10px; padding: 6px 11px; }
+  .mp-t01 .txt h2 { font-size: var(--t01-title-size, 40px); line-height: 1; }
+  .mp-t01 .txt p { font-size: var(--t01-subtitle-size, 19px); line-height: 1.55; max-width: none; }
   .mp-t01 .foot { padding-top: 14px; font-size: 9px; letter-spacing: 2px; }
 }
 

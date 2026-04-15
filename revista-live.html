@@ -195,6 +195,46 @@
     }
   }
 
+  /* ========= TUNE PANEL (?tune=1) ========= */
+  .tune-panel {
+    position: fixed; top: 12px; right: 12px; z-index: 250;
+    width: 280px; max-height: calc(100vh - 24px); overflow-y: auto;
+    background: #fff; border-radius: 12px; border: 1px solid var(--line);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    font-family: 'Inter', sans-serif; font-size: 12px;
+    display: none;
+  }
+  .tune-panel.open { display: block; }
+  .tune-panel header {
+    padding: 12px 16px; border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .tune-panel header h3 { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--ink); }
+  .tune-panel header .close { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--muted); }
+  .tune-panel .body { padding: 14px 16px; }
+  .tune-panel .grp { margin-bottom: 14px; }
+  .tune-panel .grp label { display: flex; justify-content: space-between; font-weight: 600; color: var(--ink); font-size: 11px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 6px; }
+  .tune-panel .grp label .v { color: var(--accent); font-family: ui-monospace, monospace; }
+  .tune-panel .grp input[type=range] { width: 100%; accent-color: var(--accent); }
+  .tune-panel .actions { padding: 12px 16px; border-top: 1px solid var(--line); display: flex; gap: 6px; }
+  .tune-panel .actions button {
+    flex: 1; padding: 8px 10px; font-size: 11px; font-weight: 600;
+    border-radius: 4px; cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--ink);
+  }
+  .tune-panel .actions .save { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .tune-panel .actions .save:hover { background: var(--accent); border-color: var(--accent); }
+  .tune-panel .actions .reset:hover { background: #fee2e2; color: var(--danger); border-color: var(--danger); }
+  .tune-panel .hint { font-size: 10px; color: var(--muted); padding: 0 16px 12px; line-height: 1.4; }
+  .tune-fab {
+    position: fixed; bottom: 16px; left: 16px; z-index: 248;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--accent); color: #fff; border: none; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(122,31,43,0.35);
+    font-size: 14px; font-weight: 700;
+    display: none;
+  }
+  .tune-fab.show { display: grid; place-items: center; }
+
   /* ========= HIDDEN ICON (D1) ========= */
   .hidden-icon {
     position: absolute; z-index: 4; cursor: pointer;
@@ -290,6 +330,21 @@
   </div>
 </div>
 
+<!-- TUNE PANEL (?tune=1) -->
+<button class="tune-fab" id="tuneFab" title="Abrir painel de ajustes">⚙</button>
+<div class="tune-panel" id="tunePanel">
+  <header>
+    <h3>Ajustes da página</h3>
+    <button class="close" id="tuneClose">×</button>
+  </header>
+  <div class="body" id="tuneBody"></div>
+  <div class="actions">
+    <button class="reset" id="tuneReset">Resetar</button>
+    <button class="save" id="tuneSave">Salvar na edição</button>
+  </div>
+  <div class="hint">Mude valores ao vivo. "Salvar na edição" persiste para todos que abrirem o link.</div>
+</div>
+
 <div class="reward-toast" id="rewardToast"></div>
 
 <script>
@@ -347,6 +402,9 @@
 
       edition = ed
       pages = ed.pages || []
+
+      // Aplica personalizacoes salvas (tune panel)
+      applyTuneOverrides()
 
       // A7 · Aplicar segmento ao body
       if (ed.segment) document.body.dataset.segment = ed.segment
@@ -678,6 +736,137 @@
 
   // ========= SHARE BUTTON =========
   $('shareBtn').addEventListener('click', () => generateShareCard())
+
+  // ========= TUNE PANEL (?tune=1) =========
+  // Controles editaveis por template. Persistem em magazine_editions.personalization_config.tpl_overrides
+  const TUNE_CONTROLS = {
+    t01_cover_hero_dark: [
+      { var: '--t01-pad-top',       label: 'Espaço topo',          min: 24, max: 120, step: 4, def: 64, suffix: 'px' },
+      { var: '--t01-brand-size',    label: 'Tamanho "Beauty & H"', min: 22, max: 56, step: 2, def: 30, suffix: 'px' },
+      { var: '--t01-visual-h',      label: 'Altura mínima foto',   min: 200, max: 500, step: 10, def: 380, suffix: 'px' },
+      { var: '--t01-visual-max',    label: 'Altura máxima foto',   min: 240, max: 600, step: 10, def: 420, suffix: 'px' },
+      { var: '--t01-title-size',    label: 'Tamanho do título',    min: 28, max: 64, step: 2, def: 40, suffix: 'px' },
+      { var: '--t01-subtitle-size', label: 'Tamanho do subtítulo', min: 13, max: 26, step: 1, def: 19, suffix: 'px' },
+      { var: '--t01-gap',           label: 'Espaço entre seções',  min: 12, max: 48, step: 2, def: 26, suffix: 'px' },
+    ],
+  }
+
+  const isTuneMode = qs.has('tune')
+  let tuneStyleEl = null
+  let currentTpl = null
+
+  function getTuneOverrides() {
+    if (!edition || !edition.personalization_config) return {}
+    return edition.personalization_config.tpl_overrides || {}
+  }
+
+  function applyTuneOverrides() {
+    const ov = getTuneOverrides()
+    if (!Object.keys(ov).length) return
+    if (!tuneStyleEl) { tuneStyleEl = document.createElement('style'); document.head.appendChild(tuneStyleEl) }
+    const rules = []
+    for (const slug in ov) {
+      const vars = ov[slug]
+      const decls = Object.entries(vars).map(([k, v]) => `${k}: ${v}`).join('; ')
+      rules.push(`@media (max-width: 500px) { .mp-${slugIdx(slug)} { ${decls} } }`)
+      rules.push(`.mp-${slugIdx(slug)} { ${decls} }`)
+    }
+    tuneStyleEl.textContent = rules.join('\n')
+  }
+
+  function slugIdx(slug) {
+    // t01_cover_hero_dark -> t01
+    const m = slug.match(/^(t\d+)_/)
+    return m ? m[1] : slug
+  }
+
+  function detectCurrentTemplate() {
+    const reader = $('reader'); if (!reader) return null
+    const idx = parseInt(document.querySelector('.page[data-idx]')?.dataset.idx || '0')
+    const visible = Array.from(reader.children).find(p => {
+      const r = p.getBoundingClientRect()
+      return r.left < window.innerWidth/2 && r.right > window.innerWidth/2
+    })
+    if (!visible) return null
+    const pageId = visible.dataset.id
+    const page = pages.find(p => p.id === pageId)
+    return page?.template_slug || null
+  }
+
+  function buildTunePanel() {
+    const tpl = detectCurrentTemplate()
+    if (tpl === currentTpl) return
+    currentTpl = tpl
+    const controls = TUNE_CONTROLS[tpl]
+    const body = $('tuneBody')
+    if (!controls) {
+      body.innerHTML = `<div class="hint" style="padding:0">Sem controles ajustáveis para <code>${tpl || '?'}</code> ainda.</div>`
+      return
+    }
+    const ov = (getTuneOverrides()[tpl]) || {}
+    body.innerHTML = controls.map(c => {
+      const cur = ov[c.var]
+      const num = cur ? parseInt(cur) : c.def
+      return `
+        <div class="grp">
+          <label><span>${c.label}</span><span class="v" data-disp="${c.var}">${num}${c.suffix}</span></label>
+          <input type="range" min="${c.min}" max="${c.max}" step="${c.step}" value="${num}" data-var="${c.var}" data-suffix="${c.suffix}" />
+        </div>`
+    }).join('') + `<div class="hint" style="padding:0">Template: <code>${tpl}</code></div>`
+    body.querySelectorAll('input[type=range]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const v = inp.value + inp.dataset.suffix
+        document.body.style.setProperty(inp.dataset.var, v)
+        body.querySelector(`[data-disp="${inp.dataset.var}"]`).textContent = v
+      })
+    })
+  }
+
+  async function saveTune() {
+    if (!edition) return
+    const tpl = currentTpl
+    if (!tpl) return showReward('Nada para salvar')
+    const inputs = $('tuneBody').querySelectorAll('input[type=range]')
+    const vars = {}
+    inputs.forEach(inp => { vars[inp.dataset.var] = inp.value + inp.dataset.suffix })
+    const cfg = edition.personalization_config || {}
+    const ov = cfg.tpl_overrides || {}
+    ov[tpl] = vars
+    cfg.tpl_overrides = ov
+    try {
+      const { error } = await sb.from('magazine_editions').update({ personalization_config: cfg }).eq('id', edition.id)
+      if (error) throw error
+      edition.personalization_config = cfg
+      showReward('Salvo na edição ✓')
+    } catch (e) { showReward('Erro: ' + e.message) }
+  }
+
+  function resetTune() {
+    if (!currentTpl) return
+    const cfg = edition.personalization_config || {}
+    const ov = cfg.tpl_overrides || {}
+    delete ov[currentTpl]
+    cfg.tpl_overrides = ov
+    edition.personalization_config = cfg
+    // Limpa CSS vars do body
+    TUNE_CONTROLS[currentTpl]?.forEach(c => document.body.style.removeProperty(c.var))
+    currentTpl = null
+    buildTunePanel()
+  }
+
+  if (isTuneMode) {
+    $('tuneFab').classList.add('show')
+    $('tuneFab').addEventListener('click', () => {
+      $('tunePanel').classList.toggle('open')
+      buildTunePanel()
+    })
+    $('tuneClose').addEventListener('click', () => $('tunePanel').classList.remove('open'))
+    $('tuneSave').addEventListener('click', saveTune)
+    $('tuneReset').addEventListener('click', resetTune)
+    // Atualiza painel quando muda de pagina
+    window.addEventListener('scroll', () => buildTunePanel(), { capture: true, passive: true })
+    setInterval(buildTunePanel, 500)
+  }
 
   // ========= E1 · SHARE CARD =========
   function generateShareCard() {
