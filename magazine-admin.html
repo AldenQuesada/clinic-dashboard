@@ -54,17 +54,23 @@
   button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; }
   input, textarea, select { font: inherit; color: inherit; }
 
-  .app { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
+  .app { display: grid; grid-template-rows: auto 1fr; height: 100vh; }
 
-  /* ===== Topbar ===== */
+  /* ===== Topbar (2 linhas) ===== */
   .topbar {
-    display: flex; align-items: center; gap: 16px;
-    padding: 0 20px;
+    display: flex; flex-direction: column;
     background: var(--paper);
     border-bottom: 1px solid var(--line);
   }
-  .brand { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 20px; letter-spacing: -0.01em; }
-  .brand em { font-style: italic; font-weight: 400; color: var(--accent); }
+  .topbar-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 20px;
+    min-height: 48px;
+  }
+  .topbar-row-main { border-bottom: 1px solid var(--line); }
+  .topbar-row-tools { background: var(--bg); min-height: 44px; flex-wrap: wrap; gap: 8px; padding-top: 6px; padding-bottom: 6px; }
+  .brand { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 18px; letter-spacing: -0.01em; flex-shrink: 0; color: var(--ink); }
+  .brand em { font-style: italic; font-weight: 400; color: var(--accent); font-size: 13px; margin-left: 2px; }
   .topbar .divider { width: 1px; height: 24px; background: var(--line); }
   .topbar select, .topbar .btn {
     height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px;
@@ -84,10 +90,12 @@
   .topbar .spacer { flex: 1; }
   .topbar .title-input {
     border: none; outline: none; font-family: 'Playfair Display', serif;
-    font-size: 18px; font-weight: 700; color: var(--ink); background: transparent;
-    padding: 4px 8px; border-radius: 4px; min-width: 200px;
+    font-size: 15px; font-weight: 700; color: var(--ink); background: transparent;
+    padding: 4px 8px; border-radius: 4px;
+    min-width: 160px; max-width: 320px; flex: 1; text-overflow: ellipsis;
   }
   .topbar .title-input:focus, .topbar .title-input:hover { background: var(--bg); }
+  .topbar #editionSelect { max-width: 240px; }
 
   /* ===== Main layout ===== */
   .main { display: grid; grid-template-columns: 280px 1fr 360px; min-height: 0; }
@@ -1092,34 +1100,43 @@
 <body>
 <div class="app">
 
-  <!-- TOPBAR -->
+  <!-- TOPBAR (2 linhas) -->
   <header class="topbar">
-    <div class="brand">Beauty &amp; Health <em>/ Editor</em></div>
-    <div class="divider"></div>
+    <!-- Linha 1: identidade da edição + ações principais -->
+    <div class="topbar-row topbar-row-main">
+      <div class="brand">B&amp;H <em>Editor</em></div>
 
-    <select id="editionSelect" title="Selecionar edição">
-      <option value="">— Edições —</option>
-    </select>
-    <button class="btn" id="newEditionBtn">+ Nova edição</button>
+      <select id="editionSelect" title="Selecionar edição">
+        <option value="">— Edições —</option>
+      </select>
+      <button class="btn" id="newEditionBtn" title="Criar nova edição">+ Nova</button>
 
-    <div class="divider"></div>
+      <div class="divider"></div>
 
-    <input type="text" class="title-input" id="editionTitle" placeholder="Título da edição…" disabled />
-    <button class="btn ghost" id="editionMetaBtn" style="display:none" title="Editar metadados da edição">⋯</button>
-    <span class="status draft" id="editionStatus" style="display:none">Rascunho</span>
+      <input type="text" class="title-input" id="editionTitle" placeholder="Título da edição…" disabled />
+      <button class="btn ghost" id="editionMetaBtn" style="display:none" title="Editar metadados da edição">⋯</button>
+      <span class="status draft" id="editionStatus" style="display:none">Rascunho</span>
 
-    <div class="spacer"></div>
+      <div class="spacer"></div>
 
-    <button class="btn library-btn" id="libraryBtn" data-active="0" title="Biblioteca de fotos da edição">Biblioteca</button>
-    <button class="btn" id="reviewBtn" title="Revisar edição · linter cross-page">🔎 Revisar</button>
-    <button class="btn" id="dispatchBtn" title="Preview WhatsApp · mensagens do dispatch">💬 WA</button>
-    <button class="btn" id="abBtn" title="A/B · comparar duas páginas lado a lado">A/B</button>
-    <button class="btn" id="analyticsBtn" title="Métricas da edição publicada">📊</button>
-    <span class="reading-time-chip" id="readingTimeChip" title="Tempo estimado de leitura · 200 palavras/min"></span>
-    <span class="cashback-chip" id="cashbackChip" title="Cashback máximo por leitora"></span>
-    <button class="btn ghost" id="viewLiveBtn" style="display:none" title="Abrir leitor público">Ver</button>
-    <button class="btn ghost" id="archiveBtn" style="display:none">Arquivar</button>
-    <button class="btn primary" id="publishBtn" disabled>Publicar</button>
+      <button class="btn ghost" id="viewLiveBtn" style="display:none" title="Abrir leitor público">Ver</button>
+      <button class="btn ghost" id="archiveBtn" style="display:none">Arquivar</button>
+      <button class="btn primary" id="publishBtn" disabled>Publicar</button>
+    </div>
+
+    <!-- Linha 2: ferramentas + métricas da edição -->
+    <div class="topbar-row topbar-row-tools">
+      <button class="btn library-btn" id="libraryBtn" data-active="0" title="Biblioteca de fotos da edição">Biblioteca</button>
+      <button class="btn" id="reviewBtn" title="Revisar edição · linter cross-page">🔎 Revisar</button>
+      <button class="btn" id="dispatchBtn" title="Preview WhatsApp · mensagens do dispatch">💬 WA</button>
+      <button class="btn" id="abBtn" title="A/B · comparar duas páginas lado a lado">A/B</button>
+      <button class="btn" id="analyticsBtn" title="Métricas da edição publicada">📊 Analytics</button>
+
+      <div class="spacer"></div>
+
+      <span class="reading-time-chip" id="readingTimeChip" title="Tempo estimado de leitura · 200 palavras/min"></span>
+      <span class="cashback-chip" id="cashbackChip" title="Cashback máximo por leitora"></span>
+    </div>
   </header>
 
   <!-- MAIN -->
