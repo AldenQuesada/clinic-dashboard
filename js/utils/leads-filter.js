@@ -85,6 +85,10 @@
         var phone = (l.phone || l.whatsapp || l.telefone || '').toLowerCase()
         if (!nome.includes(search) && !phone.includes(search)) return false
       }
+      // Queixas (multi-select via slugs canonicos)
+      if (opts.queixaSlugs && opts.queixaSlugs.length && window.LeadsQueixa) {
+        if (!window.LeadsQueixa.matches(l, opts.queixaSlugs)) return false
+      }
       return true
     })
 

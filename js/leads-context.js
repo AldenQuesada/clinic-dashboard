@@ -67,6 +67,8 @@
     var _sortField     = 'date'
     var _sortDir       = 'desc'
     var _selectedIds   = new Set()
+    var _queixaFilter  = []   // array de slugs canonicos ativos
+    var _allLeadsCache = []   // leads carregados sem filtro — pra agregar queixas no popover
 
     // Atalho getElementById com prefixo
     function _$(id) { return document.getElementById(P + id) }
@@ -212,6 +214,11 @@
               ' style="padding:5px 10px;border:1.5px solid #ddd6fe;border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;color:#374151">' +
               '<option value="">Todas as tags</option>' +
             '</select>' +
+            '<button id="' + p + 'QueixaBtn" type="button" style="padding:5px 10px;border:1.5px solid #ddd6fe;border-radius:8px;font-size:12px;font-family:inherit;outline:none;background:#fff;cursor:pointer;color:#374151;display:inline-flex;align-items:center;gap:6px">' +
+              '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>' +
+              '<span id="' + p + 'QueixaBtnLabel">Todas as queixas</span>' +
+            '</button>' +
+            '<div id="' + p + 'QueixaPanel" style="display:none;position:absolute;margin-top:4px;z-index:50;background:#fff;border:1px solid #E5E7EB;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.08);padding:10px;min-width:260px;max-height:340px;overflow-y:auto"></div>' +
           '</div>' +
         '</div>' +
 
@@ -290,6 +297,21 @@
       // Tags
       var tag = _$('TagFilter')
       if (tag) tag.addEventListener('change', function() { _load() })
+
+      // Queixas (popover multi-select)
+      var qBtn = _$('QueixaBtn')
+      if (qBtn) {
+        qBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation()
+          _toggleQueixaPanel()
+        })
+      }
+      document.addEventListener('click', function(ev) {
+        var panel = _$('QueixaPanel')
+        if (panel && panel.style.display !== 'none' && !panel.contains(ev.target) && ev.target !== _$('QueixaBtn')) {
+          panel.style.display = 'none'
+        }
+      })
 
       // Load more
       var loadMoreBtn = _$('LoadMoreBtn')
@@ -505,6 +527,8 @@
       var all
       try {
         all = window.LeadsService ? await LeadsService.loadAll() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+        _allLeadsCache = all
+        window._clinicaiAllLeadsCache = all   // exposicao pra broadcast ler
       } catch(e) {
         all = JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
       }
@@ -521,7 +545,7 @@
 
       // Filtrar e ordenar via modulo compartilhado
       var result = LF
-        ? LF.filter(all, { period: _period, search: search, tempVal: tempVal, tagLeadIds: tagLeadIds, excludePhases: ['agendado', 'reagendado', 'compareceu', 'perdido', 'paciente', 'orcamento'] })
+        ? LF.filter(all, { period: _period, search: search, tempVal: tempVal, tagLeadIds: tagLeadIds, queixaSlugs: _queixaFilter, excludePhases: ['agendado', 'reagendado', 'compareceu', 'perdido', 'paciente', 'orcamento'] })
         : { filtered: all, stats: { total: all.length, hot: 0, warm: 0, cold: 0 } }
 
       var filtered = LF ? LF.sort(result.filtered, _sortField, _sortDir) : result.filtered
@@ -549,6 +573,77 @@
 
       _renderTable(filtered.slice(0, showCount), 0, false)
       _updateLoadMore()
+    }
+
+    // ── Popover de filtro por queixa ──────────────────────────
+
+    function _updateQueixaLabel() {
+      var lbl = _$('QueixaBtnLabel')
+      var btn = _$('QueixaBtn')
+      if (!lbl || !btn) return
+      if (!_queixaFilter.length) {
+        lbl.textContent = 'Todas as queixas'
+        btn.style.borderColor = '#ddd6fe'
+        btn.style.background = '#fff'
+        btn.style.color = '#374151'
+      } else if (_queixaFilter.length === 1) {
+        lbl.textContent = (window.LeadsQueixa ? window.LeadsQueixa.label(_queixaFilter[0]) : _queixaFilter[0])
+        btn.style.borderColor = '#7c3aed'
+        btn.style.background = '#f5f3ff'
+        btn.style.color = '#6d28d9'
+      } else {
+        lbl.textContent = _queixaFilter.length + ' queixas'
+        btn.style.borderColor = '#7c3aed'
+        btn.style.background = '#f5f3ff'
+        btn.style.color = '#6d28d9'
+      }
+    }
+
+    function _toggleQueixaPanel() {
+      var panel = _$('QueixaPanel')
+      if (!panel || !window.LeadsQueixa) return
+      if (panel.style.display === 'block') { panel.style.display = 'none'; return }
+      // Agrega a partir da base COMPLETA atual (não da filtrada, pra não sumir opções ao selecionar)
+      var base = _allLeadsCache.length ? _allLeadsCache : _filteredAll
+      var agg = window.LeadsQueixa.aggregate(base)
+      var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+                   '<span style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em">Filtrar por queixa</span>' +
+                   '<button id="' + P + 'QueixaClear" type="button" style="font-size:11px;border:none;background:none;color:#6b7280;cursor:pointer;text-decoration:underline">Limpar</button>' +
+                 '</div>'
+      if (!agg.length) {
+        html += '<div style="font-size:12px;color:#9ca3af;padding:12px;text-align:center">Nenhuma queixa encontrada nos leads.</div>'
+      } else {
+        agg.forEach(function (it) {
+          var checked = _queixaFilter.indexOf(it.slug) !== -1
+          html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:13px;color:#374151;border-radius:4px" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\'\'">' +
+                    '<input type="checkbox" data-queixa-slug="' + it.slug + '"' + (checked ? ' checked' : '') + ' style="accent-color:#7c3aed;cursor:pointer">' +
+                    '<span style="flex:1">' + it.label + '</span>' +
+                    '<span style="font-size:11px;color:#9ca3af;background:#f3f4f6;padding:1px 7px;border-radius:10px">' + it.count + '</span>' +
+                  '</label>'
+        })
+      }
+      panel.innerHTML = html
+      panel.style.display = 'block'
+
+      panel.querySelectorAll('input[data-queixa-slug]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+          var slug = cb.getAttribute('data-queixa-slug')
+          if (cb.checked) {
+            if (_queixaFilter.indexOf(slug) === -1) _queixaFilter.push(slug)
+          } else {
+            _queixaFilter = _queixaFilter.filter(function (s) { return s !== slug })
+          }
+          _updateQueixaLabel()
+          _load()
+        })
+      })
+      var clr = _$('QueixaClear')
+      if (clr) clr.addEventListener('click', function () {
+        _queixaFilter = []
+        _updateQueixaLabel()
+        panel.style.display = 'none'
+        _load()
+      })
     }
 
     // ── Renderização da tabela ────────────────────────────────
@@ -787,6 +882,10 @@
         '<button id="' + P + 'BulkMovePaciente" style="font-size:11px;padding:4px 10px;border:1px solid #10B981;border-radius:6px;background:#ECFDF5;color:#059669;cursor:pointer;font-weight:600">Paciente</button>' +
         '<button id="' + P + 'BulkMoveOrcamento" style="font-size:11px;padding:4px 10px;border:1px solid #F59E0B;border-radius:6px;background:#FFFBEB;color:#D97706;cursor:pointer;font-weight:600">Orcamento</button>' +
         '<div style="width:1px;height:18px;background:#C7D2FE"></div>' +
+        '<button id="' + P + 'BulkBroadcast" style="font-size:11px;padding:4px 10px;border:1px solid #7C3AED;border-radius:6px;background:#7C3AED;color:#fff;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:5px">' +
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>' +
+          'Broadcast' +
+        '</button>' +
         '<button id="' + P + 'BulkDel" style="font-size:11px;padding:4px 10px;border:1px solid #FCA5A5;border-radius:6px;background:#fff;color:#EF4444;cursor:pointer">Desativar</button>' +
         '<button id="' + P + 'BulkClear" style="font-size:11px;padding:4px 10px;border:none;background:none;color:#6B7280;cursor:pointer;text-decoration:underline">Limpar</button>'
 
@@ -804,6 +903,23 @@
         if (!confirm('Mover ' + count + ' leads para Orcamentos?')) return
         var ids = Array.from(_selectedIds)
         _bulkChangePhase(ids, 'orcamento')
+      }
+
+      // Broadcast: leva IDs selecionados pra pagina de broadcast via sessionStorage
+      var bcBtn = _$('BulkBroadcast')
+      if (bcBtn) bcBtn.onclick = function () {
+        var ids = Array.from(_selectedIds)
+        if (!ids.length) return
+        try {
+          sessionStorage.setItem('clinicai_broadcast_prefill', JSON.stringify({
+            lead_ids: ids,
+            source:   'leads-context',
+            queixas:  _queixaFilter.slice(),
+            ts:       Date.now(),
+          }))
+        } catch (e) {}
+        if (window.navigateTo) window.navigateTo('broadcast-events')
+        else if (window.location) window.location.hash = '#page-broadcast-events'
       }
 
       _$('BulkTemp').onclick = function() {

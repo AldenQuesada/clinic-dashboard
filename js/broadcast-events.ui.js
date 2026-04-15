@@ -27,6 +27,45 @@
   function _bindBroadcastEvents(root) {
     var st = window.BroadcastUI.getState()
 
+    // Prefill vindo da tabela de leads (botao Broadcast na bulk bar)
+    try {
+      var raw = sessionStorage.getItem('clinicai_broadcast_prefill')
+      if (raw) {
+        var pref = JSON.parse(raw)
+        // so aplica se recente (<5min) e ainda nao aplicado nesta sessao
+        var fresh = pref && pref.ts && (Date.now() - pref.ts) < 5 * 60 * 1000
+        var already = st.broadcastMode === 'new' && (st.broadcastForm && st.broadcastForm.selected_leads && st.broadcastForm.selected_leads.length)
+        if (fresh && !already && Array.isArray(pref.lead_ids) && pref.lead_ids.length) {
+          var allLeads = (window.LeadsService && window._clinicaiAllLeadsCache) || []
+          // Tenta pegar do cache global ou localStorage
+          if (!allLeads.length) {
+            try { allLeads = JSON.parse(localStorage.getItem('clinicai_leads') || '[]') } catch (e) {}
+          }
+          var byId = {}
+          allLeads.forEach(function (l) { byId[l.id] = l })
+          var selected = pref.lead_ids.map(function (id) {
+            var l = byId[id] || { id: id, name: '(lead)', phone: '' }
+            return { id: l.id, name: l.name || l.nome || '(sem nome)', phone: l.phone || l.telefone || '' }
+          })
+          var form = window.BroadcastUI.emptyForm()
+          form.selected_leads = selected
+          if (pref.queixas && pref.queixas.length) {
+            form.name = 'Broadcast — ' + pref.queixas.length + ' queixa(s) selecionada(s)'
+          } else {
+            form.name = 'Broadcast — ' + selected.length + ' lead(s)'
+          }
+          window.BroadcastUI.setState('broadcastForm', form)
+          window.BroadcastUI.setState('broadcastMode', 'new')
+          window.BroadcastUI.setState('broadcastSelected', null)
+          window.BroadcastUI.setState('bcPanelOpen', true)
+          window.BroadcastUI.setState('bcPanelTab', 'editor')
+          window.BroadcastUI.setState('_editingBroadcastId', null)
+          sessionStorage.removeItem('clinicai_broadcast_prefill')
+          setTimeout(_render, 0)
+        }
+      }
+    } catch (e) { console.warn('[broadcast] prefill error:', e) }
+
     // New broadcast buttons (stats sidebar + center empty state)
     var newBtns = root.querySelectorAll('#bcNewBtn, #bcNewBtn2')
     newBtns.forEach(function(btn) {
