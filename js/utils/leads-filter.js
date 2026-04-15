@@ -62,6 +62,10 @@
     var includePhases = opts.includePhases || null
 
     var filtered = leads.filter(function(l) {
+      // Soft-delete e desativados — sobrevivem no localStorage cache mas
+      // sumiram do Supabase (deleted_at) ou foram desativados (is_active=false)
+      if (l.deleted_at) return false
+      if (l.is_active === false || l.active === false) return false
       // Phase filter
       var phase = l.phase || 'lead'
       if (excludePhases && excludePhases.indexOf(phase) !== -1) return false

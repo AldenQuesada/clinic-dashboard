@@ -94,7 +94,8 @@
       // Registros remotos (Supabase ganha)
       ...remote,
       // Registros locais que NÃO existem no Supabase (ainda não sincronizados)
-      ...local.filter(l => !remoteById[l.id]),
+      // Exclui leads soft-deletados ou marcados pra remocao (sumiram do remote por isso)
+      ...local.filter(l => !remoteById[l.id] && !l.deleted_at && l.is_active !== false && l.active !== false),
     ]
 
     // Normalizar todos os leads (phase, temperature, source_type, created_at)
