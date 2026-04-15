@@ -49,8 +49,12 @@
           })
           var form = window.BroadcastUI.emptyForm()
           form.selected_leads = selected
-          if (pref.queixas && pref.queixas.length) {
-            form.name = 'Broadcast — ' + pref.queixas.length + ' queixa(s) selecionada(s)'
+          // So aceita [queixa] se EXATAMENTE 1 queixa foi filtrada
+          if (pref.queixas && pref.queixas.length === 1 && window.LeadsQueixa) {
+            form._target_queixa = window.LeadsQueixa.label(pref.queixas[0])
+            form.name = 'Broadcast — ' + form._target_queixa + ' (' + selected.length + ')'
+          } else if (pref.queixas && pref.queixas.length > 1) {
+            form.name = 'Broadcast — ' + pref.queixas.length + ' queixas (' + selected.length + ')'
           } else {
             form.name = 'Broadcast — ' + selected.length + ' lead(s)'
           }
@@ -505,11 +509,19 @@
           return
         }
 
+        // Validacao [queixa]: exige queixa carregada do prefill (curForm._target_queixa)
+        var hasQueixaTag = /\[queixa\]/i.test(content)
+        if (hasQueixaTag && !curForm._target_queixa) {
+          _showToast('Tag [queixa] precisa de exatamente 1 queixa filtrada na origem. Volte aos Leads, marque 1 queixa, selecione e clique Broadcast.', 'error')
+          return
+        }
+
         var filter = {}
         if (filterPhase) filter.phase = filterPhase
         if (filterTemp) filter.temperature = filterTemp
         if (filterFunnel) filter.funnel = filterFunnel
         if (filterSource) filter.source_type = filterSource
+        if (curForm._target_queixa) filter.queixa = curForm._target_queixa
 
         window.BroadcastUI.setState('broadcastSaving', true)
         _render()
