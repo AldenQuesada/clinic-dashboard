@@ -16,10 +16,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="css/magazine-pages.css?v=20260415s" />
+<link rel="stylesheet" href="css/magazine-pages.css?v=20260415t" />
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/magazine/magazine-renderer.js?v=20260415s"></script>
+<script src="js/magazine/magazine-renderer.js?v=20260415t"></script>
 <style>
   :root {
     --ink: #1a1a1a; --ink-soft: #555; --muted: #8a8178;
@@ -98,7 +98,7 @@
   }
 
   /* ========= READER (horizontal scroll-snap) ========= */
-  .reader { display: flex; height: 100vh; width: 100vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
+  .reader { display: flex; height: 100vh; width: 100vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; touch-action: pan-x pan-y; overscroll-behavior-x: contain; }
   .reader::-webkit-scrollbar { display: none; }
   .page {
     flex: 0 0 100vw; height: 100vh; scroll-snap-align: start; scroll-snap-stop: always;
@@ -315,7 +315,7 @@
 
 <div class="swipe-hint" id="swipeHint" style="display:none">
   <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-  Deslize para continuar
+  Deslize ← ou → para navegar
 </div>
 
 <!-- LIGHTBOX -->
@@ -625,6 +625,39 @@
       if (e.key === 'ArrowRight') next.click()
       if (e.key === 'ArrowLeft') prev.click()
     })
+
+    // ========= Swipe gesture (mobile) =========
+    // Complementa o scroll-snap nativo — permite swipe em qualquer área da tela,
+    // inclusive sobre áreas com overflow vertical.
+    // Swipe horizontal > 60px:
+    //   → direita (vai para página anterior / voltar)
+    //   ← esquerda (vai para próxima página)
+    // Gesto horizontal precisa ser 2x maior que vertical para evitar conflito
+    // com scroll vertical da página.
+    let tStart = null
+    reader.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { tStart = null; return }
+      const t = e.touches[0]
+      tStart = { x: t.clientX, y: t.clientY, time: Date.now() }
+    }, { passive: true })
+    reader.addEventListener('touchend', (e) => {
+      if (!tStart) return
+      const t = e.changedTouches[0]
+      const dx = t.clientX - tStart.x
+      const dy = t.clientY - tStart.y
+      const dt = Date.now() - tStart.time
+      tStart = null
+      if (dt > 800) return // swipe lento → ignora (foi scroll)
+      if (Math.abs(dx) < 60) return // curto demais
+      if (Math.abs(dx) < Math.abs(dy) * 1.8) return // mais vertical que horizontal
+      if (dx > 0) {
+        // swipe para direita = voltar
+        if (currentIdx > 0) prev.click()
+      } else {
+        // swipe para esquerda = avançar
+        if (currentIdx < pages.length - 1) next.click()
+      }
+    }, { passive: true })
 
     // Indicador overflow
     requestAnimationFrame(() => {
