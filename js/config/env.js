@@ -30,7 +30,7 @@
     // VPS:   'https://facial-api.px1hdq.easypanel.host'
     FACIAL_API_URL: 'https://clinicai-facial-api.px1hdq.easypanel.host',
     // Cache-buster: incrementar a cada deploy para forçar recarga dos scripts
-    ASSET_VERSION: '20260415i',
+    ASSET_VERSION: '20260415j',
   })
 
 })()

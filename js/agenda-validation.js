@@ -79,6 +79,84 @@ function _getRoom(idx) {
   return (idx !== null && idx !== undefined && idx !== '') ? rooms[parseInt(idx)] || null : null
 }
 
+// ── Horarios da clinica (por dia da semana, com manha/tarde/fechado) ─
+// Le direto de clinicai_clinic_settings (gravado pela pagina Dados da Clinica).
+// Fallback para clinic_config (range global legado) e depois hardcoded.
+
+const _DOW_KEYS = ['dom','seg','ter','qua','qui','sex','sab']
+
+function _getClinicDay(dateStr) {
+  // Retorna { aberto, periods: [{ini,fim,label}] } para o dia de dateStr
+  // aberto=false se a clinica nao funciona nesse dia
+  // periods vazio = sem horario configurado => fallback default
+  var defaults = { aberto: true, periods: [{ ini: '08:00', fim: '19:00', label: 'dia' }] }
+  if (!dateStr) return defaults
+  try {
+    var raw = localStorage.getItem('clinicai_clinic_settings')
+    if (!raw) {
+      // Fallback clinic_config legado (range global)
+      var cfg = JSON.parse(localStorage.getItem('clinic_config') || '{}')
+      return { aberto: true, periods: [{ ini: cfg.horarioInicio || '08:00', fim: cfg.horarioFim || '19:00', label: 'dia' }] }
+    }
+    var data = JSON.parse(raw)
+    // data pode estar em { data: {...} } (formato Supabase)
+    var horarios = (data && data.horarios) || (data && data.data && data.data.horarios) || null
+    if (!horarios) return defaults
+    // Dia da semana (JS: 0=dom..6=sab)
+    var dow = new Date(dateStr + 'T12:00:00').getDay()
+    var key = _DOW_KEYS[dow]
+    var d = horarios[key]
+    if (!d) return defaults
+    if (d.aberto === false) return { aberto: false, periods: [] }
+    var periods = []
+    if (d.manha && d.manha.ativo !== false && d.manha.inicio && d.manha.fim) {
+      periods.push({ ini: d.manha.inicio, fim: d.manha.fim, label: 'manha' })
+    }
+    if (d.tarde && d.tarde.ativo !== false && d.tarde.inicio && d.tarde.fim) {
+      periods.push({ ini: d.tarde.inicio, fim: d.tarde.fim, label: 'tarde' })
+    }
+    // Retrocompatibilidade: formato antigo com abertura/fechamento
+    if (!periods.length && (d.abertura || d.fechamento)) {
+      periods.push({ ini: d.abertura || '08:00', fim: d.fechamento || '18:00', label: 'dia' })
+    }
+    if (!periods.length) return defaults
+    return { aberto: true, periods: periods }
+  } catch (e) {
+    return defaults
+  }
+}
+
+function _formatPeriods(periods) {
+  return periods.map(function(p) { return p.ini + '-' + p.fim }).join(' / ')
+}
+
+// Verifica se o intervalo [s,e] (em mins) cabe INTEIRO em algum period do dia.
+// Retorna null se OK, string com erro se nao couber.
+function _checkInPeriods(s, e, day, horaInicio, horaFim) {
+  if (!day.aberto) {
+    return 'Clinica fechada neste dia da semana. Configure em Dados da Clinica se precisar abrir.'
+  }
+  if (!day.periods.length) return null
+  // Precisa caber inteiro em pelo menos 1 period
+  for (var i = 0; i < day.periods.length; i++) {
+    var p = day.periods[i]
+    var pS = _toMins(p.ini), pE = _toMins(p.fim)
+    if (s >= pS && e <= pE) return null  // cabe
+  }
+  // Nao coube. Detecta se inicio esta em almoco (entre manha e tarde)
+  var horarios = _formatPeriods(day.periods)
+  // Se tem exatamente 2 periods (manha+tarde), verifica se cai no almoco
+  if (day.periods.length === 2) {
+    var m = day.periods[0], t = day.periods[1]
+    var mE = _toMins(m.fim), tS = _toMins(t.ini)
+    if ((s >= mE && s < tS) || (e > mE && e <= tS) || (s < mE && e > tS)) {
+      return 'Horario ' + horaInicio + '-' + horaFim + ' cai no intervalo de almoco (' + m.fim + '-' + t.ini + '). Horarios validos: ' + horarios + '.'
+    }
+  }
+  return 'Horario ' + horaInicio + '-' + horaFim + ' fora do funcionamento. Horarios validos neste dia: ' + horarios + '.'
+}
+
+// Legado — mantido para callers externos que esperam range simples
 function _getClinicHours() {
   try {
     const cfg = JSON.parse(localStorage.getItem('clinic_config') || '{}')
@@ -135,11 +213,10 @@ const AgendaValidator = {
     if (duracao <= 0) errs.push('Duracao nao pode ser zero.')
     if (duracao > 480) errs.push('Duracao maxima e 8 horas (480 min). Atual: ' + duracao + ' min.')
 
-    const hf = _getClinicHours()
-    const hfS = _toMins(hf.inicio)
-    const hfE = _toMins(hf.fim)
-    if (s < hfS) errs.push(`Horário ${horaInicio} está fora do funcionamento da clínica (${hf.inicio}–${hf.fim}).`)
-    if (e > hfE) errs.push(`Término ${horaFim} está fora do funcionamento da clínica (${hf.inicio}–${hf.fim}).`)
+    // Valida contra horarios do DIA ESPECIFICO (manha/tarde/fechado/almoco)
+    const day = _getClinicDay(dateStr)
+    const err = _checkInPeriods(s, e, day, horaInicio, horaFim)
+    if (err) errs.push(err)
 
     return errs
   },
@@ -356,6 +433,12 @@ const AgendaValidator = {
     if (!appt) return false
     return !NO_DRAG_STATUSES.has(appt.status)
   },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 14. Expoe horarios do dia para UI (desabilitar fechado, sugerir slots)
+  // ─────────────────────────────────────────────────────────────────
+  getClinicDay(dateStr) { return _getClinicDay(dateStr) },
+  checkInPeriods(s, e, day, horaInicio, horaFim) { return _checkInPeriods(s, e, day, horaInicio, horaFim) },
 }
 
 // ── UI: Exibir erros de validação ─────────────────────────────────
