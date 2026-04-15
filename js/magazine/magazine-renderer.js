@@ -67,6 +67,7 @@
         <h1 class="brand">Beauty &amp; Health</h1>
         <div class="edition-label">${esc(s.edicao_label || 'Edição')}</div>
       </div>
+      ${s.dedicatoria ? `<div class="dedicatoria">${esc(s.dedicatoria)}</div>` : ''}
       <div class="hero">
         <div class="visual">${photo(s.foto_hero, '', 'FOTO HERO')}</div>
         <div class="txt">
@@ -83,6 +84,7 @@
   R.t02_cover_hero_light = (s) => `
     <div class="mp mp-t02">
       <div class="head">Beauty &amp; Health</div>
+      ${s.dedicatoria ? `<div class="dedicatoria">${esc(s.dedicatoria)}</div>` : ''}
       <div class="body">
         <div class="visual">${photo(s.foto_hero, '', 'FOTO HERO')}</div>
         <div class="txt">
@@ -413,6 +415,41 @@
         ${s.lede ? `<div class="lede">${esc(s.lede)}</div>` : ''}
         <div class="corpo">${corpoHtml}</div>
         ${s.byline ? `<div class="byline">${esc(s.byline)}</div>` : ''}
+      </div>`
+  }
+
+  // ---------------------------------------------------------- t25 antes/depois com slider arrastavel
+  R.t25_before_after_slider = (s) => {
+    const id = 'sl' + Math.random().toString(36).slice(2, 8)
+    return `
+      <div class="mp mp-t25">
+        <div class="head">
+          <h1>${emify(s.titulo || 'Antes &amp; *Depois*')}</h1>
+          ${s.subtitulo ? `<p class="sub">${esc(s.subtitulo)}</p>` : ''}
+        </div>
+        <div class="slider-wrap" id="${id}">
+          <div class="slider-img depois">${photo(s.foto_depois, '', 'DEPOIS')}</div>
+          <div class="slider-img antes" data-side="antes">${photo(s.foto_antes, '', 'ANTES')}</div>
+          <div class="slider-handle" data-handle></div>
+          <div class="label-antes">ANTES</div>
+          <div class="label-depois">DEPOIS</div>
+        </div>
+        ${s.meta ? `<div class="meta">${esc(s.meta)}</div>` : ''}
+        <script>
+        (function(){
+          var w=document.getElementById('${id}');if(!w)return;
+          var antes=w.querySelector('.antes');var handle=w.querySelector('[data-handle]');
+          var dragging=false;
+          function set(x){var r=w.getBoundingClientRect();var p=Math.max(0,Math.min(1,(x-r.left)/r.width));antes.style.clipPath='inset(0 '+((1-p)*100)+'% 0 0)';handle.style.left=(p*100)+'%';}
+          set(w.getBoundingClientRect().width*0.5);
+          function down(e){dragging=true;move(e);e.preventDefault();}
+          function move(e){if(!dragging)return;var x=e.touches?e.touches[0].clientX:e.clientX;set(x);}
+          function up(){dragging=false;}
+          w.addEventListener('mousedown',down);w.addEventListener('touchstart',down,{passive:false});
+          window.addEventListener('mousemove',move);window.addEventListener('touchmove',move,{passive:true});
+          window.addEventListener('mouseup',up);window.addEventListener('touchend',up);
+        })();
+        <\/script>
       </div>`
   }
 

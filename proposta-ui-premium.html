@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposta UI Premium — Framer Motion + 21st.dev + UX Pro Max</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-elevated: #13131a;
+    --border: #1f1f2e;
+    --text: #e8e8f0;
+    --text-dim: #8b8ba3;
+    --accent: #c9a961;
+    --accent-dim: #8a7340;
+    --success: #4ade80;
+    --warning: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding: 48px 24px;
+  }
+  .container { max-width: 880px; margin: 0 auto; }
+  header { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(201, 169, 97, 0.1);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .subtitle { color: var(--text-dim); font-size: 18px; }
+  h2 {
+    font-size: 24px; font-weight: 600; margin-top: 48px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2::before {
+    content: ''; display: inline-block; width: 4px; height: 24px;
+    background: var(--accent); border-radius: 2px;
+  }
+  h3 { font-size: 18px; font-weight: 600; margin-top: 24px; margin-bottom: 12px; color: var(--accent); }
+  p, li { color: var(--text); margin-bottom: 12px; }
+  ul, ol { padding-left: 24px; margin-bottom: 16px; }
+  li { margin-bottom: 8px; }
+  code {
+    font-family: 'SF Mono', Monaco, monospace;
+    background: var(--bg-elevated);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  pre code { background: none; border: none; padding: 0; color: var(--text); font-size: 13px; }
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+  .grid .card h3 { margin-top: 0; font-size: 16px; }
+  .grid .card p { font-size: 14px; color: var(--text-dim); margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-success { background: rgba(74, 222, 128, 0.15); color: var(--success); }
+  .badge-warning { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+  .badge-dim { background: var(--border); color: var(--text-dim); }
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(201, 169, 97, 0.05);
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  .callout strong { color: var(--accent); }
+  footer {
+    margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 13px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <span class="tag">Proposta · Stack UI Premium</span>
+  <h1>Framer Motion + 21st.dev + UX Pro Max</h1>
+  <p class="subtitle">Trio de ferramentas para elevar o ClinicAI Dashboard ao nível "premium de verdade" — registrado em 2026-04-14 para trazer em sprint futuro.</p>
+</header>
+
+<h2>O problema</h2>
+<p>O dashboard hoje funciona, mas UI tem micro-interações básicas, animações limitadas e componentes feitos à mão. Para dar a sensação <strong>"produto de SaaS top tier"</strong> (estilo Linear, Vercel, Arc) precisamos de três camadas trabalhando juntas.</p>
+
+<h2>As três camadas</h2>
+
+<div class="grid">
+  <div class="card">
+    <h3>Framer Motion</h3>
+    <p>Biblioteca React para animações declarativas, gestos, layout transitions e orquestração de sequências.</p>
+  </div>
+  <div class="card">
+    <h3>21st.dev (Magic MCP)</h3>
+    <p>Registry de componentes shadcn-style com MCP que gera UI a partir de linguagem natural.</p>
+  </div>
+  <div class="card">
+    <h3>UX/UI Pro Max</h3>
+    <p>Skills de auditoria e planejamento (design-an-interface, web-interface-architect, ux-design-expert).</p>
+  </div>
+</div>
+
+<h2>Framer Motion — o que dá pra fazer</h2>
+<ul>
+  <li><strong>Layout animations automáticas</strong> — prop <code>layout</code> anima mudanças de posição/tamanho sem esforço (reordenar kanban, expandir cards)</li>
+  <li><strong>Shared element transitions</strong> — <code>layoutId</code> cria "hero transition" entre rotas (foto de paciente do grid pra tela cheia)</li>
+  <li><strong>Gestos nativos</strong> — drag, hover, tap, pan com física realista</li>
+  <li><strong>Scroll-driven</strong> — <code>useScroll</code> + <code>useTransform</code> para parallax, progress bars, reveal animations</li>
+  <li><strong>Variants + stagger</strong> — cascata de animações em listas (KPIs aparecendo em sequência)</li>
+  <li><strong>AnimatePresence</strong> — enter/exit suave em modais, toasts, rota</li>
+  <li><strong>Spring physics</strong> — animação com inércia natural, não linear fake</li>
+</ul>
+
+<h3>Exemplo concreto pro Cashflow</h3>
+<pre><code>&lt;motion.div
+  layout
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+  whileHover={{ y: -4, boxShadow: "0 12px 40px rgba(201,169,97,0.2)" }}
+&gt;
+  &lt;KPICard valor={receita} /&gt;
+&lt;/motion.div&gt;</code></pre>
+
+<h2>21st.dev — o que dá pra fazer</h2>
+<ul>
+  <li><strong>Magic MCP</strong> — descrevo em linguagem natural e ele gera componente Tailwind+React no padrão shadcn</li>
+  <li><strong>Biblioteca de componentes premium</strong> — hero sections, pricing tables, bento grids, navbars animados</li>
+  <li><strong>Blocos inspirados em Aceternity/Magic UI</strong> — meteor effects, spotlight cards, border beam, animated gradients</li>
+  <li><strong>Busca visual</strong> — encontra componentes prontos por screenshot/descrição</li>
+</ul>
+
+<div class="callout">
+  <strong>Setup necessário:</strong> <code>claude mcp add magic npx -y @21st-dev/magic@latest</code> (precisa de API key em 21st.dev)
+</div>
+
+<h2>UX/UI Pro Max — o que dá pra fazer</h2>
+<ul>
+  <li><strong>design-an-interface</strong> — gera múltiplas variantes radicalmente diferentes da mesma tela via sub-agents paralelos</li>
+  <li><strong>web-interface-architect</strong> — planeja component system, interaction flow, layout responsivo</li>
+  <li><strong>ux-design-expert (Uma)</strong> — auditoria Nielsen, acessibilidade, hierarquia visual, contraste</li>
+  <li><strong>copywriting skill</strong> — revisa e melhora copy de landing/features/CTAs</li>
+</ul>
+
+<h2>O combo poderoso</h2>
+
+<table>
+  <thead>
+    <tr><th>Fase</th><th>Ferramenta</th><th>Output</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1. Descoberta</td><td>ux-design-expert</td><td>Audit da tela atual + gaps</td></tr>
+    <tr><td>2. Design</td><td>design-an-interface</td><td>3 variantes de layout</td></tr>
+    <tr><td>3. Componentes</td><td>21st.dev Magic MCP</td><td>Código base shadcn+Tailwind</td></tr>
+    <tr><td>4. Animação</td><td>Framer Motion</td><td>Micro-interações premium</td></tr>
+    <tr><td>5. Validação</td><td>ux-design-expert</td><td>QA acessibilidade + consistência</td></tr>
+  </tbody>
+</table>
+
+<h2>Páginas candidatas (ordem de impacto)</h2>
+
+<table>
+  <thead>
+    <tr><th>Página</th><th>Por quê</th><th>Prioridade</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Cashflow / Fluxo de Caixa</td><td>Tela de valor alto, já tem gráficos e KPIs para animar com stagger</td><td><span class="badge badge-success">Alta</span></td></tr>
+    <tr><td>Face Mapping</td><td>Canvas + polígonos + vetores — layout animations matam</td><td><span class="badge badge-success">Alta</span></td></tr>
+    <tr><td>Agenda (Kanban)</td><td>Drag com spring physics + layout animation quando move cards</td><td><span class="badge badge-success">Alta</span></td></tr>
+    <tr><td>Inbox WhatsApp</td><td>Enter/exit de mensagens, typing indicator, reveal de nova conversa</td><td><span class="badge badge-warning">Média</span></td></tr>
+    <tr><td>Dashboard Home</td><td>Stagger de KPIs + count-up em números + gradient animado</td><td><span class="badge badge-warning">Média</span></td></tr>
+    <tr><td>Anamnese 3D</td><td>Transição entre etapas, shared element nos campos</td><td><span class="badge badge-dim">Depois</span></td></tr>
+  </tbody>
+</table>
+
+<h2>Estimativa de esforço</h2>
+
+<div class="card">
+  <h3>Setup inicial (1 dia)</h3>
+  <ul>
+    <li>Instalar Framer Motion no projeto</li>
+    <li>Configurar MCP do 21st.dev + API key</li>
+    <li>Criar <code>motion-tokens.js</code> com durações/easings padronizados</li>
+    <li>Definir 3-4 variants globais (fadeIn, slideUp, stagger, scale)</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Por página (0.5 a 2 dias)</h3>
+  <ul>
+    <li>Audit UX (30 min)</li>
+    <li>Gerar variantes de layout (1h)</li>
+    <li>Componentes via 21st (1-3h)</li>
+    <li>Integrar Framer Motion (2-4h)</li>
+    <li>QA acessibilidade + ajustes (1h)</li>
+  </ul>
+</div>
+
+<h2>Riscos e cuidados</h2>
+<ul>
+  <li><strong>Performance</strong> — Framer Motion é pesado; evitar em listas &gt;50 itens sem virtualização</li>
+  <li><strong>Motion sickness</strong> — respeitar <code>prefers-reduced-motion</code> sempre</li>
+  <li><strong>Consistência</strong> — criar design tokens de motion (duração, easing) para não virar "cada página anima diferente"</li>
+  <li><strong>Custo 21st.dev</strong> — Magic MCP é pago; validar ROI antes de assinar</li>
+  <li><strong>Bundle size</strong> — Framer Motion adiciona ~50KB gzipped; considerar <code>motion/react</code> (lazy)</li>
+</ul>
+
+<h2>Decisão registrada</h2>
+<div class="callout">
+  <strong>Status:</strong> Proposta parqueada para sprint futuro.<br>
+  <strong>Trigger para ativar:</strong> quando tivermos um respiro entre features core e quisermos elevar o polish visual.<br>
+  <strong>Primeiro experimento sugerido:</strong> Cashflow ou Dashboard Home (máximo impacto visível, baixo risco de quebrar fluxo).
+</div>
+
+<footer>
+  Documento criado em 2026-04-14 · ClinicAI Dashboard · Registrado em memory<br>
+  Para ativar: pedir "vamos retomar a proposta UI premium" em conversa futura.
+</footer>
+
+</div>
+</body>
+</html>

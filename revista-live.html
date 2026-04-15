@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Beauty &amp; Health</title>
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="Beauty &amp; Health" />
+<meta property="og:title" id="ogTitle" content="Beauty &amp; Health" />
+<meta property="og:description" id="ogDesc" content="Sua revista digital editorial — beleza que é cuidado." />
+<meta property="og:image" id="ogImg" content="" />
+<meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -12,22 +18,98 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/magazine/magazine-renderer.js"></script>
 <style>
-  :root { --ink: #1a1a1a; --ink-soft: #555; --muted: #8a8178; --accent: #7a1f2b; --paper: #fff; --bg: #f4f1ec; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #555; --muted: #8a8178;
+    --accent: #7a1f2b; --paper: #fff; --bg: #f4f1ec;
+    --gold: #c9a961;
+    --reading-scale: 1;
+  }
+  /* A7 · Segmento VIP -> accent dourado */
+  body[data-segment="vip"] { --accent: #b08930; }
+
+  /* B8 · Modo noite (apos 19h) */
+  body[data-night="1"] {
+    --ink: #f4f1ec; --ink-soft: #c8c4ba; --muted: #8a8178;
+    --accent: #c9a961; --paper: #1a1612; --bg: #0f0d0a;
+  }
+  body[data-night="1"] .mp { color: #f4f1ec; }
+  body[data-night="1"] .mp h1, body[data-night="1"] .mp h2, body[data-night="1"] .mp h3 { color: #f4f1ec; }
+  body[data-night="1"] .mp-t02, body[data-night="1"] .mp-t04, body[data-night="1"] .mp-t05,
+  body[data-night="1"] .mp-t10, body[data-night="1"] .mp-t11, body[data-night="1"] .mp-t12,
+  body[data-night="1"] .mp-t13, body[data-night="1"] .mp-t14, body[data-night="1"] .mp-t17,
+  body[data-night="1"] .mp-t18, body[data-night="1"] .mp-t19, body[data-night="1"] .mp-t20,
+  body[data-night="1"] .mp-t21, body[data-night="1"] .mp-t22 { background: #1a1612 !important; }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  html, body {
+    height: 100%; overflow: hidden; background: var(--bg); color: var(--ink);
+    font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased;
+    font-size: calc(16px * var(--reading-scale));
+  }
   body.loading, body.error { overflow: auto; display: grid; place-items: center; padding: 40px; }
 
-  /* Progress bar */
+  /* ========= LOADING SKELETON EDITORIAL (B7) ========= */
+  .skel { max-width: 480px; padding: 0 24px; text-align: center; }
+  .skel .brand { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 6px; color: var(--ink); }
+  .skel .brand em { color: var(--accent); font-style: italic; }
+  .skel .sub { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); margin-bottom: 32px; }
+  .skel .lines { display: flex; gap: 6px; justify-content: center; }
+  .skel .lines span {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    animation: skelDot 1.2s ease-in-out infinite both;
+  }
+  .skel .lines span:nth-child(2) { animation-delay: .15s }
+  .skel .lines span:nth-child(3) { animation-delay: .3s }
+  @keyframes skelDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+
+  /* ========= STATES (error) ========= */
+  .state-card { max-width: 420px; text-align: center; padding: 48px 32px; background: var(--paper); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
+  .state-card h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+  .state-card p { font-size: 14px; line-height: 1.6; color: var(--ink-soft); }
+
+  /* ========= PROGRESS BAR ========= */
   .progress-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; gap: 4px; padding: 12px 16px; pointer-events: none; }
   .progress-bar .seg { flex: 1; height: 2px; background: rgba(0,0,0,0.15); border-radius: 2px; overflow: hidden; }
+  body[data-night="1"] .progress-bar .seg { background: rgba(255,255,255,0.2); }
   .progress-bar .seg .fill { display: block; height: 100%; width: 0%; background: var(--ink); transition: width 0.35s ease; }
+  body[data-night="1"] .progress-bar .seg .fill { background: var(--accent); }
   .progress-bar .seg.done .fill, .progress-bar .seg.current .fill { width: 100%; }
 
-  /* Top meta */
-  .top-meta { position: fixed; top: 22px; left: 0; right: 0; z-index: 40; display: flex; justify-content: space-between; padding: 0 28px; pointer-events: none; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-soft); mix-blend-mode: difference; filter: invert(1); }
+  /* ========= TOP META + CONTROLS ========= */
+  .top-meta {
+    position: fixed; top: 22px; left: 0; right: 0; z-index: 40;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 28px; pointer-events: none;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-soft);
+    mix-blend-mode: difference; filter: invert(1);
+  }
   .top-meta .counter { font-variant-numeric: tabular-nums; }
+  .top-controls {
+    position: fixed; top: 12px; right: 12px; z-index: 60;
+    display: flex; gap: 6px; pointer-events: auto;
+  }
+  .top-controls button {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+    border: 1px solid rgba(0,0,0,0.08); cursor: pointer;
+    display: grid; place-items: center; color: var(--ink);
+    font-size: 14px; font-weight: 600; transition: transform .2s;
+  }
+  body[data-night="1"] .top-controls button { background: rgba(26,22,18,0.85); border-color: rgba(255,255,255,0.15); color: var(--ink); }
+  .top-controls button:hover { transform: scale(1.08); }
+  .top-controls button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-  /* Scroller */
+  /* ========= EXPIRY BANNER (G1) ========= */
+  .expiry-banner {
+    position: fixed; top: 30px; left: 50%; transform: translateX(-50%); z-index: 41;
+    background: var(--accent); color: #fff;
+    padding: 8px 18px; border-radius: 999px;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase; font-weight: 600;
+    box-shadow: 0 4px 14px rgba(122,31,43,0.3);
+    pointer-events: none;
+  }
+
+  /* ========= READER (horizontal scroll-snap) ========= */
   .reader { display: flex; height: 100vh; width: 100vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
   .reader::-webkit-scrollbar { display: none; }
   .page {
@@ -36,66 +118,143 @@
     overflow-x: hidden; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    /* B6 · Page transition */
+    transition: opacity .25s ease;
   }
   .page::-webkit-scrollbar { display: none; }
-  /* Permite que o conteudo do template ultrapasse a viewport e role internamente */
   .page .mp { height: auto !important; min-height: 100%; overflow: visible !important; }
-  /* Indicador "mais abaixo" - aparece quando ha conteudo nao visto */
+
+  /* B1 · Capa que acende ao abrir */
+  .page.first-load .mp { animation: fadeUp .9s ease-out both; }
+  .page.first-load .mp h1, .page.first-load .mp h2 {
+    animation: titleReveal 1.2s ease-out .2s both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes titleReveal { from{opacity:0;letter-spacing:0} to{opacity:1;letter-spacing:-0.02em} }
+
+  /* B5 · Parallax sutil em t08 fullbleed */
+  .mp-t08 .bg { transition: transform .2s ease-out; }
+
+  /* Indicador "mais abaixo" */
   .page.has-overflow::after {
     content: ''; position: sticky; bottom: 12px; left: 50%; margin: 0 auto -28px;
     width: 32px; height: 32px; border-radius: 50%; display: block;
     background: rgba(0,0,0,0.5) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") center/16px no-repeat;
-    pointer-events: none;
-    animation: bounce 1.6s ease-in-out infinite;
+    pointer-events: none; animation: bounce 1.6s ease-in-out infinite;
   }
   .page.has-overflow.scrolled::after { opacity: 0; transition: opacity .3s; }
   @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
 
-  /* Nav arrows */
+  /* ========= NAV ARROWS ========= */
   .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.08); backdrop-filter: blur(8px); cursor: pointer; z-index: 45; display: grid; place-items: center; transition: transform .25s; }
+  body[data-night="1"] .nav-arrow { background: rgba(26,22,18,0.85); border-color: rgba(255,255,255,0.15); }
   .nav-arrow:hover { transform: translateY(-50%) scale(1.08); }
   .nav-arrow.prev { left: 20px; } .nav-arrow.next { right: 20px; }
   .nav-arrow svg { width: 18px; height: 18px; stroke: var(--ink); }
   .nav-arrow[hidden] { display: none; }
   @media (max-width: 720px) { .nav-arrow { display: none; } }
 
-  /* Swipe hint */
-  .swipe-hint { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 44; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.85); color: #fff; padding: 10px 18px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; border-radius: 999px; pointer-events: none; opacity: 0; animation: hint 4s ease 1s forwards; }
+  /* ========= SWIPE HINT ========= */
+  .swipe-hint { position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); z-index: 44; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.85); color: #fff; padding: 10px 18px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; border-radius: 999px; pointer-events: none; opacity: 0; animation: hint 4s ease 1.2s forwards; }
   .swipe-hint svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; }
-  @keyframes hint { 0% { opacity: 0; transform: translate(-50%, 10px); } 15%,75% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
-  @media (prefers-reduced-motion: reduce) { .reader { scroll-behavior: auto; } .swipe-hint { display: none; } }
+  @keyframes hint { 0%{opacity:0;transform:translate(-50%,10px)} 15%,75%{opacity:1;transform:translate(-50%,0)} 100%{opacity:0;transform:translate(-50%,-10px)} }
+  @media (prefers-reduced-motion: reduce) { .reader { scroll-behavior: auto; } .swipe-hint { display: none; } .page.first-load .mp { animation: none; } }
 
-  /* States */
-  .state-card { max-width: 420px; text-align: center; padding: 48px 32px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
-  .state-card h2 { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; margin-bottom: 12px; }
-  .state-card p { font-size: 14px; line-height: 1.6; color: var(--ink-soft); }
-  .state-card .spinner { width: 32px; height: 32px; margin: 0 auto 18px; border: 2px solid var(--bg); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* Reward toast */
+  /* ========= REWARD TOAST ========= */
   .reward-toast { position: fixed; bottom: 32px; right: 32px; z-index: 60; background: var(--accent); color: #fff; padding: 14px 22px; border-radius: 8px; box-shadow: 0 10px 30px rgba(122,31,43,0.3); font-size: 14px; font-weight: 600; transform: translateY(80px); opacity: 0; transition: all .3s; }
   .reward-toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ========= REACTIONS BAR (D5) — flutuante por pagina ========= */
+  .reactions-bar {
+    position: absolute; bottom: 16px; right: 16px; z-index: 5;
+    display: flex; gap: 6px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(10px);
+    padding: 6px; border-radius: 999px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+  }
+  body[data-night="1"] .reactions-bar { background: rgba(26,22,18,0.92); }
+  .reactions-bar button {
+    background: none; border: none; cursor: pointer; padding: 6px 10px;
+    display: flex; align-items: center; gap: 4px; border-radius: 999px;
+    font-size: 16px; color: var(--ink); transition: all .2s;
+  }
+  .reactions-bar button .cnt { font-size: 11px; font-weight: 600; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .reactions-bar button:hover { background: var(--bg); transform: scale(1.05); }
+  .reactions-bar button.active { background: var(--accent); color: #fff; }
+  .reactions-bar button.active .cnt { color: #fff; }
+  .reactions-bar button.pop { animation: pop .4s ease; }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.3)} 100%{transform:scale(1)} }
+
+  /* ========= HIDDEN ICON (D1) ========= */
+  .hidden-icon {
+    position: absolute; z-index: 4; cursor: pointer;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gold); opacity: 0.18; transition: all .3s;
+    display: grid; place-items: center; color: #fff; font-size: 14px;
+    box-shadow: 0 0 0 0 rgba(201,169,97,0);
+  }
+  .hidden-icon:hover { opacity: 1; transform: scale(1.1); box-shadow: 0 0 0 8px rgba(201,169,97,0.2); }
+  .hidden-icon.found { opacity: 1; animation: foundPulse 1s ease; pointer-events: none; }
+  @keyframes foundPulse { 0%{transform:scale(1);box-shadow:0 0 0 0 rgba(201,169,97,0.6)} 100%{transform:scale(1.5);box-shadow:0 0 0 60px rgba(201,169,97,0)} }
+
+  /* ========= LIGHTBOX (B9 zoom em foto) ========= */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-out; }
+  .lightbox .close { position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.15); color: #fff; width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; font-size: 18px; }
+
+  /* ========= SHARE MODAL (E1) ========= */
+  .share-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .share-modal.open { display: flex; }
+  .share-modal .card { background: var(--paper); border-radius: 14px; max-width: 420px; width: 100%; padding: 28px; }
+  .share-modal h3 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 14px; color: var(--ink); }
+  .share-modal canvas { width: 100%; border-radius: 8px; margin: 12px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+  .share-modal .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .share-modal .actions button { flex: 1; padding: 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--ink); background: var(--ink); color: #fff; }
+  .share-modal .actions button.ghost { background: transparent; color: var(--ink); }
+
+  /* ========= COUNTING STATS (B2) ========= */
+  .mp-t12 .stat .k, .mp-t23 .stat .k, .mp-t24 .stat .k { transition: opacity .4s; }
+  .stat-counting { opacity: 0.5; }
+
+  /* Reading mode (J1) — muda --reading-scale */
+  body[data-reading="large"] { --reading-scale: 1.15; }
+  body[data-reading="xlarge"] { --reading-scale: 1.30; }
 </style>
 </head>
 <body class="loading">
 
-<div id="stateLoading" class="state-card">
-  <div class="spinner"></div>
-  <h2>Carregando sua edição</h2>
-  <p>Personalizando conteúdo…</p>
+<!-- LOADING (B7 skeleton editorial) -->
+<div id="stateLoading" class="skel">
+  <div class="brand">Beauty &amp; <em>Health</em></div>
+  <div class="sub">edição em preparo</div>
+  <div class="lines"><span></span><span></span><span></span></div>
 </div>
 
+<!-- ERROR -->
 <div id="stateError" class="state-card" style="display:none">
   <h2>Link inválido</h2>
   <p id="errorMsg">Este link não é válido ou expirou. Entre em contato para receber um novo.</p>
 </div>
 
+<!-- TOP UI -->
 <div class="progress-bar" id="progressBar" style="display:none"></div>
 <div class="top-meta" id="topMeta" style="display:none">
   <span class="brand">Beauty &amp; Health</span>
   <span class="counter"><span id="curIdx">1</span> / <span id="totalIdx">0</span></span>
 </div>
+<div class="top-controls" id="topControls" style="display:none">
+  <button id="readingBtn" title="Aumentar texto" aria-label="Aumentar texto">A+</button>
+  <button id="nightBtn" title="Modo noite" aria-label="Modo noite">☾</button>
+  <button id="shareBtn" title="Compartilhar" aria-label="Compartilhar">↗</button>
+</div>
 
+<div class="expiry-banner" id="expiryBanner" style="display:none"></div>
+
+<!-- NAV -->
 <button class="nav-arrow prev" id="prevBtn" hidden aria-label="Anterior">
   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
 </button>
@@ -103,11 +262,27 @@
   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
 </button>
 
+<!-- READER -->
 <div class="reader" id="reader" style="display:none"></div>
 
 <div class="swipe-hint" id="swipeHint" style="display:none">
   <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
   Deslize para continuar
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox"><button class="close" id="lightboxClose">×</button><img id="lightboxImg" alt="" /></div>
+
+<!-- SHARE MODAL -->
+<div class="share-modal" id="shareModal">
+  <div class="card">
+    <h3>Compartilhar esta edição</h3>
+    <canvas id="shareCanvas" width="600" height="800"></canvas>
+    <div class="actions">
+      <button id="shareDownload">Baixar imagem</button>
+      <button id="shareWhatsapp" class="ghost">WhatsApp</button>
+    </div>
+  </div>
 </div>
 
 <div class="reward-toast" id="rewardToast"></div>
@@ -140,14 +315,19 @@
     setTimeout(() => el.classList.remove('show'), 3200)
   }
 
+  let edition = null
+  let pages = []
+
+  // ========= INIT =========
   async function init() {
     if (!editionSlug) {
       showError('Link sem edição especificada. Use ?edition=slug&lead=uuid&h=hash.')
       return
     }
+    applyNightMode()
+    applyReadingMode()
 
     try {
-      // 1) Busca edicao + paginas publicas (RPC valida HMAC)
       const { data: ed, error } = await sb.rpc('magazine_get_edition_public', {
         p_edition_slug: editionSlug,
         p_lead_id: leadId,
@@ -155,10 +335,32 @@
       })
       if (error) throw error
       if (!ed) { showError('Edição não encontrada ou não publicada.'); return }
+      if (ed.expired) { showError('Esta edição saiu de circulação.'); return }
+
+      edition = ed
+      pages = ed.pages || []
+
+      // A7 · Aplicar segmento ao body
+      if (ed.segment) document.body.dataset.segment = ed.segment
+
+      // A1 · Injeta nome na capa
+      if (ed.lead_name && pages[0] && (pages[0].template_slug === 't01_cover_hero_dark' || pages[0].template_slug === 't02_cover_hero_light')) {
+        pages[0].slots = pages[0].slots || {}
+        pages[0].slots.dedicatoria = `Para ${ed.lead_name}`
+      }
+
+      // E3 · Open Graph dinamico
+      const cover = pages[0] && pages[0].slots
+      if (cover) {
+        $('ogTitle').setAttribute('content', `Beauty & Health — ${ed.title}`)
+        $('ogDesc').setAttribute('content', cover.subtitulo || ed.subtitle || 'Sua edição editorial · beleza que é cuidado.')
+        if (cover.foto_hero || cover.foto_full) $('ogImg').setAttribute('content', cover.foto_hero || cover.foto_full)
+      }
+      document.title = `Beauty & Health — ${ed.title || 'Edição'}`
 
       render(ed)
 
-      // 2) Marca abertura (nao bloqueia render)
+      // Marca abertura
       if (leadId && !preview) {
         try {
           const { data: start } = await sb.rpc('magazine_start_reading', {
@@ -168,8 +370,7 @@
             p_user_agent: navigator.userAgent,
             p_ip_hash: null,
           })
-          // Primeira abertura -> credita 10 de cashback
-          if (start && start.opened_at) showReward('✓ Cashback de abertura creditado (R$ 10)')
+          if (start && !start.last_page_index) showReward('✓ Cashback de abertura · R$ 10')
         } catch (e) { console.warn('start_reading falhou:', e.message) }
       }
     } catch (e) {
@@ -178,12 +379,34 @@
     }
   }
 
+  // ========= RENDER =========
   function render(ed) {
-    const pages = ed.pages || []
     if (!pages.length) { showError('Esta edição não tem páginas publicadas ainda.'); return }
 
     const reader = $('reader')
-    reader.innerHTML = pages.map(p => `<section class="page" data-id="${p.id}">${window.MagazineRenderer.render(p.template_slug, p.slots || {})}</section>`).join('')
+    reader.innerHTML = pages.map((p, i) => {
+      let html = `<section class="page" data-id="${p.id}" data-idx="${i}">`
+      html += window.MagazineRenderer.render(p.template_slug, injectDedicatoria(p, ed))
+      // D1 · Hidden icon na página marcada
+      if (p.is_hidden_icon_page) {
+        const pos = parseHiddenPos(p.hidden_icon_pos)
+        html += `<div class="hidden-icon" data-page-id="${p.id}" style="${pos}" title="✨"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l3 9h9l-7 5 3 9-8-6-8 6 3-9-7-5h9z"/></svg></div>`
+      }
+      // D5 · Reactions bar (em todas exceto capa e contracapa)
+      const tplCat = (p.template_slug || '').split('_')[0]
+      const tnum = parseInt(p.template_slug?.replace(/[^0-9]/g, '')) || 0
+      const skipReactions = [1,2,3,6].includes(tnum)
+      if (!skipReactions) {
+        const r = (ed.reactions && ed.reactions[p.id]) || {}
+        html += `<div class="reactions-bar" data-page-id="${p.id}">
+          <button data-react="heart" title="Adorei">❤<span class="cnt">${r.heart||''}</span></button>
+          <button data-react="sparkle" title="Inspirador">✨<span class="cnt">${r.sparkle||''}</span></button>
+          <button data-react="wow" title="Uau">!<span class="cnt">${r.wow||''}</span></button>
+        </div>`
+      }
+      html += `</section>`
+      return html
+    }).join('')
 
     const pb = $('progressBar')
     pb.innerHTML = pages.map((_, i) => `<div class="seg${i === 0 ? ' current' : ''}"><span class="fill"></span></div>`).join('')
@@ -193,32 +416,79 @@
     reader.style.display = ''
     pb.style.display = ''
     $('topMeta').style.display = ''
-    if (pages.length > 1) { $('nextBtn').hidden = false; $('swipeHint').style.display = ''; setTimeout(() => $('swipeHint').style.display = 'none', 5200) }
+    $('topControls').style.display = 'flex'
+    if (pages.length > 1) { $('nextBtn').hidden = false; $('swipeHint').style.display = ''; setTimeout(() => $('swipeHint').style.display = 'none', 5400) }
     document.body.className = ''
 
+    // B1 · Animacao na primeira pagina
+    reader.children[0]?.classList.add('first-load')
+
+    // G1 · Banner de expiracao
+    if (ed.expires_at) {
+      const days = Math.ceil((new Date(ed.expires_at) - Date.now()) / 86400000)
+      if (days <= 7 && days > 0) {
+        $('expiryBanner').textContent = `Expira em ${days} dia${days !== 1 ? 's' : ''}`
+        $('expiryBanner').style.display = 'block'
+      }
+    }
+
     wireNav(pages, ed)
-    document.title = `Beauty & Health — ${ed.title || 'Edição'}`
+    wireReactions(ed)
+    wireHiddenIcon(ed)
+    wireImageZoom()
+    wireParallax()
+
+    // F1 · Continue de onde parou (somente se nao primeira leitura)
+    setTimeout(async () => {
+      if (!leadId || preview) return
+      try {
+        const { data: rd } = await sb.from('magazine_reads')
+          .select('last_page_index')
+          .eq('edition_id', ed.id).eq('lead_id', leadId).maybeSingle()
+        if (rd && rd.last_page_index > 0 && rd.last_page_index < pages.length) {
+          showReward(`Continuando de onde parou · pág ${rd.last_page_index + 1}`)
+          setTimeout(() => reader.children[rd.last_page_index]?.scrollIntoView({ inline: 'start', behavior: 'smooth' }), 800)
+        }
+      } catch (e) { /* silencioso */ }
+    }, 400)
   }
 
+  function injectDedicatoria(page, ed) {
+    if (!ed.lead_name || !page.slots) return page.slots
+    const slots = Object.assign({}, page.slots)
+    if (page.template_slug === 't01_cover_hero_dark' || page.template_slug === 't02_cover_hero_light') {
+      slots.dedicatoria = `Para ${ed.lead_name}`
+    }
+    return slots
+  }
+
+  function parseHiddenPos(pos) {
+    // pos pode ser "top:30%;left:60%" ou null/random
+    if (pos && typeof pos === 'string') return pos
+    const t = 30 + Math.floor(Math.random() * 40)
+    const l = 30 + Math.floor(Math.random() * 40)
+    return `top:${t}%;left:${l}%`
+  }
+
+  // ========= NAV + TRACKING =========
   function wireNav(pages, ed) {
     const reader = $('reader')
     const prev = $('prevBtn'), next = $('nextBtn')
     let currentIdx = 0
-    let maxIdx = 0
-    const completed = new Set()
-
     let pageEnterAt = Date.now()
+    const completed = new Set([0])
 
     const updateUi = (idx) => {
-      // Tracka tempo na pagina anterior antes de trocar
       if (leadId && !preview && currentIdx !== idx) {
         const dt = Date.now() - pageEnterAt
         if (dt > 800 && dt < 600000) sendPageTrack(currentIdx, dt)
         pageEnterAt = Date.now()
+
+        // B1 · Remove first-load animation depois da primeira navegacao
+        reader.children[0]?.classList.remove('first-load')
       }
       currentIdx = idx
       $('curIdx').textContent = idx + 1
-      maxIdx = Math.max(maxIdx, idx)
       completed.add(idx)
       const segs = document.querySelectorAll('.progress-bar .seg')
       segs.forEach((s, i) => {
@@ -229,30 +499,22 @@
       prev.hidden = idx === 0
       next.hidden = idx === pages.length - 1
 
-      // Envia progresso (debounced)
+      // B2 · Anima stats quando entra em pagina de antes/depois
+      animateStatsOnPage(reader.children[idx])
+
       if (leadId && !preview) sendProgress()
     }
 
     async function sendPageTrack(pageIdx, ms) {
       try {
-        await sb.rpc('magazine_track_page', {
-          p_edition_id: ed.id,
-          p_lead_id: leadId,
-          p_hash: hash,
-          p_page_index: pageIdx,
-          p_time_ms: Math.round(ms),
-        })
-      } catch (e) { /* silencioso */ }
+        await sb.rpc('magazine_track_page', { p_edition_id: ed.id, p_lead_id: leadId, p_hash: hash, p_page_index: pageIdx, p_time_ms: Math.round(ms) })
+      } catch (e) {}
     }
 
-    // Tracka tempo da ultima pagina ao sair (visibilitychange eh confiavel em mobile)
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden' && leadId && !preview) {
         const dt = Date.now() - pageEnterAt
-        if (dt > 800 && dt < 600000) {
-          sendPageTrack(currentIdx, dt)
-          pageEnterAt = Date.now()
-        }
+        if (dt > 800 && dt < 600000) { sendPageTrack(currentIdx, dt); pageEnterAt = Date.now() }
       }
     })
 
@@ -266,24 +528,20 @@
           const dt = lastSent ? Math.round((now - lastSent) / 1000) : 0
           lastSent = now
           const { data } = await sb.rpc('magazine_update_progress', {
-            p_edition_id: ed.id,
-            p_lead_id: leadId,
-            p_hash: hash,
-            p_page_index: currentIdx,
-            p_pages_completed: Array.from(completed),
+            p_edition_id: ed.id, p_lead_id: leadId, p_hash: hash,
+            p_page_index: currentIdx, p_pages_completed: Array.from(completed),
             p_time_spent_sec: Math.min(dt, 60),
           })
-          if (data && data.newly_completed) showReward('✓ 80% lido — cashback extra de R$ 20')
-        } catch (e) { console.warn('progress falhou:', e.message) }
+          if (data && data.newly_completed) showReward('✓ Leu 80% · cashback extra R$ 20')
+        } catch (e) {}
       }, 1200)
     }
 
-    // Observer
     const io = new IntersectionObserver((entries) => {
       entries.forEach(en => {
         if (en.intersectionRatio > 0.5) {
-          const idx = Array.from(reader.children).indexOf(en.target)
-          if (idx >= 0 && idx !== currentIdx) updateUi(idx)
+          const idx = parseInt(en.target.dataset.idx)
+          if (!isNaN(idx) && idx !== currentIdx) updateUi(idx)
         }
       })
     }, { root: reader, threshold: [0.5] })
@@ -297,19 +555,7 @@
       if (e.key === 'ArrowLeft') prev.click()
     })
 
-    // TOC: clicar em item .mp-t04 .item navega
-    reader.addEventListener('click', e => {
-      const item = e.target.closest('.mp-t04 .item')
-      if (!item) return
-      const pid = item.dataset.pageId
-      if (!pid) return
-      const target = reader.querySelector(`[data-id="${pid}"]`)
-      if (target) target.scrollIntoView({ inline: 'start', behavior: 'smooth' })
-    })
-
-    updateUi(0)
-
-    // Marca paginas que tem overflow vertical (mostra indicador "deslize abaixo")
+    // Indicador overflow
     requestAnimationFrame(() => {
       Array.from(reader.children).forEach(p => {
         if (p.scrollHeight > p.clientHeight + 4) p.classList.add('has-overflow')
@@ -319,7 +565,222 @@
         }, { passive: true })
       })
     })
+
+    // Anima stats da primeira pagina
+    setTimeout(() => animateStatsOnPage(reader.children[0]), 600)
   }
+
+  // ========= B2 · STATS COUNTING UP =========
+  function animateStatsOnPage(pageEl) {
+    if (!pageEl || pageEl.dataset.statsAnimated) return
+    const stats = pageEl.querySelectorAll('.stat .k')
+    if (!stats.length) return
+    pageEl.dataset.statsAnimated = '1'
+    stats.forEach(el => {
+      const original = el.textContent.trim()
+      // Detecta numero (93%, 3×, 60d, -42%)
+      const m = original.match(/^(-?)(\d+(?:[.,]\d+)?)(.*)$/)
+      if (!m) return
+      const sign = m[1]; const target = parseFloat(m[2].replace(',','.')); const suffix = m[3]
+      let cur = 0
+      const start = performance.now()
+      const dur = 1200
+      el.classList.add('stat-counting')
+      function tick(t) {
+        const k = Math.min(1, (t - start) / dur)
+        const eased = 1 - Math.pow(1 - k, 3)
+        cur = target * eased
+        el.textContent = sign + (Number.isInteger(target) ? Math.round(cur) : cur.toFixed(1).replace('.',',')) + suffix
+        if (k < 1) requestAnimationFrame(tick)
+        else { el.textContent = original; el.classList.remove('stat-counting') }
+      }
+      requestAnimationFrame(tick)
+    })
+  }
+
+  // ========= D5 · REACTIONS =========
+  function wireReactions(ed) {
+    document.querySelectorAll('.reactions-bar').forEach(bar => {
+      bar.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-react]')
+        if (!btn) return
+        const pageId = bar.dataset.pageId
+        const reaction = btn.dataset.react
+        if (btn.classList.contains('active')) return
+        btn.classList.add('active', 'pop')
+        setTimeout(() => btn.classList.remove('pop'), 400)
+        if (!leadId || preview) return
+        try {
+          const { data } = await sb.rpc('magazine_react', {
+            p_edition_id: ed.id, p_page_id: pageId, p_lead_id: leadId, p_hash: hash, p_reaction: reaction
+          })
+          if (data && data.total) btn.querySelector('.cnt').textContent = data.total
+        } catch (e) { console.warn('react:', e.message) }
+      })
+    })
+  }
+
+  // ========= D1 · HIDDEN ICON =========
+  function wireHiddenIcon(ed) {
+    document.querySelectorAll('.hidden-icon').forEach(icon => {
+      icon.addEventListener('click', async () => {
+        if (icon.classList.contains('found')) return
+        icon.classList.add('found')
+        showReward('✨ Encontrou o ícone secreto · cashback R$ 25')
+        if (!leadId || preview) return
+        try {
+          await sb.rpc('magazine_claim_reward', {
+            p_edition_id: ed.id, p_lead_id: leadId, p_hash: hash,
+            p_reward_type: 'hidden_icon', p_amount: 25,
+          })
+        } catch (e) { console.warn('hidden icon:', e.message) }
+      })
+    })
+  }
+
+  // ========= B9 · LIGHTBOX (zoom em foto) =========
+  function wireImageZoom() {
+    document.addEventListener('click', (e) => {
+      const img = e.target.closest('.mp-img')
+      if (!img) return
+      // Nao abre se foi click em reactions/hidden/etc
+      if (e.target.closest('.reactions-bar, .hidden-icon')) return
+      $('lightboxImg').src = img.src
+      $('lightbox').classList.add('open')
+    })
+    $('lightboxClose').addEventListener('click', () => $('lightbox').classList.remove('open'))
+    $('lightbox').addEventListener('click', e => { if (e.target.id === 'lightbox' || e.target.tagName === 'IMG') $('lightbox').classList.remove('open') })
+  }
+
+  // ========= B5 · PARALLAX em fullbleed =========
+  function wireParallax() {
+    document.querySelectorAll('.mp-t08').forEach(el => {
+      const bg = el.querySelector('.bg')
+      if (!bg) return
+      const page = el.closest('.page')
+      if (!page) return
+      page.addEventListener('scroll', () => {
+        const y = page.scrollTop
+        bg.style.transform = `translateY(${y * 0.3}px) scale(${1 + y * 0.0003})`
+      }, { passive: true })
+    })
+  }
+
+  // ========= TOP CONTROLS (J1, B8, E1) =========
+  function applyNightMode() {
+    const stored = localStorage.getItem('mag_night')
+    let night
+    if (stored !== null) night = stored === '1'
+    else { const h = new Date().getHours(); night = h >= 19 || h < 6 }
+    if (night) document.body.dataset.night = '1'
+    if ($('nightBtn')) $('nightBtn').classList.toggle('active', night)
+  }
+  function applyReadingMode() {
+    const stored = localStorage.getItem('mag_reading') || ''
+    if (stored) document.body.dataset.reading = stored
+    if ($('readingBtn')) $('readingBtn').textContent = stored === 'xlarge' ? 'A' : stored === 'large' ? 'A+' : 'A+'
+  }
+
+  $('nightBtn').addEventListener('click', () => {
+    const isNight = document.body.dataset.night === '1'
+    if (isNight) { delete document.body.dataset.night; localStorage.setItem('mag_night', '0') }
+    else { document.body.dataset.night = '1'; localStorage.setItem('mag_night', '1') }
+    $('nightBtn').classList.toggle('active', !isNight)
+  })
+
+  $('readingBtn').addEventListener('click', () => {
+    const cur = document.body.dataset.reading || ''
+    const nxt = cur === '' ? 'large' : cur === 'large' ? 'xlarge' : ''
+    if (nxt) document.body.dataset.reading = nxt
+    else delete document.body.dataset.reading
+    localStorage.setItem('mag_reading', nxt)
+    $('readingBtn').textContent = nxt === 'xlarge' ? 'A−' : 'A+'
+    $('readingBtn').classList.toggle('active', !!nxt)
+  })
+
+  $('shareBtn').addEventListener('click', () => generateShareCard())
+
+  // ========= E1 · SHARE CARD =========
+  function generateShareCard() {
+    if (!edition || !pages.length) return
+    const cv = $('shareCanvas')
+    const ctx = cv.getContext('2d')
+    cv.width = 600; cv.height = 800
+    // background
+    ctx.fillStyle = '#0f0f0f'
+    ctx.fillRect(0, 0, 600, 800)
+    // accent strip
+    ctx.fillStyle = '#7a1f2b'
+    ctx.fillRect(0, 0, 8, 800)
+    // brand
+    ctx.fillStyle = '#f4f1ec'
+    ctx.font = 'bold 32px "Playfair Display", serif'
+    ctx.fillText('Beauty & Health', 60, 80)
+    ctx.font = '11px Inter, sans-serif'
+    ctx.fillStyle = '#c9a961'
+    ctx.fillText('R E V I S T A   E D I T O R I A L', 60, 105)
+    // edition title
+    ctx.fillStyle = '#f4f1ec'
+    ctx.font = 'bold 48px "Playfair Display", serif'
+    wrapText(ctx, edition.title || '', 60, 200, 480, 56)
+    // dedication
+    if (edition.lead_name) {
+      ctx.fillStyle = '#c9a961'
+      ctx.font = 'italic 20px "Playfair Display", serif'
+      ctx.fillText(`Para ${edition.lead_name}`, 60, 360)
+    }
+    // tagline
+    ctx.fillStyle = '#c8c4ba'
+    ctx.font = '15px Inter, sans-serif'
+    wrapText(ctx, edition.subtitle || 'Sua edição editorial · beleza que é cuidado.', 60, 410, 480, 22)
+    // bottom
+    ctx.fillStyle = '#7a1f2b'
+    ctx.fillRect(60, 700, 480, 1)
+    ctx.fillStyle = '#8a8178'
+    ctx.font = '10px Inter, sans-serif'
+    ctx.fillText('clinicamiriandepaula.com.br', 60, 730)
+    ctx.fillStyle = '#c9a961'
+    ctx.font = 'bold 11px Inter, sans-serif'
+    ctx.fillText('LEIA EM SEU CELULAR', 60, 760)
+    $('shareModal').classList.add('open')
+  }
+
+  function wrapText(ctx, text, x, y, maxW, lineH) {
+    const words = text.split(/\s+/); let line = ''; let yy = y
+    for (let n = 0; n < words.length; n++) {
+      const test = line + words[n] + ' '
+      if (ctx.measureText(test).width > maxW && n > 0) { ctx.fillText(line, x, yy); line = words[n] + ' '; yy += lineH }
+      else line = test
+    }
+    ctx.fillText(line, x, yy)
+  }
+
+  $('shareDownload').addEventListener('click', () => {
+    const a = document.createElement('a')
+    a.href = $('shareCanvas').toDataURL('image/png')
+    a.download = `beauty-health-${editionSlug}.png`
+    document.body.appendChild(a); a.click(); a.remove()
+  })
+
+  $('shareWhatsapp').addEventListener('click', async () => {
+    const url = `${location.origin}/revista-live.html?edition=${editionSlug}`
+    const text = `Confira esta edição da Beauty & Health: ${edition.title}\n${url}`
+    if (navigator.share) {
+      try {
+        const blob = await new Promise(r => $('shareCanvas').toBlob(r))
+        const file = new File([blob], 'beauty-health.png', { type: 'image/png' })
+        await navigator.share({ files: [file], text, title: edition.title })
+        if (leadId && !preview) {
+          try { await sb.rpc('magazine_claim_reward', { p_edition_id: edition.id, p_lead_id: leadId, p_hash: hash, p_reward_type: 'shared', p_amount: 15 }) } catch(e){}
+        }
+      } catch (e) { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank') }
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    }
+    $('shareModal').classList.remove('open')
+  })
+
+  $('shareModal').addEventListener('click', e => { if (e.target.id === 'shareModal') $('shareModal').classList.remove('open') })
 
   document.addEventListener('DOMContentLoaded', init)
 })()

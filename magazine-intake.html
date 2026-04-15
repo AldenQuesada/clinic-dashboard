@@ -417,6 +417,15 @@
         { k: 'legenda', label: 'Legenda (opcional · máx 120)', type: 'text', max: 120, optional: true },
       ]
     },
+    { slug: 't25_before_after_slider', name: 'Antes/Depois · Slider arrastável', cat: 'visual', order: 32,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 50 · use *itálico*)', type: 'text', max: 50 },
+        { k: 'subtitulo', label: 'Subtítulo (opcional · máx 160)', type: 'text', max: 160, optional: true },
+        { k: 'foto_antes', label: 'Foto antes (mesmo ângulo/luz)', type: 'photo-ref' },
+        { k: 'foto_depois', label: 'Foto depois (mesmo ângulo/luz)', type: 'photo-ref' },
+        { k: 'meta', label: 'Meta (protocolo · opcional · máx 120)', type: 'text', max: 120, optional: true },
+      ]
+    },
     { slug: 't15_evolution_timeline', name: 'Timeline de Evolução', cat: 'visual', order: 33,
       fields: [
         { k: 'titulo', label: 'Título (máx 50)', type: 'text', max: 50 },

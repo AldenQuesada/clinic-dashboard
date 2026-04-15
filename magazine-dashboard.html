@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Beauty &amp; Health — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#f4f1ec;--paper:#fff;--ink:#1a1a1a;--ink-soft:#555;--muted:#8a8178;--line:#e5ddd2;--accent:#7a1f2b;--ok:#2d7a43;--warn:#b45309;--gold:#c9a961}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit}
+  header.top{padding:32px 40px 22px;border-bottom:1px solid var(--line);background:var(--paper);display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:16px}
+  header.top h1{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;letter-spacing:-0.01em}
+  header.top h1 em{color:var(--accent);font-style:italic}
+  header.top .sub{color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+  header.top nav{display:flex;gap:8px}
+  header.top nav a, header.top nav button{padding:8px 14px;border:1px solid var(--line);border-radius:6px;font-size:13px;text-decoration:none;color:var(--ink);background:var(--paper)}
+  header.top nav a:hover, header.top nav button:hover{border-color:var(--accent);color:var(--accent)}
+
+  .container{max-width:1200px;margin:0 auto;padding:32px 40px 80px}
+
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:36px}
+  .sm{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:20px}
+  .sm .v{font-family:'Playfair Display',serif;font-size:36px;color:var(--ink);font-weight:700;line-height:1}
+  .sm .v.accent{color:var(--accent)}
+  .sm .v.gold{color:var(--gold)}
+  .sm .l{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:8px}
+
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:24px 26px;margin-bottom:18px}
+  .panel h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:4px}
+  .panel h2 em{color:var(--accent);font-style:italic}
+  .panel .ph{font-size:12px;color:var(--muted);margin-bottom:18px}
+
+  .row{display:grid;grid-template-columns:1fr auto auto auto;gap:18px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center;font-size:13px}
+  .row:last-child{border-bottom:none}
+  .row .name{font-weight:600;min-width:0}
+  .row .name a{color:var(--ink);text-decoration:none}
+  .row .name a:hover{color:var(--accent)}
+  .row .num{font-family:'Playfair Display',serif;font-size:18px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:60px}
+  .row .lbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+
+  .seg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+  .seg-card{background:var(--bg);border-radius:8px;padding:14px 16px;text-align:center}
+  .seg-card.vip{background:linear-gradient(135deg,#fef3c7,#fde68a)}
+  .seg-card.active{background:#dcfce7}
+  .seg-card.at_risk{background:#fed7aa}
+  .seg-card.dormant{background:#fecaca}
+  .seg-card.lead{background:#dbeafe}
+  .seg-card .v{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--ink);line-height:1}
+  .seg-card .l{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-soft);margin-top:6px;font-weight:600}
+
+  .react-list{display:flex;flex-direction:column;gap:8px}
+  .react-item{display:grid;grid-template-columns:32px 1fr auto;gap:12px;padding:8px 0;font-size:12px;align-items:center}
+  .react-item .icon{font-size:20px;text-align:center}
+  .react-item .when{color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+
+  .empty{padding:32px;text-align:center;color:var(--muted);font-style:italic;font-size:13px}
+  .loading{padding:60px;text-align:center;color:var(--muted)}
+
+  /* Auth overlay */
+  .auth-overlay{position:fixed;inset:0;background:rgba(26,26,26,0.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:300;padding:24px}
+  .auth-overlay.open{display:flex}
+  .auth-card{background:var(--paper);border-radius:14px;width:100%;max-width:380px;padding:32px}
+  .auth-card h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:6px}
+  .auth-card .sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+  .auth-card label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;margin-top:14px}
+  .auth-card input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font-size:14px;outline:none}
+  .auth-card button.submit{width:100%;padding:12px;margin-top:18px;background:var(--ink);color:#fff;border-radius:6px;font-size:13px;font-weight:600}
+  .auth-card .err{color:#b91c1c;font-size:12px;margin-top:10px;min-height:16px}
+
+  @media(max-width:720px){
+    .container{padding:24px 16px 60px}
+    header.top{padding:24px 16px 18px;flex-direction:column;align-items:flex-start}
+    .row{grid-template-columns:1fr auto;gap:8px}
+    .row .lbl{display:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Dashboard <em>Beauty &amp; Health</em></h1>
+    <div class="sub">Insights · performance · engajamento</div>
+  </div>
+  <nav>
+    <a href="magazine-editions.html">Edições</a>
+    <a href="magazine-intake.html">+ Nova</a>
+    <button id="reload">↻ Atualizar</button>
+  </nav>
+</header>
+
+<div class="container" id="root">
+  <div class="loading">Carregando insights…</div>
+</div>
+
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <h2>Entrar</h2>
+    <div class="sub">Login para ver insights da clínica.</div>
+    <form id="authForm">
+      <label>E-mail</label>
+      <input type="text" id="authEmail" required autocomplete="username" />
+      <label>Senha</label>
+      <input type="password" id="authPwd" required autocomplete="current-password" />
+      <button type="submit" class="submit" id="authSubmit">Entrar</button>
+      <div class="err" id="authErr"></div>
+    </form>
+  </div>
+</div>
+
+<script>
+;(function(){
+  'use strict'
+  const sb = window.supabase.createClient(window.ClinicEnv.SUPABASE_URL, window.ClinicEnv.SUPABASE_KEY,
+    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } })
+  const $ = id => document.getElementById(id)
+
+  async function ensureAuth(){
+    const { data: { session } } = await sb.auth.getSession()
+    if (session?.user) return true
+    return new Promise(resolve => {
+      $('authOverlay').classList.add('open'); $('authEmail').focus()
+      $('authForm').onsubmit = async e => {
+        e.preventDefault()
+        const sub=$('authSubmit'), err=$('authErr')
+        err.textContent=''; sub.disabled=true; sub.textContent='Entrando…'
+        const { data, error } = await sb.auth.signInWithPassword({ email:$('authEmail').value.trim(), password:$('authPwd').value })
+        sub.disabled=false; sub.textContent='Entrar'
+        if (error) { err.textContent=error.message; return }
+        $('authOverlay').classList.remove('open'); resolve(data.user)
+      }
+    })
+  }
+
+  function fmtMoney(v){return 'R$ '+(+v).toFixed(2).replace('.',',')}
+  function pct(part, total){return total ? Math.round((part/total)*100) : 0}
+  function timeAgo(ts){
+    const d = new Date(ts); const s = (Date.now() - d.getTime()) / 1000
+    if (s < 60) return 'agora'
+    if (s < 3600) return Math.floor(s/60) + ' min'
+    if (s < 86400) return Math.floor(s/3600) + ' h'
+    return Math.floor(s/86400) + ' d'
+  }
+  function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+  const SEG_LABELS = { vip: 'VIP', active: 'Ativo', at_risk: 'Em Risco', dormant: 'Dormente', lead: 'Lead', distante: 'Distante' }
+  const REACT_ICONS = { heart: '❤', sparkle: '✨', wow: '!' }
+
+  async function load(){
+    $('root').innerHTML = '<div class="loading">Carregando insights…</div>'
+    const { data, error } = await sb.rpc('magazine_dashboard')
+    if (error) { $('root').innerHTML = '<div class="empty">Erro: '+esc(error.message)+'</div>'; return }
+    render(data)
+  }
+
+  function render(d){
+    const s = d.summary || {}
+    const tEd = d.top_editions || []
+    const tPg = d.top_pages || []
+    const seg = d.segment_breakdown || {}
+    const react = d.recent_reactions || []
+    const totalSeg = Object.values(seg).reduce((a,b)=>a+b, 0)
+
+    let html = ''
+
+    // SUMMARY
+    html += `<div class="summary-grid">
+      <div class="sm"><div class="v">${s.published_editions||0}</div><div class="l">Edições publicadas</div></div>
+      <div class="sm"><div class="v">${s.total_opens||0}</div><div class="l">Aberturas totais</div></div>
+      <div class="sm"><div class="v">${s.total_reads_80||0}</div><div class="l">Leituras 80%${s.total_opens ? ' ('+pct(s.total_reads_80,s.total_opens)+'%)' : ''}</div></div>
+      <div class="sm"><div class="v">${s.total_quiz||0}</div><div class="l">Quiz completos</div></div>
+      <div class="sm"><div class="v gold">${fmtMoney(s.total_cashback||0)}</div><div class="l">Cashback distribuído</div></div>
+    </div>`
+
+    // TOP EDITIONS
+    html += `<div class="panel">
+      <h2>Top edições por <em>aberturas</em></h2>
+      <div class="ph">As 5 edições que mais engajaram. Use como benchmark.</div>
+      ${tEd.length ? tEd.map((e,i) => `
+        <div class="row">
+          <div class="name"><a href="revista-live.html?edition=${enc(e.slug)}&preview=1" target="_blank">${i+1}. ${esc(e.title)}</a></div>
+          <div><span class="num">${e.opens}</span><div class="lbl">aberturas</div></div>
+          <div><span class="num">${e.reads_80}</span><div class="lbl">leram 80%</div></div>
+          <div><span class="num">${fmtMoney(e.cashback||0)}</span><div class="lbl">cashback</div></div>
+        </div>`).join('') : '<div class="empty">Nenhuma edição publicada ainda.</div>'}
+    </div>`
+
+    // TOP PAGES
+    html += `<div class="panel">
+      <h2>Páginas que mais <em>prenderam</em></h2>
+      <div class="ph">Tempo médio gasto por página. Use pra entender qual conteúdo emociona — replicar nas próximas.</div>
+      ${tPg.length ? tPg.map((p,i) => `
+        <div class="row">
+          <div class="name">${i+1}. <code style="font-size:11px;color:var(--muted)">${esc(p.template)}</code> · ${esc(p.edition)}</div>
+          <div><span class="num">${(p.avg_time_sec||0).toFixed(0)}s</span><div class="lbl">tempo médio</div></div>
+          <div><span class="num">${p.views}</span><div class="lbl">visualizações</div></div>
+        </div>`).join('') : '<div class="empty">Sem dados ainda. Aparece após algumas leituras.</div>'}
+    </div>`
+
+    // SEGMENTS
+    html += `<div class="panel">
+      <h2>Quem está <em>lendo</em></h2>
+      <div class="ph">Distribuição por segmento RFM dos leads que abriram alguma edição.</div>
+      ${totalSeg ? `<div class="seg-grid">${Object.entries(seg).map(([k,v]) => `
+        <div class="seg-card ${k}"><div class="v">${v}</div><div class="l">${SEG_LABELS[k] || k} ${pct(v, totalSeg)}%</div></div>
+      `).join('')}</div>` : '<div class="empty">Sem aberturas ainda.</div>'}
+    </div>`
+
+    // REACTIONS
+    html += `<div class="panel">
+      <h2>Reactions <em>recentes</em></h2>
+      <div class="ph">Últimos toques de ❤ ✨ ! das leitoras nas matérias.</div>
+      ${react.length ? `<div class="react-list">${react.map(r => `
+        <div class="react-item">
+          <div class="icon">${REACT_ICONS[r.reaction] || '·'}</div>
+          <div>${esc(r.edition)}</div>
+          <div class="when">há ${timeAgo(r.when)}</div>
+        </div>`).join('')}</div>` : '<div class="empty">Sem reactions ainda. Aparecem assim que alguém reagir nas matérias.</div>'}
+    </div>`
+
+    $('root').innerHTML = html
+  }
+
+  function enc(s){return encodeURIComponent(s||'')}
+
+  $('reload').addEventListener('click', load)
+  ;(async()=>{ await ensureAuth(); await load() })()
+})()
+</script>
+</body>
+</html>
