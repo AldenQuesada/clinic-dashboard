@@ -10,6 +10,10 @@
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/magazine/magazine-renderer.js"></script>
+<script src="js/magazine/admin/slot-schema.js"></script>
+<script src="js/magazine/admin/editor-widgets.js"></script>
+<script src="js/magazine/admin/validator.js"></script>
+<script src="js/magazine/admin/slot-renderer.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -243,6 +247,145 @@
   .auth-card .err { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
   .auth-card .who { font-size: 12px; color: var(--ink-soft); margin-top: 14px; text-align: center; }
   .auth-card .who button { color: var(--accent); font-weight: 600; }
+
+  /* ============================================================================
+   * Admin Widgets (slot-schema / editor-widgets / validator)
+   * ============================================================================ */
+
+  /* ── Slot head (nome + slug do template) ────────────────────────────── */
+  .slot-head { padding: 0 0 10px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .slot-head-name { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: var(--ink); }
+  .slot-head-slug { display: inline-block; margin-top: 4px; font-family: ui-monospace, monospace; font-size: 10px; color: var(--muted); }
+
+  /* ── Campo (label + counter + control + hint) ──────────────────────── */
+  .slot-field-labelrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .slot-field-labelrow label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  .slot-field-labelrow label .req { color: var(--accent); margin-left: 3px; }
+
+  .slot-counter {
+    font-size: 10px; font-family: ui-monospace, monospace;
+    padding: 2px 6px; border-radius: 999px; background: #eef;
+    color: var(--ink-soft); white-space: nowrap; font-weight: 600;
+  }
+  .slot-counter[data-state="ok"]   { background: #dcfce7; color: var(--ok); }
+  .slot-counter[data-state="warn"] { background: #fef3c7; color: var(--warn); }
+  .slot-counter[data-state="err"]  { background: #fee2e2; color: var(--danger); }
+  .slot-counter.inline { margin-top: 4px; display: inline-block; }
+
+  .slot-hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+  .slot-field-control input[type="text"],
+  .slot-field-control textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); font-size: 13px; outline: none; transition: border-color .15s;
+    font-family: inherit;
+  }
+  .slot-field-control input:focus, .slot-field-control textarea:focus { border-color: var(--accent); }
+  .slot-field-control textarea { resize: vertical; min-height: 72px; }
+
+  /* ── Imagem: input + upload + thumb com lightbox ───────────────────── */
+  .slot-field-control.img-row .img-row-inner { display: flex; gap: 6px; align-items: stretch; }
+  .slot-field-control.img-row .img-row-inner input { flex: 1; }
+  .upload-btn {
+    padding: 0 12px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); font-size: 12px; font-weight: 600; color: var(--ink-soft);
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; cursor: pointer;
+  }
+  .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .upload-btn.loading { pointer-events: none; opacity: 0.6; }
+
+  .slot-field .thumb {
+    margin-top: 8px; width: 96px; height: 96px; border-radius: 6px;
+    background-size: cover; background-position: center; border: 1px solid var(--line);
+    background-color: var(--bg);
+  }
+  .slot-field .thumb.has-img { cursor: zoom-in; }
+  .slot-field .thumb.has-img:hover { border-color: var(--accent); }
+
+  .mag-lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 600;
+    display: none; align-items: center; justify-content: center; cursor: zoom-out;
+    padding: 24px;
+  }
+  .mag-lightbox.open { display: flex; }
+  .mag-lightbox img { max-width: 100%; max-height: 100%; border-radius: 6px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+
+  /* ── List editor (arrays de itens) ─────────────────────────────────── */
+  .slot-field-control.list-editor { display: flex; flex-direction: column; gap: 8px; }
+  .list-rows { display: flex; flex-direction: column; gap: 8px; }
+  .list-row {
+    display: grid; grid-template-columns: 28px 1fr 72px; gap: 8px;
+    padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+    align-items: start;
+  }
+  .list-row-handle {
+    display: grid; place-items: center; height: 100%;
+    font-family: 'Playfair Display', serif; font-weight: 700; color: var(--muted);
+  }
+  .list-row-handle .idx {
+    width: 22px; height: 22px; display: grid; place-items: center;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 4px; font-size: 11px;
+  }
+  .list-row-fields { display: grid; gap: 6px; }
+  .list-row-fields.inline { grid-template-columns: repeat(2, 1fr); }
+  .list-field { display: flex; flex-direction: column; gap: 3px; }
+  .list-field label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .list-field input[type="text"], .list-field textarea {
+    padding: 6px 8px; border: 1px solid var(--line); border-radius: 5px;
+    background: var(--paper); font-size: 12px; outline: none; font-family: inherit;
+  }
+  .list-field input:focus, .list-field textarea:focus { border-color: var(--accent); }
+  .list-field.w-xs input { max-width: 60px; }
+  .list-field.w-sm input { max-width: 100px; }
+  .list-field.w-md input { max-width: 180px; }
+
+  .list-row-actions { display: flex; flex-direction: column; gap: 4px; }
+  .list-row-actions .act {
+    width: 28px; height: 24px; border: 1px solid var(--line); border-radius: 4px;
+    background: var(--paper); color: var(--ink-soft); font-size: 12px; cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .list-row-actions .act:hover { border-color: var(--accent); color: var(--accent); }
+  .list-row-actions .act.del:hover { border-color: var(--danger); color: var(--danger); }
+
+  .list-toolbar { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+  .list-add {
+    padding: 7px 14px; border: 1px dashed var(--muted); border-radius: 6px;
+    color: var(--muted); font-size: 12px; font-weight: 600; background: transparent; cursor: pointer;
+  }
+  .list-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  .list-add:disabled { opacity: 0.4; cursor: not-allowed; }
+  .list-count { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; }
+  .list-count[data-state="warn"] { color: var(--warn); }
+  .list-count[data-state="err"]  { color: var(--danger); }
+
+  .scalar-image { display: flex; gap: 4px; }
+  .scalar-image input { flex: 1; }
+  .scalar-image .upload-btn { padding: 0 8px; font-size: 11px; }
+
+  .img-row-inline { display: flex; gap: 4px; }
+  .img-row-inline input { flex: 1; }
+  .img-row-inline .upload-btn { padding: 0 8px; font-size: 11px; }
+
+  /* ── Panel de issues (erros/warnings) ──────────────────────────────── */
+  .slot-issues { margin-top: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .issue {
+    padding: 6px 10px; border-radius: 4px; font-size: 11px; font-family: ui-monospace, monospace;
+    line-height: 1.4;
+  }
+  .issue.ok   { background: #dcfce7; color: var(--ok); }
+  .issue.warn { background: #fef3c7; color: var(--warn); }
+  .issue.err  { background: #fee2e2; color: var(--danger); }
+
+  /* ── Page status badge na lista de páginas ─────────────────────────── */
+  .page-item .page-status-badge {
+    width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+    font-size: 0; line-height: 0; flex-shrink: 0;
+  }
+  .page-status-badge[data-state="ok"]    { background: var(--ok); }
+  .page-status-badge[data-state="warn"]  { background: var(--warn); }
+  .page-status-badge[data-state="err"]   { background: var(--danger); }
+  .page-status-badge[data-state="empty"] { background: transparent; border: 1.5px solid var(--line); }
 </style>
 </head>
 <body>
@@ -371,6 +514,8 @@
     templatesBySlug: {},
     dirty: false,
     magazineCss: '', // CSS dos templates embutido no iframe preview
+    slotController: null, // controller do SlotRenderer ativo
+    pageStatuses: {}, // { [pageId]: { state, errors, warnings } } — cache p/ badges
   }
 
   // ===== DOM =====
@@ -529,10 +674,17 @@
       els.pageList.innerHTML = '<div class="empty-state">Selecione ou crie uma edição.</div>'
       return
     }
+    const V = window.MagazineAdmin && window.MagazineAdmin.Validator
     const items = state.pages.map((p, i) => {
-      const tpl = state.templatesBySlug[p.template_slug]
-      const name = tpl?.name || p.template_slug
+      const sec = window.MagazineAdmin && window.MagazineAdmin.Schema.getSectionMeta(p.template_slug)
+      const name = sec?.name || state.templatesBySlug[p.template_slug]?.name || p.template_slug
       const active = p.id === state.currentPageId ? 'active' : ''
+      const status = (state.pageStatuses[p.id] || (V && V.computePageStatus(p)) || { state: 'empty' })
+      state.pageStatuses[p.id] = status
+      const tip = status.state === 'ok' ? 'Válida'
+                : status.state === 'warn' ? `Avisos: ${(status.warnings || []).join(' · ')}`
+                : status.state === 'err'  ? `Erros: ${(status.errors || []).join(' · ')}`
+                : 'Sem conteúdo ainda'
       return `
         <div class="page-item ${active}" draggable="true" data-page-id="${p.id}" data-index="${i}">
           <div class="idx">${i + 1}</div>
@@ -540,6 +692,7 @@
             <div class="tpl-name">${escapeHtml(name)}</div>
             <div class="tpl-slug">${p.template_slug}</div>
           </div>
+          <span class="page-status-badge" data-state="${status.state}" title="${escapeHtml(tip)}"></span>
           <button class="remove" title="Remover" data-remove="${p.id}">×</button>
         </div>
       `
@@ -553,103 +706,64 @@
     if (!page) {
       els.slotsForm.innerHTML = '<div class="empty-state">Selecione uma página para editar.</div>'
       els.slotTemplate.textContent = ''
+      state.slotController = null
       return
     }
-    const tpl = state.templatesBySlug[page.template_slug]
     els.slotTemplate.textContent = page.template_slug
-    if (!tpl) {
-      els.slotsForm.innerHTML = '<div class="empty-state">Template não encontrado.</div>'
-      return
-    }
-    const schema = tpl.slots_schema || {}
-    const required = Array.isArray(schema.required) ? schema.required : []
-    const optional = Array.isArray(schema.optional) ? schema.optional : []
-    const slots = page.slots || {}
 
-    const fieldHtml = (key, isReq) => {
-      const val = slots[key]
-      const isLong = /corpo|lede|texto|subtitulo|legenda|assinatura/.test(key)
-      const isImg = /^foto|_foto|foto_|url$/.test(key) || key.includes('foto') || key.includes('imagem')
-      const isArr = Array.isArray(val) || /items|qas|fotos|marcos|opcoes|caso_|beneficios|contatos/.test(key)
-      const reqMark = isReq ? '<span class="req">*</span>' : ''
-      const hint = isArr ? '<div class="hint">JSON (lista/objeto)</div>'
-        : isImg ? '<div class="hint">URL da imagem</div>' : ''
-      if (isArr) {
-        const v = val ? JSON.stringify(val, null, 2) : ''
-        return `<div class="slot-field">
-          <label>${escapeHtml(key)}${reqMark}</label>
-          <textarea data-slot="${key}" data-json="1" rows="4" placeholder='[]'>${escapeHtml(v)}</textarea>
-          ${hint}
-        </div>`
-      }
-      if (isLong) {
-        return `<div class="slot-field">
-          <label>${escapeHtml(key)}${reqMark}</label>
-          <textarea data-slot="${key}" rows="3">${escapeHtml(val || '')}</textarea>
-        </div>`
-      }
-      if (isImg) {
-        const thumbUrl = val ? (window.MagazineRenderer?.normalizeUrl(val) || val) : ''
-        const thumb = thumbUrl ? `<div class="thumb" style="background-image:url('${escapeHtml(thumbUrl)}')"></div>` : ''
-        return `<div class="slot-field" data-field-key="${key}">
-          <label>${escapeHtml(key)}${reqMark}</label>
-          <div class="img-row">
-            <input type="text" data-slot="${key}" value="${escapeHtml(val || '')}" placeholder="URL ou use upload →" />
-            <button type="button" class="upload-btn" data-upload="${key}">↑ Upload</button>
-          </div>
-          ${thumb}
-          ${hint}
-        </div>`
-      }
-      return `<div class="slot-field">
-        <label>${escapeHtml(key)}${reqMark}</label>
-        <input type="text" data-slot="${key}" value="${escapeHtml(val || '')}" />
-        ${hint}
-      </div>`
-    }
-
-    const body = [
-      ...required.map(k => fieldHtml(k, true)),
-      ...optional.map(k => fieldHtml(k, false)),
-    ].join('')
-
-    els.slotsForm.innerHTML = (body || '<div class="empty-state">Template sem slots definidos.</div>') + `
+    // Host onde o SlotRenderer vai montar + botão de salvar separado
+    els.slotsForm.innerHTML = `
+      <div id="slotMount"></div>
       <div class="slots-actions">
         <button class="btn save" id="saveSlotsBtn" disabled>Salvar alterações</button>
       </div>
     `
+    const mount = document.getElementById('slotMount')
 
-    els.slotsForm.querySelectorAll('[data-slot]').forEach(inp => {
-      inp.addEventListener('input', () => {
+    state.slotController = window.MagazineAdmin.SlotRenderer.render(mount, page, {
+      onChange: () => {
         state.dirty = true
-        document.getElementById('saveSlotsBtn').disabled = false
+        const saveBtn = document.getElementById('saveSlotsBtn')
+        if (saveBtn) saveBtn.disabled = false
         schedulePreviewRefresh()
-      })
+      },
+      onValidate: (status) => {
+        state.pageStatuses[page.id] = status
+        // Atualiza badge da página atual sem re-render completo
+        const activeItem = els.pageList.querySelector(`.page-item[data-page-id="${page.id}"] .page-status-badge`)
+        if (activeItem) {
+          activeItem.dataset.state = status.state
+          activeItem.title = status.state === 'ok' ? 'Válida'
+            : status.state === 'warn' ? `Avisos: ${(status.warnings || []).join(' · ')}`
+            : status.state === 'err'  ? `Erros: ${(status.errors || []).join(' · ')}`
+            : 'Sem conteúdo ainda'
+        }
+      },
+      onUpload: handleSlotUpload,
     })
-    els.slotsForm.querySelectorAll('[data-upload]').forEach(btn => {
-      btn.addEventListener('click', () => triggerUpload(btn.dataset.upload, btn))
-    })
+
     document.getElementById('saveSlotsBtn').addEventListener('click', saveSlots)
   }
 
-  // ===== Upload Storage =====
-  function triggerUpload(slotKey, btn) {
+  // ===== Upload Storage (integrado com widgets) =====
+  // Handler invocado pelos widgets: recebe {key, button, onUploaded(url)}
+  function handleSlotUpload({ key, button, onUploaded }) {
+    if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*'
     input.onchange = () => {
       const file = input.files && input.files[0]
-      if (file) uploadImage(slotKey, file, btn)
+      if (file) uploadFile(file, key, button, onUploaded)
     }
     input.click()
   }
 
-  async function uploadImage(slotKey, file, btn) {
-    if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
+  async function uploadFile(file, slotKey, btn, onUploaded) {
     const maxBytes = 10 * 1024 * 1024
     if (file.size > maxBytes) { toast('Arquivo maior que 10MB', 'err'); return }
-    btn.classList.add('loading')
-    btn.textContent = '↑ Enviando…'
+    const origLabel = btn ? btn.textContent : ''
+    if (btn) { btn.classList.add('loading'); btn.textContent = '…' }
     try {
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
       const uuid = crypto.randomUUID()
@@ -662,10 +776,8 @@
       const { data: pub } = sb.storage.from('magazine-assets').getPublicUrl(path)
       const url = pub.publicUrl
 
-      // dimensoes do arquivo
       const dims = await readImageDims(file).catch(() => ({ width: null, height: null }))
 
-      // registra em magazine_assets (opcional — se falhar, URL ja funciona)
       try {
         await sb.rpc('magazine_register_asset', {
           p_edition_id: state.currentEdition.id,
@@ -679,27 +791,12 @@
         })
       } catch (e) { console.warn('register_asset falhou (upload OK):', e.message) }
 
-      // atualiza input + thumb + preview
-      const field = els.slotsForm.querySelector(`[data-field-key="${slotKey}"]`)
-      if (field) {
-        const inp = field.querySelector(`[data-slot="${slotKey}"]`)
-        inp.value = url
-        let thumb = field.querySelector('.thumb')
-        if (!thumb) {
-          thumb = document.createElement('div')
-          thumb.className = 'thumb'
-          field.querySelector('.img-row').insertAdjacentElement('afterend', thumb)
-        }
-        thumb.style.backgroundImage = `url('${url}')`
-      }
-      state.dirty = true
-      document.getElementById('saveSlotsBtn').disabled = false
+      if (typeof onUploaded === 'function') onUploaded(url)
       toast('Imagem enviada', 'ok')
     } catch (err) {
       toast('Erro upload: ' + err.message, 'err')
     } finally {
-      btn.classList.remove('loading')
-      btn.textContent = '↑ Upload'
+      if (btn) { btn.classList.remove('loading'); btn.textContent = origLabel || '↑ Upload' }
     }
   }
 
@@ -768,23 +865,12 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   }
 
   // Le valores atuais do form (ainda nao salvos) para preview em tempo real
+  // Prefere controller do SlotRenderer; fallback p/ slots persistidos.
   function readSlotsFromForm(page) {
-    const base = Object.assign({}, page.slots || {})
-    if (!els.slotsForm) return base
-    els.slotsForm.querySelectorAll('[data-slot]').forEach(inp => {
-      const key = inp.dataset.slot
-      const val = inp.value
-      if (inp.dataset.json === '1') {
-        const t = (val || '').trim()
-        if (!t) { delete base[key]; return }
-        try { base[key] = JSON.parse(t) } catch (e) { /* keep previous */ }
-      } else if (val) {
-        base[key] = val
-      } else {
-        delete base[key]
-      }
-    })
-    return base
+    if (state.slotController && page.id === state.currentPageId) {
+      return state.slotController.readSlots()
+    }
+    return Object.assign({}, page.slots || {})
   }
 
   function renderTemplateModal() {
@@ -976,25 +1062,16 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   async function saveSlots() {
     const page = state.pages.find(p => p.id === state.currentPageId)
     if (!page) return
-    const slots = {}
-    els.slotsForm.querySelectorAll('[data-slot]').forEach(inp => {
-      const key = inp.dataset.slot
-      let val = inp.value
-      if (inp.dataset.json === '1') {
-        const trimmed = (val || '').trim()
-        if (!trimmed) return
-        try { val = JSON.parse(trimmed) }
-        catch (e) { throw new Error(`JSON inválido em "${key}": ${e.message}`) }
-      } else {
-        if (!val) return
-      }
-      slots[key] = val
-    })
+    if (!state.slotController) return
+    const slots = state.slotController.readSlots()
     try {
       await updatePageSlots(page.id, slots)
       page.slots = slots
       state.dirty = false
       document.getElementById('saveSlotsBtn').disabled = true
+      // Status atualizado pós-save (sobrescreve cache)
+      state.pageStatuses[page.id] = state.slotController.getStatus()
+      renderPageList()
       renderPreview()
       toast('Conteúdo salvo', 'ok')
     } catch (err) { toast('Erro: ' + err.message, 'err') }
@@ -1151,7 +1228,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     }
   }
 
-  window.MagazineAdmin = { closeTemplateModal }
+  window.MagazineAdmin = window.MagazineAdmin || {}
+  window.MagazineAdmin.closeTemplateModal = closeTemplateModal
   document.addEventListener('DOMContentLoaded', init)
 })()
 </script>
