@@ -240,6 +240,21 @@
       ],
     },
 
+    // ── Revista Digital (Beauty & Health) ────────────────────────
+    {
+      section: 'revista',
+      icon:    'book-open',
+      label:   'Revista Digital',
+      roles:   [ROLES.OWNER, ROLES.ADMIN],
+      plans:   [],
+      pages: [
+        { page: 'revista-intake',   label: 'Montar Edição',     breadcrumb: 'Revista > Montar Edição',   externalUrl: 'magazine-intake.html',   highlight: true },
+        { page: 'revista-gallery',  label: 'Galeria de Formatos', breadcrumb: 'Revista > Galeria',        externalUrl: 'magazine-gallery.html' },
+        { page: 'revista-playbook', label: 'Playbook Editorial', breadcrumb: 'Revista > Playbook',        externalUrl: 'docs/magazine-editor-playbook.md' },
+        { page: 'revista-preview',  label: 'Protótipo (mockup)', breadcrumb: 'Revista > Protótipo',       externalUrl: 'revista.html' },
+      ],
+    },
+
     // ── Mira (Assistente Interno) ────────────────────────────────
     {
       section: 'mira',

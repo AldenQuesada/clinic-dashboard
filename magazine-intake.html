@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Beauty &amp; Health — Intake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg: #f4f1ec;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --muted: #8a8178;
+    --line: #e5ddd2;
+    --accent: #7a1f2b;
+    --accent-soft: #f5e9eb;
+    --ok: #2d7a43;
+    --warn: #b45309;
+    --danger: #b91c1c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; }
+  input, textarea, select { font: inherit; color: inherit; }
+
+  .page { max-width: 1060px; margin: 0 auto; padding: 36px 32px 120px; }
+
+  /* Header */
+  header.top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+  header.top h1 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; letter-spacing: -0.01em; }
+  header.top h1 em { font-style: italic; color: var(--accent); }
+  header.top .sub { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+  header.top nav { display: flex; gap: 10px; }
+  header.top nav button {
+    padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); font-size: 13px; font-weight: 500;
+  }
+  header.top nav button:hover { border-color: var(--accent); color: var(--accent); }
+  header.top nav button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  header.top nav button.primary:hover { background: var(--accent); border-color: var(--accent); }
+  header.top nav button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Blocks */
+  .block {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    padding: 24px 28px; margin-bottom: 20px;
+  }
+  .block > h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .block > .desc { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+  label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
+  label:first-child, label.first { margin-top: 0; }
+  input[type="text"], textarea, select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); font-size: 14px; outline: none; transition: border-color .15s;
+  }
+  input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; font-family: inherit; line-height: 1.55; }
+
+  /* Photo library */
+  .photo-drop {
+    border: 2px dashed var(--line); border-radius: 10px; padding: 32px; text-align: center;
+    color: var(--muted); font-size: 13px; transition: all .2s; cursor: pointer;
+  }
+  .photo-drop.over { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .photo-drop input[type=file] { display: none; }
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 16px; }
+  .photo-card {
+    border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper);
+    display: flex; flex-direction: column;
+  }
+  .photo-card .thumb { width: 100%; aspect-ratio: 1; background-size: cover; background-position: center; background-color: #ddd; }
+  .photo-card .meta { padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+  .photo-card .meta input { font-size: 12px; padding: 6px 8px; }
+  .photo-card .meta .del { align-self: flex-end; font-size: 11px; color: var(--danger); padding: 2px 6px; }
+  .photo-card .meta .del:hover { text-decoration: underline; }
+  .photo-card .ref { font-size: 10px; color: var(--muted); font-family: ui-monospace, monospace; text-align: center; padding: 2px; background: var(--bg); }
+
+  /* Section menu */
+  .menu {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin-top: 4px;
+  }
+  .menu-cat { grid-column: 1 / -1; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-top: 12px; margin-bottom: 4px; }
+  .menu-cat:first-child { margin-top: 0; }
+  .sec-btn {
+    border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+    background: var(--paper); text-align: left; display: flex; flex-direction: column; gap: 3px;
+    transition: all .15s;
+  }
+  .sec-btn:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
+  .sec-btn .sn { font-size: 14px; font-weight: 600; }
+  .sec-btn .ss { font-size: 10px; color: var(--muted); font-family: ui-monospace, monospace; }
+
+  /* Section list (added sections) */
+  .sections-list { display: flex; flex-direction: column; gap: 12px; }
+  .section-item {
+    border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden;
+  }
+  .section-item header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; user-select: none;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .section-item.collapsed header { border-bottom: none; }
+  .section-item header .idx {
+    width: 28px; height: 28px; display: grid; place-items: center;
+    background: var(--ink); color: #fff; border-radius: 4px; font-size: 12px; font-weight: 700;
+  }
+  .section-item header .info { flex: 1; min-width: 0; }
+  .section-item header .info .nm { font-size: 14px; font-weight: 600; }
+  .section-item header .info .sl { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; }
+  .section-item header .status-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--muted);
+  }
+  .section-item header .status-dot.ok { background: var(--ok); }
+  .section-item header .status-dot.err { background: var(--danger); }
+  .section-item header .status-dot.warn { background: var(--warn); }
+  .section-item header .actions { display: flex; gap: 6px; }
+  .section-item header .actions button {
+    padding: 6px 10px; font-size: 12px; border-radius: 4px; color: var(--ink-soft);
+  }
+  .section-item header .actions button:hover { background: var(--line); }
+  .section-item header .actions .rm:hover { background: var(--accent-soft); color: var(--danger); }
+  .section-item .body { padding: 20px 22px; }
+  .section-item.collapsed .body { display: none; }
+  .section-item .validation {
+    padding: 10px 14px; font-size: 12px; border-radius: 6px; margin-top: 12px;
+  }
+  .section-item .validation.ok { background: #dcfce7; color: var(--ok); }
+  .section-item .validation.err { background: #fee2e2; color: var(--danger); }
+  .section-item .validation.warn { background: #fef3c7; color: var(--warn); }
+  .section-item .validation strong { display: block; margin-bottom: 4px; }
+  .section-item .validation ul { padding-left: 18px; }
+
+  /* Fixed bottom bar */
+  .bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 80;
+    background: var(--paper); border-top: 1px solid var(--line); padding: 14px 32px;
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+  }
+  .bottom-bar .info { font-size: 13px; color: var(--ink-soft); }
+  .bottom-bar .info strong { color: var(--ink); }
+  .bottom-bar .actions { display: flex; gap: 10px; }
+  .bottom-bar button {
+    padding: 10px 18px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  }
+  .bottom-bar .save { border: 1px solid var(--line); background: var(--paper); }
+  .bottom-bar .save:hover { border-color: var(--ink); }
+  .bottom-bar .submit { background: var(--ink); color: #fff; }
+  .bottom-bar .submit:hover { background: var(--accent); }
+  .bottom-bar .submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 80px; right: 20px; z-index: 200;
+    padding: 12px 18px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 13px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transform: translateY(100px); opacity: 0; transition: all .25s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.ok { background: var(--ok); }
+  .toast.err { background: var(--danger); }
+
+  /* Auth overlay (same as admin) */
+  .auth-overlay { position: fixed; inset: 0; background: rgba(26,26,26,0.6); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 300; padding: 24px; }
+  .auth-overlay.open { display: flex; }
+  .auth-card { background: var(--paper); border-radius: 14px; width: 100%; max-width: 380px; padding: 32px; box-shadow: 0 30px 80px rgba(0,0,0,0.3); }
+  .auth-card h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .auth-card .sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .auth-card input { margin-top: 0; }
+  .auth-card button.submit { width: 100%; padding: 12px; margin-top: 18px; background: var(--ink); color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .auth-card button.submit:hover { background: var(--accent); }
+  .auth-card button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-card .err { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
+
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  .counter { font-size: 11px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .counter.over { color: var(--danger); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="top">
+    <div>
+      <h1>Beauty &amp; Health <em>— Intake</em></h1>
+      <div class="sub">Material bruto · Claude produz a edição</div>
+    </div>
+    <nav>
+      <button id="loadDraftBtn">Carregar rascunho</button>
+      <button id="newDraftBtn" class="primary">+ Nova edição</button>
+    </nav>
+  </header>
+
+  <!-- 1. Brief -->
+  <section class="block">
+    <h2>1. Brief da edição</h2>
+    <div class="desc">Responda em 3 linhas cada. Claude usa isso para decidir tom, ordem e chamadas.</div>
+    <label class="first">Mês · Ano (slug)</label>
+    <input type="text" id="monthYear" placeholder="abril-2026" />
+    <label>Tema / gancho principal</label>
+    <textarea id="theme" placeholder="Ex: Smooth Eyes como alternativa não-cirúrgica para olhar cansado em pacientes 45+"></textarea>
+    <label>Tom desejado</label>
+    <textarea id="tone" placeholder="Ex: editorial, cuidadoso, pessoal — sem medicalês"></textarea>
+    <label>Objetivo</label>
+    <textarea id="objective" placeholder="Ex: reativar base dormente + gerar 8-15 agendamentos de avaliação via WhatsApp"></textarea>
+  </section>
+
+  <!-- 2. Biblioteca de fotos -->
+  <section class="block">
+    <h2>2. Biblioteca de fotos</h2>
+    <div class="desc">Arraste ou clique para enviar. Para cada foto, descreva o que é (Claude usa isso para escolher onde aplicar).</div>
+    <div class="photo-drop" id="photoDrop">
+      <input type="file" id="photoInput" multiple accept="image/*" />
+      Clique ou arraste imagens aqui (PNG, JPG, WEBP · máx 10 MB cada)
+    </div>
+    <div class="photo-grid" id="photoGrid"></div>
+  </section>
+
+  <!-- 3. Menu de seções -->
+  <section class="block">
+    <h2>3. Adicionar seções</h2>
+    <div class="desc">Clique para adicionar. A ordem no sumário fica abaixo (pode arrastar para reordenar).</div>
+    <div class="menu" id="sectionMenu"></div>
+  </section>
+
+  <!-- 4. Sumário montado -->
+  <section class="block">
+    <h2>4. Sumário desta edição</h2>
+    <div class="desc">Preencha o conteúdo de cada seção. Validação aparece em tempo real (verde = ok, vermelho = ajustar).</div>
+    <div class="sections-list" id="sectionsList">
+      <div style="color: var(--muted); font-style: italic; padding: 24px; text-align: center;">Nenhuma seção adicionada. Escolha no menu acima.</div>
+    </div>
+  </section>
+
+  <!-- 5. Referências -->
+  <section class="block">
+    <h2>5. Referências &amp; notas</h2>
+    <div class="desc">URLs, fontes, estudos, posts de redes que Claude deve consultar. Livre.</div>
+    <textarea id="referencesText" rows="5" placeholder="Uma referência por linha&#10;https://...&#10;Post Instagram @xxx de 15/03: menção Fotona..."></textarea>
+  </section>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="info">
+    <span id="briefIdLabel" style="color: var(--muted); font-size: 12px;">Rascunho não salvo</span>
+    · <strong id="sectionsCount">0</strong> seções · <strong id="photosCount">0</strong> fotos
+  </div>
+  <div class="actions">
+    <button class="save" id="saveBtn">Salvar rascunho</button>
+    <button class="submit" id="submitBtn">Enviar pro Claude</button>
+  </div>
+</div>
+
+<!-- Auth overlay -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <h2>Entrar</h2>
+    <div class="sub">Login para salvar e enviar.</div>
+    <form id="authForm">
+      <label class="first">E-mail</label>
+      <input type="text" id="authEmail" required autocomplete="username" />
+      <label>Senha</label>
+      <input type="password" id="authPwd" required autocomplete="current-password" />
+      <button type="submit" class="submit" id="authSubmit">Entrar</button>
+      <div class="err" id="authErr"></div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+;(function () {
+  'use strict'
+
+  const sb = window.supabase.createClient(
+    window.ClinicEnv.SUPABASE_URL,
+    window.ClinicEnv.SUPABASE_KEY,
+    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
+  )
+
+  const LS_BRIEF = 'magazine_intake_current_brief'
+
+  // ===== Catalogo de secoes (do playbook) =====
+  const SECTIONS = [
+    // Capas
+    { slug: 't01_cover_hero_dark', name: 'Capa · Hero Dark', cat: 'cover', order: 1,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 40 chars · use *itálico* em palavra-chave)', type: 'text', max: 40 },
+        { k: 'foto_hero', label: 'Foto hero (link da biblioteca ou URL)', type: 'photo-ref' },
+        { k: 'edicao_label', label: 'Label edição (ex: ABRIL · 2026 · Nº 01 · máx 30)', type: 'text', max: 30 },
+        { k: 'subtitulo', label: 'Subtítulo (opcional · máx 140)', type: 'textarea', max: 140, optional: true },
+        { k: 'tag', label: 'Tag (opcional · máx 18)', type: 'text', max: 18, optional: true },
+      ]
+    },
+    { slug: 't02_cover_hero_light', name: 'Capa · Hero Light', cat: 'cover', order: 2,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 40)', type: 'text', max: 40 },
+        { k: 'foto_hero', label: 'Foto hero', type: 'photo-ref' },
+        { k: 'subtitulo', label: 'Subtítulo (opcional · máx 140)', type: 'textarea', max: 140, optional: true },
+      ]
+    },
+    { slug: 't03_cover_triptych', name: 'Capa · Tripla', cat: 'cover', order: 3,
+      fields: [
+        { k: 'foto_1', label: 'Foto 1', type: 'photo-ref' },
+        { k: 'titulo_1', label: 'Título 1 (máx 22)', type: 'text', max: 22 },
+        { k: 'foto_2', label: 'Foto 2', type: 'photo-ref' },
+        { k: 'titulo_2', label: 'Título 2 (máx 22)', type: 'text', max: 22 },
+        { k: 'foto_3', label: 'Foto 3', type: 'photo-ref' },
+        { k: 'titulo_3', label: 'Título 3 (máx 22)', type: 'text', max: 22 },
+      ]
+    },
+    // Estruturais
+    { slug: 't04_toc_editorial', name: 'Sumário', cat: 'structural', order: 10,
+      fields: [
+        { k: 'titulo', label: 'Título (ex: Nesta edição · máx 24)', type: 'text', max: 24 },
+        { k: 'kicker', label: 'Kicker (opcional · máx 12)', type: 'text', max: 12, optional: true },
+        { k: 'lede', label: 'Lede explicativo (opcional · máx 180)', type: 'textarea', max: 180, optional: true },
+        { k: 'items', label: 'Itens do sumário (um por linha: "01 | título | categoria")', type: 'pipe-list', parse: 'items' },
+      ]
+    },
+    { slug: 't05_editorial_letter', name: 'Carta Editorial', cat: 'structural', order: 11,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 50)', type: 'text', max: 50 },
+        { k: 'foto_autora', label: 'Foto autora', type: 'photo-ref' },
+        { k: 'corpo', label: 'Corpo (180-280 palavras · separe parágrafos com linha em branco)', type: 'textarea', rows: 12, wordsMin: 180, wordsMax: 280 },
+        { k: 'assinatura', label: 'Assinatura (nome)', type: 'text', max: 60 },
+      ]
+    },
+    { slug: 't06_back_cta', name: 'Contracapa · CTA', cat: 'structural', order: 99,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 50)', type: 'text', max: 50 },
+        { k: 'contatos', label: 'Contatos (um por linha: "Label | Valor")', type: 'pipe-list', parse: 'contatos' },
+        { k: 'cta_texto', label: 'CTA texto (all caps · máx 30)', type: 'text', max: 30 },
+        { k: 'cta_link', label: 'CTA link (URL)', type: 'text' },
+        { k: 'proxima_edicao', label: 'Teaser próxima edição (opcional · máx 60)', type: 'text', max: 60, optional: true },
+      ]
+    },
+    // Matérias
+    { slug: 't07_feature_double', name: 'Matéria · Dupla (texto + foto)', cat: 'feature', order: 20,
+      fields: [
+        { k: 'kicker', label: 'Kicker (categoria · all caps · máx 22)', type: 'text', max: 22 },
+        { k: 'titulo', label: 'Título (máx 70)', type: 'text', max: 70 },
+        { k: 'lede', label: 'Lede (140-200 chars)', type: 'textarea', max: 200, min: 100 },
+        { k: 'corpo', label: 'Corpo (400-700 palavras · parágrafos separados por linha em branco)', type: 'textarea', rows: 15, wordsMin: 400, wordsMax: 700 },
+        { k: 'foto_hero', label: 'Foto hero (portrait)', type: 'photo-ref' },
+        { k: 'byline', label: 'Byline (opcional)', type: 'text', max: 60, optional: true },
+      ]
+    },
+    { slug: 't08_feature_fullbleed', name: 'Matéria · Full Bleed', cat: 'feature', order: 21,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 60)', type: 'text', max: 60 },
+        { k: 'foto_full', label: 'Foto full (landscape)', type: 'photo-ref' },
+        { k: 'lede', label: 'Lede (máx 160)', type: 'textarea', max: 160 },
+        { k: 'overlay_color', label: 'Overlay color (opcional · ex: rgba(0,0,0,0.85))', type: 'text', optional: true },
+      ]
+    },
+    { slug: 't09_feature_triptych', name: 'Matéria · 3 Blocos', cat: 'feature', order: 22,
+      fields: [
+        { k: 'foto_1', label: 'Foto 1', type: 'photo-ref' },
+        { k: 'legenda_1', label: 'Legenda 1 (opcional · máx 40)', type: 'text', max: 40, optional: true },
+        { k: 'texto_central', label: 'Texto central (máx 180)', type: 'textarea', max: 180 },
+        { k: 'foto_2', label: 'Foto 2', type: 'photo-ref' },
+        { k: 'legenda_2', label: 'Legenda 2 (opcional · máx 40)', type: 'text', max: 40, optional: true },
+      ]
+    },
+    { slug: 't10_interview', name: 'Entrevista Q&A', cat: 'feature', order: 23,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 60)', type: 'text', max: 60 },
+        { k: 'foto_entrevistado', label: 'Foto entrevistado', type: 'photo-ref' },
+        { k: 'nome', label: 'Nome (máx 40)', type: 'text', max: 40 },
+        { k: 'titulo_prof', label: 'Cargo/credencial (opcional · máx 50)', type: 'text', max: 50, optional: true },
+        { k: 'qas', label: 'Perguntas e respostas (formato: Q: pergunta\\nA: resposta\\n--- separa pares)', type: 'textarea', rows: 12, parse: 'qas' },
+      ]
+    },
+    { slug: 't11_product_highlight', name: 'Destaque de Tratamento', cat: 'feature', order: 24,
+      fields: [
+        { k: 'titulo', label: 'Título (nome do tratamento · máx 40)', type: 'text', max: 40 },
+        { k: 'subtitulo', label: 'Subtítulo (opcional · máx 100)', type: 'text', max: 100, optional: true },
+        { k: 'foto', label: 'Foto', type: 'photo-ref' },
+        { k: 'beneficios', label: 'Benefícios (um por linha · 3-6)', type: 'textarea', rows: 6, parse: 'benefits' },
+        { k: 'preco_sugerido', label: 'Preço sugerido (opcional · ex: "a partir de R$ 1.200")', type: 'text', optional: true },
+        { k: 'cta', label: 'CTA texto (máx 30)', type: 'text', max: 30 },
+      ]
+    },
+    // Visuais
+    { slug: 't12_before_after_pair', name: 'Antes/Depois · Par', cat: 'visual', order: 30,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 50 · ex: "Ana, 58 anos: o olhar *antes* e *depois*")', type: 'text', max: 50 },
+        { k: 'foto_antes', label: 'Foto antes (mesmo ângulo/luz)', type: 'photo-ref' },
+        { k: 'foto_depois', label: 'Foto depois (mesmo ângulo/luz)', type: 'photo-ref' },
+        { k: 'meta', label: 'Meta (protocolo · máx 140)', type: 'text', max: 140 },
+        { k: 'stats', label: 'Stats (um por linha · "valor | label" · 2-4)', type: 'pipe-list', parse: 'stats' },
+      ]
+    },
+    { slug: 't13_before_after_quad', name: 'Antes/Depois · 2 casos', cat: 'visual', order: 31,
+      fields: [
+        { k: 'caso_1_antes', label: 'Caso 1 · Foto antes', type: 'photo-ref' },
+        { k: 'caso_1_depois', label: 'Caso 1 · Foto depois', type: 'photo-ref' },
+        { k: 'caso_1_label', label: 'Caso 1 · Label (máx 40)', type: 'text', max: 40 },
+        { k: 'caso_2_antes', label: 'Caso 2 · Foto antes', type: 'photo-ref' },
+        { k: 'caso_2_depois', label: 'Caso 2 · Foto depois', type: 'photo-ref' },
+        { k: 'caso_2_label', label: 'Caso 2 · Label (máx 40)', type: 'text', max: 40 },
+      ]
+    },
+    { slug: 't14_mosaic_gallery', name: 'Galeria Mosaico', cat: 'visual', order: 32,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 40)', type: 'text', max: 40 },
+        { k: 'fotos', label: 'Fotos (uma URL/ref por linha · 3-5 · 1ª é a "hero")', type: 'textarea', rows: 6, parse: 'photo-list' },
+        { k: 'legenda', label: 'Legenda (opcional · máx 120)', type: 'text', max: 120, optional: true },
+      ]
+    },
+    { slug: 't15_evolution_timeline', name: 'Timeline de Evolução', cat: 'visual', order: 33,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 50)', type: 'text', max: 50 },
+        { k: 'marcos', label: 'Marcos (um por linha · "data | URL-foto | legenda" · 3-6)', type: 'pipe-list', parse: 'marcos' },
+      ]
+    },
+    // Interativos
+    { slug: 't16_quiz_cta', name: 'Quiz · CTA', cat: 'interactive', order: 40,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 50)', type: 'text', max: 50 },
+        { k: 'lede', label: 'Lede (máx 180)', type: 'textarea', max: 180 },
+        { k: 'quiz_slug', label: 'Quiz slug (aparece em quiz-render.html?q=SLUG)', type: 'text' },
+        { k: 'recompensas', label: 'Recompensas (uma por linha · "título | descrição" · 2-4)', type: 'pipe-list', parse: 'recompensas' },
+      ]
+    },
+    { slug: 't17_poll', name: 'Enquete', cat: 'interactive', order: 41,
+      fields: [
+        { k: 'pergunta', label: 'Pergunta (máx 140 · termine com "?")', type: 'text', max: 140 },
+        { k: 'opcoes', label: 'Opções (uma por linha · 2-4 · máx 50 cada)', type: 'textarea', rows: 5, parse: 'list' },
+      ]
+    },
+    // Extras
+    { slug: 't18_stat_feature', name: 'Dado em Destaque', cat: 'extra', order: 50,
+      fields: [
+        { k: 'numero', label: 'Número (ex: 93% · máx 10)', type: 'text', max: 10 },
+        { k: 'titulo', label: 'Contexto (máx 120)', type: 'textarea', max: 120 },
+        { k: 'fonte', label: 'Fonte (máx 100)', type: 'text', max: 100 },
+      ]
+    },
+    { slug: 't19_ritual_steps', name: 'Passos de Ritual', cat: 'extra', order: 51,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 50)', type: 'text', max: 50 },
+        { k: 'passos', label: 'Passos (um por linha · "título | descrição" · 3-6)', type: 'pipe-list', parse: 'passos' },
+      ]
+    },
+    { slug: 't20_myth_vs_fact', name: 'Mito vs Fato', cat: 'extra', order: 52,
+      fields: [
+        { k: 'titulo', label: 'Título (máx 40)', type: 'text', max: 40 },
+        { k: 'pares', label: 'Pares (formato: Mito: ...\\nFato: ...\\n--- separa pares · 3-5)', type: 'textarea', rows: 10, parse: 'mitos' },
+      ]
+    },
+  ]
+
+  const CAT_NAMES = { cover: 'Capas', structural: 'Estruturais', feature: 'Matérias', visual: 'Visuais', interactive: 'Interativos', extra: 'Extras' }
+
+  // ===== State =====
+  const state = {
+    briefId: null,
+    theme: '', tone: '', objective: '', monthYear: '',
+    sections: [],      // [{slug, content: {...raw strings}}]
+    photos: [],        // [{ref, url, assetId, alt, size}]
+    referencesText: '',
+    validation: {},    // sectionIndex -> {ok, errors, warnings}
+  }
+
+  // ===== DOM =====
+  const $ = (id) => document.getElementById(id)
+  const el = {
+    monthYear: $('monthYear'), theme: $('theme'), tone: $('tone'), objective: $('objective'),
+    photoDrop: $('photoDrop'), photoInput: $('photoInput'), photoGrid: $('photoGrid'),
+    sectionMenu: $('sectionMenu'), sectionsList: $('sectionsList'),
+    referencesText: $('referencesText'),
+    briefIdLabel: $('briefIdLabel'), sectionsCount: $('sectionsCount'), photosCount: $('photosCount'),
+    saveBtn: $('saveBtn'), submitBtn: $('submitBtn'), loadDraftBtn: $('loadDraftBtn'), newDraftBtn: $('newDraftBtn'),
+    authOverlay: $('authOverlay'), authForm: $('authForm'),
+    toast: $('toast'),
+  }
+
+  let toastTimer = null
+  function toast(msg, kind) {
+    el.toast.textContent = msg
+    el.toast.className = 'toast show ' + (kind || '')
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => el.toast.classList.remove('show'), 2800)
+  }
+
+  // ===== Auth =====
+  async function ensureAuth() {
+    const { data: { session } } = await sb.auth.getSession()
+    if (session && session.user) return true
+    return new Promise(resolve => {
+      el.authOverlay.classList.add('open')
+      $('authEmail').focus()
+      el.authForm.onsubmit = async (e) => {
+        e.preventDefault()
+        const submit = $('authSubmit'), err = $('authErr')
+        err.textContent = ''; submit.disabled = true; submit.textContent = 'Entrando…'
+        const email = $('authEmail').value.trim()
+        const pwd = $('authPwd').value
+        const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd })
+        submit.disabled = false; submit.textContent = 'Entrar'
+        if (error) { err.textContent = error.message; return }
+        el.authOverlay.classList.remove('open')
+        resolve(data.user)
+      }
+    })
+  }
+
+  // ===== Section Menu =====
+  function renderSectionMenu() {
+    const byCat = {}
+    SECTIONS.forEach(s => { (byCat[s.cat] = byCat[s.cat] || []).push(s) })
+    const order = ['cover', 'structural', 'feature', 'visual', 'interactive', 'extra']
+    let html = ''
+    order.forEach(cat => {
+      if (!byCat[cat]) return
+      html += `<div class="menu-cat">${CAT_NAMES[cat]}</div>`
+      byCat[cat].forEach(s => {
+        html += `<button class="sec-btn" data-slug="${s.slug}"><div class="sn">${s.name}</div><div class="ss">${s.slug}</div></button>`
+      })
+    })
+    el.sectionMenu.innerHTML = html
+    el.sectionMenu.querySelectorAll('[data-slug]').forEach(b => {
+      b.addEventListener('click', () => addSection(b.dataset.slug))
+    })
+  }
+
+  function addSection(slug) {
+    const def = SECTIONS.find(s => s.slug === slug)
+    if (!def) return
+    const content = {}
+    def.fields.forEach(f => { content[f.k] = '' })
+    state.sections.push({ slug, content })
+    renderSectionsList()
+    toast(`"${def.name}" adicionada`, 'ok')
+  }
+
+  function removeSection(idx) {
+    if (!confirm('Remover esta seção?')) return
+    state.sections.splice(idx, 1)
+    delete state.validation[idx]
+    renderSectionsList()
+  }
+
+  function moveSection(idx, dir) {
+    const tgt = idx + dir
+    if (tgt < 0 || tgt >= state.sections.length) return
+    ;[state.sections[idx], state.sections[tgt]] = [state.sections[tgt], state.sections[idx]]
+    renderSectionsList()
+  }
+
+  function renderSectionsList() {
+    if (!state.sections.length) {
+      el.sectionsList.innerHTML = '<div style="color: var(--muted); font-style: italic; padding: 24px; text-align: center;">Nenhuma seção adicionada. Escolha no menu acima.</div>'
+      updateCounts()
+      return
+    }
+    el.sectionsList.innerHTML = state.sections.map((sec, i) => {
+      const def = SECTIONS.find(s => s.slug === sec.slug)
+      if (!def) return ''
+      const v = state.validation[i] || {}
+      const dotCls = v.errors && v.errors.length ? 'err' : (v.warnings && v.warnings.length ? 'warn' : (v.ok ? 'ok' : ''))
+      return `
+        <div class="section-item" data-idx="${i}">
+          <header>
+            <div class="idx">${i + 1}</div>
+            <div class="info"><div class="nm">${def.name}</div><div class="sl">${sec.slug}</div></div>
+            <div class="status-dot ${dotCls}" title="${v.errors?.join(', ') || v.warnings?.join(', ') || (v.ok ? 'OK' : '')}"></div>
+            <div class="actions">
+              <button data-up="${i}" title="Subir">↑</button>
+              <button data-down="${i}" title="Descer">↓</button>
+              <button class="rm" data-rm="${i}" title="Remover">×</button>
+            </div>
+          </header>
+          <div class="body">
+            ${def.fields.map(f => fieldHtml(i, f, sec.content[f.k] || '')).join('')}
+            ${renderValidation(v)}
+          </div>
+        </div>`
+    }).join('')
+
+    el.sectionsList.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); removeSection(+b.dataset.rm) }))
+    el.sectionsList.querySelectorAll('[data-up]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); moveSection(+b.dataset.up, -1) }))
+    el.sectionsList.querySelectorAll('[data-down]').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); moveSection(+b.dataset.down, 1) }))
+    el.sectionsList.querySelectorAll('[data-field]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const [idx, key] = inp.dataset.field.split('|')
+        state.sections[+idx].content[key] = inp.value
+        updateCounter(inp)
+        scheduleValidate(+idx)
+      })
+    })
+    updateCounts()
+    // validar todas na primeira render
+    state.sections.forEach((_, i) => scheduleValidate(i))
+  }
+
+  function fieldHtml(idx, f, val) {
+    const id = `f_${idx}_${f.k}`
+    const req = f.optional ? '' : ' <span style="color:var(--accent)">*</span>'
+    let control = ''
+    if (f.type === 'textarea' || f.type === 'pipe-list') {
+      const rows = f.rows || (f.type === 'pipe-list' ? 5 : 4)
+      control = `<textarea id="${id}" data-field="${idx}|${f.k}" rows="${rows}">${esc(val)}</textarea>`
+    } else if (f.type === 'photo-ref') {
+      control = `<input type="text" id="${id}" data-field="${idx}|${f.k}" value="${esc(val)}" placeholder="ref (foto1) ou https://… ou deixe vazio pra Claude escolher" />`
+    } else {
+      control = `<input type="text" id="${id}" data-field="${idx}|${f.k}" value="${esc(val)}"${f.max ? ` maxlength="${f.max + 20}"` : ''}/>`
+    }
+    const counter = f.max || f.wordsMax ? `<div class="counter" data-counter="${idx}|${f.k}"></div>` : ''
+    return `
+      <label>${f.label}${req}</label>
+      ${control}
+      ${counter}
+    `
+  }
+
+  function updateCounter(inp) {
+    const [idx, key] = inp.dataset.field.split('|')
+    const def = SECTIONS.find(s => s.slug === state.sections[+idx].slug)
+    const f = def.fields.find(x => x.k === key)
+    const counter = el.sectionsList.querySelector(`[data-counter="${idx}|${key}"]`)
+    if (!counter || !f) return
+    const val = inp.value
+    if (f.wordsMax || f.wordsMin) {
+      const words = val.trim().split(/\s+/).filter(Boolean).length
+      const overMax = f.wordsMax && words > f.wordsMax
+      const underMin = f.wordsMin && words < f.wordsMin
+      counter.textContent = `${words} palavras${f.wordsMin ? ' · min ' + f.wordsMin : ''}${f.wordsMax ? ' · max ' + f.wordsMax : ''}`
+      counter.className = 'counter ' + (overMax ? 'over' : underMin ? 'over' : '')
+    } else if (f.max) {
+      const over = val.length > f.max
+      counter.textContent = `${val.length} / ${f.max}`
+      counter.className = 'counter ' + (over ? 'over' : '')
+    }
+  }
+
+  function renderValidation(v) {
+    if (!v || (v.ok === undefined)) return ''
+    if (v.ok && (!v.warnings || !v.warnings.length)) return '<div class="validation ok">✓ Pronto para envio</div>'
+    const parts = []
+    if (v.errors && v.errors.length) parts.push(`<div class="validation err"><strong>Corrigir:</strong><ul>${v.errors.map(e => '<li>' + esc(e) + '</li>').join('')}</ul></div>`)
+    if (v.warnings && v.warnings.length) parts.push(`<div class="validation warn"><strong>Sugestões:</strong><ul>${v.warnings.map(e => '<li>' + esc(e) + '</li>').join('')}</ul></div>`)
+    return parts.join('')
+  }
+
+  // ===== Validação via RPC =====
+  const validateTimers = {}
+  function scheduleValidate(idx) {
+    clearTimeout(validateTimers[idx])
+    validateTimers[idx] = setTimeout(() => validateSection(idx), 500)
+  }
+  async function validateSection(idx) {
+    const sec = state.sections[idx]
+    if (!sec) return
+    const slots = parseContent(sec)
+    try {
+      const { data, error } = await sb.rpc('magazine_validate_section', { p_template_slug: sec.slug, p_slots: slots })
+      if (error) { console.warn('validate erro:', error.message); return }
+      state.validation[idx] = data
+      // atualiza só o item
+      const item = el.sectionsList.querySelector(`[data-idx="${idx}"]`)
+      if (item) {
+        const dot = item.querySelector('.status-dot')
+        dot.className = 'status-dot ' + (data.errors.length ? 'err' : data.warnings.length ? 'warn' : 'ok')
+        dot.title = data.errors.join(', ') || data.warnings.join(', ') || 'OK'
+        const body = item.querySelector('.body')
+        const existing = body.querySelectorAll('.validation')
+        existing.forEach(e => e.remove())
+        body.insertAdjacentHTML('beforeend', renderValidation(data))
+      }
+    } catch (e) { console.warn('validate catch:', e) }
+  }
+
+  // ===== Parser: converte textos crus do form em slots jsonb =====
+  function parseContent(sec) {
+    const def = SECTIONS.find(s => s.slug === sec.slug)
+    const slots = {}
+    def.fields.forEach(f => {
+      const raw = (sec.content[f.k] || '').trim()
+      if (!raw) return
+      if (f.parse === 'list') {
+        slots[f.k] = raw.split('\n').map(l => l.trim()).filter(Boolean)
+      } else if (f.parse === 'photo-list') {
+        slots[f.k] = raw.split('\n').map(l => resolvePhotoRef(l.trim())).filter(Boolean)
+      } else if (f.parse === 'benefits') {
+        slots[f.k] = raw.split('\n').map(l => l.trim()).filter(Boolean)
+      } else if (f.parse === 'items') {
+        slots[f.k] = raw.split('\n').map(l => {
+          const parts = l.split('|').map(p => p.trim())
+          return { num: parts[0] || '', titulo: parts[1] || '', kicker: parts[2] || '' }
+        }).filter(x => x.titulo)
+      } else if (f.parse === 'contatos') {
+        slots[f.k] = raw.split('\n').map(l => {
+          const parts = l.split('|').map(p => p.trim())
+          return { label: parts[0] || '', valor: parts[1] || '' }
+        }).filter(x => x.valor)
+      } else if (f.parse === 'stats') {
+        slots[f.k] = raw.split('\n').map(l => {
+          const parts = l.split('|').map(p => p.trim())
+          return { valor: parts[0] || '', label: parts[1] || '' }
+        }).filter(x => x.valor)
+      } else if (f.parse === 'passos') {
+        slots[f.k] = raw.split('\n').map(l => {
+          const parts = l.split('|').map(p => p.trim())
+          return { titulo: parts[0] || '', descricao: parts[1] || '' }
+        }).filter(x => x.titulo)
+      } else if (f.parse === 'marcos') {
+        slots[f.k] = raw.split('\n').map(l => {
+          const parts = l.split('|').map(p => p.trim())
+          return { data: parts[0] || '', foto: resolvePhotoRef(parts[1]) || parts[1] || '', legenda: parts[2] || '' }
+        }).filter(x => x.data)
+      } else if (f.parse === 'recompensas') {
+        slots[f.k] = raw.split('\n').map(l => {
+          const parts = l.split('|').map(p => p.trim())
+          return { titulo: parts[0] || '', descricao: parts[1] || '' }
+        }).filter(x => x.titulo)
+      } else if (f.parse === 'qas') {
+        slots[f.k] = raw.split(/\n---+\n/).map(blk => {
+          const q = (blk.match(/^Q:\s*(.+)/im) || [])[1] || ''
+          const a = (blk.match(/^A:\s*([\s\S]+)/im) || [])[1] || ''
+          return { q: q.trim(), a: a.trim() }
+        }).filter(x => x.q)
+      } else if (f.parse === 'mitos') {
+        slots[f.k] = raw.split(/\n---+\n/).map(blk => {
+          const m = (blk.match(/^Mito:\s*(.+)/im) || [])[1] || ''
+          const ft = (blk.match(/^Fato:\s*([\s\S]+)/im) || [])[1] || ''
+          return { mito: m.trim(), fato: ft.trim() }
+        }).filter(x => x.mito)
+      } else if (f.type === 'photo-ref') {
+        slots[f.k] = resolvePhotoRef(raw) || raw
+      } else {
+        slots[f.k] = raw
+      }
+    })
+    // Para t13, converter caso_N_* em estruturas {antes, depois, label}
+    if (sec.slug === 't13_before_after_quad') {
+      slots.caso_1 = { antes: slots.caso_1_antes, depois: slots.caso_1_depois, label: slots.caso_1_label }
+      slots.caso_2 = { antes: slots.caso_2_antes, depois: slots.caso_2_depois, label: slots.caso_2_label }
+      delete slots.caso_1_antes; delete slots.caso_1_depois; delete slots.caso_1_label
+      delete slots.caso_2_antes; delete slots.caso_2_depois; delete slots.caso_2_label
+    }
+    return slots
+  }
+
+  function resolvePhotoRef(ref) {
+    if (!ref) return ''
+    if (/^https?:\/\//.test(ref)) return ref
+    const photo = state.photos.find(p => p.ref === ref)
+    return photo ? photo.url : ''
+  }
+
+  // ===== Photo library =====
+  function wirePhotoDrop() {
+    el.photoDrop.addEventListener('click', () => el.photoInput.click())
+    el.photoDrop.addEventListener('dragover', e => { e.preventDefault(); el.photoDrop.classList.add('over') })
+    el.photoDrop.addEventListener('dragleave', () => el.photoDrop.classList.remove('over'))
+    el.photoDrop.addEventListener('drop', e => {
+      e.preventDefault()
+      el.photoDrop.classList.remove('over')
+      handleFiles(e.dataTransfer.files)
+    })
+    el.photoInput.addEventListener('change', () => handleFiles(el.photoInput.files))
+  }
+
+  async function handleFiles(files) {
+    const arr = Array.from(files).filter(f => f.type.startsWith('image/'))
+    for (const f of arr) {
+      await uploadOne(f)
+    }
+    el.photoInput.value = ''
+  }
+
+  async function uploadOne(file) {
+    const maxBytes = 10 * 1024 * 1024
+    if (file.size > maxBytes) { toast(`${file.name} > 10MB`, 'err'); return }
+    const ref = 'foto' + (state.photos.length + 1)
+    const placeholder = { ref, url: '', alt: '', uploading: true, name: file.name }
+    state.photos.push(placeholder)
+    renderPhotos()
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+      const uuid = crypto.randomUUID()
+      const path = `intake/${state.briefId || 'tmp'}/${uuid}.${ext}`
+      const { error: upErr } = await sb.storage.from('magazine-assets').upload(path, file, { contentType: file.type, upsert: false })
+      if (upErr) throw upErr
+      const { data: pub } = sb.storage.from('magazine-assets').getPublicUrl(path)
+      placeholder.url = pub.publicUrl
+      placeholder.uploading = false
+      // registra em magazine_assets (sem edition_id por enquanto)
+      try {
+        const { data: assetId } = await sb.rpc('magazine_register_asset', {
+          p_edition_id: null, p_url: pub.publicUrl, p_type: 'image',
+          p_alt: file.name, p_width: null, p_height: null,
+          p_size_kb: Math.round(file.size/1024), p_meta: { original_name: file.name }
+        })
+        placeholder.assetId = assetId
+      } catch (e) { console.warn('register_asset:', e.message) }
+      renderPhotos()
+    } catch (err) {
+      toast(`Erro upload ${file.name}: ${err.message}`, 'err')
+      state.photos = state.photos.filter(p => p !== placeholder)
+      renderPhotos()
+    }
+  }
+
+  function renderPhotos() {
+    if (!state.photos.length) { el.photoGrid.innerHTML = ''; updateCounts(); return }
+    el.photoGrid.innerHTML = state.photos.map((p, i) => `
+      <div class="photo-card" data-idx="${i}">
+        <div class="thumb" style="background-image:url('${esc(p.url)}')${p.uploading ? ';opacity:0.4' : ''}"></div>
+        <div class="ref">${esc(p.ref)}${p.uploading ? ' · enviando…' : ''}</div>
+        <div class="meta">
+          <input type="text" data-alt="${i}" value="${esc(p.alt || '')}" placeholder="o que é esta foto?" />
+          <button class="del" data-del="${i}">remover</button>
+        </div>
+      </div>
+    `).join('')
+    el.photoGrid.querySelectorAll('[data-alt]').forEach(inp => {
+      inp.addEventListener('input', () => { state.photos[+inp.dataset.alt].alt = inp.value })
+    })
+    el.photoGrid.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!confirm('Remover esta foto?')) return
+        state.photos.splice(+btn.dataset.del, 1)
+        state.photos.forEach((p, i) => { p.ref = 'foto' + (i + 1) })
+        renderPhotos()
+      })
+    })
+    updateCounts()
+  }
+
+  function updateCounts() {
+    el.sectionsCount.textContent = state.sections.length
+    el.photosCount.textContent = state.photos.length
+  }
+
+  // ===== Persistencia =====
+  async function saveDraft() {
+    // coleta do form global
+    state.theme = el.theme.value.trim()
+    state.tone = el.tone.value.trim()
+    state.objective = el.objective.value.trim()
+    state.monthYear = el.monthYear.value.trim()
+    state.referencesText = el.referencesText.value.trim()
+
+    const sectionsWithSlots = state.sections.map(s => ({
+      slug: s.slug,
+      raw: s.content,
+      slots: parseContent(s),
+    }))
+    const assetIds = state.photos.filter(p => p.assetId).map(p => p.assetId)
+    try {
+      const { data, error } = await sb.rpc('magazine_upsert_brief', {
+        p_brief_id: state.briefId,
+        p_theme: state.theme,
+        p_tone: state.tone,
+        p_objective: state.objective,
+        p_month_year: state.monthYear,
+        p_sections: sectionsWithSlots,
+        p_asset_ids: assetIds,
+        p_references_text: state.referencesText,
+      })
+      if (error) throw error
+      state.briefId = data
+      el.briefIdLabel.textContent = 'Rascunho #' + data.substring(0, 8)
+      try { localStorage.setItem(LS_BRIEF, data) } catch (e) {}
+      toast('Rascunho salvo', 'ok')
+    } catch (err) {
+      toast('Erro salvando: ' + err.message, 'err')
+    }
+  }
+
+  async function submitBrief() {
+    if (!state.briefId) { await saveDraft(); if (!state.briefId) return }
+    // valida tudo
+    const allErrors = []
+    for (let i = 0; i < state.sections.length; i++) {
+      await validateSection(i)
+      if (state.validation[i] && state.validation[i].errors && state.validation[i].errors.length) {
+        allErrors.push(`Seção ${i + 1} (${state.sections[i].slug}): ${state.validation[i].errors.join(', ')}`)
+      }
+    }
+    if (allErrors.length) {
+      if (!confirm(`Existem ${allErrors.length} seção(ões) com erros:\n\n${allErrors.slice(0, 5).join('\n')}\n\nEnviar mesmo assim?`)) return
+    }
+    try {
+      await saveDraft()
+      const { data, error } = await sb.rpc('magazine_submit_brief', { p_brief_id: state.briefId })
+      if (error) throw error
+      toast('Enviado pro Claude ✓', 'ok')
+      console.log('Brief submetido:', data)
+    } catch (err) {
+      toast('Erro enviando: ' + err.message, 'err')
+    }
+  }
+
+  async function loadBrief(briefId) {
+    try {
+      const { data, error } = await sb.from('magazine_briefs').select('*').eq('id', briefId).single()
+      if (error) throw error
+      state.briefId = data.id
+      state.theme = data.theme || ''; state.tone = data.tone || ''; state.objective = data.objective || ''
+      state.monthYear = data.month_year || ''; state.referencesText = data.references_text || ''
+      el.theme.value = state.theme; el.tone.value = state.tone; el.objective.value = state.objective
+      el.monthYear.value = state.monthYear; el.referencesText.value = state.referencesText
+      state.sections = (data.sections || []).map(s => ({ slug: s.slug, content: s.raw || {} }))
+      // foto library carrega assets
+      if (data.asset_ids && data.asset_ids.length) {
+        const { data: assets } = await sb.from('magazine_assets').select('id,url,alt').in('id', data.asset_ids)
+        state.photos = (assets || []).map((a, i) => ({ ref: 'foto' + (i + 1), url: a.url, alt: a.alt || '', assetId: a.id }))
+      }
+      el.briefIdLabel.textContent = 'Rascunho #' + data.id.substring(0, 8)
+      renderSectionsList(); renderPhotos()
+      toast('Rascunho carregado', 'ok')
+    } catch (err) { toast('Erro carregando: ' + err.message, 'err') }
+  }
+
+  async function newDraft() {
+    if (state.briefId && !confirm('Descartar rascunho atual?')) return
+    state.briefId = null
+    state.theme = ''; state.tone = ''; state.objective = ''; state.monthYear = ''; state.referencesText = ''
+    state.sections = []; state.photos = []; state.validation = {}
+    el.theme.value = ''; el.tone.value = ''; el.objective.value = ''; el.monthYear.value = ''; el.referencesText.value = ''
+    el.briefIdLabel.textContent = 'Rascunho não salvo'
+    try { localStorage.removeItem(LS_BRIEF) } catch (e) {}
+    renderSectionsList(); renderPhotos()
+  }
+
+  async function loadDraftDialog() {
+    const { data, error } = await sb.from('magazine_briefs').select('id, theme, month_year, status, created_at').order('created_at', { ascending: false }).limit(20)
+    if (error) { toast('Erro listando: ' + error.message, 'err'); return }
+    if (!data.length) { toast('Nenhum rascunho salvo', 'err'); return }
+    const opts = data.map(b => `${b.id.substring(0,8)} · ${b.month_year || '(sem mês)'} · ${b.theme?.substring(0,40) || '(sem tema)'} · ${b.status}`).join('\n')
+    const pick = prompt('Digite os 8 primeiros chars do ID do rascunho a carregar:\n\n' + opts)
+    if (!pick) return
+    const target = data.find(b => b.id.startsWith(pick.trim()))
+    if (!target) { toast('Não achei', 'err'); return }
+    await loadBrief(target.id)
+  }
+
+  // ===== Utils =====
+  function esc(s) {
+    if (s == null) return ''
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+  }
+
+  // ===== Init =====
+  async function init() {
+    await ensureAuth()
+    renderSectionMenu()
+    wirePhotoDrop()
+    el.saveBtn.addEventListener('click', saveDraft)
+    el.submitBtn.addEventListener('click', submitBrief)
+    el.newDraftBtn.addEventListener('click', newDraft)
+    el.loadDraftBtn.addEventListener('click', loadDraftDialog)
+
+    // tenta restaurar ultimo
+    let restore = null
+    try { restore = localStorage.getItem(LS_BRIEF) } catch (e) {}
+    if (restore) {
+      try { await loadBrief(restore) } catch (e) { console.warn(e) }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init)
+})()
+</script>
+</body>
+</html>

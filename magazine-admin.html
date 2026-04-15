@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Beauty &amp; Health — Editor Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/magazine/magazine-renderer.js"></script>
+<style>
+  :root {
+    --bg: #f4f1ec;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --muted: #8a8178;
+    --line: #e5ddd2;
+    --line-strong: #1a1a1a;
+    --accent: #7a1f2b;
+    --accent-soft: #f5e9eb;
+    --ok: #2d7a43;
+    --warn: #b45309;
+    --danger: #b91c1c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; }
+  input, textarea, select { font: inherit; color: inherit; }
+
+  .app { display: grid; grid-template-rows: 56px 1fr; height: 100vh; }
+
+  /* ===== Topbar ===== */
+  .topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 20px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 20px; letter-spacing: -0.01em; }
+  .brand em { font-style: italic; font-weight: 400; color: var(--accent); }
+  .topbar .divider { width: 1px; height: 24px; background: var(--line); }
+  .topbar select, .topbar .btn {
+    height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); color: var(--ink); font-size: 13px;
+  }
+  .topbar select:hover, .topbar .btn:hover { border-color: var(--ink-soft); }
+  .topbar .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .topbar .btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+  .topbar .btn.ghost { border-color: transparent; }
+  .topbar .status {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .status.draft { background: #fef3c7; color: var(--warn); }
+  .status.published { background: #dcfce7; color: var(--ok); }
+  .status.archived { background: #f1f5f9; color: var(--muted); }
+  .topbar .spacer { flex: 1; }
+  .topbar .title-input {
+    border: none; outline: none; font-family: 'Playfair Display', serif;
+    font-size: 18px; font-weight: 700; color: var(--ink); background: transparent;
+    padding: 4px 8px; border-radius: 4px; min-width: 200px;
+  }
+  .topbar .title-input:focus, .topbar .title-input:hover { background: var(--bg); }
+
+  /* ===== Main layout ===== */
+  .main { display: grid; grid-template-columns: 280px 1fr 360px; min-height: 0; }
+  .panel { background: var(--paper); display: flex; flex-direction: column; min-height: 0; }
+  .panel + .panel { border-left: 1px solid var(--line); }
+  .panel-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  }
+  .panel-body { flex: 1; overflow-y: auto; padding: 12px; }
+  .panel-body.center { padding: 0; background: var(--bg); }
+
+  /* ===== Page list ===== */
+  .page-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; margin-bottom: 6px;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    cursor: grab; user-select: none; transition: border-color .15s, background .15s;
+  }
+  .page-item:hover { border-color: var(--ink-soft); }
+  .page-item.active { border-color: var(--accent); background: var(--accent-soft); }
+  .page-item.dragging { opacity: 0.4; }
+  .page-item.drag-over { border-top: 2px solid var(--accent); }
+  .page-item .idx {
+    width: 24px; height: 24px; display: grid; place-items: center;
+    background: var(--bg); border-radius: 4px; font-size: 11px; font-weight: 700; color: var(--muted);
+  }
+  .page-item.active .idx { background: var(--accent); color: #fff; }
+  .page-item .meta { flex: 1; min-width: 0; }
+  .page-item .tpl-name { font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .page-item .tpl-slug { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; }
+  .page-item .remove { opacity: 0; padding: 2px 6px; font-size: 14px; color: var(--danger); }
+  .page-item:hover .remove { opacity: 0.6; }
+  .page-item .remove:hover { opacity: 1; }
+
+  .add-page-btn {
+    width: 100%; padding: 12px; margin-top: 8px;
+    border: 1px dashed var(--muted); border-radius: 8px;
+    color: var(--muted); font-size: 13px; font-weight: 500;
+    transition: all .15s;
+  }
+  .add-page-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* ===== Preview ===== */
+  .preview-wrap { display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 16px; }
+  .preview-toggle {
+    display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 2px;
+  }
+  .preview-toggle button { padding: 6px 14px; font-size: 12px; font-weight: 500; border-radius: 6px; color: var(--ink-soft); }
+  .preview-toggle button.active { background: var(--ink); color: #fff; }
+  .preview-frame {
+    background: var(--paper); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+    overflow: hidden; border: 1px solid var(--line); transition: width .2s, height .2s;
+  }
+  .preview-frame.desktop { width: min(960px, calc(100% - 48px)); aspect-ratio: 16/10; }
+  .preview-frame.mobile  { width: 390px; height: 720px; max-height: calc(100vh - 180px); }
+  .preview-frame iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--paper); }
+  .preview-content { flex: 1; overflow-y: auto; padding: 24px; }
+  .preview-content .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .preview-content h1 { font-family: 'Playfair Display', serif; font-size: 32px; line-height: 1.1; font-weight: 900; margin-bottom: 12px; }
+  .preview-content h2 { font-family: 'Playfair Display', serif; font-size: 22px; line-height: 1.2; font-weight: 700; margin: 16px 0 8px; }
+  .preview-content p { font-size: 15px; line-height: 1.55; color: var(--ink-soft); margin-bottom: 10px; }
+  .preview-content img { width: 100%; border-radius: 8px; margin: 12px 0; display: block; }
+  .preview-content .lede { font-size: 16px; line-height: 1.5; color: var(--ink); margin-bottom: 14px; font-weight: 500; }
+  .preview-content .placeholder-img {
+    background: linear-gradient(135deg, var(--bg), var(--line));
+    height: 200px; border-radius: 8px; display: grid; place-items: center;
+    color: var(--muted); font-size: 12px; margin: 12px 0;
+  }
+  .preview-empty {
+    flex: 1; display: grid; place-items: center; text-align: center; padding: 40px;
+    color: var(--muted); font-style: italic;
+  }
+
+  /* ===== Slots form ===== */
+  .slot-field { margin-bottom: 14px; }
+  .slot-field label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .slot-field label .req { color: var(--accent); margin-left: 2px; }
+  .slot-field input, .slot-field textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); font-size: 13px; outline: none; transition: border-color .15s;
+  }
+  .slot-field input:focus, .slot-field textarea:focus { border-color: var(--accent); }
+  .slot-field textarea { resize: vertical; min-height: 72px; font-family: inherit; }
+  .slot-field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .slot-field .img-row { display: flex; gap: 6px; align-items: stretch; }
+  .slot-field .img-row input { flex: 1; }
+  .slot-field .img-row .upload-btn {
+    padding: 0 12px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); font-size: 12px; font-weight: 600; color: var(--ink-soft);
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  }
+  .slot-field .img-row .upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .slot-field .img-row .upload-btn.loading { pointer-events: none; opacity: 0.6; }
+  .slot-field .thumb {
+    margin-top: 6px; width: 80px; height: 80px; border-radius: 6px;
+    background-size: cover; background-position: center; border: 1px solid var(--line);
+  }
+
+  .slots-actions { display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); margin-top: 8px; }
+  .slots-actions .btn { flex: 1; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .slots-actions .btn.save { background: var(--ink); color: #fff; }
+  .slots-actions .btn.save:hover { background: var(--accent); }
+  .slots-actions .btn.save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .empty-state { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* ===== Modal (template picker) ===== */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(26,26,26,0.5); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 500; padding: 24px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #ffffff !important; border-radius: 14px;
+    width: min(900px, calc(100vw - 48px));
+    height: min(85vh, 700px);
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+    position: relative; z-index: 1;
+  }
+  .modal-header {
+    padding: 18px 22px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; }
+  .modal-header .close { font-size: 24px; color: var(--muted); padding: 4px 10px; }
+  .modal-header .close:hover { color: var(--ink); }
+  .modal-body { padding: 20px 22px; overflow-y: auto; }
+  .category-group { margin-bottom: 22px; }
+  .category-group h3 { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .template-card {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px; cursor: pointer;
+    transition: all .15s; background: var(--paper); text-align: left;
+  }
+  .template-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+  .template-card .preview {
+    width: 100%; aspect-ratio: 1 / 1.4; background: linear-gradient(135deg, var(--bg), var(--line));
+    border-radius: 6px; margin-bottom: 10px; display: grid; place-items: center;
+    font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: var(--muted);
+  }
+  .template-card .name { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .template-card .slug { font-size: 10px; color: var(--muted); font-family: ui-monospace, monospace; margin-top: 2px; }
+
+  /* ===== Toast ===== */
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; z-index: 200;
+    padding: 12px 18px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 13px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    transform: translateY(100px); opacity: 0; transition: all .25s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.ok { background: var(--ok); }
+  .toast.err { background: var(--danger); }
+
+  /* ===== Loading overlay ===== */
+  .loading { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* ===== Auth overlay ===== */
+  .auth-overlay { position: fixed; inset: 0; background: rgba(26,26,26,0.6); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 300; padding: 24px; }
+  .auth-overlay.open { display: flex; }
+  .auth-card { background: var(--paper); border-radius: 14px; width: 100%; max-width: 380px; padding: 32px; box-shadow: 0 30px 80px rgba(0,0,0,0.3); }
+  .auth-card h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .auth-card .sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .auth-card label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; margin-top: 12px; }
+  .auth-card input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; font-size: 14px; outline: none; }
+  .auth-card input:focus { border-color: var(--accent); }
+  .auth-card button.submit { width: 100%; padding: 12px; margin-top: 18px; background: var(--ink); color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .auth-card button.submit:hover { background: var(--accent); }
+  .auth-card button.submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .auth-card .err { color: var(--danger); font-size: 12px; margin-top: 10px; min-height: 16px; }
+  .auth-card .who { font-size: 12px; color: var(--ink-soft); margin-top: 14px; text-align: center; }
+  .auth-card .who button { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">Beauty &amp; Health <em>/ Editor</em></div>
+    <div class="divider"></div>
+
+    <select id="editionSelect" title="Selecionar edição">
+      <option value="">— Edições —</option>
+    </select>
+    <button class="btn" id="newEditionBtn">+ Nova edição</button>
+
+    <div class="divider"></div>
+
+    <input type="text" class="title-input" id="editionTitle" placeholder="Título da edição…" disabled />
+    <span class="status draft" id="editionStatus" style="display:none">Rascunho</span>
+
+    <div class="spacer"></div>
+
+    <button class="btn ghost" id="viewLiveBtn" style="display:none" title="Abrir leitor público">Ver</button>
+    <button class="btn ghost" id="archiveBtn" style="display:none">Arquivar</button>
+    <button class="btn primary" id="publishBtn" disabled>Publicar</button>
+  </header>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT: Páginas -->
+    <aside class="panel">
+      <div class="panel-header">
+        <span>Páginas</span>
+        <span id="pageCount" style="color: var(--muted); font-weight: 500;">0</span>
+      </div>
+      <div class="panel-body" id="pageList">
+        <div class="empty-state">Selecione ou crie uma edição.</div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Preview -->
+    <main class="panel">
+      <div class="panel-header">
+        <span>Preview</span>
+        <span id="previewHint" style="color: var(--muted); font-weight: 500;"></span>
+      </div>
+      <div class="panel-body center">
+        <div class="preview-wrap">
+          <div class="preview-toggle">
+            <button id="viewDesktop" class="active" title="Desktop (16:10)">Desktop</button>
+            <button id="viewMobile" title="Mobile (390×720)">Mobile</button>
+          </div>
+          <div class="preview-frame desktop" id="previewFrame">
+            <iframe id="previewIframe" title="Preview"></iframe>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT: Slots -->
+    <aside class="panel">
+      <div class="panel-header">
+        <span>Conteúdo</span>
+        <span id="slotTemplate" style="color: var(--muted); font-weight: 500; font-family: ui-monospace, monospace; font-size: 10px;"></span>
+      </div>
+      <div class="panel-body" id="slotsForm">
+        <div class="empty-state">Selecione uma página para editar.</div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- TEMPLATE PICKER MODAL -->
+<div class="modal-backdrop" id="templateModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Escolher template</h2>
+      <button class="close" onclick="MagazineAdmin.closeTemplateModal()">×</button>
+    </div>
+    <div class="modal-body" id="templateGrid">
+      <div class="loading">Carregando templates…</div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH OVERLAY -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <h2>Entrar no editor</h2>
+    <div class="sub">Precisamos de login para criar e publicar edições.</div>
+    <form id="authForm">
+      <label>E-mail</label>
+      <input type="email" id="authEmail" required autocomplete="username" />
+      <label>Senha</label>
+      <input type="password" id="authPwd" required autocomplete="current-password" />
+      <button type="submit" class="submit" id="authSubmit">Entrar</button>
+      <div class="err" id="authErr"></div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+;(function () {
+  'use strict'
+
+  // ===== Supabase client =====
+  const sb = window.supabase.createClient(
+    window.ClinicEnv.SUPABASE_URL,
+    window.ClinicEnv.SUPABASE_KEY,
+    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
+  )
+
+  const LS_KEY_EDITION = 'magazine_admin_last_edition'
+
+  // ===== State =====
+  const state = {
+    editions: [],
+    currentEdition: null,
+    pages: [],
+    currentPageId: null,
+    templates: [],
+    templatesBySlug: {},
+    dirty: false,
+    magazineCss: '', // CSS dos templates embutido no iframe preview
+  }
+
+  // ===== DOM =====
+  const $ = (id) => document.getElementById(id)
+  const els = {
+    editionSelect: $('editionSelect'),
+    newEditionBtn: $('newEditionBtn'),
+    editionTitle: $('editionTitle'),
+    editionStatus: $('editionStatus'),
+    archiveBtn: $('archiveBtn'),
+    publishBtn: $('publishBtn'),
+    viewLiveBtn: $('viewLiveBtn'),
+    pageList: $('pageList'),
+    pageCount: $('pageCount'),
+    previewFrame: $('previewFrame'),
+    previewIframe: $('previewIframe'),
+    previewHint: $('previewHint'),
+    viewDesktop: $('viewDesktop'),
+    viewMobile: $('viewMobile'),
+    slotsForm: $('slotsForm'),
+    slotTemplate: $('slotTemplate'),
+    templateModal: $('templateModal'),
+    templateGrid: $('templateGrid'),
+    toast: $('toast'),
+  }
+
+  // ===== Toast =====
+  let toastTimer = null
+  function toast(msg, kind) {
+    els.toast.textContent = msg
+    els.toast.className = 'toast show ' + (kind || '')
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2600)
+  }
+
+  // ===== Data layer =====
+  async function loadTemplates() {
+    const { data, error } = await sb.from('magazine_templates')
+      .select('slug, name, category, slots_schema')
+      .order('slug')
+    if (error) {
+      console.error('[magazine] loadTemplates error:', error)
+      toast('Erro ao carregar templates: ' + error.message, 'err')
+      return
+    }
+    state.templates = data || []
+    state.templatesBySlug = {}
+    state.templates.forEach(t => { state.templatesBySlug[t.slug] = t })
+    console.log('[magazine] templates carregados:', state.templates.length)
+  }
+
+  async function loadEditions() {
+    const { data, error } = await sb.from('magazine_editions')
+      .select('id, title, slug, status, theme, subtitle, created_at')
+      .order('created_at', { ascending: false })
+    if (error) { toast('Erro ao carregar edições: ' + error.message, 'err'); return }
+    state.editions = data || []
+    renderEditionSelect()
+  }
+
+  async function loadPages(editionId) {
+    const { data, error } = await sb.from('magazine_pages')
+      .select('id, edition_id, template_slug, slots, segment_scope, order_index')
+      .eq('edition_id', editionId)
+      .order('order_index')
+    if (error) { toast('Erro ao carregar páginas: ' + error.message, 'err'); return [] }
+    return data || []
+  }
+
+  async function rpcCreateEdition(payload) {
+    const { data, error } = await sb.rpc('magazine_create_edition', payload)
+    if (error) throw error
+    return data
+  }
+
+  async function rpcAddPage(editionId, templateSlug) {
+    const { data, error } = await sb.rpc('magazine_add_page', {
+      p_edition_id: editionId,
+      p_template_slug: templateSlug,
+      p_slots: {},
+      p_segment_scope: ['all'],
+    })
+    if (error) throw error
+    return data
+  }
+
+  async function rpcReorderPages(editionId, pageIds) {
+    const { error } = await sb.rpc('magazine_reorder_pages', {
+      p_edition_id: editionId,
+      p_page_ids: pageIds,
+    })
+    if (error) throw error
+  }
+
+  async function rpcPublish(editionId) {
+    const { data, error } = await sb.rpc('magazine_publish', { p_edition_id: editionId })
+    if (error) throw error
+    return data
+  }
+
+  async function rpcArchive(editionId) {
+    const { error } = await sb.rpc('magazine_archive_edition', { p_edition_id: editionId })
+    if (error) throw error
+  }
+
+  async function updatePageSlots(pageId, slots) {
+    const { error } = await sb.from('magazine_pages').update({ slots }).eq('id', pageId)
+    if (error) throw error
+  }
+
+  async function deletePage(pageId) {
+    const { error } = await sb.from('magazine_pages').delete().eq('id', pageId)
+    if (error) throw error
+  }
+
+  async function updateEditionTitle(editionId, title) {
+    const { error } = await sb.from('magazine_editions').update({ title }).eq('id', editionId)
+    if (error) throw error
+  }
+
+  // ===== Renderers =====
+  function renderEditionSelect() {
+    const cur = state.currentEdition?.id || ''
+    els.editionSelect.innerHTML = '<option value="">— Edições —</option>' +
+      state.editions.map(e => {
+        const badge = e.status === 'published' ? ' ✓' : e.status === 'archived' ? ' [arq]' : ''
+        return `<option value="${e.id}" ${e.id === cur ? 'selected' : ''}>${escapeHtml(e.title)}${badge}</option>`
+      }).join('')
+  }
+
+  function renderEditionHeader() {
+    const ed = state.currentEdition
+    if (!ed) {
+      els.editionTitle.value = ''
+      els.editionTitle.disabled = true
+      els.editionStatus.style.display = 'none'
+      els.publishBtn.disabled = true
+      els.archiveBtn.style.display = 'none'
+      return
+    }
+    els.editionTitle.value = ed.title || ''
+    els.editionTitle.disabled = false
+    els.editionStatus.style.display = ''
+    els.editionStatus.className = 'status ' + ed.status
+    els.editionStatus.textContent = ed.status === 'draft' ? 'Rascunho'
+      : ed.status === 'published' ? 'Publicada' : 'Arquivada'
+    els.publishBtn.disabled = ed.status !== 'draft' || state.pages.length === 0
+    els.publishBtn.textContent = ed.status === 'published' ? 'Publicada' : 'Publicar'
+    els.archiveBtn.style.display = ed.status !== 'archived' ? '' : 'none'
+    els.viewLiveBtn.style.display = ed.status === 'published' ? '' : 'none'
+  }
+
+  function renderPageList() {
+    els.pageCount.textContent = state.pages.length
+    if (!state.currentEdition) {
+      els.pageList.innerHTML = '<div class="empty-state">Selecione ou crie uma edição.</div>'
+      return
+    }
+    const items = state.pages.map((p, i) => {
+      const tpl = state.templatesBySlug[p.template_slug]
+      const name = tpl?.name || p.template_slug
+      const active = p.id === state.currentPageId ? 'active' : ''
+      return `
+        <div class="page-item ${active}" draggable="true" data-page-id="${p.id}" data-index="${i}">
+          <div class="idx">${i + 1}</div>
+          <div class="meta">
+            <div class="tpl-name">${escapeHtml(name)}</div>
+            <div class="tpl-slug">${p.template_slug}</div>
+          </div>
+          <button class="remove" title="Remover" data-remove="${p.id}">×</button>
+        </div>
+      `
+    }).join('')
+    els.pageList.innerHTML = items + `<button class="add-page-btn" id="addPageBtn">+ Adicionar página</button>`
+    wirePageList()
+  }
+
+  function renderSlotsForm() {
+    const page = state.pages.find(p => p.id === state.currentPageId)
+    if (!page) {
+      els.slotsForm.innerHTML = '<div class="empty-state">Selecione uma página para editar.</div>'
+      els.slotTemplate.textContent = ''
+      return
+    }
+    const tpl = state.templatesBySlug[page.template_slug]
+    els.slotTemplate.textContent = page.template_slug
+    if (!tpl) {
+      els.slotsForm.innerHTML = '<div class="empty-state">Template não encontrado.</div>'
+      return
+    }
+    const schema = tpl.slots_schema || {}
+    const required = Array.isArray(schema.required) ? schema.required : []
+    const optional = Array.isArray(schema.optional) ? schema.optional : []
+    const slots = page.slots || {}
+
+    const fieldHtml = (key, isReq) => {
+      const val = slots[key]
+      const isLong = /corpo|lede|texto|subtitulo|legenda|assinatura/.test(key)
+      const isImg = /^foto|_foto|foto_|url$/.test(key) || key.includes('foto') || key.includes('imagem')
+      const isArr = Array.isArray(val) || /items|qas|fotos|marcos|opcoes|caso_|beneficios|contatos/.test(key)
+      const reqMark = isReq ? '<span class="req">*</span>' : ''
+      const hint = isArr ? '<div class="hint">JSON (lista/objeto)</div>'
+        : isImg ? '<div class="hint">URL da imagem</div>' : ''
+      if (isArr) {
+        const v = val ? JSON.stringify(val, null, 2) : ''
+        return `<div class="slot-field">
+          <label>${escapeHtml(key)}${reqMark}</label>
+          <textarea data-slot="${key}" data-json="1" rows="4" placeholder='[]'>${escapeHtml(v)}</textarea>
+          ${hint}
+        </div>`
+      }
+      if (isLong) {
+        return `<div class="slot-field">
+          <label>${escapeHtml(key)}${reqMark}</label>
+          <textarea data-slot="${key}" rows="3">${escapeHtml(val || '')}</textarea>
+        </div>`
+      }
+      if (isImg) {
+        const thumbUrl = val ? (window.MagazineRenderer?.normalizeUrl(val) || val) : ''
+        const thumb = thumbUrl ? `<div class="thumb" style="background-image:url('${escapeHtml(thumbUrl)}')"></div>` : ''
+        return `<div class="slot-field" data-field-key="${key}">
+          <label>${escapeHtml(key)}${reqMark}</label>
+          <div class="img-row">
+            <input type="text" data-slot="${key}" value="${escapeHtml(val || '')}" placeholder="URL ou use upload →" />
+            <button type="button" class="upload-btn" data-upload="${key}">↑ Upload</button>
+          </div>
+          ${thumb}
+          ${hint}
+        </div>`
+      }
+      return `<div class="slot-field">
+        <label>${escapeHtml(key)}${reqMark}</label>
+        <input type="text" data-slot="${key}" value="${escapeHtml(val || '')}" />
+        ${hint}
+      </div>`
+    }
+
+    const body = [
+      ...required.map(k => fieldHtml(k, true)),
+      ...optional.map(k => fieldHtml(k, false)),
+    ].join('')
+
+    els.slotsForm.innerHTML = (body || '<div class="empty-state">Template sem slots definidos.</div>') + `
+      <div class="slots-actions">
+        <button class="btn save" id="saveSlotsBtn" disabled>Salvar alterações</button>
+      </div>
+    `
+
+    els.slotsForm.querySelectorAll('[data-slot]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        state.dirty = true
+        document.getElementById('saveSlotsBtn').disabled = false
+        schedulePreviewRefresh()
+      })
+    })
+    els.slotsForm.querySelectorAll('[data-upload]').forEach(btn => {
+      btn.addEventListener('click', () => triggerUpload(btn.dataset.upload, btn))
+    })
+    document.getElementById('saveSlotsBtn').addEventListener('click', saveSlots)
+  }
+
+  // ===== Upload Storage =====
+  function triggerUpload(slotKey, btn) {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = () => {
+      const file = input.files && input.files[0]
+      if (file) uploadImage(slotKey, file, btn)
+    }
+    input.click()
+  }
+
+  async function uploadImage(slotKey, file, btn) {
+    if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
+    const maxBytes = 10 * 1024 * 1024
+    if (file.size > maxBytes) { toast('Arquivo maior que 10MB', 'err'); return }
+    btn.classList.add('loading')
+    btn.textContent = '↑ Enviando…'
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+      const uuid = crypto.randomUUID()
+      const path = `editions/${state.currentEdition.id}/${uuid}.${ext}`
+
+      const { error: upErr } = await sb.storage.from('magazine-assets')
+        .upload(path, file, { cacheControl: '31536000', upsert: false, contentType: file.type })
+      if (upErr) throw upErr
+
+      const { data: pub } = sb.storage.from('magazine-assets').getPublicUrl(path)
+      const url = pub.publicUrl
+
+      // dimensoes do arquivo
+      const dims = await readImageDims(file).catch(() => ({ width: null, height: null }))
+
+      // registra em magazine_assets (opcional — se falhar, URL ja funciona)
+      try {
+        await sb.rpc('magazine_register_asset', {
+          p_edition_id: state.currentEdition.id,
+          p_url: url,
+          p_type: 'image',
+          p_alt: slotKey,
+          p_width: dims.width,
+          p_height: dims.height,
+          p_size_kb: Math.round(file.size / 1024),
+          p_meta: { original_name: file.name, mime: file.type },
+        })
+      } catch (e) { console.warn('register_asset falhou (upload OK):', e.message) }
+
+      // atualiza input + thumb + preview
+      const field = els.slotsForm.querySelector(`[data-field-key="${slotKey}"]`)
+      if (field) {
+        const inp = field.querySelector(`[data-slot="${slotKey}"]`)
+        inp.value = url
+        let thumb = field.querySelector('.thumb')
+        if (!thumb) {
+          thumb = document.createElement('div')
+          thumb.className = 'thumb'
+          field.querySelector('.img-row').insertAdjacentElement('afterend', thumb)
+        }
+        thumb.style.backgroundImage = `url('${url}')`
+      }
+      state.dirty = true
+      document.getElementById('saveSlotsBtn').disabled = false
+      toast('Imagem enviada', 'ok')
+    } catch (err) {
+      toast('Erro upload: ' + err.message, 'err')
+    } finally {
+      btn.classList.remove('loading')
+      btn.textContent = '↑ Upload'
+    }
+  }
+
+  function readImageDims(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => { URL.revokeObjectURL(url); resolve({ width: img.naturalWidth, height: img.naturalHeight }) }
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('invalid image')) }
+      img.src = url
+    })
+  }
+
+  function renderPreview() {
+    const page = state.pages.find(p => p.id === state.currentPageId)
+    const iframe = els.previewIframe
+    if (!page) {
+      iframe.srcdoc = `<!doctype html><html><body style="margin:0;display:grid;place-items:center;height:100vh;font-family:sans-serif;color:#8a8178;font-style:italic;">Nenhuma página selecionada.</body></html>`
+      els.previewHint.textContent = ''
+      return
+    }
+    const tpl = state.templatesBySlug[page.template_slug]
+    els.previewHint.textContent = tpl?.name || page.template_slug
+
+    const pageHtml = window.MagazineRenderer.render(page.template_slug, readSlotsFromForm(page))
+    const isMobile = els.previewFrame.classList.contains('mobile')
+    // Renderiza numa "pagina" de tamanho natural e escala pra caber no iframe
+    const nat = isMobile ? { w: 390, h: 720 } : { w: 1440, h: 900 }
+    iframe.srcdoc = `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+${state.magazineCss}
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#f4f1ec;}
+#stage{
+  width:${nat.w}px;height:${nat.h}px;
+  transform-origin:top left;
+  position:absolute;top:0;left:0;
+}
+#stage>.mp{width:100%;height:100%;}
+</style>
+</head>
+<body>
+<div id="stage">${pageHtml}</div>
+<script>
+(function(){
+  function fit(){
+    var s=document.getElementById('stage');
+    var sx=window.innerWidth/${nat.w};
+    var sy=window.innerHeight/${nat.h};
+    var k=Math.min(sx,sy);
+    s.style.transform='scale('+k+')';
+    // centraliza se sobrar espaco
+    s.style.left=((window.innerWidth-${nat.w}*k)/2)+'px';
+    s.style.top=((window.innerHeight-${nat.h}*k)/2)+'px';
+  }
+  fit();
+  window.addEventListener('resize',fit);
+})();
+<\/script>
+</body></html>`
+  }
+
+  // Le valores atuais do form (ainda nao salvos) para preview em tempo real
+  function readSlotsFromForm(page) {
+    const base = Object.assign({}, page.slots || {})
+    if (!els.slotsForm) return base
+    els.slotsForm.querySelectorAll('[data-slot]').forEach(inp => {
+      const key = inp.dataset.slot
+      const val = inp.value
+      if (inp.dataset.json === '1') {
+        const t = (val || '').trim()
+        if (!t) { delete base[key]; return }
+        try { base[key] = JSON.parse(t) } catch (e) { /* keep previous */ }
+      } else if (val) {
+        base[key] = val
+      } else {
+        delete base[key]
+      }
+    })
+    return base
+  }
+
+  function renderTemplateModal() {
+    const byCat = {}
+    state.templates.forEach(t => {
+      byCat[t.category] = byCat[t.category] || []
+      byCat[t.category].push(t)
+    })
+    const catNames = { cover: 'Capas', toc: 'Estruturais', editorial: 'Editoriais', back: 'Contracapa', feature: 'Matérias', visual: 'Visuais', interactive: 'Interativos' }
+    const html = Object.keys(byCat).map(cat => `
+      <div class="category-group">
+        <h3>${catNames[cat] || cat}</h3>
+        <div class="template-grid">
+          ${byCat[cat].map(t => `
+            <button class="template-card" data-slug="${t.slug}">
+              <div class="preview">${t.slug.substring(1, 3)}</div>
+              <div class="name">${escapeHtml(t.name)}</div>
+              <div class="slug">${t.slug}</div>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')
+    els.templateGrid.innerHTML = html
+    els.templateGrid.querySelectorAll('[data-slug]').forEach(card => {
+      card.addEventListener('click', () => {
+        console.log('[magazine] template selecionado:', card.dataset.slug)
+        addPage(card.dataset.slug)
+      })
+    })
+  }
+
+  // ===== Interactions =====
+  function wirePageList() {
+    els.pageList.querySelectorAll('.page-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.dataset.remove) return
+        selectPage(el.dataset.pageId)
+      })
+      el.addEventListener('dragstart', onDragStart)
+      el.addEventListener('dragover', onDragOver)
+      el.addEventListener('dragleave', onDragLeave)
+      el.addEventListener('drop', onDrop)
+      el.addEventListener('dragend', onDragEnd)
+    })
+    els.pageList.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        removePage(btn.dataset.remove)
+      })
+    })
+    const addBtn = document.getElementById('addPageBtn')
+    if (addBtn) addBtn.addEventListener('click', openTemplateModal)
+  }
+
+  let dragSrcId = null
+  function onDragStart(e) {
+    dragSrcId = e.currentTarget.dataset.pageId
+    e.currentTarget.classList.add('dragging')
+    e.dataTransfer.effectAllowed = 'move'
+  }
+  function onDragOver(e) {
+    e.preventDefault()
+    e.currentTarget.classList.add('drag-over')
+  }
+  function onDragLeave(e) { e.currentTarget.classList.remove('drag-over') }
+  function onDragEnd(e) {
+    els.pageList.querySelectorAll('.page-item').forEach(el => {
+      el.classList.remove('dragging', 'drag-over')
+    })
+  }
+  async function onDrop(e) {
+    e.preventDefault()
+    e.currentTarget.classList.remove('drag-over')
+    const targetId = e.currentTarget.dataset.pageId
+    if (!dragSrcId || dragSrcId === targetId) return
+    const srcIdx = state.pages.findIndex(p => p.id === dragSrcId)
+    const tgtIdx = state.pages.findIndex(p => p.id === targetId)
+    if (srcIdx < 0 || tgtIdx < 0) return
+    const [moved] = state.pages.splice(srcIdx, 1)
+    state.pages.splice(tgtIdx, 0, moved)
+    renderPageList()
+    try {
+      await rpcReorderPages(state.currentEdition.id, state.pages.map(p => p.id))
+      toast('Ordem salva', 'ok')
+    } catch (err) {
+      toast('Erro ao reordenar: ' + err.message, 'err')
+      state.pages = await loadPages(state.currentEdition.id)
+      renderPageList()
+    }
+  }
+
+  async function selectEdition(editionId) {
+    if (!editionId) {
+      state.currentEdition = null
+      state.pages = []
+      state.currentPageId = null
+      try { localStorage.removeItem(LS_KEY_EDITION) } catch (e) {}
+      renderEditionHeader(); renderPageList(); renderSlotsForm(); renderPreview()
+      return
+    }
+    state.currentEdition = state.editions.find(e => e.id === editionId) || null
+    state.pages = await loadPages(editionId)
+    state.currentPageId = state.pages[0]?.id || null
+    try { localStorage.setItem(LS_KEY_EDITION, editionId) } catch (e) {}
+    renderEditionHeader(); renderPageList(); renderSlotsForm(); renderPreview()
+  }
+
+  function selectPage(pageId) {
+    if (state.dirty && !confirm('Há alterações não salvas. Descartar?')) return
+    state.dirty = false
+    state.currentPageId = pageId
+    renderPageList(); renderSlotsForm(); renderPreview()
+  }
+
+  async function newEdition() {
+    const title = prompt('Título da nova edição:', 'Beauty & Health — Edição de Abril 2026')
+    if (!title) return
+    const slug = title.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      + '-' + Date.now().toString(36).slice(-4)
+    try {
+      const newId = await rpcCreateEdition({ p_title: title, p_slug: slug, p_theme: null, p_subtitle: null })
+      await loadEditions()
+      await selectEdition(newId)
+      els.editionSelect.value = newId
+      toast('Edição criada', 'ok')
+    } catch (err) { toast('Erro: ' + err.message, 'err') }
+  }
+
+  async function openTemplateModal() {
+    console.log('[magazine] openTemplateModal, templates:', state.templates.length)
+    if (!state.templates.length) {
+      toast('Carregando templates…')
+      await loadTemplates()
+      console.log('[magazine] templates carregados:', state.templates.length)
+    }
+    if (!state.templates.length) {
+      toast('Não foi possível carregar templates. Verifique console.', 'err')
+      return
+    }
+    renderTemplateModal()
+    els.templateModal.classList.add('open')
+    const cs = getComputedStyle(els.templateModal)
+    const card = els.templateModal.querySelector('.modal')
+    const cardCs = card ? getComputedStyle(card) : null
+    const r = card ? card.getBoundingClientRect() : null
+    console.log('[magazine] backdrop:', { display: cs.display, zIndex: cs.zIndex })
+    console.log('[magazine] .modal:', card ? { display: cardCs.display, w: cardCs.width, h: cardCs.height, bg: cardCs.backgroundColor, rect: { w: r.width, h: r.height, x: r.x, y: r.y } } : 'MISSING')
+    console.log('[magazine] cards=' + els.templateGrid.querySelectorAll('[data-slug]').length)
+  }
+  function closeTemplateModal() { els.templateModal.classList.remove('open') }
+
+  async function addPage(templateSlug) {
+    if (!state.currentEdition) { toast('Selecione uma edição', 'err'); return }
+    try {
+      const newId = await rpcAddPage(state.currentEdition.id, templateSlug)
+      state.pages = await loadPages(state.currentEdition.id)
+      state.currentPageId = newId
+      closeTemplateModal()
+      safeRenderAll()
+      toast('Página adicionada', 'ok')
+    } catch (err) {
+      closeTemplateModal()
+      console.error('addPage error:', err)
+      toast('Erro: ' + (err.message || err), 'err')
+    }
+  }
+
+  function safeRenderAll() {
+    try { renderPageList() } catch (e) { console.error('renderPageList:', e) }
+    try { renderSlotsForm() } catch (e) { console.error('renderSlotsForm:', e) }
+    try { renderEditionHeader() } catch (e) { console.error('renderEditionHeader:', e) }
+    try { renderPreview() } catch (e) { console.error('renderPreview:', e) }
+  }
+
+  async function removePage(pageId) {
+    if (!confirm('Remover esta página?')) return
+    try {
+      await deletePage(pageId)
+      state.pages = await loadPages(state.currentEdition.id)
+      if (state.currentPageId === pageId) state.currentPageId = state.pages[0]?.id || null
+      renderPageList(); renderSlotsForm(); renderPreview(); renderEditionHeader()
+      toast('Página removida', 'ok')
+    } catch (err) { toast('Erro: ' + err.message, 'err') }
+  }
+
+  async function saveSlots() {
+    const page = state.pages.find(p => p.id === state.currentPageId)
+    if (!page) return
+    const slots = {}
+    els.slotsForm.querySelectorAll('[data-slot]').forEach(inp => {
+      const key = inp.dataset.slot
+      let val = inp.value
+      if (inp.dataset.json === '1') {
+        const trimmed = (val || '').trim()
+        if (!trimmed) return
+        try { val = JSON.parse(trimmed) }
+        catch (e) { throw new Error(`JSON inválido em "${key}": ${e.message}`) }
+      } else {
+        if (!val) return
+      }
+      slots[key] = val
+    })
+    try {
+      await updatePageSlots(page.id, slots)
+      page.slots = slots
+      state.dirty = false
+      document.getElementById('saveSlotsBtn').disabled = true
+      renderPreview()
+      toast('Conteúdo salvo', 'ok')
+    } catch (err) { toast('Erro: ' + err.message, 'err') }
+  }
+
+  async function saveTitle() {
+    if (!state.currentEdition) return
+    const newTitle = els.editionTitle.value.trim()
+    if (!newTitle || newTitle === state.currentEdition.title) return
+    try {
+      await updateEditionTitle(state.currentEdition.id, newTitle)
+      state.currentEdition.title = newTitle
+      const edInList = state.editions.find(e => e.id === state.currentEdition.id)
+      if (edInList) edInList.title = newTitle
+      renderEditionSelect()
+      toast('Título salvo', 'ok')
+    } catch (err) { toast('Erro: ' + err.message, 'err') }
+  }
+
+  async function publish() {
+    if (!state.currentEdition) return
+    if (!confirm(`Publicar "${state.currentEdition.title}"? Esta ação não pode ser desfeita.`)) return
+    try {
+      await rpcPublish(state.currentEdition.id)
+      state.currentEdition.status = 'published'
+      await loadEditions()
+      renderEditionHeader(); renderEditionSelect()
+      toast('Edição publicada ✓', 'ok')
+    } catch (err) { toast('Erro: ' + err.message, 'err') }
+  }
+
+  async function viewLive() {
+    if (!state.currentEdition) return
+    const slug = state.currentEdition.slug
+    // Tenta gerar hash assinado pro proprio usuario autenticado como lead de preview
+    const { data: { user } } = await sb.auth.getUser()
+    let url = `revista-live.html?edition=${encodeURIComponent(slug)}&preview=1`
+    if (user && user.id) {
+      try {
+        const { data: sig } = await sb.rpc('magazine_sign_lead_link', {
+          p_lead_id: user.id,
+          p_edition_id: state.currentEdition.id,
+        })
+        if (sig) url = `revista-live.html?edition=${encodeURIComponent(slug)}&lead=${user.id}&h=${sig}&preview=1`
+      } catch (e) { /* HMAC nao configurado ainda -> fallback com hash vazio */ }
+    }
+    window.open(url, '_blank')
+  }
+
+  async function archive() {
+    if (!state.currentEdition) return
+    if (!confirm(`Arquivar "${state.currentEdition.title}"?`)) return
+    try {
+      await rpcArchive(state.currentEdition.id)
+      state.currentEdition.status = 'archived'
+      await loadEditions()
+      renderEditionHeader(); renderEditionSelect()
+      toast('Arquivada', 'ok')
+    } catch (err) { toast('Erro: ' + err.message, 'err') }
+  }
+
+  // ===== Utils =====
+  function escapeHtml(s) {
+    if (s == null) return ''
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+  }
+
+  // Debounced preview refresh (live edit)
+  let previewTimer = null
+  function schedulePreviewRefresh() {
+    clearTimeout(previewTimer)
+    previewTimer = setTimeout(renderPreview, 220)
+  }
+
+  function setPreviewMode(mode) {
+    els.previewFrame.classList.toggle('desktop', mode === 'desktop')
+    els.previewFrame.classList.toggle('mobile', mode === 'mobile')
+    els.viewDesktop.classList.toggle('active', mode === 'desktop')
+    els.viewMobile.classList.toggle('active', mode === 'mobile')
+  }
+
+  // ===== Auth =====
+  async function ensureAuth() {
+    const { data: { session } } = await sb.auth.getSession()
+    if (session && session.user) return true
+    await showAuthOverlay()
+    return false
+  }
+
+  function showAuthOverlay() {
+    return new Promise(resolve => {
+      const ov = document.getElementById('authOverlay')
+      const form = document.getElementById('authForm')
+      const err = document.getElementById('authErr')
+      const submit = document.getElementById('authSubmit')
+      ov.classList.add('open')
+      document.getElementById('authEmail').focus()
+      form.onsubmit = async (e) => {
+        e.preventDefault()
+        err.textContent = ''
+        submit.disabled = true
+        submit.textContent = 'Entrando…'
+        const email = document.getElementById('authEmail').value.trim()
+        const pwd = document.getElementById('authPwd').value
+        const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd })
+        submit.disabled = false
+        submit.textContent = 'Entrar'
+        if (error) { err.textContent = error.message; return }
+        ov.classList.remove('open')
+        resolve(data.user)
+      }
+    })
+  }
+
+  // ===== Init =====
+  async function init() {
+    await ensureAuth()
+
+    els.editionSelect.addEventListener('change', (e) => selectEdition(e.target.value))
+    els.newEditionBtn.addEventListener('click', newEdition)
+    els.editionTitle.addEventListener('blur', saveTitle)
+    els.editionTitle.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.target.blur() })
+    els.publishBtn.addEventListener('click', publish)
+    els.archiveBtn.addEventListener('click', archive)
+    els.viewLiveBtn.addEventListener('click', viewLive)
+    els.viewDesktop.addEventListener('click', () => setPreviewMode('desktop'))
+    els.viewMobile.addEventListener('click', () => setPreviewMode('mobile'))
+    els.templateModal.addEventListener('click', (e) => {
+      if (e.target === els.templateModal) closeTemplateModal()
+    })
+
+    // Carrega CSS dos templates uma vez para embutir no iframe preview
+    try {
+      const r = await fetch('css/magazine-pages.css')
+      if (r.ok) state.magazineCss = await r.text()
+      else console.warn('CSS templates 404:', r.status)
+    } catch (e) { console.warn('Falha carregando CSS templates:', e) }
+
+    await loadTemplates()
+    await loadEditions()
+
+    // Restaura ultima edicao selecionada (ou auto-seleciona a mais recente)
+    let restore = null
+    try { restore = localStorage.getItem(LS_KEY_EDITION) } catch (e) {}
+    const hasRestore = restore && state.editions.some(e => e.id === restore)
+    const pickId = hasRestore ? restore : state.editions[0]?.id
+    if (pickId) {
+      els.editionSelect.value = pickId
+      await selectEdition(pickId)
+    } else {
+      renderPreview()
+    }
+  }
+
+  window.MagazineAdmin = { closeTemplateModal }
+  document.addEventListener('DOMContentLoaded', init)
+})()
+</script>
+</body>
+</html>

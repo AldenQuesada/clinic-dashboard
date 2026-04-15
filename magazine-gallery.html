@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Beauty &amp; Health — Galeria de Templates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/magazine-pages.css" />
+<script src="js/magazine/magazine-renderer.js"></script>
+<style>
+  :root {
+    --bg: #f4f1ec;
+    --paper: #fff;
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --muted: #8a8178;
+    --line: #e5ddd2;
+    --accent: #7a1f2b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+  header.top {
+    padding: 36px 40px 24px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+    display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+  header.top h1 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; letter-spacing: -0.01em; }
+  header.top h1 em { color: var(--accent); font-style: italic; }
+  header.top p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  header.top nav { display: flex; gap: 8px; }
+  header.top nav a {
+    padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px;
+    font-size: 13px; text-decoration: none; color: var(--ink); background: var(--paper);
+  }
+  header.top nav a:hover { border-color: var(--accent); color: var(--accent); }
+  header.top nav a.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  header.top nav a.primary:hover { background: var(--accent); border-color: var(--accent); }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 40px; }
+
+  .filter-bar {
+    display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap;
+    padding-bottom: 16px; border-bottom: 1px solid var(--line);
+  }
+  .filter-btn {
+    padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--paper); font-size: 12px; font-weight: 500; color: var(--ink-soft); cursor: pointer;
+    transition: all .15s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 32px;
+  }
+
+  .card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden; display: flex; flex-direction: column;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+
+  .card .preview-wrap {
+    width: 100%; aspect-ratio: 16/10; background: #fafaf7;
+    border-bottom: 1px solid var(--line); overflow: hidden; position: relative;
+  }
+  .card .preview-wrap iframe {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    border: 0; pointer-events: none;
+  }
+
+  .card .meta {
+    padding: 18px 22px; display: flex; justify-content: space-between; align-items: baseline;
+    gap: 14px;
+  }
+  .card .meta .left h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+  .card .meta .left .slug { font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace; }
+  .card .meta .cat {
+    padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; background: var(--bg); color: var(--muted);
+  }
+  .card .meta .cat.cover { background: #fce7ec; color: var(--accent); }
+  .card .meta .cat.feature { background: #e8f0ff; color: #1e4a8f; }
+  .card .meta .cat.visual { background: #e8f5e8; color: #2d7a43; }
+  .card .meta .cat.interactive { background: #fef3c7; color: #b45309; }
+  .card .meta .cat.structural { background: #ede9fe; color: #6b21a8; }
+  .card .meta .cat.extra { background: #f1f5f9; color: #475569; }
+
+  .card .fields { padding: 0 22px 18px; }
+  .card .fields summary {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    cursor: pointer; padding: 6px 0; outline: none;
+  }
+  .card .fields summary:hover { color: var(--accent); }
+  .card .fields .content { padding-top: 8px; font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+  .card .fields .content code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 11px; color: var(--ink); }
+  .card .fields .content .req { color: var(--accent); font-weight: 600; }
+  .card .fields .content ul { padding-left: 18px; }
+
+  .card footer {
+    padding: 12px 22px; background: #fafaf7; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; color: var(--muted);
+  }
+  .card footer strong { color: var(--ink); }
+  .card footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .card footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Beauty &amp; Health <em>— Galeria de Templates</em></h1>
+    <p>Cada um dos 20 formatos da revista, renderizado com conteúdo de exemplo. Use como referência ao montar o sumário.</p>
+  </div>
+  <nav>
+    <a href="magazine-intake.html">Intake</a>
+    <a href="revista.html" target="_blank">Protótipo</a>
+    <a href="docs/magazine-editor-playbook.md" target="_blank" class="primary">Playbook</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div class="filter-bar" id="filterBar">
+    <button class="filter-btn active" data-cat="all">Todos (20)</button>
+    <button class="filter-btn" data-cat="cover">Capas</button>
+    <button class="filter-btn" data-cat="structural">Estruturais</button>
+    <button class="filter-btn" data-cat="feature">Matérias</button>
+    <button class="filter-btn" data-cat="visual">Visuais</button>
+    <button class="filter-btn" data-cat="interactive">Interativos</button>
+    <button class="filter-btn" data-cat="extra">Extras</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+</div>
+
+<script>
+;(function () {
+  'use strict'
+
+  // Placeholders de foto - usa imagens genericas de beleza/retrato
+  const P = {
+    portrait:  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=1200&q=80',  // retrato mulher
+    portrait2: 'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=1200&q=80',  // retrato profissional
+    portrait3: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1200&q=80',     // retrato
+    beauty:    'https://images.unsplash.com/photo-1570554886111-e80fcca6a029?w=1200&q=80',  // rosto close
+    beauty2:   'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=1200&q=80',
+    eye:       'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=1200&q=80',  // olho
+    skincare:  'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=1200&q=80',     // produto
+    hands:     'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80',
+    spa:       'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1600&q=80',  // spa landscape
+    clinic:    'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=1600&q=80',  // clinica
+  }
+
+  // Exemplos fixos por template (seguindo o playbook)
+  const EXAMPLES = [
+    { slug: 't01_cover_hero_dark', name: 'Capa · Hero Dark', cat: 'cover', slots: {
+      titulo: 'O olhar que *renasce*',
+      subtitulo: 'Sem cirurgia, sem toxina, sem downtime: como a tecnologia Fotona devolve luz ao rosto em quem já passou dos 50.',
+      edicao_label: 'ABRIL · 2026 · Nº 01',
+      tag: 'MATÉRIA DE CAPA',
+      foto_hero: P.portrait,
+    }},
+    { slug: 't02_cover_hero_light', name: 'Capa · Hero Light', cat: 'cover', slots: {
+      titulo: 'Luz que *habita* você',
+      subtitulo: 'Sobre voltar a se reconhecer no espelho — e gostar do que vê.',
+      foto_hero: P.portrait2,
+    }},
+    { slug: 't03_cover_triptych', name: 'Capa · Tripla', cat: 'cover', slots: {
+      foto_1: P.beauty, titulo_1: 'Rosto',
+      foto_2: P.hands, titulo_2: 'Corpo',
+      foto_3: P.spa,   titulo_3: 'Ritual',
+    }},
+    { slug: 't04_toc_editorial', name: 'Sumário', cat: 'structural', slots: {
+      titulo: 'Nesta edição',
+      kicker: 'SUMÁRIO',
+      lede: 'Oito páginas para entender por que o olhar é o primeiro lugar onde o tempo aparece — e o primeiro onde podemos reverter.',
+      items: [
+        { num: '01', titulo: 'O olhar que *renasce*', kicker: 'MATÉRIA DE CAPA' },
+        { num: '02', titulo: 'Ana, 58: *antes* e *depois*', kicker: 'RELATO REAL' },
+        { num: '03', titulo: 'Entrevista com Dra. Fernanda', kicker: 'CONVERSA' },
+        { num: '04', titulo: 'Mitos do rejuvenescimento', kicker: 'VERDADE OU MITO' },
+      ],
+    }},
+    { slug: 't05_editorial_letter', name: 'Carta Editorial', cat: 'structural', slots: {
+      titulo: 'Uma palavra da diretora',
+      foto_autora: P.portrait3,
+      corpo: 'Outro dia, no consultório, uma paciente de 62 anos me disse algo que não saiu mais da minha cabeça: "Mirian, eu não quero ficar jovem. Eu quero ficar leve."\n\nEsse é o espírito que tento trazer a cada edição: não é sobre apagar o tempo, é sobre continuar se reconhecendo. Esta edição nasce dessa conversa — e de outras tantas que vivemos por aqui ao longo do último mês.\n\nVocê vai encontrar uma matéria de capa sobre o olhar que descansa. Uma entrevista que, confesso, me emocionou. E um antes-e-depois que só existe porque a Ana topou compartilhar.\n\nBoa leitura — e até a próxima.',
+      assinatura: 'Mirian de Paula',
+    }},
+    { slug: 't06_back_cta', name: 'Contracapa · CTA', cat: 'structural', slots: {
+      titulo: 'Até a próxima *edição*',
+      contatos: [
+        { label: 'WhatsApp', valor: '(31) 9xxxx-xxxx' },
+        { label: 'Endereço', valor: 'Rua da Clínica, 123 · Belo Horizonte' },
+        { label: 'Instagram', valor: '@clinicamiriandepaula' },
+      ],
+      cta_texto: 'AGENDAR AVALIAÇÃO',
+      cta_link: 'https://wa.me/5531999999999',
+      proxima_edicao: 'Maio: rosto que transmite descanso',
+    }},
+    { slug: 't07_feature_double', name: 'Matéria · Dupla', cat: 'feature', slots: {
+      kicker: 'MATÉRIA DE CAPA',
+      titulo: 'O olhar que *renasce*',
+      lede: 'Antes de qualquer toxina ou preenchimento, existe a luz da pele — e é nela que a Fotona atua com precisão cirúrgica sem incisão.',
+      corpo: 'Ana tem 58 anos. Em abril, ela entrou na clínica dizendo que não se reconhecia mais nas fotos. "Parece que estou sempre cansada", ela disse. E não estava — estava, sim, acumulando os pequenos sinais que o tempo costuma deixar na pele fina ao redor dos olhos.\n\nO protocolo Smooth Eyes com Fotona é exatamente para isso. Não é laser ablativo. Não substitui cirurgia para quem precisa de cirurgia. Mas para quem ainda tem elasticidade e só quer recuperar a luz, é extraordinário.\n\nSão três sessões, espaçadas de 45 em 45 dias. Nenhum downtime real — a maioria das pacientes volta ao trabalho no mesmo dia, com no máximo um leve rubor que cede em horas. O resultado começa a aparecer por volta da segunda sessão e se firma nos 60 dias seguintes à terceira.\n\nO que a Ana disse ao final? "Agora parece que dormi oito horas toda noite." E é exatamente isso — não é mudar quem você é. É voltar a parecer você.',
+      foto_hero: P.portrait,
+      byline: 'Por Mirian de Paula',
+    }},
+    { slug: 't08_feature_fullbleed', name: 'Matéria · Full Bleed', cat: 'feature', slots: {
+      titulo: 'A luz mora nos *detalhes*',
+      foto_full: P.clinic,
+      lede: 'Um passeio pelos bastidores da clínica onde cada protocolo é costurado à mão.',
+    }},
+    { slug: 't09_feature_triptych', name: 'Matéria · 3 Blocos', cat: 'feature', slots: {
+      foto_1: P.beauty, legenda_1: 'Antes do ritual',
+      texto_central: '"A pele não esquece — mas aprende a soltar."',
+      foto_2: P.beauty2, legenda_2: 'Depois de 90 dias',
+    }},
+    { slug: 't10_interview', name: 'Entrevista Q&A', cat: 'feature', slots: {
+      titulo: 'Conversa com quem entende de *olhar*',
+      foto_entrevistado: P.portrait3,
+      nome: 'Dra. Fernanda Lima',
+      titulo_prof: 'Dermatologista · CRM 12345',
+      qas: [
+        { q: 'Por que o olhar é tão específico?', a: 'A pele ao redor dos olhos é até cinco vezes mais fina que a do restante do rosto. Ela envelhece primeiro, mais rápido, e responde de forma diferente a qualquer protocolo. Ignorar isso é receita para resultado frustrante.' },
+        { q: 'E qual o grande erro que você vê no mercado?', a: 'Tratar o olhar com o mesmo arsenal do rosto inteiro. Toxina resolve músculo, mas não luz. Preenchedor resolve volume, mas não textura. Para o olhar, precisa de protocolo dedicado — e, na minha experiência, a Fotona faz isso como nada mais faz.' },
+        { q: 'O que uma paciente pode esperar como resultado realista?', a: 'Não vai ser outra pessoa. Vai ser ela, com três horas a mais de sono por noite. É essa a imagem que eu sempre uso.' },
+      ],
+    }},
+    { slug: 't11_product_highlight', name: 'Destaque · Tratamento', cat: 'feature', slots: {
+      titulo: 'Fotona 4D Smooth Eyes',
+      subtitulo: 'Protocolo dedicado à região periocular — sem incisão, sem downtime.',
+      foto: P.skincare,
+      beneficios: [
+        'Estimula colágeno profundo com dois comprimentos de onda',
+        'Redefine pálpebra superior sem bisturi',
+        'Atenua rugas de expressão e finas',
+        'Devolve luminosidade à pele periocular',
+      ],
+      preco_sugerido: 'a partir de R$ 1.800',
+      cta: 'SAIBA MAIS',
+    }},
+    { slug: 't12_before_after_pair', name: 'Antes/Depois · Par', cat: 'visual', slots: {
+      titulo: 'Ana, 58 anos: o olhar *antes* e *depois*',
+      foto_antes: P.portrait2,
+      foto_depois: P.portrait,
+      meta: 'Smooth Eyes + AH · 3 sessões · Resultado em 60 dias',
+      stats: [
+        { valor: '3×', label: 'SESSÕES' },
+        { valor: '60d', label: 'DURAÇÃO' },
+        { valor: '-42%', label: 'APARÊNCIA CANSADA' },
+        { valor: '0', label: 'DOWNTIME' },
+      ],
+    }},
+    { slug: 't13_before_after_quad', name: 'Antes/Depois · 2 casos', cat: 'visual', slots: {
+      caso_1: { antes: P.portrait2, depois: P.portrait, label: 'Ana · 58a · 3 sessões' },
+      caso_2: { antes: P.beauty, depois: P.beauty2, label: 'Regina · 52a · 2 sessões' },
+    }},
+    { slug: 't14_mosaic_gallery', name: 'Galeria Mosaico', cat: 'visual', slots: {
+      titulo: 'Bastidores de abril',
+      fotos: [P.clinic, P.hands, P.skincare, P.beauty2, P.spa],
+      legenda: 'Rituais e detalhes que compõem cada atendimento.',
+    }},
+    { slug: 't15_evolution_timeline', name: 'Timeline de Evolução', cat: 'visual', slots: {
+      titulo: 'Evolução do protocolo *Smooth Eyes*',
+      marcos: [
+        { data: 'Dia 0',   foto: P.portrait2, legenda: 'Olhar com aparência cansada e pálpebra superior caída.' },
+        { data: '30 dias', foto: P.beauty,    legenda: 'Primeiros sinais de firmeza após 1ª sessão.' },
+        { data: '60 dias', foto: P.beauty2,   legenda: '2ª sessão — luminosidade retornou.' },
+        { data: '90 dias', foto: P.portrait,  legenda: 'Resultado final consolidado.' },
+      ],
+    }},
+    { slug: 't16_quiz_cta', name: 'Quiz · CTA', cat: 'interactive', slots: {
+      titulo: 'Descubra seu perfil *Smooth Eyes*',
+      lede: 'Em três minutos você descobre qual protocolo é ideal para seu olhar — e ganha cashback aplicável na primeira sessão.',
+      quiz_slug: 'smooth-eyes-perfil',
+      recompensas: [
+        { titulo: 'Cashback R$ 50', descricao: 'Aplicável na 1ª avaliação.' },
+        { titulo: 'E-book do protocolo', descricao: 'Guia completo do que esperar.' },
+        { titulo: 'Prioridade na agenda', descricao: '48h antes do público geral.' },
+      ],
+    }},
+    { slug: 't17_poll', name: 'Enquete', cat: 'interactive', slots: {
+      pergunta: 'Qual é o sinal que mais te incomoda hoje?',
+      opcoes: [
+        { texto: 'Olhar cansado, olheiras', pct: 42 },
+        { texto: 'Rugas de expressão',       pct: 28 },
+        { texto: 'Perda de firmeza',         pct: 20 },
+        { texto: 'Manchas de sol',           pct: 10 },
+      ],
+    }},
+    { slug: 't18_stat_feature', name: 'Dado em Destaque', cat: 'extra', slots: {
+      numero: '93%',
+      titulo: 'das pacientes relatam *olhar mais descansado* após 3 sessões do protocolo Smooth Eyes',
+      fonte: 'Estudo interno · Clínica Mirian de Paula · 2025 · n=48',
+    }},
+    { slug: 't19_ritual_steps', name: 'Passos de Ritual', cat: 'extra', slots: {
+      titulo: 'Ritual matinal *pós-Smooth Eyes*',
+      passos: [
+        { titulo: 'Higienização leve', descricao: 'Água micelar e gaze. Sem fricção nos primeiros 7 dias.' },
+        { titulo: 'Sérum periocular',  descricao: 'Com peptídeos e cafeína, aplicação em toque suave.' },
+        { titulo: 'Hidratação',        descricao: 'Creme específico para região ocular, 2× ao dia.' },
+        { titulo: 'Proteção solar',    descricao: 'FPS 50+ generoso — não pula nunca.' },
+      ],
+    }},
+    { slug: 't20_myth_vs_fact', name: 'Mito vs Fato', cat: 'extra', slots: {
+      titulo: 'Mitos &amp; fatos do *laser*',
+      pares: [
+        { mito: 'Laser afina a pele com o tempo.', fato: 'Não. Lasers não-ablativos estimulam colágeno, engrossando e firmando a pele ao invés de afinar.' },
+        { mito: 'Preciso ficar vermelha dias.', fato: 'Depende do protocolo. Smooth Eyes geralmente tem rubor leve que cede em 2-4 horas.' },
+        { mito: 'Resultado é imediato.', fato: 'O estímulo de colágeno leva 30-90 dias para aparecer completamente. É um processo fisiológico.' },
+      ],
+    }},
+  ]
+
+  const grid = document.getElementById('grid')
+
+  function render(filter = 'all') {
+    const items = filter === 'all' ? EXAMPLES : EXAMPLES.filter(e => e.cat === filter)
+    grid.innerHTML = items.map(e => cardHtml(e)).join('')
+    // monta iframes depois pra melhor performance
+    items.forEach(e => mountIframe(e))
+  }
+
+  function cardHtml(e) {
+    return `
+      <article class="card" data-slug="${e.slug}">
+        <div class="preview-wrap"><iframe data-slug="${e.slug}" title="${e.name}" loading="lazy"></iframe></div>
+        <div class="meta">
+          <div class="left">
+            <h2>${e.name}</h2>
+            <div class="slug">${e.slug}</div>
+          </div>
+          <div class="cat ${e.cat}">${labelCat(e.cat)}</div>
+        </div>
+        <div class="fields">
+          <details>
+            <summary>Ver slots deste template</summary>
+            <div class="content">${slotsSummary(e)}</div>
+          </details>
+        </div>
+        <footer>
+          <span>Slots: <strong>${Object.keys(e.slots).length}</strong></span>
+          <a href="docs/magazine-editor-playbook.md#${e.slug}" target="_blank">Ver contrato →</a>
+        </footer>
+      </article>`
+  }
+
+  function labelCat(c) {
+    return ({ cover: 'Capa', feature: 'Matéria', visual: 'Visual', interactive: 'Interativo', structural: 'Estrutural', extra: 'Extra' })[c] || c
+  }
+
+  function slotsSummary(e) {
+    return `<ul>${Object.keys(e.slots).map(k => `<li><code>${k}</code>${k.startsWith('foto') ? ' <span style="color:#888">(imagem)</span>' : typeof e.slots[k] === 'object' ? ' <span style="color:#888">(lista)</span>' : ''}</li>`).join('')}</ul>`
+  }
+
+  function mountIframe(e) {
+    const iframe = grid.querySelector(`iframe[data-slug="${e.slug}"]`)
+    if (!iframe) return
+    const pageHtml = window.MagazineRenderer.render(e.slug, e.slots)
+    const nat = { w: 1440, h: 900 }
+    iframe.srcdoc = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/magazine-pages.css"/>
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#f4f1ec;}
+#stage{width:${nat.w}px;height:${nat.h}px;transform-origin:top left;position:absolute;top:0;left:0;}
+#stage>.mp{width:100%;height:100%;}
+</style></head><body>
+<div id="stage">${pageHtml}</div>
+<script>(function(){var s=document.getElementById('stage');var sx=window.innerWidth/${nat.w};var sy=window.innerHeight/${nat.h};var k=Math.min(sx,sy);s.style.transform='scale('+k+')';s.style.left=((window.innerWidth-${nat.w}*k)/2)+'px';s.style.top=((window.innerHeight-${nat.h}*k)/2)+'px';})();<\/script>
+</body></html>`
+  }
+
+  // Filter bar
+  document.getElementById('filterBar').addEventListener('click', (e) => {
+    const btn = e.target.closest('.filter-btn')
+    if (!btn) return
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    render(btn.dataset.cat)
+  })
+
+  render('all')
+})()
+</script>
+</body>
+</html>

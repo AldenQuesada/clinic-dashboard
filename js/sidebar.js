@@ -207,10 +207,12 @@
         const highlightCls = page.highlight     ? ' nav-subitem-highlight' : ''
         const activeCls    = page.defaultActive ? ' active'               : ''
 
+        const extUrlAttr = page.externalUrl ? ` data-external-url="${_esc(page.externalUrl)}"` : ''
         html += `<li`
         html += ` class="nav-subitem${highlightCls}${activeCls}"`
         html += ` data-page="${_esc(page.page)}"`
         html += ` data-breadcrumb="${_esc(page.breadcrumb)}"`
+        html += extUrlAttr
         html += `>${_esc(page.label)}</li>`
       })
 
@@ -397,6 +399,7 @@
       html += ` class="nav-flyout-item${activeCls}${highlightCls}"`
       html += ` data-page="${_esc(si.dataset.page || '')}"`
       html += ` data-breadcrumb="${_esc(si.dataset.breadcrumb || si.textContent.trim())}"`
+      if (si.dataset.externalUrl) html += ` data-external-url="${_esc(si.dataset.externalUrl)}"`
       html += `>${_esc(si.textContent.trim())}</li>`
     })
     html += '</ul>'
@@ -458,6 +461,13 @@
    * @param {HTMLElement} subItem — elemento .nav-subitem clicado
    */
   function handleSubItemClick(subItem) {
+    // Link externo: abre em nova aba, nao altera SPA
+    const extUrl = subItem.dataset.externalUrl
+    if (extUrl) {
+      window.open(extUrl, '_blank', 'noopener')
+      return
+    }
+
     // Atualiza estado visual dos sub-itens
     document.querySelectorAll('.nav-subitem').forEach(si => si.classList.remove('active'))
     subItem.classList.add('active')
