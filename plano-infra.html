@@ -197,6 +197,7 @@
       <li><a href="#etapa4">Etapa 4 — DNS e subdomínios</a></li>
       <li><a href="#etapa5">Etapa 5 — Subir <code>backend-api</code> (opcional)</a></li>
       <li><a href="#etapa6">Etapa 6 — Extrair <code>outbox-worker</code> (último)</a></li>
+      <li><a href="#etapa7">Etapa 7 — Envio direto híbrido (msgs de agendamento)</a></li>
       <li><a href="#rollback">Plano de rollback</a></li>
       <li><a href="#riscos">Matriz consolidada de riscos</a></li>
     </ol>
@@ -449,6 +450,92 @@ Project: <span style="color:var(--accent);">clinicai</span>
     </li>
   </ol>
 
+  <h2 id="etapa7"><span class="step-num">7</span> Envio direto híbrido — msgs de agendamento</h2>
+  <div class="meta-grid">
+    <div class="meta-pill"><div class="label">Complexidade</div><div class="value"><span class="risk-badge risk-yellow">Média</span></div></div>
+    <div class="meta-pill"><div class="label">Risco</div><div class="value"><span class="risk-badge risk-yellow">Médio</span></div></div>
+    <div class="meta-pill"><div class="label">Onde testar</div><div class="value">LOCAL primeiro</div></div>
+  </div>
+
+  <p>Objetivo: msg de confirmação instantânea ao criar agendamento vai <strong>direto</strong> pra Evolution (≈300ms), sem esperar o processor de 2min. Lembretes futuros (D-1, 30min antes, boas-vindas do dia) <strong>continuam no outbox</strong>.</p>
+
+  <div class="warning">
+    <strong>Testar no ambiente local antes de qualquer coisa.</strong> Subir frontend na porta 8080 apontando pro Supabase e Evolution reais, criar agendamento de teste pra número próprio, validar que só 1 msg chega e chega rápido. Só depois committar pra prod.
+  </div>
+
+  <h3>Modelo híbrido</h3>
+
+  <div class="arch-diagram">
+<span style="color:var(--green);">IMEDIATA</span> (confirmação ao clicar "criar agendamento"):
+  frontend → Evolution API (direto)
+          ↳ falhou? → INSERT wa_outbox (scheduled_at=now, fallback)
+
+<span style="color:var(--green);">FUTURA</span> (D-1, boas-vindas dia, 30 min antes):
+  frontend → INSERT wa_outbox (scheduled_at=futuro)
+          → processor drena no horário certo
+
+<span style="color:var(--green);">OPT-OUT / BLACKLIST</span>:
+  sempre via outbox (validação centralizada)</div>
+
+  <h3>Passos</h3>
+  <ol class="step-list">
+    <li>
+      <strong>Criar função utilitária <code>WhatsAppDirect.send()</code></strong>
+      <div class="detail">Módulo isolado em <code>js/services/whatsapp-direct.service.js</code>. Faz POST pra Evolution <code>/message/sendText/Mih</code> com timeout de 5s. Retorna <code>{ok, messageId}</code> ou <code>{ok:false, error, fallbackToOutbox:true}</code>.</div>
+    </li>
+    <li>
+      <strong>Identificar pontos de chamada imediata</strong>
+      <div class="detail">Em <code>agenda-automations.engine.js</code>, os templates com <code>day=0</code> e <code>delay_hours=0</code> são imediatos. Esses ficam no caminho direto. Os demais (day=-1, delay_hours>0) continuam outbox.</div>
+    </li>
+    <li>
+      <strong>Implementar fallback transacional</strong>
+      <div class="detail">Se direct falhar (timeout, 4xx, 5xx), enfileirar no outbox com <code>scheduled_at = now()</code> e o processor pega no próximo ciclo. Paciente recebe com delay de 2min mas <strong>nunca perde</strong> a msg.</div>
+    </li>
+    <li>
+      <strong>Replicar validações no client (só as imediatas)</strong>
+      <div class="detail">Checar blacklist (<code>wa_phone_blacklist</code>) via Supabase ANTES de enviar. Se bloqueado, nem tenta. Reusa a RPC de guard existente.</div>
+    </li>
+    <li>
+      <strong>Logar em <code>wa_log_message</code></strong>
+      <div class="detail">Envio direto também grava em <code>wa_log_message</code> (mesma tabela do webhook), pra manter histórico unificado pra inbox e auditoria.</div>
+    </li>
+    <li>
+      <strong>Teste local com número próprio</strong>
+      <div class="detail">Servidor local na porta 8080 → criar agendamento teste pro seu WhatsApp → verificar: (1) msg chega em ≤1s, (2) aparece na inbox, (3) <code>wa_outbox</code> NÃO tem linha pra essa msg imediata, (4) D-1 entra no outbox normalmente.</div>
+    </li>
+    <li>
+      <strong>Teste de falha (simular Evolution offline)</strong>
+      <div class="detail">Trocar URL da Evolution pra uma inválida localmente, criar agendamento, confirmar que fallback cai no outbox, e que processor (n8n ou worker) pega em 2min.</div>
+    </li>
+    <li>
+      <strong>Deploy condicional (feature flag)</strong>
+      <div class="detail">Variável <code>DIRECT_SEND_ENABLED</code> em <code>js/config/env.js</code>. Começar <code>false</code> em prod. Ativar <code>true</code> só depois do teste na clínica com 1-2 agendamentos reais acompanhados.</div>
+    </li>
+  </ol>
+
+  <h3>Ganhos esperados</h3>
+  <table>
+    <tr><th>Métrica</th><th>Antes</th><th>Depois</th></tr>
+    <tr><td>Latência msg confirmação</td><td>0-120s (média 60s)</td><td>≈300ms</td></tr>
+    <tr><td>Dependência n8n para imediatas</td><td>Crítica</td><td>Fallback apenas</td></tr>
+    <tr><td>Visibilidade do envio na UI</td><td>"Agendado" (fila)</td><td>"Enviado ✓" (confirmado)</td></tr>
+    <tr><td>Msgs futuras (lembretes)</td><td>Via outbox</td><td>Via outbox (sem mudança)</td></tr>
+  </table>
+
+  <h3>Riscos específicos dessa etapa</h3>
+  <table>
+    <tr><th>Risco</th><th>Mitigação</th></tr>
+    <tr><td>Evolution cai → msg imediata perdida</td><td>Fallback pra outbox em qualquer erro/timeout</td></tr>
+    <tr><td>Duplicação: direto + outbox</td><td>Flag <code>direct_sent=true</code> impede enfileiramento do template imediato</td></tr>
+    <tr><td>Rate limit em broadcast (vários agendamentos batch)</td><td>Broadcast mantém 100% outbox, só agendamento individual vai direto</td></tr>
+    <tr><td>Blacklist não aplicada</td><td>Checar via RPC antes do POST direto; se falha de check, cai no outbox</td></tr>
+    <tr><td>CORS da Evolution bloqueando browser</td><td>Testar local — já sabemos que <code>evolution.aldenquesada.site</code> está no CSP e <code>/headers</code> já libera. Se CORS quebrar, só via backend-api.</td></tr>
+  </table>
+
+  <div class="warning">
+    <strong>Gotcha crítico:</strong> o bug da duplicação tripla (<code>appt_</code>/<code>tag_</code>/<code>lead_</code>) precisa estar 100% resolvido antes dessa etapa. Senão, ao invés de 3 INSERTs no outbox, você tem <strong>3 fetches paralelos pra Evolution</strong> e o UNIQUE INDEX não protege mais. Verificar logs da Evolution depois de commitar <code>abcccf0</code> em prod.
+  </div>
+
   <h2 id="rollback">Plano de rollback (cada etapa)</h2>
 
   <table>
@@ -458,6 +545,7 @@ Project: <span style="color:var(--accent);">clinicai</span>
     <tr><td>4 — DNS</td><td>Remover CNAME no Cloudflare. Acesso volta pelo <code>.easypanel.host</code>.</td><td>~5 min</td></tr>
     <tr><td>5 — backend-api</td><td>Pausar service novo. Frontend continua falando com monolito.</td><td>~1 min</td></tr>
     <tr><td>6 — outbox-worker</td><td>Parar worker. Reativar workflow n8n.</td><td>~2 min</td></tr>
+    <tr><td>7 — envio direto híbrido</td><td>Flag <code>DIRECT_SEND_ENABLED=false</code> em <code>env.js</code>. Commit + deploy. Volta 100% pra outbox.</td><td>~2 min</td></tr>
   </table>
 
   <h2 id="riscos">Matriz consolidada de riscos</h2>
@@ -482,8 +570,10 @@ Project: <span style="color:var(--accent);">clinicai</span>
     <tr><td>Sábado 12h</td><td>Validar em prod, almoçar</td><td>1h</td></tr>
     <tr><td>Sábado 15h</td><td>Etapa 3 — frontend enxuto</td><td>30 min</td></tr>
     <tr><td>Sábado 16h</td><td>Etapa 4 — DNS (se quiser)</td><td>20 min</td></tr>
-    <tr><td>Domingo</td><td>Buffer pra corrigir qualquer surpresa</td><td>—</td></tr>
-    <tr><td>Próxima semana</td><td>Etapas 5 e 6 se necessário, já com calma</td><td>—</td></tr>
+    <tr><td>Domingo manhã</td><td>Etapa 7 — envio direto híbrido <strong>local</strong>, sem tocar prod</td><td>1-2h</td></tr>
+    <tr><td>Domingo tarde</td><td>Teste com número próprio e simulação de falha</td><td>1h</td></tr>
+    <tr><td>Domingo noite</td><td>Buffer pra corrigir surpresas</td><td>—</td></tr>
+    <tr><td>Próxima semana</td><td>Etapas 5, 6 e ativação da flag da 7 em prod, já com calma</td><td>—</td></tr>
   </table>
 
   <div class="footer">
