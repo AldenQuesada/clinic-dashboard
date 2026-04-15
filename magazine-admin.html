@@ -14,7 +14,7 @@
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js" defer></script>
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/magazine/magazine-renderer.js?v=20260416c"></script>
+<script src="js/magazine/magazine-renderer.js?v=20260416d"></script>
 <script src="js/magazine/admin/slot-schema.js"></script>
 <script src="js/magazine/admin/editor-widgets.js"></script>
 <script src="js/magazine/admin/validator.js"></script>
@@ -1762,9 +1762,12 @@
     if (!state.magazineCss || state.magazineCss.length < 100) {
       console.error('[preview] magazineCss vazio · CSS nao carregado')
     }
-    // Preview em viewport NATIVO (sem stage scaled) — match exato com leitor
-    // Mobile: 390px (igual ao .preview-frame.mobile · trigger mobile breakpoints)
-    // Desktop: viewport real do iframe (~960px) · scroll vertical liberado
+    const isMobile = els.previewFrame.classList.contains('mobile')
+    // Stage de tamanho fixo (1440x900 desktop / 390x720 mobile) escalado p/ caber
+    // visualmente no iframe — mantém media queries do template como na vida real.
+    // Diferença para a versão antiga: stage com altura "auto" (cresce com conteúdo)
+    // + body do iframe com scroll vertical. .mp com overflow visible permite vazar.
+    const nat = isMobile ? { w: 390, h: 720 } : { w: 1440, h: 900 }
     iframe.srcdoc = `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -1777,12 +1780,35 @@ ${state.magazineCss}
 ${state.dynamicAccent ? `:root { --mp-accent: ${state.dynamicAccent} !important; }` : ''}
 html, body { margin: 0; padding: 0; background: #f4f1ec; }
 html { scrollbar-width: thin; }
-body { min-height: 100vh; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-/* Override .mp p/ permitir scroll quando conteudo > viewport (igual ao leitor) */
-.mp { height: auto !important; min-height: 100vh; overflow: visible !important; }
+body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#stage {
+  width: ${nat.w}px; min-height: ${nat.h}px;
+  transform-origin: top center;
+  margin: 0 auto;
+}
+#stage > .mp { width: 100%; min-height: ${nat.h}px; height: auto !important; overflow: visible !important; }
 </style>
 </head>
-<body>${pageHtml}</body></html>`
+<body>
+<div id="stage">${pageHtml}</div>
+<script>
+(function(){
+  function fit(){
+    var s = document.getElementById('stage');
+    var sx = window.innerWidth / ${nat.w};
+    var k = Math.min(1, sx); // só reduz, nunca amplia
+    s.style.transform = 'scale(' + k + ')';
+    // Compensa o espaço "perdido" pelo scale para o body ter altura correta
+    var stageH = s.scrollHeight;
+    document.body.style.height = (stageH * k) + 'px';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  // re-fit após imagens carregarem (alteram altura)
+  document.addEventListener('load', fit, true);
+})();
+<\/script>
+</body></html>`
   }
 
   // Le valores atuais do form (ainda nao salvos) para preview em tempo real
@@ -2410,7 +2436,7 @@ body { min-height: 100vh; overflow-x: hidden; overflow-y: auto; -webkit-overflow
 
     // Carrega CSS dos templates uma vez para embutir no iframe preview
     try {
-      const r = await fetch('css/magazine-pages.css?v=20260416c')
+      const r = await fetch('css/magazine-pages.css?v=20260416d')
       if (r.ok) state.magazineCss = await r.text()
       else console.warn('CSS templates 404:', r.status)
     } catch (e) { console.warn('Falha carregando CSS templates:', e) }
