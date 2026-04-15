@@ -14,7 +14,7 @@
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js" defer></script>
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/magazine/magazine-renderer.js?v=20260416d"></script>
+<script src="js/magazine/magazine-renderer.js?v=20260416e"></script>
 <script src="js/magazine/admin/slot-schema.js"></script>
 <script src="js/magazine/admin/editor-widgets.js"></script>
 <script src="js/magazine/admin/validator.js"></script>
@@ -1780,11 +1780,11 @@ ${state.magazineCss}
 ${state.dynamicAccent ? `:root { --mp-accent: ${state.dynamicAccent} !important; }` : ''}
 html, body { margin: 0; padding: 0; background: #f4f1ec; }
 html { scrollbar-width: thin; }
-body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
 #stage {
   width: ${nat.w}px; min-height: ${nat.h}px;
-  transform-origin: top center;
-  margin: 0 auto;
+  transform-origin: top left;
+  position: absolute; top: 0; left: 0;
 }
 #stage > .mp { width: 100%; min-height: ${nat.h}px; height: auto !important; overflow: visible !important; }
 </style>
@@ -1798,13 +1798,14 @@ body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; 
     var sx = window.innerWidth / ${nat.w};
     var k = Math.min(1, sx); // só reduz, nunca amplia
     s.style.transform = 'scale(' + k + ')';
+    // Centraliza horizontalmente após o scale
+    var visualW = ${nat.w} * k;
+    s.style.left = ((window.innerWidth - visualW) / 2) + 'px';
     // Compensa o espaço "perdido" pelo scale para o body ter altura correta
-    var stageH = s.scrollHeight;
-    document.body.style.height = (stageH * k) + 'px';
+    document.body.style.height = (s.scrollHeight * k) + 'px';
   }
   fit();
   window.addEventListener('resize', fit);
-  // re-fit após imagens carregarem (alteram altura)
   document.addEventListener('load', fit, true);
 })();
 <\/script>
@@ -2436,7 +2437,7 @@ body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; 
 
     // Carrega CSS dos templates uma vez para embutir no iframe preview
     try {
-      const r = await fetch('css/magazine-pages.css?v=20260416d')
+      const r = await fetch('css/magazine-pages.css?v=20260416e')
       if (r.ok) state.magazineCss = await r.text()
       else console.warn('CSS templates 404:', r.status)
     } catch (e) { console.warn('Falha carregando CSS templates:', e) }
