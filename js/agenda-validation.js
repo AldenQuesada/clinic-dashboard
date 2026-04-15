@@ -99,8 +99,11 @@ function _getClinicDay(dateStr) {
       return { aberto: true, periods: [{ ini: cfg.horarioInicio || '08:00', fim: cfg.horarioFim || '19:00', label: 'dia' }] }
     }
     var data = JSON.parse(raw)
-    // data pode estar em { data: {...} } (formato Supabase)
-    var horarios = (data && data.horarios) || (data && data.data && data.data.horarios) || null
+    // data pode estar em multiplos formatos: {horarios}, {data:{horarios}}, {data:{data:{horarios}}}
+    var horarios = (data && data.horarios)
+                || (data && data.data && data.data.horarios)
+                || (data && data.data && data.data.data && data.data.data.horarios)
+                || null
     if (!horarios) return defaults
     // Dia da semana (JS: 0=dom..6=sab)
     var dow = new Date(dateStr + 'T12:00:00').getDay()

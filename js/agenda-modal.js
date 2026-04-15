@@ -328,7 +328,13 @@
       var raw = localStorage.getItem(DRAFT_KEY)
       if (!raw) return false
       var d = JSON.parse(raw)
-      if (Date.now() - d._ts > 3600000) { _clearDraft(); return false }
+      // Janela reduzida: 5 min. Senao o rascunho fica perseguindo o user.
+      if (Date.now() - d._ts > 300000) { _clearDraft(); return false }
+      // So restaura se o rascunho tiver conteudo real (paciente preenchido OU procs OU pagamentos)
+      var hasPaciente = !!(d.appt_paciente_q || d.appt_paciente_id)
+      var hasProcs    = Array.isArray(d._procs) && d._procs.length
+      var hasPagto    = Array.isArray(d._pagamentos) && d._pagamentos.length
+      if (!hasPaciente && !hasProcs && !hasPagto) { _clearDraft(); return false }
       _draftFieldIds().forEach(function (fid) {
         var el = document.getElementById(fid)
         if (el && d[fid]) el.value = d[fid]
