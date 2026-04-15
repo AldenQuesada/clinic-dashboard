@@ -197,21 +197,27 @@
 
   function syncOne(appt) {
     const repo = _repo()
-    if (!repo || !appt?.id) { _addToOfflineQueue(_enrichForSupabase(appt)); return }
+    if (!repo || !appt?.id) {
+      _addToOfflineQueue(_enrichForSupabase(appt))
+      return Promise.resolve({ ok: false, queued: true })
+    }
 
     const enriched = _enrichForSupabase(appt)
-    repo.upsert(enriched).then(function(result) {
+    const p = repo.upsert(enriched).then(function(result) {
       if (result && !result.ok) {
         console.warn('[AppointmentsService] syncOne falhou, adicionando ao offline queue:', appt.id)
         _addToOfflineQueue(enriched)
       }
+      return result || { ok: false }
     }).catch(function(err) {
       console.warn('[AppointmentsService] syncOne offline:', appt.id, err.message || err)
       _addToOfflineQueue(enriched)
+      return { ok: false, error: err && err.message || String(err) }
     })
 
     // Retry offline queue on every successful connection
     _retryOfflineQueue()
+    return p
   }
 
   /**

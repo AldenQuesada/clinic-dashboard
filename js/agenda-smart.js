@@ -1195,8 +1195,6 @@ function _buildFinModal(id, appt) {
         <!-- ════ FIM COLUNA DIREITA ════ -->
 
       </div>
-
-      </div>
       <div class="modal-footer">
         <button class="modal-btn modal-btn-ghost" onclick="closeFinalizeModal()">Cancelar</button>
         <button class="modal-btn modal-btn-primary" onclick="confirmFinalize('${id}')" style="flex:2">Confirmar Finaliza&#231;&#227;o</button>
