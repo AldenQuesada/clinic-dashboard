@@ -29,8 +29,12 @@
     // Local: 'http://localhost:8107'
     // VPS:   'https://facial-api.px1hdq.easypanel.host'
     FACIAL_API_URL: 'https://clinicai-facial-api.px1hdq.easypanel.host',
+    // Magazine AI: Edge Function que wrappa Anthropic Claude p/ gerar conteudo de slots
+    // Deploy: `supabase functions deploy magazine-ai-generate`
+    // Secret: `supabase secrets set ANTHROPIC_API_KEY=sk-ant-...`
+    MAGAZINE_AI_ENDPOINT: 'https://oqboitkpcvuaudouwvkl.supabase.co/functions/v1/magazine-ai-generate',
     // Cache-buster: incrementar a cada deploy para forçar recarga dos scripts
-    ASSET_VERSION: '20260415n',
+    ASSET_VERSION: '20260415o',
   })
 
 })()

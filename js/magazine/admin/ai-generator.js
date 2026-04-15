@@ -104,9 +104,16 @@
         extra_instruction: promptEl.value.trim() || null,
       }
       try {
+        const headers = { 'Content-Type': 'application/json' }
+        // Edge Functions exigem auth header com a anon key
+        const anon = window.ClinicEnv && window.ClinicEnv.SUPABASE_KEY
+        if (anon) {
+          headers['Authorization'] = `Bearer ${anon}`
+          headers['apikey'] = anon
+        }
         const res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(payload),
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
