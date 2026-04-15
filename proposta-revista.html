@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beauty &amp; Health — Documento Mestre do Projeto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f1ec; --paper:#fff; --ink:#1a1a1a; --ink-soft:#555; --muted:#8a8178;
+    --line:#e5e0d8; --accent:#7a1f2b; --gold:#c9a961; --dark:#0f0f0f;
+    --ok:#2d5f3f; --warn:#8a6d2b; --risk:#7a1f2b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+
+  /* Sidebar */
+  aside{position:sticky;top:0;height:100vh;border-right:1px solid var(--line);padding:32px 24px;overflow-y:auto;background:var(--paper)}
+  aside h1{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-0.02em;margin-bottom:4px}
+  aside .sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:28px}
+  aside nav{display:flex;flex-direction:column;gap:2px;margin-bottom:32px}
+  aside nav a{color:var(--ink);text-decoration:none;font-size:13px;padding:8px 12px;border-radius:4px;border-left:2px solid transparent;transition:all .2s}
+  aside nav a:hover{background:var(--bg);border-left-color:var(--accent)}
+  aside nav a.head{font-weight:600;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding-top:20px;border:none;pointer-events:none}
+  aside .tag{display:inline-block;padding:4px 10px;background:var(--accent);color:#fff;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:600}
+
+  /* Main */
+  main{padding:64px 80px 120px;max-width:1100px}
+  section{margin-bottom:96px;scroll-margin-top:32px}
+  section .kicker{font-size:11px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:12px}
+  section>h2{font-family:'Playfair Display',serif;font-size:48px;line-height:1;letter-spacing:-0.02em;margin-bottom:24px;font-weight:700}
+  section>h2 em{color:var(--accent);font-style:italic;font-weight:400}
+  section>p.lede{font-size:18px;line-height:1.6;color:var(--ink-soft);max-width:700px;margin-bottom:40px}
+  h3{font-family:'Playfair Display',serif;font-size:28px;margin:40px 0 16px;font-weight:700;letter-spacing:-0.01em}
+  h4{font-size:14px;letter-spacing:2px;text-transform:uppercase;font-weight:600;margin:24px 0 12px;color:var(--ink)}
+  p{margin-bottom:14px}
+  ul,ol{margin:12px 0 20px 24px}
+  li{margin-bottom:8px}
+
+  /* Cards & grids */
+  .grid{display:grid;gap:20px;margin:24px 0}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-4{grid-template-columns:repeat(4,1fr)}
+  .card{background:var(--paper);border:1px solid var(--line);padding:24px}
+  .card h4{margin-top:0}
+  .card .num{font-family:'Playfair Display',serif;font-size:32px;color:var(--accent);font-weight:700;line-height:1;margin-bottom:8px}
+  .card .k{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+
+  /* Swatch */
+  .swatch{display:flex;gap:12px;margin:16px 0 24px;flex-wrap:wrap}
+  .sw{width:120px}
+  .sw .chip{height:80px;border:1px solid var(--line);margin-bottom:8px}
+  .sw .name{font-size:11px;font-weight:600}
+  .sw .hex{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+  .sw .use{font-size:10px;color:var(--muted);margin-top:4px}
+
+  /* Type scale */
+  .typescale{border:1px solid var(--line);background:var(--paper)}
+  .typescale .row{display:grid;grid-template-columns:80px 1fr 1fr;gap:20px;padding:16px 24px;border-bottom:1px solid var(--line);align-items:baseline}
+  .typescale .row:last-child{border:none}
+  .typescale .size{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+  .typescale .role{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:600}
+
+  /* Spacing scale */
+  .spacing{display:flex;gap:12px;align-items:end;padding:24px;background:var(--paper);border:1px solid var(--line)}
+  .sp-box{background:var(--accent);min-width:4px}
+  .sp-label{font-family:'JetBrains Mono',monospace;font-size:10px;text-align:center;margin-top:6px;color:var(--muted)}
+
+  /* Template card */
+  .tpl{background:var(--paper);border:1px solid var(--line);padding:20px;display:grid;grid-template-columns:120px 1fr;gap:20px}
+  .tpl .preview{aspect-ratio:4/3;background:var(--dark);position:relative;overflow:hidden}
+  .tpl .preview svg{width:100%;height:100%;display:block}
+  .tpl h4{margin:0 0 4px;font-size:11px;letter-spacing:2px}
+  .tpl .id{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:8px}
+  .tpl p{font-size:12px;color:var(--ink-soft);margin:0 0 8px}
+  .tpl .slots{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+  /* Badges */
+  .badge{display:inline-block;padding:3px 8px;font-size:9px;letter-spacing:1px;text-transform:uppercase;font-weight:600;border-radius:2px}
+  .badge.ok{background:#e8f0ea;color:var(--ok)}
+  .badge.warn{background:#f5ecd9;color:var(--warn)}
+  .badge.risk{background:#f3dfe1;color:var(--risk)}
+  .badge.dark{background:var(--dark);color:#fff}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse;background:var(--paper);margin:16px 0}
+  th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+  th{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+  tr:last-child td{border:none}
+
+  /* Code */
+  pre{background:var(--dark);color:#e5d6c0;padding:20px;border-left:3px solid var(--accent);overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6;margin:16px 0}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--paper);padding:2px 6px;border:1px solid var(--line);color:var(--accent)}
+  pre code{background:transparent;border:none;padding:0;color:inherit}
+
+  /* Bug/risk card */
+  .risk-card{border-left:3px solid var(--risk);background:var(--paper);padding:20px;margin:12px 0}
+  .risk-card .head{display:flex;justify-content:space-between;margin-bottom:8px;align-items:center}
+  .risk-card h4{margin:0;text-transform:none;letter-spacing:normal;font-family:'Playfair Display',serif;font-size:18px;font-weight:700}
+  .risk-card .why{font-size:13px;color:var(--ink-soft);margin:6px 0}
+  .risk-card .fix{font-size:13px;padding:10px 12px;background:var(--bg);border-left:2px solid var(--ok);margin-top:8px}
+  .risk-card .fix b{color:var(--ok)}
+
+  /* Timeline */
+  .phase{background:var(--paper);border:1px solid var(--line);padding:24px;margin-bottom:16px;position:relative;padding-left:80px}
+  .phase::before{content:attr(data-num);position:absolute;left:24px;top:24px;width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;font-family:'Playfair Display',serif;font-weight:700;display:grid;place-items:center;font-size:14px}
+  .phase h4{font-family:'Playfair Display',serif;font-size:20px;text-transform:none;letter-spacing:normal;margin-top:0}
+  .phase .time{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+
+  /* Hero */
+  .hero{background:var(--dark);color:#f4f1ec;padding:80px 80px 100px;margin:-64px -80px 64px;display:grid;grid-template-columns:1.5fr 1fr;gap:60px;align-items:end}
+  .hero h1{font-family:'Playfair Display',serif;font-size:clamp(48px,5vw,82px);line-height:0.95;letter-spacing:-0.02em;margin-bottom:20px;font-weight:700}
+  .hero h1 em{color:var(--accent);font-style:italic}
+  .hero p{font-size:16px;line-height:1.6;opacity:.75;max-width:500px}
+  .hero .meta{border-top:1px solid rgba(255,255,255,.15);padding-top:16px;margin-top:24px;font-size:10px;letter-spacing:3px;text-transform:uppercase;opacity:.6;display:flex;justify-content:space-between}
+  .hero .stats{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding-bottom:8px}
+  .hero .stats .n{font-family:'Playfair Display',serif;font-size:48px;color:var(--accent);font-weight:700;line-height:1}
+  .hero .stats .l{font-size:10px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-top:6px}
+
+  @media(max-width:900px){
+    .wrap{grid-template-columns:1fr}
+    aside{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}
+    main{padding:40px 24px 80px}
+    .hero{padding:48px 24px 56px;margin:-40px -24px 40px;grid-template-columns:1fr}
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+    .tpl{grid-template-columns:1fr}
+    section>h2{font-size:36px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<aside>
+  <h1>Beauty &amp; Health</h1>
+  <div class="sub">Documento Mestre · v1.0</div>
+  <span class="tag">Aprovado</span>
+
+  <nav>
+    <a class="head">Fundamentos</a>
+    <a href="#visao">01 · Visão Geral</a>
+    <a href="#design">02 · Design System</a>
+    <a href="#tipografia">03 · Tipografia</a>
+    <a href="#espacamento">04 · Espaçamento & Grid</a>
+
+    <a class="head">Conteúdo</a>
+    <a href="#sumario">05 · Sumário Mensal</a>
+    <a href="#templates">06 · Biblioteca de Templates</a>
+    <a href="#expansao">07 · Expansão de Tópicos</a>
+
+    <a class="head">Distribuição</a>
+    <a href="#segmentacao">08 · Segmentação</a>
+    <a href="#dispatch">09 · Dispatch Automático</a>
+
+    <a class="head">Experiência</a>
+    <a href="#wow">10 · Efeito Wow</a>
+    <a href="#gamificacao">11 · Gamificação</a>
+
+    <a class="head">Execução</a>
+    <a href="#arquitetura">12 · Arquitetura Técnica</a>
+    <a href="#bugs">13 · Previsão de Bugs</a>
+    <a href="#roadmap">14 · Roadmap</a>
+    <a href="#metricas">15 · Métricas de Sucesso</a>
+  </nav>
+</aside>
+
+<main>
+
+<div class="hero">
+  <div>
+    <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;opacity:.6;margin-bottom:16px">Documento Mestre — Projeto Revista</div>
+    <h1>Uma revista <em>editorial</em>,<br/>escrita sem editores.</h1>
+    <p>Especificação completa do sistema de revista digital mensal <b>Beauty &amp; Health</b>: design, conteúdo, segmentação, gamificação, dispatch automático e arquitetura técnica.</p>
+    <div class="meta"><span>v1.0 · 14 abr 2026</span><span>Autor: Claude Opus 4.6</span></div>
+  </div>
+  <div class="stats">
+    <div><div class="n">20</div><div class="l">Templates na biblioteca</div></div>
+    <div><div class="n">5</div><div class="l">Segmentos de envio</div></div>
+    <div><div class="n">12</div><div class="l">Riscos mapeados</div></div>
+    <div><div class="n">4</div><div class="l">Semanas de entrega</div></div>
+  </div>
+</div>
+
+<!-- ============ 01 VISAO ============ -->
+<section id="visao">
+  <div class="kicker">01 · Fundamento</div>
+  <h2>Visão <em>geral</em> do projeto</h2>
+  <p class="lede">Uma revista digital mensal, entregue via WhatsApp, que educa pacientes e leads, reforça autoridade editorial da clínica, reativa base dormente e gera leads qualificados por meio de quiz embutido — sem exigir editor, designer ou diagramador humano.</p>
+
+  <h3>O que é</h3>
+  <p>Sistema que combina três partes:</p>
+  <ul>
+    <li><b>Leitor público (revista)</b> — página web horizontal com scroll-snap, consumo tipo Stories, 10 a 14 páginas por edição, navegação por swipe/setas/teclado.</li>
+    <li><b>Editor admin</b> — painel onde você escolhe um template, preenche slots (título, texto, imagens), reordena páginas, pré-visualiza e publica — sem tocar código.</li>
+    <li><b>Assistente de diagramação</b> — IA que, a partir de uma descrição livre (texto + fotos), sugere templates, quebra colunas, ajusta tamanhos e pré-preenche campos.</li>
+  </ul>
+
+  <h3>Objetivos de negócio</h3>
+  <div class="grid grid-3">
+    <div class="card"><div class="num">01</div><div class="k">Autoridade</div><p style="margin-top:8px;font-size:13px">Posicionar a clínica como referência editorial em estética — não apenas prestadora de serviço.</p></div>
+    <div class="card"><div class="num">02</div><div class="k">Reativação</div><p style="margin-top:8px;font-size:13px">Trazer de volta pacientes dormentes (180+ dias) com conteúdo — não com oferta fria.</p></div>
+    <div class="card"><div class="num">03</div><div class="k">Conversão</div><p style="margin-top:8px;font-size:13px">Transformar leitura em agendamento via quiz personalizado + cashback contextual.</p></div>
+  </div>
+
+  <h3>Princípios editoriais</h3>
+  <ol>
+    <li><b>Naturalidade sobre transformação</b> — textos nunca prometem "apagar anos". Sempre falam em "deixar aparecer quem você é".</li>
+    <li><b>Autoridade sem jargão</b> — linguagem acessível, mas com profundidade técnica. Zero promessas milagrosas.</li>
+    <li><b>Casos reais sobre stock photos</b> — fotos próprias da clínica sempre que possível. Antes/depois com autorização.</li>
+    <li><b>Enxuto sobre denso</b> — cada página horizontal comporta texto curto. Obriga clareza.</li>
+    <li><b>Consistência editorial</b> — cada edição mantém o DNA, mas com 1 variação grande (tema do mês).</li>
+  </ol>
+</section>
+
+<!-- ============ 02 DESIGN ============ -->
+<section id="design">
+  <div class="kicker">02 · Design System</div>
+  <h2>Paleta <em>cromática</em></h2>
+  <p class="lede">Paleta editorial minimalista. Off-white como base, grafite profundo para capas e contracapas, vinho bordô como acento primário (sofisticação feminina sem infantilizar), dourado para destaques premium.</p>
+
+  <h4>Cores primárias</h4>
+  <div class="swatch">
+    <div class="sw"><div class="chip" style="background:#f4f1ec"></div><div class="name">Paper Cream</div><div class="hex">#F4F1EC</div><div class="use">Fundo base editorial</div></div>
+    <div class="sw"><div class="chip" style="background:#ffffff;border-color:#ccc"></div><div class="name">Paper Pure</div><div class="hex">#FFFFFF</div><div class="use">Páginas de leitura clara</div></div>
+    <div class="sw"><div class="chip" style="background:#1a1a1a"></div><div class="name">Ink</div><div class="hex">#1A1A1A</div><div class="use">Texto corpo, linhas</div></div>
+    <div class="sw"><div class="chip" style="background:#0f0f0f"></div><div class="name">Dark</div><div class="hex">#0F0F0F</div><div class="use">Capa, contracapa</div></div>
+  </div>
+
+  <h4>Cores de acento</h4>
+  <div class="swatch">
+    <div class="sw"><div class="chip" style="background:#7a1f2b"></div><div class="name">Vinho Bordô</div><div class="hex">#7A1F2B</div><div class="use">Acento primário, CTAs</div></div>
+    <div class="sw"><div class="chip" style="background:#c9a961"></div><div class="name">Gold Champagne</div><div class="hex">#C9A961</div><div class="use">Destaques VIP, premium</div></div>
+    <div class="sw"><div class="chip" style="background:#d4c5b5"></div><div class="name">Nude Warm</div><div class="hex">#D4C5B5</div><div class="use">Fundos de foto, suavidade</div></div>
+  </div>
+
+  <h4>Cores utilitárias</h4>
+  <div class="swatch">
+    <div class="sw"><div class="chip" style="background:#555"></div><div class="name">Ink Soft</div><div class="hex">#555555</div><div class="use">Lede, subtítulos</div></div>
+    <div class="sw"><div class="chip" style="background:#8a8178"></div><div class="name">Muted</div><div class="hex">#8A8178</div><div class="use">Metadata, captions</div></div>
+    <div class="sw"><div class="chip" style="background:#e5e0d8"></div><div class="name">Line</div><div class="hex">#E5E0D8</div><div class="use">Bordas, divisores</div></div>
+  </div>
+
+  <h3>Combinações aprovadas</h3>
+  <div class="grid grid-3">
+    <div class="card" style="background:#0f0f0f;color:#f4f1ec;border:none"><div style="font-family:'Playfair Display',serif;font-size:22px">Dark + <em style="color:#7a1f2b">Vinho</em></div><div style="font-size:12px;opacity:.7;margin-top:8px">Capa, contracapa, quiz CTA. Máximo impacto editorial.</div></div>
+    <div class="card" style="background:#f4f1ec"><div style="font-family:'Playfair Display',serif;font-size:22px;color:#1a1a1a">Cream + <em style="color:#7a1f2b;font-style:italic">Vinho</em></div><div style="font-size:12px;color:#555;margin-top:8px">Matérias, entrevista, sumário. Leitura longa.</div></div>
+    <div class="card" style="background:#7a1f2b;color:#fff;border:none"><div style="font-family:'Playfair Display',serif;font-size:22px">Vinho + <em style="color:#c9a961;font-style:italic">Gold</em></div><div style="font-size:12px;opacity:.85;margin-top:8px">Páginas VIP, recompensas, edições especiais.</div></div>
+  </div>
+
+  <h3>Regras de uso</h3>
+  <ul>
+    <li>Acento vinho em no máximo <b>1 elemento por página</b> — dropcap, tag, CTA ou detalhe. Nunca dois ao mesmo tempo.</li>
+    <li>Gold é <b>exclusivo de conteúdo VIP</b> — aparece na capa personalizada e em recompensas premium.</li>
+    <li>Nunca usar vinho sobre gold (contraste insuficiente).</li>
+    <li>Contraste mínimo AAA para texto corpo (WCAG).</li>
+  </ul>
+</section>
+
+<!-- ============ 03 TIPOGRAFIA ============ -->
+<section id="tipografia">
+  <div class="kicker">03 · Design System</div>
+  <h2>Sistema <em>tipográfico</em></h2>
+  <p class="lede">Duas famílias, contraste clássico editorial: serif display para voz autoral, sans-serif para legibilidade de corpo. Escala baseada em razão 1.414 (√2), que gera hierarquia visível no celular sem parecer mecânica.</p>
+
+  <h4>Famílias</h4>
+  <div class="grid grid-2">
+    <div class="card">
+      <div style="font-family:'Playfair Display',serif;font-size:48px;font-weight:900;line-height:1">Playfair Display</div>
+      <div style="font-family:'Playfair Display',serif;font-style:italic;font-size:20px;margin-top:8px;color:var(--accent)">Display · Títulos · Voz editorial</div>
+      <p style="margin-top:12px;font-size:13px">Pesos usados: 400 (regular), 700 (bold), 900 (black). Italic para destaques dentro de títulos.</p>
+    </div>
+    <div class="card">
+      <div style="font-family:'Inter',sans-serif;font-size:48px;font-weight:700;letter-spacing:-0.02em">Inter</div>
+      <div style="font-family:'Inter',sans-serif;font-size:14px;margin-top:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase">Corpo · UI · Metadata</div>
+      <p style="margin-top:12px;font-size:13px">Pesos usados: 300, 400, 500, 600, 700. Otimizada para leitura em tela em todos os tamanhos.</p>
+    </div>
+  </div>
+
+  <h4>Escala tipográfica (ratio 1.414)</h4>
+  <div class="typescale">
+    <div class="row"><span class="size">96px</span><span class="role">Display Hero</span><span style="font-family:'Playfair Display',serif;font-size:40px;font-weight:900">Capa</span></div>
+    <div class="row"><span class="size">64px</span><span class="role">H1 · Matéria</span><span style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700">Renasce</span></div>
+    <div class="row"><span class="size">48px</span><span class="role">H2 · Seção</span><span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700">Depoimentos</span></div>
+    <div class="row"><span class="size">32px</span><span class="role">H3 · Sub-título</span><span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700">Entrevista</span></div>
+    <div class="row"><span class="size">22px</span><span class="role">H4 · Item lista</span><span style="font-family:'Playfair Display',serif;font-size:18px;font-weight:400">Item do sumário</span></div>
+    <div class="row"><span class="size">16px</span><span class="role">Lede · Intro</span><span style="font-family:'Inter',sans-serif;font-size:16px;color:var(--ink-soft)">Parágrafo de abertura</span></div>
+    <div class="row"><span class="size">14px</span><span class="role">Body · Corpo</span><span style="font-family:'Inter',sans-serif;font-size:14px">Texto corrido da matéria</span></div>
+    <div class="row"><span class="size">12px</span><span class="role">Caption · Legenda</span><span style="font-family:'Inter',sans-serif;font-size:12px;color:var(--muted)">Legenda de foto</span></div>
+    <div class="row"><span class="size">10px</span><span class="role">Micro · Metadata</span><span style="font-family:'Inter',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted)">Kicker · Edição · Autor</span></div>
+  </div>
+
+  <h4>Padrões de uso</h4>
+  <ul>
+    <li><b>Kickers (micro 10px uppercase)</b> sempre <i>antes</i> de títulos H1/H2 — dão orientação editorial.</li>
+    <li><b>Dropcap</b> (primeira letra do primeiro parágrafo em Playfair 54px vinho) em matérias de capa e entrevistas.</li>
+    <li><b>Italic Playfair</b> apenas em palavras-chave dentro de títulos — nunca em frases inteiras.</li>
+    <li><b>Line-height</b>: títulos 0.95, lede 1.6, corpo 1.7, micro 1.8.</li>
+    <li><b>Letter-spacing</b>: display -0.02em, micro +3px (para uppercase não fechar).</li>
+    <li><b>Font-display: swap</b> obrigatório — evita FOIT e preserva a primeira tela.</li>
+  </ul>
+</section>
+
+<!-- ============ 04 ESPACAMENTO ============ -->
+<section id="espacamento">
+  <div class="kicker">04 · Design System</div>
+  <h2>Espaçamento <em>&</em> grid</h2>
+  <p class="lede">Escala baseada em 4px. Grid de 12 colunas desktop, 6 tablet, 4 mobile. Margens laterais generosas preservam ar editorial — princípio inegociável: revista nunca deve parecer "apertada".</p>
+
+  <h4>Escala (base 4px)</h4>
+  <div class="spacing">
+    <div><div class="sp-box" style="width:4px;height:4px"></div><div class="sp-label">4</div></div>
+    <div><div class="sp-box" style="width:8px;height:8px"></div><div class="sp-label">8</div></div>
+    <div><div class="sp-box" style="width:12px;height:12px"></div><div class="sp-label">12</div></div>
+    <div><div class="sp-box" style="width:16px;height:16px"></div><div class="sp-label">16</div></div>
+    <div><div class="sp-box" style="width:24px;height:24px"></div><div class="sp-label">24</div></div>
+    <div><div class="sp-box" style="width:32px;height:32px"></div><div class="sp-label">32</div></div>
+    <div><div class="sp-box" style="width:48px;height:48px"></div><div class="sp-label">48</div></div>
+    <div><div class="sp-box" style="width:64px;height:64px"></div><div class="sp-label">64</div></div>
+    <div><div class="sp-box" style="width:80px;height:80px"></div><div class="sp-label">80</div></div>
+  </div>
+
+  <h4>Uso contextual</h4>
+  <table>
+    <tr><th>Token</th><th>Valor</th><th>Uso típico</th></tr>
+    <tr><td><code>gap-micro</code></td><td>4-8px</td><td>Entre kicker e elementos ao redor</td></tr>
+    <tr><td><code>gap-small</code></td><td>12-16px</td><td>Entre parágrafos, entre título e lede</td></tr>
+    <tr><td><code>gap-default</code></td><td>24-32px</td><td>Entre blocos de conteúdo</td></tr>
+    <tr><td><code>gap-section</code></td><td>48-64px</td><td>Entre seções dentro da página</td></tr>
+    <tr><td><code>pad-page-mobile</code></td><td>24px</td><td>Padding lateral em mobile</td></tr>
+    <tr><td><code>pad-page-desktop</code></td><td>64-80px</td><td>Padding lateral em desktop</td></tr>
+    <tr><td><code>pad-top-safe</code></td><td>90-100px</td><td>Topo de página (deixa espaço pra progress bar)</td></tr>
+  </table>
+
+  <h4>Grid</h4>
+  <ul>
+    <li><b>Desktop (≥1024px):</b> 12 colunas, gutter 24px, margem lateral 64-80px.</li>
+    <li><b>Tablet (768-1023px):</b> 6 colunas, gutter 20px, margem 40px.</li>
+    <li><b>Mobile (&lt;768px):</b> 4 colunas, gutter 16px, margem 24px.</li>
+    <li>Cada página ocupa <code>100vw × 100vh</code>. Scroll-snap obrigatório, stop always.</li>
+    <li>Conteúdo jamais ultrapassa <code>max-width: 1400px</code> centralizado.</li>
+  </ul>
+</section>
+
+<!-- ============ 05 SUMARIO ============ -->
+<section id="sumario">
+  <div class="kicker">05 · Conteúdo</div>
+  <h2>Sumário <em>mensal</em> proposto</h2>
+  <p class="lede">Estrutura editorial fixa + slots variáveis. Cada edição mantém DNA consistente (leitora reconhece de cara) com 2-3 páginas de variação temática que dão frescor. Total típico: 10 a 14 páginas.</p>
+
+  <h3>Estrutura fixa (8 páginas)</h3>
+  <table>
+    <tr><th>Pág</th><th>Seção</th><th>Template</th><th>Propósito</th></tr>
+    <tr><td>01</td><td>Capa</td><td>T01 Hero Dark</td><td>Chamada editorial, tema do mês</td></tr>
+    <tr><td>02</td><td>Carta da Diretora</td><td>T05 Editorial</td><td>Voz humana, tom da edição</td></tr>
+    <tr><td>03</td><td>Sumário</td><td>T04 Sumário</td><td>Navegação + expectativa</td></tr>
+    <tr><td>04-05</td><td>Matéria de capa</td><td>T07 Dupla + T11 Destaque</td><td>Tema principal, 2 páginas</td></tr>
+    <tr><td>06</td><td>Caso real</td><td>T12 Antes/Depois</td><td>Prova social com autorização</td></tr>
+    <tr><td>07</td><td>Entrevista</td><td>T10 Q&amp;A</td><td>Autoridade técnica</td></tr>
+    <tr><td>08</td><td>Mitos e verdades</td><td>T20 FAQ</td><td>Educação, quebra objeções</td></tr>
+    <tr><td>09</td><td>Ritual do mês</td><td>T19 Passo-a-passo</td><td>Valor pós-consulta, cuidado em casa</td></tr>
+    <tr><td>10</td><td>Quiz + recompensas</td><td>T16 Quiz CTA</td><td>Conversão, gamificação</td></tr>
+    <tr><td>11</td><td>Contracapa</td><td>T06 CTA Final</td><td>Contato, próxima edição</td></tr>
+  </table>
+
+  <h3>Slots variáveis (1-3 por edição)</h3>
+  <div class="grid grid-2">
+    <div class="card"><h4>Calendário sazonal</h4><p style="font-size:13px">Carnaval, dia das mães, inverno, Black Friday. Conteúdo atrelado ao mês (ex: "pele pós-sol de verão").</p></div>
+    <div class="card"><h4>Novidade/Lançamento</h4><p style="font-size:13px">Nova tecnologia, equipamento, protocolo. Destacado com template T11.</p></div>
+    <div class="card"><h4>Depoimento longo</h4><p style="font-size:13px">História completa de uma paciente (3 páginas: antes, jornada, depois). Usa T08 + T12 + T09.</p></div>
+    <div class="card"><h4>Parceria editorial</h4><p style="font-size:13px">Colaboração com marca de skincare, nutricionista, psicóloga. Uma página.</p></div>
+    <div class="card"><h4>Tendência científica</h4><p style="font-size:13px">Artigo traduzido de publicação internacional (NewBeauty, Dermatology Times).</p></div>
+    <div class="card"><h4>Galeria do mês</h4><p style="font-size:13px">6-8 fotos de resultados anônimos (autorização genérica) com legenda técnica curta.</p></div>
+  </div>
+
+  <h3>Calendário editorial anual sugerido</h3>
+  <table>
+    <tr><th>Mês</th><th>Tema principal</th><th>Slot variável</th></tr>
+    <tr><td>Janeiro</td><td>Recomeços — detox pós-festas</td><td>Ritual desintoxicação</td></tr>
+    <tr><td>Fevereiro</td><td>Amor próprio — autoestima</td><td>Depoimento longo</td></tr>
+    <tr><td>Março</td><td>Pele &amp; verão — reparação pós-sol</td><td>Tendência científica</td></tr>
+    <tr><td>Abril</td><td>Smooth Eyes — o olhar que renasce</td><td>Novidade/lançamento</td></tr>
+    <tr><td>Maio</td><td>Dia das Mães — beleza que se herda</td><td>Parceria editorial</td></tr>
+    <tr><td>Junho</td><td>Inverno — hidratação profunda</td><td>Galeria do mês</td></tr>
+    <tr><td>Julho</td><td>Lifting 5D — o procedimento exclusivo</td><td>Entrevista externa</td></tr>
+    <tr><td>Agosto</td><td>Colágeno — reconstrução</td><td>Tendência científica</td></tr>
+    <tr><td>Setembro</td><td>Primavera — renovação</td><td>Novidade/lançamento</td></tr>
+    <tr><td>Outubro</td><td>Outubro Rosa — beleza e saúde</td><td>Parceria editorial</td></tr>
+    <tr><td>Novembro</td><td>Pré-verão — preparação</td><td>Depoimento longo</td></tr>
+    <tr><td>Dezembro</td><td>Celebração — top transformações do ano</td><td>Galeria especial 2 páginas</td></tr>
+  </table>
+</section>
+
+<!-- ============ 06 TEMPLATES ============ -->
+<section id="templates">
+  <div class="kicker">06 · Conteúdo</div>
+  <h2>Biblioteca de <em>20 templates</em></h2>
+  <p class="lede">Cada template tem ID estável, slots nomeados em JSON, layout HTML+CSS fixo e variações de cor (light/dark/accent). Editor escolhe templates, preenche slots. Assistente IA sugere automaticamente a partir de descrição livre.</p>
+
+  <h3>Capas &amp; estruturais (T01–T06)</h3>
+  <div class="grid grid-2">
+    <div class="tpl"><div class="preview" style="background:#0f0f0f"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="50" height="70" fill="#2a2a2a"/><text x="70" y="30" fill="#fff" font-size="10" font-family="Playfair Display">TÍTULO</text><text x="70" y="50" fill="#7a1f2b" font-size="8">hero</text></svg></div><div><h4>T01 · Hero Dark</h4><div class="id">cover/hero-dark</div><p>Capa editorial com foto grande, título display, tag de destaque.</p><div class="slots">{titulo, subtitulo, tag, foto_hero, edicao}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#f4f1ec"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="100" height="30" fill="#d4c5b5"/><text x="10" y="55" fill="#1a1a1a" font-size="10" font-family="Playfair Display">TÍTULO</text><text x="10" y="75" fill="#7a1f2b" font-size="8">light capa</text></svg></div><div><h4>T02 · Hero Light</h4><div class="id">cover/hero-light</div><p>Variação clara, foto superior, tipografia dominante. Para temas suaves.</p><div class="slots">{titulo, subtitulo, foto_hero}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#0f0f0f"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="30" height="70" fill="#2a2a2a"/><rect x="45" y="10" width="30" height="70" fill="#3a3a3a"/><rect x="80" y="10" width="30" height="70" fill="#2a2a2a"/></svg></div><div><h4>T03 · Capa Tripla</h4><div class="id">cover/triptych</div><p>Três fotos verticais com 3 chamadas. Capa densa editorial.</p><div class="slots">{foto_1, foto_2, foto_3, titulo_1, titulo_2, titulo_3}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><text x="10" y="20" fill="#1a1a1a" font-size="11" font-family="Playfair Display">Sumário</text><line x1="10" y1="30" x2="110" y2="30" stroke="#e5e0d8"/><text x="10" y="45" fill="#7a1f2b" font-size="7">01</text><text x="25" y="45" fill="#1a1a1a" font-size="7">Matéria um</text><text x="10" y="60" fill="#7a1f2b" font-size="7">02</text><text x="25" y="60" fill="#1a1a1a" font-size="7">Matéria dois</text></svg></div><div><h4>T04 · Sumário Editorial</h4><div class="id">toc/editorial</div><p>Lista numerada com linhas divisoras. Clicável, pula para página.</p><div class="slots">{titulo, lede, items:[{num,titulo,kicker,page}]}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#f4f1ec"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="35" height="70" fill="#d4c5b5"/><text x="55" y="25" fill="#1a1a1a" font-size="8" font-family="Playfair Display">Carta</text><rect x="55" y="35" width="55" height="2" fill="#7a1f2b"/><text x="55" y="48" fill="#555" font-size="5">texto..</text><text x="55" y="55" fill="#555" font-size="5">texto..</text></svg></div><div><h4>T05 · Editorial/Carta</h4><div class="id">editorial/letter</div><p>Retrato + carta em coluna estreita, assinatura ao final.</p><div class="slots">{titulo, foto_autora, corpo, assinatura}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#0f0f0f"><svg viewBox="0 0 120 90"><text x="60" y="35" fill="#fff" text-anchor="middle" font-size="11" font-family="Playfair Display">Até breve</text><rect x="30" y="50" width="60" height="15" fill="#7a1f2b"/><text x="60" y="62" fill="#fff" text-anchor="middle" font-size="6">AGENDAR</text></svg></div><div><h4>T06 · Contracapa CTA</h4><div class="id">back/cta</div><p>Fechamento com contato, próxima edição e CTA forte.</p><div class="slots">{titulo, contatos, proxima_edicao, cta_texto, cta_link}</div></div></div>
+  </div>
+
+  <h3>Matérias (T07–T11)</h3>
+  <div class="grid grid-2">
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><rect x="0" y="0" width="60" height="90" fill="#d4c5b5"/><text x="65" y="20" fill="#7a1f2b" font-size="5">KICKER</text><text x="65" y="35" fill="#1a1a1a" font-size="9" font-family="Playfair Display">Título</text><text x="65" y="55" fill="#555" font-size="4">col1 col2</text></svg></div><div><h4>T07 · Matéria Dupla</h4><div class="id">feature/double</div><p>Foto full-height esquerda + conteúdo (kicker/título/lede/2 colunas).</p><div class="slots">{kicker, titulo, lede, corpo, foto_hero, byline}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#0f0f0f"><svg viewBox="0 0 120 90"><rect x="0" y="0" width="120" height="90" fill="#2a2a2a"/><rect x="0" y="50" width="120" height="40" fill="rgba(0,0,0,0.6)"/><text x="10" y="70" fill="#fff" font-size="10" font-family="Playfair Display">Full bleed</text></svg></div><div><h4>T08 · Matéria Full-bleed</h4><div class="id">feature/fullbleed</div><p>Foto ocupa a página inteira, texto sobreposto com gradiente inferior.</p><div class="slots">{titulo, lede, foto_full, overlay_color}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="30" height="70" fill="#d4c5b5"/><rect x="45" y="10" width="30" height="30" fill="#fff" stroke="#e5e0d8"/><text x="48" y="28" fill="#1a1a1a" font-size="6" font-family="Playfair Display">Texto</text><rect x="80" y="10" width="30" height="70" fill="#2a2a2a"/></svg></div><div><h4>T09 · 3 Blocos</h4><div class="id">feature/triptych</div><p>Foto + texto + foto em três colunas equilibradas.</p><div class="slots">{foto_1, texto_central, foto_2, legendas}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="35" height="70" fill="#e8dfd4"/><text x="50" y="20" fill="#7a1f2b" font-size="5">ENTREVISTA</text><text x="50" y="35" fill="#1a1a1a" font-size="8" font-family="Playfair Display">Título</text><rect x="50" y="42" width="2" height="35" fill="#7a1f2b"/><text x="56" y="55" fill="#555" font-size="4">P: ...</text><text x="56" y="65" fill="#555" font-size="4">R: ...</text></svg></div><div><h4>T10 · Entrevista Q&amp;A</h4><div class="id">feature/interview</div><p>Retrato esquerdo + perguntas/respostas com border-left vinho.</p><div class="slots">{titulo, foto_entrevistado, nome, titulo_prof, qas:[{q,a}]}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#7a1f2b"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="40" height="70" fill="#3a0a12"/><text x="55" y="25" fill="#fff" font-size="8" font-family="Playfair Display">Protocolo</text><text x="55" y="40" fill="#c9a961" font-size="6">• benefício 1</text><text x="55" y="50" fill="#c9a961" font-size="6">• benefício 2</text><rect x="55" y="58" width="40" height="12" fill="#fff"/><text x="75" y="66" fill="#7a1f2b" text-anchor="middle" font-size="5">SAIBA MAIS</text></svg></div><div><h4>T11 · Destaque Tratamento</h4><div class="id">feature/product</div><p>Foto + benefícios em bullets + CTA. Uso: apresentar protocolo/serviço.</p><div class="slots">{titulo, foto, beneficios[], cta, preco_sugerido?}</div></div></div>
+  </div>
+
+  <h3>Visuais (T12–T15)</h3>
+  <div class="grid grid-2">
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><text x="10" y="20" fill="#1a1a1a" font-size="8" font-family="Playfair Display">Antes &amp; Depois</text><rect x="10" y="30" width="48" height="50" fill="#3a3a3a"/><rect x="62" y="30" width="48" height="50" fill="#c7b9a9"/><rect x="12" y="32" width="20" height="8" fill="#fff"/><text x="22" y="38" font-size="4" text-anchor="middle">ANTES</text><rect x="64" y="32" width="20" height="8" fill="#7a1f2b"/><text x="74" y="38" font-size="4" text-anchor="middle" fill="#fff">DEPOIS</text></svg></div><div><h4>T12 · Antes/Depois (2)</h4><div class="id">visual/ba-pair</div><p>Duas fotos lado a lado + stats. Caso único.</p><div class="slots">{titulo, foto_antes, foto_depois, meta, stats[4]}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="48" height="35" fill="#3a3a3a"/><rect x="62" y="10" width="48" height="35" fill="#c7b9a9"/><rect x="10" y="50" width="48" height="35" fill="#3a3a3a"/><rect x="62" y="50" width="48" height="35" fill="#c7b9a9"/></svg></div><div><h4>T13 · Antes/Depois (4)</h4><div class="id">visual/ba-quad</div><p>Dois casos na mesma página. Para edições de portfolio.</p><div class="slots">{caso_1:{...}, caso_2:{...}}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><rect x="10" y="10" width="35" height="40" fill="#3a3a3a"/><rect x="48" y="10" width="25" height="25" fill="#c7b9a9"/><rect x="76" y="10" width="35" height="25" fill="#5a5a5a"/><rect x="48" y="38" width="63" height="12" fill="#d4c5b5"/><rect x="10" y="53" width="25" height="35" fill="#c7b9a9"/><rect x="38" y="53" width="40" height="35" fill="#3a3a3a"/><rect x="81" y="53" width="30" height="35" fill="#5a5a5a"/></svg></div><div><h4>T14 · Galeria Mosaico</h4><div class="id">visual/mosaic</div><p>6-8 fotos em grid assimétrico. Bastidores, mosaico do mês.</p><div class="slots">{titulo, fotos[6-8], legenda}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><circle cx="20" cy="30" r="5" fill="#7a1f2b"/><circle cx="50" cy="30" r="5" fill="#7a1f2b"/><circle cx="80" cy="30" r="5" fill="#7a1f2b"/><circle cx="110" cy="30" r="5" fill="#ccc"/><line x1="20" y1="30" x2="80" y2="30" stroke="#7a1f2b" stroke-width="2"/><text x="20" y="50" font-size="5" text-anchor="middle">D0</text><text x="50" y="50" font-size="5" text-anchor="middle">D7</text><text x="80" y="50" font-size="5" text-anchor="middle">D30</text><text x="110" y="50" font-size="5" text-anchor="middle">D90</text></svg></div><div><h4>T15 · Timeline Evolução</h4><div class="id">visual/timeline</div><p>Linha do tempo com marcos visuais. Mostra processo de tratamento.</p><div class="slots">{titulo, marcos:[{data,foto,legenda}]}</div></div></div>
+  </div>
+
+  <h3>Interativos (T16–T18)</h3>
+  <div class="grid grid-2">
+    <div class="tpl"><div class="preview" style="background:#7a1f2b"><svg viewBox="0 0 120 90"><text x="10" y="20" fill="#fff" font-size="8" font-family="Playfair Display">Quiz do mês</text><text x="10" y="35" fill="#fff" font-size="5" opacity="0.8">6 perguntas</text><rect x="10" y="50" width="50" height="14" fill="#fff"/><text x="35" y="59" text-anchor="middle" fill="#7a1f2b" font-size="5">COMEÇAR</text></svg></div><div><h4>T16 · Quiz CTA</h4><div class="id">interactive/quiz</div><p>Fundo vinho + CTA pro quiz-render + 3 recompensas.</p><div class="slots">{titulo, lede, quiz_slug, recompensas[3]}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><text x="10" y="20" fill="#1a1a1a" font-size="7" font-family="Playfair Display">O que você acha?</text><rect x="10" y="30" width="100" height="10" fill="#e5e0d8"/><rect x="10" y="30" width="65" height="10" fill="#7a1f2b"/><text x="10" y="48" font-size="5">65% · Smooth Eyes</text><rect x="10" y="55" width="100" height="10" fill="#e5e0d8"/><rect x="10" y="55" width="35" height="10" fill="#c9a961"/><text x="10" y="73" font-size="5">35% · Lifting 5D</text></svg></div><div><h4>T17 · Enquete/Poll</h4><div class="id">interactive/poll</div><p>Pergunta + 2-3 opções. Leitora vota, vê resultado agregado.</p><div class="slots">{pergunta, opcoes[], resultado_visivel}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><text x="60" y="35" text-anchor="middle" fill="#7a1f2b" font-size="28" font-family="Playfair Display" font-weight="700">93%</text><text x="60" y="55" text-anchor="middle" font-size="6" fill="#555">das pacientes...</text><text x="60" y="75" text-anchor="middle" font-size="5" fill="#8a8178">ESTUDO INTERNO 2026</text></svg></div><div><h4>T18 · Número em Destaque</h4><div class="id">interactive/stat</div><p>Estatística editorial grande + contexto + fonte.</p><div class="slots">{numero, unidade, contexto, fonte}</div></div></div>
+  </div>
+
+  <h3>Complementares (T19–T20)</h3>
+  <div class="grid grid-2">
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><text x="10" y="20" fill="#1a1a1a" font-size="8" font-family="Playfair Display">Ritual em casa</text><text x="10" y="35" fill="#7a1f2b" font-size="8" font-family="Playfair Display">01</text><text x="20" y="35" font-size="5">Limpeza suave</text><text x="10" y="50" fill="#7a1f2b" font-size="8" font-family="Playfair Display">02</text><text x="20" y="50" font-size="5">Tônico hidratante</text><text x="10" y="65" fill="#7a1f2b" font-size="8" font-family="Playfair Display">03</text><text x="20" y="65" font-size="5">Protetor solar</text></svg></div><div><h4>T19 · Ritual/Passo-a-passo</h4><div class="id">extra/ritual</div><p>3-7 passos numerados. Guia prático para casa.</p><div class="slots">{titulo, passos:[{num,acao,detalhe,foto?}]}</div></div></div>
+
+    <div class="tpl"><div class="preview" style="background:#fff"><svg viewBox="0 0 120 90"><text x="10" y="20" fill="#1a1a1a" font-size="7" font-family="Playfair Display">Mitos &amp; Verdades</text><rect x="10" y="30" width="100" height="14" fill="#f3dfe1"/><text x="15" y="39" font-size="5" fill="#7a1f2b">MITO · Botox parece plástico</text><rect x="10" y="48" width="100" height="14" fill="#e8f0ea"/><text x="15" y="57" font-size="5" fill="#2d5f3f">VERDADE · Depende da dose</text></svg></div><div><h4>T20 · Mitos &amp; Verdades</h4><div class="id">extra/faq</div><p>Lista de afirmações + rótulo MITO/VERDADE + explicação curta.</p><div class="slots">{titulo, items:[{afirmacao,tipo,resposta}]}</div></div></div>
+  </div>
+</section>
+
+<!-- ============ 07 EXPANSAO ============ -->
+<section id="expansao">
+  <div class="kicker">07 · Conteúdo</div>
+  <h2>Capacidade de <em>expansão</em></h2>
+  <p class="lede">O sistema é desenhado para crescer sem refatoração. Novos templates e novas seções entram como plug-ins — editor reconhece automaticamente, assistente IA aprende padrões, leitor renderiza sem alteração.</p>
+
+  <h3>Como adicionar novo template</h3>
+  <ol>
+    <li>Criar arquivo <code>templates/tXX_nome.html</code> com slots marcados via <code>{{slot_nome}}</code>.</li>
+    <li>Registrar no <code>magazine_templates.yaml</code>: id, nome, categoria, slots obrigatórios/opcionais, preview SVG.</li>
+    <li>Editor admin carrega automaticamente no picker.</li>
+    <li>Assistente IA recebe descrição do template para aprender quando sugerir.</li>
+  </ol>
+
+  <h3>Como adicionar nova seção mensal</h3>
+  <p>Sumário mensal tem estrutura fixa + variáveis. Para adicionar "Podcast do Mês" (por exemplo):</p>
+  <ol>
+    <li>Criar template dedicado (ex: T21 audio embed).</li>
+    <li>Marcar no calendário editorial anual como slot fixo ou variável.</li>
+    <li>Atualizar RPC <code>magazine_get_structure()</code> para incluir a nova posição.</li>
+  </ol>
+
+  <h3>Limites práticos</h3>
+  <table>
+    <tr><th>Dimensão</th><th>Soft limit</th><th>Hard limit</th></tr>
+    <tr><td>Páginas por edição</td><td>14</td><td>30 (scroll ainda funciona, mas UX degrada)</td></tr>
+    <tr><td>Templates na biblioteca</td><td>40</td><td>~100 (picker vira difícil sem categorização)</td></tr>
+    <tr><td>Tamanho de foto</td><td>800KB (otimizada)</td><td>2MB (além disso, lazy-load obrigatório)</td></tr>
+    <tr><td>Texto por página</td><td>400 palavras</td><td>600 (texto corrido cansa em horizontal)</td></tr>
+    <tr><td>Edições armazenadas</td><td>24 (2 anos)</td><td>ilimitado com arquivamento</td></tr>
+  </table>
+</section>
+
+<!-- ============ 08 SEGMENTACAO ============ -->
+<section id="segmentacao">
+  <div class="kicker">08 · Distribuição</div>
+  <h2>Segmentação <em>RFM</em> aplicada</h2>
+  <p class="lede">Mesma revista, cinco entregas diferentes. Cada segmento recebe a versão que faz mais sentido para o seu estado de relacionamento com a clínica — capa personalizada, recompensa adequada, chamada de ação calibrada.</p>
+
+  <table>
+    <tr><th>Segmento</th><th>Critério</th><th>Versão que recebe</th><th>Recompensa</th></tr>
+    <tr><td><span class="badge dark">VIP</span></td><td>Top 10% LTV + consultou &lt;60d</td><td>Capa personalizada com nome, conteúdo exclusivo (acesso antecipado), página bonus</td><td>R$ 100 cashback + avaliação VIP</td></tr>
+    <tr><td><span class="badge ok">Ativas</span></td><td>Consultou nos últimos 90d</td><td>Edição padrão + quiz relacionado ao último tratamento</td><td>R$ 50 cashback</td></tr>
+    <tr><td><span class="badge warn">Em risco</span></td><td>90-180d sem visita</td><td>Padrão + oferta de reativação destacada na capa</td><td>R$ 75 cashback + sessão especial</td></tr>
+    <tr><td><span class="badge risk">Dormentes</span></td><td>180+ dias</td><td>Versão mais curta (8 páginas) + CTA reativação forte</td><td>R$ 100 + 30% off primeira sessão</td></tr>
+    <tr><td><span class="badge ok">Leads</span></td><td>Nunca consultaram</td><td>Edição educativa + quiz diagnóstico + primeira avaliação grátis</td><td>Avaliação gratuita + cashback inicial</td></tr>
+  </table>
+
+  <h3>Personalizações individuais (dentro do segmento)</h3>
+  <ul>
+    <li><b>Nome na capa</b> — "Edição para Fernanda, abril 2026".</li>
+    <li><b>Último procedimento mencionado</b> — "Como a Lara, após seu Smooth Eyes em fevereiro, você pode..."</li>
+    <li><b>Aniversariantes do mês</b> — página extra inserida entre sumário e capa com felicitação + oferta.</li>
+    <li><b>Recomendação do quiz prévio</b> — se leitora fez quiz antes, mostrar tratamento sugerido em destaque.</li>
+  </ul>
+
+  <h3>Overrides manuais</h3>
+  <p>Você pode, no admin, <b>forçar manualmente</b> um lead a receber outra versão (ex: paciente especial recebe VIP mesmo fora do top 10%). Override é registrado e expira ao fim da edição.</p>
+</section>
+
+<!-- ============ 09 DISPATCH ============ -->
+<section id="dispatch">
+  <div class="kicker">09 · Distribuição</div>
+  <h2>Dispatch <em>automático</em></h2>
+  <p class="lede">Uma edição publicada no admin dispara, automaticamente, uma cadeia de envios segmentada ao longo de 5 dias — evitando ban por burst, respeitando horários, priorizando VIPs.</p>
+
+  <h3>Calendário de envio (dia 1 = publicação)</h3>
+  <table>
+    <tr><th>Dia</th><th>Segmento</th><th>Horário</th><th>Mensagem</th></tr>
+    <tr><td>D+0</td><td>VIP</td><td>10h</td><td>"Oi [nome], preview exclusivo da edição de abril já está disponível. Você é sempre primeira."</td></tr>
+    <tr><td>D+1</td><td>Aniversariantes</td><td>09h</td><td>"Feliz aniversário, [nome]! Preparamos uma edição especial — veja a página 02." (pág extra)</td></tr>
+    <tr><td>D+2</td><td>Ativas</td><td>10h-12h</td><td>"Oi [nome], nova edição da revista. Matéria de capa: Smooth Eyes. [link]"</td></tr>
+    <tr><td>D+3</td><td>Em risco</td><td>10h-16h</td><td>"[Nome], faz tempo que não nos vemos. Tem novidade que pensei em você. [link]"</td></tr>
+    <tr><td>D+4</td><td>Dormentes</td><td>11h-15h</td><td>Mensagem curta + cupom destacado + link. Template A/B.</td></tr>
+    <tr><td>D+5</td><td>Leads frios</td><td>14h</td><td>Mensagem educativa + CTA avaliação grátis.</td></tr>
+    <tr><td>D+7</td><td>Follow-up</td><td>10h</td><td>Apenas quem não abriu: "Não sei se viu, mas..."</td></tr>
+  </table>
+
+  <h3>Anti-ban (protege número WA)</h3>
+  <ul>
+    <li><b>Spread temporal</b> — envios distribuídos em janela de 2-4h com jitter aleatório (evita padrão de burst).</li>
+    <li><b>Batch 1 por vez</b> — integrado à arquitetura n8n já existente (documentada em <code>project_clinic_broadcast_architecture</code>).</li>
+    <li><b>Rotação de números</b> — se tiver múltiplos WAs, alterna emissor a cada X mensagens.</li>
+    <li><b>Exclusão automática</b> — leads que reportaram spam, bloquearam ou saíram do segmento são removidos antes do envio.</li>
+    <li><b>Phone blacklist</b> — respeita <code>wa_phone_blacklist</code> já implementado.</li>
+  </ul>
+
+  <h3>Integração técnica</h3>
+  <p>Reusa stack existente da plataforma:</p>
+  <ul>
+    <li><b>n8n workflow</b> novo <code>magazine_dispatch</code>, chamado via webhook pelo admin.</li>
+    <li><b>wa_outbox</b> recebe as mensagens com <code>automation_kind='magazine'</code> e <code>edition_id</code> no payload.</li>
+    <li><b>wa_outbox_dedup</b> já existente previne duplicações.</li>
+    <li><b>Link único por lead</b>: <code>/revista/abril-2026?u={lead_hash}&e={edition_id}</code> — permite tracking individualizado sem expor dados.</li>
+    <li><b>Eventos</b>: <code>magazine_opened</code>, <code>magazine_page_read</code>, <code>magazine_quiz_started</code>, <code>magazine_quiz_completed</code>, <code>magazine_shared</code> registrados em <code>magazine_reads</code>.</li>
+  </ul>
+
+  <pre><code>-- RPC de dispatch (pseudocódigo)
+magazine_dispatch_edition(edition_id, segment) {
+  leads = select_leads_by_segment(segment);
+  for lead in leads:
+    link = generate_personalized_link(lead.id, edition_id);
+    message = render_template(segment.template, lead, link);
+    insert_wa_outbox(lead.phone, message, scheduled_at, 'magazine', edition_id);
+}</code></pre>
+</section>
+
+<!-- ============ 10 WOW ============ -->
+<section id="wow">
+  <div class="kicker">10 · Experiência</div>
+  <h2>Efeito <em>WOW</em></h2>
+  <p class="lede">Oito elementos diferenciadores que transformam "mais uma newsletter" em experiência memorável. Priorizamos efeitos que funcionam no celular e não dependem de conexão rápida.</p>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="num">01</div>
+      <h4>Entrada cinematográfica</h4>
+      <p style="font-size:13px;margin-top:8px">Ao abrir o link, logo Beauty &amp; Health se desenha em traço (2s), capa aparece com fade + crossfade da foto. Skip opcional (tap).</p>
+      <div class="badge ok" style="margin-top:8px">Fase 4</div>
+    </div>
+    <div class="card">
+      <div class="num">02</div>
+      <h4>Nome na capa</h4>
+      <p style="font-size:13px;margin-top:8px">"Edição especial para <b>Fernanda</b>, abril 2026" — aparece discretamente na capa, gera sensação de carta pessoal.</p>
+      <div class="badge ok" style="margin-top:8px">Fase 2</div>
+    </div>
+    <div class="card">
+      <div class="num">03</div>
+      <h4>Parallax sutil nas fotos</h4>
+      <p style="font-size:13px;margin-top:8px">Ao passar de página, foto da próxima faz um microzoom (1.05 → 1.0) em 400ms. Sensação de profundidade cinematográfica.</p>
+      <div class="badge ok" style="margin-top:8px">Fase 3</div>
+    </div>
+    <div class="card">
+      <div class="num">04</div>
+      <h4>Áudio narrado (Lara + Groq)</h4>
+      <p style="font-size:13px;margin-top:8px">Botão discreto "Ouvir esta matéria" usa TTS já integrado (Groq). Leitora pode ler ou ouvir — no carro, cozinhando.</p>
+      <div class="badge warn" style="margin-top:8px">Fase 4</div>
+    </div>
+    <div class="card">
+      <div class="num">05</div>
+      <h4>Trilha ambiente opcional</h4>
+      <p style="font-size:13px;margin-top:8px">Ícone de música ativa trilha sonora curadora (piano minimalista, 2-3min em loop). Off por padrão.</p>
+      <div class="badge warn" style="margin-top:8px">Fase 4</div>
+    </div>
+    <div class="card">
+      <div class="num">06</div>
+      <h4>Cashback animado</h4>
+      <p style="font-size:13px;margin-top:8px">Valor do cashback sobe em contador animado (0 → 50 em 1.2s) quando a página do quiz aparece.</p>
+      <div class="badge ok" style="margin-top:8px">Fase 3</div>
+    </div>
+    <div class="card">
+      <div class="num">07</div>
+      <h4>Ícone oculto (caça ao tesouro)</h4>
+      <p style="font-size:13px;margin-top:8px">Ícone minúsculo escondido em 1 das páginas. Leitora que descobre clica e ganha cupom extra. Muda de lugar todo mês.</p>
+      <div class="badge ok" style="margin-top:8px">Fase 3</div>
+    </div>
+    <div class="card">
+      <div class="num">08</div>
+      <h4>Certificado de leitura</h4>
+      <p style="font-size:13px;margin-top:8px">Ao completar 100% da edição, aparece certificado digital elegante ("Fernanda leu a edição de abril") — compartilhável no Instagram.</p>
+      <div class="badge ok" style="margin-top:8px">Fase 3</div>
+    </div>
+  </div>
+
+  <h3>Princípios de motion</h3>
+  <ul>
+    <li><b>Respeitar <code>prefers-reduced-motion</code></b> — todas as animações viram instantâneas.</li>
+    <li><b>Máximo 400ms por transição</b> — nunca fazer o usuário esperar.</li>
+    <li><b>Easing editorial</b> — <code>cubic-bezier(0.22, 1, 0.36, 1)</code> (sensação "papel").</li>
+    <li><b>Sem animações gratuitas</b> — cada movimento tem função narrativa (chamar atenção, guiar, recompensar).</li>
+  </ul>
+</section>
+
+<!-- ============ 11 GAMIFICACAO ============ -->
+<section id="gamificacao">
+  <div class="kicker">11 · Experiência</div>
+  <h2>Gamificação <em>editorial</em></h2>
+  <p class="lede">Leitura vira jogo sem parecer jogo. Recompensas se acumulam em silêncio, integradas ao sistema de cashback já existente.</p>
+
+  <h3>Loop de recompensa por edição</h3>
+  <div class="grid grid-4">
+    <div class="card"><div class="num">+R$ 10</div><div class="k">Abriu a revista</div><p style="margin-top:8px;font-size:12px">Registrado automaticamente no primeiro acesso.</p></div>
+    <div class="card"><div class="num">+R$ 20</div><div class="k">Leu 80% das páginas</div><p style="margin-top:8px;font-size:12px">Threshold confiável (evita bot).</p></div>
+    <div class="card"><div class="num">+R$ 30</div><div class="k">Completou o quiz</div><p style="margin-top:8px;font-size:12px">Gera lead qualificado automaticamente.</p></div>
+    <div class="card"><div class="num">+R$ 25</div><div class="k">Achou o ícone oculto</div><p style="margin-top:8px;font-size:12px">Bônus de exploração.</p></div>
+  </div>
+
+  <h3>Ranking mensal</h3>
+  <ul>
+    <li>Top 10 leitoras do mês (por % de leitura + interações) ganham acesso VIP na edição seguinte.</li>
+    <li>Opt-in obrigatório — leitora escolhe aparecer no ranking (LGPD).</li>
+    <li>Nome exibido como "Fernanda Q." (privacidade parcial).</li>
+  </ul>
+
+  <h3>Compartilhamento</h3>
+  <ul>
+    <li>Botão "Compartilhar minha página favorita" gera imagem (print da página + CTA) para Instagram Stories.</li>
+    <li>Leitora que indica amiga cadastrada ganha cashback adicional.</li>
+    <li>Link de convite único por lead.</li>
+  </ul>
+</section>
+
+<!-- ============ 12 ARQUITETURA ============ -->
+<section id="arquitetura">
+  <div class="kicker">12 · Execução</div>
+  <h2>Arquitetura <em>técnica</em></h2>
+  <p class="lede">Stack alinhada à plataforma existente: Supabase + HTML/CSS/JS vanilla + n8n + integrações já consolidadas. Zero dependência nova de backend.</p>
+
+  <h3>Tabelas Supabase</h3>
+  <pre><code>-- Edições
+magazine_editions (
+  id uuid primary key,
+  slug text unique,                -- 'abril-2026'
+  title text,                      -- 'Smooth Eyes: o olhar que renasce'
+  edition_number int,
+  status text,                     -- draft | published | archived
+  theme text,                      -- tema editorial do mês
+  hero_image_url text,
+  published_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Páginas da edição
+magazine_pages (
+  id uuid primary key,
+  edition_id uuid references magazine_editions(id) on delete cascade,
+  order_index int not null,
+  template_slug text,              -- 't07_feature_double'
+  slots jsonb,                     -- conteúdo variável por template
+  created_at timestamptz default now()
+);
+
+-- Assets (imagens, áudio, vídeo)
+magazine_assets (
+  id uuid primary key,
+  edition_id uuid references magazine_editions(id),
+  url text,
+  type text,                       -- image | audio | video
+  alt text,
+  width int, height int, size_kb int,
+  created_at timestamptz default now()
+);
+
+-- Leitura/tracking
+magazine_reads (
+  id uuid primary key,
+  edition_id uuid references magazine_editions(id),
+  lead_id uuid references leads(id),
+  opened_at timestamptz,
+  last_page_index int,
+  pages_completed int[],
+  quiz_started boolean default false,
+  quiz_completed boolean default false,
+  hidden_icon_found boolean default false,
+  time_spent_sec int,
+  completed boolean default false,
+  segment text,
+  personalizations jsonb
+);
+
+-- Recompensas distribuídas
+magazine_rewards (
+  id uuid primary key,
+  edition_id uuid references magazine_editions(id),
+  lead_id uuid references leads(id),
+  reward_type text,                -- cashback | vip_access | hidden_bonus | shared
+  amount numeric,
+  claimed_at timestamptz default now()
+);</code></pre>
+
+  <h3>RPCs principais</h3>
+  <ul>
+    <li><code>magazine_publish(edition_id)</code> — muda status para published, dispara dispatch segmentado.</li>
+    <li><code>magazine_dispatch_segment(edition_id, segment)</code> — enfileira broadcast.</li>
+    <li><code>magazine_start_reading(lead_hash, edition_id)</code> — registra open, devolve progresso salvo.</li>
+    <li><code>magazine_update_progress(lead_hash, edition_id, page_index, time_spent)</code> — batch update.</li>
+    <li><code>magazine_claim_reward(lead_hash, edition_id, type)</code> — credita cashback.</li>
+    <li><code>magazine_get_personalized(lead_hash, edition_id)</code> — retorna edição com personalizações aplicadas.</li>
+  </ul>
+
+  <h3>Fluxo admin → leitor</h3>
+  <ol>
+    <li><b>Criar edição</b>: admin preenche metadata, escolhe tema, duplica layout base.</li>
+    <li><b>Adicionar páginas</b>: picker de templates, preencher slots, upload de fotos.</li>
+    <li><b>Preview ao vivo</b>: iframe ao lado mostra exatamente como fica no celular.</li>
+    <li><b>Revisar segmentação</b>: admin vê quantas leitoras cada segmento vai receber.</li>
+    <li><b>Publicar</b>: chama <code>magazine_publish</code> + webhook n8n.</li>
+    <li><b>Dispatch</b>: n8n executa calendário D+0 a D+7.</li>
+    <li><b>Leitora recebe</b>: WA com link único, abre, navega, interage.</li>
+    <li><b>Tracking</b>: cada evento grava em <code>magazine_reads</code>.</li>
+    <li><b>Rewards</b>: ao atingir thresholds, credita cashback via <code>magazine_claim_reward</code>.</li>
+    <li><b>Dashboard</b>: admin vê métricas em tempo real.</li>
+  </ol>
+
+  <h3>Performance</h3>
+  <ul>
+    <li><b>Imagens</b>: WebP + 2 resoluções (480w mobile, 1600w desktop), lazy-load nativa, Cloudinary-like transform via Supabase Storage.</li>
+    <li><b>Fontes</b>: preconnect + font-display: swap + subset latin-ext.</li>
+    <li><b>JS</b>: 1 arquivo, ~8KB min+gzip. Zero frameworks no leitor público.</li>
+    <li><b>Cache</b>: HTTP cache 1h + service worker offline-first.</li>
+    <li><b>CDN</b>: Easypanel já serve com Cloudflare na frente.</li>
+  </ul>
+</section>
+
+<!-- ============ 13 BUGS ============ -->
+<section id="bugs">
+  <div class="kicker">13 · Execução</div>
+  <h2>Previsão de <em>bugs</em> &amp; riscos</h2>
+  <p class="lede">12 riscos mapeados antes do primeiro commit. Cada um já tem mitigação definida. Probabilidade e severidade estimadas para priorizar atenção.</p>
+
+  <div class="risk-card">
+    <div class="head"><h4>01 · Cache agressivo faz leitora ver versão antiga</h4><span class="badge risk">ALTO</span></div>
+    <p class="why"><b>Por quê:</b> CDN Cloudflare e service worker podem servir HTML desatualizado mesmo após publicar nova edição.</p>
+    <div class="fix"><b>Mitigação:</b> cache-buster por <code>?v={edition_slug}</code> no link do WA + Cache-Control: no-cache no HTML + versionamento explícito de assets.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>02 · Fotos pesadas travam mobile</h4><span class="badge risk">ALTO</span></div>
+    <p class="why"><b>Por quê:</b> fotos da clínica saem grandes (5MB+) do celular/câmera. Leitora com 4G ruim desiste antes da página 2.</p>
+    <div class="fix"><b>Mitigação:</b> pipeline de upload converte para WebP + 2 resoluções + <code>loading=lazy</code> + <code>fetchpriority=high</code> só na capa + tamanho máximo de upload (2MB antes de otimizar).</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>03 · Scroll-snap bugga no Safari iOS</h4><span class="badge warn">MÉDIO</span></div>
+    <p class="why"><b>Por quê:</b> Safari iOS pré-16 tem bugs conhecidos em <code>scroll-snap-stop: always</code> — às vezes pula duas páginas.</p>
+    <div class="fix"><b>Mitigação:</b> feature-detect + fallback com botões sempre visíveis + teste em iOS 15/16/17 explicitamente na checklist.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>04 · Preview feio no WhatsApp (sem thumbnail)</h4><span class="badge warn">MÉDIO</span></div>
+    <p class="why"><b>Por quê:</b> WhatsApp gera preview a partir de <code>og:image</code>. Se ausente, vira texto cru e a mensagem parece spam.</p>
+    <div class="fix"><b>Mitigação:</b> gerar <code>og:image</code> dinâmica por edição (foto da capa) + <code>og:title</code> + <code>og:description</code> + testar com link preview do WhatsApp Business API antes de publicar.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>05 · Quiz trava no mobile (teclado cobre input)</h4><span class="badge warn">MÉDIO</span></div>
+    <p class="why"><b>Por quê:</b> iOS Safari com teclado aberto reduz viewport, quebra layouts absolute.</p>
+    <div class="fix"><b>Mitigação:</b> usar <code>visual-viewport</code> API + <code>scrollIntoView</code> no focus + padding-bottom reservado + testar com autopreenchimento do Google.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>06 · Broadcast WA bloqueado por envio em massa</h4><span class="badge risk">ALTO</span></div>
+    <p class="why"><b>Por quê:</b> 1000 leads × envio em 1h = padrão de spam, WA Business pode banir o número.</p>
+    <div class="fix"><b>Mitigação:</b> spread D+0 a D+5, jitter aleatório por lead, batch 1 por vez (já implementado em <code>wa_outbox</code>), rotação opcional de números, blacklist respeitada.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>07 · Tracking perde eventos (rede instável)</h4><span class="badge warn">MÉDIO</span></div>
+    <p class="why"><b>Por quê:</b> leitora lê offline (avião, metrô) e eventos de <code>page_read</code> se perdem.</p>
+    <div class="fix"><b>Mitigação:</b> queue local com retry + batch upload ao reconectar + fallback localStorage → Supabase periódico.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>08 · Fonte Google travada derruba tipografia</h4><span class="badge ok">BAIXO</span></div>
+    <p class="why"><b>Por quê:</b> rede lenta não baixa Playfair/Inter, texto usa fallback e quebra visual.</p>
+    <div class="fix"><b>Mitigação:</b> <code>font-display: swap</code> + fallback system-ui Georgia + subset latin-ext + preconnect + self-host opcional no Easypanel.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>09 · Sumário quebra ao reordenar páginas</h4><span class="badge warn">MÉDIO</span></div>
+    <p class="why"><b>Por quê:</b> hardcoded "p. 03" no sumário fica errado se você mover páginas no editor.</p>
+    <div class="fix"><b>Mitigação:</b> referências por slug de página, não por índice. Renderização do sumário calcula índice em runtime.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>10 · Acessibilidade ruim com leitor de tela</h4><span class="badge warn">MÉDIO</span></div>
+    <p class="why"><b>Por quê:</b> scroll horizontal confunde VoiceOver/TalkBack, ordem de leitura fica errada.</p>
+    <div class="fix"><b>Mitigação:</b> <code>aria-label</code> por página + <code>role=region</code> + navegação sequencial por headings + skip links + teste manual com VoiceOver antes de publicar.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>11 · Link único vaza privacidade</h4><span class="badge risk">ALTO</span></div>
+    <p class="why"><b>Por quê:</b> <code>?u=123</code> com ID sequencial permite enumeração. Se vazar link, expõe outras leitoras.</p>
+    <div class="fix"><b>Mitigação:</b> hash HMAC por lead (nunca ID cru) + TTL de 90 dias no link + 1-tap login se link compartilhado acidentalmente.</div>
+  </div>
+
+  <div class="risk-card">
+    <div class="head"><h4>12 · Assistente IA alucina conteúdo inventado</h4><span class="badge warn">MÉDIO</span></div>
+    <p class="why"><b>Por quê:</b> se você descreve superficialmente, Claude pode "inventar" dados médicos errados.</p>
+    <div class="fix"><b>Mitigação:</b> system prompt explicita "nunca invente números, percentuais ou afirmações científicas não fornecidas" + preview obrigatório antes de publicar + revisão humana de 100% das páginas na F1 e F2.</div>
+  </div>
+</section>
+
+<!-- ============ 14 ROADMAP ============ -->
+<section id="roadmap">
+  <div class="kicker">14 · Execução</div>
+  <h2>Roadmap de <em>entrega</em></h2>
+  <p class="lede">Quatro semanas até o primeiro envio real. Cada fase tem entregáveis testáveis — nada é acumulado para o final.</p>
+
+  <div class="phase" data-num="01">
+    <div class="time">Semana 1 · Foundation</div>
+    <h4>Migrations + Admin skeleton + 10 templates</h4>
+    <ul>
+      <li>Migration Supabase com 5 tabelas (<code>magazine_editions</code>, <code>magazine_pages</code>, <code>magazine_assets</code>, <code>magazine_reads</code>, <code>magazine_rewards</code>) + RPCs básicas.</li>
+      <li>Página <code>revista-admin.html</code> com lista de edições, botão criar nova.</li>
+      <li>Modelo de dados validado: CRUD manual de edição de teste.</li>
+      <li>10 dos 20 templates implementados em HTML+CSS (T01, T04, T05, T07, T10, T11, T12, T16, T19, T20).</li>
+      <li>Upload de imagens para Supabase Storage com otimização automática.</li>
+    </ul>
+    <b>Milestone:</b> admin consegue criar edição manual, adicionar 3 páginas, publicar e ver no leitor público.
+  </div>
+
+  <div class="phase" data-num="02">
+    <div class="time">Semana 2 · Editor</div>
+    <h4>Template picker + slots + preview ao vivo + publicação</h4>
+    <ul>
+      <li>Template picker visual (grid com preview SVG).</li>
+      <li>Form de slots gerado dinamicamente a partir de <code>magazine_templates.yaml</code>.</li>
+      <li>Preview ao vivo em iframe (atualiza em 500ms debounce).</li>
+      <li>Drag-drop de ordenação das páginas.</li>
+      <li>Publicação → gera slug + URL pública + preview og:image.</li>
+      <li>Página de personalização na capa (nome, aniversariante).</li>
+      <li>Os 10 templates restantes (T02, T03, T06, T08, T09, T13, T14, T15, T17, T18).</li>
+    </ul>
+    <b>Milestone:</b> você publica edição completa sem tocar código em &lt;30 min.
+  </div>
+
+  <div class="phase" data-num="03">
+    <div class="time">Semana 3 · Assistente IA + Gamificação</div>
+    <h4>Claude Haiku sugere layout + cashback + ícone oculto + certificado</h4>
+    <ul>
+      <li>Campo "descreva sua matéria" + upload de fotos → Claude Haiku sugere template e pré-preenche slots.</li>
+      <li>Ajuste automático de tamanho de fonte para caber em título.</li>
+      <li>Tracking completo: open, progress, quiz_started/completed, hidden_icon_found, shared.</li>
+      <li>Cashback real creditado via RPC ao atingir thresholds.</li>
+      <li>Ícone oculto implementado (admin define posição por edição).</li>
+      <li>Certificado digital ao completar 100%.</li>
+      <li>Animações (parallax, contador cashback, entrada cinematográfica).</li>
+    </ul>
+    <b>Milestone:</b> leitora recebe edição, lê tudo, completa quiz, ganha cashback real creditado na sua conta.
+  </div>
+
+  <div class="phase" data-num="04">
+    <div class="time">Semana 4 · Dispatch + Segmentação</div>
+    <h4>n8n + calendário D+0..D+7 + 5 segmentos + primeiro envio real</h4>
+    <ul>
+      <li>Workflow n8n <code>magazine_dispatch</code>.</li>
+      <li>RPC de segmentação baseada em RFM existente.</li>
+      <li>Calendário D+0 a D+7 com spread temporal.</li>
+      <li>5 templates de mensagem WA (um por segmento) com substituição de placeholders.</li>
+      <li>Dashboard de métricas (abertura, leitura, quiz, conversão).</li>
+      <li>Follow-up automático para quem não abriu.</li>
+      <li><b>Primeiro envio real</b>: edição de Maio 2026 para base completa.</li>
+    </ul>
+    <b>Milestone:</b> edição publicada dispara automaticamente para 1000+ leads segmentados sem intervenção manual.
+  </div>
+
+  <div class="phase" data-num="05">
+    <div class="time">Futuro · Wow Features</div>
+    <h4>Áudio narrado, trilha, vídeo, AR</h4>
+    <ul>
+      <li>TTS Lara (Groq) narra matéria principal.</li>
+      <li>Trilha sonora ambient opcional.</li>
+      <li>Vídeo embutido em templates selecionados.</li>
+      <li>QR code 3D com preview AR de tratamento (experimental).</li>
+      <li>PDF export automatizado (Puppeteer).</li>
+      <li>App nativo iOS/Android wrapper (opcional).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 15 METRICAS ============ -->
+<section id="metricas">
+  <div class="kicker">15 · Execução</div>
+  <h2>Métricas de <em>sucesso</em></h2>
+  <p class="lede">KPIs claros por edição. Tudo instrumentado desde o dia 1. Meta mínima viável definida, meta ambiciosa declarada.</p>
+
+  <table>
+    <tr><th>Métrica</th><th>Meta mínima</th><th>Meta ambiciosa</th><th>Como medir</th></tr>
+    <tr><td>Taxa de abertura</td><td>40%</td><td>65%</td><td>Eventos <code>magazine_opened</code> / leads enviados</td></tr>
+    <tr><td>Páginas lidas (média)</td><td>5 de 10</td><td>8 de 10</td><td><code>pages_completed</code> array length</td></tr>
+    <tr><td>Conclusão (100%)</td><td>15%</td><td>35%</td><td><code>completed = true</code></td></tr>
+    <tr><td>Quiz completion</td><td>20%</td><td>45%</td><td><code>quiz_completed = true</code></td></tr>
+    <tr><td>Ícone oculto encontrado</td><td>5%</td><td>20%</td><td><code>hidden_icon_found = true</code></td></tr>
+    <tr><td>Compartilhamentos</td><td>3%</td><td>10%</td><td>Evento <code>magazine_shared</code></td></tr>
+    <tr><td>Conversão em agendamento (7d)</td><td>3%</td><td>8%</td><td>Join com tabela appointments</td></tr>
+    <tr><td>NPS da edição (opt-in)</td><td>40</td><td>70</td><td>Pergunta no final, 1-10</td></tr>
+    <tr><td>Tempo médio de leitura</td><td>3 min</td><td>7 min</td><td><code>time_spent_sec</code></td></tr>
+    <tr><td>Cashback creditado (R$)</td><td>—</td><td>—</td><td>SUM(<code>magazine_rewards.amount</code>)</td></tr>
+    <tr><td>ROI (receita / custo)</td><td>3x</td><td>10x</td><td>Agendamentos atribuídos × ticket médio / custo API+envio</td></tr>
+  </table>
+
+  <h3>Dashboard admin</h3>
+  <ul>
+    <li>Visão por edição: timeline de abertura, funil de leitura, top páginas, quiz, conversão.</li>
+    <li>Visão comparativa: mês anterior × mês atual, tendências.</li>
+    <li>Visão por segmento: performance por VIP/Ativas/Em risco/Dormentes/Leads.</li>
+    <li>Alertas: se métrica cair abaixo do mínimo, notificação na central.</li>
+  </ul>
+
+  <h3>Aprendizado contínuo</h3>
+  <p>A cada edição, análise automática gera insights:</p>
+  <ul>
+    <li>Qual template teve maior engajamento? → priorizar no próximo.</li>
+    <li>Qual segmento respondeu melhor? → ajustar oferta.</li>
+    <li>Qual horário de envio funcionou? → otimizar calendário.</li>
+    <li>Qual quiz gerou mais conversão? → replicar padrão.</li>
+  </ul>
+</section>
+
+<div style="padding:40px 0;border-top:1px solid var(--line);margin-top:40px;display:flex;justify-content:space-between;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">
+  <span>Beauty &amp; Health · Documento Mestre v1.0</span>
+  <span>14 de abril de 2026</span>
+</div>
+
+</main>
+</div>
+</body>
+</html>

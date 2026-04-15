@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Beauty & Health — Edição de Abril 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #f4f1ec;
+    --ink: #1a1a1a;
+    --ink-soft: #555;
+    --line: #1a1a1a;
+    --accent: #7a1f2b;
+    --paper: #ffffff;
+    --muted: #8a8178;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+
+  /* ===== Progress bar (tipo Stories) ===== */
+  .progress-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; gap: 4px; padding: 12px 16px;
+    pointer-events: none;
+  }
+  .progress-bar .seg {
+    flex: 1; height: 2px; background: rgba(0,0,0,0.15); border-radius: 2px; overflow: hidden;
+  }
+  .progress-bar .seg .fill {
+    display: block; height: 100%; width: 0%; background: var(--ink);
+    transition: width 0.35s ease;
+  }
+  .progress-bar .seg.done .fill { width: 100%; }
+  .progress-bar .seg.current .fill { width: 100%; }
+
+  /* ===== Top meta ===== */
+  .top-meta {
+    position: fixed; top: 22px; left: 0; right: 0; z-index: 40;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 28px; pointer-events: none;
+    font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--ink-soft); mix-blend-mode: difference; filter: invert(1);
+  }
+  .top-meta .brand { font-weight: 600; }
+  .top-meta .counter { font-variant-numeric: tabular-nums; }
+
+  /* ===== Scroller ===== */
+  .reader {
+    display: flex; height: 100vh; width: 100vw;
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+  .reader::-webkit-scrollbar { display: none; }
+
+  .page {
+    flex: 0 0 100vw; height: 100vh; scroll-snap-align: start; scroll-snap-stop: always;
+    position: relative; overflow: hidden; background: var(--paper);
+  }
+
+  /* ===== Nav arrows ===== */
+  .nav-arrow {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.08);
+    backdrop-filter: blur(8px); cursor: pointer; z-index: 45;
+    display: grid; place-items: center;
+    transition: opacity .25s, transform .25s;
+  }
+  .nav-arrow:hover { transform: translateY(-50%) scale(1.08); }
+  .nav-arrow.prev { left: 20px; }
+  .nav-arrow.next { right: 20px; }
+  .nav-arrow svg { width: 18px; height: 18px; stroke: var(--ink); }
+  .nav-arrow[hidden] { display: none; }
+  @media (max-width: 720px) { .nav-arrow { display: none; } }
+
+  /* ===== Capa ===== */
+  .cover {
+    background: #0f0f0f; color: #f4f1ec; display: grid;
+    grid-template-rows: auto 1fr auto; padding: 48px; gap: 32px;
+  }
+  .cover .masthead {
+    display: flex; justify-content: space-between; align-items: start;
+    border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 20px;
+  }
+  .cover .masthead h1 {
+    font-family: 'Playfair Display', serif; font-weight: 900; font-size: clamp(38px, 7vw, 82px);
+    letter-spacing: -0.02em; line-height: 0.9;
+  }
+  .cover .masthead .edition { text-align: right; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.7; }
+  .cover .hero {
+    display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; align-items: end;
+  }
+  .cover .hero-visual {
+    aspect-ratio: 3/4; background:
+      radial-gradient(ellipse at 50% 30%, #2a2a2a 0%, #0f0f0f 70%),
+      linear-gradient(180deg, #1f1f1f, #000);
+    border: 1px solid rgba(255,255,255,0.08); position: relative; overflow: hidden;
+  }
+  .cover .hero-visual::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 45%, rgba(122,31,43,0.35) 0%, transparent 55%);
+  }
+  .cover .hero-visual::after {
+    content: 'FOTO HERO'; position: absolute; bottom: 18px; left: 18px;
+    font-size: 9px; letter-spacing: 3px; color: rgba(255,255,255,0.25);
+  }
+  .cover .hero-text { padding-bottom: 12px; }
+  .cover .hero-text .tag {
+    display: inline-block; padding: 6px 12px; border: 1px solid var(--accent); color: var(--accent);
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px;
+  }
+  .cover .hero-text h2 {
+    font-family: 'Playfair Display', serif; font-weight: 700; font-size: clamp(28px, 4.5vw, 56px);
+    line-height: 1; margin-bottom: 16px;
+  }
+  .cover .hero-text h2 em { color: var(--accent); font-style: italic; }
+  .cover .hero-text p { font-size: 14px; line-height: 1.6; opacity: 0.75; max-width: 420px; }
+  .cover .footline {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.6;
+  }
+
+  /* ===== Sumário ===== */
+  .toc { padding: 100px 80px 60px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; align-items: start; }
+  .toc .side h1 {
+    font-family: 'Playfair Display', serif; font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.95; letter-spacing: -0.02em; margin-bottom: 24px;
+  }
+  .toc .side h1 em { color: var(--accent); font-style: italic; }
+  .toc .side .kicker { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; color: var(--muted); margin-bottom: 32px; }
+  .toc .side p { font-size: 14px; line-height: 1.7; color: var(--ink-soft); max-width: 360px; }
+  .toc .list { display: flex; flex-direction: column; gap: 0; }
+  .toc .item {
+    display: grid; grid-template-columns: 48px 1fr 56px; gap: 20px; align-items: baseline;
+    padding: 18px 0; border-bottom: 1px solid rgba(0,0,0,0.1);
+    cursor: pointer; transition: padding .25s;
+  }
+  .toc .item:hover { padding-left: 8px; }
+  .toc .item .num { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--accent); font-weight: 700; }
+  .toc .item .title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 400; }
+  .toc .item .title span { display: block; font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .toc .item .page-no { text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ===== Matéria hero ===== */
+  .feature { display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+  .feature .visual {
+    background: linear-gradient(135deg, #d4c5b5 0%, #a89888 100%);
+    position: relative; overflow: hidden;
+  }
+  .feature .visual::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 80%, rgba(122,31,43,0.25) 0%, transparent 50%);
+  }
+  .feature .visual::after {
+    content: 'RETRATO DRA. FERNANDA'; position: absolute; bottom: 24px; left: 24px;
+    font-size: 9px; letter-spacing: 3px; color: rgba(255,255,255,0.7); font-weight: 600;
+  }
+  .feature .content {
+    padding: 90px 64px 60px; display: flex; flex-direction: column; justify-content: center; gap: 28px;
+    position: relative;
+  }
+  .feature .kicker {
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); font-weight: 600;
+  }
+  .feature h1 {
+    font-family: 'Playfair Display', serif; font-size: clamp(32px, 4.5vw, 58px);
+    line-height: 1; letter-spacing: -0.02em; font-weight: 700;
+  }
+  .feature h1 em { color: var(--accent); font-style: italic; font-weight: 400; }
+  .feature .lede { font-size: 16px; line-height: 1.6; color: var(--ink-soft); max-width: 480px; }
+  .feature .columns { columns: 2; column-gap: 28px; font-size: 13px; line-height: 1.7; color: var(--ink); }
+  .feature .columns p { margin-bottom: 12px; break-inside: avoid; }
+  .feature .columns p:first-child::first-letter {
+    font-family: 'Playfair Display', serif; font-size: 54px; float: left;
+    line-height: 0.9; padding: 4px 8px 0 0; color: var(--accent); font-weight: 700;
+  }
+  .feature .byline {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted);
+    border-top: 1px solid rgba(0,0,0,0.15); padding-top: 16px; margin-top: 8px;
+  }
+
+  /* ===== Antes/Depois ===== */
+  .ba {
+    padding: 90px 64px 60px; display: grid; grid-template-rows: auto 1fr auto; gap: 36px;
+    background: var(--paper);
+  }
+  .ba header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 40px; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+  .ba header h1 { font-family: 'Playfair Display', serif; font-size: clamp(36px, 5vw, 64px); line-height: 1; letter-spacing: -0.02em; }
+  .ba header .meta { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); text-align: right; line-height: 1.8; }
+  .ba .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; height: 100%; }
+  .ba .photo {
+    position: relative; background: #2a2a2a; overflow: hidden;
+  }
+  .ba .photo::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, #3a3a3a 0%, #1a1a1a 100%); }
+  .ba .photo.after::before { background: linear-gradient(180deg, #c7b9a9 0%, #8a7a6b 100%); }
+  .ba .photo .label {
+    position: absolute; top: 18px; left: 18px; z-index: 2;
+    background: var(--paper); padding: 6px 12px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-weight: 600;
+  }
+  .ba .photo.after .label { background: var(--accent); color: var(--paper); }
+  .ba .photo .stamp {
+    position: absolute; bottom: 18px; right: 18px; z-index: 2;
+    font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,0.6);
+  }
+  .ba .caption { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .ba .caption .stat .k { font-family: 'Playfair Display', serif; font-size: 32px; color: var(--accent); font-weight: 700; line-height: 1; }
+  .ba .caption .stat .l { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+
+  /* ===== Entrevista ===== */
+  .interview { padding: 90px 64px 60px; display: grid; grid-template-columns: 1fr 1.5fr; gap: 56px; height: 100%; }
+  .interview .portrait {
+    background: linear-gradient(160deg, #e8dfd4 0%, #b8a898 100%);
+    position: relative; overflow: hidden;
+  }
+  .interview .portrait::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 35%, rgba(0,0,0,0.12), transparent 60%); }
+  .interview .portrait .name {
+    position: absolute; bottom: 24px; left: 24px; right: 24px;
+    font-family: 'Playfair Display', serif; font-size: 28px; color: #3a2a1f; font-weight: 700;
+  }
+  .interview .portrait .name span { display: block; font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; font-weight: 500; margin-top: 4px; color: #6a5a4a; }
+  .interview .content { overflow: hidden; }
+  .interview .kicker { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 16px; }
+  .interview h1 { font-family: 'Playfair Display', serif; font-size: clamp(30px, 4vw, 48px); line-height: 1; letter-spacing: -0.02em; margin-bottom: 36px; }
+  .interview h1 em { color: var(--accent); font-style: italic; }
+  .interview .qa { display: flex; flex-direction: column; gap: 22px; }
+  .interview .qa .q { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 16px; color: var(--accent); line-height: 1.4; }
+  .interview .qa .q::before { content: 'P '; color: var(--ink); font-weight: 900; }
+  .interview .qa .a { font-size: 14px; line-height: 1.7; color: var(--ink); padding-left: 18px; border-left: 2px solid var(--accent); }
+
+  /* ===== Quiz CTA ===== */
+  .quiz-cta {
+    background: var(--accent); color: var(--paper);
+    display: grid; grid-template-columns: 1fr 1fr; height: 100%;
+  }
+  .quiz-cta .side { padding: 90px 64px 60px; display: flex; flex-direction: column; justify-content: center; gap: 32px; }
+  .quiz-cta .side.left { border-right: 1px solid rgba(255,255,255,0.15); }
+  .quiz-cta .kicker { font-size: 10px; letter-spacing: 4px; text-transform: uppercase; opacity: 0.7; }
+  .quiz-cta h1 { font-family: 'Playfair Display', serif; font-size: clamp(40px, 5.5vw, 72px); line-height: 0.95; letter-spacing: -0.02em; font-weight: 700; }
+  .quiz-cta h1 em { font-style: italic; opacity: 0.8; }
+  .quiz-cta p { font-size: 15px; line-height: 1.7; opacity: 0.85; max-width: 420px; }
+  .quiz-cta .cta-btn {
+    align-self: start; margin-top: 8px;
+    display: inline-flex; align-items: center; gap: 16px;
+    padding: 18px 28px; background: var(--paper); color: var(--accent);
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;
+    border: none; cursor: pointer; text-decoration: none;
+    transition: transform .25s;
+  }
+  .quiz-cta .cta-btn:hover { transform: translateX(4px); }
+  .quiz-cta .cta-btn svg { width: 16px; height: 16px; stroke: var(--accent); }
+  .quiz-cta .rewards { display: grid; gap: 20px; }
+  .quiz-cta .reward { display: grid; grid-template-columns: 44px 1fr; gap: 16px; padding: 18px 0; border-bottom: 1px solid rgba(255,255,255,0.15); }
+  .quiz-cta .reward:last-child { border-bottom: none; }
+  .quiz-cta .reward .icon { width: 44px; height: 44px; border: 1px solid rgba(255,255,255,0.4); display: grid; place-items: center; }
+  .quiz-cta .reward .icon svg { width: 20px; height: 20px; stroke: var(--paper); fill: none; stroke-width: 1.5; }
+  .quiz-cta .reward .txt h3 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 4px; font-weight: 700; }
+  .quiz-cta .reward .txt p { font-size: 12px; opacity: 0.8; line-height: 1.5; }
+
+  /* ===== Contracapa ===== */
+  .back {
+    background: #0f0f0f; color: #f4f1ec;
+    padding: 80px; display: grid; grid-template-rows: auto 1fr auto; gap: 40px;
+  }
+  .back header { border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+  .back header .logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
+  .back header .edition { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.6; }
+  .back .main { display: grid; grid-template-columns: 1.3fr 1fr; gap: 80px; align-items: center; }
+  .back .main h1 { font-family: 'Playfair Display', serif; font-size: clamp(44px, 6vw, 88px); line-height: 0.95; letter-spacing: -0.02em; font-weight: 700; }
+  .back .main h1 em { color: var(--accent); font-style: italic; }
+  .back .main .info .block { margin-bottom: 28px; }
+  .back .main .info .block .k { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; opacity: 0.5; margin-bottom: 8px; }
+  .back .main .info .block .v { font-family: 'Playfair Display', serif; font-size: 20px; }
+  .back footer { border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.5; }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 820px) {
+    .cover { padding: 56px 24px 24px; gap: 20px; }
+    .cover .hero { grid-template-columns: 1fr; gap: 20px; }
+    .cover .hero-visual { aspect-ratio: 1 / 1.2; }
+    .toc { padding: 80px 24px 40px; grid-template-columns: 1fr; gap: 40px; }
+    .feature { grid-template-columns: 1fr; grid-template-rows: 45vh 1fr; }
+    .feature .content { padding: 32px 24px; gap: 16px; }
+    .feature .columns { columns: 1; }
+    .ba { padding: 80px 24px 32px; }
+    .ba header { grid-template-columns: 1fr; gap: 12px; }
+    .ba header .meta { text-align: left; }
+    .ba .pair { gap: 12px; }
+    .ba .caption { grid-template-columns: 1fr 1fr; gap: 16px; }
+    .interview { padding: 80px 24px 32px; grid-template-columns: 1fr; grid-template-rows: 35vh 1fr; gap: 24px; }
+    .quiz-cta { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+    .quiz-cta .side { padding: 56px 24px 32px; gap: 20px; }
+    .quiz-cta .side.left { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); }
+    .back { padding: 56px 24px 32px; }
+    .back .main { grid-template-columns: 1fr; gap: 32px; }
+  }
+
+  /* ===== Swipe hint (aparece 1x) ===== */
+  .swipe-hint {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 44; display: flex; align-items: center; gap: 10px;
+    background: rgba(0,0,0,0.85); color: #fff; padding: 10px 18px;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase; border-radius: 999px;
+    pointer-events: none; opacity: 0; animation: hint 4s ease 1s forwards;
+  }
+  .swipe-hint svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 2; }
+  @keyframes hint {
+    0% { opacity: 0; transform: translate(-50%, 10px); }
+    15%, 75% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -10px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reader { scroll-behavior: auto; }
+    .swipe-hint { animation: none; display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Progress bar tipo Stories -->
+<div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+
+<!-- Meta topo -->
+<div class="top-meta">
+  <span class="brand">Beauty &amp; Health</span>
+  <span class="counter"><span id="curPage">1</span> / <span id="totalPage">6</span></span>
+</div>
+
+<!-- Setas -->
+<button class="nav-arrow prev" id="prevBtn" aria-label="Página anterior" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+</button>
+<button class="nav-arrow next" id="nextBtn" aria-label="Próxima página">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+</button>
+
+<!-- Swipe hint -->
+<div class="swipe-hint" role="status">
+  <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  <span>Arraste para o lado</span>
+</div>
+
+<!-- Reader -->
+<main class="reader" id="reader" tabindex="0" aria-label="Revista Beauty and Health">
+
+  <!-- Página 1: Capa -->
+  <section class="page cover" aria-label="Capa">
+    <div class="masthead">
+      <h1>Beauty<br/>&amp; Health</h1>
+      <div class="edition">
+        <div>Edição 04</div>
+        <div>Abril 2026</div>
+      </div>
+    </div>
+    <div class="hero">
+      <div class="hero-visual" role="img" aria-label="Foto de capa"></div>
+      <div class="hero-text">
+        <span class="tag">Destaque da edição</span>
+        <h2>O olhar que <em>renasce</em> em 40 minutos</h2>
+        <p>Como o protocolo Smooth Eyes está transformando o cansaço em expressão viva — sem cortes, sem afastamento, sem susto no espelho.</p>
+      </div>
+    </div>
+    <div class="footline">
+      <span>Revista bimestral da Clínica</span>
+      <span>Ed. 04 / 2026</span>
+    </div>
+  </section>
+
+  <!-- Página 2: Sumário -->
+  <section class="page toc" aria-label="Sumário">
+    <div class="side">
+      <div class="kicker">Nesta edição</div>
+      <h1>Sobre o <em>tempo</em> que nos habita</h1>
+      <p>Seis matérias para você repensar sua relação com a imagem no espelho — e descobrir que rejuvenescer não é apagar quem você é, mas deixar quem você é aparecer.</p>
+    </div>
+    <div class="list">
+      <div class="item" data-goto="2">
+        <span class="num">01</span>
+        <div class="title">Smooth Eyes: o renascer do olhar<span>Matéria de capa</span></div>
+        <span class="page-no">p. 03</span>
+      </div>
+      <div class="item" data-goto="3">
+        <span class="num">02</span>
+        <div class="title">Antes & depois: o caso Fernanda<span>Transformações reais</span></div>
+        <span class="page-no">p. 04</span>
+      </div>
+      <div class="item" data-goto="4">
+        <span class="num">03</span>
+        <div class="title">Conversa com a especialista<span>Entrevista</span></div>
+        <span class="page-no">p. 05</span>
+      </div>
+      <div class="item" data-goto="5">
+        <span class="num">04</span>
+        <div class="title">Seu ritual de abril<span>Quiz interativo</span></div>
+        <span class="page-no">p. 06</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Página 3: Matéria hero -->
+  <section class="page feature" aria-label="Matéria: Smooth Eyes">
+    <div class="visual" role="img" aria-label="Retrato editorial da Dra. Fernanda"></div>
+    <div class="content">
+      <span class="kicker">Matéria de capa · Tratamento</span>
+      <h1>O olhar que <em>renasce</em></h1>
+      <p class="lede">Existe uma hora do dia em que mulheres na faixa dos 45 olham para o espelho e não se reconhecem. Não é vaidade — é um descompasso entre o cansaço visível e a vida interior que ainda pulsa.</p>
+      <div class="columns">
+        <p>O protocolo Smooth Eyes combina três tecnologias em uma única sessão de 40 minutos. A primeira atua sobre a melanina acumulada no contorno dos olhos. A segunda estimula a produção de colágeno sob a pele fina da região periocular.</p>
+        <p>A terceira, e talvez mais surpreendente, reposiciona os vetores mandibulares através de ácido hialurônico de baixa reticulação — um toque sutil que devolve ao rosto a moldura que o tempo atenuou.</p>
+        <p>"Quando minhas pacientes voltam para casa, ninguém diz que elas fizeram algo. Dizem que estão descansadas. Que estão bem. E isso, para mim, é o maior elogio possível ao meu trabalho", conta a especialista responsável pelo protocolo.</p>
+      </div>
+      <div class="byline">Por Redação Beauty &amp; Health · Fotografia: Estúdio próprio</div>
+    </div>
+  </section>
+
+  <!-- Página 4: Antes/Depois -->
+  <section class="page ba" aria-label="Antes e depois">
+    <header>
+      <h1>O caso <em style="color: var(--accent); font-style: italic;">Fernanda</em>, 52</h1>
+      <div class="meta">
+        Protocolo: Smooth Eyes + AH<br/>
+        Sessão única · 38 minutos<br/>
+        Registro: março 2026
+      </div>
+    </header>
+    <div class="pair">
+      <div class="photo before">
+        <span class="label">Antes</span>
+        <span class="stamp">03.02.2026</span>
+      </div>
+      <div class="photo after">
+        <span class="label">Depois</span>
+        <span class="stamp">28.02.2026</span>
+      </div>
+    </div>
+    <div class="caption">
+      <div class="stat"><div class="k">38<span style="font-size:16px">min</span></div><div class="l">Tempo total</div></div>
+      <div class="stat"><div class="k">0<span style="font-size:16px">d</span></div><div class="l">Afastamento</div></div>
+      <div class="stat"><div class="k">3<span style="font-size:16px">sem</span></div><div class="l">Resultado pleno</div></div>
+      <div class="stat"><div class="k">12<span style="font-size:16px">m</span></div><div class="l">Duração média</div></div>
+    </div>
+  </section>
+
+  <!-- Página 5: Entrevista -->
+  <section class="page interview" aria-label="Entrevista">
+    <div class="portrait" role="img" aria-label="Retrato da especialista">
+      <div class="name">Dra. Especialista<span>Responsável técnica · CRM/RS 00000</span></div>
+    </div>
+    <div class="content">
+      <div class="kicker">Conversa · 8 minutos de leitura</div>
+      <h1>"Beleza não é apagar <em>marcas</em> — é reorganizar a luz."</h1>
+      <div class="qa">
+        <div>
+          <p class="q">O que mudou na procura por estética nos últimos dois anos?</p>
+          <p class="a">As pacientes chegam mais informadas — e mais exigentes com naturalidade. Ninguém quer mais aquela cara congelada dos anos 2000. Querem parecer descansadas, não diferentes.</p>
+        </div>
+        <div>
+          <p class="q">Qual o erro mais comum que você corrige no consultório?</p>
+          <p class="a">Pacientes que já fizeram preenchimento em lugares errados. A correção exige mais técnica do que o procedimento original. Por isso insisto: escolha menos, mas escolha bem.</p>
+        </div>
+        <div>
+          <p class="q">Um conselho para quem está começando agora?</p>
+          <p class="a">Comece pelo que incomoda você, não pelo que incomoda os outros. Estética é autoestima, não validação externa.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Página 6: Quiz CTA -->
+  <section class="page quiz-cta" aria-label="Quiz interativo">
+    <div class="side left">
+      <span class="kicker">Exclusivo leitoras</span>
+      <h1>Qual tratamento combina com <em>o seu momento</em>?</h1>
+      <p>Responda 6 perguntas rápidas e receba uma recomendação personalizada baseada no seu objetivo, rotina e expectativa. Leva 2 minutos.</p>
+      <a class="cta-btn" href="quiz-render.html?q=revista-abril" target="_blank">
+        Fazer meu diagnóstico
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+    <div class="side right">
+      <span class="kicker">Recompensas desta edição</span>
+      <div class="rewards">
+        <div class="reward">
+          <div class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></div>
+          <div class="txt"><h3>R$ 50 em cashback</h3><p>Creditado ao concluir o quiz até 30/04</p></div>
+        </div>
+        <div class="reward">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2l3 7 7 .5-5.5 4.5L18 21l-6-3.5L6 21l1.5-7L2 9.5 9 9z"/></svg></div>
+          <div class="txt"><h3>Edição limitada VIP</h3><p>Top 10 leitoras do mês ganham avaliação presencial gratuita</p></div>
+        </div>
+        <div class="reward">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <div class="txt"><h3>Ícone oculto</h3><p>Encontre o símbolo escondido nas páginas e libere 10% extra</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const reader = document.getElementById('reader');
+  const pages = reader.querySelectorAll('.page');
+  const total = pages.length;
+  const progressBar = document.getElementById('progressBar');
+  const curPageEl = document.getElementById('curPage');
+  const totalPageEl = document.getElementById('totalPage');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  totalPageEl.textContent = total;
+  for (let i = 0; i < total; i++) {
+    const seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.innerHTML = '<span class="fill"></span>';
+    progressBar.appendChild(seg);
+  }
+
+  let current = 0;
+  function updateUI(index) {
+    current = index;
+    curPageEl.textContent = index + 1;
+    progressBar.querySelectorAll('.seg').forEach((s, i) => {
+      s.classList.toggle('done', i < index);
+      s.classList.toggle('current', i === index);
+    });
+    prevBtn.hidden = index === 0;
+    nextBtn.hidden = index === total - 1;
+  }
+  updateUI(0);
+
+  // Observa qual página está em foco
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting && e.intersectionRatio > 0.55) {
+        const idx = Array.from(pages).indexOf(e.target);
+        updateUI(idx);
+      }
+    });
+  }, { root: reader, threshold: [0.55, 0.9] });
+  pages.forEach(p => io.observe(p));
+
+  function goTo(i) {
+    const target = Math.max(0, Math.min(total - 1, i));
+    pages[target].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+  }
+
+  prevBtn.addEventListener('click', () => goTo(current - 1));
+  nextBtn.addEventListener('click', () => goTo(current + 1));
+
+  // Teclado
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  // Click no sumário
+  document.querySelectorAll('[data-goto]').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.goto, 10);
+      goTo(idx);
+    });
+  });
+
+  // Wheel vertical vira horizontal no desktop
+  reader.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      if (Math.abs(e.deltaY) < 30) return;
+      e.preventDefault();
+      if (e.deltaY > 0) goTo(current + 1);
+      else goTo(current - 1);
+    }
+  }, { passive: false });
+
+  reader.focus();
+</script>
+
+</body>
+</html>
