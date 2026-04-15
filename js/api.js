@@ -720,10 +720,20 @@ function buildSemanaGrid() {
       const cards = cellAppts.map((a, ci) => apptCardSmall(a, ci, cellAppts.length)).join('')
       const isPast = iso < todayIso
       const hasCards = cards.length > 0
-      const clickable = !isPast || hasCards
-      return `<td ${clickable?'ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\',0)"':''}
-        ${clickable?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\',0)"':''}
-        style="width:${colW};padding:2px 3px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};height:34px;vertical-align:top;cursor:${clickable?'pointer':'default'};position:relative;background:${isToday?'#FEFCE8':isPast&&!hasCards?'#F9FAFB':''};${isPast&&!hasCards?'opacity:0.5;':''}"
+      // Marcações de horário (almoço/fechado/fora)
+      const slotInfo = (window.AgendaValidator && AgendaValidator.isSlotBlocked)
+        ? AgendaValidator.isSlotBlocked(iso, slot, 15) : { blocked: false }
+      const blockedBg = slotInfo.blocked
+        ? (slotInfo.kind === 'lunch'
+            ? 'background-image:repeating-linear-gradient(45deg,#FEF3C7,#FEF3C7 4px,#FDE68A 4px,#FDE68A 8px);'
+            : 'background-image:repeating-linear-gradient(45deg,#F3F4F6,#F3F4F6 4px,#E5E7EB 4px,#E5E7EB 8px);')
+        : ''
+      const clickable = (!isPast && !slotInfo.blocked) || hasCards
+      const title = slotInfo.blocked && !hasCards ? `title="${slotInfo.reason || 'Bloqueado'}"` : ''
+      return `<td ${title} ${clickable?'ondragover="agendaDragOver(event,\''+iso+'\',\''+slot+'\')" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\',0)"':''}
+        ${clickable&&!slotInfo.blocked?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\',0)"':''}
+        data-slot-blocked="${slotInfo.blocked?'1':'0'}" data-slot-kind="${slotInfo.kind||''}"
+        style="width:${colW};padding:2px 3px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};height:34px;vertical-align:top;cursor:${clickable?(slotInfo.blocked?'not-allowed':'pointer'):'default'};position:relative;background:${isToday?'#FEFCE8':isPast&&!hasCards?'#F9FAFB':''};${blockedBg}${isPast&&!hasCards?'opacity:0.5;':''}"
         >${cards}</td>`
     }).join('')
     return `<tr style="background:${isHour?'#FAFAFA':'#fff'}">
