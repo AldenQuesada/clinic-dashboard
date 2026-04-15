@@ -2,9 +2,10 @@
  * Beauty & Health Magazine — CSS dos 20 templates
  * Usado por magazine-admin.html (preview) e revista.html (leitor publico)
  * Convencao: cada template tem classe .mp-{slug} e herda vars editoriais
+ *
+ * NOTA: fonte Great Vibes (assinatura t05) é carregada via <link> no admin
+ * e revista-live, NÃO via @import aqui dentro (evita bloqueio no srcdoc iframe).
  * ============================================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
 :root {
   --mp-bg: #f4f1ec;

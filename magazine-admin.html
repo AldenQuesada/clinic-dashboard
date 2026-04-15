@@ -6,12 +6,12 @@
 <title>Beauty &amp; Health — Editor Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" />
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js" defer></script>
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/magazine/magazine-renderer.js?v=20260415t"></script>
+<script src="js/magazine/magazine-renderer.js?v=20260415u"></script>
 <script src="js/magazine/admin/slot-schema.js"></script>
 <script src="js/magazine/admin/editor-widgets.js"></script>
 <script src="js/magazine/admin/validator.js"></script>
@@ -1729,7 +1729,7 @@
 <meta charset="utf-8"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet"/>
 <style>
 ${state.magazineCss}
 ${state.dynamicAccent ? `:root { --mp-accent: ${state.dynamicAccent} !important; }` : ''}
@@ -2383,7 +2383,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 
     // Carrega CSS dos templates uma vez para embutir no iframe preview
     try {
-      const r = await fetch('css/magazine-pages.css?v=20260415t')
+      const r = await fetch('css/magazine-pages.css?v=20260415u')
       if (r.ok) state.magazineCss = await r.text()
       else console.warn('CSS templates 404:', r.status)
     } catch (e) { console.warn('Falha carregando CSS templates:', e) }
