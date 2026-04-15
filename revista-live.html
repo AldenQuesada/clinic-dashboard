@@ -207,7 +207,15 @@
     let maxIdx = 0
     const completed = new Set()
 
+    let pageEnterAt = Date.now()
+
     const updateUi = (idx) => {
+      // Tracka tempo na pagina anterior antes de trocar
+      if (leadId && !preview && currentIdx !== idx) {
+        const dt = Date.now() - pageEnterAt
+        if (dt > 800 && dt < 600000) sendPageTrack(currentIdx, dt)
+        pageEnterAt = Date.now()
+      }
       currentIdx = idx
       $('curIdx').textContent = idx + 1
       maxIdx = Math.max(maxIdx, idx)
@@ -224,6 +232,29 @@
       // Envia progresso (debounced)
       if (leadId && !preview) sendProgress()
     }
+
+    async function sendPageTrack(pageIdx, ms) {
+      try {
+        await sb.rpc('magazine_track_page', {
+          p_edition_id: ed.id,
+          p_lead_id: leadId,
+          p_hash: hash,
+          p_page_index: pageIdx,
+          p_time_ms: Math.round(ms),
+        })
+      } catch (e) { /* silencioso */ }
+    }
+
+    // Tracka tempo da ultima pagina ao sair (visibilitychange eh confiavel em mobile)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && leadId && !preview) {
+        const dt = Date.now() - pageEnterAt
+        if (dt > 800 && dt < 600000) {
+          sendPageTrack(currentIdx, dt)
+          pageEnterAt = Date.now()
+        }
+      }
+    })
 
     let progTimer = null
     let lastSent = 0

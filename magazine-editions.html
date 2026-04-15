@@ -85,6 +85,30 @@
 
   .loading{padding:40px;text-align:center;color:var(--muted);font-size:13px}
 
+  /* Report modal */
+  .report-overlay{position:fixed;inset:0;background:rgba(26,26,26,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px}
+  .report-card{background:var(--paper);border-radius:14px;width:100%;max-width:780px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,0.3);overflow:hidden}
+  .report-card header{padding:20px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .report-card header h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700}
+  .report-card header button{font-size:24px;color:var(--muted);padding:4px 10px}
+  .report-card header button:hover{color:var(--ink)}
+  .report-body{padding:24px 26px;overflow-y:auto}
+  .report-body h3{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;margin:24px 0 12px}
+  .report-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .rs{padding:14px;background:var(--paper);text-align:center}
+  .rs .v{font-family:'Playfair Display',serif;font-size:24px;color:var(--ink);font-weight:700;line-height:1}
+  .rs .l{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .heatmap{display:flex;flex-direction:column;gap:8px}
+  .hm-row{display:grid;grid-template-columns:90px 1fr 160px;gap:12px;align-items:center;font-size:12px}
+  .hm-label{color:var(--ink);font-weight:600}
+  .hm-bar{background:var(--bg);height:24px;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+  .hm-fill{height:100%;background:linear-gradient(90deg,var(--accent),#a8345d);transition:width .6s ease}
+  .hm-val{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  @media(max-width:600px){
+    .hm-row{grid-template-columns:60px 1fr;gap:8px}
+    .hm-val{grid-column:1/-1;text-align:right}
+  }
+
   @media(max-width:720px){
     .container{padding:24px 16px 60px}
     header.top{padding:24px 16px 18px}
@@ -234,7 +258,7 @@
 
     // wire actions
     $('list').querySelectorAll('[data-act]').forEach(btn => {
-      btn.addEventListener('click', () => doAction(btn.dataset.act, btn.dataset.id))
+      btn.addEventListener('click', () => doAction(btn.dataset.act, btn.dataset.id, btn.dataset))
     })
   }
 
@@ -249,6 +273,10 @@
     actions.push(`<a href="magazine-admin.html?edition=${enc(e.id)}" target="_blank" class="primary">Editar páginas</a>`)
     if (e.status === 'draft' && e.pages_count > 0) {
       actions.push(`<button data-act="publish" data-id="${e.id}">Publicar</button>`)
+    }
+    if (e.status === 'published') {
+      actions.push(`<button data-act="report" data-id="${e.id}" data-title="${esc(e.title)}">Relatório</button>`)
+      actions.push(`<button data-act="csv" data-id="${e.id}" data-slug="${esc(e.slug)}">CSV</button>`)
     }
     if (e.status === 'draft' || e.status === 'published') {
       actions.push(`<button data-act="archive" data-id="${e.id}" class="danger">Arquivar</button>`)
@@ -290,7 +318,7 @@
       </article>`
   }
 
-  async function doAction(act, id) {
+  async function doAction(act, id, dataset) {
     if (act === 'publish') {
       if (!confirm('Publicar esta edição? Esta ação fica registrada e a edição vira pública.')) return
       const { error } = await sb.rpc('magazine_publish', { p_edition_id: id })
@@ -306,7 +334,86 @@
       const { error } = await sb.from('magazine_editions').delete().eq('id', id)
       if (error) return toast('Erro: ' + error.message, 'err')
       toast('Excluída', 'ok'); loadEditions()
+    } else if (act === 'report') {
+      await openReport(id, dataset.title)
+    } else if (act === 'csv') {
+      await exportCsv(id, dataset.slug)
     }
+  }
+
+  // ===== Relatorio (modal com heatmap por pagina) =====
+  async function openReport(id, title) {
+    toast('Carregando relatório…')
+    const { data, error } = await sb.rpc('magazine_edition_report', { p_edition_id: id })
+    if (error) return toast('Erro: ' + error.message, 'err')
+    showReportModal(title, data)
+  }
+
+  function showReportModal(title, report) {
+    const s = report.summary
+    const pp = report.per_page || []
+    const maxAvgTime = Math.max(1, ...pp.map(p => p.avg_time_sec))
+
+    const heatmap = pp.map((p, i) => {
+      const pct = (p.avg_time_sec / maxAvgTime) * 100
+      const minutes = (p.avg_time_sec / 60)
+      return `
+        <div class="hm-row">
+          <div class="hm-label">Página ${p.page_index + 1}</div>
+          <div class="hm-bar"><div class="hm-fill" style="width:${pct}%"></div></div>
+          <div class="hm-val">${p.avg_time_sec.toFixed(0)}s · ${p.unique_views} visualizações</div>
+        </div>`
+    }).join('')
+
+    const html = `
+      <div class="report-overlay" id="reportOv">
+        <div class="report-card">
+          <header><h2>Relatório · ${esc(title)}</h2><button id="closeReport">×</button></header>
+          <div class="report-body">
+            <div class="report-summary">
+              <div class="rs"><div class="v">${s.leads_opened}</div><div class="l">Aberturas</div></div>
+              <div class="rs"><div class="v">${s.leads_completed}</div><div class="l">Leram 80%</div></div>
+              <div class="rs"><div class="v">${s.leads_quiz}</div><div class="l">Quiz</div></div>
+              <div class="rs"><div class="v">${s.leads_shared}</div><div class="l">Compartilharam</div></div>
+              <div class="rs"><div class="v">${Math.round(s.avg_time_sec/60*10)/10}min</div><div class="l">Tempo médio</div></div>
+              <div class="rs"><div class="v" style="color:var(--accent)">R$ ${(+s.total_cashback).toFixed(2).replace('.',',')}</div><div class="l">Cashback</div></div>
+            </div>
+            <h3>Heatmap por página (tempo médio)</h3>
+            <div class="heatmap">${heatmap || '<div style="color:var(--muted);font-style:italic">Sem dados ainda</div>'}</div>
+            <p style="font-size:11px;color:var(--muted);margin-top:18px">As páginas com barra mais cheia foram as que prenderam mais. Drop-offs (poucas visualizações) podem indicar páginas pra revisar na próxima edição.</p>
+          </div>
+        </div>
+      </div>`
+    const div = document.createElement('div')
+    div.innerHTML = html
+    document.body.appendChild(div.firstElementChild)
+    document.getElementById('closeReport').addEventListener('click', () => document.getElementById('reportOv').remove())
+    document.getElementById('reportOv').addEventListener('click', e => { if (e.target.id === 'reportOv') e.target.remove() })
+  }
+
+  // ===== Export CSV =====
+  async function exportCsv(id, slug) {
+    toast('Gerando CSV…')
+    const { data, error } = await sb.rpc('magazine_edition_report', { p_edition_id: id })
+    if (error) return toast('Erro: ' + error.message, 'err')
+    const leads = data.leads || []
+    if (!leads.length) return toast('Sem leads para exportar', 'err')
+
+    const headers = ['lead_id','segment','opened_at','last_page','pages_completed','time_sec','completed','quiz','hidden_icon','shared']
+    const rows = leads.map(l => [
+      l.lead_id, l.segment || '', l.opened_at || '',
+      l.last_page_index ?? '', l.pages_completed_count ?? 0,
+      l.time_spent_sec ?? 0, l.completed ? 'sim' : 'nao',
+      l.quiz_completed ? 'sim' : 'nao', l.hidden_icon_found ? 'sim' : 'nao',
+      l.shared ? 'sim' : 'nao',
+    ])
+    const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `revista-${slug}-leads.csv`
+    document.body.appendChild(a); a.click(); a.remove()
+    toast('CSV baixado', 'ok')
   }
 
   function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}

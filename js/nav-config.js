@@ -252,6 +252,7 @@
         { page: 'revista-editions', label: 'Edições (Hub)',       breadcrumb: 'Revista > Edições',         externalUrl: 'magazine-editions.html',  highlight: true },
         { page: 'revista-gallery',  label: 'Galeria de Formatos', breadcrumb: 'Revista > Galeria',         externalUrl: 'magazine-gallery.html' },
         { page: 'revista-playbook', label: 'Playbook Editorial',  breadcrumb: 'Revista > Playbook',        externalUrl: 'docs/magazine-editor-playbook.md' },
+        { page: 'revista-wow',      label: 'Efeitos Wow (Premium)', breadcrumb: 'Revista > Efeitos Wow',  externalUrl: 'docs/magazine-wow-effects.md' },
         { page: 'revista-doc',      label: 'Documento Mestre',    breadcrumb: 'Revista > Documento',       externalUrl: 'proposta-revista.html' },
       ],
     },
