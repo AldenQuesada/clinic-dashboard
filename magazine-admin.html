@@ -17,6 +17,9 @@
 <script src="js/magazine/admin/page-controls.js"></script>
 <script src="js/magazine/admin/photo-library.js"></script>
 <script src="js/magazine/admin/template-picker.js"></script>
+<script src="js/magazine/admin/drop-zone.js"></script>
+<script src="js/magazine/admin/edition-meta.js"></script>
+<script src="js/magazine/admin/preview-fullscreen.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -530,6 +533,90 @@
   .tp-name { font-size: 13px; font-weight: 600; color: var(--ink); }
   .tp-slug { font-size: 10px; color: var(--muted); font-family: ui-monospace, monospace; margin-top: 2px; }
   .tp-empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
+
+  /* ============================================================================
+   * Drop Zone (hover state nos campos de imagem)
+   * ============================================================================ */
+  .slot-field[data-drag-hover="1"],
+  .scalar-image[data-drag-hover="1"],
+  .list-field[data-drag-hover="1"] {
+    position: relative;
+  }
+  .slot-field[data-drag-hover="1"]::after,
+  .scalar-image[data-drag-hover="1"]::after,
+  .list-field[data-drag-hover="1"]::after {
+    content: '↓ Soltar para enviar';
+    position: absolute; inset: 0; z-index: 5;
+    display: grid; place-items: center;
+    background: rgba(122, 31, 43, 0.08); border: 2px dashed var(--accent); border-radius: 8px;
+    color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    pointer-events: none;
+  }
+
+  /* ============================================================================
+   * Edition Meta modal
+   * ============================================================================ */
+  .em-modal { height: auto; max-height: min(85vh, 680px); width: min(560px, calc(100vw - 48px)); }
+  .em-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .em-field { display: flex; flex-direction: column; gap: 4px; }
+  .em-field label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+  }
+  .em-field input, .em-field textarea, .em-field select {
+    padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); font-size: 13px; outline: none; font-family: inherit;
+  }
+  .em-field input:focus, .em-field textarea:focus, .em-field select:focus { border-color: var(--accent); }
+  .em-field input[readonly] { background: var(--bg); color: var(--muted); cursor: not-allowed; }
+  .em-field textarea { resize: vertical; min-height: 60px; }
+  .em-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .em-footer {
+    padding: 14px 22px; border-top: 1px solid var(--line); background: var(--bg);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+  .em-footer .btn {
+    padding: 8px 16px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .em-footer .btn:hover { border-color: var(--ink); }
+  .em-footer .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .em-footer .btn.primary:hover { background: var(--accent); border-color: var(--accent); }
+  .em-footer .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ============================================================================
+   * Preview Full-Screen overlay
+   * ============================================================================ */
+  .fsp-overlay {
+    position: fixed; inset: 0; z-index: 700; background: #1a1a1a;
+    display: none; flex-direction: column;
+  }
+  .fsp-overlay[data-open="1"] { display: flex; }
+  .fsp-head {
+    height: 52px; flex-shrink: 0; padding: 0 16px; background: #0f0f0f;
+    display: flex; align-items: center; justify-content: space-between; color: #fff;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .fsp-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; }
+  .fsp-actions { display: flex; align-items: center; gap: 6px; }
+  .fsp-mode-btn {
+    padding: 5px 12px; border: 1px solid #333; border-radius: 4px;
+    background: transparent; color: #bbb; font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+  .fsp-mode-btn:hover { border-color: #888; color: #fff; }
+  .fsp-mode-btn[data-active="1"] { background: #fff; color: #000; border-color: #fff; }
+  .fsp-close {
+    margin-left: 8px; width: 32px; height: 32px; border: 1px solid #333; border-radius: 4px;
+    background: transparent; color: #ccc; font-size: 18px; cursor: pointer; display: grid; place-items: center;
+  }
+  .fsp-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .fsp-stage { flex: 1; display: grid; place-items: center; padding: 16px; min-height: 0; overflow: hidden; }
+  .fsp-frame {
+    background: var(--paper); border-radius: 8px; overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  }
+  .fsp-frame.desktop { width: min(1200px, calc(100vw - 32px)); aspect-ratio: 16/10; max-height: calc(100vh - 100px); }
+  .fsp-frame.mobile  { width: 390px; height: min(720px, calc(100vh - 100px)); }
+  .fsp-frame iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--paper); }
 </style>
 </head>
 <body>
@@ -548,6 +635,7 @@
     <div class="divider"></div>
 
     <input type="text" class="title-input" id="editionTitle" placeholder="Título da edição…" disabled />
+    <button class="btn ghost" id="editionMetaBtn" style="display:none" title="Editar metadados da edição">⋯</button>
     <span class="status draft" id="editionStatus" style="display:none">Rascunho</span>
 
     <div class="spacer"></div>
@@ -583,6 +671,7 @@
           <div class="preview-toggle">
             <button id="viewDesktop" class="active" title="Desktop (16:10)">Desktop</button>
             <button id="viewMobile" title="Mobile (390×720)">Mobile</button>
+            <button id="viewFullscreen" title="Preview em tela cheia (ESC p/ fechar)">⛶</button>
           </div>
           <div class="preview-frame desktop" id="previewFrame">
             <iframe id="previewIframe" title="Preview"></iframe>
@@ -610,6 +699,12 @@
 
 <!-- PHOTO LIBRARY DRAWER (renderizado pelo módulo PhotoLibrary) -->
 <div id="photoLibraryHost"></div>
+
+<!-- EDITION METADATA MODAL -->
+<div class="modal-backdrop" id="editionMetaModal"></div>
+
+<!-- PREVIEW FULL-SCREEN OVERLAY -->
+<div id="fullscreenPreviewHost"></div>
 
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
@@ -658,6 +753,8 @@
     photoLib: null,  // controller do PhotoLibrary
     tplPicker: null, // controller do TemplatePicker
     lastImageInput: null, // input de imagem em foco (p/ library onPick)
+    editionMetaCtrl: null, // controller do EditionMeta
+    fsPreview: null, // controller do PreviewFullscreen
   }
 
   // ===== DOM =====
@@ -711,7 +808,7 @@
 
   async function loadEditions() {
     const { data, error } = await sb.from('magazine_editions')
-      .select('id, title, slug, status, theme, subtitle, created_at')
+      .select('id, title, slug, status, theme, subtitle, cover_template_slug, created_at')
       .order('created_at', { ascending: false })
     if (error) { toast('Erro ao carregar edições: ' + error.message, 'err'); return }
     state.editions = data || []
@@ -790,12 +887,14 @@
 
   function renderEditionHeader() {
     const ed = state.currentEdition
+    const metaBtn = document.getElementById('editionMetaBtn')
     if (!ed) {
       els.editionTitle.value = ''
       els.editionTitle.disabled = true
       els.editionStatus.style.display = 'none'
       els.publishBtn.disabled = true
       els.archiveBtn.style.display = 'none'
+      if (metaBtn) metaBtn.style.display = 'none'
       return
     }
     els.editionTitle.value = ed.title || ''
@@ -808,6 +907,7 @@
     els.publishBtn.textContent = ed.status === 'published' ? 'Publicada' : 'Publicar'
     els.archiveBtn.style.display = ed.status !== 'archived' ? '' : 'none'
     els.viewLiveBtn.style.display = ed.status === 'published' ? '' : 'none'
+    if (metaBtn) metaBtn.style.display = ''
   }
 
   function renderPageList() {
@@ -899,15 +999,17 @@
   }
 
   // ===== Upload Storage (integrado com widgets) =====
-  // Handler invocado pelos widgets: recebe {key, button, onUploaded(url)}
-  function handleSlotUpload({ key, button, onUploaded }) {
+  // Handler invocado pelos widgets: recebe {key, button, file?, onUploaded(url)}
+  // Se file presente (drag-drop), sobe direto. Senão, abre file picker.
+  function handleSlotUpload({ key, button, file, onUploaded }) {
     if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
+    if (file) { uploadFile(file, key, button, onUploaded); return }
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*'
     input.onchange = () => {
-      const file = input.files && input.files[0]
-      if (file) uploadFile(file, key, button, onUploaded)
+      const f = input.files && input.files[0]
+      if (f) uploadFile(f, key, button, onUploaded)
     }
     input.click()
   }
@@ -1347,6 +1449,16 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     els.viewMobile.classList.toggle('active', mode === 'mobile')
   }
 
+  function openFullscreenPreview() {
+    const page = state.pages.find(p => p.id === state.currentPageId)
+    if (!page) { toast('Selecione uma página primeiro', 'err'); return }
+    const section = window.MagazineAdmin.Schema.getSectionMeta(page.template_slug)
+    const slots = readSlotsFromForm(page)
+    const html = window.MagazineRenderer.render(page.template_slug, slots)
+    const title = `${section?.name || page.template_slug} · ${state.currentEdition?.title || ''}`
+    state.fsPreview.open({ html, css: state.magazineCss, title })
+  }
+
   // ===== Auth =====
   async function ensureAuth() {
     const { data: { session } } = await sb.auth.getSession()
@@ -1393,6 +1505,27 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     els.viewLiveBtn.addEventListener('click', viewLive)
     els.viewDesktop.addEventListener('click', () => setPreviewMode('desktop'))
     els.viewMobile.addEventListener('click', () => setPreviewMode('mobile'))
+
+    // Preview fullscreen
+    state.fsPreview = window.MagazineAdmin.PreviewFullscreen.mount(document.getElementById('fullscreenPreviewHost'))
+    document.getElementById('viewFullscreen').addEventListener('click', openFullscreenPreview)
+
+    // Edition metadata modal
+    state.editionMetaCtrl = window.MagazineAdmin.EditionMeta.mount(
+      document.getElementById('editionMetaModal'), sb, {
+        onSaved: (payload) => {
+          if (!state.currentEdition) return
+          Object.assign(state.currentEdition, payload)
+          const ed = state.editions.find(e => e.id === state.currentEdition.id)
+          if (ed) Object.assign(ed, payload)
+          renderEditionHeader(); renderEditionSelect()
+          toast('Metadados salvos', 'ok')
+        },
+        onError: (msg) => toast('Erro: ' + msg, 'err'),
+      })
+    document.getElementById('editionMetaBtn').addEventListener('click', () => {
+      if (state.currentEdition) state.editionMetaCtrl.open(state.currentEdition, state.templates)
+    })
 
     // Template picker (modal)
     state.tplPicker = window.MagazineAdmin.TemplatePicker.mount(els.templateModal, state.templates, {

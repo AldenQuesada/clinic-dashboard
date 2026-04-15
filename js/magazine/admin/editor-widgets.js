@@ -180,24 +180,29 @@
       setThumb(input.value)
     })
 
-    btn.addEventListener('click', () => {
-      if (typeof onUpload === 'function') {
-        onUpload({
-          key: meta.k,
-          button: btn,
-          onUploaded: (url) => {
-            input.value = url
-            onChange(url)
-            setThumb(url)
-          },
-        })
-      }
-    })
+    const doUpload = (file) => {
+      if (typeof onUpload !== 'function') return
+      onUpload({
+        key: meta.k,
+        button: btn,
+        file: file || null,
+        onUploaded: (url) => {
+          input.value = url
+          onChange(url)
+          setThumb(url)
+        },
+      })
+    }
+    btn.addEventListener('click', () => doUpload(null))
 
     thumb.addEventListener('click', () => {
       if (!thumb.classList.contains('has-img')) return
       openLightbox(input.value)
     })
+
+    // Drag-drop arquivo direto no wrapper (se DropZone disponível)
+    const DZ = window.MagazineAdmin && window.MagazineAdmin.DropZone
+    if (DZ) DZ.attach(parts.wrap, { onFile: doUpload })
 
     return { input, thumb, setThumb }
   }
@@ -309,27 +314,29 @@
         onChange(items.slice())
       })
       if (sc.type === 'image') {
-        // wrapper com upload + thumb
         const wrap = document.createElement('div')
         wrap.className = 'scalar-image'
         el.placeholder = 'URL ou use upload →'
         wrap.appendChild(el)
         const ub = document.createElement('button')
         ub.type = 'button'; ub.className = 'upload-btn'; ub.textContent = '↑'
-        ub.addEventListener('click', () => {
-          if (typeof handlers.onUpload === 'function') {
-            handlers.onUpload({
-              key: `${meta.k}[${idx}]`,
-              button: ub,
-              onUploaded: (url) => {
-                el.value = url
-                items[idx] = url
-                onChange(items.slice())
-              },
-            })
-          }
-        })
+        const doUp = (file) => {
+          if (typeof handlers.onUpload !== 'function') return
+          handlers.onUpload({
+            key: `${meta.k}[${idx}]`,
+            button: ub,
+            file: file || null,
+            onUploaded: (url) => {
+              el.value = url
+              items[idx] = url
+              onChange(items.slice())
+            },
+          })
+        }
+        ub.addEventListener('click', () => doUp(null))
         wrap.appendChild(ub)
+        const DZ = window.MagazineAdmin && window.MagazineAdmin.DropZone
+        if (DZ) DZ.attach(wrap, { onFile: doUp })
         return wrap
       }
       return el
@@ -360,21 +367,24 @@
         })
         const ub = document.createElement('button')
         ub.type = 'button'; ub.className = 'upload-btn'; ub.textContent = '↑'
-        ub.addEventListener('click', () => {
-          if (typeof handlers.onUpload === 'function') {
-            handlers.onUpload({
-              key: `${meta.k}[${idx}].${fm.k}`,
-              button: ub,
-              onUploaded: (url) => {
-                inp.value = url
-                items[idx] = Object.assign({}, items[idx], { [fm.k]: url })
-                onChange(items.slice())
-              },
-            })
-          }
-        })
+        const doUp = (file) => {
+          if (typeof handlers.onUpload !== 'function') return
+          handlers.onUpload({
+            key: `${meta.k}[${idx}].${fm.k}`,
+            button: ub,
+            file: file || null,
+            onUploaded: (url) => {
+              inp.value = url
+              items[idx] = Object.assign({}, items[idx], { [fm.k]: url })
+              onChange(items.slice())
+            },
+          })
+        }
+        ub.addEventListener('click', () => doUp(null))
         row.appendChild(inp); row.appendChild(ub)
         wrap.appendChild(row)
+        const DZ = window.MagazineAdmin && window.MagazineAdmin.DropZone
+        if (DZ) DZ.attach(wrap, { onFile: doUp })
       } else {
         const el = document.createElement(isTA ? 'textarea' : 'input')
         if (!isTA) el.type = 'text'
