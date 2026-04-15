@@ -103,16 +103,16 @@
   font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
   opacity: 0.8; text-align: right; white-space: nowrap; font-weight: 500;
 }
+/* Body padrão REVISTA: foto preenche tudo · texto sobreposto no rodapé com gradient */
 .mp-t01 .body {
-  display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 14px;
+  position: relative;
   min-height: 0;
-}
-.mp-t01 .visual {
-  min-height: 0; overflow: hidden; position: relative;
+  overflow: hidden;
   border: 1px solid rgba(255,255,255,0.08);
   background: radial-gradient(ellipse at 50% 30%, #2a2a2a, #0f0f0f 70%);
+}
+.mp-t01 .visual {
+  position: absolute; inset: 0; min-height: 0; overflow: hidden;
   display: grid; place-items: center;
 }
 .mp-t01 .visual .mp-photo-slot {
@@ -121,13 +121,24 @@
 }
 .mp-t01 .visual .mp-img {
   width: auto; height: auto; max-width: 100%; max-height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* foto ocupa espaço todo no mobile · texto sobrepõe */
+}
+/* Gradient inferior sempre presente (padrão revista) */
+.mp-t01 .body::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 55%; pointer-events: none; z-index: 1;
+  background: linear-gradient(to top,
+    rgba(0,0,0,0.92) 0%,
+    rgba(0,0,0,0.75) 35%,
+    rgba(0,0,0,0.35) 70%,
+    transparent 100%);
 }
 .mp-t01 .txt {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
   display: flex; flex-direction: column; gap: 10px;
-  align-items: flex-start; justify-content: center;
-  text-align: left; min-width: 0;
-  min-height: 0;
+  align-items: flex-start; text-align: left; min-width: 0;
+  padding: 30px 22px 26px;
+  color: var(--mp-cream);
 }
 .mp-t01 .tag {
   padding: 5px 10px; border: 1px solid var(--mp-accent);
@@ -145,6 +156,7 @@
 }
 
 /* ───── Desktop/tablet (≥720px): foto | título lateral ───── */
+/* No desktop, volta ao layout grid 2-col (foto + texto ao lado) — mais confortável em tela larga */
 @media (min-width: 720px) {
   .mp-t01 { padding: 40px 56px; gap: 24px; }
   .mp-t01 .head { padding-bottom: 18px; gap: 24px; }
@@ -152,13 +164,24 @@
   .mp-t01 .head .brand { font-size: clamp(32px, 4vw, 48px); }
   .mp-t01 .head .edition-label { font-size: 11px; letter-spacing: 3px; }
   .mp-t01 .body {
+    display: grid;
     grid-template-rows: 1fr;
     grid-template-columns: 1.15fr 1fr;
     gap: 40px;
+    border: none;
+    background: transparent;
+    overflow: visible;
   }
+  .mp-t01 .body::after { display: none; }
+  .mp-t01 .visual {
+    position: relative; inset: auto;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: radial-gradient(ellipse at 50% 30%, #2a2a2a, #0f0f0f 70%);
+  }
+  .mp-t01 .visual .mp-img { object-fit: contain; }
   .mp-t01 .txt {
+    position: relative; inset: auto;
     justify-content: center; gap: 18px; padding: 0;
-    /* Empurra ligeiramente pra cima do centro geometrico (parece mais balanceado com foto) */
     transform: translateY(-4%);
   }
   .mp-t01 .txt h2 { font-size: clamp(42px, 5vw, 64px); line-height: 0.95; }
