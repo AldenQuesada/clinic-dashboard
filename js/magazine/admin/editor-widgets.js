@@ -178,6 +178,18 @@
     input.addEventListener('input', () => {
       onChange(input.value)
       setThumb(input.value)
+      // Aviso: Drive bloqueia hotlink — sugerir Upload
+      const v = input.value || ''
+      const isDrive = /drive\.google\.com/.test(v)
+      let warn = parts.wrap.querySelector('.drive-warn')
+      if (isDrive && !warn) {
+        warn = document.createElement('div')
+        warn.className = 'drive-warn'
+        warn.innerHTML = '⚠️ Google Drive bloqueia hotlink · use o botão <strong>↑ Upload</strong> em vez de colar URL'
+        parts.wrap.appendChild(warn)
+      } else if (!isDrive && warn) {
+        warn.remove()
+      }
     })
 
     const doUpload = (file) => {

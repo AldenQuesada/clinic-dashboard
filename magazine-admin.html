@@ -14,7 +14,7 @@
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js" defer></script>
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/magazine/magazine-renderer.js?v=20260415y"></script>
+<script src="js/magazine/magazine-renderer.js?v=20260415z"></script>
 <script src="js/magazine/admin/slot-schema.js"></script>
 <script src="js/magazine/admin/editor-widgets.js"></script>
 <script src="js/magazine/admin/validator.js"></script>
@@ -681,19 +681,45 @@
   .fsp-sep { width: 1px; height: 22px; background: #333; margin: 0 4px; }
 
   /* ============================================================================
-   * Autosave indicator (Sprint 4)
+   * Autosave indicator (Sprint 4) — versão visível
    * ============================================================================ */
   .slots-actions { align-items: center; }
   .autosave-indicator {
-    font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace;
-    padding: 4px 8px; border-radius: 4px; transition: color .15s, background .15s;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    font-family: 'Inter', sans-serif;
+    padding: 6px 12px; border-radius: 999px; transition: all .2s ease;
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid transparent;
   }
+  .autosave-indicator[data-state="idle"] { opacity: 0; }
   .autosave-indicator[data-state="idle"]::before  { content: ''; }
-  .autosave-indicator[data-state="saving"]::before { content: 'salvando…'; }
-  .autosave-indicator[data-state="saved"]  { color: var(--ok); }
-  .autosave-indicator[data-state="saved"]::before  { content: '✓ salvo'; }
-  .autosave-indicator[data-state="error"]  { color: var(--danger); }
+
+  .autosave-indicator[data-state="saving"] {
+    background: #fef3c7; color: var(--warn); border-color: #fde68a;
+    animation: pulseSave 1s ease-in-out infinite;
+  }
+  .autosave-indicator[data-state="saving"]::before { content: '⟳ salvando…'; }
+
+  .autosave-indicator[data-state="saved"] {
+    background: #dcfce7; color: var(--ok); border-color: #86efac;
+    animation: popSaved .35s ease-out;
+  }
+  .autosave-indicator[data-state="saved"]::before  { content: '✓ Salvo automaticamente'; }
+
+  .autosave-indicator[data-state="error"] {
+    background: #fee2e2; color: var(--danger); border-color: #fca5a5;
+  }
   .autosave-indicator[data-state="error"]::before  { content: '⨯ erro · tentar de novo'; }
+
+  @keyframes pulseSave { 0%,100% { opacity: 0.7 } 50% { opacity: 1 } }
+  @keyframes popSaved { 0% { transform: scale(0.85); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+
+  .drive-warn {
+    margin-top: 8px; padding: 8px 12px; border-radius: 6px;
+    background: #fef3c7; color: #92400e; border-left: 3px solid var(--warn);
+    font-size: 11px; line-height: 1.5;
+  }
+  .drive-warn strong { color: var(--ink); }
 
   /* ============================================================================
    * Editorial Score (Sprint 4)
@@ -2137,7 +2163,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
         await saveSlots({ silent: true })
         if (indicator) {
           indicator.dataset.state = 'saved'
-          setTimeout(() => { if (indicator.dataset.state === 'saved') indicator.dataset.state = 'idle' }, 2000)
+          setTimeout(() => { if (indicator.dataset.state === 'saved') indicator.dataset.state = 'idle' }, 4000)
         }
       } catch (e) {
         if (indicator) indicator.dataset.state = 'error'
@@ -2404,7 +2430,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 
     // Carrega CSS dos templates uma vez para embutir no iframe preview
     try {
-      const r = await fetch('css/magazine-pages.css?v=20260415y')
+      const r = await fetch('css/magazine-pages.css?v=20260415z')
       if (r.ok) state.magazineCss = await r.text()
       else console.warn('CSS templates 404:', r.status)
     } catch (e) { console.warn('Falha carregando CSS templates:', e) }
