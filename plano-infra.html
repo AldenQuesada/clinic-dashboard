@@ -189,6 +189,7 @@
   <div class="toc">
     <strong style="display:block; margin-bottom:8px; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-faded);">Conteúdo</strong>
     <ol>
+      <li><a href="#concluido">Concluído nesta semana (14-15/04)</a></li>
       <li><a href="#visao">Visão geral e arquitetura proposta</a></li>
       <li><a href="#antes">Antes de começar (pré-requisitos)</a></li>
       <li><a href="#etapa1">Etapa 1 — Preparação (sem risco)</a></li>
@@ -201,6 +202,34 @@
       <li><a href="#rollback">Plano de rollback</a></li>
       <li><a href="#riscos">Matriz consolidada de riscos</a></li>
     </ol>
+  </div>
+
+  <h2 id="concluido"><span class="step-num">✓</span> Concluído nesta semana</h2>
+
+  <p>Ações já em produção (não precisam executar de novo no fim de semana):</p>
+
+  <div class="card">
+    <h3>14/04 — Auditoria de WhatsApp + dedup</h3>
+    <ul style="margin-left:20px; color:var(--text-dim);">
+      <li>Migration <code>20260679</code> aplicada: <strong>UNIQUE INDEX</strong> em <code>wa_outbox(appt_ref, scheduled_at, md5(content))</code>, RPC <code>wa_outbox_schedule_automation</code> com <code>EXCEPTION WHEN unique_violation</code>, purga inicial das duplicatas.</li>
+      <li>Bug das 3 confirmações duplicadas diagnosticado: 3 caminhos paralelos (<code>appt_</code>/<code>tag_</code>/<code>lead_</code>) enfileiravam o mesmo template. Fix no JS via <code>_APPT_LIFECYCLE_SLUGS</code> (commit <code>abcccf0</code>).</li>
+    </ul>
+
+    <h3>15/04 — Segregação de funil + filtro por queixa + broadcast direcionado</h3>
+    <ul style="margin-left:20px; color:var(--text-dim);">
+      <li>Migration <code>20260680</code>: coluna <code>funnel</code> com <strong>backfill de 541 leads</strong> antigos pra <code>procedimentos</code>, default + CHECK, índice. <code>submit_quiz_response</code> grava <code>funnel</code> a partir de <code>kanban_target</code> do quiz. Overload antigo de 13 args dropado.</li>
+      <li>Migration <code>20260681</code>: <code>wa_outbox_fetch_pending</code> faz <strong>regexp_replace</strong> de <code>[nome]</code> e <code>[queixa]</code> no content antes de devolver pro n8n.</li>
+      <li>Kanban Full Face Premium e Procedimentos agora <strong>segregados</strong> por <code>funnel</code>. Lead-modal ganhou dropdown de reclassificação.</li>
+      <li>Tabela de leads exibe <strong>queixas de 218 leads do import legado</strong> (lia em cascata: array do quiz → texto livre <code>data.data.queixas</code>). Coluna alargada.</li>
+      <li>Novo módulo <code>js/utils/leads-queixa.js</code>: catálogo canônico de 18 queixas, matching normalizado sem acento. Popover multi-select com contagens na barra de filtros.</li>
+      <li>Botão <strong>Broadcast</strong> na bulk bar leva leads selecionados + queixa via <code>sessionStorage</code>, abre Disparos com formulário pré-preenchido.</li>
+      <li>Editor de broadcast tem botão <code>[queixa]</code>. Validação bloqueia salvar se a tag está no texto sem 1 queixa filtrada na origem.</li>
+    </ul>
+
+    <h3>Quiz Procedimentos (16/04)</h3>
+    <ul style="margin-left:20px; color:var(--text-dim);">
+      <li>Pode rodar amanhã sem risco de cruzar funis: leads novos do quiz Procedimentos vão para <code>funnel='procedimentos'</code> automaticamente; quiz Full Face vai para <code>fullface</code>.</li>
+    </ul>
   </div>
 
   <h2 id="visao"><span class="step-num">0</span> Visão geral</h2>
