@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano de Infra — Fatiamento Easypanel | ClinicAI</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-card: #13131a;
+    --bg-elevated: #1a1a24;
+    --border: #2a2a38;
+    --text: #e8e8ef;
+    --text-dim: #9a9aab;
+    --text-faded: #6a6a7a;
+    --accent: #a78bfa;
+    --accent-soft: rgba(167, 139, 250, 0.12);
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --orange: #fb923c;
+    --red: #f87171;
+    --code: #161620;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.65;
+    font-size: 15px;
+    padding: 40px 24px 120px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  .hero {
+    padding: 32px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .hero .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 12px; }
+  h2 {
+    font-size: 22px; font-weight: 600; margin: 48px 0 20px; letter-spacing: -0.3px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  h2 .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: var(--accent); color: #000;
+    border-radius: 8px; font-size: 15px; font-weight: 700;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 10px; color: var(--text); }
+  p { color: var(--text-dim); margin-bottom: 12px; }
+  p.lead { color: var(--text); font-size: 16px; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+  a:hover { border-bottom-color: var(--accent); }
+  code {
+    background: var(--code); color: #e8e8ef;
+    padding: 2px 7px; border-radius: 4px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 13px;
+  }
+  pre {
+    background: var(--code); padding: 14px 18px;
+    border-radius: 8px; border: 1px solid var(--border);
+    overflow-x: auto; margin: 12px 0;
+    font-family: "SF Mono", Consolas, monospace; font-size: 13px;
+    line-height: 1.55;
+  }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px 24px; margin: 16px 0;
+  }
+  .step-list { counter-reset: step; list-style: none; }
+  .step-list li {
+    counter-increment: step;
+    padding: 14px 0 14px 48px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-list li:last-child { border-bottom: none; }
+  .step-list li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 14px;
+    width: 30px; height: 30px;
+    background: var(--bg-elevated); color: var(--accent);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px;
+  }
+  .step-list li strong { color: var(--text); display: block; margin-bottom: 4px; }
+  .step-list li .detail { color: var(--text-dim); font-size: 14px; }
+  .step-list li .click {
+    display: inline-block;
+    background: var(--accent-soft); color: var(--accent);
+    padding: 3px 8px; border-radius: 4px;
+    font-size: 12px; font-weight: 500;
+    margin: 4px 4px 0 0;
+  }
+  .risk-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px; border-radius: 4px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .risk-green { background: rgba(74, 222, 128, 0.12); color: var(--green); }
+  .risk-yellow { background: rgba(251, 191, 36, 0.12); color: var(--yellow); }
+  .risk-orange { background: rgba(251, 146, 60, 0.12); color: var(--orange); }
+  .risk-red { background: rgba(248, 113, 113, 0.12); color: var(--red); }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  th { color: var(--text-faded); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { color: var(--text-dim); vertical-align: top; }
+  .meta-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 8px;
+  }
+  .meta-pill {
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    padding: 10px 14px; border-radius: 6px; font-size: 13px;
+  }
+  .meta-pill .label { color: var(--text-faded); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .meta-pill .value { color: var(--text); font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .warning {
+    border-left: 3px solid var(--orange);
+    background: rgba(251, 146, 60, 0.06);
+    padding: 14px 18px; border-radius: 0 8px 8px 0;
+    margin: 14px 0;
+  }
+  .warning strong { color: var(--orange); }
+  .link-easy {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--accent); color: #0a0a0f;
+    padding: 9px 16px; border-radius: 6px;
+    font-weight: 600; font-size: 14px;
+    margin: 8px 6px 8px 0;
+    border: none;
+  }
+  .link-easy:hover { border-bottom: none; transform: translateY(-1px); transition: transform 0.15s; }
+  .link-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--bg-elevated); color: var(--text);
+    padding: 9px 16px; border-radius: 6px; font-weight: 500;
+    border: 1px solid var(--border);
+    margin: 8px 6px 8px 0;
+  }
+  .arch-diagram {
+    background: var(--code); padding: 20px; border-radius: 8px;
+    font-family: "SF Mono", Consolas, monospace; font-size: 13px;
+    line-height: 1.7; overflow-x: auto; margin: 16px 0;
+    border: 1px solid var(--border);
+  }
+  .toc { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 24px; margin-bottom: 40px; }
+  .toc ol { margin-left: 20px; color: var(--text-dim); }
+  .toc ol li { padding: 4px 0; }
+  .toc ol li a { color: var(--text); }
+  .svg-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .footer { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--text-faded); font-size: 13px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="tag">Infra · Clin<wbr>icAI · 2026-04-14</span>
+    <h1>Plano de Fatiamento — Easypanel</h1>
+    <p class="lead">Quebrar o deploy monolítico em services independentes. Passo a passo pra executar num fim de semana, com o sistema já rodando na clínica.</p>
+    <div>
+      <a href="https://clinicai-dashboard.px1hdq.easypanel.host" target="_blank" class="link-secondary">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 3h7v7M10 14L21 3M21 14v7H3V3h7"/></svg>
+        Dashboard atual
+      </a>
+      <a href="https://easypanel.io/docs" target="_blank" class="link-secondary">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+        Docs Easypanel
+      </a>
+    </div>
+  </div>
+
+  <div class="toc">
+    <strong style="display:block; margin-bottom:8px; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-faded);">Conteúdo</strong>
+    <ol>
+      <li><a href="#visao">Visão geral e arquitetura proposta</a></li>
+      <li><a href="#antes">Antes de começar (pré-requisitos)</a></li>
+      <li><a href="#etapa1">Etapa 1 — Preparação (sem risco)</a></li>
+      <li><a href="#etapa2">Etapa 2 — Separar <code>facial-api</code></a></li>
+      <li><a href="#etapa3">Etapa 3 — Enxugar <code>frontend-dashboard</code></a></li>
+      <li><a href="#etapa4">Etapa 4 — DNS e subdomínios</a></li>
+      <li><a href="#etapa5">Etapa 5 — Subir <code>backend-api</code> (opcional)</a></li>
+      <li><a href="#etapa6">Etapa 6 — Extrair <code>outbox-worker</code> (último)</a></li>
+      <li><a href="#rollback">Plano de rollback</a></li>
+      <li><a href="#riscos">Matriz consolidada de riscos</a></li>
+    </ol>
+  </div>
+
+  <h2 id="visao"><span class="step-num">0</span> Visão geral</h2>
+
+  <p><strong>Hoje:</strong> 1 container nginx servindo tudo em <code>clinicai-dashboard.px1hdq.easypanel.host</code>. Mexer em qualquer coisa reinicia o sistema inteiro.</p>
+  <p><strong>Depois:</strong> 4 services no mesmo project Easypanel, cada um com deploy, logs e scaling independentes. Se o face-mapping pesar a CPU, escala só ele. Se mexer no CSS do dashboard, só o frontend reinicia.</p>
+
+  <div class="arch-diagram">
+Project: <span style="color:var(--accent);">clinicai</span>
+
+├── <span style="color:var(--green);">frontend-dashboard</span>   [nginx:alpine]     → dashboard.aldenquesada.site
+├── <span style="color:var(--green);">facial-api</span>           [python fastapi]   → interno (porta 8000)
+├── <span style="color:var(--green);">backend-api</span>          [node/prisma]      → api.aldenquesada.site
+└── <span style="color:var(--green);">outbox-worker</span>        [node, sem porta]  → interno
+
+<span style="color:var(--text-faded);">Já rodando em projects separados:</span>
+    alexa-bridge, n8n  (não mexe)
+    Supabase           (externo, não muda)</div>
+
+  <p>Services do mesmo project se falam pelo nome DNS interno (ex: <code>http://facial-api:8000</code>). Sem sair pra internet, sem custo de banda, latência mínima.</p>
+
+  <h2 id="antes"><span class="step-num">!</span> Antes de começar</h2>
+
+  <div class="card">
+    <h3>Faça isso na sexta à noite, antes do fim de semana de migração</h3>
+    <ol class="step-list">
+      <li>
+        <strong>Exportar env vars do service atual</strong>
+        <div class="detail">No Easypanel, abra o service <code>clinicai-dashboard</code> → aba <strong>Environment</strong> → copie tudo pra um arquivo local <code>.env.backup</code>.</div>
+        <a href="https://clinicai-dashboard.px1hdq.easypanel.host" target="_blank" class="link-easy">
+          <svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+          Abrir Easypanel
+        </a>
+      </li>
+      <li>
+        <strong>Anotar URLs e certificados atuais</strong>
+        <div class="detail">Aba <strong>Domains</strong> de cada service — guardar lista num bloco de notas pra replicar igual depois.</div>
+      </li>
+      <li>
+        <strong>Verificar que o deploy automático por push está funcionando</strong>
+        <div class="detail">Commit bobo em README → push → olhar logs do Easypanel → confirmar que fez deploy sozinho.</div>
+      </li>
+      <li>
+        <strong>Horário da janela</strong>
+        <div class="detail">Sábado de manhã ou domingo à tarde são bons — clínica fechada, sem risco de perder mensagem de paciente no meio da migração.</div>
+      </li>
+    </ol>
+  </div>
+
+  <h2 id="etapa1"><span class="step-num">1</span> Preparação</h2>
+  <div class="meta-grid">
+    <div class="meta-pill"><div class="label">Complexidade</div><div class="value"><span class="risk-badge risk-green">Baixa</span></div></div>
+    <div class="meta-pill"><div class="label">Risco</div><div class="value"><span class="risk-badge risk-green">Nenhum</span></div></div>
+    <div class="meta-pill"><div class="label">Downtime</div><div class="value">Zero</div></div>
+  </div>
+
+  <p>Nada é tocado em prod. Só organiza o código e valida que os Dockerfiles buildam local.</p>
+
+  <ol class="step-list">
+    <li>
+      <strong>Criar branch <code>infra/split-services</code> no repo</strong>
+      <div class="detail">Eu faço via commit. Você só aprova no GitHub depois.</div>
+    </li>
+    <li>
+      <strong>Build local dos Dockerfiles</strong>
+      <div class="detail">Rodar <code>docker build -f Dockerfile .</code> e <code>docker build -f Dockerfile.api .</code> pra garantir que não tem erro antes de subir pro Easypanel. Eu rodo.</div>
+    </li>
+    <li>
+      <strong>Limpar o <code>nginx.conf</code> com <code>proxy_pass</code> planejado</strong>
+      <div class="detail">Adicionar location pros services futuros. Ainda apontando pro localhost (monolito) — só depois da Etapa 2 muda pra apontar no service novo.</div>
+    </li>
+  </ol>
+
+  <h2 id="etapa2"><span class="step-num">2</span> Separar <code>facial-api</code></h2>
+  <div class="meta-grid">
+    <div class="meta-pill"><div class="label">Complexidade</div><div class="value"><span class="risk-badge risk-yellow">Média</span></div></div>
+    <div class="meta-pill"><div class="label">Risco</div><div class="value"><span class="risk-badge risk-yellow">Médio</span></div></div>
+    <div class="meta-pill"><div class="label">Downtime</div><div class="value">~5 min</div></div>
+  </div>
+
+  <p>Começamos por aqui porque o <code>Dockerfile.api</code> já existe pronto, é Python puro (OpenCV, MediaPipe, rembg) e é fácil de isolar. Se der ruim, rollback é trivial.</p>
+
+  <h3>No Easypanel</h3>
+  <ol class="step-list">
+    <li>
+      <strong>Abrir project <code>clinicai</code> (ou o nome atual)</strong>
+      <span class="click">Sidebar → Projects → clinicai</span>
+    </li>
+    <li>
+      <strong>Criar novo service</strong>
+      <span class="click">Botão + (topo direito) → App</span>
+      <div class="detail">Nome: <code>facial-api</code></div>
+    </li>
+    <li>
+      <strong>Configurar source</strong>
+      <span class="click">Aba Source</span>
+      <div class="detail">GitHub repo: <code>alden/clinic-dashboard</code>, branch: <code>main</code>, build path: <code>/</code>, Dockerfile path: <code>Dockerfile.api</code>.</div>
+    </li>
+    <li>
+      <strong>Env vars</strong>
+      <span class="click">Aba Environment</span>
+      <div class="detail">Copiar do <code>.env.backup</code> APENAS as vars que o FastAPI usa (chaves de modelo, Supabase se usar).</div>
+    </li>
+    <li>
+      <strong>Configurar porta</strong>
+      <span class="click">Aba Domains</span>
+      <div class="detail">Porta interna: <strong>8000</strong>. <strong>Não</strong> adicione domínio público ainda — vai ser acessado só pelo frontend via rede interna.</div>
+    </li>
+    <li>
+      <strong>Deploy</strong>
+      <span class="click">Botão Deploy</span>
+      <div class="detail">Aguardar build (5-10 min na primeira vez — download dos modelos do rembg é pesado). Acompanhar logs.</div>
+    </li>
+    <li>
+      <strong>Health check</strong>
+      <div class="detail">Eu abro terminal no service <code>frontend-dashboard</code> (botão Terminal no Easypanel) e rodo <code>curl http://facial-api:8000/docs</code>. Se retornar HTML do FastAPI, está vivo.</div>
+    </li>
+  </ol>
+
+  <h3>No código (eu faço)</h3>
+  <ol class="step-list">
+    <li>
+      <strong>Editar <code>nginx.conf</code></strong>
+      <div class="detail">Trocar <code>proxy_pass http://127.0.0.1:8000</code> por <code>proxy_pass http://facial-api:8000</code> no location <code>/api/</code>. Commit + push.</div>
+    </li>
+    <li>
+      <strong>Validar</strong>
+      <div class="detail">Abrir face-mapping no dashboard, carregar uma foto, testar detecção. Se funcionar, etapa 2 concluída.</div>
+    </li>
+  </ol>
+
+  <div class="warning">
+    <strong>Se quebrar:</strong> reverter <code>nginx.conf</code> pro commit anterior. Easypanel auto-redeploy em ~2 min e volta a servir o API embedded no container monolítico.
+  </div>
+
+  <h2 id="etapa3"><span class="step-num">3</span> Enxugar <code>frontend-dashboard</code></h2>
+  <div class="meta-grid">
+    <div class="meta-pill"><div class="label">Complexidade</div><div class="value"><span class="risk-badge risk-green">Baixa</span></div></div>
+    <div class="meta-pill"><div class="label">Risco</div><div class="value"><span class="risk-badge risk-yellow">Médio</span></div></div>
+    <div class="meta-pill"><div class="label">Downtime</div><div class="value">~2 min</div></div>
+  </div>
+
+  <p>Agora que o Python saiu, o Dockerfile principal fica só com HTML/CSS/JS. Imagem cai de ~500MB pra ~30MB. Build em segundos.</p>
+
+  <ol class="step-list">
+    <li>
+      <strong>Limpar <code>Dockerfile</code></strong>
+      <div class="detail">Remover qualquer stage de Python. Manter só <code>FROM nginx:alpine</code>, <code>COPY nginx.conf</code>, <code>COPY . /usr/share/nginx/html</code>. Eu faço.</div>
+    </li>
+    <li>
+      <strong>Adicionar <code>.dockerignore</code> pesado</strong>
+      <div class="detail">Excluir <code>api/</code>, <code>node_modules/</code>, <code>docs/</code>, <code>*.md</code>, <code>tests/</code>, <code>supabase/</code>. Imagem minúscula.</div>
+    </li>
+    <li>
+      <strong>Commit + push</strong>
+      <div class="detail">Easypanel auto-deploy. Aguardar ~1 min.</div>
+    </li>
+    <li>
+      <strong>Smoke test completo</strong>
+      <div class="detail">Login, agenda, inbox, WhatsApp, face-mapping, cashflow, quiz. Cada um checado na UI.</div>
+    </li>
+  </ol>
+
+  <h2 id="etapa4"><span class="step-num">4</span> DNS e subdomínios (opcional)</h2>
+  <div class="meta-grid">
+    <div class="meta-pill"><div class="label">Complexidade</div><div class="value"><span class="risk-badge risk-green">Baixa</span></div></div>
+    <div class="meta-pill"><div class="label">Risco</div><div class="value"><span class="risk-badge risk-green">Baixo</span></div></div>
+    <div class="meta-pill"><div class="label">Downtime</div><div class="value">Zero</div></div>
+  </div>
+
+  <p>Se preferir URLs limpas tipo <code>dashboard.aldenquesada.site</code> e <code>api.aldenquesada.site</code>, é hora de apontar DNS. Se o <code>.easypanel.host</code> atual estiver bom, pula.</p>
+
+  <ol class="step-list">
+    <li>
+      <strong>Cloudflare (ou seu DNS)</strong>
+      <div class="detail">Adicionar CNAME: <code>dashboard</code> → <code>clinicai-dashboard.px1hdq.easypanel.host</code>. Idem <code>api</code>, <code>facial</code>. Proxy OFF (deixe o Easypanel lidar com TLS).</div>
+    </li>
+    <li>
+      <strong>No Easypanel, aba Domains do service</strong>
+      <div class="detail">Adicionar domínio → digitar <code>dashboard.aldenquesada.site</code> → toggle Enable HTTPS ON → Easypanel emite cert Let's Encrypt em ~30s.</div>
+    </li>
+    <li>
+      <strong>Testar acesso</strong>
+      <div class="detail">Abrir https://dashboard.aldenquesada.site no navegador anônimo. Se subir sem erro de cert, ok.</div>
+    </li>
+  </ol>
+
+  <h2 id="etapa5"><span class="step-num">5</span> Subir <code>backend-api</code> <span style="color:var(--text-faded); font-size:14px; font-weight:400;">(opcional)</span></h2>
+  <div class="meta-grid">
+    <div class="meta-pill"><div class="label">Complexidade</div><div class="value"><span class="risk-badge risk-yellow">Média</span></div></div>
+    <div class="meta-pill"><div class="label">Risco</div><div class="value"><span class="risk-badge risk-yellow">Médio</span></div></div>
+    <div class="meta-pill"><div class="label">Downtime</div><div class="value">Zero (service novo)</div></div>
+  </div>
+
+  <p>Só fazer isso se o <code>clinic-ai-backend</code> tiver endpoints em uso hoje. Se o dashboard fala direto com Supabase via anon key, esse backend pode até estar morto — nesse caso, pula a etapa.</p>
+
+  <ol class="step-list">
+    <li>
+      <strong>Auditar uso do backend</strong>
+      <div class="detail">Eu rodo <code>grep -r "aldenquesada.org\|:3000" clinic-dashboard/js/</code> pra achar chamadas. Se não achar nada, pula essa etapa inteira.</div>
+    </li>
+    <li>
+      <strong>Criar service <code>backend-api</code> no Easypanel</strong>
+      <span class="click">+ → App → nome backend-api</span>
+      <div class="detail">Source: repo <code>clinic-ai-backend</code>, Dockerfile padrão. Porta 3000.</div>
+    </li>
+    <li>
+      <strong>Env vars</strong>
+      <div class="detail"><code>DATABASE_URL</code>, <code>SUPABASE_URL</code>, <code>SUPABASE_SERVICE_KEY</code>. Cópia do <code>.env</code> que já funciona local.</div>
+    </li>
+    <li>
+      <strong>Deploy + teste</strong>
+      <div class="detail">Logs mostrando "server listening on :3000"? Bom. Chamar health endpoint interno.</div>
+    </li>
+  </ol>
+
+  <h2 id="etapa6"><span class="step-num">6</span> Extrair <code>outbox-worker</code> <span style="color:var(--text-faded); font-size:14px; font-weight:400;">(último, com cuidado)</span></h2>
+  <div class="meta-grid">
+    <div class="meta-pill"><div class="label">Complexidade</div><div class="value"><span class="risk-badge risk-yellow">Média</span></div></div>
+    <div class="meta-pill"><div class="label">Risco</div><div class="value"><span class="risk-badge risk-orange">Alto</span></div></div>
+    <div class="meta-pill"><div class="label">Downtime</div><div class="value">Zero</div></div>
+  </div>
+
+  <div class="warning">
+    <strong>ATENÇÃO — risco real:</strong> hoje o n8n já dispara msgs de <code>wa_outbox</code> a cada 2min. Se ligar um worker novo em paralelo sem desligar o n8n, <strong>paciente recebe cada msg 2x</strong>. Auditar fluxo ATUAL antes. Só fazer essa etapa se houver motivo claro (ex: quer migrar do n8n pra worker Node próprio).
+  </div>
+
+  <p>Se decidir fazer:</p>
+
+  <ol class="step-list">
+    <li>
+      <strong>Auditar: quem drena <code>wa_outbox</code> hoje?</strong>
+      <div class="detail">Workflow n8n <code>outbox-processor-workflow</code>. Pausar esse antes de ligar worker novo.</div>
+    </li>
+    <li>
+      <strong>Criar worker Node</strong>
+      <div class="detail">Script que dorme 2min, consulta <code>wa_outbox</code> pending, dispara via Evolution API, marca sent. Eu escrevo.</div>
+    </li>
+    <li>
+      <strong>Service novo no Easypanel</strong>
+      <span class="click">+ → App → nome outbox-worker</span>
+      <div class="detail">Sem porta exposta, sem domínio. Só restart policy <code>always</code>.</div>
+    </li>
+    <li>
+      <strong>Desligar o workflow n8n equivalente NO MESMO MOMENTO do deploy</strong>
+      <div class="detail">Zero sobreposição. Se der ruim, liga o n8n de volta e mata o worker.</div>
+    </li>
+  </ol>
+
+  <h2 id="rollback">Plano de rollback (cada etapa)</h2>
+
+  <table>
+    <tr><th>Etapa</th><th>O que fazer se der ruim</th><th>Tempo</th></tr>
+    <tr><td>2 — facial-api</td><td>Reverter <code>nginx.conf</code> no git. Auto-redeploy.</td><td>~3 min</td></tr>
+    <tr><td>3 — frontend enxuto</td><td><code>git revert</code> do commit. Auto-redeploy.</td><td>~2 min</td></tr>
+    <tr><td>4 — DNS</td><td>Remover CNAME no Cloudflare. Acesso volta pelo <code>.easypanel.host</code>.</td><td>~5 min</td></tr>
+    <tr><td>5 — backend-api</td><td>Pausar service novo. Frontend continua falando com monolito.</td><td>~1 min</td></tr>
+    <tr><td>6 — outbox-worker</td><td>Parar worker. Reativar workflow n8n.</td><td>~2 min</td></tr>
+  </table>
+
+  <h2 id="riscos">Matriz consolidada de riscos</h2>
+
+  <table>
+    <tr><th>Risco</th><th>Probabilidade</th><th>Impacto</th><th>Mitigação</th></tr>
+    <tr><td>Proxy <code>/api</code> quebrado → face-mapping offline</td><td>Média</td><td>Alto</td><td>Testar em horário tranquilo, rollback pronto</td></tr>
+    <tr><td>Worker duplicado (n8n + outbox) → msgs 2x</td><td>Alta se descuidar</td><td>Crítico</td><td>Desligar n8n no mesmo deploy do worker</td></tr>
+    <tr><td>Env vars esquecidas no service novo</td><td>Alta</td><td>Médio</td><td>Checklist escrita antes do deploy</td></tr>
+    <tr><td>nginx.conf com typo derruba site</td><td>Baixa</td><td>Crítico</td><td><code>nginx -t</code> local antes do push</td></tr>
+    <tr><td>DNS propagation delay</td><td>Baixa</td><td>Baixo</td><td>Fazer sábado de manhã, TTL 300</td></tr>
+    <tr><td>Supabase bloqueia service novo</td><td>Baixa</td><td>Alto</td><td>Usar mesma URL/key que já passa RLS</td></tr>
+  </table>
+
+  <h2>Cronograma sugerido — fim de semana</h2>
+
+  <table>
+    <tr><th>Dia</th><th>Etapa</th><th>Horário</th></tr>
+    <tr><td>Sexta 22h</td><td>Pré-requisitos (backup env, avisar equipe)</td><td>20 min</td></tr>
+    <tr><td>Sábado 9h</td><td>Etapa 1 — preparação local</td><td>30 min</td></tr>
+    <tr><td>Sábado 10h</td><td>Etapa 2 — facial-api</td><td>40 min</td></tr>
+    <tr><td>Sábado 12h</td><td>Validar em prod, almoçar</td><td>1h</td></tr>
+    <tr><td>Sábado 15h</td><td>Etapa 3 — frontend enxuto</td><td>30 min</td></tr>
+    <tr><td>Sábado 16h</td><td>Etapa 4 — DNS (se quiser)</td><td>20 min</td></tr>
+    <tr><td>Domingo</td><td>Buffer pra corrigir qualquer surpresa</td><td>—</td></tr>
+    <tr><td>Próxima semana</td><td>Etapas 5 e 6 se necessário, já com calma</td><td>—</td></tr>
+  </table>
+
+  <div class="footer">
+    Documento gerado 2026-04-14 · ClinicAI · Revisar a cada etapa concluída<br>
+    URL de consulta: <a href="https://clinicai-dashboard.px1hdq.easypanel.host/plano-infra.html">clinicai-dashboard.px1hdq.easypanel.host/plano-infra.html</a>
+  </div>
+
+</div>
+</body>
+</html>
