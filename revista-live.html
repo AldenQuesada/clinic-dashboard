@@ -30,7 +30,26 @@
   /* Scroller */
   .reader { display: flex; height: 100vh; width: 100vw; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; }
   .reader::-webkit-scrollbar { display: none; }
-  .page { flex: 0 0 100vw; height: 100vh; scroll-snap-align: start; scroll-snap-stop: always; position: relative; overflow: hidden; background: var(--paper); }
+  .page {
+    flex: 0 0 100vw; height: 100vh; scroll-snap-align: start; scroll-snap-stop: always;
+    position: relative; background: var(--paper);
+    overflow-x: hidden; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .page::-webkit-scrollbar { display: none; }
+  /* Permite que o conteudo do template ultrapasse a viewport e role internamente */
+  .page .mp { height: auto !important; min-height: 100%; overflow: visible !important; }
+  /* Indicador "mais abaixo" - aparece quando ha conteudo nao visto */
+  .page.has-overflow::after {
+    content: ''; position: sticky; bottom: 12px; left: 50%; margin: 0 auto -28px;
+    width: 32px; height: 32px; border-radius: 50%; display: block;
+    background: rgba(0,0,0,0.5) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") center/16px no-repeat;
+    pointer-events: none;
+    animation: bounce 1.6s ease-in-out infinite;
+  }
+  .page.has-overflow.scrolled::after { opacity: 0; transition: opacity .3s; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)} }
 
   /* Nav arrows */
   .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.08); backdrop-filter: blur(8px); cursor: pointer; z-index: 45; display: grid; place-items: center; transition: transform .25s; }
@@ -258,6 +277,17 @@
     })
 
     updateUi(0)
+
+    // Marca paginas que tem overflow vertical (mostra indicador "deslize abaixo")
+    requestAnimationFrame(() => {
+      Array.from(reader.children).forEach(p => {
+        if (p.scrollHeight > p.clientHeight + 4) p.classList.add('has-overflow')
+        p.addEventListener('scroll', () => {
+          if (p.scrollTop > 8) p.classList.add('scrolled')
+          else p.classList.remove('scrolled')
+        }, { passive: true })
+      })
+    })
   }
 
   document.addEventListener('DOMContentLoaded', init)
