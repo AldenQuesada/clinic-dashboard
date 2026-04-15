@@ -71,25 +71,25 @@
   gap: 14px;
   overflow: hidden;
 }
+/* Mobile base: tudo empilhado vertical no centro (sem risco de overflow) */
 .mp-t01 .head {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 12px;
-  align-items: center;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px;
   border-bottom: 1px solid rgba(255,255,255,0.15);
   padding-bottom: 10px;
+  text-align: center;
 }
-/* Bloco central: dedicatoria + brand empilhados (não mais espalhados) */
+.mp-t01 .head .spacer-left { display: none; }
 .mp-t01 .head .brand-stack {
-  grid-column: 2;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  min-width: 0;
+  min-width: 0; max-width: 100%;
 }
 .mp-t01 .head .dedicatoria {
   font-family: 'Inter', sans-serif; font-style: normal;
   font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
   opacity: 0.7; text-align: center; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
   animation: none; color: var(--mp-cream);
 }
 .mp-t01 .head .brand {
@@ -97,11 +97,9 @@
   font-size: clamp(22px, 6vw, 32px); letter-spacing: -0.02em; line-height: 1;
   text-align: center; white-space: nowrap;
 }
-.mp-t01 .head .spacer-left { grid-column: 1; }
 .mp-t01 .head .edition-label {
-  grid-column: 3;
   font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-  opacity: 0.8; text-align: right; white-space: nowrap; font-weight: 500;
+  opacity: 0.8; text-align: center; white-space: nowrap; font-weight: 500;
 }
 /* Body padrão REVISTA: foto preenche tudo · texto sobreposto no rodapé com gradient */
 .mp-t01 .body {
@@ -159,10 +157,18 @@
 /* No desktop, volta ao layout grid 2-col (foto + texto ao lado) — mais confortável em tela larga */
 @media (min-width: 720px) {
   .mp-t01 { padding: 40px 56px; gap: 24px; }
-  .mp-t01 .head { padding-bottom: 18px; gap: 24px; }
+  /* Desktop: volta ao grid 3-col (spacer | brand-stack centro | edition direita) */
+  .mp-t01 .head {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px; padding-bottom: 18px;
+    align-items: center; text-align: initial;
+  }
+  .mp-t01 .head .spacer-left { display: block; grid-column: 1; }
+  .mp-t01 .head .brand-stack { grid-column: 2; }
+  .mp-t01 .head .edition-label { grid-column: 3; text-align: right; font-size: 11px; letter-spacing: 3px; }
   .mp-t01 .head .dedicatoria { font-size: 11px; letter-spacing: 3px; }
   .mp-t01 .head .brand { font-size: clamp(32px, 4vw, 48px); }
-  .mp-t01 .head .edition-label { font-size: 11px; letter-spacing: 3px; }
   .mp-t01 .body {
     display: grid;
     grid-template-rows: 1fr;
