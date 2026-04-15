@@ -14,6 +14,9 @@
 <script src="js/magazine/admin/editor-widgets.js"></script>
 <script src="js/magazine/admin/validator.js"></script>
 <script src="js/magazine/admin/slot-renderer.js"></script>
+<script src="js/magazine/admin/page-controls.js"></script>
+<script src="js/magazine/admin/photo-library.js"></script>
+<script src="js/magazine/admin/template-picker.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -386,6 +389,147 @@
   .page-status-badge[data-state="warn"]  { background: var(--warn); }
   .page-status-badge[data-state="err"]   { background: var(--danger); }
   .page-status-badge[data-state="empty"] { background: transparent; border: 1.5px solid var(--line); }
+
+  /* ============================================================================
+   * Page Controls (segment_scope + hidden_icon + ações)
+   * ============================================================================ */
+  .page-controls {
+    margin-bottom: 16px; padding: 12px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pc-section { display: flex; flex-direction: column; gap: 6px; }
+  .pc-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .pc-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .pc-chip {
+    padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--paper); font-size: 11px; font-weight: 600;
+    color: var(--ink-soft); cursor: pointer; transition: all .12s;
+  }
+  .pc-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .pc-chip[data-active="1"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .pc-chip[data-seg="all"][data-active="1"] { background: var(--ink); border-color: var(--ink); }
+
+  .pc-toggle {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    padding: 4px 0; user-select: none;
+  }
+  .pc-toggle input { display: none; }
+  .pc-toggle-track {
+    width: 34px; height: 18px; border-radius: 999px; background: var(--line);
+    position: relative; transition: background .15s; flex-shrink: 0;
+  }
+  .pc-toggle-thumb {
+    position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+    background: var(--paper); border-radius: 50%; transition: transform .18s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .pc-toggle input:checked + .pc-toggle-track { background: var(--accent); }
+  .pc-toggle input:checked + .pc-toggle-track .pc-toggle-thumb { transform: translateX(16px); }
+  .pc-toggle-text { font-size: 12px; color: var(--ink); }
+  .pc-hint { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+  .pc-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pc-action {
+    padding: 6px 10px; border: 1px solid var(--line); border-radius: 5px;
+    background: var(--paper); font-size: 11px; font-weight: 600; color: var(--ink-soft); cursor: pointer;
+  }
+  .pc-action:hover { border-color: var(--ink); color: var(--ink); }
+  .pc-action.danger:hover { border-color: var(--danger); color: var(--danger); background: #fee2e2; }
+
+  /* ============================================================================
+   * Photo Library drawer (flutuante direita)
+   * ============================================================================ */
+  .pl-drawer {
+    position: fixed; top: 56px; right: 0; width: 320px; height: calc(100vh - 56px);
+    background: var(--paper); border-left: 1px solid var(--line);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.08);
+    display: flex; flex-direction: column; z-index: 120;
+    transform: translateX(100%); transition: transform .22s ease-out;
+  }
+  .pl-drawer[data-open="1"] { transform: translateX(0); }
+  .pl-head {
+    padding: 14px 16px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .pl-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  }
+  .pl-head-actions { display: flex; align-items: center; gap: 8px; }
+  .pl-count { font-size: 10px; font-family: ui-monospace, monospace; color: var(--muted); padding: 2px 6px; background: var(--bg); border-radius: 4px; }
+  .pl-close { font-size: 20px; color: var(--muted); line-height: 1; padding: 0 4px; cursor: pointer; }
+  .pl-close:hover { color: var(--ink); }
+  .pl-hint { padding: 8px 16px; font-size: 11px; color: var(--muted); background: var(--bg); border-bottom: 1px solid var(--line); line-height: 1.4; }
+  .pl-grid {
+    flex: 1; overflow-y: auto; padding: 10px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start;
+  }
+  .pl-empty {
+    grid-column: 1 / -1; text-align: center; padding: 30px 10px;
+    color: var(--muted); font-size: 12px; font-style: italic;
+  }
+  .pl-empty.err { color: var(--danger); }
+  .pl-item {
+    border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
+    overflow: hidden; cursor: pointer; transition: all .12s; padding: 0;
+    display: flex; flex-direction: column;
+  }
+  .pl-item:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .pl-thumb { width: 100%; aspect-ratio: 1; background-size: cover; background-position: center; background-color: var(--bg); }
+  .pl-meta { padding: 4px 6px; font-size: 9px; color: var(--muted); font-family: ui-monospace, monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Toggle button no topbar */
+  .topbar .btn.library-btn { display: inline-flex; align-items: center; gap: 4px; }
+  .topbar .btn.library-btn[data-active="1"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* ============================================================================
+   * Template Picker (modal refatorado)
+   * ============================================================================ */
+  .tp-modal { height: min(85vh, 720px); }
+  .tp-toolbar {
+    padding: 12px 22px; border-bottom: 1px solid var(--line); background: var(--bg);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .tp-search {
+    width: 100%; padding: 10px 14px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--paper); font-size: 13px; outline: none;
+  }
+  .tp-search:focus { border-color: var(--accent); }
+  .tp-cats { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tp-cat {
+    padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--paper); font-size: 11px; font-weight: 600; color: var(--ink-soft); cursor: pointer;
+  }
+  .tp-cat:hover { border-color: var(--accent); color: var(--accent); }
+  .tp-cat[data-active="1"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .tp-body { padding: 18px 22px; }
+  .tp-group { margin-bottom: 22px; }
+  .tp-group-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .tp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .tp-card {
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px; cursor: pointer;
+    transition: all .15s; background: var(--paper); text-align: left; font-family: inherit;
+  }
+  .tp-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+  .tp-preview {
+    width: 100%; aspect-ratio: 1 / 1.4; border-radius: 6px; margin-bottom: 10px;
+    overflow: hidden; border: 1px solid var(--line); background: var(--bg);
+  }
+  .tp-preview.proto {
+    display: grid; place-items: center;
+    font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: var(--muted);
+    background: linear-gradient(135deg, var(--bg), var(--line));
+  }
+  .tp-preview.svg svg { width: 100%; height: 100%; display: block; }
+  .tp-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .tp-slug { font-size: 10px; color: var(--muted); font-family: ui-monospace, monospace; margin-top: 2px; }
+  .tp-empty { padding: 40px; text-align: center; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -408,6 +552,7 @@
 
     <div class="spacer"></div>
 
+    <button class="btn library-btn" id="libraryBtn" data-active="0" title="Biblioteca de fotos da edição">Biblioteca</button>
     <button class="btn ghost" id="viewLiveBtn" style="display:none" title="Abrir leitor público">Ver</button>
     <button class="btn ghost" id="archiveBtn" style="display:none">Arquivar</button>
     <button class="btn primary" id="publishBtn" disabled>Publicar</button>
@@ -460,18 +605,11 @@
   </div>
 </div>
 
-<!-- TEMPLATE PICKER MODAL -->
-<div class="modal-backdrop" id="templateModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h2>Escolher template</h2>
-      <button class="close" onclick="MagazineAdmin.closeTemplateModal()">×</button>
-    </div>
-    <div class="modal-body" id="templateGrid">
-      <div class="loading">Carregando templates…</div>
-    </div>
-  </div>
-</div>
+<!-- TEMPLATE PICKER MODAL (renderizado pelo módulo TemplatePicker) -->
+<div class="modal-backdrop" id="templateModal"></div>
+
+<!-- PHOTO LIBRARY DRAWER (renderizado pelo módulo PhotoLibrary) -->
+<div id="photoLibraryHost"></div>
 
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
@@ -516,6 +654,10 @@
     magazineCss: '', // CSS dos templates embutido no iframe preview
     slotController: null, // controller do SlotRenderer ativo
     pageStatuses: {}, // { [pageId]: { state, errors, warnings } } — cache p/ badges
+    pageControlsCtrl: null, // controller do PageControls
+    photoLib: null,  // controller do PhotoLibrary
+    tplPicker: null, // controller do TemplatePicker
+    lastImageInput: null, // input de imagem em foco (p/ library onPick)
   }
 
   // ===== DOM =====
@@ -554,7 +696,7 @@
   // ===== Data layer =====
   async function loadTemplates() {
     const { data, error } = await sb.from('magazine_templates')
-      .select('slug, name, category, slots_schema')
+      .select('slug, name, category, slots_schema, preview_svg')
       .order('slug')
     if (error) {
       console.error('[magazine] loadTemplates error:', error)
@@ -578,7 +720,7 @@
 
   async function loadPages(editionId) {
     const { data, error } = await sb.from('magazine_pages')
-      .select('id, edition_id, template_slug, slots, segment_scope, order_index')
+      .select('id, edition_id, template_slug, slots, segment_scope, order_index, is_hidden_icon_page')
       .eq('edition_id', editionId)
       .order('order_index')
     if (error) { toast('Erro ao carregar páginas: ' + error.message, 'err'); return [] }
@@ -711,14 +853,25 @@
     }
     els.slotTemplate.textContent = page.template_slug
 
-    // Host onde o SlotRenderer vai montar + botão de salvar separado
+    // Hosts: controles da página (segment/hidden/actions) + slots + save
     els.slotsForm.innerHTML = `
+      <div id="pageControlsMount"></div>
       <div id="slotMount"></div>
       <div class="slots-actions">
         <button class="btn save" id="saveSlotsBtn" disabled>Salvar alterações</button>
       </div>
     `
     const mount = document.getElementById('slotMount')
+    const pcMount = document.getElementById('pageControlsMount')
+
+    // Page Controls (segment_scope + hidden_icon + ações)
+    state.pageControlsCtrl = window.MagazineAdmin.PageControls.render(pcMount, page, state.pages, {
+      onUpdateSegment: (scope) => updateSegmentScope(page.id, scope),
+      onToggleHiddenIcon: (on) => toggleHiddenIcon(page.id, on),
+      onDuplicate: () => duplicateCurrentPage(),
+      onInsertAt: (where) => insertAtFromCurrent(where),
+      onRemove: () => removePage(page.id),
+    })
 
     state.slotController = window.MagazineAdmin.SlotRenderer.render(mount, page, {
       onChange: () => {
@@ -793,6 +946,7 @@
 
       if (typeof onUploaded === 'function') onUploaded(url)
       toast('Imagem enviada', 'ok')
+      if (state.photoLib && state.currentEdition) state.photoLib.refresh(state.currentEdition.id)
     } catch (err) {
       toast('Erro upload: ' + err.message, 'err')
     } finally {
@@ -873,36 +1027,6 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     return Object.assign({}, page.slots || {})
   }
 
-  function renderTemplateModal() {
-    const byCat = {}
-    state.templates.forEach(t => {
-      byCat[t.category] = byCat[t.category] || []
-      byCat[t.category].push(t)
-    })
-    const catNames = { cover: 'Capas', toc: 'Estruturais', editorial: 'Editoriais', back: 'Contracapa', feature: 'Matérias', visual: 'Visuais', interactive: 'Interativos' }
-    const html = Object.keys(byCat).map(cat => `
-      <div class="category-group">
-        <h3>${catNames[cat] || cat}</h3>
-        <div class="template-grid">
-          ${byCat[cat].map(t => `
-            <button class="template-card" data-slug="${t.slug}">
-              <div class="preview">${t.slug.substring(1, 3)}</div>
-              <div class="name">${escapeHtml(t.name)}</div>
-              <div class="slug">${t.slug}</div>
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    `).join('')
-    els.templateGrid.innerHTML = html
-    els.templateGrid.querySelectorAll('[data-slug]').forEach(card => {
-      card.addEventListener('click', () => {
-        console.log('[magazine] template selecionado:', card.dataset.slug)
-        addPage(card.dataset.slug)
-      })
-    })
-  }
-
   // ===== Interactions =====
   function wirePageList() {
     els.pageList.querySelectorAll('.page-item').forEach(el => {
@@ -970,6 +1094,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       state.currentPageId = null
       try { localStorage.removeItem(LS_KEY_EDITION) } catch (e) {}
       renderEditionHeader(); renderPageList(); renderSlotsForm(); renderPreview()
+      if (state.photoLib) state.photoLib.refresh(null)
       return
     }
     state.currentEdition = state.editions.find(e => e.id === editionId) || null
@@ -977,6 +1102,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     state.currentPageId = state.pages[0]?.id || null
     try { localStorage.setItem(LS_KEY_EDITION, editionId) } catch (e) {}
     renderEditionHeader(); renderPageList(); renderSlotsForm(); renderPreview()
+    if (state.photoLib) state.photoLib.refresh(editionId)
   }
 
   function selectPage(pageId) {
@@ -1002,42 +1128,110 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     } catch (err) { toast('Erro: ' + err.message, 'err') }
   }
 
-  async function openTemplateModal() {
-    console.log('[magazine] openTemplateModal, templates:', state.templates.length)
+  let _templateInsertMode = null // null | 'append' | {at: idx}
+  async function openTemplateModal(opts) {
+    _templateInsertMode = opts && opts.insertAt != null ? { at: opts.insertAt } : 'append'
     if (!state.templates.length) {
       toast('Carregando templates…')
       await loadTemplates()
-      console.log('[magazine] templates carregados:', state.templates.length)
     }
     if (!state.templates.length) {
-      toast('Não foi possível carregar templates. Verifique console.', 'err')
+      toast('Não foi possível carregar templates', 'err')
       return
     }
-    renderTemplateModal()
-    els.templateModal.classList.add('open')
-    const cs = getComputedStyle(els.templateModal)
-    const card = els.templateModal.querySelector('.modal')
-    const cardCs = card ? getComputedStyle(card) : null
-    const r = card ? card.getBoundingClientRect() : null
-    console.log('[magazine] backdrop:', { display: cs.display, zIndex: cs.zIndex })
-    console.log('[magazine] .modal:', card ? { display: cardCs.display, w: cardCs.width, h: cardCs.height, bg: cardCs.backgroundColor, rect: { w: r.width, h: r.height, x: r.x, y: r.y } } : 'MISSING')
-    console.log('[magazine] cards=' + els.templateGrid.querySelectorAll('[data-slug]').length)
+    if (state.tplPicker) state.tplPicker.refresh(state.templates)
+    state.tplPicker.open()
   }
-  function closeTemplateModal() { els.templateModal.classList.remove('open') }
+  function closeTemplateModal() { state.tplPicker && state.tplPicker.close() }
 
   async function addPage(templateSlug) {
     if (!state.currentEdition) { toast('Selecione uma edição', 'err'); return }
     try {
       const newId = await rpcAddPage(state.currentEdition.id, templateSlug)
       state.pages = await loadPages(state.currentEdition.id)
+
+      // Se pediram insert em posição, reordena
+      if (_templateInsertMode && typeof _templateInsertMode === 'object' && _templateInsertMode.at != null) {
+        const ids = state.pages.map(p => p.id).filter(id => id !== newId)
+        const at = Math.max(0, Math.min(_templateInsertMode.at, ids.length))
+        ids.splice(at, 0, newId)
+        try { await rpcReorderPages(state.currentEdition.id, ids) } catch (e) { /* ordem relaxada */ }
+        state.pages = await loadPages(state.currentEdition.id)
+      }
+      _templateInsertMode = null
+
       state.currentPageId = newId
       closeTemplateModal()
       safeRenderAll()
       toast('Página adicionada', 'ok')
     } catch (err) {
       closeTemplateModal()
+      _templateInsertMode = null
       console.error('addPage error:', err)
       toast('Erro: ' + (err.message || err), 'err')
+    }
+  }
+
+  // ===== Page operations (duplicar · inserir · segment · hidden_icon) =====
+  async function duplicateCurrentPage() {
+    const source = state.pages.find(p => p.id === state.currentPageId)
+    if (!source || !state.currentEdition) return
+    try {
+      const newId = await rpcAddPage(state.currentEdition.id, source.template_slug)
+      // Copia slots (segment_scope fica padrão, hidden não)
+      await sb.from('magazine_pages').update({
+        slots: source.slots || {},
+        segment_scope: source.segment_scope || ['all'],
+      }).eq('id', newId)
+      // Reordena p/ logo depois da source
+      state.pages = await loadPages(state.currentEdition.id)
+      const ids = state.pages.map(p => p.id).filter(id => id !== newId)
+      const sIdx = ids.indexOf(source.id)
+      ids.splice(sIdx + 1, 0, newId)
+      try { await rpcReorderPages(state.currentEdition.id, ids) } catch (e) {}
+      state.pages = await loadPages(state.currentEdition.id)
+      state.currentPageId = newId
+      safeRenderAll()
+      toast('Página duplicada', 'ok')
+    } catch (err) {
+      toast('Erro duplicar: ' + err.message, 'err')
+    }
+  }
+
+  function insertAtFromCurrent(where) {
+    const idx = state.pages.findIndex(p => p.id === state.currentPageId)
+    if (idx < 0) return openTemplateModal()
+    const target = where === 'above' ? idx : idx + 1
+    openTemplateModal({ insertAt: target })
+  }
+
+  async function updateSegmentScope(pageId, scope) {
+    try {
+      await sb.from('magazine_pages').update({ segment_scope: scope }).eq('id', pageId)
+      const p = state.pages.find(x => x.id === pageId)
+      if (p) p.segment_scope = scope
+    } catch (err) {
+      toast('Erro salvar segmento: ' + err.message, 'err')
+    }
+  }
+
+  async function toggleHiddenIcon(pageId, on) {
+    try {
+      if (on) {
+        // Desmarca todas as outras da edição
+        const others = state.pages.filter(p => p.id !== pageId && p.is_hidden_icon_page).map(p => p.id)
+        if (others.length) {
+          await sb.from('magazine_pages').update({ is_hidden_icon_page: false }).in('id', others)
+          others.forEach(id => { const p = state.pages.find(x => x.id === id); if (p) p.is_hidden_icon_page = false })
+        }
+      }
+      await sb.from('magazine_pages').update({ is_hidden_icon_page: on }).eq('id', pageId)
+      const p = state.pages.find(x => x.id === pageId)
+      if (p) p.is_hidden_icon_page = on
+      toast(on ? 'Ícone oculto nesta página' : 'Ícone oculto removido', 'ok')
+      renderPageList()
+    } catch (err) {
+      toast('Erro: ' + err.message, 'err')
     }
   }
 
@@ -1199,8 +1393,38 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     els.viewLiveBtn.addEventListener('click', viewLive)
     els.viewDesktop.addEventListener('click', () => setPreviewMode('desktop'))
     els.viewMobile.addEventListener('click', () => setPreviewMode('mobile'))
-    els.templateModal.addEventListener('click', (e) => {
-      if (e.target === els.templateModal) closeTemplateModal()
+
+    // Template picker (modal)
+    state.tplPicker = window.MagazineAdmin.TemplatePicker.mount(els.templateModal, state.templates, {
+      onPick: (slug) => addPage(slug),
+    })
+
+    // Photo library (drawer)
+    const libHost = document.getElementById('photoLibraryHost')
+    const libBtn = document.getElementById('libraryBtn')
+    state.photoLib = window.MagazineAdmin.PhotoLibrary.mount(libHost, sb, {
+      onPick: (url) => {
+        const input = state.lastImageInput
+        if (!input || !document.body.contains(input)) {
+          toast('Clique num campo de imagem antes de escolher da biblioteca', 'err')
+          return
+        }
+        input.value = url
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        toast('Foto aplicada', 'ok')
+      },
+      onStateChange: (open) => { libBtn.dataset.active = open ? '1' : '0' },
+    })
+    libBtn.addEventListener('click', () => state.photoLib.toggle())
+
+    // Rastreia último input de imagem em foco (p/ biblioteca aplicar)
+    document.addEventListener('focusin', (e) => {
+      const inp = e.target
+      if (inp && inp.tagName === 'INPUT' && inp.type === 'text' && inp.dataset.slot) {
+        // só marca como image input se for de slot de imagem conhecido
+        const isImg = inp.closest('.img-row, .scalar-image, .img-row-inline')
+        if (isImg) state.lastImageInput = inp
+      }
     })
 
     // Carrega CSS dos templates uma vez para embutir no iframe preview
@@ -1211,6 +1435,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     } catch (e) { console.warn('Falha carregando CSS templates:', e) }
 
     await loadTemplates()
+    if (state.tplPicker) state.tplPicker.refresh(state.templates)
     await loadEditions()
 
     // Prioridade de selecao: ?edition=ID na URL > localStorage > mais recente
