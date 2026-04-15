@@ -59,12 +59,13 @@
   .mp-t01 .head { padding-bottom: 16px; }
   .mp-t01 .head .brand { font-size: 26px; }
   .mp-t01 .head .edition-label { font-size: 10px; letter-spacing: 2px; }
-  .mp-t01 .hero { grid-template-columns: 1fr; grid-template-rows: 1fr auto; gap: 20px; }
-  .mp-t01 .visual { min-height: 240px; }
-  .mp-t01 .txt { padding-bottom: 0; gap: 12px; }
+  .mp-t01 .hero { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 22px; }
+  /* Foto hero ocupa ate 45vh (sem passar metade da tela) */
+  .mp-t01 .visual { min-height: 42vh; max-height: 45vh; aspect-ratio: auto; }
+  .mp-t01 .txt { padding-bottom: 0; gap: 14px; }
   .mp-t01 .tag { font-size: 9px; padding: 5px 10px; }
-  .mp-t01 .txt h2 { font-size: 36px; }
-  .mp-t01 .txt p { font-size: 14px; max-width: none; }
+  .mp-t01 .txt h2 { font-size: 38px; }
+  .mp-t01 .txt p { font-size: 17px; line-height: 1.5; max-width: none; }
   .mp-t01 .foot { padding-top: 14px; font-size: 9px; letter-spacing: 2px; }
 }
 
