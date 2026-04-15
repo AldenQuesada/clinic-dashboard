@@ -578,8 +578,16 @@
         var tags    = Array.isArray(l.tags) ? l.tags.slice(0, 3).map(function(t) {
           return '<span style="font-size:11px;background:#f3f4f6;border-radius:4px;padding:2px 7px;color:#374151">' + _esc(t) + '</span>'
         }).join(' ') : ''
-        var qfData = l.queixas_faciais || l.complaints || []
-        var queixas = Array.isArray(qfData) && qfData.length ? qfData.slice(0, 3).join(', ') : (l.queixa || '')
+        var _cf = l.customFields || l.data || {}
+        var _nd = (l.data && l.data.data) || _cf.data || {}
+        var qfData = l.queixas_faciais || _cf.queixas_faciais || _nd.queixas_faciais || l.complaints || []
+        var queixas = ''
+        if (Array.isArray(qfData) && qfData.length) {
+          queixas = qfData.slice(0, 3).map(function(x){ return typeof x === 'string' ? x : (x && (x.label || x.nome || x.name)) || '' }).filter(Boolean).join(', ')
+        }
+        if (!queixas) {
+          queixas = _cf.queixaPrincipal || _cf.queixa || _cf.queixas || _nd.queixa || _nd.queixas || l.queixa || l.queixas || ''
+        }
         var ativo   = (l.is_active !== undefined ? l.is_active : l.active) !== false
 
         var tr = document.createElement('tr')
