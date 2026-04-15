@@ -64,8 +64,11 @@
   R.t01_cover_hero_dark = (s) => `
     <div class="mp mp-t01">
       <div class="head">
-        ${s.dedicatoria ? `<div class="dedicatoria">${esc(s.dedicatoria)}</div>` : '<div class="dedicatoria"></div>'}
-        <h1 class="brand">Beauty &amp; Health</h1>
+        <div class="spacer-left"></div>
+        <div class="brand-stack">
+          ${s.dedicatoria ? `<div class="dedicatoria">${esc(s.dedicatoria)}</div>` : ''}
+          <h1 class="brand">Beauty &amp; Health</h1>
+        </div>
         <div class="edition-label">${esc(s.edicao_label || 'Edição')}</div>
       </div>
       <div class="body">

@@ -79,19 +79,27 @@
   border-bottom: 1px solid rgba(255,255,255,0.15);
   padding-bottom: 10px;
 }
+/* Bloco central: dedicatoria + brand empilhados (não mais espalhados) */
+.mp-t01 .head .brand-stack {
+  grid-column: 2;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 0;
+}
 .mp-t01 .head .dedicatoria {
   font-family: 'Inter', sans-serif; font-style: normal;
-  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-  opacity: 0.75; text-align: left; font-weight: 600;
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  opacity: 0.7; text-align: center; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  animation: none;
+  animation: none; color: var(--mp-cream);
 }
 .mp-t01 .head .brand {
   font-family: 'Playfair Display', serif; font-weight: 900;
   font-size: clamp(22px, 6vw, 32px); letter-spacing: -0.02em; line-height: 1;
   text-align: center; white-space: nowrap;
 }
+.mp-t01 .head .spacer-left { grid-column: 1; }
 .mp-t01 .head .edition-label {
+  grid-column: 3;
   font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
   opacity: 0.8; text-align: right; white-space: nowrap; font-weight: 500;
 }
@@ -117,7 +125,9 @@
 }
 .mp-t01 .txt {
   display: flex; flex-direction: column; gap: 10px;
-  align-items: flex-start; text-align: left; min-width: 0;
+  align-items: flex-start; justify-content: center;
+  text-align: left; min-width: 0;
+  min-height: 0;
 }
 .mp-t01 .tag {
   padding: 5px 10px; border: 1px solid var(--mp-accent);
@@ -147,7 +157,9 @@
     gap: 40px;
   }
   .mp-t01 .txt {
-    justify-content: center; gap: 16px; padding: 20px 0;
+    justify-content: center; gap: 18px; padding: 0;
+    /* Empurra ligeiramente pra cima do centro geometrico (parece mais balanceado com foto) */
+    transform: translateY(-4%);
   }
   .mp-t01 .txt h2 { font-size: clamp(42px, 5vw, 64px); line-height: 0.95; }
   .mp-t01 .txt p { font-size: clamp(14px, 1.2vw, 16px); }
