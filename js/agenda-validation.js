@@ -439,6 +439,61 @@ const AgendaValidator = {
   // ─────────────────────────────────────────────────────────────────
   getClinicDay(dateStr) { return _getClinicDay(dateStr) },
   checkInPeriods(s, e, day, horaInicio, horaFim) { return _checkInPeriods(s, e, day, horaInicio, horaFim) },
+
+  // Retorna { blocked, reason, kind } para um slot (dateStr + timeStr + duracao)
+  //   kind: 'closed' | 'lunch' | 'out' | null
+  isSlotBlocked(dateStr, timeStr, durationMin) {
+    if (!dateStr || !timeStr) return { blocked: false }
+    var dur = durationMin || 30
+    var day = _getClinicDay(dateStr)
+    if (!day.aberto) return { blocked: true, kind: 'closed', reason: 'Clinica fechada' }
+    var s = _toMins(timeStr)
+    var e = s + dur
+    // Dentro de algum period?
+    for (var i = 0; i < day.periods.length; i++) {
+      var p = day.periods[i]
+      var pS = _toMins(p.ini), pE = _toMins(p.fim)
+      if (s >= pS && e <= pE) return { blocked: false }
+    }
+    // Detecta almoco (entre 2 periods)
+    if (day.periods.length === 2) {
+      var m = day.periods[0], t = day.periods[1]
+      var mE = _toMins(m.fim), tS = _toMins(t.ini)
+      if (s >= mE && s < tS) return { blocked: true, kind: 'lunch', reason: 'Almoco ' + m.fim + '-' + t.ini }
+    }
+    return { blocked: true, kind: 'out', reason: 'Fora do expediente' }
+  },
+
+  // Proximo slot livre (horario valido + sem conflito de profissional)
+  //   retorna {horaInicio, horaFim} ou null
+  suggestNextSlot(dateStr, profissionalIdx, durationMin) {
+    if (!dateStr) return null
+    var dur = durationMin || 60
+    var day = _getClinicDay(dateStr)
+    if (!day.aberto || !day.periods.length) return null
+    var step = 15 // minutos
+    var appts = _getAppts().filter(function(a){
+      return a.data === dateStr
+        && BLOCKS_CALENDAR.has(a.status)
+        && (profissionalIdx === null || profissionalIdx === undefined || profissionalIdx === ''
+            || String(a.profissionalIdx) === String(profissionalIdx))
+    })
+    for (var i = 0; i < day.periods.length; i++) {
+      var p = day.periods[i]
+      var pS = _toMins(p.ini), pE = _toMins(p.fim)
+      for (var t = pS; t + dur <= pE; t += step) {
+        var hasConflict = appts.some(function(a){
+          if (!a.horaInicio || !a.horaFim) return false
+          return _overlap(t, t + dur, _toMins(a.horaInicio), _toMins(a.horaFim))
+        })
+        if (!hasConflict) {
+          var toHM = function(m){ return String(Math.floor(m/60)).padStart(2,'0') + ':' + String(m%60).padStart(2,'0') }
+          return { horaInicio: toHM(t), horaFim: toHM(t + dur) }
+        }
+      }
+    }
+    return null
+  },
 }
 
 // ── UI: Exibir erros de validação ─────────────────────────────────

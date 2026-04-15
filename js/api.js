@@ -389,6 +389,10 @@ function renderAgenda() {
       <div style="font-size:14px;font-weight:700;color:#111;min-width:200px;text-align:center">${navLabel}</div>
       <button onclick="navAgenda(1)"  style="${btnOutline()}">›</button>
       <div id="agendaToolbarAlerts" style="flex:1;display:flex;gap:6px;justify-content:center;align-items:center;overflow:hidden"></div>
+      <button onclick="openAgendaHoursQuickEdit()" title="Editar horários de funcionamento" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid #E5E7EB;background:#fff;color:#374151;display:inline-flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Horários
+      </button>
       <div style="display:flex;gap:4px;background:#F3F4F6;padding:4px;border-radius:10px">
         ${viewBtn('mes','Mês')}${viewBtn('semana','Semana')}${viewBtn('hoje','Hoje')}
       </div>
@@ -754,8 +758,15 @@ function buildHojeGrid() {
   })
 
   const cols = profs.length ? profs : [{ nome: 'Sem profissional' }]
-
   const profColW = cols.length > 0 ? `calc((100% - 72px) / ${cols.length})` : '100%'
+
+  // Horario da clinica no dia
+  const day = (window.AgendaValidator && AgendaValidator.getClinicDay) ? AgendaValidator.getClinicDay(iso) : { aberto: true, periods: [] }
+
+  // Se dia fechado — mostra aviso acima da tabela e pinta tudo cinza
+  const closedBanner = !day.aberto
+    ? '<div style="background:#F3F4F6;border:1px dashed #D1D5DB;border-radius:10px;padding:14px 18px;margin-bottom:10px;text-align:center;color:#6B7280;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Clínica fechada neste dia. Configure em <a href="#" onclick="openAgendaHoursQuickEdit();return false" style="color:#7C3AED;text-decoration:underline;font-weight:700">Horários</a>.</div>'
+    : ''
 
   const ths = cols.map((p,i) =>
     `<th style="width:${profColW};padding:10px 12px;font-size:12px;font-weight:700;color:#374151;border-right:1px solid #E5E7EB;text-align:center">
@@ -766,24 +777,43 @@ function buildHojeGrid() {
 
   const bodyRows = AGENDA_SLOTS.map(slot => {
     const isHour = slot.endsWith(':00')
+    // Verificar se esse slot cai em horario bloqueado (almoco / fora / fechado)
+    const slotInfo = (window.AgendaValidator && AgendaValidator.isSlotBlocked)
+      ? AgendaValidator.isSlotBlocked(iso, slot, 15)
+      : { blocked: false }
+    const isBlocked = slotInfo.blocked
+    const blockKind = slotInfo.kind // 'closed' | 'lunch' | 'out'
+    // Estilo do slot bloqueado
+    const blockedBg = isBlocked
+      ? (blockKind === 'lunch'
+          ? 'background-image:repeating-linear-gradient(45deg,#FEF3C7,#FEF3C7 5px,#FDE68A 5px,#FDE68A 10px);'
+          : 'background-image:repeating-linear-gradient(45deg,#F3F4F6,#F3F4F6 5px,#E5E7EB 5px,#E5E7EB 10px);')
+      : ''
     const tds = cols.map((_,pi) => {
       const key = `${slot}_${pi}`
       const cards = (cellMap[key] || []).map(a => apptCard(a, pi)).join('')
       const isPastDay = iso < todayIso
       const hasAppts = cards.length > 0
-      const canClick = !isPastDay || hasAppts
-      return `<td ${canClick?'ondragover="agendaDragOver(event)" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\','+pi+')"':''}
-        ${canClick?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\','+pi+')"':''}
-        style="width:${profColW};padding:3px 4px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};height:38px;vertical-align:top;cursor:${canClick?'pointer':'default'};transition:background .1s;position:relative;${isPastDay&&!hasAppts?'opacity:0.5;':''}"
+      // Slot bloqueado so permite click se tem appts existentes (pra editar)
+      const canClick = (!isPastDay && !isBlocked) || hasAppts
+      const title = isBlocked && !hasAppts ? `title="${slotInfo.reason || 'Horário bloqueado'}"` : ''
+      return `<td ${title} ${canClick?'ondragover="agendaDragOver(event,\''+iso+'\',\''+slot+'\')" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\','+pi+')"':''}
+        ${canClick&&!isBlocked?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\','+pi+')"':''}
+        data-slot-blocked="${isBlocked?'1':'0'}" data-slot-kind="${blockKind||''}"
+        style="width:${profColW};padding:3px 4px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};height:38px;vertical-align:top;cursor:${canClick?(isBlocked?'not-allowed':'pointer'):'default'};transition:background .1s;position:relative;${blockedBg}${isPastDay&&!hasAppts?'opacity:0.5;':''}"
         >${cards}</td>`
     }).join('')
+    // Label inline no horario (ex: "ALMOCO" no primeiro slot da faixa)
+    const lunchBadge = isBlocked && blockKind === 'lunch' && slot.endsWith(':00')
+      ? '<span style="position:absolute;right:6px;font-size:9px;font-weight:700;color:#D97706;letter-spacing:0.04em">ALMOÇO</span>'
+      : ''
     return `<tr style="background:${isHour?'#FAFAFA':'#fff'}">
-      <td style="width:72px;padding:6px 10px;font-size:11px;font-weight:${isHour?'700':'400'};color:${isHour?'#374151':'#9CA3AF'};border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};white-space:nowrap;position:sticky;left:0;background:${isHour?'#FAFAFA':'#fff'};z-index:1">${slot}</td>
+      <td style="width:72px;padding:6px 10px;font-size:11px;font-weight:${isHour?'700':'400'};color:${isHour?'#374151':'#9CA3AF'};border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};white-space:nowrap;position:sticky;left:0;background:${isHour?'#FAFAFA':'#fff'};z-index:1;position:relative">${slot}${lunchBadge}</td>
       ${tds}
     </tr>`
   }).join('')
 
-  return `<div style="width:100%;overflow-x:auto;border-radius:12px;border:1px solid #E5E7EB;box-sizing:border-box">
+  return closedBanner + `<div style="width:100%;overflow-x:auto;border-radius:12px;border:1px solid #E5E7EB;box-sizing:border-box;${!day.aberto?'opacity:0.55;':''}">
     <table style="border-collapse:collapse;table-layout:fixed;width:100%;min-width:${72 + cols.length * 140}px">
       <thead><tr style="background:#F9FAFB">
         <th style="width:72px;padding:10px 12px;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;border-right:1px solid #E5E7EB;position:sticky;left:0;background:#F9FAFB;z-index:2">Hora</th>
@@ -1164,17 +1194,36 @@ function agendaDragStartBlocked(e, id) {
   return false
 }
 
-function agendaDragOver(e) {
+function agendaDragOver(e, iso, slot) {
   e.preventDefault()
+  // Se celula esta marcada como bloqueada, mostrar drop-effect "none" + vermelho
+  var td = e.currentTarget
+  var blocked = td && td.dataset && td.dataset.slotBlocked === '1'
+  if (blocked) {
+    e.dataTransfer.dropEffect = 'none'
+    td.style.outline = '2px solid #EF4444'
+    td.style.outlineOffset = '-2px'
+    return
+  }
   e.dataTransfer.dropEffect = 'move'
-  e.currentTarget.style.background = '#EDE9FE'
+  td.style.background = '#EDE9FE'
 }
 function agendaDragLeave(e) {
-  e.currentTarget.style.background = ''
+  var td = e.currentTarget
+  td.style.background = ''
+  td.style.outline = ''
 }
 function agendaDrop(e, iso, slot, profIdx) {
   e.preventDefault()
-  e.currentTarget.style.background = ''
+  var td = e.currentTarget
+  td.style.background = ''
+  td.style.outline = ''
+  // Se slot bloqueado, abortar com toast
+  if (td.dataset && td.dataset.slotBlocked === '1') {
+    if (window.showErrorToast) showErrorToast('Slot bloqueado (' + (td.dataset.slotKind === 'lunch' ? 'horário de almoço' : td.dataset.slotKind === 'closed' ? 'clínica fechada' : 'fora do expediente') + ')')
+    _draggedApptId = null
+    return
+  }
   if (!_draggedApptId) return
   const appts = getAppointments()
   const a = appts.find(x => x.id === _draggedApptId)
