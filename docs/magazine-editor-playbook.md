@@ -449,6 +449,47 @@ Cada seção abaixo segue este formato:
 
 ---
 
+## ESTRUTURAS DE EDIÇÃO RECOMENDADAS
+
+Modelos de sumário testados e prontos para reuso. Edições novas podem partir de uma destas estruturas e adaptar.
+
+### Modelo A — "Programa Integrado" (15 páginas)
+Usado na **Edição Inaugural · Abril 2026 · Lifting 5D**. Recomendado para apresentar um protocolo principal da clínica como programa contínuo (ex: Smooth Eyes, Lifting 5D, Full Body Renewal). Cobre todas as categorias do playbook.
+
+| # | Página | Template | Função editorial |
+|---|--------|----------|------------------|
+| 01 | Capa | `t01_cover_hero_dark` | Gancho emocional + nome da edição |
+| 02 | Sumário | `t04_toc_editorial` | 8 itens · convida à navegação |
+| 03 | Carta editorial | `t05_editorial_letter` | Voz da Mirian abre a edição (180-280 palavras) |
+| 04 | Avaliação inicial · 2 fotos | `t21_product_photo_split` | Apresenta o aparelho de diagnóstico (Anovator A5) |
+| 05 | Avaliação inicial · matéria | `t22_product_feature_text` | Aprofundamento textual da avaliação (par com t21) |
+| 06 | Matéria de capa | `t07_feature_double` | O protocolo principal por dentro (400-700 palavras) |
+| 07 | Tratamento destaque | `t11_product_highlight` | Tecnologia/equipamento principal com benefícios e CTA |
+| 08 | Editorial visual fullbleed | `t08_feature_fullbleed` | Página de respiro · ideal para esconder o hidden icon |
+| 09 | Caso real Antes/Depois | `t12_before_after_pair` | Prova social com TCLE + 4 stats |
+| 10 | Entrevista com a responsável | `t10_interview` | 4 Q&As que reforçam autoridade |
+| 11 | Dado em destaque | `t18_stat_feature` | Número de impacto (ex: "100% cashback") |
+| 12 | Mitos vs Fatos | `t20_myth_vs_fact` | 4 pares — desmente crenças comuns |
+| 13 | Ritual / etapas do protocolo | `t19_ritual_steps` | 4 passos numerados |
+| 14 | Quiz CTA | `t16_quiz_cta` | Conversão · 3 recompensas |
+| 15 | Contracapa | `t06_back_cta` | CTA WhatsApp + teaser próxima edição |
+
+**Fotos necessárias:** 9 (capa, retrato responsável reusado em t05+t10, 2 do aparelho de avaliação, 1 da matéria, 1 do tratamento destaque, 1 fullbleed landscape, antes+depois).
+
+**Hidden icon:** marcar `magazine_editions.hidden_icon_page_id` apontando para a página t08 (fullbleed dá espaço visual sem competir com texto).
+
+**Cashback total possível por leitora:** R$ 150 (R$ 10 abertura + R$ 20 leu 80% + R$ 30 quiz + R$ 25 hidden + R$ 15 share + R$ 50 indicação).
+
+---
+
+### Modelo B — "Mini Sazonal" (8 páginas) · futuro
+Versão enxuta para edições especiais (Black Friday, Aniversário da clínica, Datas comemorativas). Estrutura sugerida: capa → editorial → matéria única → antes/depois → quiz → contracapa.
+
+### Modelo C — "Especialista Convidada" (12 páginas) · futuro
+Quando uma profissional externa assina conteúdo. Substituir t07 por t10 (entrevista longa) e adicionar t09 com quote da convidada.
+
+---
+
 ## CHECKLIST PRÉ-PUBLICAÇÃO
 
 Antes de publicar qualquer edição, verificar:
