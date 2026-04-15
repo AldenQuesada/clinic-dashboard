@@ -41,6 +41,8 @@
       ? page.segment_scope.slice()
       : ['all']
     const isHidden = !!page.is_hidden_icon_page
+    const isBeforeAfter = /^(t12|t13|t25)/.test(page.template_slug || '')
+    const tcleOk = page.slots && (page.slots.tcle_validado === true || page.slots.tcle_validado === 'true')
 
     container.innerHTML = `
       <div class="page-controls">
@@ -69,6 +71,18 @@
           </label>
           <div class="pc-hint">Apenas uma página por edição pode ter o ícone. Marcar aqui desmarca das outras.</div>
         </div>
+
+        ${isBeforeAfter ? `
+        <div class="pc-section pc-tcle">
+          <div class="pc-label">TCLE · Termo de uso de imagem</div>
+          <label class="pc-toggle">
+            <input type="checkbox" data-role="tcle" ${tcleOk ? 'checked' : ''}/>
+            <span class="pc-toggle-track"><span class="pc-toggle-thumb"></span></span>
+            <span class="pc-toggle-text">${tcleOk ? 'Consentimento arquivado ✓' : '⚠️ Marque apenas com TCLE assinado em mãos'}</span>
+          </label>
+          <div class="pc-hint">Obrigatório para publicar páginas de antes/depois · linter bloqueia edição sem TCLE.</div>
+        </div>
+        ` : ''}
 
         <div class="pc-section">
           <div class="pc-label">Ações</div>
@@ -109,6 +123,15 @@
         handlers.onToggleHiddenIcon(hiddenInput.checked)
       }
     })
+
+    const tcleInput = container.querySelector('[data-role="tcle"]')
+    if (tcleInput) {
+      tcleInput.addEventListener('change', () => {
+        if (typeof handlers.onToggleTcle === 'function') {
+          handlers.onToggleTcle(tcleInput.checked)
+        }
+      })
+    }
 
     container.querySelectorAll('[data-act]').forEach(btn => {
       btn.addEventListener('click', () => {

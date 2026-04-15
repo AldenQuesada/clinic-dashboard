@@ -29,6 +29,9 @@
           </div>
         </div>
         <div class="pl-hint">Clique numa foto para aplicá-la no campo de imagem em foco.</div>
+        <div class="pl-search-wrap">
+          <input type="search" data-role="search" placeholder="Buscar por alt…" />
+        </div>
         <div class="pl-grid" data-role="grid">
           <div class="pl-empty">Selecione uma edição.</div>
         </div>
@@ -38,8 +41,11 @@
     const drawer = host.querySelector('.pl-drawer')
     const grid = host.querySelector('[data-role="grid"]')
     const count = host.querySelector('[data-role="count"]')
+    const searchEl = host.querySelector('[data-role="search"]')
+    let searchQuery = ''
 
     host.querySelector('[data-act="close"]').addEventListener('click', close)
+    searchEl.addEventListener('input', () => { searchQuery = searchEl.value.trim().toLowerCase(); render() })
 
     async function refresh(editionId) {
       currentEditionId = editionId || null
@@ -63,12 +69,15 @@
     }
 
     function render() {
-      count.textContent = String(assets.length)
-      if (!assets.length) {
-        grid.innerHTML = `<div class="pl-empty">Nenhuma foto enviada nesta edição ainda.</div>`
+      const filtered = searchQuery
+        ? assets.filter(a => (a.alt || '').toLowerCase().includes(searchQuery))
+        : assets
+      count.textContent = searchQuery ? `${filtered.length}/${assets.length}` : String(assets.length)
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="pl-empty">${searchQuery ? 'Nenhuma foto corresponde ao filtro.' : 'Nenhuma foto enviada nesta edição ainda.'}</div>`
         return
       }
-      grid.innerHTML = assets.map(a => {
+      grid.innerHTML = filtered.map(a => {
         const url = (window.MagazineRenderer && window.MagazineRenderer.normalizeUrl)
           ? window.MagazineRenderer.normalizeUrl(a.url) : a.url
         const meta = [

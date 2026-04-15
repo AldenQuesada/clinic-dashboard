@@ -154,6 +154,40 @@
       issues.push({ severity: 'info', message: 'Edição sem cover_template_slug configurado.', hint: 'Use o botão ⋯ Metadados para escolher.' })
     }
 
+    // 9. TCLE obrigatório em páginas de antes/depois (t12/t13/t25)
+    //    Convenção: slot "tcle_validado" = true marca que o consentimento foi assinado
+    const baTemplates = /^(t12|t13|t25)/
+    pages.forEach(p => {
+      if (!baTemplates.test(p.template_slug)) return
+      const tcle = p.slots && (p.slots.tcle_validado === true || p.slots.tcle_validado === 'true')
+      if (!tcle) {
+        issues.push({
+          severity: 'err',
+          page_id: p.id,
+          message: `Antes/depois sem TCLE validado (${p.template_slug})`,
+          hint: 'Marque o slot "tcle_validado" na página · risco jurídico publicar sem consentimento assinado.',
+        })
+      }
+    })
+
+    // 10. Quiz slug referenciado deve ser válido (string não vazia, sem espaços)
+    pages.forEach(p => {
+      if (p.template_slug !== 't16_quiz_cta') return
+      const slug = p.slots && p.slots.quiz_slug
+      if (!slug || typeof slug !== 'string') {
+        issues.push({ severity: 'err', page_id: p.id, message: 't16_quiz_cta sem quiz_slug', hint: 'Defina o slug do quiz existente em quiz-render.html.' })
+        return
+      }
+      if (/\s/.test(slug) || !/^[a-z0-9\-]+$/i.test(slug)) {
+        issues.push({
+          severity: 'warn',
+          page_id: p.id,
+          message: `quiz_slug "${slug}" com formato suspeito`,
+          hint: 'Use apenas letras, números e hífen. Ex: "smooth-eyes-perfil".',
+        })
+      }
+    })
+
     return { issues }
   }
 
