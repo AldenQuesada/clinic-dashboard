@@ -220,8 +220,8 @@
           '<div style="background:#fff;border-radius:12px;border:1px solid #F3F4F6;overflow:hidden">' +
             '<table style="width:100%;border-collapse:collapse;table-layout:fixed">' +
               '<colgroup>' +
-                '<col style="width:44px"><col style="width:220px"><col style="width:145px">' +
-                '<col><col style="width:160px"><col style="width:72px"><col style="width:120px">' +
+                '<col style="width:44px"><col style="width:220px"><col style="width:110px">' +
+                '<col style="width:180px"><col><col style="width:90px"><col style="width:100px">' +
               '</colgroup>' +
               '<thead>' +
                 '<tr style="background:#F9FAFB;border-bottom:1px solid #F3F4F6">' +
@@ -618,8 +618,8 @@
             '</span>' +
           '</td>' +
           '<td style="padding:12px 16px;font-size:12px">' + (tags || '<span style="color:#D1D5DB">—</span>') + '</td>' +
-          '<td style="padding:12px 16px;font-size:12px;color:#6B7280">' + _esc(queixas || '—') + '</td>' +
-          '<td style="padding:12px 16px;font-size:12px;color:#6B7280">' + dateStr + '</td>' +
+          '<td style="padding:12px 16px;font-size:12px;color:#374151;line-height:1.4">' + (queixas ? _esc(queixas) : '<span style="color:#D1D5DB">—</span>') + '</td>' +
+          '<td style="padding:12px 16px;font-size:12px;color:#6B7280;white-space:nowrap">' + dateStr + '</td>' +
           '<td style="padding:12px 16px;text-align:center">' +
             '<button onclick="event.stopPropagation();(window.viewLead?viewLead(\'' + _esc(l.id) + '\'):void 0)"' +
               ' style="background:none;border:1px solid #E5E7EB;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;color:#374151">Ver</button>' +
