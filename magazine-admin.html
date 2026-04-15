@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js" defer></script>
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/magazine/magazine-renderer.js"></script>
@@ -20,6 +22,8 @@
 <script src="js/magazine/admin/drop-zone.js"></script>
 <script src="js/magazine/admin/edition-meta.js"></script>
 <script src="js/magazine/admin/preview-fullscreen.js"></script>
+<script src="js/magazine/admin/editorial-score.js"></script>
+<script src="js/magazine/admin/image-crop.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -617,6 +621,114 @@
   .fsp-frame.desktop { width: min(1200px, calc(100vw - 32px)); aspect-ratio: 16/10; max-height: calc(100vh - 100px); }
   .fsp-frame.mobile  { width: 390px; height: min(720px, calc(100vh - 100px)); }
   .fsp-frame iframe { width: 100%; height: 100%; border: 0; display: block; background: var(--paper); }
+
+  /* Segment chips + page nav no fullscreen */
+  .fsp-seg { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 auto 0 18px; }
+  .fsp-seg-btn {
+    padding: 5px 11px; border: 1px solid #333; border-radius: 999px;
+    background: transparent; color: #bbb; font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+  .fsp-seg-btn:hover { border-color: #888; color: #fff; }
+  .fsp-seg-btn[data-active="1"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .fsp-nav {
+    width: 32px; height: 32px; border: 1px solid #333; border-radius: 4px;
+    background: transparent; color: #ccc; font-size: 18px; cursor: pointer; display: grid; place-items: center;
+  }
+  .fsp-nav:hover { background: #fff; color: #000; border-color: #fff; }
+  .fsp-counter { font-size: 11px; color: #bbb; font-family: ui-monospace, monospace; padding: 0 6px; min-width: 56px; text-align: center; }
+  .fsp-sep { width: 1px; height: 22px; background: #333; margin: 0 4px; }
+
+  /* ============================================================================
+   * Autosave indicator (Sprint 4)
+   * ============================================================================ */
+  .slots-actions { align-items: center; }
+  .autosave-indicator {
+    font-size: 11px; color: var(--muted); font-family: ui-monospace, monospace;
+    padding: 4px 8px; border-radius: 4px; transition: color .15s, background .15s;
+  }
+  .autosave-indicator[data-state="idle"]::before  { content: ''; }
+  .autosave-indicator[data-state="saving"]::before { content: 'salvando…'; }
+  .autosave-indicator[data-state="saved"]  { color: var(--ok); }
+  .autosave-indicator[data-state="saved"]::before  { content: '✓ salvo'; }
+  .autosave-indicator[data-state="error"]  { color: var(--danger); }
+  .autosave-indicator[data-state="error"]::before  { content: '⨯ erro · tentar de novo'; }
+
+  /* ============================================================================
+   * Editorial Score (Sprint 4)
+   * ============================================================================ */
+  .score-badge-mount { margin-bottom: 14px; }
+  .es-badge {
+    display: inline-flex; flex-direction: column; align-items: center;
+    padding: 10px 14px; border-radius: 10px; min-width: 76px;
+    color: #fff; font-family: 'Playfair Display', serif;
+  }
+  .es-badge[data-band="high"] { background: linear-gradient(135deg, #2d7a43, #3f9960); }
+  .es-badge[data-band="mid"]  { background: linear-gradient(135deg, #b45309, #d97706); }
+  .es-badge[data-band="low"]  { background: linear-gradient(135deg, #b91c1c, #dc2626); }
+  .es-score { font-size: 28px; font-weight: 900; line-height: 1; }
+  .es-label { font-size: 9px; letter-spacing: 0.14em; margin-top: 2px; opacity: 0.9; }
+
+  .score-checklist-mount { margin-top: 12px; }
+  .es-list { display: flex; flex-direction: column; gap: 6px; }
+  .es-check {
+    padding: 8px 10px; background: var(--bg); border-radius: 6px; border: 1px solid var(--line);
+    font-size: 11px;
+  }
+  .es-check[data-state="ok"]      { border-left: 3px solid var(--ok); }
+  .es-check[data-state="partial"] { border-left: 3px solid var(--warn); }
+  .es-check[data-state="fail"]    { border-left: 3px solid var(--danger); }
+  .es-check-main { display: flex; align-items: center; gap: 8px; }
+  .es-dot { font-size: 13px; color: var(--ink-soft); }
+  .es-check[data-state="ok"] .es-dot      { color: var(--ok); }
+  .es-check[data-state="partial"] .es-dot { color: var(--warn); }
+  .es-check[data-state="fail"] .es-dot    { color: var(--danger); }
+  .es-check-label { flex: 1; color: var(--ink); font-weight: 600; }
+  .es-weight { font-family: ui-monospace, monospace; color: var(--muted); font-size: 10px; }
+  .es-sub {
+    margin: 6px 0 0 20px; padding: 0; list-style: disc;
+    font-size: 10px; color: var(--muted); line-height: 1.5;
+  }
+
+  /* ============================================================================
+   * Image Crop overlay (Sprint 4)
+   * ============================================================================ */
+  .ic-overlay {
+    position: fixed; inset: 0; z-index: 750; background: rgba(10,10,10,0.92);
+    display: none; flex-direction: column;
+  }
+  .ic-overlay[data-open="1"] { display: flex; }
+  .ic-modal {
+    flex: 1; display: flex; flex-direction: column; min-height: 0;
+  }
+  .ic-head {
+    height: 56px; flex-shrink: 0; padding: 0 20px; background: #0f0f0f; color: #fff;
+    display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #2a2a2a;
+  }
+  .ic-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; }
+  .ic-aspect {
+    padding: 4px 10px; border-radius: 999px; background: rgba(122,31,43,0.2);
+    color: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+  }
+  .ic-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .ic-btn {
+    padding: 7px 14px; border: 1px solid #333; border-radius: 5px;
+    background: transparent; color: #ddd; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .ic-btn:hover { border-color: #fff; color: #fff; }
+  .ic-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .ic-btn.primary:hover { background: #fff; color: var(--accent); }
+  .ic-close {
+    width: 32px; height: 32px; border: 1px solid #333; border-radius: 4px; margin-left: 6px;
+    background: transparent; color: #ccc; font-size: 18px; cursor: pointer; display: grid; place-items: center;
+  }
+  .ic-close:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .ic-stage {
+    flex: 1; min-height: 0; display: grid; place-items: center; padding: 20px;
+    overflow: hidden;
+  }
+  .ic-stage img {
+    max-width: 100%; max-height: 100%; display: block;
+  }
 </style>
 </head>
 <body>
@@ -706,6 +818,9 @@
 <!-- PREVIEW FULL-SCREEN OVERLAY -->
 <div id="fullscreenPreviewHost"></div>
 
+<!-- IMAGE CROP MODAL -->
+<div id="imageCropHost"></div>
+
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -755,6 +870,9 @@
     lastImageInput: null, // input de imagem em foco (p/ library onPick)
     editionMetaCtrl: null, // controller do EditionMeta
     fsPreview: null, // controller do PreviewFullscreen
+    autosaveTimer: null,
+    autosaveInFlight: false,
+    imageCropCtrl: null,
   }
 
   // ===== DOM =====
@@ -956,9 +1074,12 @@
     // Hosts: controles da página (segment/hidden/actions) + slots + save
     els.slotsForm.innerHTML = `
       <div id="pageControlsMount"></div>
+      <div id="scoreBadgeMount" class="score-badge-mount"></div>
       <div id="slotMount"></div>
+      <div id="scoreChecklistMount" class="score-checklist-mount"></div>
       <div class="slots-actions">
         <button class="btn save" id="saveSlotsBtn" disabled>Salvar alterações</button>
+        <span id="autosaveIndicator" class="autosave-indicator" data-state="idle"></span>
       </div>
     `
     const mount = document.getElementById('slotMount')
@@ -979,10 +1100,10 @@
         const saveBtn = document.getElementById('saveSlotsBtn')
         if (saveBtn) saveBtn.disabled = false
         schedulePreviewRefresh()
+        scheduleAutosave()
       },
       onValidate: (status) => {
         state.pageStatuses[page.id] = status
-        // Atualiza badge da página atual sem re-render completo
         const activeItem = els.pageList.querySelector(`.page-item[data-page-id="${page.id}"] .page-status-badge`)
         if (activeItem) {
           activeItem.dataset.state = status.state
@@ -990,6 +1111,18 @@
             : status.state === 'warn' ? `Avisos: ${(status.warnings || []).join(' · ')}`
             : status.state === 'err'  ? `Erros: ${(status.errors || []).join(' · ')}`
             : 'Sem conteúdo ainda'
+        }
+        // Score editorial ao vivo (usa slots atuais do controller)
+        const liveSlots = state.slotController ? state.slotController.readSlots() : (page.slots || {})
+        const section = window.MagazineAdmin.Schema.getSectionMeta(page.template_slug)
+        if (section) {
+          const result = window.MagazineAdmin.EditorialScore.compute(
+            { template_slug: page.template_slug, slots: liveSlots },
+            section
+          )
+          window.MagazineAdmin.EditorialScore.renderBadge(document.getElementById('scoreBadgeMount'), result)
+          window.MagazineAdmin.EditorialScore.renderChecklist(document.getElementById('scoreChecklistMount'), result)
+          state.pageStatuses[page.id] = Object.assign({}, status, { score: result.score, band: result.band })
         }
       },
       onUpload: handleSlotUpload,
@@ -999,17 +1132,32 @@
   }
 
   // ===== Upload Storage (integrado com widgets) =====
-  // Handler invocado pelos widgets: recebe {key, button, file?, onUploaded(url)}
-  // Se file presente (drag-drop), sobe direto. Senão, abre file picker.
-  function handleSlotUpload({ key, button, file, onUploaded }) {
+  // Handler invocado pelos widgets: recebe {key, button, file?, aspect?, onUploaded(url)}
+  // Fluxo: arquivo → (se aspect definido) crop inline → upload.
+  function handleSlotUpload({ key, button, file, aspect, onUploaded }) {
     if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
-    if (file) { uploadFile(file, key, button, onUploaded); return }
+    const proceed = (f) => {
+      if (!f) return
+      if (aspect && state.imageCropCtrl) {
+        state.imageCropCtrl.open({
+          file: f,
+          aspect,
+          onResult: (cropped) => {
+            if (!cropped) return // cancelou
+            uploadFile(cropped, key, button, onUploaded)
+          },
+        })
+      } else {
+        uploadFile(f, key, button, onUploaded)
+      }
+    }
+    if (file) { proceed(file); return }
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*'
     input.onchange = () => {
       const f = input.files && input.files[0]
-      if (f) uploadFile(f, key, button, onUploaded)
+      if (f) proceed(f)
     }
     input.click()
   }
@@ -1207,8 +1355,12 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     if (state.photoLib) state.photoLib.refresh(editionId)
   }
 
-  function selectPage(pageId) {
-    if (state.dirty && !confirm('Há alterações não salvas. Descartar?')) return
+  async function selectPage(pageId) {
+    // Flush: se há alterações não salvas e autosave pendente, salva antes de trocar
+    if (state.dirty && state.slotController) {
+      clearTimeout(state.autosaveTimer)
+      try { await saveSlots({ silent: true }) } catch (e) { /* segue mesmo com falha */ }
+    }
     state.dirty = false
     state.currentPageId = pageId
     renderPageList(); renderSlotsForm(); renderPreview()
@@ -1355,7 +1507,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     } catch (err) { toast('Erro: ' + err.message, 'err') }
   }
 
-  async function saveSlots() {
+  async function saveSlots(opts) {
+    opts = opts || {}
     const page = state.pages.find(p => p.id === state.currentPageId)
     if (!page) return
     if (!state.slotController) return
@@ -1365,11 +1518,10 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
       page.slots = slots
       state.dirty = false
       document.getElementById('saveSlotsBtn').disabled = true
-      // Status atualizado pós-save (sobrescreve cache)
       state.pageStatuses[page.id] = state.slotController.getStatus()
       renderPageList()
       renderPreview()
-      toast('Conteúdo salvo', 'ok')
+      if (!opts.silent) toast('Conteúdo salvo', 'ok')
     } catch (err) { toast('Erro: ' + err.message, 'err') }
   }
 
@@ -1442,6 +1594,28 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     previewTimer = setTimeout(renderPreview, 220)
   }
 
+  // Autosave debounced 1.5s — dispara save silencioso no DB.
+  function scheduleAutosave() {
+    clearTimeout(state.autosaveTimer)
+    state.autosaveTimer = setTimeout(async () => {
+      if (state.autosaveInFlight || !state.dirty || !state.slotController) return
+      state.autosaveInFlight = true
+      const indicator = document.getElementById('autosaveIndicator')
+      if (indicator) indicator.dataset.state = 'saving'
+      try {
+        await saveSlots({ silent: true })
+        if (indicator) {
+          indicator.dataset.state = 'saved'
+          setTimeout(() => { if (indicator.dataset.state === 'saved') indicator.dataset.state = 'idle' }, 2000)
+        }
+      } catch (e) {
+        if (indicator) indicator.dataset.state = 'error'
+      } finally {
+        state.autosaveInFlight = false
+      }
+    }, 1500)
+  }
+
   function setPreviewMode(mode) {
     els.previewFrame.classList.toggle('desktop', mode === 'desktop')
     els.previewFrame.classList.toggle('mobile', mode === 'mobile')
@@ -1450,13 +1624,24 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
   }
 
   function openFullscreenPreview() {
-    const page = state.pages.find(p => p.id === state.currentPageId)
-    if (!page) { toast('Selecione uma página primeiro', 'err'); return }
-    const section = window.MagazineAdmin.Schema.getSectionMeta(page.template_slug)
-    const slots = readSlotsFromForm(page)
-    const html = window.MagazineRenderer.render(page.template_slug, slots)
-    const title = `${section?.name || page.template_slug} · ${state.currentEdition?.title || ''}`
-    state.fsPreview.open({ html, css: state.magazineCss, title })
+    if (!state.pages.length) { toast('Sem páginas ainda', 'err'); return }
+    const currentIndex = Math.max(0, state.pages.findIndex(p => p.id === state.currentPageId))
+    // Anexa sectionName a cada página para o title do overlay
+    const pages = state.pages.map(p => {
+      const section = window.MagazineAdmin.Schema.getSectionMeta(p.template_slug)
+      return Object.assign({}, p, { _sectionName: section?.name || p.template_slug })
+    })
+    state.fsPreview.open({
+      pages,
+      currentIndex,
+      css: state.magazineCss,
+      editionTitle: state.currentEdition?.title || '',
+      renderPage: (page) => {
+        // Para a página atualmente editada, usa slots do form (live)
+        const slots = (page.id === state.currentPageId) ? readSlotsFromForm(page) : (page.slots || {})
+        return window.MagazineRenderer.render(page.template_slug, slots)
+      },
+    })
   }
 
   // ===== Auth =====
@@ -1509,6 +1694,9 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
     // Preview fullscreen
     state.fsPreview = window.MagazineAdmin.PreviewFullscreen.mount(document.getElementById('fullscreenPreviewHost'))
     document.getElementById('viewFullscreen').addEventListener('click', openFullscreenPreview)
+
+    // Image crop (lazy — depende de Cropper.js carregado via defer)
+    state.imageCropCtrl = window.MagazineAdmin.ImageCrop.mount(document.getElementById('imageCropHost'))
 
     // Edition metadata modal
     state.editionMetaCtrl = window.MagazineAdmin.EditionMeta.mount(

@@ -186,6 +186,7 @@
         key: meta.k,
         button: btn,
         file: file || null,
+        aspect: meta.aspect || null,
         onUploaded: (url) => {
           input.value = url
           onChange(url)
@@ -326,6 +327,7 @@
             key: `${meta.k}[${idx}]`,
             button: ub,
             file: file || null,
+            aspect: sc.aspect || null,
             onUploaded: (url) => {
               el.value = url
               items[idx] = url
@@ -373,6 +375,7 @@
             key: `${meta.k}[${idx}].${fm.k}`,
             button: ub,
             file: file || null,
+            aspect: fm.aspect || null,
             onUploaded: (url) => {
               inp.value = url
               items[idx] = Object.assign({}, items[idx], { [fm.k]: url })
