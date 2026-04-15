@@ -1628,6 +1628,39 @@ window._lmShowLostForm = _lmShowLostForm
 window._lmConfirmLost  = _lmConfirmLost
 window._lmChangePhase  = _lmChangePhase
 
+async function _lmChangeFunnel(selectEl) {
+  var leadId      = selectEl.dataset.leadId
+  var newFunnel   = selectEl.value
+  var prevFunnel  = selectEl.dataset.current
+  var label       = newFunnel === 'fullface' ? 'Full Face Premium' : 'Procedimentos'
+  if (newFunnel === prevFunnel) return
+  if (!confirm('Mover lead para o funil "' + label + '"?')) {
+    selectEl.value = prevFunnel
+    return
+  }
+  selectEl.disabled = true
+  try {
+    if (!window._sbShared) throw new Error('Supabase indisponivel')
+    var r = await window._sbShared.from('leads').update({ funnel: newFunnel, updated_at: new Date().toISOString() }).eq('id', leadId)
+    if (r.error) throw new Error(r.error.message)
+    selectEl.dataset.current = newFunnel
+    if (window.Toast && window.Toast.show) window.Toast.show('Lead movido para ' + label, 'success')
+    else alert('Lead movido para ' + label)
+    // Recarregar kanban de captação se aberto
+    if (window.CaptacaoKanbans) {
+      try { window.CaptacaoKanbans.initFullFace() } catch (e) {}
+      try { window.CaptacaoKanbans.initProtocolos() } catch (e) {}
+    }
+  } catch (e) {
+    console.error('[lead-modal] changeFunnel:', e)
+    selectEl.value = prevFunnel
+    alert('Erro ao mudar funil: ' + (e.message || e))
+  } finally {
+    selectEl.disabled = false
+  }
+}
+window._lmChangeFunnel = _lmChangeFunnel
+
 // ── Aba: Geral ────────────────────────────────────────────────
 
 async function _lmTabGeral(lead) {
@@ -1682,10 +1715,17 @@ async function _lmTabGeral(lead) {
   ])
 
   var sdrScore = '<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:20px;font-weight:800;color:#7C3AED">' + (lead.leadScore||0) + '</span><span style="font-size:11px;color:#9CA3AF">pts</span></div>'
+  var FUNNEL_LABELS = { fullface: 'Full Face Premium', procedimentos: 'Procedimentos' }
+  var currentFunnel = lead.funnel || 'procedimentos'
+  var funnelEditor = '<select onchange="window._lmChangeFunnel(this)" data-lead-id="' + lead.id + '" data-current="' + currentFunnel + '" style="width:100%;padding:6px 8px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:12px;font-weight:600;color:#374151;background:#fff;cursor:pointer">'
+                   +   '<option value="procedimentos"' + (currentFunnel==='procedimentos'?' selected':'') + '>Procedimentos</option>'
+                   +   '<option value="fullface"'      + (currentFunnel==='fullface'     ?' selected':'') + '>Full Face Premium</option>'
+                   + '</select>'
   var sdr = _lmGrid(3, [
     _lmField('Fase', phaseSrc[lead.phase] || lead.phase || null),
     _lmField('Temperatura', tempSrc[lead.temperature] || lead.temperature || null),
     _lmField('Lead Score', sdrScore),
+    _lmField('Funil', funnelEditor),
     _lmField('Procedimento de interesse', cf.procedimentoInteresse),
     _lmField('Valor estimado', cf.valorEstimado ? 'R$ ' + (+cf.valorEstimado).toLocaleString('pt-BR',{minimumFractionDigits:2}) : null),
     _lmField('Última interação', lead.lastInteractionAt ? new Date(lead.lastInteractionAt).toLocaleDateString('pt-BR') : null),

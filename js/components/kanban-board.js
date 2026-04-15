@@ -56,6 +56,7 @@
     const pipeline   = opts.pipeline || 'seven_days'
     const phase      = opts.phase    || null
     const onMoved    = opts.onLeadMoved || null
+    const funnel     = opts.funnel || null  // 'fullface' | 'procedimentos' | null (todos)
 
     let _boardEl     = null
     let _dragState   = null
@@ -64,11 +65,21 @@
     let _sortOrder   = 'desc'  // desc = mais recentes primeiro
 
     function _filterStages(stages) {
-      if (!_temperature) return stages
+      var hasFunnel = funnel === 'fullface' || funnel === 'procedimentos'
+      var hasTemp   = !!_temperature
+      if (!hasFunnel && !hasTemp) return stages
       return stages.map(function(s) {
-        return Object.assign({}, s, {
-          leads: (s.leads || []).filter(function(l) { return l.temperature === _temperature })
-        })
+        var leads = s.leads || []
+        if (hasFunnel) {
+          leads = leads.filter(function(l) {
+            var f = l.funnel || l.funil || 'procedimentos'  // null → procedimentos
+            return f === funnel
+          })
+        }
+        if (hasTemp) {
+          leads = leads.filter(function(l) { return l.temperature === _temperature })
+        }
+        return Object.assign({}, s, { leads: leads })
       })
     }
 

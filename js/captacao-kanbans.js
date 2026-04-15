@@ -310,6 +310,7 @@
       pipeline:    'evolution',
       phase:       null,
       temperature: _tempFullFace,
+      funnel:      'fullface',
     })
     _boardFullFace.load()
   }
@@ -339,6 +340,7 @@
       pipeline:    'evolution',
       phase:       null,
       temperature: _tempProtocolos,
+      funnel:      'procedimentos',
     })
     _boardProtocolos.load()
   }
