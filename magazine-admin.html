@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js" defer></script>
 <script src="js/config/env.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/magazine/magazine-renderer.js?v=20260415u"></script>
+<script src="js/magazine/magazine-renderer.js?v=20260415v"></script>
 <script src="js/magazine/admin/slot-schema.js"></script>
 <script src="js/magazine/admin/editor-widgets.js"></script>
 <script src="js/magazine/admin/validator.js"></script>
@@ -1719,7 +1719,15 @@
     const tpl = state.templatesBySlug[page.template_slug]
     els.previewHint.textContent = tpl?.name || page.template_slug
 
-    const pageHtml = window.MagazineRenderer.render(page.template_slug, readSlotsFromForm(page))
+    const slotsForRender = readSlotsFromForm(page)
+    const pageHtml = window.MagazineRenderer.render(page.template_slug, slotsForRender)
+    console.log('[preview]', page.template_slug, 'slots:', Object.keys(slotsForRender), 'html-len:', pageHtml.length, 'css-len:', state.magazineCss.length)
+    if (!pageHtml || pageHtml.length < 50) {
+      console.error('[preview] render returned empty', page.template_slug)
+    }
+    if (!state.magazineCss || state.magazineCss.length < 100) {
+      console.error('[preview] magazineCss vazio · CSS nao carregado')
+    }
     const isMobile = els.previewFrame.classList.contains('mobile')
     // Renderiza numa "pagina" de tamanho natural e escala pra caber no iframe
     const nat = isMobile ? { w: 390, h: 720 } : { w: 1440, h: 900 }
@@ -2383,7 +2391,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 
     // Carrega CSS dos templates uma vez para embutir no iframe preview
     try {
-      const r = await fetch('css/magazine-pages.css?v=20260415u')
+      const r = await fetch('css/magazine-pages.css?v=20260415v')
       if (r.ok) state.magazineCss = await r.text()
       else console.warn('CSS templates 404:', r.status)
     } catch (e) { console.warn('Falha carregando CSS templates:', e) }
