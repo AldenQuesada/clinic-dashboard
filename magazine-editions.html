@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Beauty &amp; Health — Edições</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg:#f4f1ec; --paper:#fff; --ink:#1a1a1a; --ink-soft:#555; --muted:#8a8178;
+    --line:#e5ddd2; --accent:#7a1f2b; --ok:#2d7a43; --warn:#b45309; --danger:#b91c1c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer;background:none;border:none;color:inherit}
+
+  header.top{padding:32px 40px 22px;border-bottom:1px solid var(--line);background:var(--paper);display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:16px}
+  header.top h1{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;letter-spacing:-0.01em}
+  header.top h1 em{color:var(--accent);font-style:italic}
+  header.top .sub{color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+  header.top nav{display:flex;gap:8px;align-items:center}
+  header.top nav a, header.top nav button{padding:8px 14px;border:1px solid var(--line);border-radius:6px;font-size:13px;text-decoration:none;color:var(--ink);background:var(--paper)}
+  header.top nav a:hover, header.top nav button:hover{border-color:var(--accent);color:var(--accent)}
+  header.top nav .primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  header.top nav .primary:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .container{max-width:1200px;margin:0 auto;padding:32px 40px 80px}
+
+  .filter-bar{display:flex;gap:8px;margin-bottom:24px;align-items:center}
+  .filter-btn{padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);font-size:12px;font-weight:500;color:var(--ink-soft)}
+  .filter-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .filter-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* Edition card */
+  .ed{background:var(--paper);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden;transition:box-shadow .2s}
+  .ed:hover{box-shadow:0 8px 24px rgba(0,0,0,0.06)}
+  .ed-head{display:grid;grid-template-columns:1fr auto;gap:18px;padding:20px 24px;align-items:center}
+  .ed-title{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .ed-title h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;line-height:1.2;color:var(--ink)}
+  .ed-title h2 em{color:var(--accent);font-style:italic}
+  .ed-title .meta{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--muted)}
+  .ed-title .meta code{font-family:ui-monospace,monospace;font-size:10px;background:var(--bg);padding:2px 6px;border-radius:3px;color:var(--ink-soft)}
+  .ed-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .ed-actions button, .ed-actions a{padding:8px 12px;border-radius:5px;font-size:12px;font-weight:600;border:1px solid var(--line);background:var(--paper);color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+  .ed-actions button:hover, .ed-actions a:hover{border-color:var(--accent);color:var(--accent)}
+  .ed-actions .primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .ed-actions .primary:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+  .ed-actions .danger:hover{background:#fee2e2;color:var(--danger);border-color:var(--danger)}
+
+  .status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+  .status.draft{background:#fef3c7;color:var(--warn)}
+  .status.published{background:#dcfce7;color:var(--ok)}
+  .status.archived{background:#f1f5f9;color:var(--muted)}
+
+  .ed-metrics{display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:0;border-top:1px solid var(--line);background:#fafaf7}
+  .ed-metrics .m{padding:14px 18px;border-right:1px solid var(--line);text-align:left}
+  .ed-metrics .m:last-child{border-right:none}
+  .ed-metrics .m .v{font-family:'Playfair Display',serif;font-size:24px;color:var(--ink);font-weight:700;line-height:1}
+  .ed-metrics .m .v.accent{color:var(--accent)}
+  .ed-metrics .m .l{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+  .empty{padding:60px 24px;text-align:center;color:var(--muted);background:var(--paper);border:1px dashed var(--line);border-radius:10px;font-size:14px}
+  .empty a{color:var(--accent);font-weight:600}
+
+  /* Auth overlay (igual outras paginas) */
+  .auth-overlay{position:fixed;inset:0;background:rgba(26,26,26,0.6);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:300;padding:24px}
+  .auth-overlay.open{display:flex}
+  .auth-card{background:var(--paper);border-radius:14px;width:100%;max-width:380px;padding:32px}
+  .auth-card h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:6px}
+  .auth-card .sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+  .auth-card label{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;margin-top:14px}
+  .auth-card input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font-size:14px;outline:none}
+  .auth-card input:focus{border-color:var(--accent)}
+  .auth-card button.submit{width:100%;padding:12px;margin-top:18px;background:var(--ink);color:#fff;border-radius:6px;font-size:13px;font-weight:600}
+  .auth-card .err{color:var(--danger);font-size:12px;margin-top:10px;min-height:16px}
+
+  /* Toast */
+  .toast{position:fixed;bottom:20px;right:20px;z-index:200;padding:12px 18px;border-radius:8px;background:var(--ink);color:#fff;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,0.2);transform:translateY(100px);opacity:0;transition:all .25s}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast.ok{background:var(--ok)}.toast.err{background:var(--danger)}
+
+  .loading{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+
+  @media(max-width:720px){
+    .container{padding:24px 16px 60px}
+    header.top{padding:24px 16px 18px}
+    .ed-head{grid-template-columns:1fr;gap:12px}
+    .ed-actions{justify-content:flex-start}
+    .ed-metrics{grid-template-columns:repeat(2,1fr)}
+    .ed-metrics .m{border-bottom:1px solid var(--line)}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Edições <em>·</em> Hub</h1>
+    <div class="sub">Repositório · gestão · métricas</div>
+  </div>
+  <nav>
+    <a href="magazine-gallery.html" target="_blank">Galeria</a>
+    <a href="docs/magazine-editor-playbook.md" target="_blank">Playbook</a>
+    <a href="magazine-intake.html" class="primary">+ Nova Edição (Intake)</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <div class="filter-bar">
+    <button class="filter-btn active" data-status="all">Todas (<span id="cAll">0</span>)</button>
+    <button class="filter-btn" data-status="draft">Rascunho (<span id="cDraft">0</span>)</button>
+    <button class="filter-btn" data-status="published">Publicadas (<span id="cPub">0</span>)</button>
+    <button class="filter-btn" data-status="archived">Arquivadas (<span id="cArch">0</span>)</button>
+    <button class="filter-btn" id="reloadBtn" style="margin-left:auto" title="Recarregar dados">↻ Atualizar</button>
+  </div>
+
+  <div id="list"><div class="loading">Carregando edições…</div></div>
+
+</div>
+
+<!-- Auth overlay -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <h2>Entrar</h2>
+    <div class="sub">Login para gerenciar edições.</div>
+    <form id="authForm">
+      <label>E-mail</label>
+      <input type="text" id="authEmail" required autocomplete="username" />
+      <label>Senha</label>
+      <input type="password" id="authPwd" required autocomplete="current-password" />
+      <button type="submit" class="submit" id="authSubmit">Entrar</button>
+      <div class="err" id="authErr"></div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+;(function () {
+  'use strict'
+
+  const sb = window.supabase.createClient(
+    window.ClinicEnv.SUPABASE_URL,
+    window.ClinicEnv.SUPABASE_KEY,
+    { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } }
+  )
+
+  const state = { editions: [], filter: 'all' }
+  const $ = id => document.getElementById(id)
+
+  let toastT
+  function toast(m, k){
+    const t = $('toast'); t.textContent = m; t.className = 'toast show ' + (k||'')
+    clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 2600)
+  }
+
+  async function ensureAuth() {
+    const { data:{ session } } = await sb.auth.getSession()
+    if (session && session.user) return true
+    return new Promise(resolve => {
+      $('authOverlay').classList.add('open')
+      $('authEmail').focus()
+      $('authForm').onsubmit = async e => {
+        e.preventDefault()
+        const sub = $('authSubmit'), err = $('authErr')
+        err.textContent = ''; sub.disabled = true; sub.textContent = 'Entrando…'
+        const { data, error } = await sb.auth.signInWithPassword({ email: $('authEmail').value.trim(), password: $('authPwd').value })
+        sub.disabled = false; sub.textContent = 'Entrar'
+        if (error) { err.textContent = error.message; return }
+        $('authOverlay').classList.remove('open'); resolve(data.user)
+      }
+    })
+  }
+
+  // ===== Carrega edicoes + agrega metricas =====
+  async function loadEditions() {
+    $('list').innerHTML = '<div class="loading">Carregando edições…</div>'
+
+    // 1) Edicoes
+    const { data: eds, error } = await sb.from('magazine_editions')
+      .select('id, title, slug, status, theme, subtitle, created_at, published_at, archived_at')
+      .order('created_at', { ascending: false })
+    if (error) { toast('Erro: ' + error.message, 'err'); return }
+
+    // 2) Pages count por edition
+    const { data: pages } = await sb.from('magazine_pages').select('edition_id')
+    const pagesByEd = {}
+    ;(pages||[]).forEach(p => { pagesByEd[p.edition_id] = (pagesByEd[p.edition_id]||0) + 1 })
+
+    // 3) Reads + rewards (so para published)
+    const pubIds = eds.filter(e => e.status === 'published').map(e => e.id)
+    const reads = pubIds.length ? (await sb.from('magazine_reads').select('edition_id, opened_at, completed, quiz_completed').in('edition_id', pubIds)).data || [] : []
+    const rewards = pubIds.length ? (await sb.from('magazine_rewards').select('edition_id, amount').in('edition_id', pubIds)).data || [] : []
+
+    const metricsByEd = {}
+    pubIds.forEach(id => { metricsByEd[id] = { opens:0, reads80:0, quiz:0, cashback:0 } })
+    reads.forEach(r => {
+      const m = metricsByEd[r.edition_id]; if (!m) return
+      if (r.opened_at) m.opens++
+      if (r.completed) m.reads80++
+      if (r.quiz_completed) m.quiz++
+    })
+    rewards.forEach(r => { const m = metricsByEd[r.edition_id]; if (m) m.cashback += +r.amount || 0 })
+
+    state.editions = eds.map(e => ({
+      ...e,
+      pages_count: pagesByEd[e.id] || 0,
+      metrics: metricsByEd[e.id] || null,
+    }))
+    render()
+  }
+
+  function render() {
+    const list = state.filter === 'all' ? state.editions : state.editions.filter(e => e.status === state.filter)
+
+    // contadores
+    $('cAll').textContent = state.editions.length
+    $('cDraft').textContent = state.editions.filter(e => e.status === 'draft').length
+    $('cPub').textContent = state.editions.filter(e => e.status === 'published').length
+    $('cArch').textContent = state.editions.filter(e => e.status === 'archived').length
+
+    if (!list.length) {
+      $('list').innerHTML = `<div class="empty">Nenhuma edição ${state.filter === 'all' ? 'criada ainda' : 'com este status'}.<br/><br/>Comece em <a href="magazine-intake.html">Montar Edição</a> ou crie diretamente em <a href="magazine-admin.html">Editor Visual</a>.</div>`
+      return
+    }
+
+    $('list').innerHTML = list.map(e => edHtml(e)).join('')
+
+    // wire actions
+    $('list').querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => doAction(btn.dataset.act, btn.dataset.id))
+    })
+  }
+
+  function edHtml(e) {
+    const created = new Date(e.created_at).toLocaleDateString('pt-BR')
+    const published = e.published_at ? new Date(e.published_at).toLocaleDateString('pt-BR') : null
+    const m = e.metrics
+    const statusLabel = e.status === 'draft' ? 'Rascunho' : e.status === 'published' ? 'Publicada' : 'Arquivada'
+
+    const actions = []
+    actions.push(`<a href="revista-live.html?edition=${enc(e.slug)}&preview=1" target="_blank">Ver →</a>`)
+    actions.push(`<a href="magazine-admin.html?edition=${enc(e.id)}" target="_blank" class="primary">Editar páginas</a>`)
+    if (e.status === 'draft' && e.pages_count > 0) {
+      actions.push(`<button data-act="publish" data-id="${e.id}">Publicar</button>`)
+    }
+    if (e.status === 'draft' || e.status === 'published') {
+      actions.push(`<button data-act="archive" data-id="${e.id}" class="danger">Arquivar</button>`)
+    }
+    if (e.status === 'archived') {
+      actions.push(`<button data-act="delete" data-id="${e.id}" class="danger">Excluir</button>`)
+    }
+
+    let metricsHtml = ''
+    if (e.status === 'published' && m) {
+      const reads80Pct = m.opens ? Math.round((m.reads80 / m.opens) * 100) : 0
+      const quizPct = m.opens ? Math.round((m.quiz / m.opens) * 100) : 0
+      metricsHtml = `
+        <div class="ed-metrics">
+          <div class="m"><div class="v">${m.opens}</div><div class="l">Aberturas</div></div>
+          <div class="m"><div class="v">${m.reads80}</div><div class="l">Leram 80%${reads80Pct ? ' (' + reads80Pct + '%)' : ''}</div></div>
+          <div class="m"><div class="v">${m.quiz}</div><div class="l">Quiz feito${quizPct ? ' (' + quizPct + '%)' : ''}</div></div>
+          <div class="m"><div class="v accent">R$ ${m.cashback.toFixed(2).replace('.', ',')}</div><div class="l">Cashback total</div></div>
+        </div>`
+    } else if (e.status === 'draft') {
+      metricsHtml = `<div class="ed-metrics"><div class="m" style="grid-column:1/-1;color:var(--muted);font-style:italic;text-align:center">Métricas aparecem após publicação</div></div>`
+    }
+
+    return `
+      <article class="ed">
+        <div class="ed-head">
+          <div class="ed-title">
+            <h2>${esc(e.title)}</h2>
+            <div class="meta">
+              <span class="status ${e.status}">${statusLabel}</span>
+              <span><code>${esc(e.slug)}</code></span>
+              <span>${e.pages_count} página${e.pages_count !== 1 ? 's' : ''}</span>
+              <span>Criada ${created}${published ? ' · Publicada ' + published : ''}</span>
+            </div>
+          </div>
+          <div class="ed-actions">${actions.join('')}</div>
+        </div>
+        ${metricsHtml}
+      </article>`
+  }
+
+  async function doAction(act, id) {
+    if (act === 'publish') {
+      if (!confirm('Publicar esta edição? Esta ação fica registrada e a edição vira pública.')) return
+      const { error } = await sb.rpc('magazine_publish', { p_edition_id: id })
+      if (error) return toast('Erro: ' + error.message, 'err')
+      toast('Edição publicada ✓', 'ok'); loadEditions()
+    } else if (act === 'archive') {
+      if (!confirm('Arquivar esta edição? Ela some das listagens públicas.')) return
+      const { error } = await sb.rpc('magazine_archive_edition', { p_edition_id: id })
+      if (error) return toast('Erro: ' + error.message, 'err')
+      toast('Arquivada', 'ok'); loadEditions()
+    } else if (act === 'delete') {
+      if (!confirm('EXCLUIR permanentemente? Páginas e métricas serão perdidas. Confirme.')) return
+      const { error } = await sb.from('magazine_editions').delete().eq('id', id)
+      if (error) return toast('Erro: ' + error.message, 'err')
+      toast('Excluída', 'ok'); loadEditions()
+    }
+  }
+
+  function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+  function enc(s){return encodeURIComponent(s||'')}
+
+  // Filter clicks
+  document.querySelector('.filter-bar').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn[data-status]')
+    if (!btn) return
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    state.filter = btn.dataset.status
+    render()
+  })
+
+  $('reloadBtn').addEventListener('click', loadEditions)
+
+  // Init
+  ;(async () => { await ensureAuth(); await loadEditions() })()
+})()
+</script>
+</body>
+</html>

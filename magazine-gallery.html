@@ -369,10 +369,38 @@
         </div>
         <footer>
           <span>Slots: <strong>${Object.keys(e.slots).length}</strong></span>
-          <a href="docs/magazine-editor-playbook.md#${e.slug}" target="_blank">Ver contrato →</a>
+          <span style="display:flex;gap:12px"><a href="#" data-mobile="${e.slug}">📱 Mobile</a> · <a href="docs/magazine-editor-playbook.md#${e.slug}" target="_blank">Contrato →</a></span>
         </footer>
       </article>`
   }
+
+  function openMobilePreview(slug) {
+    const ex = EXAMPLES.find(x => x.slug === slug)
+    if (!ex) return
+    const pageHtml = window.MagazineRenderer.render(slug, ex.slots)
+    const w = window.open('', '_blank', 'width=420,height=760,scrollbars=yes,resizable=yes')
+    if (!w) { alert('Popup bloqueado. Permita popups deste site.'); return }
+    w.document.open()
+    w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/>
+<title>Mobile · ${esc(ex.name)}</title>
+<meta name="viewport" content="width=390"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="${location.origin + location.pathname.replace(/[^/]*$/, '')}css/magazine-pages.css"/>
+<style>
+html,body{margin:0;padding:0;background:#f4f1ec;width:390px;min-height:720px;}
+body{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mp{min-height:720px;height:auto;overflow:visible}
+.frame-info{position:fixed;top:6px;right:6px;background:#1a1a1a;color:#fff;font-family:system-ui;font-size:9px;padding:3px 7px;border-radius:3px;letter-spacing:1px;text-transform:uppercase;z-index:99}
+</style></head><body>
+<div class="frame-info">${esc(slug)} · 390×720</div>
+${pageHtml}
+</body></html>`)
+    w.document.close()
+  }
+
+  function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
   function labelCat(c) {
     return ({ cover: 'Capa', feature: 'Matéria', visual: 'Visual', interactive: 'Interativo', structural: 'Estrutural', extra: 'Extra' })[c] || c
@@ -401,6 +429,12 @@ html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#
 <script>(function(){var s=document.getElementById('stage');var sx=window.innerWidth/${nat.w};var sy=window.innerHeight/${nat.h};var k=Math.min(sx,sy);s.style.transform='scale('+k+')';s.style.left=((window.innerWidth-${nat.w}*k)/2)+'px';s.style.top=((window.innerHeight-${nat.h}*k)/2)+'px';})();<\/script>
 </body></html>`
   }
+
+  // Mobile preview links
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-mobile]')
+    if (link) { e.preventDefault(); openMobilePreview(link.dataset.mobile) }
+  })
 
   // Filter bar
   document.getElementById('filterBar').addEventListener('click', (e) => {
