@@ -378,6 +378,77 @@ Cada seção abaixo segue este formato:
 
 ---
 
+## SPREADS DE PRODUTO (categoria: feature)
+
+### t21_product_photo_split — Display de Produto (2 fotos)
+**Quando usar**: primeira página de um spread sobre aparelho/tratamento. Precede sempre uma página t22 com a matéria. Estrutura visual antes de aprofundamento textual.
+
+**Slots obrigatórios**:
+- `foto_principal` — aspect 3/4 portrait, lado esquerdo, resolução ≥ 1200px no maior lado
+- `foto_detalhe` — aspect 3/4 portrait, lado direito (close, detalhe, aplicação), mesmo tratamento de luz da principal
+- `kicker` — máx 22 chars all caps (ex: "TECNOLOGIA EXCLUSIVA"). Deve ser **idêntico** ao kicker do t22 que vem em seguida
+- `nome_produto` — máx 40 chars (ex: "Anovator A5")
+
+**Slots opcionais**:
+- `legenda_principal` — máx 80 chars, abaixo da foto 1
+- `legenda_detalhe` — máx 80 chars, abaixo da foto 2
+- `tagline` — máx 60 chars, frase âncora abaixo do nome (ex: "luz fria de alta penetração")
+
+**Regras**:
+- Fotos devem parecer parte da mesma sessão fotográfica (luz, fundo, paleta).
+- Fundo da página creme, nunca dark.
+- Nome do produto em Playfair Display 56px no rodapé.
+- Esta página é sempre **par** com uma `t22` imediatamente seguinte.
+
+**Exemplo**:
+```json
+{
+  "kicker": "TECNOLOGIA EM DESTAQUE",
+  "nome_produto": "Anovator A5",
+  "tagline": "Estímulo profundo de colágeno · sem downtime",
+  "foto_principal": "https://<storage>/editions/<id>/anovator-completo.jpg",
+  "foto_detalhe": "https://<storage>/editions/<id>/anovator-aplicacao.jpg",
+  "legenda_principal": "Console e ponteira",
+  "legenda_detalhe": "Aplicação na região periocular"
+}
+```
+
+---
+
+### t22_product_feature_text — Matéria Texto-Cheio (par com t21)
+**Quando usar**: segunda página do spread t21+t22. Aprofunda em texto o produto/tratamento mostrado na página anterior. Sem foto hero — libera 100% da largura para o texto em duas colunas com drop cap. DNA editorial idêntico ao `t07_feature_double`.
+
+**Slots obrigatórios**:
+- `kicker` — máx 22 chars all caps. **Deve ser idêntico ao kicker do t21** anterior (continuidade visual)
+- `titulo` — máx 70 chars, pode ter `*itálico*`
+- `lede` — 140-200 chars, 1 frase
+- `corpo` — 400-700 palavras, parágrafos separados por linha em branco. Mínimo 4 parágrafos, máximo 7
+
+**Slots opcionais**:
+- `byline` — máx 60 chars (ex: "Por Mirian de Paula")
+- `destaque` — máx 140 chars, pull quote inserido após o 2º parágrafo
+
+**Regras**:
+- 1º parágrafo abre concreto (caso, dado, cena).
+- Drop cap automático no 1º caractere.
+- 2 colunas de texto sempre.
+- Sem foto — qualquer slot de imagem aqui é ignorado.
+- Tom: editorial, técnico mas acessível, 2ª pessoa.
+
+**Exemplo**:
+```json
+{
+  "kicker": "TECNOLOGIA EM DESTAQUE",
+  "titulo": "Por dentro da *Anovator A5*",
+  "lede": "O aparelho que combina dois comprimentos de onda em uma única sessão — e por que isso muda o jogo do rejuvenescimento periocular.",
+  "corpo": "Era 2024 quando recebi um aparelho diferente na clínica…\n\n…",
+  "byline": "Por Mirian de Paula",
+  "destaque": "A grande virada não é a tecnologia — é como você protocoliza ela para o tipo de pele do seu paciente."
+}
+```
+
+---
+
 ## CHECKLIST PRÉ-PUBLICAÇÃO
 
 Antes de publicar qualquer edição, verificar:

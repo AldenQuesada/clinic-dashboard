@@ -452,6 +452,27 @@
         { k: 'passos', label: 'Passos (um por linha · "título | descrição" · 3-6)', type: 'pipe-list', parse: 'passos' },
       ]
     },
+    { slug: 't21_product_photo_split', name: 'Produto · 2 Fotos Split', cat: 'feature', order: 25,
+      fields: [
+        { k: 'kicker', label: 'Kicker (categoria · all caps · máx 22)', type: 'text', max: 22 },
+        { k: 'nome_produto', label: 'Nome do produto (máx 40)', type: 'text', max: 40 },
+        { k: 'tagline', label: 'Tagline (opcional · máx 60)', type: 'text', max: 60, optional: true },
+        { k: 'foto_principal', label: 'Foto principal (esquerda)', type: 'photo-ref' },
+        { k: 'legenda_principal', label: 'Legenda da foto principal (opcional · máx 80)', type: 'text', max: 80, optional: true },
+        { k: 'foto_detalhe', label: 'Foto detalhe (direita)', type: 'photo-ref' },
+        { k: 'legenda_detalhe', label: 'Legenda da foto detalhe (opcional · máx 80)', type: 'text', max: 80, optional: true },
+      ]
+    },
+    { slug: 't22_product_feature_text', name: 'Produto · Matéria Texto (par com t21)', cat: 'feature', order: 26,
+      fields: [
+        { k: 'kicker', label: 'Kicker (use o MESMO do t21 anterior · máx 22)', type: 'text', max: 22 },
+        { k: 'titulo', label: 'Título (máx 70 · use *itálico* em palavra-chave)', type: 'text', max: 70 },
+        { k: 'lede', label: 'Lede (140-200 chars)', type: 'textarea', max: 200, min: 100 },
+        { k: 'corpo', label: 'Corpo (400-700 palavras · parágrafos separados por linha em branco)', type: 'textarea', rows: 15, wordsMin: 400, wordsMax: 700 },
+        { k: 'destaque', label: 'Pull quote no meio do texto (opcional · máx 140)', type: 'text', max: 140, optional: true },
+        { k: 'byline', label: 'Byline (opcional)', type: 'text', max: 60, optional: true },
+      ]
+    },
     { slug: 't20_myth_vs_fact', name: 'Mito vs Fato', cat: 'extra', order: 52,
       fields: [
         { k: 'titulo', label: 'Título (máx 40)', type: 'text', max: 40 },

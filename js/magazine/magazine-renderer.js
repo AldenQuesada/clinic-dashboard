@@ -368,6 +368,54 @@
       </div>`
   }
 
+  // ---------------------------------------------------------- t21 product photo split
+  R.t21_product_photo_split = (s) => `
+    <div class="mp mp-t21">
+      <div class="head">
+        <div class="kicker">${esc(s.kicker || 'EM DESTAQUE')}</div>
+      </div>
+      <div class="photos">
+        <div class="photo-block">
+          <div class="frame">${photo(s.foto_principal, '', 'FOTO PRINCIPAL').replace('mp-photo-slot ', 'mp-photo-slot frame ')}</div>
+          ${s.legenda_principal ? `<div class="legenda">${esc(s.legenda_principal)}</div>` : ''}
+        </div>
+        <div class="photo-block">
+          <div class="frame">${photo(s.foto_detalhe, '', 'FOTO DETALHE').replace('mp-photo-slot ', 'mp-photo-slot frame ')}</div>
+          ${s.legenda_detalhe ? `<div class="legenda">${esc(s.legenda_detalhe)}</div>` : ''}
+        </div>
+      </div>
+      <div class="product-name">
+        <h1>${emify(s.nome_produto || 'Nome do Produto')}</h1>
+        ${s.tagline ? `<div class="tagline">${esc(s.tagline)}</div>` : ''}
+      </div>
+    </div>
+  `
+
+  // ---------------------------------------------------------- t22 product feature text
+  R.t22_product_feature_text = (s) => {
+    const corpo = (s.corpo || '').split(/\n\n+/).filter(Boolean)
+    let corpoHtml = ''
+    if (corpo.length === 0) {
+      corpoHtml = '<p>Corpo do texto…</p>'
+    } else if (s.destaque && corpo.length >= 2) {
+      // pull quote depois do 2º paragrafo
+      corpoHtml = corpo.slice(0, 2).map(p => `<p>${esc(p.trim())}</p>`).join('')
+        + `<div class="destaque">${esc(s.destaque)}</div>`
+        + corpo.slice(2).map(p => `<p>${esc(p.trim())}</p>`).join('')
+    } else {
+      corpoHtml = corpo.map(p => `<p>${esc(p.trim())}</p>`).join('')
+      if (s.destaque) corpoHtml += `<div class="destaque">${esc(s.destaque)}</div>`
+    }
+    return `
+      <div class="mp mp-t22">
+        <div class="kicker">${esc(s.kicker || 'EM DESTAQUE')}</div>
+        <h1>${emify(s.titulo || 'Título da matéria')}</h1>
+        ${s.lede ? `<div class="lede">${esc(s.lede)}</div>` : ''}
+        <div class="corpo">${corpoHtml}</div>
+        ${s.byline ? `<div class="byline">${esc(s.byline)}</div>` : ''}
+      </div>`
+  }
+
   // ---------------------------------------------------------- Fallback
   function fallback(slug, s) {
     return `
