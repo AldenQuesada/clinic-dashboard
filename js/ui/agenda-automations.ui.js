@@ -40,6 +40,7 @@
       recipient_type: 'patient',
       channel: 'whatsapp',
       content_template: '',
+      attachment_url: '',
       alert_title: '',
       alert_type: 'info',
       task_title: '',
@@ -51,6 +52,32 @@
       is_active: true,
       sort_order: 0,
     }
+  }
+
+  // Preview debounce timer
+  var _previewTimer = null
+  function _schedulePreviewUpdate() {
+    if (_previewTimer) clearTimeout(_previewTimer)
+    _previewTimer = setTimeout(function () {
+      _refreshPreview()
+    }, 100)
+  }
+
+  function _refreshPreview() {
+    var prev = document.getElementById('aaPhonePreview')
+    if (!prev) return
+    var vars = _sampleVars()
+    var rendered = _svc().renderTemplate(_form.content_template, vars)
+    prev.outerHTML = _renderPhonePreview(rendered, _form.attachment_url)
+  }
+
+  function _sampleVars() {
+    var svc = _svc()
+    var vars = {}
+    ;(svc.TEMPLATE_VARS || []).forEach(function (v) {
+      vars[v.id] = v.example || ''
+    })
+    return vars
   }
 
   var _svc = function() { return window.AgendaAutomationsService }
@@ -229,6 +256,18 @@
     return String(cfg.hour||8).padStart(2,'0') + ':' + String(cfg.minute||0).padStart(2,'0')
   }
 
+  function _delayHintText(cfg) {
+    var d = parseInt(cfg && cfg.delay_days) || 0
+    var h = parseInt(cfg && cfg.delay_hours) || 0
+    var m = parseInt(cfg && cfg.delay_minutes) || 0
+    if (!d && !h && !m) return 'Dispara imediatamente quando a tag for aplicada.'
+    var parts = []
+    if (d) parts.push(d + (d === 1 ? ' dia' : ' dias'))
+    if (h) parts.push(h + (h === 1 ? ' hora' : ' horas'))
+    if (m) parts.push(m + (m === 1 ? ' minuto' : ' minutos'))
+    return 'Dispara ' + parts.join(' e ') + ' apos a tag ser aplicada.'
+  }
+
   // ── Slide Panel ────────────────────────────────────────────
   function _renderSlidePanel() {
     if (!_panelOpen) return ''
@@ -269,7 +308,7 @@
 
     // Show WhatsApp preview if channel includes whatsapp
     if (_channelIncludes(r.channel, 'whatsapp')) {
-      html += _renderPhonePreview(rendered)
+      html += _renderPhonePreview(rendered, r.attachment_url)
     }
 
     // Show alert preview if channel includes alert
@@ -310,22 +349,36 @@
   }
 
   // ── Phone Preview (WhatsApp mockup) ────────────────────────
-  function _renderPhonePreview(text) {
+  function _renderPhonePreview(text, imageUrl) {
     var formatted = _waFormat(text)
     // Highlight {{vars}} remaining
     formatted = formatted.replace(/\{\{([^}]+)\}\}/g, '<span class="aa-wa-tag">{{$1}}</span>')
 
-    return '<div class="aa-phone">'
+    var now = new Date()
+    var hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+
+    var imgHtml = imageUrl
+      ? '<div class="aa-wa-img"><img src="' + _esc(imageUrl) + '" alt="anexo" loading="lazy"></div>'
+      : ''
+
+    var bubble
+    if (imgHtml && formatted) {
+      bubble = '<div class="aa-wa-bubble aa-wa-bubble-img">' + imgHtml + '<div class="aa-wa-text">' + formatted + '</div><div class="aa-wa-time">' + hhmm + ' \u2713\u2713</div></div>'
+    } else if (imgHtml) {
+      bubble = '<div class="aa-wa-bubble aa-wa-bubble-img">' + imgHtml + '<div class="aa-wa-time">' + hhmm + ' \u2713\u2713</div></div>'
+    } else if (formatted) {
+      bubble = '<div class="aa-wa-bubble">' + formatted + '<div class="aa-wa-time">' + hhmm + ' \u2713\u2713</div></div>'
+    } else {
+      bubble = '<div class="aa-wa-empty">Sem mensagem configurada</div>'
+    }
+
+    return '<div class="aa-phone" id="aaPhonePreview">'
       + '<div class="aa-phone-notch"></div>'
       + '<div class="aa-wa-header">'
       + '<div class="aa-wa-avatar"></div>'
       + '<div><div class="aa-wa-name">Clinica</div><div class="aa-wa-status">online</div></div>'
       + '</div>'
-      + '<div class="aa-wa-chat">'
-      + (formatted
-        ? '<div class="aa-wa-bubble">' + formatted + '<div class="aa-wa-time">08:00 ✓✓</div></div>'
-        : '<div class="aa-wa-empty">Sem mensagem configurada</div>')
-      + '</div>'
+      + '<div class="aa-wa-chat">' + bubble + '</div>'
       + '<div class="aa-wa-bottom"><div class="aa-wa-input">Mensagem</div><div class="aa-wa-send">' + _feather('send', 14) + '</div></div>'
       + '</div>'
   }
@@ -392,10 +445,11 @@
     if (_channelIncludes(f.channel, 'whatsapp')) {
       html += '<div class="aa-field"><label>Mensagem WhatsApp</label>'
 
-      // Variable tags bar
+      // Variable tags bar (com tooltip explicativo)
       html += '<div class="aa-tags-bar">'
       svc.TEMPLATE_VARS.forEach(function(v) {
-        html += '<button class="aa-tag-btn" data-var="' + v.id + '">{{' + v.id + '}}</button>'
+        var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
+        html += '<button class="aa-tag-btn" data-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
       })
       html += '</div>'
 
@@ -407,10 +461,34 @@
         + '</div>'
 
       html += '<textarea id="aaContent" rows="8" placeholder="Digite a mensagem...">' + _esc(f.content_template) + '</textarea>'
+
+      // Image attachment area
+      html += '<div class="aa-attach">'
+      if (f.attachment_url) {
+        html += '<div class="aa-attach-preview">'
+          + '<img src="' + _esc(f.attachment_url) + '" alt="anexo">'
+          + '<button type="button" class="aa-attach-remove" data-action="remove-image" title="Remover imagem">' + _feather('x', 14) + '</button>'
+          + '</div>'
+      } else {
+        html += '<button type="button" class="aa-btn-attach" data-action="pick-image">'
+          + _feather('image', 14) + ' Anexar imagem'
+          + '</button>'
+          + '<div class="aa-attach-hint">JPG, PNG, WEBP ou GIF — max 10 MB</div>'
+      }
+      html += '<input type="file" id="aaAttachInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">'
+      html += '</div>'
+
       html += '</div>'
 
       // Live preview
-      html += _renderPhonePreview(_svc().renderTemplate(f.content_template, { nome:'Maria Silva', data:'15/04/2026', hora:'14:30', profissional:'Dra. Mirian', procedimento:'Bioestimulador', clinica:'Clinica' }))
+      html += _renderPhonePreview(_svc().renderTemplate(f.content_template, _sampleVars()), f.attachment_url)
+
+      // Testar envio (dry-run — so mostra preview completo)
+      html += '<div style="margin-top:8px;display:flex;justify-content:flex-end">'
+        + '<button type="button" class="aa-btn-test" data-action="test-wa" title="Renderiza a mensagem final com dados de exemplo sem enviar">'
+        + _feather('eye', 12) + ' Testar renderizacao'
+        + '</button>'
+        + '</div>'
     }
 
     // Alert config (show if channel includes alert)
@@ -474,7 +552,8 @@
       html += '<div class="aa-field"><label>Mensagem Alexa</label>'
       html += '<div class="aa-tags-bar">'
       svc.TEMPLATE_VARS.forEach(function(v) {
-        html += '<button class="aa-tag-btn" data-alexa-var="' + v.id + '">{{' + v.id + '}}</button>'
+        var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
+        html += '<button class="aa-tag-btn" data-alexa-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
       })
       html += '</div>'
       html += '<textarea id="aaAlexaMsg" rows="3" placeholder="Ex: Dra {{profissional}}, sua proxima paciente {{nome}} esta na recepcao.">' + _esc(f.alexa_message) + '</textarea>'
@@ -521,6 +600,18 @@
     } else if (type === 'on_tag') {
       html += '<div class="aa-field"><label>Tag</label>'
         + '<input type="text" id="aaCfgTag" value="' + _esc(cfg.tag||'') + '" placeholder="ex: orcamento-aberto"></div>'
+
+      // Delay escalonado: dispara X dias/horas/minutos APOS aplicar a tag.
+      // Se tudo zero = imediato.
+      html += '<div class="aa-delay-block">'
+        + '<div class="aa-delay-title">' + _feather('clock', 12) + ' Quando disparar apos aplicar a tag</div>'
+        + '<div class="aa-field-row">'
+        + '<div class="aa-field"><label>Dias</label><input type="number" id="aaCfgDelayDays" min="0" max="365" value="' + (parseInt(cfg.delay_days)||0) + '"></div>'
+        + '<div class="aa-field"><label>Horas</label><input type="number" id="aaCfgDelayHours" min="0" max="23" value="' + (parseInt(cfg.delay_hours)||0) + '"></div>'
+        + '<div class="aa-field"><label>Minutos</label><input type="number" id="aaCfgDelayMin" min="0" max="59" value="' + (parseInt(cfg.delay_minutes)||0) + '"></div>'
+        + '</div>'
+        + '<div class="aa-delay-hint" id="aaDelayHint">' + _delayHintText(cfg) + '</div>'
+        + '</div>'
     }
     // on_finalize has no config
 
@@ -579,6 +670,12 @@
       cfg.status = val('aaCfgStatus')
     } else if (tt === 'on_tag') {
       cfg.tag = val('aaCfgTag')
+      var dd = parseInt(val('aaCfgDelayDays')) || 0
+      var dh = parseInt(val('aaCfgDelayHours')) || 0
+      var dm = parseInt(val('aaCfgDelayMin')) || 0
+      if (dd) cfg.delay_days = dd
+      if (dh) cfg.delay_hours = dh
+      if (dm) cfg.delay_minutes = dm
     }
     _form.trigger_config = cfg
   }
@@ -593,6 +690,20 @@
         if (action === 'new') { _form = _emptyForm(); _editingRule = null; _panelTab = 'editor'; _render() }
         if (action === 'cancel') { _panelTab = 'list'; _editingRule = null; _render() }
         if (action === 'save') _handleSave()
+        if (action === 'pick-image') {
+          var inp = document.getElementById('aaAttachInput')
+          if (inp) inp.click()
+        }
+        if (action === 'remove-image') {
+          _readForm()
+          _form.attachment_url = ''
+          _render()
+        }
+        if (action === 'test-wa') {
+          _readForm()
+          _refreshPreview()
+          if (window._showToast) _showToast('Preview', 'Renderizado com dados de exemplo (nao enviado)', 'info')
+        }
         return
       }
 
@@ -619,7 +730,8 @@
             name: r.name, description: r.description||'', category: r.category,
             trigger_type: r.trigger_type, trigger_config: r.trigger_config||{},
             recipient_type: r.recipient_type, channel: r.channel,
-            content_template: r.content_template||'', alert_title: r.alert_title||'',
+            content_template: r.content_template||'', attachment_url: r.attachment_url||'',
+            alert_title: r.alert_title||'',
             alert_type: r.alert_type||'info', task_title: r.task_title||'',
             task_assignee: r.task_assignee||'sdr', task_priority: r.task_priority||'normal',
             task_deadline_hours: r.task_deadline_hours||24, alexa_message: r.alexa_message||'',
@@ -712,15 +824,63 @@
       }
     })
 
-    // Live preview on content input
+    // Live preview on content input + delay hint update
     root.addEventListener('input', function(e) {
       if (e.target.id === 'aaContent') {
         _form.content_template = e.target.value
+        _schedulePreviewUpdate()
       }
       if (e.target.id === 'aaAlexaMsg') {
         _form.alexa_message = e.target.value
       }
+      if (e.target.id === 'aaCfgDelayDays' || e.target.id === 'aaCfgDelayHours' || e.target.id === 'aaCfgDelayMin') {
+        var hint = document.getElementById('aaDelayHint')
+        if (hint) {
+          hint.textContent = _delayHintText({
+            delay_days: document.getElementById('aaCfgDelayDays') ? document.getElementById('aaCfgDelayDays').value : 0,
+            delay_hours: document.getElementById('aaCfgDelayHours') ? document.getElementById('aaCfgDelayHours').value : 0,
+            delay_minutes: document.getElementById('aaCfgDelayMin') ? document.getElementById('aaCfgDelayMin').value : 0,
+          })
+        }
+      }
     })
+
+    // Image upload handler
+    root.addEventListener('change', function(e) {
+      if (e.target.id === 'aaAttachInput') {
+        var file = e.target.files && e.target.files[0]
+        if (!file) return
+        _uploadAttachment(file)
+      }
+    })
+  }
+
+  async function _uploadAttachment(file) {
+    if (!window._sbShared) { _toastErr('Supabase nao disponivel'); return }
+    var MAX = 10 * 1024 * 1024
+    if (file.size > MAX) { _toastErr('Imagem maior que 10 MB'); return }
+
+    _readForm()
+    if (window._showToast) _showToast('Upload', 'Enviando imagem...', 'info')
+
+    var ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+    var key = 'auto_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + ext
+
+    try {
+      var up = await window._sbShared.storage.from('wa-automations').upload(key, file, {
+        contentType: file.type || 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false,
+      })
+      if (up.error) { _toastErr('Upload falhou: ' + up.error.message); return }
+
+      var publicUrl = window._sbShared.storage.from('wa-automations').getPublicUrl(key).data.publicUrl
+      _form.attachment_url = publicUrl
+      if (window._showToast) _showToast('Imagem anexada', 'Pronta para enviar', 'success')
+      _render()
+    } catch (e) {
+      _toastErr('Upload erro: ' + e.message)
+    }
   }
 
   async function _testAlexaRule(ruleId) {

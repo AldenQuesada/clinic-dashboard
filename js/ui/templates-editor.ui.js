@@ -137,9 +137,14 @@
     _loading = true
     _render()
     // Carregar templates + contagem de tags em paralelo
+    // Nota: supabase-js v2 rpc retorna PostgrestBuilder (thenable, sem .catch direto).
+    // Envolve em async wrapper para garantir tratamento de erro via try/catch.
+    async function _safeRpc(fn) {
+      try { return await window._sbShared.rpc(fn) } catch (e) { return {} }
+    }
     var results = await Promise.all([
       window.TemplatesRepository ? TemplatesRepository.list() : Promise.resolve({ ok: false }),
-      window._sbShared ? window._sbShared.rpc('wa_tag_counts').catch(function () { return {} }) : Promise.resolve({}),
+      window._sbShared ? _safeRpc('wa_tag_counts') : Promise.resolve({}),
     ])
     var r = results[0]
     if (r.ok) { _templates = r.data || []; _dirty = {} }

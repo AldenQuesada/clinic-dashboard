@@ -113,3 +113,28 @@
 .aa-wa-bottom { background:#F0F0F0; padding:6px 8px; display:flex; gap:6px; align-items:center; }
 .aa-wa-input { flex:1; background:#fff; border-radius:16px; padding:4px 10px; font-size:11px; color:#999; }
 .aa-wa-send { width:28px; height:28px; border-radius:50%; background:#25D366; display:flex; align-items:center; justify-content:center; color:#fff; }
+
+/* Image in WhatsApp bubble */
+.aa-wa-bubble-img { padding:4px; }
+.aa-wa-img { margin-bottom:4px; border-radius:6px; overflow:hidden; background:#fff; }
+.aa-wa-img img { display:block; width:100%; max-height:160px; object-fit:cover; }
+.aa-wa-text { padding:4px 4px 0; }
+
+/* Image attachment area (editor) */
+.aa-attach { margin-top:8px; padding:8px; border:1px dashed var(--border, #CBD5E1); border-radius:8px; background:#F8FAFC; }
+.aa-btn-attach { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:#fff; border:1px solid var(--border, #CBD5E1); border-radius:6px; font-size:12px; font-weight:600; color:var(--text-primary, #334155); cursor:pointer; }
+.aa-btn-attach:hover { background:#F1F5F9; border-color:#94A3B8; }
+.aa-attach-hint { font-size:10px; color:var(--text-secondary, #64748B); margin-top:4px; }
+.aa-attach-preview { position:relative; display:inline-block; border-radius:8px; overflow:hidden; border:1px solid var(--border, #CBD5E1); background:#fff; max-width:200px; }
+.aa-attach-preview img { display:block; width:100%; max-height:140px; object-fit:cover; }
+.aa-attach-remove { position:absolute; top:4px; right:4px; width:24px; height:24px; border-radius:50%; background:rgba(15,23,42,0.75); color:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.aa-attach-remove:hover { background:rgba(220,38,38,0.9); }
+
+/* Delay block for on_tag */
+.aa-delay-block { margin-top:10px; padding:10px; border-radius:8px; background:#F0F9FF; border-left:3px solid #0EA5E9; }
+.aa-delay-title { display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:#0369A1; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.3px; }
+.aa-delay-hint { margin-top:6px; font-size:11px; color:#0369A1; font-style:italic; }
+
+/* Test button */
+.aa-btn-test { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; background:#fff; border:1px solid #CBD5E1; border-radius:6px; font-size:11px; font-weight:600; color:#475569; cursor:pointer; }
+.aa-btn-test:hover { background:#F1F5F9; border-color:#64748B; }

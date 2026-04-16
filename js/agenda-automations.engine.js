@@ -29,15 +29,6 @@
   var _svc = function () { return window.AgendaAutomationsService }
   var _initialized = false
 
-  // Slugs que representam fases do ciclo de vida do agendamento.
-  // Tratados exclusivamente por processStatusChange/_enqueueCampaignForPhase —
-  // dispatchCampaignForTag/Lead ignora para evitar duplicacao.
-  var _APPT_LIFECYCLE_SLUGS = {
-    agendado: 1, aguardando_confirmacao: 1, confirmado: 1, aguardando: 1,
-    na_clinica: 1, em_consulta: 1, em_atendimento: 1, finalizado: 1,
-    remarcado: 1, cancelado: 1, no_show: 1, compareceu: 1,
-  }
-
   // ── Init: load rules on first use ──────────────────────────
   async function _ensureLoaded() {
     if (_initialized) return
@@ -130,9 +121,17 @@
       }
     })
 
-    // Campanha por fase — NAO disparar aqui.
-    // A confirmacao ja e enviada por _enviarMsgAgendamento() no modal.
-    // Campanhas disparam via processStatusChange() quando o status muda.
+    // Gap 1 resolvido: dispara regras on_status para o status inicial
+    // do agendamento (normalmente 'agendado') ao criar.
+    // `scheduling_confirm_novo` (imediato via modal) cobre a msg de confirmacao;
+    // a regra "Confirmacao Agendamento" esta desativada para evitar duplicata.
+    // Qualquer outra regra on_status='agendado' (com delay ou conteudo diferente)
+    // passa a disparar normalmente.
+    var initialStatus = appt.status || 'agendado'
+    var statusRules = svc.getByStatus(initialStatus)
+    statusRules.forEach(function (rule) {
+      _executeRule(rule, vars, phone, appt)
+    })
   }
 
   // ══════════════════════════════════════════════════════════
@@ -143,75 +142,15 @@
   async function processStatusChange(appt, newStatus) {
     await _ensureLoaded()
     var svc = _svc()
+    if (!svc) return
 
-    // 1. Regras manuais de automacao (existentes)
-    if (svc) {
-      var rules = svc.getByStatus(newStatus)
-      var phone = (_getPhone(appt) || '').replace(/\D/g, '')
-      var vars = _apptVars(appt)
-      vars.status = newStatus
-      rules.forEach(function (rule) {
-        _executeRule(rule, vars, phone, appt)
-      })
-    }
-
-    // 2. Campanha por fase: busca templates vinculados a esta fase
-    _enqueueCampaignForPhase(appt, newStatus)
-  }
-
-  async function _enqueueCampaignForPhase(appt, phase) {
-    if (!window._sbShared) return
+    var rules = svc.getByStatus(newStatus)
     var phone = (_getPhone(appt) || '').replace(/\D/g, '')
-    if (!phone) return
-
-    // Normalizar: "Agendado" → "agendado", "Na Clinica" → "na_clinica"
-    var phaseSlug = (phase || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-    if (!phaseSlug) return
-
-    try {
-      var res = await window._sbShared.rpc('wa_templates_for_phase', { p_phase: phaseSlug })
-      if (res.error || !res.data) return
-      var templates = Array.isArray(res.data) ? res.data : []
-      if (!templates.length) return
-
-      var vars = _apptVars(appt)
-      var _cfg = {}; try { _cfg = JSON.parse(localStorage.getItem('clinicai_clinic_settings') || '{}') } catch(e) {}
-      var _end = [_cfg.rua, _cfg.num].filter(Boolean).join(', ')
-      if (_cfg.comp) _end += ' - ' + _cfg.comp
-      if (_cfg.cidade) _end += ' - ' + _cfg.cidade
-      vars.endereco = _end || ''
-      vars.endereco_clinica = _end || ''
-      vars.link_maps = _cfg.maps || ''
-      vars.menu_clinica = (window.location.origin || '') + '/menu-clinica.html'
-      vars.link = _cfg.site || ''
-
-      var apptDate = appt.data ? new Date(appt.data + 'T00:00:00') : null
-      if (!apptDate || isNaN(apptDate.getTime())) return
-      var now = new Date()
-      templates.forEach(function (tpl) {
-        var content = (tpl.content || '').replace(/\{(\w+)\}/g, function (_, k) {
-          return vars[k] != null ? String(vars[k]) : ''
-        })
-        if (!content.trim()) return
-
-        var days = parseInt(tpl.day) || 0
-        var hours = parseInt(tpl.delay_hours) || 0
-        var mins = parseInt(tpl.delay_minutes) || 0
-        var scheduledAt = new Date(apptDate)
-        scheduledAt.setDate(scheduledAt.getDate() + days)
-        scheduledAt.setHours(hours, mins, 0, 0)
-
-        if (scheduledAt.getTime() <= now.getTime()) return
-
-        _enqueueWA(phone, content, appt, scheduledAt, 'campaign:' + phaseSlug + ':' + (tpl.slug || tpl.name))
-      })
-
-      if (templates.length && window._showToast) {
-        _showToast('Campanha disparada', templates.length + ' mensagen' + (templates.length > 1 ? 's' : '') + ' agendada' + (templates.length > 1 ? 's' : '') + ' para "' + phaseSlug + '"', 'info')
-      }
-    } catch (e) {
-      console.error('[Engine] campanha fase erro:', e)
-    }
+    var vars = _apptVars(appt)
+    vars.status = newStatus
+    rules.forEach(function (rule) {
+      _executeRule(rule, vars, phone, appt)
+    })
   }
 
   // ══════════════════════════════════════════════════════════
@@ -280,8 +219,35 @@
       }
     } catch (e) { /* silencioso */ }
 
+    var fakeAppt = { id: entityId, pacienteId: entityId, pacienteNome: vars.nome }
     rules.forEach(function (rule) {
-      _executeRule(rule, vars, phone, { id: entityId, pacienteId: entityId, pacienteNome: vars.nome })
+      var cfg = rule.trigger_config || {}
+      var delayDays = parseInt(cfg.delay_days) || 0
+      var delayHours = parseInt(cfg.delay_hours) || 0
+      var delayMinutes = parseInt(cfg.delay_minutes) || 0
+
+      if (delayDays || delayHours || delayMinutes) {
+        // on_tag com delay: agenda para o futuro
+        if (_channelIncludes(rule.channel, 'whatsapp') && phone && rule.content_template) {
+          var scheduledAt = new Date()
+          scheduledAt.setDate(scheduledAt.getDate() + delayDays)
+          scheduledAt.setHours(scheduledAt.getHours() + delayHours)
+          scheduledAt.setMinutes(scheduledAt.getMinutes() + delayMinutes)
+          var content = svc.renderTemplate(rule.content_template, vars)
+          _enqueueWA(phone, content, fakeAppt, scheduledAt, rule.name)
+        }
+        if (_channelIncludes(rule.channel, 'task') && rule.task_title) {
+          var sched2 = new Date()
+          sched2.setDate(sched2.getDate() + delayDays)
+          sched2.setHours(sched2.getHours() + delayHours)
+          sched2.setMinutes(sched2.getMinutes() + delayMinutes)
+          _scheduleTask(rule, vars, sched2, entityId)
+        }
+        // alert/alexa com delay nao faz sentido — ignora
+      } else {
+        // Sem delay: executa imediatamente
+        _executeRule(rule, vars, phone, fakeAppt)
+      }
     })
   }
 
@@ -566,121 +532,11 @@
     }
   }
 
-  // ── Camada 2: dispatch para lead phase changes ─────────────
-  async function dispatchCampaignForLead(leadId, phase, leadName, leadPhone) {
-    if (!window._sbShared || !leadPhone) return
-    var phaseSlug = (phase || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-    if (!phaseSlug) return
-    // Fases de agendamento disparam apenas via processStatusChange (evita duplicacao)
-    if (_APPT_LIFECYCLE_SLUGS[phaseSlug]) return
-
-    var phone = leadPhone.replace(/\D/g, '')
-    if (!phone) return
-
-    try {
-      var res = await window._sbShared.rpc('wa_templates_for_phase', { p_phase: phaseSlug })
-      if (res.error || !res.data) return
-      var templates = Array.isArray(res.data) ? res.data : []
-      if (!templates.length) return
-
-      var clinica = window._getClinicaNome ? _getClinicaNome() : 'Clinica'
-      var _cfg = {}; try { _cfg = JSON.parse(localStorage.getItem('clinicai_clinic_settings') || '{}') } catch(e) {}
-      var _end = [_cfg.rua, _cfg.num].filter(Boolean).join(', ')
-      if (_cfg.comp) _end += ' - ' + _cfg.comp
-      if (_cfg.cidade) _end += ' - ' + _cfg.cidade
-
-      var vars = {
-        nome: leadName || 'Paciente',
-        clinica: clinica,
-        endereco: _end || '',
-        endereco_clinica: _end || '',
-        link_maps: _cfg.maps || '',
-        menu_clinica: (window.location.origin || '') + '/menu-clinica.html',
-        link: _cfg.site || '',
-        data: '', hora: '', profissional: '', procedimento: '',
-        linha_procedimento: '', link_anamnese: '', valor: '',
-      }
-
-      var now = new Date()
-      var fakeAppt = { id: 'lead_' + leadId, pacienteId: leadId, pacienteNome: leadName || '' }
-
-      templates.forEach(function (tpl) {
-        var content = (tpl.content || '').replace(/\{(\w+)\}/g, function (_, k) {
-          return vars[k] != null ? String(vars[k]) : ''
-        })
-        if (!content.trim()) return
-
-        var scheduledAt = new Date(now)
-        scheduledAt.setDate(scheduledAt.getDate() + (parseInt(tpl.day) || 0))
-        scheduledAt.setHours(scheduledAt.getHours() + (parseInt(tpl.delay_hours) || 0))
-        scheduledAt.setMinutes(scheduledAt.getMinutes() + (parseInt(tpl.delay_minutes) || 0))
-        if (scheduledAt.getTime() <= now.getTime()) return
-
-        _enqueueWA(phone, content, fakeAppt, scheduledAt, 'campaign:lead:' + phaseSlug + ':' + (tpl.slug || ''))
-      })
-
-      if (templates.length && window._showToast) {
-        _showToast('Campanha', templates.length + ' msg para "' + phaseSlug + '"', 'info')
-      }
-    } catch (e) {
-      console.error('[Engine] campanha lead erro:', e)
-    }
-  }
-
-  // ── Camada 3: dispatch para tag application ───────────────
-  async function dispatchCampaignForTag(entityId, entityType, tagSlug, vars) {
-    if (!window._sbShared) return
-    var phaseSlug = (tagSlug || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-    if (!phaseSlug) return
-    // Tags que sao fases de agendamento disparam apenas via processStatusChange
-    if (_APPT_LIFECYCLE_SLUGS[phaseSlug]) return
-
-    // Buscar telefone do lead
-    var phone = ''
-    if (vars && vars.phone) {
-      phone = vars.phone
-    } else if (window.LeadsService) {
-      var leads = LeadsService.getLocal()
-      var lead = leads.find(function(l) { return l.id === entityId })
-      if (lead) phone = lead.phone || lead.whatsapp || ''
-    }
-    phone = (phone || '').replace(/\D/g, '')
-    if (!phone) return
-
-    try {
-      var res = await window._sbShared.rpc('wa_templates_for_phase', { p_phase: phaseSlug })
-      if (res.error || !res.data) return
-      var templates = Array.isArray(res.data) ? res.data : []
-      if (!templates.length) return
-
-      var leadName = (vars && vars.nome) || 'Paciente'
-      var fakeAppt = { id: 'tag_' + entityId, pacienteId: entityId, pacienteNome: leadName }
-
-      var clinica = window._getClinicaNome ? _getClinicaNome() : 'Clinica'
-      var tplVars = Object.assign({
-        nome: leadName, clinica: clinica,
-        data: '', hora: '', profissional: '', procedimento: '',
-      }, vars || {})
-
-      var now = new Date()
-      templates.forEach(function (tpl) {
-        var content = (tpl.content || '').replace(/\{(\w+)\}/g, function (_, k) {
-          return tplVars[k] != null ? String(tplVars[k]) : ''
-        })
-        if (!content.trim()) return
-
-        var scheduledAt = new Date(now)
-        scheduledAt.setDate(scheduledAt.getDate() + (parseInt(tpl.day) || 0))
-        scheduledAt.setHours(scheduledAt.getHours() + (parseInt(tpl.delay_hours) || 0))
-        scheduledAt.setMinutes(scheduledAt.getMinutes() + (parseInt(tpl.delay_minutes) || 0))
-        if (scheduledAt.getTime() <= now.getTime()) return
-
-        _enqueueWA(phone, content, fakeAppt, scheduledAt, 'campaign:tag:' + phaseSlug + ':' + (tpl.slug || ''))
-      })
-    } catch (e) {
-      console.error('[Engine] campanha tag erro:', e)
-    }
-  }
+  // Camadas 2 e 3 removidas: leitura de wa_templates_for_phase foi descontinuada
+  // em favor de regras em wa_agenda_automations (on_tag/on_status com delay).
+  // Stubs mantidos como no-op para preservar compat de chamadas existentes.
+  function dispatchCampaignForLead() { /* no-op */ }
+  function dispatchCampaignForTag() { /* no-op */ }
 
   // ── Public API ─────────────────────────────────────────────
   window.AutomationsEngine = Object.freeze({

@@ -160,15 +160,18 @@
   ]
 
   var TEMPLATE_VARS = [
-    { id: 'nome',          label: 'Nome paciente' },
-    { id: 'data',          label: 'Data consulta' },
-    { id: 'hora',          label: 'Horario' },
-    { id: 'profissional',  label: 'Profissional' },
-    { id: 'procedimento',  label: 'Procedimento' },
-    { id: 'clinica',       label: 'Nome clinica' },
-    { id: 'link_anamnese', label: 'Link anamnese' },
-    { id: 'status',        label: 'Status atual' },
-    { id: 'obs',           label: 'Observacoes' },
+    { id: 'nome',          label: 'Nome paciente',        example: 'Maria Silva' },
+    { id: 'data',          label: 'Data da consulta',     example: '16/04/2026' },
+    { id: 'hora',          label: 'Horario da consulta',  example: '14:30' },
+    { id: 'profissional',  label: 'Profissional',         example: 'Dra. Mirian' },
+    { id: 'procedimento',  label: 'Procedimento',         example: 'Bioestimulador' },
+    { id: 'clinica',       label: 'Nome da clinica',      example: 'Clinica' },
+    { id: 'link_anamnese', label: 'Link da anamnese',     example: 'https://clinica.app/anamnese/abc' },
+    { id: 'endereco',      label: 'Endereco da clinica',  example: 'Rua X, 123 - Centro' },
+    { id: 'link_maps',     label: 'Link Google Maps',     example: 'https://maps.app.goo.gl/xyz' },
+    { id: 'menu_clinica',  label: 'Link menu da clinica', example: 'https://clinica.app/menu' },
+    { id: 'status',        label: 'Status atual',         example: 'agendado' },
+    { id: 'obs',           label: 'Observacoes',          example: '' },
   ]
 
   window.AgendaAutomationsService = Object.freeze({
