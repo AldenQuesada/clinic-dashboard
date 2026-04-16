@@ -2,12 +2,18 @@
  * Modulo Agendamento — ciclo do agendamento (antes, durante, apos a consulta)
  * Especial: tem "dias antes da consulta", "no dia da consulta", "min antes"
  * Zero dependencia de outros modulos.
+ *
+ * Regras de combinacao:
+ * - Statuses com consulta FUTURA (agendado, aguardando_confirmacao, confirmado,
+ *   remarcado, encaixe) aceitam tempos relativos a consulta (days_before,
+ *   same_day, min_before).
+ * - Statuses TERMINAIS (cancelado, no_show, finalizado) ou em TEMPO REAL
+ *   (na_clinica, em_consulta) so aceitam linha do tempo (immediate, hours, days).
  */
 ;(function () {
   'use strict'
   window.FAModules = window.FAModules || {}
 
-  // Statuses do agendamento = mudancas de estado do appointment
   var STATUSES = [
     { id: 'agendado',               label: 'Agendado',               kind: 'status' },
     { id: 'aguardando_confirmacao', label: 'Aguardando Confirmacao', kind: 'status' },
@@ -21,34 +27,115 @@
     { id: 'encaixe',                label: 'Encaixe',                kind: 'tag' },
   ]
 
-  // Tempo: inclui opcoes relativas a data da consulta
   var TIME_OPTIONS = [
-    { id: 'immediate',         label: 'Imediata (ao entrar nesse status)' },
-    { id: 'hours',             label: 'Horas depois' },
-    { id: 'days',              label: 'Dias depois' },
-    { id: 'days_before',       label: 'Dias ANTES da consulta' },
-    { id: 'same_day',          label: 'No dia da consulta' },
-    { id: 'min_before',        label: 'Minutos ANTES da consulta' },
+    { id: 'immediate',   label: 'Imediata (ao entrar nesse status)' },
+    { id: 'hours',       label: 'Horas depois' },
+    { id: 'days',        label: 'Dias depois' },
+    { id: 'days_before', label: 'Dias ANTES da consulta' },
+    { id: 'same_day',    label: 'No dia da consulta' },
+    { id: 'min_before',  label: 'Minutos ANTES da consulta' },
   ]
+
+  // Matrix de combinacoes validas status x when
+  var ALLOWED_WHEN_BY_STATUS = {
+    agendado:               ['immediate', 'hours', 'days', 'days_before', 'same_day', 'min_before'],
+    aguardando_confirmacao: ['immediate', 'hours', 'days', 'days_before', 'same_day', 'min_before'],
+    confirmado:             ['immediate', 'hours', 'days', 'days_before', 'same_day', 'min_before'],
+    remarcado:              ['immediate', 'hours', 'days', 'days_before', 'same_day', 'min_before'],
+    encaixe:                ['immediate', 'hours', 'days', 'days_before', 'same_day', 'min_before'],
+    cancelado:              ['immediate', 'hours', 'days'],
+    no_show:                ['immediate', 'hours', 'days'],
+    na_clinica:             ['immediate', 'hours', 'days'],
+    em_consulta:            ['immediate', 'hours'],
+    finalizado:             ['immediate', 'hours', 'days'],
+  }
+
+  // Defaults inteligentes por status (when + campos do tempo)
+  var DEFAULT_WHEN = {
+    agendado:               { when: 'immediate' },
+    aguardando_confirmacao: { when: 'days_before', days: 1, hour: 12, minute: 0 },
+    confirmado:             { when: 'immediate' },
+    remarcado:              { when: 'immediate' },
+    cancelado:              { when: 'immediate' },
+    no_show:                { when: 'hours', hours: 2, minutes: 0 },
+    na_clinica:             { when: 'immediate' },
+    em_consulta:            { when: 'immediate' },
+    finalizado:             { when: 'immediate' },
+    encaixe:                { when: 'immediate' },
+  }
+
+  // Nomes sugeridos para regras por combinacao
+  var SUGGESTED_NAMES = {
+    'agendado|immediate':               'Confirmacao de Agendamento',
+    'aguardando_confirmacao|days_before': 'Lembrete D-1 — Confirmar Presenca',
+    'aguardando_confirmacao|immediate': 'Aguardando Confirmacao',
+    'confirmado|immediate':             'Resposta: Paciente Confirmou',
+    'remarcado|immediate':              'Aviso de Remarcacao',
+    'cancelado|immediate':              'Mensagem de Cancelamento',
+    'no_show|hours':                    'Recuperacao No-show (2h depois)',
+    'no_show|immediate':                'Sentimos sua Falta',
+    'na_clinica|immediate':             'Boas-vindas na Clinica',
+    'em_consulta|immediate':            'Alerta Em Consulta',
+    'finalizado|immediate':             'Pos-atendimento + Consentimento',
+    'encaixe|immediate':                'Confirmacao de Encaixe',
+    // Tempo antes da consulta
+    'agendado|days_before':             'Lembrete D-1 Agendamento',
+    'agendado|same_day':                'Chegou o Dia da Consulta',
+    'agendado|min_before':              'Lembrete Minutos Antes',
+    'confirmado|days_before':           'Lembrete D-1 (Confirmado)',
+    'confirmado|same_day':              'Bom Dia — Consulta Hoje',
+    'confirmado|min_before':            'Lembrete Minutos Antes',
+  }
+
+  function timeOptionsFor(statusId) {
+    var allowed = ALLOWED_WHEN_BY_STATUS[statusId]
+    if (!allowed) return TIME_OPTIONS
+    return TIME_OPTIONS.filter(function(t) { return allowed.indexOf(t.id) >= 0 })
+  }
+
+  function isValidCombination(status, when) {
+    var allowed = ALLOWED_WHEN_BY_STATUS[status]
+    return !!(allowed && allowed.indexOf(when) >= 0)
+  }
+
+  // Quando muda status, retorna defaults do novo (preserva status e when se valido)
+  function applyStatusDefaults(currentForm, newStatus) {
+    var out = { status: newStatus }
+    // Se o when atual ainda e valido, preserva
+    if (currentForm && currentForm.when && isValidCombination(newStatus, currentForm.when)) {
+      out.when = currentForm.when
+      // preserva campos numericos tambem
+      ;['hours','minutes','days','hour','minute','minutesBefore'].forEach(function(k){
+        if (currentForm[k] !== undefined) out[k] = currentForm[k]
+      })
+    } else {
+      // Usa default do status
+      var def = DEFAULT_WHEN[newStatus] || { when: 'immediate' }
+      Object.keys(def).forEach(function(k){ out[k] = def[k] })
+    }
+    return out
+  }
+
+  function suggestName(form) {
+    if (!form || !form.status) return ''
+    var key = form.status + '|' + (form.when || 'immediate')
+    return SUGGESTED_NAMES[key] || ''
+  }
 
   function matchesRule(rule) {
     if (!rule) return false
     var t = rule.trigger_type
     var cfg = rule.trigger_config || {}
-    // on_status com status do agendamento
     if (t === 'on_status') {
       return STATUSES.some(function(s){ return s.kind === 'status' && s.id === cfg.status })
     }
-    // on_tag com tag=encaixe
     if (t === 'on_tag' && cfg.tag === 'encaixe') return true
-    // tempos relativos a consulta
     if (t === 'd_before' || t === 'd_zero' || t === 'min_before' || t === 'daily_summary') return true
     return false
   }
 
   function toTrigger(form) {
-    // encaixe sempre on_tag
-    if (form.status === 'encaixe') {
+    if (form.status === 'encaixe' && form.when === 'immediate') {
       return { trigger_type: 'on_tag', trigger_config: { tag: 'encaixe' } }
     }
     if (form.when === 'immediate') {
@@ -113,9 +200,16 @@
 
   function validate(form) {
     if (!form.status) return { ok: false, error: 'Escolha um status do agendamento' }
+    if (!form.when) return { ok: false, error: 'Escolha quando disparar' }
+    if (!isValidCombination(form.status, form.when)) {
+      var statusLabel = (STATUSES.find(function(s){return s.id===form.status})||{}).label || form.status
+      var whenLabel = (TIME_OPTIONS.find(function(t){return t.id===form.when})||{}).label || form.when
+      return { ok: false, error: 'Combinacao invalida: "' + statusLabel + '" nao aceita "' + whenLabel + '"' }
+    }
     if (form.when === 'days_before' && (!form.days || form.days < 1)) return { ok: false, error: 'Dias antes da consulta invalido' }
     if (form.when === 'min_before' && (!form.minutesBefore || form.minutesBefore < 1)) return { ok: false, error: 'Minutos antes invalido' }
     if (form.when === 'days' && (!form.days || form.days < 1)) return { ok: false, error: 'Dias invalido' }
+    if (form.when === 'hours' && (!form.hours || form.hours < 0)) return { ok: false, error: 'Horas invalido' }
     return { ok: true }
   }
 
@@ -123,14 +217,17 @@
     var statusOpts = STATUSES.map(function(s) {
       return '<option value="'+s.id+'"'+(form.status===s.id?' selected':'')+'>'+s.label+'</option>'
     }).join('')
-    var timeOpts = TIME_OPTIONS.map(function(t) {
+    // Filtra opcoes de tempo baseado no status escolhido
+    var validTimes = form.status ? timeOptionsFor(form.status) : TIME_OPTIONS
+    var timeOpts = validTimes.map(function(t) {
       return '<option value="'+t.id+'"'+(form.when===t.id?' selected':'')+'>'+t.label+'</option>'
     }).join('')
 
     var html = '<div class="fa-field"><label>Status do agendamento</label>'
       + '<select id="faStatus"><option value="">Selecione...</option>'+statusOpts+'</select></div>'
       + '<div class="fa-field"><label>Quando disparar</label>'
-      + '<select id="faWhen">'+timeOpts+'</select></div>'
+      + '<select id="faWhen"'+(form.status?'':' disabled')+'>'+timeOpts+'</select>'
+      + (form.status ? '' : '<div class="fa-hint-small">Escolha o status primeiro</div>') + '</div>'
 
     if (form.when === 'hours') {
       html += '<div class="fa-field-row">'
@@ -179,5 +276,9 @@
     validate: validate,
     renderTriggerFields: renderTriggerFields,
     readTriggerForm: readTriggerForm,
+    // Novas APIs (opcionais — shell chama se disponivel)
+    applyStatusDefaults: applyStatusDefaults,
+    suggestName: suggestName,
+    isValidCombination: isValidCombination,
   }
 })()

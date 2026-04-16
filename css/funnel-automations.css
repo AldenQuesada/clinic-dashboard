@@ -79,6 +79,8 @@
 }
 .fa-field input:focus, .fa-field select:focus, .fa-field textarea:focus { border-color:#92724B; }
 .fa-field textarea { resize:vertical; min-height:200px; line-height:1.6; font-size:14px; padding:12px 14px; }
+.fa-field select[disabled] { background:#F1F5F9; color:#94A3B8; cursor:not-allowed; }
+.fa-hint-small { font-size:10px; color:#94A3B8; margin-top:4px; font-style:italic; }
 .fa-field-row { display:flex; gap:8px; }
 .fa-field-row .fa-field { flex:1; }
 

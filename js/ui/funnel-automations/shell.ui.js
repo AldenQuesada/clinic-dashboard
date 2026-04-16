@@ -546,12 +546,43 @@
         _refreshPreview()
         return
       }
+      // Status select → aplica defaults do modulo (when + campos) + sugere nome
+      if (e.target.id === 'faStatus') {
+        _readForm()
+        var mod = _mod()
+        if (mod && mod.applyStatusDefaults) {
+          var newStatus = e.target.value
+          var defaults = mod.applyStatusDefaults(_form, newStatus)
+          Object.keys(defaults).forEach(function(k){ _form[k] = defaults[k] })
+          // Sugere nome se user nao digitou ainda
+          if (mod.suggestName && (!_form.name || _form.name.trim() === '')) {
+            var suggested = mod.suggestName(_form)
+            if (suggested) _form.name = suggested
+          }
+        }
+        var tw1 = document.getElementById('faTriggerFields')
+        if (tw1 && mod) tw1.innerHTML = mod.renderTriggerFields(_form)
+        // Atualiza o input Nome tambem se foi preenchido
+        var nameEl = document.getElementById('faName')
+        if (nameEl && _form.name) nameEl.value = _form.name
+        return
+      }
       // When select → re-render SO dos trigger fields (sem flash)
       if (e.target.id === 'faWhen') {
         _readForm()
         var tw = document.getElementById('faTriggerFields')
         var m = _mod()
         if (tw && m) tw.innerHTML = m.renderTriggerFields(_form)
+        // Sugere nome novo se nome ainda vazio ou se era sugestao antiga
+        if (m && m.suggestName) {
+          var newSug = m.suggestName(_form)
+          var nameEl2 = document.getElementById('faName')
+          if (nameEl2 && newSug && (!nameEl2.value.trim() || _form.__wasSuggested)) {
+            nameEl2.value = newSug
+            _form.name = newSug
+            _form.__wasSuggested = true
+          }
+        }
         return
       }
       // Upload imagem
