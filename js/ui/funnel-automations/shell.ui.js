@@ -41,6 +41,7 @@
       name: '', description: '',
       channel: 'whatsapp',
       content_template: '',
+      ab_variant_template: '',
       attachment_url: '',
       attachment_above_text: true,
       alert_title: '', alert_type: 'info',
@@ -101,6 +102,7 @@
       +     '<div class="fa-subtitle">' + total + ' regras nesta fase · isolamento total</div>'
       +   '</div>'
       +   '<div class="fa-top-actions">'
+      +     '<button type="button" class="fa-btn-sec" data-action="show-deliverability" title="Entregabilidade (ultimos 30 dias)">' + _f('barChart2', 14) + ' Entregabilidade</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="export-json" title="Exportar regras desta fase como JSON">' + _f('download', 14) + ' Exportar</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="import-json" title="Importar regras de JSON">' + _f('upload', 14) + ' Importar</button>'
       +     '<input type="file" id="faImportInput" accept="application/json" style="display:none">'
@@ -300,11 +302,25 @@
   }
 
   function _blockWhatsapp(f) {
+    var abActive = !!(f.ab_variant_template && f.ab_variant_template.trim())
+    var abLabel = abActive ? 'A/B ativo' : 'Testar variacao B'
+    var abIcon = abActive ? 'zap' : 'plus'
+    var abBlock = abActive
+      ? '<div class="fa-ab-block">'
+        +   '<div class="fa-ab-header">' + _f('zap', 12) + ' Variante B <span class="fa-ab-badge">50/50</span>'
+        +     '<button type="button" class="fa-ab-remove" data-action="ab-remove" title="Desativar A/B">' + _f('x', 12) + '</button>'
+        +   '</div>'
+        +   '<textarea id="faContentB" class="fa-wa-textarea" rows="6" placeholder="Variante B — engine sorteia 50/50 entre A e B">' + _esc(f.ab_variant_template || '') + '</textarea>'
+        + '</div>'
+      : ''
     return '<div class="fa-channel-block fa-wa-block">'
-      +   '<div class="fa-channel-block-title">' + _f('messageCircle', 12) + ' WhatsApp</div>'
+      +   '<div class="fa-channel-block-title">' + _f('messageCircle', 12) + ' WhatsApp'
+      +     '<button type="button" class="fa-ab-toggle" data-action="ab-toggle" title="A/B testing de copy">' + _f(abIcon, 11) + ' ' + abLabel + '</button>'
+      +   '</div>'
       +   S().renderChipsBar('var')
       +   S().renderFormatToolbar()
       +   '<textarea id="faContent" class="fa-wa-textarea" rows="10" placeholder="Digite a mensagem do WhatsApp...">'+_esc(f.content_template)+'</textarea>'
+      +   abBlock
       +   S().renderAttachArea(f.attachment_url, f.attachment_above_text !== false)
       + '</div>'
   }
@@ -384,6 +400,16 @@
     if (S().channelIncludes(rule.channel, 'alert')) {
       html += S().renderAlertPreview(rule.alert_title, rule.alert_type)
     }
+    // Simulador de disparo: converte _form → rule via modulo ativo
+    try {
+      var m = _mod()
+      if (m && m.toTrigger) {
+        var trig = m.toTrigger(rule)
+        if (trig && trig.trigger_type) {
+          html += S().renderDispatchTimeline({ trigger_type: trig.trigger_type, trigger_config: trig.trigger_config })
+        }
+      }
+    } catch (e) { /* silencioso se form incompleto */ }
     return html || '<div class="fa-col-preview-empty">Preview vazio</div>'
   }
 
@@ -418,6 +444,7 @@
     out.description = r.description || ''
     out.channel = r.channel || 'whatsapp'
     out.content_template = r.content_template || ''
+    out.ab_variant_template = r.ab_variant_template || ''
     out.attachment_url = r.attachment_url || ''
     out.attachment_above_text = r.attachment_above_text !== false
     out.alert_title = r.alert_title || ''
@@ -444,6 +471,7 @@
     _form.name = v('faName')
     _form.description = v('faDesc')
     _form.content_template = v('faContent')
+    _form.ab_variant_template = v('faContentB')
     _form.alert_title = v('faAlertTitle')
     _form.alert_type = v('faAlertType') || 'info'
     _form.task_title = v('faTaskTitle')
@@ -496,6 +524,7 @@
       description: _form.description,
       channel: _form.channel,
       content_template: _form.content_template || _form.alexa_message || '-',
+      ab_variant_template: (_form.ab_variant_template && _form.ab_variant_template.trim()) ? _form.ab_variant_template : null,
       attachment_url: _form.attachment_url || null,
       attachment_above_text: _form.attachment_above_text !== false,
       alert_title: _form.alert_title,
@@ -569,6 +598,22 @@
         if (a === 'export-json') { _exportJson(); return }
         if (a === 'import-json') { var imp = document.getElementById('faImportInput'); if (imp) imp.click(); return }
         if (a === 'load-more') { _visibleCount += PAGE_SIZE; _render(); return }
+        if (a === 'ab-toggle') {
+          _readForm()
+          _form.ab_variant_template = _form.ab_variant_template && _form.ab_variant_template.trim()
+            ? ''
+            : (_form.content_template || 'Variacao alternativa...')
+          _render(); return
+        }
+        if (a === 'ab-remove') {
+          _readForm(); _form.ab_variant_template = ''; _render(); return
+        }
+        if (a === 'show-deliverability') { _showDeliverability(); return }
+        if (a === 'close-deliverability') {
+          var mdv = document.getElementById('faDeliverabilityModal')
+          if (mdv) mdv.remove()
+          return
+        }
       }
 
       // Duplicar regra
@@ -657,6 +702,7 @@
 
     root.addEventListener('input', function(e) {
       if (e.target.id === 'faContent') { _form.content_template = e.target.value; _schedulePreview() }
+      if (e.target.id === 'faContentB') { _form.ab_variant_template = e.target.value }
       if (e.target.id === 'faAlexaMsg') { _form.alexa_message = e.target.value; _schedulePreview() }
       if (e.target.id === 'faName') { _form.name = e.target.value }
       if (e.target.id === 'faAttachUrl') { _form.attachment_url = e.target.value.trim(); _schedulePreview() }
@@ -747,6 +793,78 @@
     var preview = document.querySelector(_modalOpen ? '.fa-modal-preview' : '.fa-col-preview')
     if (!preview) return
     preview.innerHTML = _renderLivePreview(_form)
+  }
+
+  // ── Dashboard de Entregabilidade ────────────────────────────
+  async function _showDeliverability() {
+    var existing = document.getElementById('faDeliverabilityModal')
+    if (existing) existing.remove()
+    var overlay = document.createElement('div')
+    overlay.id = 'faDeliverabilityModal'
+    overlay.className = 'fa-modal-overlay'
+    overlay.setAttribute('data-action', 'close-deliverability')
+    overlay.innerHTML = '<div class="fa-modal fa-modal-deliv" role="dialog">'
+      + '<div class="fa-modal-header">'
+      +   '<div class="fa-modal-title">' + _f('barChart2', 16) + ' Entregabilidade - ultimos 30 dias</div>'
+      +   '<button type="button" class="fa-btn-icon" data-action="close-deliverability">' + _f('x', 16) + '</button>'
+      + '</div>'
+      + '<div class="fa-modal-body"><div class="fa-deliv-loading">Carregando metricas...</div></div>'
+      + '</div>'
+    document.body.appendChild(overlay)
+
+    try {
+      if (!window._sbShared) throw new Error('Supabase indisponivel')
+      var res = await window._sbShared.rpc('wa_rule_deliverability', { p_days: 30 })
+      if (res.error) throw new Error(res.error.message)
+      var rows = res.data || []
+      _renderDeliverabilityTable(rows)
+    } catch (e) {
+      var body = document.querySelector('#faDeliverabilityModal .fa-modal-body')
+      if (body) body.innerHTML = '<div class="fa-deliv-error">Erro: ' + S().esc(e.message) + '</div>'
+    }
+  }
+
+  function _renderDeliverabilityTable(rows) {
+    var body = document.querySelector('#faDeliverabilityModal .fa-modal-body')
+    if (!body) return
+    if (!rows.length) {
+      body.innerHTML = '<div class="fa-deliv-empty">Nenhum dado nos ultimos 30 dias</div>'
+      return
+    }
+    var totalSent = rows.reduce(function(s,r){ return s + parseInt(r.sent||0) }, 0)
+    var totalFailed = rows.reduce(function(s,r){ return s + parseInt(r.failed||0) }, 0)
+    var totalPending = rows.reduce(function(s,r){ return s + parseInt(r.pending||0) }, 0)
+    var avgRate = totalSent + totalFailed > 0
+      ? Math.round((totalSent / (totalSent + totalFailed)) * 1000) / 10
+      : null
+
+    var summary = '<div class="fa-deliv-summary">'
+      + '<div class="fa-deliv-stat"><div class="fa-deliv-stat-label">Enviadas</div><div class="fa-deliv-stat-val" style="color:#10B981">' + totalSent + '</div></div>'
+      + '<div class="fa-deliv-stat"><div class="fa-deliv-stat-label">Falharam</div><div class="fa-deliv-stat-val" style="color:#DC2626">' + totalFailed + '</div></div>'
+      + '<div class="fa-deliv-stat"><div class="fa-deliv-stat-label">Pendentes</div><div class="fa-deliv-stat-val" style="color:#F59E0B">' + totalPending + '</div></div>'
+      + '<div class="fa-deliv-stat"><div class="fa-deliv-stat-label">Taxa geral</div><div class="fa-deliv-stat-val">' + (avgRate != null ? avgRate + '%' : '—') + '</div></div>'
+      + '</div>'
+
+    var thead = '<tr><th>Regra</th><th>Canal</th><th>Total</th><th>Enviadas</th><th>Falhas</th><th>Pendentes</th><th>Taxa</th></tr>'
+    var tbody = rows.map(function(r) {
+      var rate = r.delivery_rate
+      var rateCls = rate == null ? '' : rate >= 90 ? 'fa-deliv-good' : rate >= 70 ? 'fa-deliv-warn' : 'fa-deliv-bad'
+      var rateTxt = rate == null ? '—' : rate + '%'
+      var inactiveCls = r.is_active ? '' : ' fa-deliv-row-inactive'
+      return '<tr class="' + inactiveCls + '">'
+        + '<td>' + S().esc(r.rule_name) + (r.is_active ? '' : ' <span class="fa-deliv-off">OFF</span>') + '</td>'
+        + '<td><span class="fa-deliv-chan">' + S().esc(r.channel || '') + '</span></td>'
+        + '<td>' + r.total + '</td>'
+        + '<td style="color:#10B981">' + r.sent + '</td>'
+        + '<td' + (parseInt(r.failed) > 0 ? ' style="color:#DC2626;font-weight:600"' : '') + '>' + r.failed + '</td>'
+        + '<td>' + r.pending + '</td>'
+        + '<td class="' + rateCls + '">' + rateTxt + '</td>'
+        + '</tr>'
+    }).join('')
+
+    body.innerHTML = summary
+      + '<table class="fa-deliv-table"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>'
+      + '<div class="fa-deliv-hint">' + _f('info', 11) + ' Taxa = enviadas / (enviadas + falhas). Regras sem dados nao aparecem com valor.</div>'
   }
 
   // ── Duplicar regra ──────────────────────────────────────────

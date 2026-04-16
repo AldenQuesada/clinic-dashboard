@@ -275,6 +275,162 @@
     return html
   }
 
+  // ── Dispatch simulator ──────────────────────────────────────
+  // Simula quando a regra vai disparar proximos N vezes.
+  // Para d_before/d_zero/min_before: busca appointments futuros reais.
+  // Para on_tag/on_status: descritivo (sem data especifica).
+  // Para d_after: busca appointments finalizados recentes.
+  function _loadAppts() {
+    try { return JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch (e) { return [] }
+  }
+  function _fmtDispatchDate(d) {
+    if (!d || isNaN(d.getTime())) return ''
+    var dd = String(d.getDate()).padStart(2, '0')
+    var mm = String(d.getMonth() + 1).padStart(2, '0')
+    var yy = d.getFullYear()
+    var hh = String(d.getHours()).padStart(2, '0')
+    var mi = String(d.getMinutes()).padStart(2, '0')
+    var now = new Date()
+    var diffMs = d - now
+    var diffDays = Math.round(diffMs / 86400000)
+    var rel = ''
+    if (diffMs < 0) rel = '(ja passou)'
+    else if (diffDays === 0) rel = '(hoje)'
+    else if (diffDays === 1) rel = '(amanha)'
+    else if (diffDays > 1 && diffDays < 30) rel = '(em ' + diffDays + 'd)'
+    return dd + '/' + mm + '/' + yy + ' ' + hh + ':' + mi + ' ' + rel
+  }
+  function _calcForApptRule(rule, apptDate) {
+    var cfg = rule.trigger_config || {}
+    var d
+    switch (rule.trigger_type) {
+      case 'd_before':
+        d = new Date(apptDate)
+        d.setDate(d.getDate() - (cfg.days || 1))
+        d.setHours(cfg.hour || 10, cfg.minute || 0, 0, 0)
+        return d
+      case 'd_zero':
+        d = new Date(apptDate)
+        d.setHours(cfg.hour || 8, cfg.minute || 0, 0, 0)
+        return d
+      case 'min_before':
+        d = new Date(apptDate)
+        d.setMinutes(d.getMinutes() - (cfg.minutes || 30))
+        return d
+      case 'd_after':
+        d = new Date(apptDate)
+        d.setDate(d.getDate() + (cfg.days || 1))
+        d.setHours(cfg.hour || 10, cfg.minute || 0, 0, 0)
+        return d
+      default:
+        return null
+    }
+  }
+  function simulateDispatches(rule, limit) {
+    limit = limit || 3
+    if (!rule || !rule.trigger_type) return { type: 'unknown', items: [] }
+    var tt = rule.trigger_type
+    var cfg = rule.trigger_config || {}
+
+    if (tt === 'on_tag') {
+      return {
+        type: 'reactive',
+        headline: 'Dispara quando a tag <b>' + _esc(cfg.tag || '?') + '</b> for aplicada',
+        delay: cfg.delay_days || cfg.delay_hours || cfg.delay_minutes
+          ? _delayDescription(cfg) : 'imediatamente',
+        items: [],
+      }
+    }
+    if (tt === 'on_status') {
+      return {
+        type: 'reactive',
+        headline: 'Dispara quando status mudar para <b>' + _esc(cfg.status || '?') + '</b>',
+        delay: 'imediato',
+        items: [],
+      }
+    }
+    if (tt === 'on_finalize') {
+      return { type: 'reactive', headline: 'Dispara ao <b>finalizar</b> a consulta', delay: 'imediato', items: [] }
+    }
+    if (tt === 'daily_summary') {
+      return { type: 'recurring', headline: 'Dispara <b>todo dia</b> as ' + (cfg.hour || 9) + 'h' + String(cfg.minute || 0).padStart(2, '0'), items: [] }
+    }
+
+    // Time-based: precisa appointments
+    var appts = _loadAppts()
+    if (!appts.length) {
+      return { type: 'empty', headline: 'Nenhum agendamento encontrado para simular', items: [] }
+    }
+
+    var now = new Date()
+    var isAfter = tt === 'd_after'
+    var candidates = appts
+      .filter(function(a) {
+        if (!a.data || a.status === 'cancelado' || a.status === 'no_show') return false
+        var dt = new Date(a.data + 'T' + (a.horaInicio || '09:00') + ':00')
+        if (isNaN(dt.getTime())) return false
+        return isAfter ? dt < now : dt >= now
+      })
+      .sort(function(a, b) {
+        var da = new Date(a.data + 'T' + (a.horaInicio || '09:00') + ':00')
+        var db = new Date(b.data + 'T' + (b.horaInicio || '09:00') + ':00')
+        return isAfter ? db - da : da - db
+      })
+      .slice(0, limit)
+
+    var items = candidates.map(function(a) {
+      var dt = new Date(a.data + 'T' + (a.horaInicio || '09:00') + ':00')
+      var dispatchAt = _calcForApptRule(rule, dt)
+      return {
+        patient: a.pacienteNome || 'Paciente',
+        appt_at: _fmtDispatchDate(dt),
+        dispatch_at: _fmtDispatchDate(dispatchAt),
+        overdue: dispatchAt < now,
+      }
+    })
+
+    return {
+      type: 'scheduled',
+      headline: items.length ? 'Proximos ' + items.length + ' disparos:' : 'Nenhum agendamento futuro encontrado',
+      items: items,
+    }
+  }
+  function _delayDescription(cfg) {
+    var parts = []
+    if (cfg.delay_days) parts.push(cfg.delay_days + 'd')
+    if (cfg.delay_hours) parts.push(cfg.delay_hours + 'h')
+    if (cfg.delay_minutes) parts.push(cfg.delay_minutes + 'min')
+    return parts.length ? 'apos ' + parts.join(' ') : 'imediatamente'
+  }
+
+  function renderDispatchTimeline(rule) {
+    var sim = simulateDispatches(rule, 3)
+    var body = ''
+    if (sim.type === 'reactive' || sim.type === 'recurring' || sim.type === 'empty') {
+      body = '<div class="fa-sim-headline">' + sim.headline + '</div>'
+      if (sim.delay) body += '<div class="fa-sim-delay">' + _feather('clock', 11) + ' ' + _esc(sim.delay) + '</div>'
+    } else if (sim.items.length) {
+      body = '<div class="fa-sim-headline">' + sim.headline + '</div>'
+        + '<ul class="fa-sim-list">'
+        + sim.items.map(function(it) {
+            var icon = it.overdue ? 'alertCircle' : 'clock'
+            var cls = it.overdue ? ' fa-sim-overdue' : ''
+            return '<li class="fa-sim-item' + cls + '">'
+              + _feather(icon, 12)
+              + '<div class="fa-sim-who">' + _esc(it.patient) + '</div>'
+              + '<div class="fa-sim-when">' + _esc(it.dispatch_at) + '</div>'
+              + '<div class="fa-sim-appt">consulta: ' + _esc(it.appt_at) + '</div>'
+              + '</li>'
+          }).join('')
+        + '</ul>'
+    } else {
+      body = '<div class="fa-sim-headline">' + _esc(sim.headline) + '</div>'
+    }
+    return '<div class="fa-sim-card">'
+      + '<div class="fa-sim-header">' + _feather('radio', 13) + ' Simulador de disparo</div>'
+      + body + '</div>'
+  }
+
   // ── Alexa TTS ───────────────────────────────────────────────
   if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try { window.speechSynthesis.getVoices() } catch (e) {}
@@ -321,6 +477,8 @@
     VALID_VAR_IDS: VALID_VAR_IDS,
     validatePlaceholders: validatePlaceholders,
     validatePlaceholdersInForm: validatePlaceholdersInForm,
+    simulateDispatches: simulateDispatches,
+    renderDispatchTimeline: renderDispatchTimeline,
     renderPhonePreview: renderPhonePreview,
     renderAlexaPreview: renderAlexaPreview,
     renderTaskPreview:  renderTaskPreview,
