@@ -78,6 +78,18 @@
     return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : isoDate
   }
 
+  // Diferenca em dias de calendario entre hoje e a data da consulta (YYYY-MM-DD).
+  // Ignora horario. Retorna 0 se hoje, 1 se amanha, negativo se passado.
+  function _dayDiffToAppt(apptIsoDate) {
+    if (!apptIsoDate) return 0
+    var p = apptIsoDate.split('-')
+    if (p.length !== 3) return 0
+    var appt = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10))
+    var today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return Math.round((appt.getTime() - today.getTime()) / 86400000)
+  }
+
   // ── Get phone from lead ────────────────────────────────────
   function _getPhone(appt) {
     try {
@@ -118,6 +130,14 @@
     timeRules.forEach(function (rule) {
       var scheduledAt = _calcScheduledAt(rule, dt)
       if (!scheduledAt) return
+
+      // Guard min_lead_days (so d_before): pula se faltam menos de N dias
+      // de calendario entre hoje e a data da consulta.
+      if (rule.trigger_type === 'd_before') {
+        var cfg = rule.trigger_config || {}
+        var minLead = parseInt(cfg.min_lead_days, 10) || 0
+        if (minLead > 0 && _dayDiffToAppt(appt.data) < minLead) return
+      }
 
       // WhatsApp: enqueue in wa_outbox
       if (_channelIncludes(rule.channel, 'whatsapp') && phone && rule.content_template) {
