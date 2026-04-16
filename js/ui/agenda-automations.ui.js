@@ -212,7 +212,7 @@
       +     '<div class="aa-title">Automacoes da Agenda</div>'
       +     '<div class="aa-subtitle">' + active + ' de ' + total + ' regras ativas</div>'
       +   '</div>'
-      +   '<button class="aa-btn-new" data-action="new">' + _feather('plus', 14) + ' Nova automacao</button>'
+      +   '<button type="button" class="aa-btn-new" data-action="new">' + _feather('plus', 14) + ' Nova automacao</button>'
       + '</div>'
   }
 
@@ -234,7 +234,7 @@
         subDetail = ' <span class="te-tab-sub">(N:' + n + ' R:' + r0 + ' O:' + (o0 > 0 ? o0 : 0) + ')</span>'
       }
 
-      return '<button class="te-tab' + active + '" data-action="tab" data-tab="' + cid + '">'
+      return '<button type="button" class="te-tab' + active + '" data-action="tab" data-tab="' + cid + '">'
         + meta.label
         + ' <span class="te-tab-count">' + total + '</span>'
         + subDetail
@@ -256,7 +256,7 @@
       var count = p.id === 'all' ? rulesInTab.length
         : rulesInTab.filter(function (r) { return _catToMoment(_ruleFunnelCategory(r)) === p.id }).length
       var active = _momentPill === p.id ? ' aa-mom-pill-active' : ''
-      return '<button class="aa-mom-pill' + active + '" data-moment="' + p.id + '">'
+      return '<button type="button" class="aa-mom-pill' + active + '" data-moment="' + p.id + '">'
         + p.label + ' <span class="aa-mom-count">' + count + '</span></button>'
     }).join('')
     return '<div class="aa-mom-pills">' + html + '</div>'
@@ -307,8 +307,8 @@
       return '<div class="aa-card aa-card-delete">'
         + '<div style="font-size:12px;font-weight:600;color:#DC2626;margin-bottom:8px">Excluir "' + _esc(r.name) + '"?</div>'
         + '<div style="display:flex;gap:6px">'
-        + '<button class="aa-btn-sm aa-btn-danger" data-confirm-delete="' + r.id + '">Excluir</button>'
-        + '<button class="aa-btn-sm" data-cancel-delete>Cancelar</button>'
+        + '<button type="button" class="aa-btn-sm aa-btn-danger" data-confirm-delete="' + r.id + '">Excluir</button>'
+        + '<button type="button" class="aa-btn-sm" data-cancel-delete>Cancelar</button>'
         + '</div></div>'
     }
 
@@ -364,8 +364,8 @@
       +   '<div class="aa-editor-title">' + _feather('eye', 16) + '<span class="aa-editor-title-text">' + title + '</span></div>'
       +   '<div style="display:flex;gap:6px">'
       +     '<label class="aa-switch" title="Ativar/desativar"><input type="checkbox" ' + (r.is_active?'checked':'') + ' data-toggle="' + r.id + '"><span class="aa-slider"></span></label>'
-      +     '<button class="aa-btn-icon" data-edit="' + r.id + '" title="Editar">' + _feather('edit2', 14) + '</button>'
-      +     '<button class="aa-btn-icon" data-delete="' + r.id + '" title="Excluir">' + _feather('trash2', 14) + '</button>'
+      +     '<button type="button" class="aa-btn-icon" data-edit="' + r.id + '" title="Editar">' + _feather('edit2', 14) + '</button>'
+      +     '<button type="button" class="aa-btn-icon" data-delete="' + r.id + '" title="Excluir">' + _feather('trash2', 14) + '</button>'
       +   '</div>'
       + '</div>'
       + '<div class="aa-editor-body">' + _renderReadOnlyBody(r) + '</div>'
@@ -622,15 +622,15 @@
       html += '<div class="aa-tags-bar">'
       svc.TEMPLATE_VARS.forEach(function(v) {
         var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
-        html += '<button class="aa-tag-btn" data-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
+        html += '<button type="button" class="aa-tag-btn" data-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
       })
       html += '</div>'
 
       // Formatting toolbar
       html += '<div class="aa-fmt-bar">'
-        + '<button class="aa-fmt-btn" data-fmt="*" title="Negrito"><b>B</b></button>'
-        + '<button class="aa-fmt-btn" data-fmt="_" title="Italico"><i>I</i></button>'
-        + '<button class="aa-fmt-btn" data-fmt="~" title="Tachado"><s>S</s></button>'
+        + '<button type="button" class="aa-fmt-btn" data-fmt="*" title="Negrito"><b>B</b></button>'
+        + '<button type="button" class="aa-fmt-btn" data-fmt="_" title="Italico"><i>I</i></button>'
+        + '<button type="button" class="aa-fmt-btn" data-fmt="~" title="Tachado"><s>S</s></button>'
         + '</div>'
 
       html += '<textarea id="aaContent" rows="8" placeholder="Digite a mensagem...">' + _esc(f.content_template) + '</textarea>'
@@ -726,7 +726,7 @@
       html += '<div class="aa-tags-bar">'
       svc.TEMPLATE_VARS.forEach(function(v) {
         var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
-        html += '<button class="aa-tag-btn" data-alexa-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
+        html += '<button type="button" class="aa-tag-btn" data-alexa-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
       })
       html += '</div>'
       html += '<textarea id="aaAlexaMsg" rows="3" placeholder="Ex: Dra {{profissional}}, sua proxima paciente {{nome}} esta na recepcao.">' + _esc(f.alexa_message) + '</textarea>'
@@ -794,8 +794,8 @@
 
   function _renderEditorFooter() {
     return '<div class="aa-panel-footer">'
-      + '<button class="aa-btn aa-btn-cancel" data-action="cancel">Cancelar</button>'
-      + '<button class="aa-btn aa-btn-save" data-action="save">' + (_saving ? 'Salvando...' : 'Salvar') + '</button>'
+      + '<button type="button" class="aa-btn aa-btn-cancel" data-action="cancel">Cancelar</button>'
+      + '<button type="button" class="aa-btn aa-btn-save" data-action="save">' + (_saving ? 'Salvando...' : 'Salvar') + '</button>'
       + '</div>'
   }
 
@@ -872,24 +872,36 @@
           _editingRule = null
           _isCreating = true
           _render()
+          return
         }
-        if (action === 'cancel') { _isCreating = false; _editingRule = null; _render() }
-        if (action === 'save') _handleSave()
+        if (action === 'cancel') { _isCreating = false; _editingRule = null; _render(); return }
+        if (action === 'save') { _handleSave(); return }
         if (action === 'pick-image') {
           var inp = document.getElementById('aaAttachInput')
           if (inp) inp.click()
+          return
         }
         if (action === 'remove-image') {
           _readForm()
           _form.attachment_url = ''
           _render()
+          return
         }
         if (action === 'test-wa') {
           _readForm()
           _refreshPreview()
           if (window._showToast) _showToast('Preview', 'Renderizado com dados de exemplo (nao enviado)', 'info')
+          return
         }
-        return
+        if (action === 'tab') {
+          _funnelTab = btn.dataset.tab
+          _selectedId = null
+          _isCreating = false
+          _editingRule = null
+          _render()
+          return
+        }
+        // data-action desconhecido: nao retorna — deixa outros handlers processarem
       }
 
       // Toggle
@@ -940,18 +952,6 @@
       // Test Alexa
       var testAlexa = e.target.closest('[data-test-alexa]')
       if (testAlexa) { _testAlexaRule(testAlexa.dataset.testAlexa); return }
-
-      // Category filter tabs
-      // Funnel tab click (data-action=tab, data-tab=cid)
-      var funnelTab = e.target.closest('[data-action="tab"]')
-      if (funnelTab) {
-        _funnelTab = funnelTab.dataset.tab
-        _selectedId = null
-        _isCreating = false
-        _editingRule = null
-        _render()
-        return
-      }
 
       // Moment pill click (PRE/ATEND/POS)
       var momPill = e.target.closest('[data-moment]')
