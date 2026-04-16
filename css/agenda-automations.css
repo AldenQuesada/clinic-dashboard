@@ -173,6 +173,64 @@
 .aa-col-preview > * + * { margin-top:12px; }
 .aa-modal-preview > * + * { margin-top:12px; }
 
+/* ── Form sections (hierarquia top-down) ────────────────────── */
+.aa-form-section {
+  padding:18px 0 14px;
+  border-bottom:1px solid var(--border, #E2E8F0);
+}
+.aa-form-section:first-child { padding-top:0; }
+.aa-form-section:last-child { border-bottom:none; }
+.aa-form-section-title {
+  font-size:11px; font-weight:700; letter-spacing:.8px;
+  text-transform:uppercase; color:#92724B;
+  margin-bottom:12px; display:flex; align-items:center; gap:6px;
+}
+
+/* ── Canal multi-checkboxes ─────────────────────────────────── */
+.aa-channel-checks {
+  display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;
+}
+.aa-channel-check {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:10px 16px; border-radius:10px;
+  border:1.5px solid var(--border, #E2E8F0);
+  background:#fff; cursor:pointer;
+  font-size:13px; font-weight:600;
+  color:var(--text-secondary, #64748B);
+  transition:all .15s;
+  user-select:none;
+}
+.aa-channel-check:hover { border-color:#94A3B8; }
+.aa-channel-check:has(input:checked) {
+  background:#FDF8F0; border-color:#92724B; color:#92724B;
+}
+.aa-channel-check input { display:none; }
+
+/* ── Bloco de config por canal marcado ──────────────────────── */
+.aa-channel-block {
+  margin-top:12px; padding:14px;
+  background:var(--bg-secondary, #F8FAFC);
+  border-radius:10px; border:1px solid var(--border, #E2E8F0);
+}
+.aa-channel-block-title {
+  font-size:12px; font-weight:700; color:var(--text-primary, #1E293B);
+  margin-bottom:10px; display:flex; align-items:center; gap:6px;
+}
+
+/* ── Seccao Avancado (details/summary) ──────────────────────── */
+details.aa-advanced { padding:12px 0; }
+details.aa-advanced summary {
+  cursor:pointer; list-style:none;
+  padding:8px 0;
+}
+details.aa-advanced summary::-webkit-details-marker { display:none; }
+details.aa-advanced summary::before {
+  content:'▸'; margin-right:8px;
+  transition:transform .15s;
+  display:inline-block; color:#92724B;
+}
+details.aa-advanced[open] summary::before { transform:rotate(90deg); }
+
 /* Nivel 3 — Grid 3 colunas fixas */
 .aa-grid { flex:1; display:grid; grid-template-columns:320px 1fr 320px; gap:16px; padding:16px 24px 24px; min-height:0; }
 @media (max-width: 1200px) { .aa-grid { grid-template-columns:280px 1fr 280px; } }

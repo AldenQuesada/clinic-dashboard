@@ -695,184 +695,209 @@
     return s
   }
 
-  // ── Editor ─────────────────────────────────────────────────
+  // ── Combina array de canais em valor unico para persistir ─
+  function _combineChannels(arr) {
+    if (!arr || !arr.length) return ''
+    if (arr.length === 1) return arr[0]
+    if (arr.length >= 3) return 'all'
+    var s = arr.slice().sort().join('_')
+    var map = {
+      'alert_whatsapp': 'whatsapp_alert',
+      'alexa_whatsapp': 'whatsapp_alexa',
+      'task_whatsapp':  'whatsapp_task',
+      'alert_task':     'alert_task',
+      'alert_alexa':    'alert_alexa',
+      'alexa_task':     'all', // sem variante dedicada no schema
+    }
+    return map[s] || 'all'
+  }
+
+  // ── Editor (4 secoes top-down) ─────────────────────────────
   function _renderEditor() {
+    return _renderSectionIdent()
+      + _renderSectionWhen()
+      + _renderSectionHow()
+      + _renderSectionAdvanced()
+  }
+
+  // SECAO 1 — Identificacao
+  function _renderSectionIdent() {
+    var f = _form
+    return '<div class="aa-form-section">'
+      +   '<div class="aa-form-section-title">' + _feather('tag', 12) + ' Identificacao</div>'
+      +   '<div class="aa-field"><label>Nome</label>'
+      +     '<input type="text" id="aaName" value="' + _esc(f.name) + '" placeholder="Ex: Confirmacao D-1"></div>'
+      +   '<div class="aa-field"><label>Descricao</label>'
+      +     '<input type="text" id="aaDesc" value="' + _esc(f.description) + '" placeholder="Breve descricao (opcional)"></div>'
+      + '</div>'
+  }
+
+  // SECAO 2 — Quando disparar
+  function _renderSectionWhen() {
+    var f = _form
+    var svc = _svc()
+    var triggerOpts = svc.TRIGGER_TYPES.map(function(t) {
+      var sel = f.trigger_type === t.id ? ' selected' : ''
+      return '<option value="' + t.id + '"' + sel + '>' + t.label + '</option>'
+    }).join('')
+
+    return '<div class="aa-form-section">'
+      +   '<div class="aa-form-section-title">' + _feather('clock', 12) + ' Quando disparar</div>'
+      +   '<div class="aa-field"><label>Gatilho</label>'
+      +     '<select id="aaTrigger">' + triggerOpts + '</select></div>'
+      +   '<div id="aaTriggerConfig">' + _renderTriggerConfig(f.trigger_type, f.trigger_config) + '</div>'
+      + '</div>'
+  }
+
+  // SECAO 3 — Como avisa (canais + config por canal marcado)
+  function _renderSectionHow() {
+    var f = _form
+    var channels = [
+      { id: 'whatsapp', label: 'WhatsApp', icon: 'messageCircle' },
+      { id: 'alexa',    label: 'Alexa',    icon: 'speaker' },
+      { id: 'task',     label: 'Tarefa',   icon: 'clipboard' },
+      { id: 'alert',    label: 'Alerta',   icon: 'bell' },
+    ]
+    var checks = channels.map(function(ch) {
+      var checked = _channelIncludes(f.channel, ch.id) ? ' checked' : ''
+      return '<label class="aa-channel-check"><input type="checkbox" name="aaChannelMulti" value="' + ch.id + '"' + checked + '>'
+        + _feather(ch.icon, 14) + ' <span>' + ch.label + '</span></label>'
+    }).join('')
+
+    var html = '<div class="aa-form-section">'
+      +   '<div class="aa-form-section-title">' + _feather('zap', 12) + ' Como avisar</div>'
+      +   '<div class="aa-channel-checks">' + checks + '</div>'
+
+    // Config por canal marcado (aparece empilhada)
+    if (_channelIncludes(f.channel, 'whatsapp')) html += _renderChannelConfigWhatsapp(f)
+    if (_channelIncludes(f.channel, 'alexa'))    html += _renderChannelConfigAlexa(f)
+    if (_channelIncludes(f.channel, 'task'))     html += _renderChannelConfigTask(f)
+    if (_channelIncludes(f.channel, 'alert'))    html += _renderChannelConfigAlert(f)
+
+    html += '</div>'
+    return html
+  }
+
+  // SECAO 4 — Avancado (destinatario + fase) colapsavel
+  function _renderSectionAdvanced() {
     var f = _form
     var svc = _svc()
 
-    // Name
-    var html = '<div class="aa-field"><label>Nome</label>'
-      + '<input type="text" id="aaName" value="' + _esc(f.name) + '" placeholder="Ex: Confirmacao D-1"></div>'
-
-    // Description
-    html += '<div class="aa-field"><label>Descricao</label>'
-      + '<input type="text" id="aaDesc" value="' + _esc(f.description) + '" placeholder="Breve descricao"></div>'
-
-    // Category
-    html += '<div class="aa-field"><label>Fase</label><div class="aa-radio-group">'
-    svc.CATEGORIES.forEach(function(c) {
-      var checked = f.category === c.id ? ' checked' : ''
-      html += '<label class="aa-radio" style="--ac:' + c.color + '"><input type="radio" name="aaCategory" value="' + c.id + '"' + checked + '> ' + c.label + '</label>'
-    })
-    html += '</div></div>'
-
-    // Trigger type
-    html += '<div class="aa-field"><label>Gatilho</label><select id="aaTrigger">'
-    svc.TRIGGER_TYPES.forEach(function(t) {
-      var sel = f.trigger_type === t.id ? ' selected' : ''
-      html += '<option value="' + t.id + '"' + sel + '>' + t.label + '</option>'
-    })
-    html += '</select></div>'
-
-    // Trigger config (dynamic)
-    html += '<div id="aaTriggerConfig">' + _renderTriggerConfig(f.trigger_type, f.trigger_config) + '</div>'
-
-    // Recipient
-    html += '<div class="aa-field"><label>Destinatario</label><div class="aa-radio-group">'
-    svc.RECIPIENT_TYPES.forEach(function(r) {
+    var recipRadios = svc.RECIPIENT_TYPES.map(function(r) {
       var checked = f.recipient_type === r.id ? ' checked' : ''
-      html += '<label class="aa-radio"><input type="radio" name="aaRecipient" value="' + r.id + '"' + checked + '> ' + _feather(RECIPIENT_ICONS[r.id], 12) + ' ' + r.label + '</label>'
-    })
-    html += '</div></div>'
+      return '<label class="aa-radio"><input type="radio" name="aaRecipient" value="' + r.id + '"' + checked + '> '
+        + _feather(RECIPIENT_ICONS[r.id], 12) + ' ' + r.label + '</label>'
+    }).join('')
 
-    // Channel
-    html += '<div class="aa-field"><label>Canal</label><div class="aa-radio-group">'
-    svc.CHANNELS.forEach(function(c) {
-      var checked = f.channel === c.id ? ' checked' : ''
-      html += '<label class="aa-radio"><input type="radio" name="aaChannel" value="' + c.id + '"' + checked + '> ' + _feather(CHANNEL_ICONS[c.id], 12) + ' ' + c.label + '</label>'
-    })
-    html += '</div></div>'
+    var catRadios = svc.CATEGORIES.map(function(c) {
+      var checked = f.category === c.id ? ' checked' : ''
+      return '<label class="aa-radio" style="--ac:' + c.color + '"><input type="radio" name="aaCategory" value="' + c.id + '"' + checked + '> ' + c.label + '</label>'
+    }).join('')
 
-    // Content template (show if channel includes whatsapp)
-    if (_channelIncludes(f.channel, 'whatsapp')) {
-      html += '<div class="aa-field"><label>Mensagem WhatsApp</label>'
+    return '<details class="aa-form-section aa-advanced">'
+      +   '<summary class="aa-form-section-title">' + _feather('settings', 12) + ' Avancado</summary>'
+      +   '<div style="margin-top:8px">'
+      +     '<div class="aa-field"><label>Destinatario</label>'
+      +       '<div class="aa-radio-group">' + recipRadios + '</div></div>'
+      +     '<div class="aa-field"><label>Fase (interna)</label>'
+      +       '<div class="aa-radio-group">' + catRadios + '</div></div>'
+      +   '</div>'
+      + '</details>'
+  }
 
-      // Variable tags bar (com tooltip explicativo)
-      html += '<div class="aa-tags-bar">'
-      svc.TEMPLATE_VARS.forEach(function(v) {
-        var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
-        html += '<button type="button" class="aa-tag-btn" data-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
-      })
-      html += '</div>'
+  // ── Subsecoes por canal ────────────────────────────────────
+  function _renderChannelConfigWhatsapp(f) {
+    var svc = _svc()
+    var chips = svc.TEMPLATE_VARS.map(function(v) {
+      var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
+      return '<button type="button" class="aa-tag-btn" data-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
+    }).join('')
 
-      // Formatting toolbar
-      html += '<div class="aa-fmt-bar">'
-        + '<button type="button" class="aa-fmt-btn" data-fmt="*" title="Negrito"><b>B</b></button>'
-        + '<button type="button" class="aa-fmt-btn" data-fmt="_" title="Italico"><i>I</i></button>'
-        + '<button type="button" class="aa-fmt-btn" data-fmt="~" title="Tachado"><s>S</s></button>'
+    var html = '<div class="aa-channel-block">'
+      +   '<div class="aa-channel-block-title">' + _feather('messageCircle', 12) + ' Mensagem WhatsApp</div>'
+      +   '<div class="aa-tags-bar">' + chips + '</div>'
+      +   '<div class="aa-fmt-bar">'
+      +     '<button type="button" class="aa-fmt-btn" data-fmt="*" title="Negrito"><b>B</b></button>'
+      +     '<button type="button" class="aa-fmt-btn" data-fmt="_" title="Italico"><i>I</i></button>'
+      +     '<button type="button" class="aa-fmt-btn" data-fmt="~" title="Tachado"><s>S</s></button>'
+      +   '</div>'
+      +   '<textarea id="aaContent" rows="8" placeholder="Digite a mensagem...">' + _esc(f.content_template) + '</textarea>'
+      +   '<div class="aa-attach">'
+
+    if (f.attachment_url) {
+      html += '<div class="aa-attach-preview">'
+        +   '<img src="' + _esc(f.attachment_url) + '" alt="anexo">'
+        +   '<button type="button" class="aa-attach-remove" data-action="remove-image" title="Remover imagem">' + _feather('x', 14) + '</button>'
         + '</div>'
-
-      html += '<textarea id="aaContent" rows="8" placeholder="Digite a mensagem...">' + _esc(f.content_template) + '</textarea>'
-
-      // Image attachment area
-      html += '<div class="aa-attach">'
-      if (f.attachment_url) {
-        html += '<div class="aa-attach-preview">'
-          + '<img src="' + _esc(f.attachment_url) + '" alt="anexo">'
-          + '<button type="button" class="aa-attach-remove" data-action="remove-image" title="Remover imagem">' + _feather('x', 14) + '</button>'
-          + '</div>'
-      } else {
-        html += '<button type="button" class="aa-btn-attach" data-action="pick-image">'
-          + _feather('image', 14) + ' Anexar imagem'
-          + '</button>'
-          + '<div class="aa-attach-hint">JPG, PNG, WEBP ou GIF — max 10 MB</div>'
-      }
-      html += '<input type="file" id="aaAttachInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">'
-      html += '</div>'
-
-      html += '</div>'
-
-      // Live preview
-      html += _renderPhonePreview(_svc().renderTemplate(f.content_template, _sampleVars()), f.attachment_url, f.attachment_above_text !== false)
-
-      // Testar envio (dry-run — so mostra preview completo)
-      html += '<div style="margin-top:8px;display:flex;justify-content:flex-end">'
-        + '<button type="button" class="aa-btn-test" data-action="test-wa" title="Renderiza a mensagem final com dados de exemplo sem enviar">'
-        + _feather('eye', 12) + ' Testar renderizacao'
+    } else {
+      html += '<button type="button" class="aa-btn-attach" data-action="pick-image">'
+        +   _feather('image', 14) + ' Anexar imagem'
         + '</button>'
-        + '</div>'
+        + '<div class="aa-attach-hint">JPG, PNG, WEBP ou GIF — max 10 MB</div>'
     }
-
-    // Alert config (show if channel includes alert)
-    if (_channelIncludes(f.channel, 'alert')) {
-      html += '<div class="aa-section-title">' + _feather('bell', 14) + ' Alerta Visual</div>'
-      html += '<div class="aa-field"><label>Titulo do Alerta</label>'
-        + '<input type="text" id="aaAlertTitle" value="' + _esc(f.alert_title) + '" placeholder="Ex: Paciente chegou: {{nome}}">'
-        + '</div>'
-      html += '<div class="aa-field"><label>Tipo</label><select id="aaAlertType">'
-        + '<option value="info"' + (f.alert_type==='info'?' selected':'') + '>Info</option>'
-        + '<option value="warning"' + (f.alert_type==='warning'?' selected':'') + '>Aviso</option>'
-        + '<option value="success"' + (f.alert_type==='success'?' selected':'') + '>Sucesso</option>'
-        + '<option value="error"' + (f.alert_type==='error'?' selected':'') + '>Erro</option>'
-        + '</select></div>'
-    }
-
-    // Task config (show if channel includes task)
-    if (_channelIncludes(f.channel, 'task')) {
-      html += '<div class="aa-section-title">' + _feather('clipboard', 14) + ' Tarefa</div>'
-      html += '<div class="aa-field"><label>Titulo da Tarefa</label>'
-        + '<input type="text" id="aaTaskTitle" value="' + _esc(f.task_title || '') + '" placeholder="Ex: Confirmar presenca do paciente">'
-        + '</div>'
-      html += '<div class="aa-field-row">'
-      html += '<div class="aa-field"><label>Responsavel</label><select id="aaTaskAssignee">'
-      svc.TASK_ASSIGNEES.forEach(function(a) {
-        html += '<option value="' + a.id + '"' + ((f.task_assignee||'sdr')===a.id?' selected':'') + '>' + a.label + '</option>'
-      })
-      html += '</select></div>'
-      html += '<div class="aa-field"><label>Prioridade</label><select id="aaTaskPriority">'
-      svc.TASK_PRIORITIES.forEach(function(p) {
-        html += '<option value="' + p.id + '"' + ((f.task_priority||'normal')===p.id?' selected':'') + '>' + p.label + '</option>'
-      })
-      html += '</select></div>'
-      html += '<div class="aa-field"><label>Prazo (h)</label>'
-        + '<input type="number" id="aaTaskDeadline" min="1" max="720" value="' + (f.task_deadline_hours||24) + '">'
-        + '</div>'
-      html += '</div>'
-
-      // Task preview
-      var taskPrevColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[f.task_priority||'normal'] || '#3B82F6'
-      html += '<div style="margin-top:8px;padding:10px;border-radius:8px;border-left:4px solid ' + taskPrevColor + ';background:' + taskPrevColor + '08;font-size:12px">'
-        + '<div style="font-weight:700;color:' + taskPrevColor + '">' + _feather('clipboard', 12) + ' Preview Tarefa</div>'
-        + '<div style="margin-top:4px">' + _esc(f.task_title || 'Titulo da tarefa') + '</div>'
-        + '<div style="margin-top:2px;color:var(--text-secondary);font-size:11px">Para: ' + (f.task_assignee||'sdr') + ' | Prazo: ' + (f.task_deadline_hours||24) + 'h | ' + (f.task_priority||'normal') + '</div>'
-        + '</div>'
-    }
-
-    // Alexa config (show if channel includes alexa)
-    if (_channelIncludes(f.channel, 'alexa')) {
-      html += '<div class="aa-section-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg> Alexa</div>'
-
-      // Target device
-      html += '<div class="aa-field"><label>Dispositivo Alvo</label><select id="aaAlexaTarget">'
-      svc.ALEXA_TARGETS.forEach(function(t) {
-        var sel = (f.alexa_target||'sala') === t.id ? ' selected' : ''
-        html += '<option value="' + t.id + '"' + sel + '>' + t.label + '</option>'
-      })
-      html += '</select></div>'
-
-      // Message template
-      html += '<div class="aa-field"><label>Mensagem Alexa</label>'
-      html += '<div class="aa-tags-bar">'
-      svc.TEMPLATE_VARS.forEach(function(v) {
-        var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
-        html += '<button type="button" class="aa-tag-btn" data-alexa-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
-      })
-      html += '</div>'
-      html += '<textarea id="aaAlexaMsg" rows="3" placeholder="Ex: Dra {{profissional}}, sua proxima paciente {{nome}} esta na recepcao.">' + _esc(f.alexa_message) + '</textarea>'
-      html += '</div>'
-
-      // Alexa preview
-      var alexaPreviewMsg = _svc().renderTemplate(f.alexa_message || 'Mensagem Alexa...', { nome:'Maria Silva', data:'15/04/2026', hora:'14:30', profissional:'Dra. Mirian', procedimento:'Bioestimulador', clinica:'Clinica' })
-      var alexaTargetLabel = (svc.ALEXA_TARGETS.find(function(t){return t.id===(f.alexa_target||'sala')})||{}).label || 'Sala'
-      html += '<div style="margin-top:8px;padding:12px;border-radius:10px;border-left:4px solid #06B6D4;background:#ECFEFF;font-size:12px">'
-        + '<div style="display:flex;align-items:center;gap:6px;font-weight:700;color:#0891B2;margin-bottom:6px">'
-        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>'
-        + ' Preview Alexa (' + _esc(alexaTargetLabel) + ')</div>'
-        + '<div style="color:#0E7490;font-style:italic">"' + _esc(alexaPreviewMsg) + '"</div>'
-        + '</div>'
-    }
-
+    html += '<input type="file" id="aaAttachInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none">'
+    html += '</div>'
+    html += '</div>'
     return html
+  }
+
+  function _renderChannelConfigAlexa(f) {
+    var svc = _svc()
+    var targetOpts = svc.ALEXA_TARGETS.map(function(t) {
+      var sel = (f.alexa_target||'sala') === t.id ? ' selected' : ''
+      return '<option value="' + t.id + '"' + sel + '>' + t.label + '</option>'
+    }).join('')
+    var chips = svc.TEMPLATE_VARS.map(function(v) {
+      var tip = v.label + (v.example ? ' — ex.: "' + v.example + '"' : '')
+      return '<button type="button" class="aa-tag-btn" data-alexa-var="' + v.id + '" title="' + _esc(tip) + '">{{' + v.id + '}}</button>'
+    }).join('')
+
+    return '<div class="aa-channel-block">'
+      +   '<div class="aa-channel-block-title">' + _feather('speaker', 12) + ' Alexa</div>'
+      +   '<div class="aa-field"><label>Dispositivo alvo</label>'
+      +     '<select id="aaAlexaTarget">' + targetOpts + '</select></div>'
+      +   '<div class="aa-field"><label>Mensagem</label>'
+      +     '<div class="aa-tags-bar">' + chips + '</div>'
+      +     '<textarea id="aaAlexaMsg" rows="3" placeholder="Ex: Dra {{profissional}}, sua proxima paciente {{nome}} esta na recepcao.">' + _esc(f.alexa_message) + '</textarea>'
+      +   '</div>'
+      + '</div>'
+  }
+
+  function _renderChannelConfigTask(f) {
+    var svc = _svc()
+    var assignees = svc.TASK_ASSIGNEES.map(function(a) {
+      return '<option value="' + a.id + '"' + ((f.task_assignee||'sdr')===a.id?' selected':'') + '>' + a.label + '</option>'
+    }).join('')
+    var priorities = svc.TASK_PRIORITIES.map(function(p) {
+      return '<option value="' + p.id + '"' + ((f.task_priority||'normal')===p.id?' selected':'') + '>' + p.label + '</option>'
+    }).join('')
+
+    return '<div class="aa-channel-block">'
+      +   '<div class="aa-channel-block-title">' + _feather('clipboard', 12) + ' Tarefa</div>'
+      +   '<div class="aa-field"><label>Titulo</label>'
+      +     '<input type="text" id="aaTaskTitle" value="' + _esc(f.task_title || '') + '" placeholder="Ex: Confirmar presenca do paciente"></div>'
+      +   '<div class="aa-field-row">'
+      +     '<div class="aa-field"><label>Responsavel</label><select id="aaTaskAssignee">' + assignees + '</select></div>'
+      +     '<div class="aa-field"><label>Prioridade</label><select id="aaTaskPriority">' + priorities + '</select></div>'
+      +     '<div class="aa-field"><label>Prazo (h)</label>'
+      +       '<input type="number" id="aaTaskDeadline" min="1" max="720" value="' + (f.task_deadline_hours||24) + '"></div>'
+      +   '</div>'
+      + '</div>'
+  }
+
+  function _renderChannelConfigAlert(f) {
+    return '<div class="aa-channel-block">'
+      +   '<div class="aa-channel-block-title">' + _feather('bell', 12) + ' Alerta Visual</div>'
+      +   '<div class="aa-field"><label>Titulo</label>'
+      +     '<input type="text" id="aaAlertTitle" value="' + _esc(f.alert_title) + '" placeholder="Ex: Paciente chegou: {{nome}}"></div>'
+      +   '<div class="aa-field"><label>Tipo</label>'
+      +     '<select id="aaAlertType">'
+      +       '<option value="info"'    + (f.alert_type==='info'   ?' selected':'') + '>Info</option>'
+      +       '<option value="warning"' + (f.alert_type==='warning'?' selected':'') + '>Aviso</option>'
+      +       '<option value="success"' + (f.alert_type==='success'?' selected':'') + '>Sucesso</option>'
+      +       '<option value="error"'   + (f.alert_type==='error'  ?' selected':'') + '>Erro</option>'
+      +     '</select></div>'
+      + '</div>'
   }
 
   function _renderTriggerConfig(type, cfg) {
@@ -955,8 +980,10 @@
     var recipient = document.querySelector('input[name=aaRecipient]:checked')
     if (recipient) _form.recipient_type = recipient.value
 
-    var channel = document.querySelector('input[name=aaChannel]:checked')
-    if (channel) _form.channel = channel.value
+    // Canal: checkboxes multi-select (combinados em valor unico pro DB)
+    var checked = Array.prototype.slice.call(document.querySelectorAll('input[name=aaChannelMulti]:checked'))
+      .map(function(el){ return el.value })
+    _form.channel = _combineChannels(checked)
 
     // Read trigger config
     var cfg = {}
@@ -1182,8 +1209,8 @@
         var cfgDiv = document.getElementById('aaTriggerConfig')
         if (cfgDiv) cfgDiv.innerHTML = _renderTriggerConfig(_form.trigger_type, _form.trigger_config)
       }
-      // Channel change → re-render editor
-      if (e.target.name === 'aaChannel') {
+      // Channel change (checkboxes) → re-render editor para mostrar/esconder config
+      if (e.target.name === 'aaChannelMulti') {
         _readForm()
         _render()
       }
@@ -1328,6 +1355,7 @@
   async function _handleSave() {
     _readForm()
     if (!_form.name.trim()) { _toastWarn('Nome obrigatorio'); return }
+    if (!_form.channel) { _toastWarn('Marque ao menos 1 canal'); return }
     var needsWaContent = _channelIncludes(_form.channel, 'whatsapp')
     var needsAlexaContent = _channelIncludes(_form.channel, 'alexa')
     var isAlertOnly = _form.channel === 'alert'
