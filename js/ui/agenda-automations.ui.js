@@ -28,7 +28,8 @@
   var _deleteConfirm = null
   var _funnelTab = 'agendamento'  // pre_agendamento | agendamento | paciente | orcamento | paciente_orcamento | perdido
   var _momentPill = 'all'         // all | pre | atend | pos
-  var _isCreating = false
+  var _isCreating = false          // mantido p/ compat — true quando modal aberto
+  var _modalOpen = false           // true = overlay modal de criacao visivel
 
   // Metadata das 6 categorias do funil (copiado do templates-editor)
   var FUNNEL_CATS = {
@@ -114,7 +115,7 @@
     if (!prev) return
     var vars = _sampleVars()
     var rendered = _svc().renderTemplate(_form.content_template, vars)
-    prev.outerHTML = _renderPhonePreview(rendered, _form.attachment_url)
+    prev.outerHTML = _renderPhonePreview(rendered, _form.attachment_url, _form.attachment_above_text !== false)
   }
 
   function _sampleVars() {
@@ -201,6 +202,26 @@
       +   '<div class="aa-col-editor">' + _renderEditorColumn() + '</div>'
       +   '<div class="aa-col-preview">' + _renderPreviewColumn() + '</div>'
       + '</div>'
+      + (_modalOpen ? _renderCreateModal() : '')
+      + '</div>'
+  }
+
+  // ── Modal de criacao de nova regra ─────────────────────────
+  function _renderCreateModal() {
+    // Reutiliza o mesmo _renderEditor (form completo) dentro do modal.
+    // _form ja foi preparado pelo handler 'new' (trigger_type coerente com tab atual).
+    return '<div class="aa-modal-overlay" data-action="modal-backdrop">'
+      +   '<div class="aa-modal" role="dialog" aria-modal="true">'
+      +     '<div class="aa-modal-header">'
+      +       '<div class="aa-modal-title">' + _feather('plus', 16) + ' Nova automacao</div>'
+      +       '<button type="button" class="aa-btn-icon" data-action="modal-close" title="Fechar">' + _feather('x', 16) + '</button>'
+      +     '</div>'
+      +     '<div class="aa-modal-body">' + _renderEditor() + '</div>'
+      +     '<div class="aa-modal-footer">'
+      +       '<button type="button" class="aa-btn aa-btn-cancel" data-action="modal-close">Cancelar</button>'
+      +       '<button type="button" class="aa-btn aa-btn-save" data-action="save">' + (_saving ? 'Salvando...' : 'Criar automacao') + '</button>'
+      +     '</div>'
+      +   '</div>'
       + '</div>'
   }
 
@@ -327,24 +348,35 @@
   }
 
   // ── Coluna 2: editor ───────────────────────────────────────
+  // Simplificado: sem regra selecionada = estado vazio; com regra = edicao direta.
+  // Criacao de nova regra acontece em modal (veja _renderCreateModal).
   function _renderEditorColumn() {
-    var isEditing = _isCreating || !!_editingRule
+    if (!_selectedId) return _renderEditorEmpty()
 
-    if (!isEditing && !_selectedId) {
-      return _renderEditorEmpty()
+    var r = _rules.find(function (x) { return x.id === _selectedId })
+    if (!r) return _renderEditorEmpty()
+
+    // Carrega form com a regra selecionada (para render do _renderEditor)
+    // Se o usuario ainda nao editou nada, _form e' a regra. Se editou, _form mantem alteracoes locais.
+    if (!_editingRule || _editingRule.id !== r.id) {
+      _editingRule = r
+      _form = {
+        name: r.name, description: r.description||'', category: r.category,
+        trigger_type: r.trigger_type, trigger_config: r.trigger_config||{},
+        recipient_type: r.recipient_type, channel: r.channel,
+        content_template: r.content_template||'', attachment_url: r.attachment_url||'',
+        attachment_above_text: r.attachment_above_text !== false,
+        alert_title: r.alert_title||'',
+        alert_type: r.alert_type||'info', task_title: r.task_title||'',
+        task_assignee: r.task_assignee||'sdr', task_priority: r.task_priority||'normal',
+        task_deadline_hours: r.task_deadline_hours||24, alexa_message: r.alexa_message||'',
+        alexa_target: r.alexa_target||'sala', is_active: r.is_active, sort_order: r.sort_order||0,
+      }
     }
 
-    // Se ha selecao mas nao esta editando, mostra header minimo com botoes de acao
-    if (!isEditing && _selectedId) {
-      var r = _rules.find(function (x) { return x.id === _selectedId })
-      if (!r) return _renderEditorEmpty()
-      return _renderSelectedHeader(r)
-    }
-
-    // Modo de edicao (editor completo)
-    return _renderEditorHeader()
+    return _renderEditorHeader(r)
       + '<div class="aa-editor-body">' + _renderEditor() + '</div>'
-      + _renderEditorFooter()
+      + _renderEditorFooter(r)
   }
 
   function _renderEditorEmpty() {
@@ -353,28 +385,19 @@
       + '</div>'
       + '<div class="aa-editor-body"><div class="aa-empty-col">'
       +   _feather('mousePointer', 24)
-      +   '<br>Selecione uma regra na lista para visualizar'
+      +   '<br>Selecione uma regra na lista para editar'
       +   '<br>ou clique em <b>+ Nova automacao</b> para criar.'
       + '</div></div>'
   }
 
-  function _renderSelectedHeader(r) {
-    var title = _esc(r.name)
-    return '<div class="aa-editor-header">'
-      +   '<div class="aa-editor-title">' + _feather('eye', 16) + '<span class="aa-editor-title-text">' + title + '</span></div>'
-      +   '<div style="display:flex;gap:6px">'
-      +     '<label class="aa-switch" title="Ativar/desativar"><input type="checkbox" ' + (r.is_active?'checked':'') + ' data-toggle="' + r.id + '"><span class="aa-slider"></span></label>'
-      +     '<button type="button" class="aa-btn-icon" data-edit="' + r.id + '" title="Editar">' + _feather('edit2', 14) + '</button>'
-      +     '<button type="button" class="aa-btn-icon" data-delete="' + r.id + '" title="Excluir">' + _feather('trash2', 14) + '</button>'
-      +   '</div>'
-      + '</div>'
-      + '<div class="aa-editor-body">' + _renderReadOnlyBody(r) + '</div>'
-  }
-
-  function _renderEditorHeader() {
-    var title = _editingRule ? 'Editar: ' + _esc(_editingRule.name) : 'Nova automacao'
+  // Header do editor — mostra nome + toggle ativo + botao excluir
+  function _renderEditorHeader(r) {
+    var title = _esc((r && r.name) || 'Editar regra')
     return '<div class="aa-editor-header">'
       +   '<div class="aa-editor-title">' + _feather('edit3', 16) + '<span class="aa-editor-title-text">' + title + '</span></div>'
+      +   '<div style="display:flex;gap:8px;align-items:center">'
+      +     (r ? '<label class="aa-switch" title="Ativar/desativar"><input type="checkbox" ' + (r.is_active?'checked':'') + ' data-toggle="' + r.id + '"><span class="aa-slider"></span></label>' : '')
+      +   '</div>'
       + '</div>'
   }
 
@@ -444,7 +467,7 @@
 
     if (_channelIncludes(rule.channel, 'whatsapp')) {
       var txt = _svc().renderTemplate(rule.content_template || '', vars)
-      html += _renderPhonePreview(txt, rule.attachment_url)
+      html += _renderPhonePreview(txt, rule.attachment_url, rule.attachment_above_text !== false)
     }
 
     if (_channelIncludes(rule.channel, 'alexa') && rule.alexa_message) {
@@ -521,38 +544,35 @@
     return 'Dispara ' + parts.join(' e ') + ' apos a tag ser aplicada.'
   }
 
-  // ── Phone Preview (WhatsApp mockup) ────────────────────────
-  function _renderPhonePreview(text, imageUrl) {
+  // ── Phone Preview (WhatsApp mockup — classes .bc-* do Templates) ────
+  function _renderPhonePreview(text, imageUrl, imageAbove) {
     var formatted = _waFormat(text)
-    // Highlight {{vars}} remaining
-    formatted = formatted.replace(/\{\{([^}]+)\}\}/g, '<span class="aa-wa-tag">{{$1}}</span>')
+    formatted = formatted.replace(/\{\{([^}]+)\}\}/g, '<span class="bc-wa-tag">{{$1}}</span>')
 
     var now = new Date()
-    var hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+    var hhmm = (now.getHours() < 10 ? '0' : '') + now.getHours() + ':' + (now.getMinutes() < 10 ? '0' : '') + now.getMinutes()
+    var tick = '<svg width="14" height="8" viewBox="0 0 16 8" fill="none" stroke="#53bdeb" stroke-width="1.5"><polyline points="1 4 4 7 9 2"/><polyline points="5 4 8 7 13 2"/></svg>'
 
-    var imgHtml = imageUrl
-      ? '<div class="aa-wa-img"><img src="' + _esc(imageUrl) + '" alt="anexo" loading="lazy"></div>'
+    var imgBubble = imageUrl
+      ? '<div class="bc-wa-bubble bc-wa-img-bubble"><img class="bc-wa-preview-img" src="' + _esc(imageUrl) + '" alt="media"></div>'
+      : ''
+    var textBubble = formatted
+      ? '<div class="bc-wa-bubble"><div class="bc-wa-bubble-text">' + formatted + '</div><div class="bc-wa-bubble-time">' + hhmm + ' ' + tick + '</div></div>'
       : ''
 
-    var bubble
-    if (imgHtml && formatted) {
-      bubble = '<div class="aa-wa-bubble aa-wa-bubble-img">' + imgHtml + '<div class="aa-wa-text">' + formatted + '</div><div class="aa-wa-time">' + hhmm + ' \u2713\u2713</div></div>'
-    } else if (imgHtml) {
-      bubble = '<div class="aa-wa-bubble aa-wa-bubble-img">' + imgHtml + '<div class="aa-wa-time">' + hhmm + ' \u2713\u2713</div></div>'
-    } else if (formatted) {
-      bubble = '<div class="aa-wa-bubble">' + formatted + '<div class="aa-wa-time">' + hhmm + ' \u2713\u2713</div></div>'
-    } else {
-      bubble = '<div class="aa-wa-empty">Sem mensagem configurada</div>'
-    }
+    var above = imageAbove !== false // default true
+    var chatContent = above ? (imgBubble + textBubble) : (textBubble + imgBubble)
+    if (!chatContent) chatContent = '<div class="bc-wa-empty">Escreva a mensagem ao lado</div>'
 
-    return '<div class="aa-phone" id="aaPhonePreview">'
-      + '<div class="aa-phone-notch"></div>'
-      + '<div class="aa-wa-header">'
-      + '<div class="aa-wa-avatar"></div>'
-      + '<div><div class="aa-wa-name">Clinica</div><div class="aa-wa-status">online</div></div>'
+    return '<div class="bc-phone" id="aaPhonePreview">'
+      + '<div class="bc-phone-notch"><span class="bc-phone-notch-time">' + hhmm + '</span></div>'
+      + '<div class="bc-wa-header">'
+      +   '<div class="bc-wa-avatar"><svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>'
+      +   '<div><div class="bc-wa-name">Clinica Mirian de Paula</div><div class="bc-wa-status">online</div></div>'
       + '</div>'
-      + '<div class="aa-wa-chat">' + bubble + '</div>'
-      + '<div class="aa-wa-bottom"><div class="aa-wa-input">Mensagem</div><div class="aa-wa-send">' + _feather('send', 14) + '</div></div>'
+      + '<div class="bc-wa-chat">' + chatContent + '</div>'
+      + '<div class="bc-wa-bottom"><div class="bc-wa-input-mock">Mensagem</div><div class="bc-wa-send-mock"><svg width="16" height="16" fill="#fff" viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg></div></div>'
+      + '<div class="bc-phone-home"></div>'
       + '</div>'
   }
 
@@ -654,7 +674,7 @@
       html += '</div>'
 
       // Live preview
-      html += _renderPhonePreview(_svc().renderTemplate(f.content_template, _sampleVars()), f.attachment_url)
+      html += _renderPhonePreview(_svc().renderTemplate(f.content_template, _sampleVars()), f.attachment_url, f.attachment_above_text !== false)
 
       // Testar envio (dry-run — so mostra preview completo)
       html += '<div style="margin-top:8px;display:flex;justify-content:flex-end">'
@@ -792,10 +812,12 @@
     return html
   }
 
-  function _renderEditorFooter() {
-    return '<div class="aa-panel-footer">'
-      + '<button type="button" class="aa-btn aa-btn-cancel" data-action="cancel">Cancelar</button>'
-      + '<button type="button" class="aa-btn aa-btn-save" data-action="save">' + (_saving ? 'Salvando...' : 'Salvar') + '</button>'
+  function _renderEditorFooter(r) {
+    var id = r && r.id ? r.id : ''
+    return '<div class="aa-editor-footer">'
+      + (id ? '<button type="button" class="aa-btn-delete-edit" data-action="delete" data-delete="' + id + '" title="Excluir regra">' + _feather('trash2', 14) + ' Excluir</button>' : '')
+      + '<div style="flex:1"></div>'
+      + '<button type="button" class="aa-btn aa-btn-save" data-action="save">' + (_saving ? 'Salvando...' : 'Salvar alteracoes') + '</button>'
       + '</div>'
   }
 
@@ -856,14 +878,24 @@
   // ── Events ─────────────────────────────────────────────────
   function _bindEvents(root) {
     if (!root) return
+    // ESC fecha modal
+    if (!window._clinicaiAaEscBound) {
+      window._clinicaiAaEscBound = true
+      document.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Escape' && _modalOpen) {
+          _modalOpen = false; _isCreating = false; _editingRule = null
+          _form = _emptyForm(); _render()
+        }
+      })
+    }
     root.addEventListener('click', function(e) {
       var btn = e.target.closest('[data-action]')
       if (btn) {
         var action = btn.dataset.action
         if (action === 'new') {
           _form = _emptyForm()
-          _form.channel = 'whatsapp' // default para nova regra
-          // Inicia com trigger_type condizente com a tab atual
+          _form.channel = 'whatsapp'
+          // Trigger coerente com a tab atual
           if (_funnelTab === 'pre_agendamento') { _form.trigger_type = 'on_tag'; _form.trigger_config = { tag: 'lead_novo' } }
           else if (_funnelTab === 'perdido') { _form.trigger_type = 'on_tag'; _form.trigger_config = { tag: 'perdido' } }
           else if (_funnelTab === 'orcamento') { _form.trigger_type = 'on_tag'; _form.trigger_config = { tag: 'orcamento-aberto' } }
@@ -871,6 +903,17 @@
           else if (_funnelTab === 'paciente') { _form.trigger_type = 'd_after'; _form.trigger_config = { days: 1, hour: 10, minute: 0 } }
           _editingRule = null
           _isCreating = true
+          _modalOpen = true
+          _render()
+          return
+        }
+        if (action === 'modal-close' || action === 'modal-backdrop') {
+          // Backdrop so fecha se click for direto no backdrop (nao em filhos)
+          if (action === 'modal-backdrop' && e.target !== btn) return
+          _modalOpen = false
+          _isCreating = false
+          _editingRule = null
+          _form = _emptyForm()
           _render()
           return
         }
@@ -1178,11 +1221,13 @@
     _saving = false
 
     if (res.ok) {
+      _modalOpen = false
       _isCreating = false
+      // Se criou nova (nao era edit), seleciona a recem-criada
+      var wasCreating = !_editingRule
       _editingRule = null
-      // Seleciona a regra recem criada/editada se vier id
       if (res.data && res.data.id) _selectedId = res.data.id
-      if (window._showToast) _showToast('Salvo', _form.name + ' salva com sucesso', 'success')
+      if (window._showToast) _showToast('Salvo', _form.name + (wasCreating ? ' criada' : ' atualizada') + ' com sucesso', 'success')
       await _load()
     } else {
       _toastErr('Erro: ' + (res.error||'desconhecido'))
