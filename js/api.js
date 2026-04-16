@@ -1667,15 +1667,21 @@ function saveAppt() {
   // ── Ao criar novo agendamento: iniciar loop fechado ──────────────
   if (isNew) {
     const apptCompleto = { ...apptData, id: novoId, profissionalNome: profs[profIdx]?.nome||'' }
-    // 1. Mensagem de boas-vindas
-    _enviarMsgAgendamento(apptCompleto)
-    // 2. Agendar automações (D-1, dia 08h, 30min, 10min)
-    if (window.scheduleAutomations) scheduleAutomations(apptCompleto)
-    // 3. Aplicar tag inicial 'agendado' ao paciente
+    // Gera link de anamnese (paciente novo) e injeta no appt antes do engine disparar,
+    // para que {{link_anamnese}} seja substituido no content_template. Fire-and-forget.
+    const isNovo = (apptCompleto.tipoPaciente || 'novo') !== 'retorno'
+    const linkPromise = isNovo
+      ? _gerarLinkAnamnese(apptCompleto.id, apptCompleto.pacienteId).catch(function(e) { console.warn('[Agenda] falha link anamnese:', e); return null })
+      : Promise.resolve(null)
+    linkPromise.then(function(link) {
+      if (link) apptCompleto.link_anamnese = link
+      // Engine dispara regras time-based + on_status=agendado com filtro patient_type
+      if (window.scheduleAutomations) scheduleAutomations(apptCompleto)
+    })
+    // Aplica tag + lead status imediatamente (nao depende do link)
     if (window._applyStatusTag && apptCompleto.pacienteId) {
       _applyStatusTag(apptCompleto, 'agendado', 'criação')
     }
-    // 4. Promover lead para 'scheduled' — sai de Todos os Leads → Agendados
     if (apptCompleto.pacienteId) {
       _setLeadStatus(apptCompleto.pacienteId, 'scheduled', ['patient', 'attending'])
     }
@@ -1702,161 +1708,16 @@ function _setLeadStatus(leadId, newStatus, skipIf = []) {
   }
 }
 
-// ── Cache de templates WA (1x por sessão) ────────────────────
-let _waTemplatesCache = null
-async function _getWaTemplate(slug) {
-  if (!window._sbShared) return null
-  if (!_waTemplatesCache) {
-    try {
-      const { data, error } = await window._sbShared
-        .from('wa_message_templates')
-        .select('slug, content, is_active')
-        .eq('is_active', true)
-      if (error) return null
-      _waTemplatesCache = {}
-      ;(data || []).forEach(t => { if (t.slug) _waTemplatesCache[t.slug] = t.content })
-    } catch (e) { return null }
-  }
-  return _waTemplatesCache[slug] || null
-}
+// (removido) Cache de templates e helpers de wa_message_templates
+// Fluxo de envio de mensagem ao criar agendamento agora usa o engine
+// (AutomationsEngine.processAppointment dispara regras on_status=agendado
+//  com filtro trigger_config.patient_type para diferenciar novo/retorno).
 
-// Substitui {placeholders} no template string
-function _waTplRender(tpl, vars) {
-  if (!tpl) return ''
-  return tpl.replace(/\{(\w+)\}/g, function(_, k) {
-    return (vars && vars[k] != null) ? String(vars[k]) : ''
-  })
-}
-
-// ── Mensagem automática ao criar agendamento ──────────────────
-async function _enviarMsgAgendamento(appt) {
-  // Busca telefone: 1) do appt, 2) do lead no localStorage
-  let telefone = appt.pacientePhone || ''
-  if (!telefone) {
-    try {
-      const leads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-      const lead = leads.find(function(l) {
-        return l.id === appt.pacienteId
-          || (l.nome || l.name || '').toLowerCase() === (appt.pacienteNome || '').toLowerCase()
-      })
-      if (lead) telefone = lead.phone || lead.whatsapp || lead.telefone || ''
-    } catch(e) { console.warn('[Agenda] busca lead falhou:', e) }
-  }
-
-  const clinica   = _getClinicaNome()
-  const nomeEnx   = _nomeEnxuto(appt.pacienteNome || 'Paciente')
-  const dataFmt   = _fmtDataPtBr(appt.data)
-  const profNome  = appt.profissionalNome || ''
-  const proc      = appt.procedimento || ''
-
-  // ═ Escolhe variante baseado em tipoPaciente ═
-  // novo    → scheduling_confirm_novo (com link da anamnese)
-  // retorno → scheduling_confirm_retorno (sem link)
-  const isNovo = (appt.tipoPaciente || 'novo') !== 'retorno'
-  const slug = isNovo ? 'scheduling_confirm_novo' : 'scheduling_confirm_retorno'
-
-  // Só gera link da anamnese se for paciente novo (retorno já preencheu)
-  const linkAnam = isNovo ? await _gerarLinkAnamnese(appt.id, appt.pacienteId) : null
-
-  // Monta o conteúdo da linha procedimento (usada nos 2 templates)
-  const linhaProc = proc ? `💆‍♀️ *Procedimento:* ${proc}` : ''
-
-  // Busca template do DB; se falhar, cai no hardcoded legado
-  const dbTpl = await _getWaTemplate(slug)
-  let mensagem
-  if (dbTpl) {
-    var _cfg = {}; try { _cfg = JSON.parse(localStorage.getItem('clinicai_clinic_settings') || '{}') } catch(e) {}
-    var _end = [_cfg.rua, _cfg.num].filter(Boolean).join(', ')
-    if (_cfg.comp) _end += ' - ' + _cfg.comp
-    if (_cfg.bairro) _end += ', ' + _cfg.bairro
-    if (_cfg.cidade) _end += ' - ' + _cfg.cidade
-
-    mensagem = _waTplRender(dbTpl, {
-      nome:               nomeEnx,
-      clinica:            clinica,
-      data:               dataFmt,
-      data_consulta:      appt.data ? appt.data.split('-').reverse().join('/') : '',
-      hora:               appt.horaInicio,
-      hora_consulta:      appt.horaInicio,
-      procedimento:       proc,
-      profissional:       profNome,
-      linha_procedimento: linhaProc,
-      link_anamnese:      linkAnam || '',
-      endereco:           _end || '',
-      endereco_clinica:   _end || '',
-      link_maps:          _cfg.maps || '',
-      link:               _cfg.site || '',
-      menu_clinica:       (window.location.origin || '') + '/menu-clinica.html',
-      valor:              appt.valor ? 'R$ ' + parseFloat(appt.valor).toFixed(2).replace('.', ',') : '',
-    })
-    // Se template de novo e link falhou, remove a linha do link
-    if (isNovo && !linkAnam) {
-      mensagem = mensagem.replace(/\n*Para garantirmos[\s\S]*?5 min\)[^\n]*\n*/m, '\n\n')
-    }
-  } else {
-    // Fallback: template hardcoded legado
-    mensagem = _tplMsgAgendamento({
-      nome:       nomeEnx,
-      clinica,
-      data:       dataFmt,
-      hora:       appt.horaInicio,
-      procedimento: proc,
-      profissional: profNome,
-      link_anamnese: linkAnam,
-      telefone
-    })
-  }
-
-  // Enviar via wa_outbox (real, nao simulado)
-  if (telefone && window._sbShared) {
-    window._sbShared.rpc('wa_outbox_enqueue_appt', {
-      p_phone: telefone,
-      p_content: mensagem,
-      p_lead_name: nomeEnx,
-      p_appt_ref: appt.id || null,
-      p_lead_id: appt.pacienteId || ''
-    }).then(function(res) {
-      if (res.error) console.error('[Agenda] wa_outbox_enqueue falhou:', res.error.message)
-      else _showToast('WhatsApp enviado', 'Confirmacao para ' + nomeEnx, 'info')
-    }).catch(function(e) { console.error('[Agenda] wa_outbox_enqueue exception:', e) })
-  } else if (!telefone) {
-    console.error('[Agenda] SEM TELEFONE para', nomeEnx, '| pacienteId:', appt.pacienteId)
-    _showToast('Sem telefone', nomeEnx + ' nao tem WhatsApp cadastrado', 'warning')
-  } else if (!window._sbShared) {
-    console.error('[Agenda] Supabase nao disponivel para envio WhatsApp')
-  }
-}
-
-function _tplMsgAgendamento({ nome, clinica, data, hora, procedimento, profissional, link_anamnese }) {
-  const linhaProc  = procedimento  ? `\n💆‍♀️ *Procedimento:* ${procedimento}` : ''
-  const linhaProf  = profissional  ? `\n👩‍⚕️ *Profissional:* ${profissional}` : ''
-  // Bloco da anamnese: só inclui se tiver link REAL. Caso contrário
-  // omite por completo (evita enviar "👉 null" ou link quebrado).
-  const blocoAnam  = link_anamnese
-    ? `\n\nPara garantirmos o melhor atendimento personalizado, pedimos que preencha sua *Ficha de Anamnese* antes da consulta:\n\n👉 ${link_anamnese}\n\nO preenchimento é rápido (≈5 min) e nos ajuda a entender melhor o seu histórico e objetivos. 😊`
-    : ''
-
-  return `Olá, *${nome}*! 🌸
-
-Seu agendamento na *${clinica}* foi confirmado com sucesso! ✅
-${linhaProc}${linhaProf}
-📅 *Data:* ${data}
-🕐 *Horário:* ${hora}${blocoAnam}
-
-Qualquer dúvida estamos à disposição!
-*Equipe ${clinica}* 💜`
-}
-
-function _fmtDataPtBr(isoDate) {
-  if (!isoDate) return '—'
-  try {
-    const [y, m, d] = isoDate.split('-').map(Number)
-    const dt = new Date(y, m - 1, d)
-    const diasSem = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado']
-    const meses   = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
-    return `${diasSem[dt.getDay()]}, ${d} de ${meses[m-1]} de ${y}`
-  } catch { return isoDate }
-}
+// (removido) _enviarMsgAgendamento / _tplMsgAgendamento / _fmtDataPtBr
+// Substituidos pelo engine (processAppointment dispara on_status=agendado
+// com filtro patient_type em trigger_config). Os 2 conteudos originais
+// estao agora em wa_agenda_automations como regras "Confirmacao Paciente
+// Novo" e "Confirmacao Paciente Retorno".
 
 // Cache do template default (buscado 1x por sessão)
 let _anamneseDefaultTemplateId = null
@@ -2698,7 +2559,8 @@ window._apptRefresh         = refreshCurrentAgenda
 window._apptStatusCfg       = APPT_STATUS_CFG
 window._apptCheckConflict   = checkConflict
 window._apptSetLeadStatus   = _setLeadStatus
-window._apptEnviarMsg       = _enviarMsgAgendamento
+// window._apptEnviarMsg removido — engine agora trata msg de confirmacao
+// via processAppointment (regras on_status=agendado com patient_type).
 window._apptFinishProducts  = function(v) { if (v !== undefined) _finishProducts = v; return _finishProducts }
 window._apptDeductStock     = _deductStock
 

@@ -591,9 +591,6 @@
     if (pageId === 'settings-automation' && typeof window.AutomationsUI?.init === 'function') {
       window.AutomationsUI.init('automations-root', 'rules')
     }
-    if (pageId === 'settings-templates' && typeof window.TemplatesEditorUI?.init === 'function') {
-      window.TemplatesEditorUI.init()
-    }
     if (pageId === 'inbox' && typeof window.InboxUI?.init === 'function') {
       window.InboxUI.init()
     }

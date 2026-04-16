@@ -27,7 +27,6 @@
   <link rel="stylesheet" href="css/short-links.css?v=409f52c4" />
   <link rel="stylesheet" href="css/modal-system.css?v=f85a1b29" />
   <link rel="stylesheet" href="css/page-builder.css?v=c8c372ea" />
-  <link rel="stylesheet" href="css/templates-editor.css?v=482157e2" />
   <link rel="stylesheet" href="css/inbox.css?v=375412b0" />
   <link rel="stylesheet" href="css/analytics.css?v=72a3ead0" />
   <link rel="stylesheet" href="css/face-mapping.css?v=08072006" />
@@ -1699,11 +1698,6 @@
       <!-- ==================== PAGE: ANIVERSARIOS ==================== -->
       <div class="page" id="page-birthday-campaigns">
         <div id="birthday-root"></div>
-      </div>
-
-      <!-- ==================== PAGE: TEMPLATES DE MENSAGEM ==================== -->
-      <div class="page" id="page-settings-templates">
-        <div id="templates-editor-root"></div>
       </div>
 
       <!-- ==================== PAGE: MENU DA CLINICA ==================== -->
@@ -4479,7 +4473,7 @@
   <script src="js/utils.js?v=cf9e6041" defer></script>
 
   <!-- Supabase Sync -->
-  <script src="js/config/env.js?v=eaf1faff" defer></script>
+  <script src="js/config/env.js?v=e86167f1" defer></script>
   <script src="js/supabase.js?v=0374c82d" defer></script>
   <script src="js/tags-data.js?v=714e89db" defer></script>
   <script src="js/tags-engine.js?v=a3018cbe" defer></script>
@@ -4487,8 +4481,8 @@
   <!-- Nav Config → Sidebar (devem carregar antes de app.js e auth.js)
        nav-config.js  — fonte única da verdade para o menu (seções, ícones, roles, plans)
        sidebar.js     — renderiza o nav, gerencia navegação e permissões por papel/plano -->
-  <script src="js/nav-config.js?v=bba703be" defer></script>
-  <script src="js/sidebar.js?v=c124c729" defer></script>
+  <script src="js/nav-config.js?v=80c56218" defer></script>
+  <script src="js/sidebar.js?v=0ed4b1b2" defer></script>
   <script src="js/multi-tab-launcher.js?v=266f3883" defer></script>
 
   <!-- Auth deve carregar antes de app.js (app.js chama requireAuth) -->
@@ -4593,8 +4587,6 @@
   <script src="js/broadcast.ui.js?v=501712d4" defer></script>
   <script src="js/broadcast-dashboard.ui.js?v=06efed73" defer></script>
   <script src="js/broadcast-events.ui.js?v=7e446f50" defer></script>
-  <script src="js/repositories/templates.repository.js?v=36d17067" defer></script>
-  <script src="js/ui/templates-editor.ui.js?v=62452af5" defer></script>
   <script src="js/repositories/inbox.repository.js?v=c58c9318" defer></script>
   <script src="js/services/inbox.service.js?v=ff1f4cd5" defer></script>
   <script src="js/repositories/broadcast.repository.js?v=54e7b017" defer></script>
@@ -4732,10 +4724,10 @@
   <script src="js/rooms.js?v=32c4014e" defer></script>
   <script src="js/technologies.js?v=91098694" defer></script>
   <script src="js/inj-catalog.js?v=5c9c36a5" defer></script>
-  <script src="js/api.js?v=31202248" defer></script>
+  <script src="js/api.js?v=3b26d6dd" defer></script>
   <!-- Módulos extraídos de api.js — carregam DEPOIS de api.js, sobrescrevem globals -->
   <script src="js/agenda-notifications.js?v=0f89a874" defer></script>
-  <script src="js/agenda-modal.js?v=0caff642" defer></script>
+  <script src="js/agenda-modal.js?v=b27f1e68" defer></script>
   <script src="js/agenda-finalize.js?v=44108125" defer></script>
   <!-- injetaveis.js (235 KB) carregado sob demanda via _lazyLoadInjetaveis() -->
   <script src="js/procedimentos.js?v=442f17e7" defer></script>
@@ -4747,7 +4739,7 @@
   <!-- agenda-mensagens.js removido — substituido por templates-editor.ui.js (Supabase) -->
   <script src="js/agenda-validation.js?v=36c9e078" defer></script>
   <script src="js/agenda-module.js?v=bf5536a5" defer></script>
-  <script src="js/agenda-automations.engine.js?v=b7d5597e" defer></script>
+  <script src="js/agenda-automations.engine.js?v=a71205ab" defer></script>
   <script src="js/services/alexa-notification.service.js?v=e26115ef" defer></script>
   <script src="js/services/legal-documents.service.js?v=4585ee93" defer></script>
   <script src="js/legal-doc-templates.js?v=caa57729" defer></script>

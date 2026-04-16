@@ -39,16 +39,36 @@
   // ── Build variables from appointment ───────────────────────
   function _apptVars(appt) {
     var clinica = window._getClinicaNome ? _getClinicaNome() : 'Clinica'
+    // Endereco e links da clinica a partir de clinic_settings
+    var _cfg = {}; try { _cfg = JSON.parse(localStorage.getItem('clinicai_clinic_settings') || '{}') } catch(e) {}
+    var _end = [_cfg.rua, _cfg.num].filter(Boolean).join(', ')
+    if (_cfg.comp) _end += ' - ' + _cfg.comp
+    if (_cfg.bairro) _end += ', ' + _cfg.bairro
+    if (_cfg.cidade) _end += ' - ' + _cfg.cidade
+
+    var proc = appt.procedimento || appt.tipoConsulta || ''
+    var linhaProc = proc ? '\uD83D\uDC86 *Procedimento:* ' + proc : ''
+
     return {
       nome:          appt.pacienteNome || 'Paciente',
       data:          appt.data ? _fmtDate(appt.data) : '',
+      data_consulta: appt.data ? _fmtDate(appt.data) : '',
       hora:          appt.horaInicio || '',
+      hora_consulta: appt.horaInicio || '',
       profissional:  appt.profissionalNome || '',
-      procedimento:  appt.procedimento || appt.tipoConsulta || '',
+      procedimento:  proc,
+      linha_procedimento: linhaProc,
       clinica:       clinica,
-      link_anamnese: '',
+      // link_anamnese: passado via appt.link_anamnese quando gerado pelo fluxo de criacao
+      link_anamnese: appt.link_anamnese || '',
+      endereco:      _end || '',
+      endereco_clinica: _end || '',
+      link_maps:     _cfg.maps || '',
+      link:          _cfg.site || '',
+      menu_clinica:  (window.location.origin || '') + '/menu-clinica.html',
       status:        appt.status || '',
       obs:           appt.obs || '',
+      valor:         appt.valor ? 'R$ ' + parseFloat(appt.valor).toFixed(2).replace('.', ',') : '',
     }
   }
 
@@ -123,15 +143,24 @@
 
     // Gap 1 resolvido: dispara regras on_status para o status inicial
     // do agendamento (normalmente 'agendado') ao criar.
-    // `scheduling_confirm_novo` (imediato via modal) cobre a msg de confirmacao;
-    // a regra "Confirmacao Agendamento" esta desativada para evitar duplicata.
-    // Qualquer outra regra on_status='agendado' (com delay ou conteudo diferente)
-    // passa a disparar normalmente.
+    // Engine aplica filtro patient_type se a regra especificar:
+    //   regra com patient_type='novo' so dispara se appt.tipoPaciente==='novo'
+    //   regra com patient_type='retorno' so dispara se appt.tipoPaciente==='retorno'
+    //   regra sem patient_type dispara sempre (comportamento legado)
     var initialStatus = appt.status || 'agendado'
     var statusRules = svc.getByStatus(initialStatus)
     statusRules.forEach(function (rule) {
+      if (!_matchesPatientType(rule, appt)) return
       _executeRule(rule, vars, phone, appt)
     })
+  }
+
+  // Filtra regra pelo tipo do paciente (novo/retorno). Retorna true se pode disparar.
+  function _matchesPatientType(rule, appt) {
+    var cfg = rule && rule.trigger_config || {}
+    if (!cfg.patient_type) return true // regra generica — dispara sempre
+    var apptType = (appt && appt.tipoPaciente) || 'novo' // default novo se nao especificado
+    return cfg.patient_type === apptType
   }
 
   // ══════════════════════════════════════════════════════════
@@ -149,6 +178,7 @@
     var vars = _apptVars(appt)
     vars.status = newStatus
     rules.forEach(function (rule) {
+      if (!_matchesPatientType(rule, appt)) return
       _executeRule(rule, vars, phone, appt)
     })
   }

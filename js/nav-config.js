@@ -282,7 +282,6 @@
         { page: 'settings-clinic',       label: 'Dados da Clínica',       breadcrumb: 'Configurações > Dados da Clínica' },
         { page: 'settings-tags',         label: 'Tags e Fluxos',          breadcrumb: 'Configurações > Tags e Fluxos' },
         { page: 'settings-automation',   label: 'Automação',              breadcrumb: 'Configurações > Automação' },
-        { page: 'settings-templates',    label: 'Templates de Mensagem',  breadcrumb: 'Configurações > Templates de Mensagem' },
         { page: 'clinic-menu',           label: 'Menu da Clinica',         breadcrumb: 'Configurações > Menu da Clinica' },
         { page: 'settings-security',     label: 'Segurança',              breadcrumb: 'Configurações > Segurança' },
         { page: 'settings-backups',      label: 'Backups',                breadcrumb: 'Configurações > Backups' },

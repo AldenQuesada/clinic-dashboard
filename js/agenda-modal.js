@@ -41,7 +41,7 @@
   function _warn(msg)        { if (window._showToast) _showToast('Atenção', msg, 'warn'); else alert(msg) }
   function _checkConflict(a, all) { return window._apptCheckConflict ? window._apptCheckConflict(a, all) : { conflict: false } }
   function _setLeadStatus(id, s, skip) { if (window._apptSetLeadStatus) window._apptSetLeadStatus(id, s, skip) }
-  function _enviarMsg(appt)  { if (window._apptEnviarMsg) window._apptEnviarMsg(appt) }
+  // _enviarMsg removido: engine dispara regras de confirmacao via processAppointment
 
   // ── Event delegation: centraliza data-action em vez de onclick=fn ─
   // Vantagem: bindings sobrevivem ao re-render, menos globals no window
@@ -1631,8 +1631,16 @@
     // Ao criar novo agendamento: loop fechado (disparado imediatamente)
     if (isNew) {
       const apptCompleto = Object.assign({}, apptData, { id: novoId, profissionalNome: profs[profIdx] && profs[profIdx].nome || '' })
-      _enviarMsg(apptCompleto)
-      if (typeof scheduleAutomations === 'function') scheduleAutomations(apptCompleto)
+      // Gera link anamnese (paciente novo) e dispara automacoes. Async fire-and-forget.
+      const isNovo = (apptCompleto.tipoPaciente || 'novo') !== 'retorno'
+      const linkPromise = (isNovo && typeof _gerarLinkAnamnese === 'function')
+        ? _gerarLinkAnamnese(apptCompleto.id, apptCompleto.pacienteId).catch(function(e) { console.warn('[Agenda-modal] falha link:', e); return null })
+        : Promise.resolve(null)
+      linkPromise.then(function(link) {
+        if (link) apptCompleto.link_anamnese = link
+        // Engine dispara regras (time-based + on_status=agendado com filtro patient_type)
+        if (typeof scheduleAutomations === 'function') scheduleAutomations(apptCompleto)
+      })
       if (typeof _applyStatusTag === 'function' && apptCompleto.pacienteId) {
         _applyStatusTag(apptCompleto, 'agendado', 'criacao')
       }
