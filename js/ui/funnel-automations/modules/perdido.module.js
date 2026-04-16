@@ -11,11 +11,58 @@
     { id: 'quiz_abandonado', label: 'Quiz Abandonado' },
     { id: 'inativo',         label: 'Inativo' },
   ]
+
   var TIME_OPTIONS = [
     { id: 'immediate', label: 'Imediata (ao aplicar tag)' },
     { id: 'hours',     label: 'Horas depois' },
     { id: 'days',      label: 'Dias depois' },
   ]
+
+  var ALLOWED_WHEN_BY_STATUS = {
+    perdido:         ['immediate', 'hours', 'days'],
+    quiz_abandonado: ['immediate', 'hours', 'days'],
+    inativo:         ['immediate', 'hours', 'days'],
+  }
+
+  var DEFAULT_WHEN = {
+    perdido:         { when: 'days', days: 7, hour: 10, minute: 0 },  // 1 semana
+    quiz_abandonado: { when: 'hours', hours: 2, minutes: 0 },          // 2h apos abandonar
+    inativo:         { when: 'days', days: 30, hour: 10, minute: 0 }, // 1 mes
+  }
+
+  var SUGGESTED_NAMES = {
+    'perdido|days':          'Recuperacao Lead Perdido',
+    'perdido|hours':          'Recuperacao Rapida',
+    'quiz_abandonado|hours':  'Recuperacao Quiz Abandonado',
+    'quiz_abandonado|days':   'Follow-up Quiz',
+    'inativo|days':           'Reativacao Paciente Inativo',
+  }
+
+  function timeOptionsFor(statusId) {
+    var allowed = ALLOWED_WHEN_BY_STATUS[statusId]
+    return allowed ? TIME_OPTIONS.filter(function(t) { return allowed.indexOf(t.id) >= 0 }) : TIME_OPTIONS
+  }
+  function isValidCombination(status, when) {
+    var allowed = ALLOWED_WHEN_BY_STATUS[status]
+    return !!(allowed && allowed.indexOf(when) >= 0)
+  }
+  function applyStatusDefaults(currentForm, newStatus) {
+    var out = { status: newStatus }
+    if (currentForm && currentForm.when && isValidCombination(newStatus, currentForm.when)) {
+      out.when = currentForm.when
+      ;['hours','minutes','days','hour','minute'].forEach(function(k){
+        if (currentForm[k] !== undefined) out[k] = currentForm[k]
+      })
+    } else {
+      var def = DEFAULT_WHEN[newStatus] || { when: 'days', days: 7, hour: 10, minute: 0 }
+      Object.keys(def).forEach(function(k){ out[k] = def[k] })
+    }
+    return out
+  }
+  function suggestName(form) {
+    if (!form || !form.status) return ''
+    return SUGGESTED_NAMES[form.status + '|' + (form.when || 'immediate')] || ''
+  }
 
   function matchesRule(rule) {
     if (!rule || rule.trigger_type !== 'on_tag') return false
@@ -46,6 +93,8 @@
 
   function validate(form) {
     if (!form.status) return { ok: false, error: 'Escolha um status' }
+    if (!form.when) return { ok: false, error: 'Escolha quando disparar' }
+    if (!isValidCombination(form.status, form.when)) return { ok: false, error: 'Combinacao invalida' }
     if (form.when === 'days' && (!form.days || form.days < 1)) return { ok: false, error: 'Dias invalido' }
     return { ok: true }
   }
@@ -54,13 +103,16 @@
     var statusOpts = STATUSES.map(function(s) {
       return '<option value="'+s.id+'"'+(form.status===s.id?' selected':'')+'>'+s.label+'</option>'
     }).join('')
-    var timeOpts = TIME_OPTIONS.map(function(t) {
+    var validTimes = form.status ? timeOptionsFor(form.status) : TIME_OPTIONS
+    var timeOpts = validTimes.map(function(t) {
       return '<option value="'+t.id+'"'+(form.when===t.id?' selected':'')+'>'+t.label+'</option>'
     }).join('')
 
     var html = '<div class="fa-field"><label>Status (perdido)</label>'
       + '<select id="faStatus"><option value="">Selecione...</option>'+statusOpts+'</select></div>'
-      + '<div class="fa-field"><label>Quando disparar</label><select id="faWhen">'+timeOpts+'</select></div>'
+      + '<div class="fa-field"><label>Quando disparar</label>'
+      + '<select id="faWhen"'+(form.status?'':' disabled')+'>'+timeOpts+'</select>'
+      + (form.status ? '' : '<div class="fa-hint-small">Escolha o status primeiro</div>') + '</div>'
 
     if (form.when === 'hours') {
       html += '<div class="fa-field-row">'
@@ -69,7 +121,7 @@
         + '</div>'
     } else if (form.when === 'days') {
       html += '<div class="fa-field-row">'
-        + '<div class="fa-field"><label>Dias</label><input type="number" id="faDays" min="1" max="365" value="'+(form.days||1)+'"></div>'
+        + '<div class="fa-field"><label>Dias</label><input type="number" id="faDays" min="1" max="365" value="'+(form.days||7)+'"></div>'
         + '<div class="fa-field"><label>Hora</label><input type="number" id="faHour" min="0" max="23" value="'+(form.hour||10)+'"></div>'
         + '<div class="fa-field"><label>Min</label><input type="number" id="faMinute" min="0" max="59" value="'+(form.minute||0)+'"></div>'
         + '</div>'
@@ -90,5 +142,6 @@
     statuses: STATUSES, timeOptions: TIME_OPTIONS,
     matchesRule: matchesRule, toTrigger: toTrigger, fromRule: fromRule,
     validate: validate, renderTriggerFields: renderTriggerFields, readTriggerForm: readTriggerForm,
+    applyStatusDefaults: applyStatusDefaults, suggestName: suggestName, isValidCombination: isValidCombination,
   }
 })()

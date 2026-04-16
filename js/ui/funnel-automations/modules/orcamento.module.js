@@ -1,6 +1,8 @@
 /**
  * Modulo Orcamento — negociacao
  * Zero dependencia de outros modulos.
+ *
+ * Paridade com Agendamento (validacoes + defaults + sugestoes + grupos).
  */
 ;(function () {
   'use strict'
@@ -13,11 +15,78 @@
     { id: 'follow_up_pendente', label: 'Follow-up Pendente' },
     { id: 'aprovado_agendar',   label: 'Aprovado — Agendar' },
   ]
+
   var TIME_OPTIONS = [
     { id: 'immediate', label: 'Imediata (ao aplicar tag)' },
     { id: 'hours',     label: 'Horas depois' },
     { id: 'days',      label: 'Dias depois' },
   ]
+
+  var ALLOWED_WHEN_BY_STATUS = {
+    'orcamento-aberto':   ['immediate', 'hours', 'days'],
+    orcamento_enviado:    ['immediate', 'hours', 'days'],
+    em_negociacao:        ['immediate', 'hours', 'days'],
+    follow_up_pendente:   ['immediate', 'hours', 'days'],
+    aprovado_agendar:     ['immediate', 'hours', 'days'],
+  }
+
+  var DEFAULT_WHEN = {
+    'orcamento-aberto':  { when: 'immediate' },
+    orcamento_enviado:   { when: 'immediate' },
+    em_negociacao:       { when: 'days', days: 3, hour: 10, minute: 0 },
+    follow_up_pendente:  { when: 'days', days: 2, hour: 10, minute: 0 },
+    aprovado_agendar:    { when: 'immediate' },
+  }
+
+  var SUGGESTED_NAMES = {
+    'orcamento-aberto|immediate':   'Orcamento Enviado',
+    'orcamento-aberto|days':        'Follow-up Orcamento Xd',
+    'orcamento_enviado|immediate':  'Confirmacao Envio',
+    'em_negociacao|immediate':      'Alerta Negociacao',
+    'em_negociacao|days':           'Follow-up Negociacao Xd',
+    'em_negociacao|hours':          'Urgencia Negociacao',
+    'follow_up_pendente|days':      'Follow-up Pendente',
+    'aprovado_agendar|immediate':   'Parabenizar Aprovacao',
+  }
+
+  var GROUPS = [
+    { id: 'novo',        label: 'Novo orcamento',     icon: 'fileText',    minOrder: 0,  maxOrder: 49 },
+    { id: 'negociacao',  label: 'Em negociacao',      icon: 'messageSquare', minOrder: 50, maxOrder: 89 },
+    { id: 'fechamento',  label: 'Fechamento',         icon: 'checkCircle', minOrder: 90, maxOrder: 999 },
+  ]
+
+  function timeOptionsFor(statusId) {
+    var allowed = ALLOWED_WHEN_BY_STATUS[statusId]
+    return allowed ? TIME_OPTIONS.filter(function(t) { return allowed.indexOf(t.id) >= 0 }) : TIME_OPTIONS
+  }
+  function isValidCombination(status, when) {
+    var allowed = ALLOWED_WHEN_BY_STATUS[status]
+    return !!(allowed && allowed.indexOf(when) >= 0)
+  }
+  function applyStatusDefaults(currentForm, newStatus) {
+    var out = { status: newStatus }
+    if (currentForm && currentForm.when && isValidCombination(newStatus, currentForm.when)) {
+      out.when = currentForm.when
+      ;['hours','minutes','days','hour','minute'].forEach(function(k){
+        if (currentForm[k] !== undefined) out[k] = currentForm[k]
+      })
+    } else {
+      var def = DEFAULT_WHEN[newStatus] || { when: 'immediate' }
+      Object.keys(def).forEach(function(k){ out[k] = def[k] })
+    }
+    return out
+  }
+  function suggestName(form) {
+    if (!form || !form.status) return ''
+    return SUGGESTED_NAMES[form.status + '|' + (form.when || 'immediate')] || ''
+  }
+  function groupRule(rule) {
+    var so = (rule && rule.sort_order) || 0
+    for (var i = 0; i < GROUPS.length; i++) {
+      if (so >= GROUPS[i].minOrder && so <= GROUPS[i].maxOrder) return GROUPS[i].id
+    }
+    return 'novo'
+  }
 
   function matchesRule(rule) {
     if (!rule || rule.trigger_type !== 'on_tag') return false
@@ -48,6 +117,8 @@
 
   function validate(form) {
     if (!form.status) return { ok: false, error: 'Escolha um status de orcamento' }
+    if (!form.when) return { ok: false, error: 'Escolha quando disparar' }
+    if (!isValidCombination(form.status, form.when)) return { ok: false, error: 'Combinacao invalida' }
     if (form.when === 'days' && (!form.days || form.days < 1)) return { ok: false, error: 'Dias invalido' }
     return { ok: true }
   }
@@ -56,13 +127,16 @@
     var statusOpts = STATUSES.map(function(s) {
       return '<option value="'+s.id+'"'+(form.status===s.id?' selected':'')+'>'+s.label+'</option>'
     }).join('')
-    var timeOpts = TIME_OPTIONS.map(function(t) {
+    var validTimes = form.status ? timeOptionsFor(form.status) : TIME_OPTIONS
+    var timeOpts = validTimes.map(function(t) {
       return '<option value="'+t.id+'"'+(form.when===t.id?' selected':'')+'>'+t.label+'</option>'
     }).join('')
 
     var html = '<div class="fa-field"><label>Status (orcamento)</label>'
       + '<select id="faStatus"><option value="">Selecione...</option>'+statusOpts+'</select></div>'
-      + '<div class="fa-field"><label>Quando disparar</label><select id="faWhen">'+timeOpts+'</select></div>'
+      + '<div class="fa-field"><label>Quando disparar</label>'
+      + '<select id="faWhen"'+(form.status?'':' disabled')+'>'+timeOpts+'</select>'
+      + (form.status ? '' : '<div class="fa-hint-small">Escolha o status primeiro</div>') + '</div>'
 
     if (form.when === 'hours') {
       html += '<div class="fa-field-row">'
@@ -92,5 +166,7 @@
     statuses: STATUSES, timeOptions: TIME_OPTIONS,
     matchesRule: matchesRule, toTrigger: toTrigger, fromRule: fromRule,
     validate: validate, renderTriggerFields: renderTriggerFields, readTriggerForm: readTriggerForm,
+    applyStatusDefaults: applyStatusDefaults, suggestName: suggestName, isValidCombination: isValidCombination,
+    groups: GROUPS, groupRule: groupRule,
   }
 })()
