@@ -13,34 +13,70 @@
   function _esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
   function _feather(n, s) { return window._clinicaiHelpers ? window._clinicaiHelpers.feather(n, s) : '' }
 
-  // ── Sample vars para preview (dados ficticios) ──────────────
+  // ── Sample vars para preview — ALINHADO com _apptVars() do engine ─
+  // Fonte de verdade: js/agenda-automations.engine.js (_apptVars)
   var SAMPLE_VARS = {
-    nome:          'Maria Silva',
-    data:          '16/04/2026',
-    hora:          '14:30',
-    profissional:  'Dra. Mirian',
-    procedimento:  'Bioestimulador',
-    clinica:       'Clinica Mirian de Paula',
-    link_anamnese: 'https://clinica.app/anamnese/abc',
-    endereco:      'Av. Carneiro Leao, 296 - Sala 806',
-    link_maps:     'https://maps.app.goo.gl/xyz',
-    menu_clinica:  'https://clinica.app/menu',
-    status:        'agendado',
-    obs:           '',
+    nome:               'Maria Silva',
+    data:               '16/04/2026',
+    data_consulta:      '16/04/2026',
+    hora:               '14:30',
+    hora_consulta:      '14:30',
+    profissional:       'Dra. Mirian',
+    procedimento:       'Bioestimulador',
+    linha_procedimento: '\uD83D\uDC86 *Procedimento:* Bioestimulador',
+    clinica:            'Clinica Mirian de Paula',
+    link_anamnese:      'https://clinica.app/anamnese/abc',
+    endereco:           'Av. Carneiro Leao, 296 - Sala 806, Parnamirim - Recife',
+    endereco_clinica:   'Av. Carneiro Leao, 296 - Sala 806, Parnamirim - Recife',
+    link_maps:          'https://maps.app.goo.gl/xyz',
+    link:               'https://clinica.app',
+    menu_clinica:       'https://clinica.app/menu-clinica.html',
+    status:             'agendado',
+    obs:                '',
+    valor:              'R$ 2.500,00',
+    queixas:            'bigode chines e flacidez',
   }
 
   var TEMPLATE_VARS = [
-    { id: 'nome',          label: 'Nome paciente',        example: 'Maria Silva' },
-    { id: 'data',          label: 'Data da consulta',     example: '16/04/2026' },
-    { id: 'hora',          label: 'Horario da consulta',  example: '14:30' },
-    { id: 'profissional',  label: 'Profissional',         example: 'Dra. Mirian' },
-    { id: 'procedimento',  label: 'Procedimento',         example: 'Bioestimulador' },
-    { id: 'clinica',       label: 'Nome da clinica',      example: 'Clinica' },
-    { id: 'link_anamnese', label: 'Link da anamnese',     example: 'https://...' },
-    { id: 'endereco',      label: 'Endereco',             example: 'Rua X, 123' },
-    { id: 'link_maps',     label: 'Google Maps',          example: 'https://maps...' },
-    { id: 'menu_clinica',  label: 'Menu clinica',         example: 'https://...' },
+    { id: 'nome',               label: 'Nome do paciente',          example: 'Maria Silva' },
+    { id: 'data',               label: 'Data da consulta',          example: '16/04/2026' },
+    { id: 'hora',               label: 'Horario da consulta',       example: '14:30' },
+    { id: 'profissional',       label: 'Profissional',              example: 'Dra. Mirian' },
+    { id: 'procedimento',       label: 'Procedimento',              example: 'Bioestimulador' },
+    { id: 'linha_procedimento', label: 'Linha procedimento (auto)', example: '💆 *Procedimento:* X' },
+    { id: 'clinica',            label: 'Nome da clinica',           example: 'Clinica' },
+    { id: 'link_anamnese',      label: 'Link da anamnese',          example: 'https://...' },
+    { id: 'endereco',           label: 'Endereco completo',         example: 'Rua X, 123...' },
+    { id: 'link_maps',          label: 'Google Maps',               example: 'https://maps...' },
+    { id: 'menu_clinica',       label: 'Menu clinica',              example: 'https://...' },
+    { id: 'valor',              label: 'Valor formatado',           example: 'R$ 2.500,00' },
+    { id: 'status',             label: 'Status do agendamento',     example: 'agendado' },
+    { id: 'obs',                label: 'Observacoes',               example: '' },
+    { id: 'queixas',            label: 'Queixas do lead (quiz)',    example: 'bigode chines' },
   ]
+
+  // Validador de placeholders: extrai {{var}} e retorna invalidas.
+  var VALID_VAR_IDS = TEMPLATE_VARS.map(function(v) { return v.id })
+  function validatePlaceholders(text) {
+    if (!text) return []
+    var found = []
+    var re = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g
+    var m
+    while ((m = re.exec(text)) !== null) {
+      var key = m[1]
+      if (VALID_VAR_IDS.indexOf(key) < 0 && found.indexOf(key) < 0) found.push(key)
+    }
+    return found
+  }
+  function validatePlaceholdersInForm(form) {
+    if (!form) return []
+    var fields = [form.content_template, form.alexa_message, form.task_title, form.alert_title]
+    var bad = []
+    fields.forEach(function(f) {
+      validatePlaceholders(f || '').forEach(function(k) { if (bad.indexOf(k) < 0) bad.push(k) })
+    })
+    return bad
+  }
 
   function _renderTemplate(template, vars) {
     if (!template) return ''
@@ -282,6 +318,9 @@
   window.AAShared = Object.freeze({
     TEMPLATE_VARS: TEMPLATE_VARS,
     SAMPLE_VARS: SAMPLE_VARS,
+    VALID_VAR_IDS: VALID_VAR_IDS,
+    validatePlaceholders: validatePlaceholders,
+    validatePlaceholdersInForm: validatePlaceholdersInForm,
     renderPhonePreview: renderPhonePreview,
     renderAlexaPreview: renderAlexaPreview,
     renderTaskPreview:  renderTaskPreview,

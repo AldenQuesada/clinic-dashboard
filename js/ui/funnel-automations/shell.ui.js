@@ -30,6 +30,8 @@
   var _modalOpen = false
   var _form = _emptyForm()
   var _root = null
+  var PAGE_SIZE = 50
+  var _visibleCount = PAGE_SIZE
 
   function _emptyForm() {
     return {
@@ -145,16 +147,27 @@
         + '</div>'
     }
 
+    var total = rules.length
+    var visible = Math.min(_visibleCount, total)
+    var hasMore = visible < total
+    var loadMoreHtml = hasMore
+      ? '<button type="button" class="fa-load-more" data-action="load-more">'
+        + _f('chevronDown', 14) + ' Carregar mais (' + (total - visible) + ' restantes)'
+        + '</button>'
+      : ''
+
     var m = _mod()
     // Sem agrupamento: lista flat numerada
     if (!m || !m.groups || !m.groupRule) {
-      return '<div class="fa-list">' + rules.map(function(r, i) { return _renderRuleCard(r, i+1) }).join('') + '</div>'
+      var slice = rules.slice(0, visible)
+      return '<div class="fa-list">' + slice.map(function(r, i) { return _renderRuleCard(r, i+1) }).join('') + loadMoreHtml + '</div>'
     }
 
-    // Agrupamento por fase (shell renderiza cabecalho entre grupos)
+    // Agrupamento por fase — aplica limite global preservando ordem
+    var shown = rules.slice(0, visible)
     var buckets = {}
     m.groups.forEach(function(g) { buckets[g.id] = [] })
-    rules.forEach(function(r) {
+    shown.forEach(function(r) {
       var gid = m.groupRule(r)
       if (!buckets[gid]) buckets[gid] = []
       buckets[gid].push(r)
@@ -174,7 +187,7 @@
         html += _renderRuleCard(r, counter)
       })
     })
-    html += '</div>'
+    html += loadMoreHtml + '</div>'
     return html
   }
 
@@ -466,6 +479,17 @@
     var v = m.validate(_form)
     if (!v.ok) { S().showToast('Validacao', v.error, 'warning'); return }
 
+    var badVars = S().validatePlaceholdersInForm(_form)
+    if (badVars.length) {
+      var validList = S().TEMPLATE_VARS.map(function(x) { return x.id }).slice(0, 8).join(', ')
+      S().showToast(
+        'Placeholders invalidos',
+        'Nao existem: {{' + badVars.join('}}, {{') + '}}. Use: ' + validList + '...',
+        'error'
+      )
+      return
+    }
+
     var trig = m.toTrigger(_form)
     var data = {
       name: _form.name,
@@ -544,6 +568,7 @@
         }
         if (a === 'export-json') { _exportJson(); return }
         if (a === 'import-json') { var imp = document.getElementById('faImportInput'); if (imp) imp.click(); return }
+        if (a === 'load-more') { _visibleCount += PAGE_SIZE; _render(); return }
       }
 
       // Duplicar regra
@@ -551,7 +576,7 @@
       if (dupBtn) { e.stopPropagation(); _duplicateRule(dupBtn.dataset.duplicate); return }
 
       var tab = e.target.closest('[data-tab]')
-      if (tab) { _activeModule = tab.dataset.tab; _selectedId = null; _form = _emptyForm(); _render(); return }
+      if (tab) { _activeModule = tab.dataset.tab; _selectedId = null; _form = _emptyForm(); _visibleCount = PAGE_SIZE; _render(); return }
 
       var sel = e.target.closest('[data-select]')
       if (sel) { _selectedId = sel.dataset.select; _render(); return }

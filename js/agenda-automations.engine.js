@@ -250,7 +250,25 @@
     } catch (e) { /* silencioso */ }
 
     var fakeAppt = { id: entityId, pacienteId: entityId, pacienteNome: vars.nome }
-    rules.forEach(function (rule) {
+
+    async function _canDispatch(rule) {
+      if (!window._sbShared || !entityId || !rule.id) return true
+      try {
+        var res = await window._sbShared.rpc('wa_automation_try_mark_sent', {
+          p_lead_id: String(entityId), p_rule_id: rule.id,
+        })
+        if (res && res.data === false) return false
+        return true
+      } catch (e) { return true } // fallback: nao bloqueia por erro de rede
+    }
+
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i]
+      var ok = await _canDispatch(rule)
+      if (!ok) {
+        console.info('[automations] skip duplicado on_tag:', rule.name, 'lead', entityId)
+        continue
+      }
       var cfg = rule.trigger_config || {}
       var delayDays = parseInt(cfg.delay_days) || 0
       var delayHours = parseInt(cfg.delay_hours) || 0
@@ -278,7 +296,7 @@
         // Sem delay: executa imediatamente
         _executeRule(rule, vars, phone, fakeAppt)
       }
-    })
+    }
   }
 
   // ══════════════════════════════════════════════════════════
