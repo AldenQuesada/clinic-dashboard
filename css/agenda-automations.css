@@ -8,20 +8,19 @@
 .aa-title { font-size:22px; font-weight:800; color:var(--text-primary, #1E293B); line-height:1.1; }
 .aa-subtitle { font-size:12px; color:var(--text-secondary, #64748B); margin-top:2px; }
 
-/* Nivel 1 — Tabs por canal (topo) */
-.aa-ch-tabs { display:flex; flex-wrap:wrap; gap:8px; padding:14px 24px 8px; }
-.aa-ch-tab { padding:8px 16px; border-radius:22px; border:1px solid var(--border, #E2E8F0); background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:var(--text-secondary, #64748B); transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
-.aa-ch-tab:hover { border-color:#94A3B8; }
-.aa-ch-tab-active { background:#92724B; color:#fff; border-color:#92724B; }
-.aa-ch-count { font-size:11px; font-weight:700; opacity:.85; }
-.aa-ch-split { font-size:10px; opacity:.75; font-weight:500; letter-spacing:.3px; }
+/* Nivel 1 — Tabs por CATEGORIA DO FUNIL (reutiliza .te-tabs do Templates) */
+/* Wrapper inherits .te-tabs styles from templates-editor.css */
+.aa-page .te-tabs { padding:14px 24px 0; margin:0 !important; border-bottom:none !important; }
 
-/* Nivel 2 — Pills por momento */
-.aa-mom-pills { display:flex; flex-wrap:wrap; gap:6px; padding:4px 24px 12px; border-bottom:1px solid var(--border, #E2E8F0); }
-.aa-mom-pill { padding:4px 12px; border-radius:12px; border:1px solid transparent; background:transparent; font-size:12px; font-weight:600; cursor:pointer; color:var(--text-secondary, #64748B); transition:all .1s; display:inline-flex; align-items:center; gap:4px; }
-.aa-mom-pill:hover { background:var(--bg-secondary, #F1F5F9); }
-.aa-mom-pill-active { background:#EFF6FF; color:#2563EB; border-color:#BFDBFE; }
-.aa-mom-count { font-size:10px; opacity:.75; }
+/* Nivel 2 — Pills PRE/ATEND/POS (barra compacta estilo etiqueta) */
+.aa-mom-pills { display:flex; flex-wrap:wrap; gap:8px; padding:10px 24px 12px; border-bottom:1px solid var(--border, #E2E8F0); }
+.aa-mom-pill { padding:6px 14px; border-radius:6px; border:1px solid var(--border, #E2E8F0); background:#fff; font-size:11px; font-weight:700; cursor:pointer; color:var(--text-secondary, #64748B); transition:all .1s; display:inline-flex; align-items:center; gap:6px; letter-spacing:.5px; text-transform:uppercase; }
+.aa-mom-pill:hover { background:var(--bg-secondary, #F1F5F9); border-color:#94A3B8; }
+.aa-mom-pill-active { background:#92724B; color:#fff; border-color:#92724B; }
+.aa-mom-count { font-size:10px; opacity:.85; font-weight:600; }
+
+/* Compat: esconder wrappers antigos */
+.aa-ch-tabs { display:none; }
 
 /* Nivel 3 — Grid 3 colunas fixas */
 .aa-grid { flex:1; display:grid; grid-template-columns:320px 1fr 320px; gap:16px; padding:16px 24px 24px; min-height:0; }

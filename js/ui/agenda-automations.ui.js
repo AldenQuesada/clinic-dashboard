@@ -26,30 +26,54 @@
   var _editingRule = null // rule object being edited (null = new)
   var _form = _emptyForm()
   var _deleteConfirm = null
-  var _channel = 'whatsapp'      // whatsapp | alexa | task | alert | multi
-  var _momentFilter = 'all'      // all | before | during | after | tag
-  var _isCreating = false         // true quando criando nova regra (força editor mesmo sem _selectedId)
+  var _funnelTab = 'agendamento'  // pre_agendamento | agendamento | paciente | orcamento | paciente_orcamento | perdido
+  var _momentPill = 'all'         // all | pre | atend | pos
+  var _isCreating = false
 
-  // Mapeia channel do DB para bucket da tab:
-  // 'multi' inclui todos os canais compostos.
+  // Metadata das 6 categorias do funil (copiado do templates-editor)
+  var FUNNEL_CATS = {
+    pre_agendamento:    { label: 'Pre-agendamento',        color: '#7C3AED' },
+    agendamento:        { label: 'Agendamento',            color: '#059669' },
+    paciente:           { label: 'Paciente',               color: '#0891B2' },
+    orcamento:          { label: 'Orcamento',              color: '#D97706' },
+    paciente_orcamento: { label: 'Paciente + Orcamento',   color: '#2563EB' },
+    perdido:            { label: 'Perdido',                color: '#9CA3AF' },
+  }
+
+  // Mapeia cada regra para categoria do funil (nivel 1)
+  function _ruleFunnelCategory(rule) {
+    var t = rule && rule.trigger_type
+    var cfg = rule && rule.trigger_config || {}
+    var tag = cfg.tag || ''
+    var status = cfg.status || ''
+
+    if (t === 'on_tag') {
+      if (tag === 'lead_novo' || tag === 'lead_novo_fullface' || tag === 'lead_novo_olheiras') return 'pre_agendamento'
+      if (tag === 'perdido') return 'perdido'
+      if (tag === 'aguardando_retorno') return 'paciente'
+      if (tag === 'encaixe') return 'agendamento'
+      if (tag === 'orcamento-aberto' || tag === 'em_negociacao' || tag === 'orcamento_enviado') return 'orcamento'
+      if (tag === 'orcamento_fechado' || tag === 'fechado') return 'paciente_orcamento'
+      // on_tag nao mapeado → agendamento fallback
+      return 'agendamento'
+    }
+    if (t === 'd_after' || t === 'on_finalize') return 'paciente'
+    if (t === 'd_before' || t === 'd_zero' || t === 'min_before' || t === 'daily_summary') return 'agendamento'
+    if (t === 'on_status') return 'agendamento'
+    return 'agendamento'
+  }
+
+  // Mapeia categoria do funil para pill (nivel 2)
+  function _catToMoment(cat) {
+    if (cat === 'pre_agendamento' || cat === 'perdido') return 'pre'
+    if (cat === 'agendamento') return 'atend'
+    return 'pos'  // paciente, orcamento, paciente_orcamento
+  }
+
+  // Canais compostos mapeados para bucket (mantido para compat)
   var _MULTI_CHANNELS = {
     whatsapp_alert: 1, whatsapp_task: 1, whatsapp_alexa: 1,
     alert_task: 1, alert_alexa: 1, all: 1, both: 1,
-  }
-  function _bucketChannel(rule) {
-    var ch = (rule && rule.channel) || ''
-    if (_MULTI_CHANNELS[ch]) return 'multi'
-    return ch
-  }
-
-  // Mapeia trigger_type para "momento"
-  function _ruleMoment(rule) {
-    var t = rule && rule.trigger_type
-    if (t === 'd_before' || t === 'd_zero' || t === 'min_before' || t === 'daily_summary') return 'before'
-    if (t === 'on_status') return 'during'
-    if (t === 'd_after' || t === 'on_finalize') return 'after'
-    if (t === 'on_tag') return 'tag'
-    return 'other'
   }
 
   function _emptyForm() {
@@ -192,57 +216,69 @@
       + '</div>'
   }
 
-  // ── Nivel 1: tabs por CANAL ────────────────────────────────
+  // ── Nivel 1: tabs por CATEGORIA DO FUNIL (padrao Templates) ──
   function _renderChannelTabs() {
-    var ch = [
-      { id: 'whatsapp', label: 'WhatsApp' },
-      { id: 'alexa',    label: 'Alexa' },
-      { id: 'task',     label: 'Tarefa' },
-      { id: 'alert',    label: 'Alerta' },
-      { id: 'multi',    label: 'Multi-canal' },
-    ]
-    var html = ch.map(function (c) {
-      var ruleList = _rules.filter(function (r) { return _bucketChannel(r) === c.id })
+    var cats = Object.keys(FUNNEL_CATS)
+    var html = cats.map(function (cid) {
+      var meta = FUNNEL_CATS[cid]
+      var ruleList = _rules.filter(function (r) { return _ruleFunnelCategory(r) === cid })
       var total = ruleList.length
-      var ativos = ruleList.filter(function (r) { return r.is_active }).length
-      var inativos = total - ativos
-      var active = _channel === c.id ? ' aa-ch-tab-active' : ''
-      var split = total ? '<span class="aa-ch-split">A:' + ativos + ' I:' + inativos + '</span>' : ''
-      return '<button class="aa-ch-tab' + active + '" data-channel="' + c.id + '">'
-        + c.label + ' <span class="aa-ch-count">' + total + '</span> ' + split + '</button>'
+      var active = _funnelTab === cid ? ' te-tab-active' : ''
+
+      // Badge extra só para 'agendamento' (imitando o N:x R:x O:x do Templates)
+      var subDetail = ''
+      if (cid === 'agendamento' && total > 0) {
+        var n = ruleList.filter(function(r){ return (r.trigger_config && r.trigger_config.tag === 'lead_novo_fullface') || (r.trigger_config && r.trigger_config.status === 'agendado') }).length
+        var r0 = ruleList.filter(function(r){ return r.trigger_config && r.trigger_config.status === 'remarcado' }).length
+        var o0 = total - n - r0
+        subDetail = ' <span class="te-tab-sub">(N:' + n + ' R:' + r0 + ' O:' + (o0 > 0 ? o0 : 0) + ')</span>'
+      }
+
+      return '<button class="te-tab' + active + '" data-action="tab" data-tab="' + cid + '">'
+        + meta.label
+        + ' <span class="te-tab-count">' + total + '</span>'
+        + subDetail
+        + '</button>'
     }).join('')
-    return '<div class="aa-ch-tabs">' + html + '</div>'
+    return '<div class="te-tabs">' + html + '</div>'
   }
 
-  // ── Nivel 2: pills por MOMENTO ─────────────────────────────
+  // ── Nivel 2: pills PRE / ATENDIMENTO / POS ─────────────────
   function _renderMomentPills() {
-    var moments = [
-      { id: 'all',    label: 'Todas' },
-      { id: 'before', label: 'Antes' },
-      { id: 'during', label: 'Durante' },
-      { id: 'after',  label: 'Depois' },
-      { id: 'tag',    label: 'Por tag' },
+    var pills = [
+      { id: 'all',   label: 'TODAS' },
+      { id: 'pre',   label: 'PRE-ATENDIMENTO' },
+      { id: 'atend', label: 'ATENDIMENTO' },
+      { id: 'pos',   label: 'POS-ATENDIMENTO' },
     ]
-    var rulesInChannel = _rulesInCurrentChannel()
-    var html = moments.map(function (m) {
-      var count = m.id === 'all' ? rulesInChannel.length
-        : rulesInChannel.filter(function (r) { return _ruleMoment(r) === m.id }).length
-      var active = _momentFilter === m.id ? ' aa-mom-pill-active' : ''
-      return '<button class="aa-mom-pill' + active + '" data-moment="' + m.id + '">'
-        + m.label + ' <span class="aa-mom-count">' + count + '</span></button>'
+    var rulesInTab = _rulesInCurrentFunnel()
+    var html = pills.map(function (p) {
+      var count = p.id === 'all' ? rulesInTab.length
+        : rulesInTab.filter(function (r) { return _catToMoment(_ruleFunnelCategory(r)) === p.id }).length
+      var active = _momentPill === p.id ? ' aa-mom-pill-active' : ''
+      return '<button class="aa-mom-pill' + active + '" data-moment="' + p.id + '">'
+        + p.label + ' <span class="aa-mom-count">' + count + '</span></button>'
     }).join('')
     return '<div class="aa-mom-pills">' + html + '</div>'
   }
 
-  function _rulesInCurrentChannel() {
-    return _rules.filter(function (r) { return _bucketChannel(r) === _channel })
+  function _rulesInCurrentFunnel() {
+    return _rules.filter(function (r) { return _ruleFunnelCategory(r) === _funnelTab })
   }
 
   function _filteredRules() {
-    var list = _rulesInCurrentChannel()
-    if (_momentFilter !== 'all') {
-      list = list.filter(function (r) { return _ruleMoment(r) === _momentFilter })
+    var list = _rulesInCurrentFunnel()
+    if (_momentPill !== 'all') {
+      list = list.filter(function (r) { return _catToMoment(_ruleFunnelCategory(r)) === _momentPill })
     }
+    // Ordena igual Templates: por minutos totais (day + delay_hours + delay_minutes)
+    list.sort(function (a, b) {
+      var cfgA = a.trigger_config || {}
+      var cfgB = b.trigger_config || {}
+      var ma = ((parseInt(cfgA.delay_days) || 0) * 1440) + ((parseInt(cfgA.delay_hours) || cfgA.hour || 0) * 60) + (parseInt(cfgA.delay_minutes) || cfgA.minute || 0)
+      var mb = ((parseInt(cfgB.delay_days) || 0) * 1440) + ((parseInt(cfgB.delay_hours) || cfgB.hour || 0) * 60) + (parseInt(cfgB.delay_minutes) || cfgB.minute || 0)
+      return ma - mb
+    })
     return list
   }
 
@@ -824,7 +860,19 @@
       var btn = e.target.closest('[data-action]')
       if (btn) {
         var action = btn.dataset.action
-        if (action === 'new') { _form = _emptyForm(); _form.channel = _channel === 'multi' ? 'whatsapp' : _channel; _editingRule = null; _isCreating = true; _render() }
+        if (action === 'new') {
+          _form = _emptyForm()
+          _form.channel = 'whatsapp' // default para nova regra
+          // Inicia com trigger_type condizente com a tab atual
+          if (_funnelTab === 'pre_agendamento') { _form.trigger_type = 'on_tag'; _form.trigger_config = { tag: 'lead_novo' } }
+          else if (_funnelTab === 'perdido') { _form.trigger_type = 'on_tag'; _form.trigger_config = { tag: 'perdido' } }
+          else if (_funnelTab === 'orcamento') { _form.trigger_type = 'on_tag'; _form.trigger_config = { tag: 'orcamento-aberto' } }
+          else if (_funnelTab === 'paciente_orcamento') { _form.trigger_type = 'on_tag'; _form.trigger_config = { tag: 'orcamento_fechado' } }
+          else if (_funnelTab === 'paciente') { _form.trigger_type = 'd_after'; _form.trigger_config = { days: 1, hour: 10, minute: 0 } }
+          _editingRule = null
+          _isCreating = true
+          _render()
+        }
         if (action === 'cancel') { _isCreating = false; _editingRule = null; _render() }
         if (action === 'save') _handleSave()
         if (action === 'pick-image') {
@@ -894,10 +942,10 @@
       if (testAlexa) { _testAlexaRule(testAlexa.dataset.testAlexa); return }
 
       // Category filter tabs
-      // Channel tab click
-      var chTab = e.target.closest('[data-channel]')
-      if (chTab) {
-        _channel = chTab.dataset.channel
+      // Funnel tab click (data-action=tab, data-tab=cid)
+      var funnelTab = e.target.closest('[data-action="tab"]')
+      if (funnelTab) {
+        _funnelTab = funnelTab.dataset.tab
         _selectedId = null
         _isCreating = false
         _editingRule = null
@@ -905,9 +953,9 @@
         return
       }
 
-      // Moment pill click
+      // Moment pill click (PRE/ATEND/POS)
       var momPill = e.target.closest('[data-moment]')
-      if (momPill) { _momentFilter = momPill.dataset.moment; _render(); return }
+      if (momPill) { _momentPill = momPill.dataset.moment; _render(); return }
 
       // Variable insertion
       var varBtn = e.target.closest('[data-var]')
