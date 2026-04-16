@@ -30,6 +30,50 @@
   var _momentPill = 'all'         // all | pre | atend | pos
   var _isCreating = false          // mantido p/ compat — true quando modal aberto
   var _modalOpen = false           // true = overlay modal de criacao visivel
+  var _speakingAlexa = false        // pulse animation no device quando falando
+
+  // Preload voices do speechSynthesis (async em alguns browsers)
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    // Trigger load — em Chrome primeira chamada e async
+    try { window.speechSynthesis.getVoices() } catch (e) {}
+    window.speechSynthesis.onvoiceschanged = function () {
+      // Voices carregadas; nada a fazer aqui, ja fica disponivel
+    }
+  }
+
+  function _pickVoice(lang) {
+    if (!('speechSynthesis' in window)) return null
+    var voices = window.speechSynthesis.getVoices() || []
+    var pref = voices.find(function (v) { return v.lang && v.lang.indexOf(lang) === 0 && /female|mulher|feminin/i.test(v.name) })
+    if (pref) return pref
+    var any = voices.find(function (v) { return v.lang && v.lang.indexOf(lang) === 0 })
+    return any || null
+  }
+
+  function _speakAlexa(text) {
+    if (!('speechSynthesis' in window)) {
+      if (window._showToast) window._showToast('Navegador sem suporte', 'speechSynthesis nao disponivel', 'warning')
+      return
+    }
+    window.speechSynthesis.cancel()
+    var u = new SpeechSynthesisUtterance(text || '(mensagem vazia)')
+    u.lang = 'pt-BR'
+    u.rate = 0.95
+    u.pitch = 1.0
+    var voice = _pickVoice('pt')
+    if (voice) u.voice = voice
+    u.onstart = function () {
+      _speakingAlexa = true
+      var ring = document.querySelector('.aa-alexa-ring')
+      if (ring) ring.classList.add('aa-alexa-speaking')
+    }
+    u.onend = u.onerror = function () {
+      _speakingAlexa = false
+      var ring = document.querySelector('.aa-alexa-ring')
+      if (ring) ring.classList.remove('aa-alexa-speaking')
+    }
+    window.speechSynthesis.speak(u)
+  }
 
   // Metadata das 6 categorias do funil (copiado do templates-editor)
   var FUNNEL_CATS = {
@@ -207,16 +251,18 @@
   }
 
   // ── Modal de criacao de nova regra ─────────────────────────
+  // Grid 2 col: editor (esquerda) + preview live (direita). Em <900px colapsa.
   function _renderCreateModal() {
-    // Reutiliza o mesmo _renderEditor (form completo) dentro do modal.
-    // _form ja foi preparado pelo handler 'new' (trigger_type coerente com tab atual).
     return '<div class="aa-modal-overlay" data-action="modal-backdrop">'
-      +   '<div class="aa-modal" role="dialog" aria-modal="true">'
+      +   '<div class="aa-modal aa-modal-wide" role="dialog" aria-modal="true">'
       +     '<div class="aa-modal-header">'
       +       '<div class="aa-modal-title">' + _feather('plus', 16) + ' Nova automacao</div>'
       +       '<button type="button" class="aa-btn-icon" data-action="modal-close" title="Fechar">' + _feather('x', 16) + '</button>'
       +     '</div>'
-      +     '<div class="aa-modal-body">' + _renderEditor() + '</div>'
+      +     '<div class="aa-modal-body aa-modal-body-split">'
+      +       '<div class="aa-modal-editor">' + _renderEditor() + '</div>'
+      +       '<div class="aa-modal-preview">' + _renderLivePreview(_form) + '</div>'
+      +     '</div>'
       +     '<div class="aa-modal-footer">'
       +       '<button type="button" class="aa-btn aa-btn-cancel" data-action="modal-close">Cancelar</button>'
       +       '<button type="button" class="aa-btn aa-btn-save" data-action="save">' + (_saving ? 'Salvando...' : 'Criar automacao') + '</button>'
@@ -441,6 +487,13 @@
 
   // ── Coluna 3: preview ──────────────────────────────────────
   function _renderPreviewColumn() {
+    // Quando modal esta aberto, preview fica DENTRO do modal — oculta a coluna 3
+    if (_modalOpen) {
+      return '<div class="aa-col-preview-empty">'
+        + _feather('smartphone', 28)
+        + '<br>Preview disponivel no modal'
+        + '</div>'
+    }
     var isEditing = _isCreating || !!_editingRule
 
     // Modo edicao: preview do _form em tempo real
@@ -461,6 +514,7 @@
       + '</div>'
   }
 
+  // Router de preview por canal — adaptativo
   function _renderLivePreview(rule) {
     var vars = _sampleVars()
     var html = ''
@@ -470,42 +524,97 @@
       html += _renderPhonePreview(txt, rule.attachment_url, rule.attachment_above_text !== false)
     }
 
-    if (_channelIncludes(rule.channel, 'alexa') && rule.alexa_message) {
-      var alexaMsg = _svc().renderTemplate(rule.alexa_message, vars)
-      var targetLabel = rule.alexa_target === 'recepcao' ? 'Recepcao'
-        : rule.alexa_target === 'todos' ? 'Todos'
-        : rule.alexa_target === 'profissional' ? 'Profissional' : 'Sala'
-      html += '<div style="margin-top:12px;padding:14px;border-radius:12px;border-left:4px solid #06B6D4;background:#ECFEFF;font-size:13px">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-        +   '<div style="display:flex;align-items:center;gap:6px;font-weight:700;color:#0891B2">'
-        +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>'
-        +     ' Alexa (' + targetLabel + ')'
-        +   '</div>'
-        + '</div>'
-        + '<div style="color:#0E7490;font-style:italic">"' + _esc(alexaMsg) + '"</div>'
-        + '</div>'
+    if (_channelIncludes(rule.channel, 'alexa')) {
+      html += _renderAlexaPreview(rule, vars)
     }
 
-    if (_channelIncludes(rule.channel, 'task') && rule.task_title) {
-      var pColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[rule.task_priority] || '#3B82F6'
-      html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border-left:4px solid ' + pColor + ';background:' + pColor + '08;font-size:13px">'
-        + '<div style="font-weight:700;color:' + pColor + ';display:flex;align-items:center;gap:4px;margin-bottom:4px">' + _feather('clipboard', 14) + ' Tarefa</div>'
-        + '<div>' + _esc(rule.task_title) + '</div>'
-        + '<div style="margin-top:2px;color:var(--text-secondary);font-size:11px">Para: ' + (rule.task_assignee||'sdr') + ' · Prazo: ' + (rule.task_deadline_hours||24) + 'h · ' + (rule.task_priority||'normal') + '</div>'
-        + '</div>'
+    if (_channelIncludes(rule.channel, 'task')) {
+      html += _renderTaskCardPreview(rule, vars)
     }
 
-    if (_channelIncludes(rule.channel, 'alert') && rule.alert_title) {
-      var aColor = { info:'#3B82F6', warning:'#F59E0B', success:'#10B981', error:'#DC2626' }[rule.alert_type] || '#3B82F6'
-      var aTitle = _svc().renderTemplate(rule.alert_title, vars)
-      html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border-left:4px solid ' + aColor + ';background:' + aColor + '10;font-size:13px">'
-        + '<div style="font-weight:700;color:' + aColor + ';display:flex;align-items:center;gap:4px;margin-bottom:4px">' + _feather('bell', 14) + ' Alerta</div>'
-        + '<div>' + _esc(aTitle) + '</div>'
-        + '</div>'
+    if (_channelIncludes(rule.channel, 'alert')) {
+      html += _renderAlertPreviewLive(rule, vars)
     }
 
-    if (!html) html = '<div class="aa-col-preview-empty">Preview vazio — preencha a regra.</div>'
+    if (!html) html = '<div class="aa-col-preview-empty">Preview vazio — escolha um canal e preencha a mensagem.</div>'
     return html
+  }
+
+  // ── Preview Alexa (Echo Dot + reproduzir voz) ───────────────
+  function _renderAlexaPreview(rule, vars) {
+    var msg = _svc().renderTemplate(rule.alexa_message || '', vars)
+    var targetLabel = rule.alexa_target === 'recepcao' ? 'Recepcao'
+      : rule.alexa_target === 'todos' ? 'Todos'
+      : rule.alexa_target === 'profissional' ? 'Profissional' : 'Sala'
+
+    var deviceSvg = '<svg viewBox="0 0 100 100" width="100" height="100">'
+      +   '<defs><radialGradient id="aaDotGrad" cx="50%" cy="50%" r="50%">'
+      +     '<stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0369A1"/>'
+      +   '</radialGradient></defs>'
+      +   '<circle cx="50" cy="50" r="46" fill="#1E293B"/>'
+      +   '<circle cx="50" cy="50" r="40" fill="none" stroke="url(#aaDotGrad)" stroke-width="4" class="aa-alexa-ring"/>'
+      +   '<circle cx="50" cy="50" r="6" fill="#0EA5E9"/>'
+      + '</svg>'
+
+    return '<div class="aa-alexa-preview">'
+      +   '<div class="aa-alexa-header">'
+      +     '<div class="aa-alexa-title">' + _feather('speaker', 14) + ' Alexa · ' + _esc(targetLabel) + '</div>'
+      +   '</div>'
+      +   '<div class="aa-alexa-device">' + deviceSvg + '</div>'
+      +   '<div class="aa-alexa-msg">"' + _esc(msg || '(sem mensagem — preencha acima)') + '"</div>'
+      +   '<button type="button" class="aa-alexa-play-btn" data-action="speak-alexa" title="Reproduzir via voz do navegador">'
+      +     _feather('play', 12) + ' Reproduzir voz'
+      +   '</button>'
+      + '</div>'
+  }
+
+  // ── Preview Alerta (card + botao simular) ───────────────────
+  function _renderAlertPreviewLive(rule, vars) {
+    var typeMap = {
+      info:    { color: '#3B82F6', bg: '#EFF6FF', icon: 'info',           label: 'Info' },
+      warning: { color: '#F59E0B', bg: '#FEF3C7', icon: 'alertTriangle',  label: 'Aviso' },
+      success: { color: '#10B981', bg: '#D1FAE5', icon: 'checkCircle',    label: 'Sucesso' },
+      error:   { color: '#DC2626', bg: '#FEE2E2', icon: 'alertCircle',    label: 'Erro' },
+    }
+    var t = typeMap[rule.alert_type] || typeMap.info
+    var title = _svc().renderTemplate(rule.alert_title || '', vars)
+
+    return '<div class="aa-alert-preview" style="--ac:' + t.color + ';background:' + t.bg + ';border-color:' + t.color + '">'
+      +   '<div class="aa-alert-preview-header">'
+      +     '<div class="aa-alert-preview-title">' + _feather(t.icon, 16) + ' Alerta ' + t.label + '</div>'
+      +   '</div>'
+      +   '<div class="aa-alert-preview-body">' + _esc(title || '(sem titulo — preencha acima)') + '</div>'
+      +   '<button type="button" class="aa-alert-sim-btn" data-action="simulate-alert" title="Disparar o toast ao vivo por 3s">'
+      +     _feather('zap', 12) + ' Simular alerta'
+      +   '</button>'
+      + '</div>'
+  }
+
+  // ── Preview Tarefa (card estilo dashboard) ─────────────────
+  function _renderTaskCardPreview(rule, vars) {
+    var pri = rule.task_priority || 'normal'
+    var pColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[pri] || '#3B82F6'
+    var pLabel = { urgente:'URGENTE', alta:'ALTA', normal:'NORMAL', baixa:'BAIXA' }[pri] || 'NORMAL'
+    var assignee = rule.task_assignee || 'sdr'
+    var aLabel = { sdr:'SDR / Comercial', secretaria:'Secretaria', cs:'CS / Pos-venda', clinica:'Equipe Clinica', gestao:'Gestao' }[assignee] || assignee
+    var title = _svc().renderTemplate(rule.task_title || '', vars)
+    var deadline = rule.task_deadline_hours || 24
+    var prazoLabel = deadline < 24 ? deadline + 'h'
+      : deadline === 24 ? '1 dia'
+      : deadline < 168 ? Math.round(deadline / 24) + ' dias'
+      : Math.round(deadline / 168) + ' sem'
+
+    return '<div class="aa-task-card-preview" style="border-left-color:' + pColor + '">'
+      +   '<div class="aa-task-card-header">'
+      +     _feather('clipboard', 14)
+      +     '<span class="aa-task-card-pri" style="background:' + pColor + '20;color:' + pColor + '">' + pLabel + '</span>'
+      +   '</div>'
+      +   '<div class="aa-task-card-title">' + _esc(title || '(sem titulo — preencha acima)') + '</div>'
+      +   '<div class="aa-task-card-meta">'
+      +     '<span>' + _feather('user', 11) + ' ' + _esc(aLabel) + '</span>'
+      +     '<span>' + _feather('clock', 11) + ' Prazo ' + prazoLabel + '</span>'
+      +   '</div>'
+      + '</div>'
   }
 
   // Compat: antigos nomes esperados por linkage (caso existam chamadas leg)
@@ -919,6 +1028,22 @@
         }
         if (action === 'cancel') { _isCreating = false; _editingRule = null; _render(); return }
         if (action === 'save') { _handleSave(); return }
+        if (action === 'speak-alexa') {
+          _readForm()
+          var vars = _sampleVars()
+          var msg = _svc().renderTemplate(_form.alexa_message || '', vars)
+          _speakAlexa(msg || 'Mensagem de exemplo. Preencha o texto da Alexa no editor.')
+          return
+        }
+        if (action === 'simulate-alert') {
+          _readForm()
+          var v2 = _sampleVars()
+          var title = _svc().renderTemplate(_form.alert_title || '', v2) || 'Alerta de exemplo'
+          if (window._showToast) {
+            window._showToast('Automacao', title, _form.alert_type || 'info')
+          }
+          return
+        }
         if (action === 'pick-image') {
           var inp = document.getElementById('aaAttachInput')
           if (inp) inp.click()
