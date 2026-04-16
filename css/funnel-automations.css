@@ -78,7 +78,7 @@
   background:#fff; color:var(--text-primary); outline:none; font-family:inherit; box-sizing:border-box;
 }
 .fa-field input:focus, .fa-field select:focus, .fa-field textarea:focus { border-color:#92724B; }
-.fa-field textarea { resize:vertical; min-height:100px; line-height:1.5; }
+.fa-field textarea { resize:vertical; min-height:200px; line-height:1.6; font-size:14px; padding:12px 14px; }
 .fa-field-row { display:flex; gap:8px; }
 .fa-field-row .fa-field { flex:1; }
 

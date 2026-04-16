@@ -232,7 +232,7 @@
       +   '<div class="fa-channel-block-title">' + _f('messageCircle', 12) + ' WhatsApp</div>'
       +   S().renderChipsBar('var')
       +   S().renderFormatToolbar()
-      +   '<textarea id="faContent" rows="6" placeholder="Digite a mensagem...">'+_esc(f.content_template)+'</textarea>'
+      +   '<textarea id="faContent" rows="10" placeholder="Digite a mensagem do WhatsApp...">'+_esc(f.content_template)+'</textarea>'
       +   S().renderAttachArea(f.attachment_url)
       + '</div>'
   }
