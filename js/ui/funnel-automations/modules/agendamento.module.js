@@ -263,6 +263,21 @@
     return form
   }
 
+  // Agrupamento visual da lista por fase do ciclo
+  var GROUPS = [
+    { id: 'antes',    label: 'Antes da consulta',            icon: 'clock',      minOrder: 0,  maxOrder: 49 },
+    { id: 'durante',  label: 'Durante a consulta',           icon: 'activity',   minOrder: 50, maxOrder: 69 },
+    { id: 'especial', label: 'Casos especiais',              icon: 'alertCircle', minOrder: 70, maxOrder: 999 },
+  ]
+
+  function groupRule(rule) {
+    var so = (rule && rule.sort_order) || 0
+    for (var i = 0; i < GROUPS.length; i++) {
+      if (so >= GROUPS[i].minOrder && so <= GROUPS[i].maxOrder) return GROUPS[i].id
+    }
+    return 'antes' // default fallback
+  }
+
   window.FAModules.agendamento = {
     id: 'agendamento',
     label: 'Agendamento',
@@ -276,9 +291,11 @@
     validate: validate,
     renderTriggerFields: renderTriggerFields,
     readTriggerForm: readTriggerForm,
-    // Novas APIs (opcionais — shell chama se disponivel)
     applyStatusDefaults: applyStatusDefaults,
     suggestName: suggestName,
     isValidCombination: isValidCombination,
+    // Agrupamento opcional
+    groups: GROUPS,
+    groupRule: groupRule,
   }
 })()

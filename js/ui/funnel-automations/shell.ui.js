@@ -114,6 +114,24 @@
     return '<div class="fa-tabs">' + html + '</div>'
   }
 
+  // Icone por canal — mostra rapidamente que canal a regra usa
+  var CHANNEL_ICONS = {
+    whatsapp: 'messageCircle',
+    alexa: 'speaker',
+    task: 'clipboard',
+    alert: 'bell',
+  }
+  function _channelIconFor(rule) {
+    var ch = rule && rule.channel || ''
+    // Canais compostos: icone do primeiro canal
+    if (ch.indexOf('whatsapp') === 0) return 'messageCircle'
+    if (ch.indexOf('alexa') === 0) return 'speaker'
+    if (ch.indexOf('task') === 0) return 'clipboard'
+    if (ch.indexOf('alert') === 0) return 'bell'
+    if (ch === 'all' || ch === 'both') return 'radio'
+    return CHANNEL_ICONS[ch] || 'messageCircle'
+  }
+
   function _renderList() {
     var rules = _rulesInModule()
     if (!rules.length) {
@@ -121,7 +139,38 @@
         + _f('inbox', 24) + '<br>Nenhuma regra nesta fase.<br>Clique em <b>+ Nova automacao</b>.'
         + '</div>'
     }
-    return '<div class="fa-list">' + rules.map(function(r, i) { return _renderRuleCard(r, i+1) }).join('') + '</div>'
+
+    var m = _mod()
+    // Sem agrupamento: lista flat numerada
+    if (!m || !m.groups || !m.groupRule) {
+      return '<div class="fa-list">' + rules.map(function(r, i) { return _renderRuleCard(r, i+1) }).join('') + '</div>'
+    }
+
+    // Agrupamento por fase (shell renderiza cabecalho entre grupos)
+    var buckets = {}
+    m.groups.forEach(function(g) { buckets[g.id] = [] })
+    rules.forEach(function(r) {
+      var gid = m.groupRule(r)
+      if (!buckets[gid]) buckets[gid] = []
+      buckets[gid].push(r)
+    })
+
+    var html = '<div class="fa-list">'
+    var counter = 0
+    m.groups.forEach(function(g) {
+      var items = buckets[g.id] || []
+      if (!items.length) return
+      html += '<div class="fa-list-group-header">'
+        + _f(g.icon, 11) + ' <span>' + g.label + '</span>'
+        + '<span class="fa-list-group-count">' + items.length + '</span>'
+        + '</div>'
+      items.forEach(function(r) {
+        counter++
+        html += _renderRuleCard(r, counter)
+      })
+    })
+    html += '</div>'
+    return html
   }
 
   function _renderRuleCard(r, num) {
@@ -130,8 +179,10 @@
     var status = r.is_active ? 'ON' : 'OFF'
     var statusCls = r.is_active ? 'fa-status-on' : 'fa-status-off'
     var sub = _ruleSubtitle(r)
+    var chanIcon = _channelIconFor(r)
     return '<div class="fa-card' + sel + inactive + '" data-select="' + _esc(r.id) + '">'
       +   '<div class="fa-card-num">' + num + '</div>'
+      +   '<div class="fa-card-channel" title="' + _esc(r.channel||'') + '">' + _f(chanIcon, 13) + '</div>'
       +   '<div class="fa-card-body">'
       +     '<div class="fa-card-name">' + _esc(r.name) + '</div>'
       +     '<div class="fa-card-sub">' + _esc(sub) + '</div>'

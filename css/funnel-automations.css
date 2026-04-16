@@ -37,6 +37,30 @@
 
 /* Lista de regras */
 .fa-list { display:flex; flex-direction:column; gap:6px; }
+
+/* Cabecalho de grupo (fase) na lista */
+.fa-list-group-header {
+  display:flex; align-items:center; gap:6px;
+  font-size:10px; font-weight:700; letter-spacing:.8px;
+  text-transform:uppercase; color:#92724B;
+  padding:10px 4px 4px; margin-top:8px;
+  border-bottom:1px solid #E2E8F0;
+}
+.fa-list-group-header:first-child { margin-top:0; }
+.fa-list-group-count {
+  margin-left:auto; background:#F1F5F9; color:var(--text-secondary);
+  font-size:10px; padding:1px 7px; border-radius:10px; font-weight:600;
+  letter-spacing:0;
+}
+
+/* Icone de canal no card */
+.fa-card-channel {
+  width:26px; height:26px; border-radius:6px;
+  background:#F1F5F9; color:var(--text-secondary);
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.fa-card-selected .fa-card-channel { background:#FDF8F0; color:#92724B; }
 .fa-card {
   display:flex; align-items:center; gap:10px; padding:12px;
   background:#fff; border-radius:10px; border:1.5px solid var(--border, #E2E8F0);
