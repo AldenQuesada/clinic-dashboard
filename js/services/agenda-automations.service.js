@@ -83,6 +83,23 @@
     })
   }
 
+  // Canais "multi" = canais agrupados (whatsapp_alert, all, etc.)
+  var MULTI_CHANNEL_IDS = {
+    whatsapp_alert: 1, whatsapp_task: 1, whatsapp_alexa: 1,
+    alert_task: 1, alert_alexa: 1, all: 1, both: 1,
+  }
+
+  // getByChannel: filtra regras por canal (ativas + inativas — UI decide).
+  //   'whatsapp' | 'alexa' | 'task' | 'alert' -> exata
+  //   'multi' -> qualquer canal agrupado
+  function getByChannel(channelId) {
+    var all = _readCache()
+    if (channelId === 'multi') {
+      return all.filter(function (r) { return !!MULTI_CHANNEL_IDS[r.channel] })
+    }
+    return all.filter(function (r) { return r.channel === channelId })
+  }
+
   // ── Template rendering ─────────────────────────────────────
   function renderTemplate(template, vars) {
     if (!template) return ''
@@ -176,7 +193,7 @@
 
   window.AgendaAutomationsService = Object.freeze({
     loadAll, save, remove, toggle,
-    getActive, getByTrigger, getByCategory, getByStatus, getByTag,
+    getActive, getByTrigger, getByCategory, getByStatus, getByTag, getByChannel,
     renderTemplate,
     TRIGGER_TYPES, RECIPIENT_TYPES, CHANNELS, CATEGORIES, TEMPLATE_VARS,
     TASK_ASSIGNEES, TASK_PRIORITIES, ALEXA_TARGETS,

@@ -23,12 +23,34 @@
   var _loading = false
   var _saving = false
   var _selectedId = null
-  var _panelOpen = true
-  var _panelTab = 'list' // list | editor
   var _editingRule = null // rule object being edited (null = new)
   var _form = _emptyForm()
   var _deleteConfirm = null
-  var _filterCategory = 'all' // all | before | during | after
+  var _channel = 'whatsapp'      // whatsapp | alexa | task | alert | multi
+  var _momentFilter = 'all'      // all | before | during | after | tag
+  var _isCreating = false         // true quando criando nova regra (força editor mesmo sem _selectedId)
+
+  // Mapeia channel do DB para bucket da tab:
+  // 'multi' inclui todos os canais compostos.
+  var _MULTI_CHANNELS = {
+    whatsapp_alert: 1, whatsapp_task: 1, whatsapp_alexa: 1,
+    alert_task: 1, alert_alexa: 1, all: 1, both: 1,
+  }
+  function _bucketChannel(rule) {
+    var ch = (rule && rule.channel) || ''
+    if (_MULTI_CHANNELS[ch]) return 'multi'
+    return ch
+  }
+
+  // Mapeia trigger_type para "momento"
+  function _ruleMoment(rule) {
+    var t = rule && rule.trigger_type
+    if (t === 'd_before' || t === 'd_zero' || t === 'min_before' || t === 'daily_summary') return 'before'
+    if (t === 'on_status') return 'during'
+    if (t === 'd_after' || t === 'on_finalize') return 'after'
+    if (t === 'on_tag') return 'tag'
+    return 'other'
+  }
 
   function _emptyForm() {
     return {
@@ -139,73 +161,112 @@
   function _render() { render() }
 
   function _renderPage() {
-    return '<div class="aa-page">'
-      + _renderCenterPanel()
-      + _renderSlidePanel()
-      + '</div>'
-  }
-
-  // ── Center: rules list ─────────────────────────────────────
-  function _renderCenterPanel() {
-    var cats = ['all','captacao','before','during','after','pos','orcamento']
-    var tabs = cats.map(function(c) {
-      var active = _filterCategory === c ? ' aa-tab-active' : ''
-      var label = c === 'all' ? 'Todas' : CATEGORY_LABELS[c]
-      var count = c === 'all' ? _rules.length : _rules.filter(function(r){return r.category===c}).length
-      return '<button class="aa-tab' + active + '" data-cat="' + c + '">'
-        + label + ' <span class="aa-tab-count">' + count + '</span></button>'
-    }).join('')
-
-    var header = '<div class="aa-header">'
-      + '<div class="aa-title">' + _feather('zap', 18) + ' Automacoes da Agenda</div>'
-      + '<div class="aa-tabs">' + tabs + '</div>'
-      + '</div>'
-
-    var filtered = _filterCategory === 'all' ? _rules : _rules.filter(function(r){return r.category===_filterCategory})
-
     if (_loading) {
-      return '<div class="aa-center">' + header + '<div class="aa-loading">Carregando...</div></div>'
+      return '<div class="aa-page">'
+        + _renderTopHeader()
+        + '<div class="aa-loading">Carregando automacoes...</div>'
+        + '</div>'
     }
 
-    var groups = {}
-    filtered.forEach(function(r) {
-      var cat = r.category || 'before'
-      if (!groups[cat]) groups[cat] = []
-      groups[cat].push(r)
-    })
-
-    var list = ''
-    var order = ['before','during','after','summary']
-    order.forEach(function(cat) {
-      var items = groups[cat]
-      if (!items || !items.length) return
-      var color = CATEGORY_COLORS[cat] || '#6B7280'
-      list += '<div class="aa-group">'
-        + '<div class="aa-group-title" style="color:' + color + '">'
-        + (CATEGORY_LABELS[cat]||cat).toUpperCase() + ' DA CONSULTA'
-        + '</div>'
-      items.forEach(function(r) { list += _renderRuleCard(r) })
-      list += '</div>'
-    })
-
-    if (!list) list = '<div class="aa-empty">' + _feather('inbox', 32) + '<br>Nenhuma automacao configurada</div>'
-
-    return '<div class="aa-center">' + header + '<div class="aa-list">' + list + '</div></div>'
+    return '<div class="aa-page">'
+      + _renderTopHeader()
+      + _renderChannelTabs()
+      + _renderMomentPills()
+      + '<div class="aa-grid">'
+      +   '<div class="aa-col-list">' + _renderRulesList() + '</div>'
+      +   '<div class="aa-col-editor">' + _renderEditorColumn() + '</div>'
+      +   '<div class="aa-col-preview">' + _renderPreviewColumn() + '</div>'
+      + '</div>'
+      + '</div>'
   }
 
-  function _renderRuleCard(r) {
-    var color = CATEGORY_COLORS[r.category] || '#6B7280'
+  function _renderTopHeader() {
+    var total = _rules.length
+    var active = _rules.filter(function (r) { return r.is_active }).length
+    return '<div class="aa-top">'
+      +   '<div class="aa-top-left">'
+      +     '<div class="aa-title">Automacoes da Agenda</div>'
+      +     '<div class="aa-subtitle">' + active + ' de ' + total + ' regras ativas</div>'
+      +   '</div>'
+      +   '<button class="aa-btn-new" data-action="new">' + _feather('plus', 14) + ' Nova automacao</button>'
+      + '</div>'
+  }
+
+  // ── Nivel 1: tabs por CANAL ────────────────────────────────
+  function _renderChannelTabs() {
+    var ch = [
+      { id: 'whatsapp', label: 'WhatsApp' },
+      { id: 'alexa',    label: 'Alexa' },
+      { id: 'task',     label: 'Tarefa' },
+      { id: 'alert',    label: 'Alerta' },
+      { id: 'multi',    label: 'Multi-canal' },
+    ]
+    var html = ch.map(function (c) {
+      var ruleList = _rules.filter(function (r) { return _bucketChannel(r) === c.id })
+      var total = ruleList.length
+      var ativos = ruleList.filter(function (r) { return r.is_active }).length
+      var inativos = total - ativos
+      var active = _channel === c.id ? ' aa-ch-tab-active' : ''
+      var split = total ? '<span class="aa-ch-split">A:' + ativos + ' I:' + inativos + '</span>' : ''
+      return '<button class="aa-ch-tab' + active + '" data-channel="' + c.id + '">'
+        + c.label + ' <span class="aa-ch-count">' + total + '</span> ' + split + '</button>'
+    }).join('')
+    return '<div class="aa-ch-tabs">' + html + '</div>'
+  }
+
+  // ── Nivel 2: pills por MOMENTO ─────────────────────────────
+  function _renderMomentPills() {
+    var moments = [
+      { id: 'all',    label: 'Todas' },
+      { id: 'before', label: 'Antes' },
+      { id: 'during', label: 'Durante' },
+      { id: 'after',  label: 'Depois' },
+      { id: 'tag',    label: 'Por tag' },
+    ]
+    var rulesInChannel = _rulesInCurrentChannel()
+    var html = moments.map(function (m) {
+      var count = m.id === 'all' ? rulesInChannel.length
+        : rulesInChannel.filter(function (r) { return _ruleMoment(r) === m.id }).length
+      var active = _momentFilter === m.id ? ' aa-mom-pill-active' : ''
+      return '<button class="aa-mom-pill' + active + '" data-moment="' + m.id + '">'
+        + m.label + ' <span class="aa-mom-count">' + count + '</span></button>'
+    }).join('')
+    return '<div class="aa-mom-pills">' + html + '</div>'
+  }
+
+  function _rulesInCurrentChannel() {
+    return _rules.filter(function (r) { return _bucketChannel(r) === _channel })
+  }
+
+  function _filteredRules() {
+    var list = _rulesInCurrentChannel()
+    if (_momentFilter !== 'all') {
+      list = list.filter(function (r) { return _ruleMoment(r) === _momentFilter })
+    }
+    return list
+  }
+
+  // ── Coluna 1: lista de regras ──────────────────────────────
+  function _renderRulesList() {
+    var rules = _filteredRules()
+    if (!rules.length) {
+      return '<div class="aa-list-empty">'
+        + 'Nenhuma regra neste canal/momento.<br>Clique em <b>+ Nova automacao</b> para criar.'
+        + '</div>'
+    }
+    var html = '<div class="aa-list">'
+    rules.forEach(function (r, idx) {
+      html += _renderRuleCard(r, idx + 1)
+    })
+    html += '</div>'
+    return html
+  }
+
+  function _renderRuleCard(r, num) {
     var sel = _selectedId === r.id ? ' aa-card-selected' : ''
     var inactive = r.is_active ? '' : ' aa-card-inactive'
 
-    var triggerLabel = _triggerLabel(r)
-    var recipientIcon = RECIPIENT_ICONS[r.recipient_type] || 'user'
-    var channelIcon = CHANNEL_ICONS[r.channel] || 'messageCircle'
-
-    var recipientLabel = r.recipient_type === 'patient' ? 'Paciente' : r.recipient_type === 'professional' ? 'Profissional' : 'Ambos'
-    var channelLabel = CHANNEL_LABELS[r.channel] || r.channel
-
-    // Delete confirmation
+    // Delete confirmation (mostrado no card)
     if (_deleteConfirm === r.id) {
       return '<div class="aa-card aa-card-delete">'
         + '<div style="font-size:12px;font-weight:600;color:#DC2626;margin-bottom:8px">Excluir "' + _esc(r.name) + '"?</div>'
@@ -215,27 +276,183 @@
         + '</div></div>'
     }
 
-    return '<div class="aa-card' + sel + inactive + '" data-rule-id="' + r.id + '">'
-      + '<div class="aa-card-left">'
-      + '<div class="aa-card-dot" style="background:' + color + '"></div>'
-      + '<div class="aa-card-toggle">'
-      + '<label class="aa-switch"><input type="checkbox" ' + (r.is_active?'checked':'') + ' data-toggle="' + r.id + '"><span class="aa-slider"></span></label>'
+    var statusLabel = r.is_active ? 'ON' : 'OFF'
+    var statusClass = r.is_active ? 'aa-card-status-on' : 'aa-card-status-off'
+    var subLabel = _triggerLabel(r)
+
+    return '<div class="aa-card' + sel + inactive + '" data-select="' + r.id + '">'
+      + '<div class="aa-card-num">' + num + '</div>'
+      + '<div class="aa-card-body">'
+      +   '<div class="aa-card-name">' + _esc(r.name) + '</div>'
+      +   '<div class="aa-card-sub">' + _esc(subLabel) + '</div>'
       + '</div>'
-      + '</div>'
-      + '<div class="aa-card-body" data-select="' + r.id + '">'
-      + '<div class="aa-card-name">' + _esc(r.name) + '</div>'
-      + '<div class="aa-card-meta">'
-      + '<span class="aa-chip" style="background:' + color + '15;color:' + color + '">' + _feather('clock', 10) + ' ' + triggerLabel + '</span>'
-      + '<span class="aa-chip">' + _feather(recipientIcon, 10) + ' ' + recipientLabel + '</span>'
-      + '<span class="aa-chip">' + _feather(channelIcon, 10) + ' ' + channelLabel + '</span>'
-      + '</div>'
-      + '</div>'
-      + '<div class="aa-card-actions">'
-      + '<button class="aa-btn-icon" data-edit="' + r.id + '" title="Editar">' + _feather('edit2', 14) + '</button>'
-      + '<button class="aa-btn-icon" data-delete="' + r.id + '" title="Excluir">' + _feather('trash2', 14) + '</button>'
-      + '</div>'
+      + '<div class="aa-card-status ' + statusClass + '">' + statusLabel + '</div>'
       + '</div>'
   }
+
+  // ── Coluna 2: editor ───────────────────────────────────────
+  function _renderEditorColumn() {
+    var isEditing = _isCreating || !!_editingRule
+
+    if (!isEditing && !_selectedId) {
+      return _renderEditorEmpty()
+    }
+
+    // Se ha selecao mas nao esta editando, mostra header minimo com botoes de acao
+    if (!isEditing && _selectedId) {
+      var r = _rules.find(function (x) { return x.id === _selectedId })
+      if (!r) return _renderEditorEmpty()
+      return _renderSelectedHeader(r)
+    }
+
+    // Modo de edicao (editor completo)
+    return _renderEditorHeader()
+      + '<div class="aa-editor-body">' + _renderEditor() + '</div>'
+      + _renderEditorFooter()
+  }
+
+  function _renderEditorEmpty() {
+    return '<div class="aa-editor-header">'
+      +   '<div class="aa-editor-title">' + _feather('edit3', 16) + '<span>Editor</span></div>'
+      + '</div>'
+      + '<div class="aa-editor-body"><div class="aa-empty-col">'
+      +   _feather('mousePointer', 24)
+      +   '<br>Selecione uma regra na lista para visualizar'
+      +   '<br>ou clique em <b>+ Nova automacao</b> para criar.'
+      + '</div></div>'
+  }
+
+  function _renderSelectedHeader(r) {
+    var title = _esc(r.name)
+    return '<div class="aa-editor-header">'
+      +   '<div class="aa-editor-title">' + _feather('eye', 16) + '<span class="aa-editor-title-text">' + title + '</span></div>'
+      +   '<div style="display:flex;gap:6px">'
+      +     '<label class="aa-switch" title="Ativar/desativar"><input type="checkbox" ' + (r.is_active?'checked':'') + ' data-toggle="' + r.id + '"><span class="aa-slider"></span></label>'
+      +     '<button class="aa-btn-icon" data-edit="' + r.id + '" title="Editar">' + _feather('edit2', 14) + '</button>'
+      +     '<button class="aa-btn-icon" data-delete="' + r.id + '" title="Excluir">' + _feather('trash2', 14) + '</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="aa-editor-body">' + _renderReadOnlyBody(r) + '</div>'
+  }
+
+  function _renderEditorHeader() {
+    var title = _editingRule ? 'Editar: ' + _esc(_editingRule.name) : 'Nova automacao'
+    return '<div class="aa-editor-header">'
+      +   '<div class="aa-editor-title">' + _feather('edit3', 16) + '<span class="aa-editor-title-text">' + title + '</span></div>'
+      + '</div>'
+  }
+
+  function _renderReadOnlyBody(r) {
+    var vars = _sampleVars()
+    var html = '<div class="aa-field">'
+      + '<label>Descricao</label>'
+      + '<div style="font-size:13px;color:var(--text-secondary);padding:4px 0">' + _esc(r.description || '—') + '</div>'
+      + '</div>'
+      + '<div class="aa-field"><label>Gatilho</label>'
+      + '<div style="font-size:13px;color:var(--text-primary);font-weight:600">' + _esc(_triggerLabel(r)) + '</div>'
+      + '</div>'
+      + '<div class="aa-field"><label>Canal</label>'
+      + '<div style="font-size:13px">' + (CHANNEL_LABELS[r.channel] || r.channel) + '</div>'
+      + '</div>'
+
+    if (_channelIncludes(r.channel, 'whatsapp') && r.content_template) {
+      html += '<div class="aa-field"><label>Mensagem</label>'
+        + '<div style="font-size:13px;white-space:pre-wrap;background:var(--bg-secondary);padding:10px;border-radius:8px;line-height:1.5">'
+        + _esc(r.content_template) + '</div></div>'
+    }
+    if (_channelIncludes(r.channel, 'alexa') && r.alexa_message) {
+      html += '<div class="aa-field"><label>Mensagem Alexa (device: ' + (r.alexa_target || 'sala') + ')</label>'
+        + '<div style="font-size:13px;color:#0E7490;font-style:italic;padding:8px;background:#ECFEFF;border-radius:8px">"' + _esc(r.alexa_message) + '"</div>'
+        + '</div>'
+    }
+    if (_channelIncludes(r.channel, 'task') && r.task_title) {
+      var pColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[r.task_priority] || '#3B82F6'
+      html += '<div class="aa-field"><label>Tarefa</label>'
+        + '<div style="font-size:13px;padding:8px;border-left:3px solid ' + pColor + ';background:' + pColor + '08;border-radius:0 8px 8px 0">'
+        + _esc(r.task_title) + ' — ' + (r.task_assignee||'sdr') + ' / ' + (r.task_priority||'normal') + ' / ' + (r.task_deadline_hours||24) + 'h'
+        + '</div></div>'
+    }
+    if (_channelIncludes(r.channel, 'alert') && r.alert_title) {
+      html += '<div class="aa-field"><label>Alerta</label>'
+        + '<div style="font-size:13px">' + _esc(r.alert_title) + ' (' + (r.alert_type||'info') + ')</div>'
+        + '</div>'
+    }
+    return html
+  }
+
+  // ── Coluna 3: preview ──────────────────────────────────────
+  function _renderPreviewColumn() {
+    var isEditing = _isCreating || !!_editingRule
+
+    // Modo edicao: preview do _form em tempo real
+    if (isEditing) {
+      return _renderLivePreview(_form)
+    }
+
+    // Modo visualizacao: preview da regra selecionada
+    if (_selectedId) {
+      var r = _rules.find(function (x) { return x.id === _selectedId })
+      if (r) return _renderLivePreview(r)
+    }
+
+    return '<div class="aa-col-preview-empty">'
+      + _feather('smartphone', 28)
+      + '<br>Preview aparece aqui'
+      + '<br>ao selecionar ou criar uma regra'
+      + '</div>'
+  }
+
+  function _renderLivePreview(rule) {
+    var vars = _sampleVars()
+    var html = ''
+
+    if (_channelIncludes(rule.channel, 'whatsapp')) {
+      var txt = _svc().renderTemplate(rule.content_template || '', vars)
+      html += _renderPhonePreview(txt, rule.attachment_url)
+    }
+
+    if (_channelIncludes(rule.channel, 'alexa') && rule.alexa_message) {
+      var alexaMsg = _svc().renderTemplate(rule.alexa_message, vars)
+      var targetLabel = rule.alexa_target === 'recepcao' ? 'Recepcao'
+        : rule.alexa_target === 'todos' ? 'Todos'
+        : rule.alexa_target === 'profissional' ? 'Profissional' : 'Sala'
+      html += '<div style="margin-top:12px;padding:14px;border-radius:12px;border-left:4px solid #06B6D4;background:#ECFEFF;font-size:13px">'
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        +   '<div style="display:flex;align-items:center;gap:6px;font-weight:700;color:#0891B2">'
+        +     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>'
+        +     ' Alexa (' + targetLabel + ')'
+        +   '</div>'
+        + '</div>'
+        + '<div style="color:#0E7490;font-style:italic">"' + _esc(alexaMsg) + '"</div>'
+        + '</div>'
+    }
+
+    if (_channelIncludes(rule.channel, 'task') && rule.task_title) {
+      var pColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[rule.task_priority] || '#3B82F6'
+      html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border-left:4px solid ' + pColor + ';background:' + pColor + '08;font-size:13px">'
+        + '<div style="font-weight:700;color:' + pColor + ';display:flex;align-items:center;gap:4px;margin-bottom:4px">' + _feather('clipboard', 14) + ' Tarefa</div>'
+        + '<div>' + _esc(rule.task_title) + '</div>'
+        + '<div style="margin-top:2px;color:var(--text-secondary);font-size:11px">Para: ' + (rule.task_assignee||'sdr') + ' · Prazo: ' + (rule.task_deadline_hours||24) + 'h · ' + (rule.task_priority||'normal') + '</div>'
+        + '</div>'
+    }
+
+    if (_channelIncludes(rule.channel, 'alert') && rule.alert_title) {
+      var aColor = { info:'#3B82F6', warning:'#F59E0B', success:'#10B981', error:'#DC2626' }[rule.alert_type] || '#3B82F6'
+      var aTitle = _svc().renderTemplate(rule.alert_title, vars)
+      html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border-left:4px solid ' + aColor + ';background:' + aColor + '10;font-size:13px">'
+        + '<div style="font-weight:700;color:' + aColor + ';display:flex;align-items:center;gap:4px;margin-bottom:4px">' + _feather('bell', 14) + ' Alerta</div>'
+        + '<div>' + _esc(aTitle) + '</div>'
+        + '</div>'
+    }
+
+    if (!html) html = '<div class="aa-col-preview-empty">Preview vazio — preencha a regra.</div>'
+    return html
+  }
+
+  // Compat: antigos nomes esperados por linkage (caso existam chamadas leg)
+  function _renderCenterPanel() { return '' }
+  function _renderSlidePanel()  { return '' }
+  function _renderPreviewSelected() { return _renderPreviewColumn() }
 
   function _triggerLabel(r) {
     var cfg = r.trigger_config || {}
@@ -266,86 +483,6 @@
     if (h) parts.push(h + (h === 1 ? ' hora' : ' horas'))
     if (m) parts.push(m + (m === 1 ? ' minuto' : ' minutos'))
     return 'Dispara ' + parts.join(' e ') + ' apos a tag ser aplicada.'
-  }
-
-  // ── Slide Panel ────────────────────────────────────────────
-  function _renderSlidePanel() {
-    if (!_panelOpen) return ''
-
-    var isEditor = _panelTab === 'editor'
-    var title = isEditor ? (_editingRule ? 'Editar Regra' : 'Nova Regra') : 'Automacoes'
-
-    return '<div class="aa-panel">'
-      + '<div class="aa-panel-header">'
-      + '<span class="aa-panel-title">' + title + '</span>'
-      + '<div style="display:flex;gap:6px">'
-      + (isEditor ? '' : '<button class="aa-btn-new" data-action="new">' + _feather('plus', 14) + ' Nova</button>')
-      + '</div>'
-      + '</div>'
-      + '<div class="aa-panel-body">'
-      + (isEditor ? _renderEditor() : _renderPreviewSelected())
-      + '</div>'
-      + (isEditor ? _renderEditorFooter() : '')
-      + '</div>'
-  }
-
-  // ── Preview selected ───────────────────────────────────────
-  function _renderPreviewSelected() {
-    if (!_selectedId) {
-      return '<div class="aa-empty-panel">' + _feather('mousePointer', 24)
-        + '<br>Selecione uma regra para ver o preview<br>ou clique em <b>Nova</b></div>'
-    }
-    var r = _rules.find(function(x){return x.id===_selectedId})
-    if (!r) return ''
-
-    var vars = { nome:'Maria Silva', data:'15/04/2026', hora:'14:30', profissional:'Dra. Mirian', procedimento:'Bioestimulador', clinica:'Clinica', link_anamnese:'https://...', status:r.trigger_config?.status||'agendado', obs:'' }
-    var rendered = _svc().renderTemplate(r.content_template, vars)
-
-    var html = '<div style="margin-bottom:16px">'
-      + '<div style="font-weight:600;font-size:14px;margin-bottom:4px">' + _esc(r.name) + '</div>'
-      + '<div style="font-size:12px;color:var(--text-secondary)">' + _esc(r.description) + '</div>'
-      + '</div>'
-
-    // Show WhatsApp preview if channel includes whatsapp
-    if (_channelIncludes(r.channel, 'whatsapp')) {
-      html += _renderPhonePreview(rendered, r.attachment_url)
-    }
-
-    // Show alert preview if channel includes alert
-    if (_channelIncludes(r.channel, 'task') && r.task_title) {
-      var tColor = { urgente:'#DC2626', alta:'#F59E0B', normal:'#3B82F6', baixa:'#6B7280' }[r.task_priority] || '#3B82F6'
-      html += '<div style="margin-top:12px;padding:12px;border-radius:8px;border-left:4px solid ' + tColor + ';background:' + tColor + '08;font-size:13px">'
-        + '<div style="font-weight:600;color:' + tColor + '">' + _feather('clipboard', 14) + ' Tarefa</div>'
-        + '<div style="margin-top:4px">' + _esc(r.task_title) + '</div>'
-        + '<div style="margin-top:2px;font-size:11px;color:var(--text-secondary)">Para: ' + (r.task_assignee||'sdr') + ' | Prazo: ' + (r.task_deadline_hours||24) + 'h | ' + (r.task_priority||'normal') + '</div>'
-        + '</div>'
-    }
-
-    if (_channelIncludes(r.channel, 'alert')) {
-      var alertColor = { info:'#3B82F6', warning:'#F59E0B', success:'#10B981', error:'#DC2626' }[r.alert_type] || '#3B82F6'
-      var alertTitle = _svc().renderTemplate(r.alert_title, vars)
-      html += '<div style="margin-top:12px;padding:12px;border-radius:8px;border-left:4px solid ' + alertColor + ';background:' + alertColor + '10;font-size:13px">'
-        + '<div style="font-weight:600;color:' + alertColor + '">' + _feather('bell', 14) + ' Alerta Visual</div>'
-        + '<div style="margin-top:4px">' + _esc(alertTitle) + '</div>'
-        + '</div>'
-    }
-
-    if (_channelIncludes(r.channel, 'alexa') && r.alexa_message) {
-      var alexaMsg = _svc().renderTemplate(r.alexa_message, vars)
-      var targetLabel = r.alexa_target === 'recepcao' ? 'Recepcao' : r.alexa_target === 'todos' ? 'Todos' : r.alexa_target === 'profissional' ? 'Profissional' : 'Sala'
-      html += '<div style="margin-top:12px;padding:12px;border-radius:10px;border-left:4px solid #06B6D4;background:#ECFEFF;font-size:13px">'
-        + '<div style="display:flex;align-items:center;justify-content:space-between">'
-        + '<div style="display:flex;align-items:center;gap:6px;font-weight:600;color:#0891B2">'
-        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>'
-        + ' Alexa (' + targetLabel + ')</div>'
-        + '<button data-test-alexa="' + r.id + '" style="padding:4px 10px;background:#0891B2;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">'
-        + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Testar</button>'
-        + '</div>'
-        + '<div style="margin-top:4px;color:#0E7490;font-style:italic">"' + _esc(alexaMsg) + '"</div>'
-        + '</div>'
-    }
-
-    return html
   }
 
   // ── Phone Preview (WhatsApp mockup) ────────────────────────
@@ -687,8 +824,8 @@
       var btn = e.target.closest('[data-action]')
       if (btn) {
         var action = btn.dataset.action
-        if (action === 'new') { _form = _emptyForm(); _editingRule = null; _panelTab = 'editor'; _render() }
-        if (action === 'cancel') { _panelTab = 'list'; _editingRule = null; _render() }
+        if (action === 'new') { _form = _emptyForm(); _form.channel = _channel === 'multi' ? 'whatsapp' : _channel; _editingRule = null; _isCreating = true; _render() }
+        if (action === 'cancel') { _isCreating = false; _editingRule = null; _render() }
         if (action === 'save') _handleSave()
         if (action === 'pick-image') {
           var inp = document.getElementById('aaAttachInput')
@@ -718,7 +855,7 @@
 
       // Select rule
       var sel = e.target.closest('[data-select]')
-      if (sel) { _selectedId = sel.dataset.select; _panelTab = 'list'; _render(); return }
+      if (sel) { _selectedId = sel.dataset.select; _isCreating = false; _editingRule = null; _render(); return }
 
       // Edit
       var edit = e.target.closest('[data-edit]')
@@ -737,7 +874,7 @@
             task_deadline_hours: r.task_deadline_hours||24, alexa_message: r.alexa_message||'',
             alexa_target: r.alexa_target||'sala', is_active: r.is_active, sort_order: r.sort_order||0,
           }
-          _panelTab = 'editor'; _render()
+          _isCreating = true; _selectedId = r.id; _render()
         }
         return
       }
@@ -757,8 +894,20 @@
       if (testAlexa) { _testAlexaRule(testAlexa.dataset.testAlexa); return }
 
       // Category filter tabs
-      var tab = e.target.closest('[data-cat]')
-      if (tab) { _filterCategory = tab.dataset.cat; _render(); return }
+      // Channel tab click
+      var chTab = e.target.closest('[data-channel]')
+      if (chTab) {
+        _channel = chTab.dataset.channel
+        _selectedId = null
+        _isCreating = false
+        _editingRule = null
+        _render()
+        return
+      }
+
+      // Moment pill click
+      var momPill = e.target.closest('[data-moment]')
+      if (momPill) { _momentFilter = momPill.dataset.moment; _render(); return }
 
       // Variable insertion
       var varBtn = e.target.closest('[data-var]')
@@ -820,7 +969,7 @@
       // Channel change → re-render editor
       if (e.target.name === 'aaChannel') {
         _readForm()
-        _panelTab = 'editor'; _render()
+        _render()
       }
     })
 
@@ -981,8 +1130,10 @@
     _saving = false
 
     if (res.ok) {
-      _panelTab = 'list'
+      _isCreating = false
       _editingRule = null
+      // Seleciona a regra recem criada/editada se vier id
+      if (res.data && res.data.id) _selectedId = res.data.id
       if (window._showToast) _showToast('Salvo', _form.name + ' salva com sucesso', 'success')
       await _load()
     } else {
