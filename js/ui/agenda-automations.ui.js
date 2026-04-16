@@ -1361,8 +1361,14 @@
   }
 
   // ── Init ───────────────────────────────────────────────────
+  // Evita flash triplo: render inicial ja em estado de loading,
+  // depois _load substitui pelo conteudo real (2 renders em vez de 3).
   function init(rootId) {
-    render(rootId)
+    var el = document.getElementById(rootId || 'agenda-automations-root')
+    if (!el) return
+    if (_root !== el) { _root = el; _bindEvents(_root) }
+    _loading = true
+    _root.innerHTML = _renderPage()
     _load()
   }
 
