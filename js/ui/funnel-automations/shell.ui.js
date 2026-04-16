@@ -208,13 +208,13 @@
       // Secao 2 — Gatilho (modulo renderiza seus campos)
       + '<div class="fa-section">'
       +   '<div class="fa-section-title">' + _f('zap', 11) + ' Gatilho · ' + m.label + '</div>'
-      +   m.renderTriggerFields(f)
+      +   '<div id="faTriggerFields">' + m.renderTriggerFields(f) + '</div>'
       + '</div>'
       // Secao 3 — Canal + config por canal
       + '<div class="fa-section">'
       +   '<div class="fa-section-title">' + _f('send', 11) + ' Como avisar</div>'
       +   S().renderChannelChecks(f.channel)
-      +   _renderChannelBlocks(f)
+      +   '<div id="faChannelBlocks">' + _renderChannelBlocks(f) + '</div>'
       + '</div>'
   }
 
@@ -538,10 +538,22 @@
     })
 
     root.addEventListener('change', function(e) {
-      // Channel checkbox → re-render
-      if (e.target.name === 'faChannel') { _readForm(); _render(); return }
-      // When select → re-render (mostra/esconde campos)
-      if (e.target.id === 'faWhen') { _readForm(); _render(); return }
+      // Channel checkbox → re-render SO dos blocos (sem flash, preserva check)
+      if (e.target.name === 'faChannel') {
+        _readForm()
+        var wrap = document.getElementById('faChannelBlocks')
+        if (wrap) wrap.innerHTML = _renderChannelBlocks(_form)
+        _refreshPreview()
+        return
+      }
+      // When select → re-render SO dos trigger fields (sem flash)
+      if (e.target.id === 'faWhen') {
+        _readForm()
+        var tw = document.getElementById('faTriggerFields')
+        var m = _mod()
+        if (tw && m) tw.innerHTML = m.renderTriggerFields(_form)
+        return
+      }
       // Upload imagem
       if (e.target.id === 'faAttachInput') {
         var file = e.target.files && e.target.files[0]
