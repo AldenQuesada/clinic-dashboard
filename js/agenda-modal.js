@@ -1638,8 +1638,14 @@
         : Promise.resolve(null)
       linkPromise.then(function(link) {
         if (link) apptCompleto.link_anamnese = link
-        // Engine dispara regras (time-based + on_status=agendado com filtro patient_type)
+        // scheduleAutomations agenda regras time-based (d_before/d_zero/min_before).
+        // processStatusChange dispara regras on_status do status inicial ('agendado').
+        // Separacao evita double-insert quando apptTransition e usado depois.
         if (typeof scheduleAutomations === 'function') scheduleAutomations(apptCompleto)
+        if (window.AutomationsEngine && window.AutomationsEngine.processStatusChange) {
+          AutomationsEngine.processStatusChange(apptCompleto, apptCompleto.status || 'agendado')
+            .catch(function(e) { console.error('[Agenda-modal] processStatusChange inicial falhou:', e) })
+        }
       })
       if (typeof _applyStatusTag === 'function' && apptCompleto.pacienteId) {
         _applyStatusTag(apptCompleto, 'agendado', 'criacao')

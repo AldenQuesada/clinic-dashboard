@@ -1675,8 +1675,14 @@ function saveAppt() {
       : Promise.resolve(null)
     linkPromise.then(function(link) {
       if (link) apptCompleto.link_anamnese = link
-      // Engine dispara regras time-based + on_status=agendado com filtro patient_type
+      // Engine: processAppointment agenda regras time-based (d_before, d_zero, min_before).
+      // processStatusChange dispara regras on_status do status inicial ('agendado').
+      // Separacao evita double-insert quando apptTransition e usado depois.
       if (window.scheduleAutomations) scheduleAutomations(apptCompleto)
+      if (window.AutomationsEngine && window.AutomationsEngine.processStatusChange) {
+        AutomationsEngine.processStatusChange(apptCompleto, apptCompleto.status || 'agendado')
+          .catch(function(e) { console.error('[Agenda] processStatusChange inicial falhou:', e) })
+      }
     })
     // Aplica tag + lead status imediatamente (nao depende do link)
     if (window._applyStatusTag && apptCompleto.pacienteId) {

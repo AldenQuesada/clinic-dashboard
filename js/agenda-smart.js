@@ -498,7 +498,25 @@ window._ckUpdate = _ckUpdate
 window._ckTryClose = _ckTryClose
 
 // ── Envio automatico de consentimentos via WhatsApp ─────────
+// Guard in-flight + TTL contra duplo-clique e re-abertura do modal.
+// Backend dedup adicional via wa_outbox_schedule_automation (unique_violation em appt_ref+scheduled_at+content_hash).
+var _CONSENT_TTL_MS = 10 * 60 * 1000
+function _consentKey(apptId, tipo) { return 'consent_sent_' + apptId + '_' + tipo }
+function _consentRecent(apptId, tipo) {
+  try {
+    var raw = localStorage.getItem(_consentKey(apptId, tipo))
+    if (!raw) return false
+    return (Date.now() - parseInt(raw, 10)) < _CONSENT_TTL_MS
+  } catch (e) { return false }
+}
+function _consentMark(apptId, tipo) {
+  try { localStorage.setItem(_consentKey(apptId, tipo), String(Date.now())) } catch (e) { /* quota */ }
+}
+
 function _enviarConsentimento(appt, tipo) {
+  if (!appt || !appt.id) return
+  if (_consentRecent(appt.id, tipo)) return
+
   var phone = (_getPhone(appt) || '').replace(/\D/g, '')
   if (!phone || !window._sbShared) return
 
@@ -514,16 +532,24 @@ function _enviarConsentimento(appt, tipo) {
   var msg = msgs[tipo]
   if (!msg) return
 
-  window._sbShared.rpc('wa_outbox_enqueue_appt', {
+  _consentMark(appt.id, tipo)
+
+  window._sbShared.rpc('wa_outbox_schedule_automation', {
     p_phone: phone,
     p_content: msg,
-    p_lead_name: nome
+    p_lead_id: appt.pacienteId || '',
+    p_lead_name: nome,
+    p_appt_ref: appt.id
   }).then(function(res) {
-    if (!res.error && window._showToast) {
+    if (res.error) {
+      console.warn('[Agenda] consentimento falhou:', res.error)
+      return
+    }
+    if (res.data && window._showToast) {
       var labels = { imagem: 'Consent. Imagem', procedimento: 'Consent. Procedimento', pagamento: 'Consent. Pagamento' }
       _showToast('Consentimento enviado', (labels[tipo] || tipo) + ' para ' + nome, 'success')
     }
-  }).catch(function(e) { console.warn('[Agenda] wa_enqueue consentimento falhou:', e) })
+  }).catch(function(e) { console.warn('[Agenda] consentimento exception:', e) })
 
   _logAuto(appt.id, 'wa_consentimento_' + tipo, 'enviado')
 }

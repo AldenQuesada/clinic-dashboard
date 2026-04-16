@@ -141,18 +141,10 @@
       }
     })
 
-    // Gap 1 resolvido: dispara regras on_status para o status inicial
-    // do agendamento (normalmente 'agendado') ao criar.
-    // Engine aplica filtro patient_type se a regra especificar:
-    //   regra com patient_type='novo' so dispara se appt.tipoPaciente==='novo'
-    //   regra com patient_type='retorno' so dispara se appt.tipoPaciente==='retorno'
-    //   regra sem patient_type dispara sempre (comportamento legado)
-    var initialStatus = appt.status || 'agendado'
-    var statusRules = svc.getByStatus(initialStatus)
-    statusRules.forEach(function (rule) {
-      if (!_matchesPatientType(rule, appt)) return
-      _executeRule(rule, vars, phone, appt)
-    })
+    // on_status e responsabilidade exclusiva de processStatusChange —
+    // evita double-insert quando apptTransition dispara ambos os caminhos.
+    // Caller deve invocar processStatusChange apos processAppointment em
+    // fluxos de criacao nova (onde nao ha apptTransition intermediario).
   }
 
   // Filtra regra pelo tipo do paciente (novo/retorno). Retorna true se pode disparar.
