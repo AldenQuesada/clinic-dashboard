@@ -98,7 +98,12 @@
       +     '<div class="fa-title">Funis de Automacao</div>'
       +     '<div class="fa-subtitle">' + total + ' regras nesta fase · isolamento total</div>'
       +   '</div>'
-      +   '<button type="button" class="fa-btn-new" data-action="new">' + _f('plus', 14) + ' Nova automacao</button>'
+      +   '<div class="fa-top-actions">'
+      +     '<button type="button" class="fa-btn-sec" data-action="export-json" title="Exportar regras desta fase como JSON">' + _f('download', 14) + ' Exportar</button>'
+      +     '<button type="button" class="fa-btn-sec" data-action="import-json" title="Importar regras de JSON">' + _f('upload', 14) + ' Importar</button>'
+      +     '<input type="file" id="faImportInput" accept="application/json" style="display:none">'
+      +     '<button type="button" class="fa-btn-new" data-action="new">' + _f('plus', 14) + ' Nova automacao</button>'
+      +   '</div>'
       + '</div>'
   }
 
@@ -180,12 +185,15 @@
     var statusCls = r.is_active ? 'fa-status-on' : 'fa-status-off'
     var sub = _ruleSubtitle(r)
     var chanIcon = _channelIconFor(r)
-    return '<div class="fa-card' + sel + inactive + '" data-select="' + _esc(r.id) + '">'
+    return '<div class="fa-card' + sel + inactive + '">'
       +   '<div class="fa-card-num">' + num + '</div>'
       +   '<div class="fa-card-channel" title="' + _esc(r.channel||'') + '">' + _f(chanIcon, 13) + '</div>'
-      +   '<div class="fa-card-body">'
+      +   '<div class="fa-card-body" data-select="' + _esc(r.id) + '">'
       +     '<div class="fa-card-name">' + _esc(r.name) + '</div>'
       +     '<div class="fa-card-sub">' + _esc(sub) + '</div>'
+      +   '</div>'
+      +   '<div class="fa-card-actions">'
+      +     '<button type="button" class="fa-card-action-btn" data-duplicate="' + _esc(r.id) + '" title="Duplicar regra">' + _f('copy', 13) + '</button>'
       +   '</div>'
       +   '<div class="fa-card-status ' + statusCls + '">' + status + '</div>'
       + '</div>'
@@ -534,7 +542,13 @@
           if (pk) pk.style.display = pk.style.display === 'none' ? 'flex' : 'none'
           return
         }
+        if (a === 'export-json') { _exportJson(); return }
+        if (a === 'import-json') { var imp = document.getElementById('faImportInput'); if (imp) imp.click(); return }
       }
+
+      // Duplicar regra
+      var dupBtn = e.target.closest('[data-duplicate]')
+      if (dupBtn) { e.stopPropagation(); _duplicateRule(dupBtn.dataset.duplicate); return }
 
       var tab = e.target.closest('[data-tab]')
       if (tab) { _activeModule = tab.dataset.tab; _selectedId = null; _form = _emptyForm(); _render(); return }
@@ -689,6 +703,13 @@
           _render()
         }).catch(function(err) { S().showToast('Erro', err.message || 'Upload falhou', 'error') })
       }
+      // Importar JSON
+      if (e.target.id === 'faImportInput') {
+        var ifile = e.target.files && e.target.files[0]
+        if (!ifile) return
+        _importJson(ifile)
+        e.target.value = ''
+      }
     })
   }
 
@@ -701,6 +722,89 @@
     var preview = document.querySelector(_modalOpen ? '.fa-modal-preview' : '.fa-col-preview')
     if (!preview) return
     preview.innerHTML = _renderLivePreview(_form)
+  }
+
+  // ── Duplicar regra ──────────────────────────────────────────
+  async function _duplicateRule(ruleId) {
+    var orig = _rules.find(function(r) { return r.id === ruleId })
+    if (!orig) { S().showToast('Erro', 'Regra nao encontrada', 'error'); return }
+    var copy = Object.assign({}, orig)
+    delete copy.id
+    delete copy.created_at
+    delete copy.updated_at
+    copy.name = 'Copia de ' + orig.name
+    copy.is_active = false // criada desativada por seguranca
+    copy.sort_order = (parseInt(orig.sort_order) || 0) + 1
+
+    S().showToast('Duplicando', 'Criando copia de "' + orig.name + '"', 'info')
+    var res = await REPO().upsert(copy)
+    if (res.ok) {
+      if (res.data && res.data.id) _selectedId = res.data.id
+      S().showToast('Duplicado', 'Copia criada (inativa). Ative quando quiser.', 'success')
+      await _load()
+    } else {
+      S().showToast('Erro', res.error || 'Falha ao duplicar', 'error')
+    }
+  }
+
+  // ── Export / Import JSON ────────────────────────────────────
+  function _exportJson() {
+    var m = _mod()
+    if (!m) return
+    var rules = _rulesInModule()
+    var payload = {
+      version: 1,
+      exported_at: new Date().toISOString(),
+      module: m.id,
+      module_label: m.label,
+      count: rules.length,
+      rules: rules.map(function(r) {
+        // Sanitiza — remove IDs do DB
+        var copy = Object.assign({}, r)
+        delete copy.id
+        delete copy.created_at
+        delete copy.updated_at
+        delete copy.clinic_id
+        return copy
+      }),
+    }
+    var json = JSON.stringify(payload, null, 2)
+    var blob = new Blob([json], { type: 'application/json' })
+    var url = URL.createObjectURL(blob)
+    var a = document.createElement('a')
+    a.href = url
+    a.download = 'funnel-' + m.id + '-' + new Date().toISOString().slice(0, 10) + '.json'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    S().showToast('Exportado', rules.length + ' regras em JSON', 'success')
+  }
+
+  async function _importJson(file) {
+    try {
+      var txt = await file.text()
+      var data = JSON.parse(txt)
+      if (!data || !Array.isArray(data.rules)) {
+        S().showToast('Erro', 'JSON invalido (esperado { rules: [...] })', 'error')
+        return
+      }
+      var m = _mod()
+      if (data.module && m && data.module !== m.id) {
+        if (!confirm('JSON e do modulo "' + data.module + '" mas voce esta em "' + m.id + '". Importar mesmo assim?')) return
+      }
+      var ok = 0, fail = 0
+      for (var i = 0; i < data.rules.length; i++) {
+        var r = Object.assign({}, data.rules[i])
+        delete r.id // forca criacao nova
+        r.is_active = false // importadas ficam inativas
+        r.name = (r.name || 'Importada') + ' (importada)'
+        var res = await REPO().upsert(r)
+        if (res.ok) ok++; else fail++
+      }
+      S().showToast('Importado', ok + ' criadas (inativas)' + (fail ? ', ' + fail + ' falharam' : ''), ok > 0 ? 'success' : 'error')
+      await _load()
+    } catch (e) {
+      S().showToast('Erro', 'JSON invalido: ' + e.message, 'error')
+    }
   }
 
   // ── Init ────────────────────────────────────────────────────
