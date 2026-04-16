@@ -478,6 +478,11 @@
         if (a === 'remove-image') { _readForm(); _form.attachment_url = ''; _render(); return }
         if (a === 'speak-alexa') { _readForm(); S().speakAlexa(S().renderTemplate(_form.alexa_message || 'Mensagem vazia', S().SAMPLE_VARS)); return }
         if (a === 'simulate-alert') { _readForm(); S().showToast('Automacao', S().renderTemplate(_form.alert_title||'Alerta', S().SAMPLE_VARS), _form.alert_type || 'info'); return }
+        if (a === 'emoji-toggle') {
+          var pk = document.getElementById('faEmojiPicker')
+          if (pk) pk.style.display = pk.style.display === 'none' ? 'flex' : 'none'
+          return
+        }
       }
 
       var tab = e.target.closest('[data-tab]')
@@ -493,6 +498,24 @@
       if (del) {
         if (confirm('Excluir esta regra?')) {
           REPO().remove(del.dataset.delete).then(function(){ _selectedId = null; _load() })
+        }
+        return
+      }
+
+      // Inserir emoji no textarea ativo
+      var emojiBtn = e.target.closest('[data-emoji]')
+      if (emojiBtn) {
+        var em = emojiBtn.dataset.emoji
+        // Determina qual textarea esta focado (whatsapp ou alexa)
+        var target = document.getElementById('faContent') || document.getElementById('faAlexaMsg')
+        if (target) {
+          var es = target.selectionStart
+          target.value = target.value.slice(0, es) + em + target.value.slice(target.selectionEnd)
+          target.selectionStart = target.selectionEnd = es + em.length
+          target.focus()
+          if (target.id === 'faContent') _form.content_template = target.value
+          else if (target.id === 'faAlexaMsg') _form.alexa_message = target.value
+          _refreshPreview()
         }
         return
       }

@@ -189,12 +189,29 @@
     }).join('') + '</div>'
   }
 
+  // Emojis mais usados em clinica (saude, confirmacao, afeto, celebracao)
+  var EMOJI_LIST = [
+    '😊','😍','🥰','😉','🤗','👋','💜','❤️','🌸','✨','🌟','⭐',
+    '✅','❌','⏰','📅','🕐','📍','📞','💆‍♀️','👩‍⚕️','🏥','💉','💊',
+    '🎉','🎁','💐','🙏','👏','💫','🔥','💎','📸','🪞','🌺','🥳',
+    '💪','👍','💡','⚡','📊','📝','📎','🎯','🔔','💌','📲','🫶',
+  ]
+
   function renderFormatToolbar() {
-    return '<div class="fa-fmt-bar">'
+    var html = '<div class="fa-fmt-bar">'
       + '<button type="button" class="fa-fmt-btn" data-fmt="*" title="Negrito"><b>B</b></button>'
       + '<button type="button" class="fa-fmt-btn" data-fmt="_" title="Italico"><i>I</i></button>'
       + '<button type="button" class="fa-fmt-btn" data-fmt="~" title="Tachado"><s>S</s></button>'
+      + '<span class="fa-fmt-sep"></span>'
+      + '<button type="button" class="fa-fmt-btn fa-emoji-toggle" data-action="emoji-toggle" title="Emojis">😊</button>'
       + '</div>'
+    // Picker de emojis (escondido por default)
+    html += '<div class="fa-emoji-picker" id="faEmojiPicker" style="display:none">'
+    EMOJI_LIST.forEach(function(e) {
+      html += '<button type="button" class="fa-emoji-btn" data-emoji="' + e + '">' + e + '</button>'
+    })
+    html += '</div>'
+    return html
   }
 
   function renderAttachArea(url, above) {
