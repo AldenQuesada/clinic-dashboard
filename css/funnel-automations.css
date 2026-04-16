@@ -81,6 +81,27 @@
 .fa-field textarea { resize:vertical; min-height:200px; line-height:1.6; font-size:14px; padding:12px 14px; }
 .fa-field select[disabled] { background:#F1F5F9; color:#94A3B8; cursor:not-allowed; }
 .fa-hint-small { font-size:10px; color:#94A3B8; margin-top:4px; font-style:italic; }
+
+/* WhatsApp textarea full-width dentro do channel block */
+.fa-wa-block .fa-wa-textarea {
+  width:100%; display:block; box-sizing:border-box;
+  min-height:220px; line-height:1.6; font-size:14px; padding:14px;
+  border:1px solid var(--border, #E2E8F0); border-radius:8px;
+  resize:vertical; font-family:inherit;
+}
+.fa-wa-textarea:focus { outline:none; border-color:#92724B; box-shadow:0 0 0 3px rgba(146,114,75,.1); }
+
+/* Attach: URL input + botao upload lado a lado */
+.fa-attach-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.fa-attach-url {
+  flex:1; padding:8px 12px; border:1px solid var(--border, #E2E8F0);
+  border-radius:6px; font-size:12px; box-sizing:border-box;
+  background:#fff;
+}
+.fa-attach-url:focus { outline:none; border-color:#92724B; }
+.fa-attach-pos { display:flex; gap:16px; margin-top:10px; font-size:12px; color:var(--text-secondary); }
+.fa-attach-pos label { cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.fa-attach-pos input[type=radio] { cursor:pointer; }
 .fa-field-row { display:flex; gap:8px; }
 .fa-field-row .fa-field { flex:1; }
 

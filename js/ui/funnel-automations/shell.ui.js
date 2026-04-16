@@ -228,12 +228,12 @@
   }
 
   function _blockWhatsapp(f) {
-    return '<div class="fa-channel-block">'
+    return '<div class="fa-channel-block fa-wa-block">'
       +   '<div class="fa-channel-block-title">' + _f('messageCircle', 12) + ' WhatsApp</div>'
       +   S().renderChipsBar('var')
       +   S().renderFormatToolbar()
-      +   '<textarea id="faContent" rows="10" placeholder="Digite a mensagem do WhatsApp...">'+_esc(f.content_template)+'</textarea>'
-      +   S().renderAttachArea(f.attachment_url)
+      +   '<textarea id="faContent" class="fa-wa-textarea" rows="10" placeholder="Digite a mensagem do WhatsApp...">'+_esc(f.content_template)+'</textarea>'
+      +   S().renderAttachArea(f.attachment_url, f.attachment_above_text !== false)
       + '</div>'
   }
 
@@ -380,6 +380,17 @@
     _form.task_deadline_hours = parseInt(v('faTaskDeadline')) || 24
     _form.alexa_message = v('faAlexaMsg')
     _form.alexa_target = v('faAlexaTarget') || 'sala'
+
+    // Imagem: URL colada manualmente sobrescreve attachment_url atual
+    var urlEl = document.getElementById('faAttachUrl')
+    if (urlEl) {
+      var typedUrl = (urlEl.value || '').trim()
+      if (typedUrl) _form.attachment_url = typedUrl
+      else if (!_form.attachment_url) _form.attachment_url = ''
+    }
+    // Posicao da imagem (above/below)
+    var posEl = document.querySelector('input[name=faAttachPos]:checked')
+    if (posEl) _form.attachment_above_text = (posEl.value === 'above')
 
     var chs = Array.prototype.slice.call(document.querySelectorAll('input[name=faChannel]:checked'))
       .map(function(el){ return el.value })
@@ -533,8 +544,9 @@
 
     root.addEventListener('input', function(e) {
       if (e.target.id === 'faContent') { _form.content_template = e.target.value; _schedulePreview() }
-      if (e.target.id === 'faAlexaMsg') { _form.alexa_message = e.target.value }
+      if (e.target.id === 'faAlexaMsg') { _form.alexa_message = e.target.value; _schedulePreview() }
       if (e.target.id === 'faName') { _form.name = e.target.value }
+      if (e.target.id === 'faAttachUrl') { _form.attachment_url = e.target.value.trim(); _schedulePreview() }
     })
 
     root.addEventListener('change', function(e) {
@@ -543,6 +555,12 @@
         _readForm()
         var wrap = document.getElementById('faChannelBlocks')
         if (wrap) wrap.innerHTML = _renderChannelBlocks(_form)
+        _refreshPreview()
+        return
+      }
+      // Posicao da imagem (acima/abaixo do texto)
+      if (e.target.name === 'faAttachPos') {
+        _form.attachment_above_text = (e.target.value === 'above')
         _refreshPreview()
         return
       }

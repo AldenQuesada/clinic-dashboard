@@ -197,17 +197,29 @@
       + '</div>'
   }
 
-  function renderAttachArea(url) {
+  function renderAttachArea(url, above) {
+    var pos = above === false ? 'below' : 'above'
+    var html = '<div class="fa-attach">'
+      +   '<div class="fa-attach-row">'
+      +     '<button type="button" class="fa-btn-attach" data-action="pick-image">'+_feather('image',14)+' Enviar imagem</button>'
+      +     '<input type="text" id="faAttachUrl" class="fa-attach-url" placeholder="https://... (URL da imagem)" value="'+_esc(url || '')+'">'
+      +   '</div>'
+
     if (url) {
-      return '<div class="fa-attach"><div class="fa-attach-preview">'
-        + '<img src="'+_esc(url)+'" alt="anexo">'
-        + '<button type="button" class="fa-attach-remove" data-action="remove-image">'+_feather('x',14)+'</button>'
-        + '</div><input type="file" id="faAttachInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none"></div>'
+      html += '<div class="fa-attach-preview">'
+        +   '<img src="'+_esc(url)+'" alt="anexo">'
+        +   '<button type="button" class="fa-attach-remove" data-action="remove-image" title="Remover">'+_feather('x',14)+'</button>'
+        + '</div>'
+      html += '<div class="fa-attach-pos">'
+        +   '<label><input type="radio" name="faAttachPos" value="above"' + (pos==='above'?' checked':'') + '> Acima do texto</label>'
+        +   '<label style="margin-left:16px"><input type="radio" name="faAttachPos" value="below"' + (pos==='below'?' checked':'') + '> Abaixo do texto</label>'
+        + '</div>'
+    } else {
+      html += '<div class="fa-attach-hint">JPG, PNG, WEBP ou GIF — max 10 MB. Ou cole URL direto.</div>'
     }
-    return '<div class="fa-attach">'
-      + '<button type="button" class="fa-btn-attach" data-action="pick-image">'+_feather('image',14)+' Anexar imagem</button>'
-      + '<div class="fa-attach-hint">JPG, PNG, WEBP ou GIF — max 10 MB</div>'
-      + '<input type="file" id="faAttachInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none"></div>'
+
+    html += '<input type="file" id="faAttachInput" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none"></div>'
+    return html
   }
 
   // ── Alexa TTS ───────────────────────────────────────────────
