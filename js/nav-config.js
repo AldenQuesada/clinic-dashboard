@@ -148,8 +148,7 @@
         { page: 'agenda-reports',   label: 'Relatorios',    breadcrumb: 'Agenda > Relatorios' },
         { page: 'agenda-eventos',   label: 'Eventos',       breadcrumb: 'Agenda > Eventos' },
         { page: 'agenda-tags',      label: 'Tags e Fluxos', breadcrumb: 'Agenda > Tags e Fluxos' },
-        { page: 'agenda-automations', label: 'Automacoes',  breadcrumb: 'Agenda > Automacoes' },
-        { page: 'funnel-automations', label: 'Funis de Automacao', breadcrumb: 'Agenda > Funis de Automacao' },
+        { page: 'funnel-automations', label: 'Automacoes (Funis)', breadcrumb: 'Agenda > Automacoes (Funis)' },
       ],
     },
 

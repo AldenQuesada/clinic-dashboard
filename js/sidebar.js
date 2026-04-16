@@ -585,9 +585,6 @@
     if (pageId === 'wa-disparos' && typeof window.AutomationsUI?.init === 'function') {
       window.AutomationsUI.init('disparos-root', 'disparos')
     }
-    if (pageId === 'agenda-automations' && typeof window.AgendaAutomationsUI?.init === 'function') {
-      window.AgendaAutomationsUI.init('agenda-automations-root')
-    }
     if (pageId === 'funnel-automations' && typeof window.FunnelAutomationsUI?.init === 'function') {
       window.FunnelAutomationsUI.init('funnel-automations-root')
     }
