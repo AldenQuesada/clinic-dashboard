@@ -11,6 +11,8 @@
     { id: 'lead_novo_fullface', label: 'Lead Novo — Fullface' },
     { id: 'lead_novo_olheiras', label: 'Lead Novo — Olheiras' },
     { id: 'lead_quente',        label: 'Lead Quente' },
+    { id: 'lead_morno',         label: 'Lead Morno' },
+    { id: 'lead_frio',          label: 'Lead Frio' },
     { id: 'em_conversa',        label: 'Em Conversa' },
     { id: 'qualificado',        label: 'Qualificado' },
     { id: 'follow_up',          label: 'Follow-up' },
