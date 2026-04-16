@@ -588,6 +588,9 @@
     if (pageId === 'agenda-automations' && typeof window.AgendaAutomationsUI?.init === 'function') {
       window.AgendaAutomationsUI.init('agenda-automations-root')
     }
+    if (pageId === 'funnel-automations' && typeof window.FunnelAutomationsUI?.init === 'function') {
+      window.FunnelAutomationsUI.init('funnel-automations-root')
+    }
     if (pageId === 'settings-automation' && typeof window.AutomationsUI?.init === 'function') {
       window.AutomationsUI.init('automations-root', 'rules')
     }
