@@ -619,17 +619,17 @@
       // angle type
       var pv = pts[m.vertex], p1 = pts[m.ray1], p2 = pts[m.ray2]
       if (!pv || !p1 || !p2) return
-      _drawLine(ctx, pv, p1, w, h, _withAlpha(m.color, 0.7), 1.5)
-      _drawLine(ctx, pv, p2, w, h, _withAlpha(m.color, 0.7), 1.5)
+      _drawLine(ctx, pv, p1, w, h, _withAlpha(m.color, 0.55), 1.4)
+      _drawLine(ctx, pv, p2, w, h, _withAlpha(m.color, 0.55), 1.4)
       if (m.id === 'nasofacial') {
-        _drawLine(ctx, pv, p1, w, h, _withAlpha('#64A0FF', 0.35), 1.2, [5, 4])
+        _drawLine(ctx, pv, p1, w, h, _withAlpha('#64A0FF', 0.28), 1.1, [5, 4])
       }
       var ang = _angleAt(pv, p1, p2)
       var d1 = _dist(pv, p1, w, h)
       var d2 = _dist(pv, p2, w, h)
-      var radius = Math.min(d1, d2) * 0.45
-      radius = Math.max(22, Math.min(70, radius))
-      _drawAngleArc(ctx, pv, p1, p2, w, h, radius, m.color, ang.toFixed(0) + '\u00B0', m.label)
+      var radius = Math.min(d1, d2) * 0.28
+      radius = Math.max(18, Math.min(38, radius))
+      _drawAngleArc(ctx, pv, p1, p2, w, h, radius, m.color, ang.toFixed(0) + '\u00B0')
     })
 
     // Points on top
@@ -1470,10 +1470,10 @@
     ctx.fillStyle = grad
     ctx.beginPath(); ctx.arc(x, y, active ? 14 : 10, 0, Math.PI * 2); ctx.fill()
 
-    ctx.fillStyle = active ? color : '#F5F0E8'
-    ctx.strokeStyle = '#1a1816'
-    ctx.lineWidth = 1.8
-    ctx.beginPath(); ctx.arc(x, y, active ? 6 : 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
+    ctx.fillStyle = active ? color : _withAlpha(color, 0.30)
+    ctx.strokeStyle = active ? '#1a1816' : _withAlpha(color, 0.85)
+    ctx.lineWidth = active ? 1.8 : 1.3
+    ctx.beginPath(); ctx.arc(x, y, active ? 6 : 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
 
     if (active && label) {
       ctx.font = 'bold 11px Montserrat, sans-serif'
@@ -1491,7 +1491,7 @@
     ctx.restore()
   }
 
-  function _drawAngleArc(ctx, vertex, p1, p2, w, h, radius, color, numberText, labelText) {
+  function _drawAngleArc(ctx, vertex, p1, p2, w, h, radius, color, numberText) {
     var vx = vertex.x * w, vy = vertex.y * h
     var ang1 = Math.atan2(p1.y * h - vy, p1.x * w - vx)
     var ang2 = Math.atan2(p2.y * h - vy, p2.x * w - vx)
@@ -1502,38 +1502,31 @@
     var anticlockwise = diff < 0
 
     ctx.save()
-    ctx.fillStyle = _withAlpha(color, 0.22)
+    ctx.fillStyle = _withAlpha(color, 0.30)
     ctx.beginPath()
     ctx.moveTo(vx, vy)
     ctx.arc(vx, vy, radius, ang1, ang2, anticlockwise)
     ctx.closePath()
     ctx.fill()
 
-    ctx.strokeStyle = color
-    ctx.lineWidth = 2
+    ctx.strokeStyle = _withAlpha(color, 0.75)
+    ctx.lineWidth = 1.4
     ctx.beginPath()
     ctx.arc(vx, vy, radius, ang1, ang2, anticlockwise)
     ctx.stroke()
 
     var midAng = ang1 + diff / 2
-    var tx = vx + Math.cos(midAng) * (radius * 0.62)
-    var ty = vy + Math.sin(midAng) * (radius * 0.62)
+    var tx = vx + Math.cos(midAng) * (radius * 0.58)
+    var ty = vy + Math.sin(midAng) * (radius * 0.58)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font = 'bold 15px Montserrat, sans-serif'
-    ctx.strokeStyle = 'rgba(20,18,16,0.95)'
-    ctx.lineWidth = 4
+    ctx.font = 'bold 12px Montserrat, sans-serif'
+    ctx.strokeStyle = 'rgba(20,18,16,0.75)'
+    ctx.lineWidth = 2.5
     ctx.strokeText(numberText, tx, ty)
-    ctx.fillStyle = color
+    ctx.fillStyle = '#F5F0E8'
     ctx.fillText(numberText, tx, ty)
-
-    ctx.font = '600 8px Montserrat, sans-serif'
-    ctx.strokeStyle = 'rgba(20,18,16,0.95)'
-    ctx.lineWidth = 3
-    ctx.strokeText(labelText, tx, ty + 13)
-    ctx.fillStyle = 'rgba(245,240,232,0.85)'
-    ctx.fillText(labelText, tx, ty + 13)
 
     ctx.restore()
   }
