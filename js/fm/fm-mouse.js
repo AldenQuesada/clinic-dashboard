@@ -396,9 +396,9 @@
     var mx = e.offsetX, my = e.offsetY
     var inLabelArea = mx > FM._imgW
 
-    // NASAL TAB — delegate to isolated module
+    // NASAL TAB — delegate to isolated module (carries canvas target for slot routing)
     if (FM._activeTab === 'nasal' && FM.Nasal) {
-      if (FM.Nasal.onMouseDown(mx, my)) { FM._mode = 'move'; return }
+      if (FM.Nasal.onMouseDown(mx, my, e._canvas)) { FM._mode = 'move'; return }
       return
     }
 
@@ -646,7 +646,7 @@
 
     // NASAL TAB — delegate to isolated module
     if (FM._activeTab === 'nasal' && FM.Nasal) {
-      FM.Nasal.onMouseMove(mx, my)
+      FM.Nasal.onMouseMove(mx, my, e._canvas)
       return
     }
 

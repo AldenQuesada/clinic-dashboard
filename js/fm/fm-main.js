@@ -136,11 +136,11 @@
     _autoAngles: FM._autoAngles,
     _autoAsymmetryPairs: FM._autoAsymmetryPairs,
 
-    // Nasal analysis (isolated module FM.Nasal — own photo, own state)
+    // Nasal analysis (isolated module FM.Nasal — own photos per slot, own state)
     _setNasalGender: function (g) { if (FM.Nasal) FM.Nasal.setGender(g) },
-    _resetNasal: function () { if (FM.Nasal) FM.Nasal.reset() },
-    _uploadNasalPhoto: function () { if (FM.Nasal) FM.Nasal.triggerUpload() },
-    _deleteNasalPhoto: function () { if (FM.Nasal) FM.Nasal.deletePhoto() },
+    _resetNasal: function (slot) { if (FM.Nasal) FM.Nasal.reset(slot) },
+    _uploadNasalPhoto: function (slot) { if (FM.Nasal) FM.Nasal.triggerUpload(slot) },
+    _deleteNasalPhoto: function (slot) { if (FM.Nasal) FM.Nasal.deletePhoto(slot) },
 
     // Region overlay engine
     _toggleRegion: FM._toggleRegion,
