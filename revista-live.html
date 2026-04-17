@@ -112,6 +112,24 @@
   .page::-webkit-scrollbar { display: none; }
   .page .mp { height: auto !important; min-height: 100%; overflow: visible !important; }
 
+  /* A5 · Mobile polish: breakpoints 360/375/414 + micro transitions */
+  @media (max-width: 430px) {
+    .top-meta { padding: 0 18px; font-size: 9px; letter-spacing: 1.5px; }
+    .top-controls { top: 10px; right: 10px; gap: 4px; }
+    .progress-bar { padding: 10px 12px; }
+    .reader { touch-action: pan-x pan-y; }
+    .reader img { -webkit-user-drag: none; }
+  }
+  @media (max-width: 375px) {
+    .state-card { padding: 32px 20px; }
+  }
+  @media (max-width: 360px) {
+    .top-meta { font-size: 8px; }
+  }
+  /* Imagens com fallback suave */
+  .reader img { transition: opacity .35s ease; }
+  .reader img[data-fallback="1"] { filter: sepia(0.1); }
+
   /* B1 · Capa que acende ao abrir */
   .page.first-load .mp { animation: fadeUp .9s ease-out both; }
   .page.first-load .mp h1, .page.first-load .mp h2 {
@@ -444,7 +462,24 @@
       }
     } catch (e) {
       console.error(e)
-      showError(e.message || 'Erro ao carregar edição.')
+      // A5 · Fallback amigavel com retry
+      const msg = e && e.message ? e.message : 'Erro ao carregar edição.'
+      const userMsg = /fetch|network|failed|timeout/i.test(msg)
+        ? 'Nao foi possivel carregar a edicao. Verifique sua conexao e tente novamente.'
+        : msg
+      showError(userMsg)
+      // Adiciona botao tentar novamente
+      try {
+        const card = document.querySelector('#stateError .state-card')
+        if (card && !card.querySelector('[data-act="retry"]')) {
+          const btn = document.createElement('button')
+          btn.dataset.act = 'retry'
+          btn.textContent = 'Tentar novamente'
+          btn.style.cssText = 'margin-top:16px;padding:10px 24px;background:var(--ink);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer'
+          btn.addEventListener('click', () => { location.reload() })
+          card.appendChild(btn)
+        }
+      } catch (inner) {}
     }
   }
 
@@ -508,6 +543,8 @@
     wireHiddenIcon(ed)
     wireImageZoom()
     wireParallax()
+    wireImageFallback()
+    preloadNextPage(0)
 
     // F1 · Continue de onde parou (somente se nao primeira leitura)
     setTimeout(async () => {
@@ -572,6 +609,9 @@
 
       // B2 · Anima stats quando entra em pagina de antes/depois
       animateStatsOnPage(reader.children[idx])
+
+      // A5 · Preload da proxima pagina
+      preloadNextPage(idx)
 
       if (leadId && !preview) sendProgress()
     }
@@ -763,6 +803,60 @@
         } catch (e) { console.warn('hidden icon:', e.message) }
       })
     })
+  }
+
+  // ========= A5 · IMAGE FALLBACK + PRELOAD =========
+  // Placeholder SVG data URI (retrato editorial em tons claros)
+  const PHOTO_PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">' +
+    '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+    '<stop offset="0%" stop-color="#f4f1ec"/><stop offset="100%" stop-color="#e5ddd2"/></linearGradient></defs>' +
+    '<rect width="400" height="500" fill="url(#g)"/>' +
+    '<g transform="translate(200 240)" fill="#bfb4a5" opacity=".7">' +
+    '<circle cx="0" cy="-24" r="22"/><path d="M-40 40c0-22 18-40 40-40s40 18 40 40v20h-80z"/>' +
+    '</g>' +
+    '<text x="200" y="460" text-anchor="middle" font-family="Playfair Display,serif" font-size="14" fill="#8a8178" font-style="italic">imagem indisponivel</text>' +
+    '</svg>'
+  )
+
+  function wireImageFallback() {
+    // Intercepta erros em todas as imagens renderizadas
+    document.querySelectorAll('.reader img').forEach(img => {
+      if (img.dataset.fallbackWired === '1') return
+      img.dataset.fallbackWired = '1'
+      img.addEventListener('error', () => {
+        if (img.dataset.fallback === '1') return
+        img.dataset.fallback = '1'
+        img.src = PHOTO_PLACEHOLDER
+        img.style.opacity = '.85'
+      }, { once: false })
+      // Fade in suave quando carrega
+      if (!img.complete) {
+        img.style.opacity = '0'
+        img.style.transition = 'opacity .4s ease'
+        img.addEventListener('load', () => { img.style.opacity = '1' }, { once: true })
+      }
+    })
+  }
+
+  function preloadNextPage(currentIdx) {
+    // Pre-carrega imagens das proximas 1-2 paginas pra swipe instantaneo
+    const reader = $('reader')
+    if (!reader) return
+    for (let delta of [1, 2]) {
+      const target = reader.children[currentIdx + delta]
+      if (!target) continue
+      target.querySelectorAll('img').forEach(img => {
+        if (img.dataset.preloaded === '1') return
+        if (!img.src || img.src.startsWith('data:')) return
+        const link = document.createElement('link')
+        link.rel = 'preload'
+        link.as = 'image'
+        link.href = img.src
+        document.head.appendChild(link)
+        img.dataset.preloaded = '1'
+      })
+    }
   }
 
   // ========= B9 · LIGHTBOX (zoom em foto) =========
