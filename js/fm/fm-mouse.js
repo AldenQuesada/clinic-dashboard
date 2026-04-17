@@ -11,6 +11,11 @@
   FM._imgCache = {}  // { angle: { url, img } }
 
   FM._initCanvas = function () {
+    // NASAL TAB — delegate to isolated canvas init (own photo, own image)
+    if (FM._activeTab === 'nasal' && FM._initNasalCanvas) {
+      FM._initNasalCanvas()
+      return
+    }
     FM._canvas = document.getElementById('fmCanvas')
     if (!FM._canvas || !FM._photoUrls[FM._activeAngle]) return
 

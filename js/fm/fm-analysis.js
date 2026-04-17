@@ -234,13 +234,8 @@
     } else if (tabId === 'nasal') {
       if (FM._stopVecAnimation) FM._stopVecAnimation()
       FM._editorMode = 'nasal'
-      if (FM._photoUrls['lateral']) {
-        FM._activeAngle = 'lateral'
-      } else {
-        FM._showToast('Analise Nasal requer foto lateral.', 'warn')
-        FM._activeTab = 'simetria'
-        FM._editorMode = 'analysis'
-      }
+      // Nasal tab is FULLY INDEPENDENT — own photo, own state, own canvas.
+      // Does NOT require or use FM._photoUrls / FM._activeAngle.
       if (FM.Nasal) FM.Nasal.init()
     }
     FM._render()

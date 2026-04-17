@@ -2753,6 +2753,7 @@
           <button id="vpiTab3" onclick="vpiSwitchTab(3)" style="padding:10px 22px;font-size:13px;font-weight:600;white-space:nowrap;color:#9CA3AF;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">Regras</button>
           <button id="vpiTab4" onclick="vpiSwitchTab(4)" style="padding:10px 22px;font-size:13px;font-weight:600;white-space:nowrap;color:#9CA3AF;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">Configurações</button>
           <button id="vpiTab5" onclick="vpiSwitchTab(5)" style="padding:10px 22px;font-size:13px;font-weight:600;white-space:nowrap;color:#9CA3AF;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">Missões</button>
+          <button id="vpiTab6" onclick="vpiSwitchTab(6)" style="padding:10px 22px;font-size:13px;font-weight:600;white-space:nowrap;color:#9CA3AF;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">Desafios</button>
         </div>
 
         <!-- ── TAB 1: RANKING ── -->
@@ -3380,6 +3381,11 @@
         <!-- ── TAB 5: MISSÕES ── -->
         <div id="vpiPanel5" style="display:none">
           <!-- Container renderizado dinamicamente por vpi-missoes.ui.js -->
+        </div>
+
+        <!-- ── TAB 6: DESAFIOS (Fase 9 Entrega 2) ── -->
+        <div id="vpiPanel6" style="display:none">
+          <!-- Container renderizado dinamicamente por vpi-challenges.ui.js -->
         </div>
       </div>
 
@@ -4814,11 +4820,11 @@
   <script src="js/fm/fm-state.js?v=64e40b09" defer></script>
   <script src="js/fm/fm-persistence.js?v=00d01bb9" defer></script>
   <script src="js/fm/fm-draw.js?v=d624708c" defer></script>
-  <script src="js/fm/fm-mouse.js?v=nasal1" defer></script>
-  <script src="js/fm/fm-analysis.js?v=nasal1" defer></script>
-  <script src="js/fm/fm-render.js?v=nasal1" defer></script>
+  <script src="js/fm/fm-mouse.js?v=nasal2" defer></script>
+  <script src="js/fm/fm-analysis.js?v=nasal2" defer></script>
+  <script src="js/fm/fm-render.js?v=nasal2" defer></script>
   <script src="js/fm/fm-actions.js?v=33bf44a4" defer></script>
-  <script src="js/fm/fm-export.js?v=nasal1" defer></script>
+  <script src="js/fm/fm-export.js?v=nasal2" defer></script>
   <script src="js/fm/fm-crop.js?v=9a50bded" defer></script>
   <script src="js/fm/fm-simulation.js?v=634086b8" defer></script>
   <script src="js/fm/fm-compare.js?v=d22471f0" defer></script>
@@ -4828,8 +4834,8 @@
   <script src="js/fm/fm-before-after.js?v=a609e077" defer></script>
   <script src="js/fm/fm-templates.js?v=e23b8e91" defer></script>
   <script src="js/fm/fm-history.js?v=ae8981f9" defer></script>
-  <script src="js/fm/fm-nasal.js?v=nasal1" defer></script>
-  <script src="js/fm/fm-main.js?v=nasal1" defer></script>
+  <script src="js/fm/fm-nasal.js?v=nasal2" defer></script>
+  <script src="js/fm/fm-main.js?v=nasal2" defer></script>
 
   <!-- html2canvas for report export -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
@@ -5017,6 +5023,7 @@
   <script src="js/vpi/ui/vpi-rewards.ui.js?v=20260416a" defer></script>
   <script src="js/vpi/ui/vpi-missoes.ui.js?v=20260416a" defer></script>
   <script src="js/vpi/ui/vpi-strategic-kpis.ui.js?v=20260416a" defer></script>
+  <script src="js/vpi/ui/vpi-challenges.ui.js?v=20260417f9e2" defer></script>
   <script src="js/vpi/ui/vpi-partner-modal.ui.js?v=20260416a" defer></script>
 
   <script>

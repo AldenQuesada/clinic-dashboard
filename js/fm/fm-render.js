@@ -192,6 +192,11 @@
   }
 
   FM._renderCanvasArea = function () {
+    // NASAL TAB — fully independent canvas area with own upload
+    if (FM._activeTab === 'nasal' && FM._renderNasalCanvasArea) {
+      return FM._renderNasalCanvasArea()
+    }
+
     var hasAntes = FM._activeAngle && FM._photoUrls[FM._activeAngle]
     var hasDepois = FM._activeAngle && (FM._afterPhotoByAngle[FM._activeAngle] || FM._simPhotoByAngle[FM._activeAngle])
 

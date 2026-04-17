@@ -2,9 +2,9 @@
  * fm-nasal.js — Nasal Angular Analysis (self-contained module)
  *
  * Namespace: FM.Nasal
- * Tab: 'nasal' (only when lateral photo exists)
- * Storage: FM._angleStore.lateral._nasal (auto-persists via angleStore)
- * Zero crosstalk with other fm-* modules.
+ * Tab: 'nasal' (always visible)
+ * Storage: localStorage key "fm_nasal_{leadId}" — ISOLATED from angleStore
+ * Photo: OWN upload, independent from FM._photoUrls (no crosstalk)
  */
 ;(function () {
   'use strict'
@@ -24,116 +24,188 @@
     { id: 'pogonion', label: 'Pogonio',          desc: 'Ponto mais anterior do mento',             defX: 0.58, defY: 0.88 },
   ]
 
-  // ── Ideal ranges by gender ───────────────────────────────────
   var IDEAL = {
-    F: {
-      nasofrontal: [120, 130],
-      nasolabial:  [100, 110],
-      nasofacial:  [30, 35],
-    },
-    M: {
-      nasofrontal: [115, 125],
-      nasolabial:  [90, 95],
-      nasofacial:  [36, 40],
-    },
+    F: { nasofrontal: [120, 130], nasolabial: [100, 110], nasofacial: [30, 35] },
+    M: { nasofrontal: [115, 125], nasolabial: [90, 95],   nasofacial: [36, 40] },
   }
 
-  // ── State access (isolated in angleStore.lateral._nasal) ─────
-  function _getState() {
-    if (!FM._angleStore) FM._angleStore = {}
-    if (!FM._angleStore.lateral) FM._angleStore.lateral = {}
-    if (!FM._angleStore.lateral._nasal) {
-      FM._angleStore.lateral._nasal = { points: null, gender: 'F' }
+  // ── ISOLATED STATE (in-memory) ───────────────────────────────
+  // Keyed by leadId to support patient switching. Persisted separately.
+  var _state = {
+    leadId: null,
+    points: null,
+    gender: 'F',
+    photoB64: null,   // data URL for persistence
+    photoUrl: null,   // objectURL for canvas (revoked on replace)
+    img: null,        // cached Image element for the canvas
+  }
+
+  function _currentLeadId() {
+    if (!FM._lead) return 'anon'
+    return FM._lead.id || FM._lead.lead_id || 'anon'
+  }
+
+  function _storageKey(id) {
+    return 'fm_nasal_' + id
+  }
+
+  function _loadFromStorage(leadId) {
+    try {
+      var raw = localStorage.getItem(_storageKey(leadId))
+      if (!raw) return null
+      return JSON.parse(raw)
+    } catch (e) { return null }
+  }
+
+  function _saveToStorage() {
+    var leadId = _currentLeadId()
+    try {
+      var payload = {
+        points: _state.points,
+        gender: _state.gender,
+        photoB64: _state.photoB64,
+        savedAt: new Date().toISOString(),
+      }
+      localStorage.setItem(_storageKey(leadId), JSON.stringify(payload))
+    } catch (e) { /* silent — quota or other */ }
+  }
+
+  function _ensureLoaded() {
+    var leadId = _currentLeadId()
+    if (_state.leadId === leadId) return
+    // Switch lead — reset in-memory state
+    if (_state.photoUrl) { try { URL.revokeObjectURL(_state.photoUrl) } catch (e) {} }
+    _state = {
+      leadId: leadId,
+      points: null,
+      gender: 'F',
+      photoB64: null,
+      photoUrl: null,
+      img: null,
     }
-    return FM._angleStore.lateral._nasal
+    var saved = _loadFromStorage(leadId)
+    if (saved) {
+      _state.points = saved.points || null
+      _state.gender = saved.gender || 'F'
+      if (saved.photoB64) {
+        _state.photoB64 = saved.photoB64
+        _state.photoUrl = saved.photoB64 // use data URL directly
+      }
+    }
   }
 
-  function _seedIfEmpty(s) {
-    if (s.points && Object.keys(s.points).length === 6) return
-    s.points = {}
-    POINT_DEFS.forEach(function (p) { s.points[p.id] = { x: p.defX, y: p.defY } })
+  function _seedIfEmpty() {
+    if (_state.points && Object.keys(_state.points).length === 6) return
+    _state.points = {}
+    POINT_DEFS.forEach(function (p) { _state.points[p.id] = { x: p.defX, y: p.defY } })
   }
 
   // ── Public API ───────────────────────────────────────────────
   Nasal.init = function () {
-    _seedIfEmpty(_getState())
+    _ensureLoaded()
+    _seedIfEmpty()
+  }
+
+  Nasal.hasPhoto = function () {
+    _ensureLoaded()
+    return !!_state.photoUrl
+  }
+
+  Nasal.getPhotoUrl = function () {
+    _ensureLoaded()
+    return _state.photoUrl
+  }
+
+  Nasal.getImage = function () {
+    _ensureLoaded()
+    return _state.img
+  }
+
+  Nasal.setImage = function (img) {
+    _state.img = img
   }
 
   Nasal.hasData = function () {
-    var s = _getState()
-    return !!(s.points && Object.keys(s.points).length === 6)
+    _ensureLoaded()
+    return !!(_state.points && Object.keys(_state.points).length === 6)
   }
 
-  Nasal.getGender = function () { return _getState().gender || 'F' }
+  Nasal.getGender = function () { _ensureLoaded(); return _state.gender }
 
   Nasal.setGender = function (g) {
-    _getState().gender = (g === 'M') ? 'M' : 'F'
+    _ensureLoaded()
+    _state.gender = (g === 'M') ? 'M' : 'F'
+    _saveToStorage()
     FM._render()
     setTimeout(FM._initCanvas, 50)
-    FM._autoSave && FM._autoSave()
   }
 
   Nasal.reset = function () {
-    var s = _getState()
-    s.points = null
-    _seedIfEmpty(s)
+    _ensureLoaded()
+    _state.points = null
+    _seedIfEmpty()
+    _saveToStorage()
     FM._redraw()
     FM._render()
     setTimeout(FM._initCanvas, 50)
-    FM._autoSave && FM._autoSave()
   }
 
-  // Auto-seed from MediaPipe landmarks (opt-in, lateral view has limited accuracy)
-  Nasal.autoSeed = function () {
-    if (!FM._scanData || !FM._scanData.landmarks) {
-      FM._showToast('Scanner nao executado. Ative na aba Simetria primeiro.', 'warn')
-      return
-    }
-    var lm = FM._scanData.landmarks
-    var idxMap = { glabella: 10, radix: 168, tip: 1, subnasal: 2, lipUpper: 0, pogonion: 152 }
-    var s = _getState()
-    var next = {}
-    Object.keys(idxMap).forEach(function (k) {
-      var l = lm[idxMap[k]]
-      if (l) {
-        var x = (l.x != null) ? l.x : (Array.isArray(l) ? l[0] : null)
-        var y = (l.y != null) ? l.y : (Array.isArray(l) ? l[1] : null)
-        if (x != null && y != null) next[k] = { x: x, y: y }
+  // Upload triggered from UI — opens file picker
+  Nasal.triggerUpload = function () {
+    var input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = function (e) {
+      var f = e.target.files && e.target.files[0]
+      if (!f) return
+      var reader = new FileReader()
+      reader.onload = function (ev) {
+        _ensureLoaded()
+        if (_state.photoUrl && _state.photoUrl.indexOf('blob:') === 0) {
+          try { URL.revokeObjectURL(_state.photoUrl) } catch (err) {}
+        }
+        _state.photoB64 = ev.target.result
+        _state.photoUrl = ev.target.result
+        _state.img = null
+        _seedIfEmpty()
+        _saveToStorage()
+        FM._render()
+        setTimeout(FM._initCanvas, 50)
       }
-    })
-    if (Object.keys(next).length === 6) {
-      s.points = next
-      FM._redraw()
-      FM._render()
-      setTimeout(FM._initCanvas, 50)
-      FM._autoSave && FM._autoSave()
-    } else {
-      FM._showToast('MediaPipe nao mapeou todos os pontos nesta foto.', 'warn')
+      reader.readAsDataURL(f)
     }
+    input.click()
+  }
+
+  Nasal.deletePhoto = function () {
+    if (!confirm('Remover a foto lateral da analise nasal?')) return
+    _ensureLoaded()
+    if (_state.photoUrl && _state.photoUrl.indexOf('blob:') === 0) {
+      try { URL.revokeObjectURL(_state.photoUrl) } catch (e) {}
+    }
+    _state.photoUrl = null
+    _state.photoB64 = null
+    _state.img = null
+    _saveToStorage()
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+  }
+
+  Nasal.autoSeed = function () {
+    FM._showToast('Auto-posicionamento requer landmarks em foto ja carregada. Marque os pontos manualmente.', 'warn')
   }
 
   // ── Angle computation ────────────────────────────────────────
   Nasal.compute = function () {
-    var s = _getState()
-    if (!s.points) return null
-    var p = s.points
+    _ensureLoaded()
+    if (!_state.points) return null
+    var p = _state.points
     if (!p.glabella || !p.radix || !p.tip || !p.subnasal || !p.lipUpper || !p.pogonion) return null
 
-    // Nasofrontal: vertex=radix, rays to glabella and tip
     var nasofrontal = _angleAt(p.radix, p.glabella, p.tip)
-
-    // Nasolabial (columelo-labial): vertex=subnasal, rays to tip (columella) and lipUpper
-    var nasolabial = _angleAt(p.subnasal, p.tip, p.lipUpper)
-
-    // Nasofacial: between facial plane (glabella→pogonion) and dorsum (glabella→tip)
-    var nasofacial = _angleBetween(
-      _vec(p.glabella, p.pogonion),
-      _vec(p.glabella, p.tip)
-    )
-
-    // Lip projection (Ricketts-like): signed perpendicular distance from lipUpper
-    // to facial plane (glabella↔pogonion), normalized as fraction of face height.
-    var lipProj = _perpSigned(p.lipUpper, p.glabella, p.pogonion)
+    var nasolabial  = _angleAt(p.subnasal, p.tip, p.lipUpper)
+    var nasofacial  = _angleBetween(_vec(p.glabella, p.pogonion), _vec(p.glabella, p.tip))
+    var lipProj     = _perpSigned(p.lipUpper, p.glabella, p.pogonion)
 
     return {
       nasofrontal: Math.round(nasofrontal * 10) / 10,
@@ -143,39 +215,33 @@
     }
   }
 
-  // ── Canvas render ────────────────────────────────────────────
+  // ── Canvas render (called from _redraw when tab=nasal) ───────
   Nasal.render = function (ctx) {
     if (!ctx || !FM._img) return
     if (FM._activeTab !== 'nasal') return
-    if (FM._activeAngle !== 'lateral') return
 
     var w = FM._imgW, h = FM._imgH
-    var s = _getState()
-    _seedIfEmpty(s)
-    var p = s.points
-    var gender = s.gender || 'F'
+    _ensureLoaded()
+    _seedIfEmpty()
+    var p = _state.points
+    var gender = _state.gender
     var ideal = IDEAL[gender]
     var a = Nasal.compute()
 
     ctx.save()
 
-    // Facial plane (glabella→pogonion) — dashed reference
     _drawLine(ctx, p.glabella, p.pogonion, w, h, 'rgba(100,160,255,0.55)', 1.2, [5, 4])
-
-    // Dorsum + columella + lip lines
     _drawLine(ctx, p.glabella, p.radix,    w, h, 'rgba(200,169,126,0.45)', 1)
     _drawLine(ctx, p.radix,    p.tip,      w, h, 'rgba(200,169,126,0.85)', 1.5)
     _drawLine(ctx, p.tip,      p.subnasal, w, h, 'rgba(200,169,126,0.85)', 1.5)
     _drawLine(ctx, p.subnasal, p.lipUpper, w, h, 'rgba(200,169,126,0.85)', 1.5)
 
-    // Angle arcs (drawn large, readable)
     if (a) {
       _drawAngleArc(ctx, p.glabella, p.pogonion, p.tip,      w, h, 80, _statusColor(a.nasofacial,  ideal.nasofacial),  a.nasofacial.toFixed(0)  + '\u00B0', 'Nasofacial')
       _drawAngleArc(ctx, p.radix,    p.glabella, p.tip,      w, h, 64, _statusColor(a.nasofrontal, ideal.nasofrontal), a.nasofrontal.toFixed(0) + '\u00B0', 'Nasofrontal')
       _drawAngleArc(ctx, p.subnasal, p.tip,      p.lipUpper, w, h, 54, _statusColor(a.nasolabial,  ideal.nasolabial),  a.nasolabial.toFixed(0)  + '\u00B0', 'Nasolabial')
     }
 
-    // Points (on top)
     POINT_DEFS.forEach(function (def) {
       var pt = p[def.id]
       if (!pt) return
@@ -191,13 +257,12 @@
   Nasal._hoverPoint = null
 
   Nasal.onMouseDown = function (mx, my) {
-    if (FM._activeTab !== 'nasal' || FM._activeAngle !== 'lateral') return false
-    var s = _getState()
-    _seedIfEmpty(s)
-    var hit = _hitTest(mx, my, s.points)
+    if (FM._activeTab !== 'nasal') return false
+    _ensureLoaded()
+    _seedIfEmpty()
+    var hit = _hitTest(mx, my, _state.points)
     if (hit) {
       Nasal._dragPoint = hit
-      if (FM._pushUndo) FM._pushUndo()
       if (FM._canvas) FM._canvas.style.cursor = 'grabbing'
       return true
     }
@@ -205,18 +270,17 @@
   }
 
   Nasal.onMouseMove = function (mx, my) {
-    if (FM._activeTab !== 'nasal' || FM._activeAngle !== 'lateral') return false
-    var s = _getState()
-    if (!s.points) return false
+    if (FM._activeTab !== 'nasal') return false
+    if (!_state.points) return false
     if (Nasal._dragPoint) {
-      s.points[Nasal._dragPoint].x = Math.max(0, Math.min(1, mx / FM._imgW))
-      s.points[Nasal._dragPoint].y = Math.max(0, Math.min(1, my / FM._imgH))
+      _state.points[Nasal._dragPoint].x = Math.max(0, Math.min(1, mx / FM._imgW))
+      _state.points[Nasal._dragPoint].y = Math.max(0, Math.min(1, my / FM._imgH))
       FM._redraw()
       _refreshPanelValues()
-      if (FM._autoSave) FM._autoSave()
+      _saveToStorage()
       return true
     }
-    var hit = _hitTest(mx, my, s.points)
+    var hit = _hitTest(mx, my, _state.points)
     if (hit !== Nasal._hoverPoint) {
       Nasal._hoverPoint = hit
       if (FM._canvas) FM._canvas.style.cursor = hit ? 'grab' : 'crosshair'
@@ -235,25 +299,99 @@
     return false
   }
 
-  // ── Panel (right sidebar when tab active) ────────────────────
+  // ── Canvas area (replaces fm main canvas when tab=nasal) ─────
+  Nasal.renderCanvasArea = function () {
+    _ensureLoaded()
+    if (!_state.photoUrl) {
+      return '<div class="fm-canvas-area" id="fmCanvasArea" style="display:flex;align-items:center;justify-content:center;background:#0A0A0A;border-radius:8px">' +
+        '<div style="text-align:center;max-width:420px;padding:40px 20px">' +
+          '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-style:italic;color:#C8A97E;margin-bottom:8px">Analise Angular do Nariz</div>' +
+          '<div style="font-size:13px;color:rgba(245,240,232,0.6);line-height:1.6;margin-bottom:24px">' +
+            'Esta analise usa uma foto lateral (perfil) dedicada, independente das outras fotos do paciente.' +
+          '</div>' +
+          '<button onclick="FaceMapping._uploadNasalPhoto()" style="padding:14px 28px;border:none;border-radius:8px;background:#C8A97E;color:#1a1816;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">' +
+            'Carregar Foto Lateral' +
+          '</button>' +
+          '<div style="margin-top:16px;font-size:10px;color:rgba(200,169,126,0.4);letter-spacing:0.04em">Idealmente vista de perfil 90\u00B0</div>' +
+        '</div>' +
+      '</div>'
+    }
+    return '<div class="fm-canvas-area" id="fmCanvasArea" style="display:flex;flex-direction:column;background:#0A0A0A;border-radius:8px;overflow:hidden;position:relative">' +
+      '<div style="padding:6px 14px;background:rgba(200,169,126,0.08);display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#C8A97E;letter-spacing:0.1em">NARIZ \u2014 PERFIL</span>' +
+        '<div style="display:flex;gap:4px">' +
+          '<button class="fm-btn" onclick="FaceMapping._uploadNasalPhoto()" title="Substituir foto" style="font-size:9px;padding:3px 8px">Trocar</button>' +
+          '<button class="fm-btn" onclick="FaceMapping._deleteNasalPhoto()" title="Remover foto" style="font-size:9px;padding:3px 8px;border-color:#EF4444;color:#EF4444">\u00D7</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">' +
+        '<canvas id="fmCanvas" style="max-width:100%;max-height:100%;cursor:crosshair"></canvas>' +
+      '</div>' +
+    '</div>'
+  }
+
+  // ── Canvas init (called from _initCanvas when tab=nasal) ─────
+  Nasal.initCanvas = function () {
+    _ensureLoaded()
+    if (!_state.photoUrl) return
+
+    var canvas = document.getElementById('fmCanvas')
+    if (!canvas) return
+    FM._canvas = canvas
+    FM._ctx = canvas.getContext('2d')
+
+    var onReady = function () {
+      var area = document.getElementById('fmCanvasArea')
+      var areaW = area ? area.clientWidth : 800
+      var areaH = area ? area.clientHeight - 30 : 600
+      var scale = Math.min((areaW - 8) / _state.img.width, areaH / _state.img.height)
+      FM._imgW = Math.round(_state.img.width * scale)
+      FM._imgH = Math.round(_state.img.height * scale)
+      FM._img = _state.img
+      canvas.width = FM._imgW + 32
+      canvas.height = FM._imgH
+      FM._redraw()
+    }
+
+    if (_state.img && _state.img.complete && _state.img.naturalWidth > 0) {
+      onReady()
+    } else {
+      _state.img = new Image()
+      _state.img.onload = onReady
+      _state.img.src = _state.photoUrl
+    }
+
+    canvas.addEventListener('mousedown', FM._onMouseDown)
+    canvas.addEventListener('mousemove', FM._onMouseMove)
+    canvas.addEventListener('mouseup', FM._onMouseUp)
+  }
+
+  // ── Panel (right sidebar) ────────────────────────────────────
   Nasal.renderPanel = function () {
-    var s = _getState()
-    _seedIfEmpty(s)
-    var gender = s.gender || 'F'
+    _ensureLoaded()
+    _seedIfEmpty()
+    var gender = _state.gender
     var ideal = IDEAL[gender]
-    var a = Nasal.compute() || {}
+    var hasPhoto = !!_state.photoUrl
+    var a = hasPhoto ? (Nasal.compute() || {}) : {}
 
     var html = '<div class="fm-toolbar">'
 
-    // Header info
     html += '<div class="fm-tool-section" style="padding-bottom:8px">' +
       '<div class="fm-tool-section-title">Analise Angular do Nariz</div>' +
       '<div style="font-size:10px;color:rgba(200,169,126,0.5);line-height:1.5;margin-top:4px">' +
-        'Arraste os 6 pontos sobre a vista lateral para calcular automaticamente os angulos nasofrontal, nasolabial e nasofacial.' +
+        (hasPhoto
+          ? 'Arraste os 6 pontos sobre a foto de perfil para calcular os angulos.'
+          : 'Carregue uma foto lateral dedicada para iniciar a analise.') +
       '</div>' +
     '</div>'
 
-    // Gender toggle
+    if (!hasPhoto) {
+      html += '<div class="fm-tool-section">' +
+        '<button class="fm-btn" style="width:100%;background:#C8A97E;color:#1a1816;border:none;font-weight:700" onclick="FaceMapping._uploadNasalPhoto()">Carregar Foto Lateral</button>' +
+      '</div>'
+    }
+
     html += '<div class="fm-tool-section">' +
       '<div class="fm-tool-section-title">Genero de referencia</div>' +
       '<div style="display:flex;gap:3px">' +
@@ -263,19 +401,16 @@
       '<div style="font-size:9px;color:rgba(200,169,126,0.4);margin-top:6px">Define as faixas ideais de referencia.</div>' +
     '</div>'
 
-    // Metrics
     html += '<div id="fmNasalMetrics" class="fm-tool-section">' +
       _renderMetricsBlock(a, ideal) +
     '</div>'
 
-    // Actions
-    var hasScan = !!(FM._scanData && FM._scanData.landmarks)
-    html += '<div class="fm-tool-section" style="display:flex;flex-direction:column;gap:4px">' +
-      (hasScan ? '<button class="fm-btn" style="width:100%" onclick="FaceMapping._autoSeedNasal()">Auto-posicionar (MediaPipe)</button>' : '') +
-      '<button class="fm-btn" style="width:100%" onclick="FaceMapping._resetNasal()">Reposicionar pontos padrao</button>' +
-    '</div>'
+    if (hasPhoto) {
+      html += '<div class="fm-tool-section" style="display:flex;flex-direction:column;gap:4px">' +
+        '<button class="fm-btn" style="width:100%" onclick="FaceMapping._resetNasal()">Reposicionar pontos padrao</button>' +
+      '</div>'
+    }
 
-    // Point legend
     html += '<div class="fm-tool-section" style="font-size:10px;color:rgba(200,169,126,0.55);line-height:1.55">' +
       '<div class="fm-tool-section-title">Pontos</div>' +
       POINT_DEFS.map(function (pt) {
@@ -320,12 +455,12 @@
     el.innerHTML = _renderMetricsBlock(a, ideal)
   }
 
-  // ── Report section (embedded in exported HTML) ───────────────
+  // ── Report section ───────────────────────────────────────────
   Nasal.getReportData = function () {
-    if (!Nasal.hasData()) return null
+    if (!Nasal.hasData() || !Nasal.hasPhoto()) return null
     var a = Nasal.compute()
     if (!a) return null
-    var gender = _getState().gender || 'F'
+    var gender = _state.gender
     return {
       gender: gender,
       angles: a,
@@ -376,24 +511,16 @@
   function _interpret(a, gender) {
     var ideal = IDEAL[gender]
     var parts = []
-
-    function _dir(v, r) {
-      if (v >= r[0] && v <= r[1]) return 'ok'
-      return v < r[0] ? 'below' : 'above'
-    }
-
+    function _dir(v, r) { if (v >= r[0] && v <= r[1]) return 'ok'; return v < r[0] ? 'below' : 'above' }
     var nf = _dir(a.nasofrontal, ideal.nasofrontal)
     if (nf === 'below') parts.push('angulo nasofrontal fechado (dorso proeminente ou raiz baixa)')
     else if (nf === 'above') parts.push('angulo nasofrontal aberto (raiz nasal baixa ou testa retraida)')
-
     var nl = _dir(a.nasolabial, ideal.nasolabial)
     if (nl === 'below') parts.push('ponta nasal hiporotacionada (tendencia a caida)')
     else if (nl === 'above') parts.push('ponta nasal hiperrotacionada (excessivamente elevada)')
-
     var nfc = _dir(a.nasofacial, ideal.nasofacial)
     if (nfc === 'below') parts.push('projecao nasal reduzida em relacao ao plano facial')
     else if (nfc === 'above') parts.push('projecao nasal acentuada em relacao ao plano facial')
-
     if (parts.length === 0) {
       return 'Proporcoes nasais alinhadas com os parametros esteticos de referencia ' + (gender === 'F' ? 'femininos' : 'masculinos') + '.'
     }
@@ -469,20 +596,17 @@
 
   function _drawPoint(ctx, x, y, active, label) {
     ctx.save()
-    // Halo
     var grad = ctx.createRadialGradient(x, y, 0, x, y, active ? 14 : 10)
     grad.addColorStop(0, active ? 'rgba(200,169,126,0.55)' : 'rgba(200,169,126,0.3)')
     grad.addColorStop(1, 'rgba(200,169,126,0)')
     ctx.fillStyle = grad
     ctx.beginPath(); ctx.arc(x, y, active ? 14 : 10, 0, Math.PI * 2); ctx.fill()
 
-    // Body
     ctx.fillStyle = active ? '#C8A97E' : '#F5F0E8'
     ctx.strokeStyle = '#1a1816'
     ctx.lineWidth = 1.8
     ctx.beginPath(); ctx.arc(x, y, active ? 6 : 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
 
-    // Label on hover/drag
     if (active && label) {
       ctx.font = 'bold 11px Montserrat, sans-serif'
       var tw = ctx.measureText(label).width + 12
@@ -511,8 +635,6 @@
     var anticlockwise = diff < 0
 
     ctx.save()
-
-    // Translucent fill
     ctx.fillStyle = _withAlpha(color, 0.22)
     ctx.beginPath()
     ctx.moveTo(vx, vy)
@@ -520,22 +642,18 @@
     ctx.closePath()
     ctx.fill()
 
-    // Arc stroke
     ctx.strokeStyle = color
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.arc(vx, vy, radius, ang1, ang2, anticlockwise)
     ctx.stroke()
 
-    // Number + label inside arc (at mid-angle, pulled slightly out)
     var midAng = ang1 + diff / 2
     var tx = vx + Math.cos(midAng) * (radius * 0.62)
     var ty = vy + Math.sin(midAng) * (radius * 0.62)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-
-    // Number (big, stroked for contrast)
     ctx.font = 'bold 18px Montserrat, sans-serif'
     ctx.strokeStyle = 'rgba(20,18,16,0.95)'
     ctx.lineWidth = 4
@@ -543,7 +661,6 @@
     ctx.fillStyle = color
     ctx.fillText(numberText, tx, ty)
 
-    // Label
     ctx.font = '600 9px Montserrat, sans-serif'
     ctx.strokeStyle = 'rgba(20,18,16,0.95)'
     ctx.lineWidth = 3
@@ -554,8 +671,9 @@
     ctx.restore()
   }
 
-  // ── Expose ───────────────────────────────────────────────────
   FM.Nasal = Nasal
   FM._renderNasalPanel = Nasal.renderPanel
+  FM._renderNasalCanvasArea = Nasal.renderCanvasArea
+  FM._initNasalCanvas = Nasal.initCanvas
 
 })()
