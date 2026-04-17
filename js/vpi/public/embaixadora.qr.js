@@ -47,7 +47,14 @@
         var origin = (window.ClinicEnv && window.ClinicEnv.SHORT_LINK_HOST)
                       ? window.ClinicEnv.SHORT_LINK_HOST
                       : window.location.origin
-        return String(origin).replace(/\/+$/, '') + '/r.html?c=' + encodeURIComponent(slug)
+        // Fase 9 Entrega 1: UTMs anexas pro attribution ROI
+        // r.html passa tudo no redirect 302; a landing captura utm_*
+        // e chama vpi_pub_track_attribution.
+        var utm = '&utm_source=vpi' +
+                  '&utm_medium=partner_card' +
+                  '&utm_campaign=referral' +
+                  '&utm_content=' + encodeURIComponent(slug)
+        return String(origin).replace(/\/+$/, '') + '/r.html?c=' + encodeURIComponent(slug) + utm
       }
       // Fallback: URL atual com token (ainda funciona, so nao tem tracking)
       return window.location.href

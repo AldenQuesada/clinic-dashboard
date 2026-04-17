@@ -106,6 +106,44 @@
     } catch (_) { /* ignore */ }
   }
 
+  // Tracking de attribution (Fase 9 - Entrega 1)
+  // Gera/reusa session_id por aba e captura UTMs presentes na URL.
+  // Dedup server-side por 2h.
+  function _trackAttribution(token) {
+    if (!token) return
+    var sb = _initSupabase()
+    if (!sb) return
+
+    var sessionId
+    try {
+      sessionId = sessionStorage.getItem('vpi_attr_sid')
+      if (!sessionId) {
+        sessionId = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10)
+        sessionStorage.setItem('vpi_attr_sid', sessionId)
+      }
+    } catch (_) {
+      sessionId = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10)
+    }
+
+    var url = new URL(window.location.href)
+    var utms = {
+      source:   url.searchParams.get('utm_source')   || 'vpi',
+      medium:   url.searchParams.get('utm_medium')   || 'partner_card',
+      campaign: url.searchParams.get('utm_campaign') || 'referral',
+      content:  url.searchParams.get('utm_content')  || null,
+    }
+
+    try {
+      sb.rpc('vpi_pub_track_attribution', {
+        p_token: token, p_session_id: sessionId, p_utm_params: utms,
+      })
+      .then(function () { /* silent ok */ })
+      .catch(function (e) {
+        if (window.console && console.debug) console.debug('[VPIEmbApp] track attr skip:', e && e.message)
+      })
+    } catch (_) { /* ignore */ }
+  }
+
   function _setState(patch) {
     Object.keys(patch).forEach(function (k) { _state[k] = patch[k] })
     _listeners.forEach(function (fn) {
@@ -180,6 +218,7 @@
     // 2b) Registra abertura (throttle por sessao)
     if (_state.data && !_state.error) {
       _trackCardOpen(token)
+      _trackAttribution(token)
     }
 
     if (_state.error === 'not_found') {
@@ -205,6 +244,7 @@
       if (window.VPIEmbQR && window.VPIEmbQR.init)                window.VPIEmbQR.init()
       if (window.VPIEmbFotona && window.VPIEmbFotona.init)        window.VPIEmbFotona.init()
       if (window.VPIEmbLineage && window.VPIEmbLineage.init)      window.VPIEmbLineage.init()
+      if (window.VPIEmbAttribution && window.VPIEmbAttribution.init) window.VPIEmbAttribution.init()
       if (window.VPIEmbRealtime && window.VPIEmbRealtime.init)    window.VPIEmbRealtime.init()
     } catch (e) {
       console.warn('[VPIEmbApp] module init error:', e)

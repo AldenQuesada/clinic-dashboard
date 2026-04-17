@@ -168,6 +168,8 @@
       '<div id="vpi-missao-slot"></div>' +
       '<div id="vpi-badges-slot"></div>' +
       '<div id="vpi-shoutout-slot"></div>' +
+      // Fase 9: Attribution ROI (card "Sua Atribuicao")
+      '<div id="vpi-emb-attribution"></div>' +
       '<div id="vpi-impact-slot"></div>' +
       // Fase 8: Fotona transferivel + troca
       '<div id="vpi-emb-fotona"></div>' +

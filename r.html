@@ -207,6 +207,29 @@ body{background:#0A0A0A;color:#F5F5F5;font-family:-apple-system,'SF Pro Display'
   }
 
   function doRedirect(url) {
+    // Fase 9 Entrega 1 (VPI): preserva utm_* / session_id no redirect
+    // pra que a landing (public_embaixadora.html) possa capturar e
+    // gravar attribution via vpi_pub_track_attribution.
+    try {
+      var hostParams = new URLSearchParams(window.location.search);
+      var carry = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','sid'];
+      var hasAny = false;
+      carry.forEach(function(k){ if (hostParams.get(k)) hasAny = true; });
+      if (hasAny) {
+        var destUrl;
+        try { destUrl = new URL(url, window.location.origin); }
+        catch(_){ destUrl = null; }
+        if (destUrl) {
+          carry.forEach(function(k){
+            var v = hostParams.get(k);
+            if (v != null && !destUrl.searchParams.has(k)) {
+              destUrl.searchParams.set(k, v);
+            }
+          });
+          url = destUrl.toString();
+        }
+      }
+    } catch(_){ /* fallback: redirect cru */ }
     window.location.replace(url);
   }
 
