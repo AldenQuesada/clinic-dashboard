@@ -134,7 +134,10 @@ async function renderProfessionalsList() {
                 <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px">
                   <div style="width:40px;height:40px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,${color},${color}99);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff">${initials}</div>
                   <div style="flex:1;min-width:0">
-                    <div style="font-size:13px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.nome}">${p.nome}</div>
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <div style="font-size:13px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0" title="${p.nome}">${p.nome}</div>
+                      ${_profAccessBadge(p.invite_status)}
+                    </div>
                     ${p.especialidade
                       ? `<div style="display:inline-block;margin-top:3px;background:#EDE9FE;color:#7C3AED;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700">${p.especialidade}</div>`
                       : p.cargo ? `<div style="font-size:11px;color:#9CA3AF;margin-top:2px">${p.cargo}</div>` : ''}
@@ -210,10 +213,10 @@ function openProfModal(index) {
   const modal = document.getElementById('profModal')
   if (!modal) return
 
-  const profFields = ['sp_nome','sp_especialidade','sp_registro','sp_cargo','sp_email',
+  const profFields = ['sp_nome','sp_especialidade','sp_registro','sp_cargo','sp_email','sp_invite_email',
     'sp_telefone','sp_whatsapp','sp_bio','sp_cep','sp_rua','sp_num_end',
     'sp_comp_end','sp_bairro_end','sp_cidade_end','sp_estado_end',
-    'sp_contrato','sp_salario','sp_valor_consulta','sp_role','sp_senha','sp_senha2']
+    'sp_contrato','sp_salario','sp_valor_consulta']
   // sp_nivel é gerenciado por profSetNivel(), não via .value direto
 
   // Popular select de salas
@@ -258,7 +261,7 @@ function openProfModal(index) {
       sp_cargo:'cargo', sp_email:'email', sp_telefone:'telefone', sp_whatsapp:'whatsapp',
       sp_bio:'bio', sp_cep:'cep', sp_rua:'rua', sp_num_end:'num_end', sp_comp_end:'comp_end',
       sp_bairro_end:'bairro_end', sp_cidade_end:'cidade_end', sp_estado_end:'estado_end',
-      sp_contrato:'contrato', sp_salario:'salario', sp_valor_consulta:'valor_consulta', sp_role:'role' }
+      sp_contrato:'contrato', sp_salario:'salario', sp_valor_consulta:'valor_consulta' }
     Object.entries(map).forEach(([id, key]) => {
       const el = document.getElementById(id); if (el) el.value = p[key] || ''
     })
@@ -272,12 +275,9 @@ function openProfModal(index) {
     _profSkillsDraft  = JSON.parse(JSON.stringify(p.skills       || {}))
     _profCommDraft    = JSON.parse(JSON.stringify(p.commissions  || []))
     _profGoalsDraft   = JSON.parse(JSON.stringify(p.goals        || []))
-    // Preenche senha salva para recuperação
-    const s = document.getElementById('sp_senha');  if(s) s.value = p.senha || ''
-    const s2= document.getElementById('sp_senha2'); if(s2) s2.value = p.senha || ''
   }
-  // Permissões admin
-  _profRenderPerms()
+  // Acesso ao sistema — renderiza status e bloco de convite
+  _profRenderAccessTab(index)
 
   if (aparelhosContainer) {
     if (!techs.length) {
@@ -305,7 +305,7 @@ function openProfModal(index) {
   const watchIds = ['sp_nome','sp_especialidade','sp_registro','sp_cargo','sp_email',
     'sp_telefone','sp_whatsapp','sp_bio','sp_cep','sp_rua','sp_num_end',
     'sp_comp_end','sp_bairro_end','sp_cidade_end','sp_estado_end',
-    'sp_contrato','sp_salario','sp_valor_consulta','sp_role','sp_sala','sp_senha','sp_senha2',
+    'sp_contrato','sp_salario','sp_valor_consulta','sp_sala',
     'sp_cpf','sp_nascimento']
   watchIds.forEach(id => {
     const el = document.getElementById(id)
@@ -477,16 +477,6 @@ async function saveProfessional() {
   const nome = document.getElementById('sp_nome')?.value?.trim()
   if (!nome) { _toastWarn('Informe o nome'); return }
 
-  // Validar senha se preenchida
-  const senha  = document.getElementById('sp_senha')?.value  || ''
-  const senha2 = document.getElementById('sp_senha2')?.value || ''
-  if (senha && senha !== senha2) {
-    const e = document.getElementById('sp_senha_err')
-    if (e) { e.textContent = 'As senhas não coincidem'; e.style.display = 'block' }
-    profModalTab('acesso'); return
-  }
-  const errEl = document.getElementById('sp_senha_err'); if (errEl) errEl.style.display = 'none'
-
   const salario        = parseFloat(document.getElementById('sp_salario')?.value) || 0
   const valorConsulta  = parseFloat(document.getElementById('sp_valor_consulta')?.value) || 0
   const editIndex = parseInt(document.getElementById('sp_edit_index')?.value ?? '-1')
@@ -508,6 +498,7 @@ async function saveProfessional() {
       crm:          document.getElementById('sp_registro')?.value?.trim()      || null,
       color:        existing?.color || '#7C3AED',
       bio:          document.getElementById('sp_bio')?.value?.trim()           || null,
+      email:        document.getElementById('sp_email')?.value?.trim()         || null,
       telefone:     document.getElementById('sp_telefone')?.value?.trim()      || null,
       whatsapp:     document.getElementById('sp_whatsapp')?.value?.trim()      || null,
       cpf:          document.getElementById('sp_cpf')?.value?.trim()           || null,
@@ -555,7 +546,6 @@ async function saveProfessional() {
       cargo: document.getElementById('sp_cargo')?.value?.trim() || '',
       contrato: document.getElementById('sp_contrato')?.value || '', salario,
       valor_consulta: valorConsulta || 0,
-      role: document.getElementById('sp_role')?.value || '', senha,
       cpf: document.getElementById('sp_cpf')?.value?.trim() || '',
       nascimento: document.getElementById('sp_nascimento')?.value || '',
       email: document.getElementById('sp_email')?.value?.trim() || '',
@@ -573,7 +563,6 @@ async function saveProfessional() {
       skills: JSON.parse(JSON.stringify(_profSkillsDraft)),
       commissions: JSON.parse(JSON.stringify(_profCommDraft)),
       goals: JSON.parse(JSON.stringify(_profGoalsDraft)),
-      permissions: _profPermsDraft,
     }
     if (!isNew) profs[editIndex] = data
     else profs.push(data)
@@ -873,31 +862,238 @@ function _syncProfSalarioToGastos(nome, salario, oldNome) {
   } catch(e) { console.warn('Erro ao sincronizar gastos:', e) }
 }
 
-// ── Permissões Admin ──────────────────────────────────────────
-let _profPermsDraft = {}
-const _ADMIN_PERMS = [
-  { key:'leads',       label:'Gerenciar Leads'        },
-  { key:'agenda',      label:'Gerenciar Agenda'        },
-  { key:'financeiro',  label:'Ver Financeiro'          },
-  { key:'equipe',      label:'Gerenciar Equipe'        },
-  { key:'configs',     label:'Configurações da Clínica'},
-  { key:'relatorios',  label:'Relatórios'              },
-  { key:'usuarios',    label:'Criar Usuários'          },
-  { key:'marketing',   label:'Marketing / Campanhas'   },
-]
+// ── Acesso ao Sistema (integrado com modulo Usuarios) ─────────
+// Estado atual do profissional sendo editado (preenchido em _profRenderAccessTab)
+let _profAccessCtx = { index: -1, prof: null }
 
-function _profRenderPerms() {
-  const role  = document.getElementById('sp_role')?.value || ''
-  const block = document.getElementById('sp_perms_block')
-  const grid  = document.getElementById('sp_perms_grid')
-  if (!block || !grid) return
-  if (role !== 'admin') { block.style.display = 'none'; return }
-  block.style.display = 'block'
-  grid.innerHTML = _ADMIN_PERMS.map(p => `
-    <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#F9FAFB;border-radius:8px;cursor:pointer">
-      <input type="checkbox" id="perm_${p.key}" ${_profPermsDraft[p.key]!==false?'checked':''} style="width:14px;height:14px;accent-color:#7C3AED;cursor:pointer"/>
-      <span style="font-size:12px;font-weight:600;color:#374151">${p.label}</span>
-    </label>`).join('')
+function _profRenderAccessTab(index) {
+  _profAccessCtx.index = index
+  _profAccessCtx.prof  = index >= 0 ? (getProfessionals()[index] || null) : null
+
+  const statusEl = document.getElementById('sp_access_status')
+  const inviteEl = document.getElementById('sp_invite_block')
+  if (!statusEl || !inviteEl) return
+
+  // Profissional novo (nao salvo): precisa salvar primeiro antes de convidar
+  if (!_profAccessCtx.prof) {
+    statusEl.innerHTML = `
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <svg width="20" height="20" fill="none" stroke="#92400E" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div style="font-size:13px;color:#92400E;font-weight:600">Salve o profissional primeiro para poder convida-lo como usuario.</div>
+      </div>`
+    inviteEl.style.display = 'none'
+    return
+  }
+
+  const p = _profAccessCtx.prof
+  const status = p.invite_status || 'none'
+
+  if (status === 'active') {
+    statusEl.innerHTML = `
+      <div style="background:#D1FAE5;border:1px solid #A7F3D0;border-radius:12px;padding:16px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+          <svg width="20" height="20" fill="none" stroke="#059669" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+          <div style="font-size:14px;color:#065F46;font-weight:700">Usuario Ativo</div>
+        </div>
+        <div style="font-size:12px;color:#047857;margin-left:32px">Email: <strong>${p.user_email || p.email || '—'}</strong></div>
+        <div style="font-size:12px;color:#047857;margin-left:32px">Nivel: <strong>${_profRoleLabel(p.user_role)}</strong></div>
+        <div style="margin-top:12px;margin-left:32px;display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" onclick="settingsTab('users');closeProfModal()" style="padding:7px 14px;background:#fff;color:#065F46;border:1.5px solid #A7F3D0;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Gerenciar em Usuarios</button>
+        </div>
+      </div>`
+    inviteEl.style.display = 'none'
+    return
+  }
+
+  if (status === 'inactive') {
+    statusEl.innerHTML = `
+      <div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:12px;padding:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <svg width="20" height="20" fill="none" stroke="#B91C1C" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <div>
+            <div style="font-size:14px;color:#991B1B;font-weight:700">Usuario Desativado</div>
+            <div style="font-size:12px;color:#B91C1C;margin-top:2px">Reative em Configuracoes → Usuarios.</div>
+          </div>
+        </div>
+      </div>`
+    inviteEl.style.display = 'none'
+    return
+  }
+
+  if (status === 'pending') {
+    statusEl.innerHTML = `
+      <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:12px;padding:16px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <svg width="20" height="20" fill="none" stroke="#92400E" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div style="font-size:14px;color:#92400E;font-weight:700">Convite Pendente</div>
+            <div style="font-size:12px;color:#B45309;margin-top:2px">O profissional ainda nao aceitou o convite. Gerencie em Usuarios → Convites Pendentes.</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;margin-left:32px">
+          <button type="button" onclick="settingsTab('users');closeProfModal()" style="padding:7px 14px;background:#fff;color:#92400E;border:1.5px solid #FDE68A;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Ir para Usuarios</button>
+        </div>
+      </div>`
+    inviteEl.style.display = 'none'
+    return
+  }
+
+  // status === 'none' → mostra bloco de convite
+  statusEl.innerHTML = `
+    <div style="background:#F3F4F6;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <svg width="18" height="18" fill="none" stroke="#6B7280" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 1 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>
+      <div>
+        <div style="font-size:13px;color:#374151;font-weight:700">Sem acesso ao sistema</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:2px">Este profissional nao tem login. Envie um convite para criar o acesso.</div>
+      </div>
+    </div>`
+  inviteEl.style.display = 'block'
+
+  // Pre-preenche email do profissional (se houver) no input de convite
+  const emailPreenchido = p.email || document.getElementById('sp_email')?.value?.trim() || ''
+  const inviteEmailInput = document.getElementById('sp_invite_email')
+  if (inviteEmailInput && !inviteEmailInput.value) inviteEmailInput.value = emailPreenchido
+
+  // Renderiza permissoes padrao para o role selecionado
+  _profRenderInvitePerms()
+  const roleSel = document.getElementById('sp_invite_role')
+  if (roleSel) {
+    roleSel.removeEventListener('change', _profRenderInvitePerms)
+    roleSel.addEventListener('change', _profRenderInvitePerms)
+  }
+
+  // Reset mensagens
+  const err = document.getElementById('sp_invite_err'); if (err) err.style.display = 'none'
+  const ok  = document.getElementById('sp_invite_ok');  if (ok)  ok.style.display  = 'none'
+}
+
+function _profRoleLabel(role) {
+  const map = { owner:'Proprietario', admin:'Administrador', therapist:'Especialista', receptionist:'Secretaria', viewer:'Visualizador' }
+  return map[role] || role || '—'
+}
+
+function _profAccessBadge(status) {
+  const cfg = {
+    active:   { color:'#059669', bg:'#D1FAE5', border:'#A7F3D0', title:'Usuario ativo',     icon:'<path d="M20 6 9 17l-5-5"/>' },
+    pending:  { color:'#B45309', bg:'#FEF3C7', border:'#FDE68A', title:'Convite pendente',  icon:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
+    inactive: { color:'#B91C1C', bg:'#FEE2E2', border:'#FECACA', title:'Usuario desativado', icon:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>' },
+    none:     { color:'#6B7280', bg:'#F3F4F6', border:'#E5E7EB', title:'Sem acesso ao sistema', icon:'<path d="M18 8h1a4 4 0 1 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>' },
+  }
+  const s = cfg[status] || cfg.none
+  return `<span title="${s.title}" style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:${s.bg};border:1px solid ${s.border}">
+    <svg width="10" height="10" fill="none" stroke="${s.color}" stroke-width="2.5" viewBox="0 0 24 24">${s.icon}</svg>
+  </span>`
+}
+
+function _profRenderInvitePerms() {
+  const el = document.getElementById('sp_invite_perms')
+  if (!el) return
+  const role = document.getElementById('sp_invite_role')?.value || 'therapist'
+  const nav  = window.NAV_CONFIG || []
+  if (!nav.length) {
+    el.innerHTML = '<div style="font-size:12px;color:#9CA3AF">Permissoes serao aplicadas conforme o perfil.</div>'
+    return
+  }
+  el.innerHTML = nav
+    .filter(s => s.section !== 'settings')
+    .map(s => {
+      const sRoles = s.roles || []
+      const defaultOn = sRoles.length === 0 || sRoles.indexOf(role) >= 0
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px;border-bottom:1px solid #F3F4F6">
+          <div style="font-size:12px;font-weight:600;color:#374151">${s.label || s.section}</div>
+          <label style="position:relative;display:inline-block;width:34px;height:20px;cursor:pointer">
+            <input type="checkbox" class="_sp-inv-perm" data-module="${s.section}" ${defaultOn?'checked':''} style="opacity:0;width:0;height:0"/>
+            <span style="position:absolute;inset:0;background:${defaultOn?'#7C3AED':'#D1D5DB'};border-radius:20px;transition:.2s"></span>
+            <span style="position:absolute;top:2px;left:${defaultOn?'16px':'2px'};width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s"></span>
+          </label>
+        </div>`
+    }).join('')
+  el.querySelectorAll('._sp-inv-perm').forEach(cb => {
+    cb.addEventListener('change', function () {
+      const track = this.nextElementSibling
+      const thumb = track?.nextElementSibling
+      if (track) track.style.background = this.checked ? '#7C3AED' : '#D1D5DB'
+      if (thumb) thumb.style.left       = this.checked ? '16px'    : '2px'
+    })
+  })
+}
+
+async function profSendInvite() {
+  const p     = _profAccessCtx.prof
+  const errEl = document.getElementById('sp_invite_err')
+  const okEl  = document.getElementById('sp_invite_ok')
+  const btn   = document.getElementById('sp_invite_btn')
+  if (!p || !p.id) {
+    if (errEl) { errEl.textContent = 'Salve o profissional antes de enviar o convite.'; errEl.style.display = 'block' }
+    return
+  }
+  if (!window.UsersRepository?.inviteProfessionalAsUser) {
+    if (errEl) { errEl.textContent = 'Modulo de usuarios indisponivel.'; errEl.style.display = 'block' }
+    return
+  }
+
+  const email = (document.getElementById('sp_invite_email')?.value || '').trim().toLowerCase()
+  const role  = document.getElementById('sp_invite_role')?.value || 'therapist'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (errEl) { errEl.textContent = 'Email invalido.'; errEl.style.display = 'block' }
+    return
+  }
+
+  const perms = []
+  document.querySelectorAll('._sp-inv-perm').forEach(cb => {
+    perms.push({ module_id: cb.dataset.module, page_id: null, allowed: cb.checked })
+  })
+
+  if (errEl) errEl.style.display = 'none'
+  if (okEl)  okEl.style.display  = 'none'
+  if (btn)   { btn.disabled = true; btn.textContent = 'Enviando...' }
+
+  const r = await window.UsersRepository.inviteProfessionalAsUser(p.id, email, role, perms)
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Enviar Convite' }
+
+  if (!r.ok) {
+    const msg = _profInviteErrorMsg(r.error)
+    if (errEl) { errEl.textContent = msg; errEl.style.display = 'block' }
+    return
+  }
+
+  const joinUrl = window.location.origin + '/join.html?token=' + (r.data?.raw_token || '')
+  if (okEl) {
+    okEl.innerHTML = `
+      <div style="font-weight:700;margin-bottom:4px">Convite gerado!</div>
+      <div style="margin-bottom:8px">Envie este link para <strong>${email}</strong> (valido por 48h):</div>
+      <div style="background:#fff;border:1px solid #A7F3D0;border-radius:8px;padding:8px 10px;word-break:break-all;font-family:monospace;font-size:11px;margin-bottom:8px">${joinUrl}</div>
+      <button type="button" onclick="navigator.clipboard.writeText('${joinUrl}');this.textContent='Copiado!'" style="padding:6px 12px;background:#10B981;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Copiar Link</button>`
+    okEl.style.display = 'block'
+  }
+
+  // Recarrega lista de profissionais para atualizar invite_status
+  if (window.ProfessionalsRepository?.getAll) {
+    const list = await window.ProfessionalsRepository.getAll()
+    if (list.ok && Array.isArray(list.data)) {
+      try {
+        if (typeof setProfessionalsFromServer === 'function') setProfessionalsFromServer(list.data)
+        else if (typeof _setProfessionalsCache === 'function') _setProfessionalsCache(list.data)
+      } catch (_) {}
+    }
+  }
+  // Re-renderiza a aba com status atualizado
+  setTimeout(() => _profRenderAccessTab(_profAccessCtx.index), 300)
+}
+
+function _profInviteErrorMsg(code) {
+  const msgs = {
+    insufficient_permissions:    'Sem permissao para enviar convites.',
+    invalid_role:                'Nivel de acesso invalido.',
+    invalid_email:               'Email invalido.',
+    only_owner_can_invite_admin: 'Apenas o proprietario pode convidar administradores.',
+    already_member:              'Este email ja e membro ativo da clinica.',
+    professional_not_found:      'Profissional nao encontrado nesta clinica.',
+    professional_already_linked: 'Este profissional ja esta vinculado a um usuario.',
+  }
+  return msgs[code] || code || 'Erro desconhecido'
 }
 
 // ── Comissionamento no profModal ──────────────────────────────
@@ -1019,7 +1215,8 @@ window.profSaveComissao        = profSaveComissao
 window.profSaveMeta            = profSaveMeta
 window._profRemoveComissao     = _profRemoveComissao
 window._profRemoveMeta         = _profRemoveMeta
-window._profRenderPerms        = _profRenderPerms
+window._profRenderAccessTab    = _profRenderAccessTab
+window.profSendInvite          = profSendInvite
 window.renderProfessionalsList = renderProfessionalsList
 window.getProfessionals        = getProfessionals
 

@@ -54,13 +54,38 @@
    * Convida um novo membro para a clínica.
    * @param {string} email
    * @param {string} role  — 'therapist' | 'receptionist' | 'admin' | 'viewer'
+   * @param {object} [opts] — { permissions: Array, professionalId: string }
    * @returns {Promise<{ok, data, error}>}
    */
-  async function inviteStaff(email, role) {
+  async function inviteStaff(email, role, opts) {
     try {
-      var { data, error } = await _sb().rpc('invite_staff', {
-        p_email: email,
-        p_role:  role,
+      var params = { p_email: email, p_role: role }
+      if (opts && opts.permissions != null)    params.p_permissions = opts.permissions
+      if (opts && opts.professionalId != null) params.p_professional_id = opts.professionalId
+      var { data, error } = await _sb().rpc('invite_staff', params)
+      if (error) return _err(error)
+      if (data && data.ok === false) return _err(data.error)
+      return _ok(data)
+    } catch (e) { return _err(e) }
+  }
+
+  // ── inviteProfessionalAsUser ──────────────────────────────────
+  /**
+   * Convida um profissional existente como usuario do sistema.
+   * Persiste o email no professional_profiles e vincula user_id ao aceitar.
+   * @param {string} professionalId
+   * @param {string} email
+   * @param {string} role
+   * @param {Array}  [permissions]
+   * @returns {Promise<{ok, data, error}>}
+   */
+  async function inviteProfessionalAsUser(professionalId, email, role, permissions) {
+    try {
+      var { data, error } = await _sb().rpc('invite_professional_as_user', {
+        p_professional_id: professionalId,
+        p_email:           email,
+        p_role:            role,
+        p_permissions:     permissions || null,
       })
       if (error) return _err(error)
       if (data && data.ok === false) return _err(data.error)
@@ -191,6 +216,7 @@
   window.UsersRepository = Object.freeze({
     getStaff,
     inviteStaff,
+    inviteProfessionalAsUser,
     updateRole,
     deactivateStaff,
     activateStaff,
