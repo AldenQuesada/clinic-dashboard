@@ -242,7 +242,7 @@
       if (window.VPIEmbShare && window.VPIEmbShare.init)          window.VPIEmbShare.init()
       if (window.VPIEmbStory && window.VPIEmbStory.init)          window.VPIEmbStory.init()
       if (window.VPIEmbQR && window.VPIEmbQR.init)                window.VPIEmbQR.init()
-      if (window.VPIEmbFotona && window.VPIEmbFotona.init)        window.VPIEmbFotona.init()
+      if (window.VPIEmbPonteiras && window.VPIEmbPonteiras.init)  window.VPIEmbPonteiras.init()
       if (window.VPIEmbLineage && window.VPIEmbLineage.init)      window.VPIEmbLineage.init()
       if (window.VPIEmbAttribution && window.VPIEmbAttribution.init) window.VPIEmbAttribution.init()
       if (window.VPIEmbChallenge && window.VPIEmbChallenge.init)   window.VPIEmbChallenge.init()

@@ -173,8 +173,8 @@
       // Fase 9 Entrega 5: Meu Impacto ("voce transformou N vidas")
       '<div id="vpi-emb-myimpact"></div>' +
       '<div id="vpi-impact-slot"></div>' +
-      // Fase 8: Fotona transferivel + troca
-      '<div id="vpi-emb-fotona"></div>' +
+      // Novo modelo: Ponteiras Fotona 4D (5 ponteiras, resgate a partir de 2)
+      '<div id="vpi-emb-ponteiras"></div>' +
       // Fase 8: Linhagem (arvore de filhas)
       '<div id="vpi-emb-lineage"></div>' +
 

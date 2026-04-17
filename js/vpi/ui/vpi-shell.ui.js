@@ -64,7 +64,7 @@
   //  Tabs
   // ══════════════════════════════════════════════════
   function vpiSwitchTab(n) {
-    [1, 2, 3, 4, 5, 6, 7].forEach(function (i) {
+    [1, 2, 3, 4, 5, 6, 7, 8].forEach(function (i) {
       var panel = document.getElementById('vpiPanel' + i)
       var tab   = document.getElementById('vpiTab'   + i)
       if (!panel || !tab) return
@@ -82,6 +82,7 @@
     if (n === 5 && window.vpiRenderMissoes)       window.vpiRenderMissoes()
     if (n === 6 && window.vpiRenderChallenges)    window.vpiRenderChallenges()
     if (n === 7 && window.vpiRenderCelebrations)  window.vpiRenderCelebrations()
+    if (n === 8 && window.vpiRenderResgates)      window.vpiRenderResgates()
   }
 
   function vpiToggle(id) {
