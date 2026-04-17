@@ -493,63 +493,144 @@ function _agendaSelectAuto(ruleId) {
   renderAgendaTagsFluxos()
 }
 
-function _autoRenderDrawer() {
-  const r = _autoRules.find(x => x.id === _autoSelectedId)
-  if (!r) return ''
-  const triggerLabel = _autoTriggerLabel(r)
+async function _agendaReloadAuto(keepSelectedId) {
+  try {
+    const repo = window.AgendaAutomationsRepository
+    if (repo) {
+      const res = await repo.list()
+      _autoRules = (res && res.ok && Array.isArray(res.data)) ? res.data : []
+    }
+  } catch (e) {}
+  _autoLoaded = true
+  if (keepSelectedId && !_autoRules.some(r => r.id === keepSelectedId)) _autoSelectedId = null
+  else if (keepSelectedId) _autoSelectedId = keepSelectedId
+  renderAgendaTagsFluxos()
+}
+
+// Traduz a chave do grupo (status:na_clinica | tag:encaixe | time:d_before) em prefill do editor
+function _autoPrefillFromGroupKey(key) {
+  const mods = window.FAModules || {}
+  if (!key) return { category: _autoCatTab !== 'all' ? _autoCatTab : 'agendamento' }
+  if (key.indexOf('status:') === 0) {
+    const status = key.slice(7)
+    let category = _autoCatTab !== 'all' ? _autoCatTab : null
+    if (!category) {
+      for (const mid of _FA_MODULE_ORDER) {
+        const m = mods[mid]
+        if (m && m.statuses && m.statuses.some(s => s.id === status)) { category = mid; break }
+      }
+    }
+    return { category: category || 'agendamento', trigger_type: 'on_status', trigger_config: { status } }
+  }
+  if (key.indexOf('tag:') === 0) {
+    const tag = key.slice(4)
+    return { category: _autoCatTab !== 'all' ? _autoCatTab : 'agendamento', trigger_type: 'on_tag', trigger_config: { tag } }
+  }
+  if (key.indexOf('time:') === 0) {
+    const t = key.slice(5)
+    return { category: _autoCatTab !== 'all' ? _autoCatTab : 'agendamento', trigger_type: t, trigger_config: {} }
+  }
+  return { category: _autoCatTab !== 'all' ? _autoCatTab : 'agendamento' }
+}
+
+function _agendaEditRule(ruleId) {
+  if (!window.FAEditor) { if (window._showToast) _showToast('Editor', 'Editor nao carregado', 'warn'); return }
+  window.FAEditor.open(ruleId, { onSave: () => _agendaReloadAuto(ruleId) })
+}
+
+function _agendaNewRuleInGroup(groupKey) {
+  if (!window.FAEditor) { if (window._showToast) _showToast('Editor', 'Editor nao carregado', 'warn'); return }
+  const prefill = _autoPrefillFromGroupKey(groupKey)
+  window.FAEditor.open(null, { prefill, onSave: (saved) => _agendaReloadAuto(saved && saved.id) })
+}
+
+function _autoGroupKeyOf(rule) {
+  if (!rule) return null
+  const cfg = rule.trigger_config || {}
+  if (rule.trigger_type === 'on_status') return 'status:' + (cfg.status || '?')
+  if (rule.trigger_type === 'on_tag')    return 'tag:' + (cfg.tag || '?')
+  return 'time:' + (rule.trigger_type || '?')
+}
+
+function _autoRuleContentSummary(r) {
   const activeCh = _autoActiveChannels(r)
   const sections = []
   if (activeCh.includes('whatsapp') && r.content_template) {
-    sections.push({ icon: 'message-circle', color: '#25D366', label: 'WhatsApp',
-      body: `<div style="white-space:pre-wrap;font-size:12px;line-height:1.55;color:#111827;background:#F0FDF4;border-left:3px solid #25D366;padding:10px 12px;border-radius:6px">${_autoEsc(r.content_template)}</div>` })
+    const txt = String(r.content_template).slice(0, 120) + (r.content_template.length > 120 ? '…' : '')
+    sections.push(`<div style="font-size:11px;color:#374151;background:#F0FDF4;border-left:3px solid #25D366;padding:8px 10px;border-radius:5px;white-space:pre-wrap;line-height:1.5">${_autoEsc(txt)}</div>`)
   }
   if (activeCh.includes('alexa') && r.alexa_message) {
-    sections.push({ icon: 'speaker', color: '#1FCCB2', label: 'Alexa (' + (r.alexa_target||'sala') + ')',
-      body: `<div style="font-size:12px;color:#111827;background:#ECFEFF;border-left:3px solid #1FCCB2;padding:10px 12px;border-radius:6px">${_autoEsc(r.alexa_message)}</div>` })
+    const txt = String(r.alexa_message).slice(0, 120) + (r.alexa_message.length > 120 ? '…' : '')
+    sections.push(`<div style="font-size:11px;color:#374151;background:#ECFEFF;border-left:3px solid #1FCCB2;padding:8px 10px;border-radius:5px">${_autoEsc(txt)}</div>`)
   }
-  if (activeCh.includes('task') && (r.task_title || r.task_assignee)) {
-    sections.push({ icon: 'clipboard', color: '#10B981', label: 'Tarefa',
-      body: `<div style="font-size:12px;color:#111827;background:#F0FDF4;border-left:3px solid #10B981;padding:10px 12px;border-radius:6px">
-        <div><b>${_autoEsc(r.task_title || '—')}</b></div>
-        <div style="color:#6B7280;margin-top:4px;font-size:11px">Responsavel: ${_autoEsc(r.task_assignee || 'sdr')} · Prioridade: ${_autoEsc(r.task_priority || 'normal')} · Prazo: ${r.task_deadline_hours || 24}h</div>
-      </div>` })
+  if (activeCh.includes('task') && r.task_title) {
+    sections.push(`<div style="font-size:11px;color:#374151;background:#F0FDF4;border-left:3px solid #10B981;padding:8px 10px;border-radius:5px"><b>${_autoEsc(r.task_title)}</b> · ${_autoEsc(r.task_assignee || 'sdr')} · ${r.task_deadline_hours || 24}h</div>`)
   }
   if (activeCh.includes('alert') && r.alert_title) {
-    sections.push({ icon: 'bell', color: '#F59E0B', label: 'Alerta',
-      body: `<div style="font-size:12px;color:#111827;background:#FFFBEB;border-left:3px solid #F59E0B;padding:10px 12px;border-radius:6px">
-        <div><b>${_autoEsc(r.alert_title)}</b></div>
-        <div style="color:#6B7280;margin-top:4px;font-size:11px">Tipo: ${_autoEsc(r.alert_type||'info')}</div>
-      </div>` })
+    sections.push(`<div style="font-size:11px;color:#374151;background:#FFFBEB;border-left:3px solid #F59E0B;padding:8px 10px;border-radius:5px"><b>${_autoEsc(r.alert_title)}</b> · ${_autoEsc(r.alert_type || 'info')}</div>`)
   }
+  return sections
+}
+
+function _autoRenderDrawer() {
+  const selected = _autoRules.find(x => x.id === _autoSelectedId)
+  if (!selected) return ''
+  const groupKey = _autoGroupKeyOf(selected)
+  const siblings = _autoRules.filter(r => _autoGroupKeyOf(r) === groupKey)
+  const triggerLabel = _autoTriggerLabel(selected)
+  const activeN = siblings.filter(r => r.is_active).length
+
   return `
     <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;overflow:hidden;align-self:start;position:sticky;top:80px;max-height:calc(100vh - 110px);overflow-y:auto">
       <div style="padding:14px 16px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;gap:8px">
+        <i data-feather="zap" style="width:14px;height:14px;color:#7C3AED"></i>
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:800;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(r.name || 'Sem nome')}</div>
-          <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${_autoEsc(triggerLabel)}</div>
+          <div style="font-size:13px;font-weight:800;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(triggerLabel)}</div>
+          <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${siblings.length} regra${siblings.length===1?'':'s'} · ${activeN} ativa${activeN===1?'':'s'}</div>
         </div>
-        <button onclick="window._agendaSelectAuto(null)" style="background:none;border:none;cursor:pointer;color:#9CA3AF;padding:4px">
+        <button onclick="window._agendaSelectAuto(null)" title="Fechar" style="background:none;border:none;cursor:pointer;color:#9CA3AF;padding:4px">
           <i data-feather="x" style="width:16px;height:16px"></i>
         </button>
       </div>
-      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
-        ${r.description ? `<div style="font-size:12px;color:#6B7280;line-height:1.5">${_autoEsc(r.description)}</div>` : ''}
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <span style="font-size:10px;padding:3px 8px;border-radius:5px;background:${r.is_active?'#DCFCE7':'#F3F4F6'};color:${r.is_active?'#166534':'#6B7280'};font-weight:700">${r.is_active?'ATIVA':'PAUSADA'}</span>
-          <span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#EEF2FF;color:#4338CA;font-weight:700">${_autoEsc(r.trigger_type || '—')}</span>
-          ${r.category ? `<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#F3F4F6;color:#6B7280;font-weight:700">${_autoEsc(r.category)}</span>` : ''}
-        </div>
-        ${sections.map(s => `
-          <div>
-            <div style="font-size:11px;font-weight:700;color:${s.color};display:flex;align-items:center;gap:6px;margin-bottom:6px">
-              <i data-feather="${s.icon}" style="width:11px;height:11px"></i> ${s.label}
-            </div>
-            ${s.body}
-          </div>
-        `).join('')}
-        ${sections.length === 0 ? `<div style="font-size:12px;color:#9CA3AF;font-style:italic">Sem conteudo cadastrado para os canais ativos.</div>` : ''}
-        <button onclick="if(window.navigateTo){window.navigateTo('funnel-automations')}else{location.hash='funnel-automations'}" style="margin-top:6px;padding:9px 12px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px">
-          <i data-feather="edit-3" style="width:12px;height:12px"></i> Editar no funil
+
+      <div style="padding:12px 16px;border-bottom:1px solid #F3F4F6">
+        <button onclick="window._agendaNewRuleInGroup('${_autoEsc(groupKey)}')" style="width:100%;padding:10px 12px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px">
+          <i data-feather="plus" style="width:12px;height:12px"></i> Nova regra neste grupo
+        </button>
+      </div>
+
+      <div style="display:flex;flex-direction:column">
+        ${siblings.map(r => {
+          const isSel = r.id === _autoSelectedId
+          const activeCh = _autoActiveChannels(r)
+          const chBadges = activeCh.map(c => {
+            const m = _autoChannelMeta(c)
+            return `<div title="${m.label}" style="width:20px;height:20px;border-radius:5px;background:${m.color}18;display:flex;align-items:center;justify-content:center">
+              <i data-feather="${m.icon}" style="width:10px;height:10px;color:${m.color}"></i>
+            </div>`
+          }).join('')
+          const sections = _autoRuleContentSummary(r)
+          return `
+            <div style="border-bottom:1px solid #F9FAFB;${isSel?'background:#F5F3FF':''}">
+              <div style="padding:11px 16px 8px;display:flex;align-items:flex-start;gap:8px">
+                <div style="width:8px;height:8px;border-radius:50%;background:${r.is_active?'#10B981':'#D1D5DB'};flex-shrink:0;margin-top:5px"></div>
+                <div onclick="window._agendaSelectAuto('${r.id}')" style="flex:1;min-width:0;cursor:pointer">
+                  <div style="font-size:12.5px;font-weight:700;color:#111827">${_autoEsc(r.name || 'Sem nome')}</div>
+                  ${r.description ? `<div style="font-size:11px;color:#6B7280;margin-top:2px">${_autoEsc(r.description)}</div>` : ''}
+                </div>
+                <div style="display:flex;gap:3px;flex-shrink:0">${chBadges}</div>
+                <button onclick="window._agendaEditRule('${r.id}')" title="Editar regra" style="background:#EEF2FF;border:1px solid #E0E7FF;cursor:pointer;color:#4338CA;padding:5px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700">
+                  <i data-feather="edit-2" style="width:11px;height:11px"></i>
+                </button>
+              </div>
+              ${sections.length ? `<div style="padding:0 16px 10px;display:flex;flex-direction:column;gap:6px">${sections.join('')}</div>` : ''}
+            </div>`
+        }).join('')}
+      </div>
+
+      <div style="padding:10px 16px;border-top:1px solid #F3F4F6;background:#FAFAFA">
+        <button onclick="if(window.navigateTo){window.navigateTo('funnel-automations')}else{location.hash='funnel-automations'}" style="width:100%;padding:8px 12px;background:#fff;color:#4338CA;border:1px solid #E0E7FF;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px">
+          <i data-feather="external-link" style="width:11px;height:11px"></i> Abrir no Funil
         </button>
       </div>
     </div>`
@@ -671,18 +752,21 @@ async function renderAgendaTagsFluxos() {
                 ${pausedN ? `<span style="font-size:10px;color:#9CA3AF;background:#F3F4F6;padding:2px 7px;border-radius:10px;font-weight:700">${pausedN} pausada${pausedN===1?'':'s'}</span>` : ''}
                 <div style="flex:1"></div>
                 <div style="display:flex;gap:4px;flex-shrink:0">${chBadgesG}</div>
+                <button onclick="event.stopPropagation();window._agendaNewRuleInGroup('${_autoEsc(g.key)}')" title="Nova regra neste grupo" style="background:#fff;border:1px solid #E0E7FF;color:#4338CA;padding:4px 8px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700">
+                  <i data-feather="plus" style="width:11px;height:11px"></i> Nova
+                </button>
               </div>
               <div>
                 ${g.rules.map(r => {
                   const selected = _autoSelectedId === r.id
                   const activeCh = _autoActiveChannels(r)
                   return `
-                    <div onclick="window._agendaSelectAuto('${r.id}')" style="
-                      padding:11px 16px;border-bottom:1px solid #F9FAFB;display:flex;align-items:center;gap:10px;cursor:pointer;
+                    <div style="
+                      padding:11px 16px;border-bottom:1px solid #F9FAFB;display:flex;align-items:center;gap:10px;
                       background:${selected?'#F5F3FF':'transparent'};
                       border-left:3px solid ${selected?'#7C3AED':'transparent'}">
                       <div style="width:8px;height:8px;border-radius:50%;background:${r.is_active?'#10B981':'#D1D5DB'};flex-shrink:0"></div>
-                      <div style="flex:1;min-width:0">
+                      <div onclick="window._agendaSelectAuto('${r.id}')" style="flex:1;min-width:0;cursor:pointer">
                         <div style="font-size:12.5px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(r.name || 'Sem nome')}</div>
                         <div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(r.description || '—')}</div>
                       </div>
@@ -695,6 +779,9 @@ async function renderAgendaTagsFluxos() {
                         }).join('')}
                       </div>
                       <span style="font-size:9.5px;padding:2px 7px;border-radius:5px;background:${r.is_active?'#DCFCE7':'#F3F4F6'};color:${r.is_active?'#166534':'#9CA3AF'};font-weight:700;flex-shrink:0">${r.is_active?'ON':'OFF'}</span>
+                      <button onclick="event.stopPropagation();window._agendaEditRule('${r.id}')" title="Editar regra" style="background:#EEF2FF;border:1px solid #E0E7FF;color:#4338CA;padding:5px 7px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;flex-shrink:0">
+                        <i data-feather="edit-2" style="width:11px;height:11px"></i>
+                      </button>
                     </div>`
                 }).join('')}
               </div>
@@ -774,5 +861,8 @@ window.agendaEventoSalvar      = agendaEventoSalvar
 window.agendaEventoRemover     = agendaEventoRemover
 window._agendaSetAutoTab       = _agendaSetAutoTab
 window._agendaSelectAuto       = _agendaSelectAuto
+window._agendaEditRule         = _agendaEditRule
+window._agendaNewRuleInGroup   = _agendaNewRuleInGroup
+window._agendaReloadAuto       = _agendaReloadAuto
 
 })()
