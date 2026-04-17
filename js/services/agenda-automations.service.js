@@ -135,17 +135,34 @@
   }
 
   // ── Template rendering ─────────────────────────────────────
+  // Sanitiza templates WA contra vars vazias (Fase 8 - Entrega 1).
+  // Universal — espelha o helper SQL public._wa_render_template.
   function renderTemplate(template, vars) {
     if (!template) return ''
-    var result = template
+    var result = String(template)
     var keys = Object.keys(vars || {})
     for (var i = 0; i < keys.length; i++) {
       var re = new RegExp('\\{\\{' + keys[i] + '\\}\\}', 'g')
-      result = result.replace(re, vars[keys[i]] || '')
+      var val = vars[keys[i]]
+      result = result.replace(re, val == null ? '' : String(val))
     }
-    // Clean unresolved vars
-    result = result.replace(/\{\{[^}]+\}\}/g, '')
-    return result
+    // 1. Limpa placeholders nao resolvidos
+    result = result.replace(/\{\{[^{}]+\}\}/g, '')
+    // 2. Remove delimitadores markdown orfaos (valor vazio entre eles)
+    result = result.replace(/\*\s*\*/g, '')
+    result = result.replace(/_\s*_/g,   '')
+    result = result.replace(/~\s*~/g,   '')
+    // 3. Espacos antes de pontuacao
+    result = result.replace(/[ \t]+([.,;:!?])/g, '$1')
+    // 4. Colapsa espacos/tabs multiplos
+    result = result.replace(/[ \t]{2,}/g, ' ')
+    // 5. Colapsa quebras de linha (>=3) em 2
+    result = result.replace(/\n{3,}/g, '\n\n')
+    // 6. Trim por linha
+    result = result.replace(/[ \t]+\n/g, '\n')
+    result = result.replace(/\n[ \t]+/g, '\n')
+    // 7. Trim final
+    return result.trim()
   }
 
   // ── Constants ──────────────────────────────────────────────
