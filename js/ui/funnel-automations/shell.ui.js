@@ -104,6 +104,7 @@
       +   '</div>'
       +   '<div class="fa-top-actions">'
       +     '<button type="button" class="fa-btn-sec" data-action="show-lifecycle" title="Lifecycle — conversao por fase">' + _f('trendingUp', 14) + ' Lifecycle</button>'
+      +     '<button type="button" class="fa-btn-sec" data-action="show-d1tracking" title="Rastreamento SIM/NAO do D-1">' + _f('checkCircle', 14) + ' D-1 Tracking</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="show-deliverability" title="Entregabilidade (ultimos 30 dias)">' + _f('barChart2', 14) + ' Entregabilidade</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="export-json" title="Exportar regras desta fase como JSON">' + _f('download', 14) + ' Exportar</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="import-json" title="Importar regras de JSON">' + _f('upload', 14) + ' Importar</button>'
@@ -633,6 +634,7 @@
           return
         }
         if (a === 'show-lifecycle') { _showLifecycle(); return }
+        if (a === 'show-d1tracking') { _showD1Tracking(); return }
         if (a === 'show-template-library') {
           var cat = _activeModule || 'agendamento'
           S().showTemplateLibrary(cat, function(tpl) {
@@ -1107,6 +1109,148 @@
       + transitionsBlock
       + originBlock
       + '<div class="fa-lc-hint">' + _f('info', 11) + ' "Entradas" = leads que entraram na fase no periodo. "Atual" = leads que estao nela agora. "Tempo medio" = duracao tipica entre entrar e sair.</div>'
+  }
+
+  // ── D-1 Tracking (SIM/NAO) ──────────────────────────────────
+  function _showD1Tracking() {
+    var existing = document.getElementById('faD1TrackingModal')
+    if (existing) existing.remove()
+    var overlay = document.createElement('div')
+    overlay.id = 'faD1TrackingModal'
+    overlay.className = 'fa-modal-overlay'
+    overlay.innerHTML = '<div class="fa-modal fa-modal-d1" role="dialog">'
+      + '<div class="fa-modal-header">'
+      +   '<div class="fa-modal-title">' + _f('checkCircle', 16) + ' Rastreamento D-1 · SIM/NAO</div>'
+      +   '<button type="button" class="fa-btn-icon" data-d1-close>' + _f('x', 16) + '</button>'
+      + '</div>'
+      + '<div class="fa-d1-filters">'
+      +   '<label>Periodo'
+      +     '<select id="faD1Days">'
+      +       '<option value="7">Ultimos 7 dias</option>'
+      +       '<option value="30" selected>Ultimos 30 dias</option>'
+      +       '<option value="60">Ultimos 60 dias</option>'
+      +       '<option value="90">Ultimos 90 dias</option>'
+      +     '</select>'
+      +   '</label>'
+      + '</div>'
+      + '<div class="fa-modal-body"><div class="fa-d1-loading">Carregando metricas...</div></div>'
+      + '</div>'
+    document.body.appendChild(overlay)
+
+    function close() { overlay.remove() }
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) return close()
+      if (e.target.closest('[data-d1-close]')) return close()
+    })
+    overlay.querySelector('#faD1Days').addEventListener('change', function() {
+      _loadD1Tracking(parseInt(this.value, 10) || 30)
+    })
+    if (!window._faD1EscBound) {
+      window._faD1EscBound = true
+      document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return
+        var m = document.getElementById('faD1TrackingModal')
+        if (m) m.remove()
+      })
+    }
+
+    _loadD1Tracking(30)
+  }
+
+  async function _loadD1Tracking(days) {
+    var body = document.querySelector('#faD1TrackingModal .fa-modal-body')
+    if (!body) return
+    body.innerHTML = '<div class="fa-d1-loading">Carregando...</div>'
+    try {
+      if (!window._sbShared) throw new Error('Supabase indisponivel')
+      var res = await window._sbShared.rpc('sdr_d1_tracking_metrics', { p_days: days })
+      if (res.error) throw new Error(res.error.message)
+      var payload = res.data || {}
+      if (payload.ok === false) throw new Error(payload.error || 'Erro na RPC')
+      _renderD1Tracking(payload.data || {}, body)
+    } catch (e) {
+      body.innerHTML = '<div class="fa-d1-error">' + _f('alertCircle', 14) + ' Erro: ' + S().esc(e.message) + '</div>'
+    }
+  }
+
+  function _renderD1Tracking(data, body) {
+    var t = data.totals || {}
+    var daily = Array.isArray(data.daily) ? data.daily : []
+    var sent = Number(t.sent) || 0
+
+    if (!sent) {
+      body.innerHTML = '<div class="fa-d1-empty">' + _f('info', 14)
+        + ' Nenhum disparo D-1 registrado no periodo. Crie ou ative uma regra'
+        + ' <b>d_before</b> com <b>days=1</b> para comecar o rastreamento.</div>'
+      return
+    }
+
+    var confirmed = Number(t.confirmed) || 0
+    var declined = Number(t.declined) || 0
+    var silent = Number(t.silent) || 0
+    var responded = confirmed + declined
+    var respRate = sent ? Math.round((responded / sent) * 1000) / 10 : 0
+    var confRate = responded ? Math.round((confirmed / responded) * 1000) / 10 : 0
+    var avgHours = t.avg_response_hours != null ? Number(t.avg_response_hours).toFixed(1) + 'h' : '—'
+
+    var summary = '<div class="fa-d1-summary">'
+      + '<div class="fa-d1-stat"><div class="fa-d1-stat-label">Enviados</div><div class="fa-d1-stat-val">' + sent + '</div></div>'
+      + '<div class="fa-d1-stat"><div class="fa-d1-stat-label">Confirmaram</div><div class="fa-d1-stat-val" style="color:#10B981">' + confirmed + '</div></div>'
+      + '<div class="fa-d1-stat"><div class="fa-d1-stat-label">Recusaram</div><div class="fa-d1-stat-val" style="color:#DC2626">' + declined + '</div></div>'
+      + '<div class="fa-d1-stat"><div class="fa-d1-stat-label">Sem resposta</div><div class="fa-d1-stat-val" style="color:#94A3B8">' + silent + '</div></div>'
+      + '<div class="fa-d1-stat"><div class="fa-d1-stat-label">Taxa resposta</div><div class="fa-d1-stat-val">' + respRate + '%</div></div>'
+      + '<div class="fa-d1-stat"><div class="fa-d1-stat-label">Taxa confirmacao</div><div class="fa-d1-stat-val">' + confRate + '%</div></div>'
+      + '<div class="fa-d1-stat"><div class="fa-d1-stat-label">Tempo medio</div><div class="fa-d1-stat-val">' + avgHours + '</div></div>'
+      + '</div>'
+
+    // Stacked bar for overall
+    var pctConf = sent ? Math.round((confirmed / sent) * 100) : 0
+    var pctDecl = sent ? Math.round((declined / sent) * 100) : 0
+    var pctSilent = Math.max(0, 100 - pctConf - pctDecl)
+    var stack = '<div class="fa-d1-stacked">'
+      + '<div class="fa-d1-stacked-label">Distribuicao geral</div>'
+      + '<div class="fa-d1-stacked-bar">'
+      +   '<div class="fa-d1-stacked-seg" style="width:' + pctConf + '%;background:#10B981" title="Confirmaram ' + confirmed + '">' + (pctConf >= 8 ? pctConf + '%' : '') + '</div>'
+      +   '<div class="fa-d1-stacked-seg" style="width:' + pctDecl + '%;background:#DC2626" title="Recusaram ' + declined + '">' + (pctDecl >= 8 ? pctDecl + '%' : '') + '</div>'
+      +   '<div class="fa-d1-stacked-seg" style="width:' + pctSilent + '%;background:#CBD5E1;color:#475569" title="Sem resposta ' + silent + '">' + (pctSilent >= 8 ? pctSilent + '%' : '') + '</div>'
+      + '</div>'
+      + '<div class="fa-d1-stacked-legend">'
+      +   '<span><i style="background:#10B981"></i> Confirmaram</span>'
+      +   '<span><i style="background:#DC2626"></i> Recusaram</span>'
+      +   '<span><i style="background:#CBD5E1"></i> Sem resposta</span>'
+      + '</div>'
+      + '</div>'
+
+    // Daily breakdown
+    var dailyBlock = ''
+    if (daily.length) {
+      var rows = daily.map(function(d) {
+        var rConf = d.total ? Math.round((d.confirmed / d.total) * 100) : 0
+        var rDecl = d.total ? Math.round((d.declined / d.total) * 100) : 0
+        var rSil = Math.max(0, 100 - rConf - rDecl)
+        return '<tr>'
+          + '<td>' + S().esc(d.date) + '</td>'
+          + '<td class="fa-d1-num">' + d.total + '</td>'
+          + '<td class="fa-d1-num" style="color:#10B981">' + d.confirmed + '</td>'
+          + '<td class="fa-d1-num" style="color:#DC2626">' + d.declined + '</td>'
+          + '<td class="fa-d1-num" style="color:#94A3B8">' + d.silent + '</td>'
+          + '<td><div class="fa-d1-bar">'
+          +   '<div style="width:' + rConf + '%;background:#10B981"></div>'
+          +   '<div style="width:' + rDecl + '%;background:#DC2626"></div>'
+          +   '<div style="width:' + rSil + '%;background:#CBD5E1"></div>'
+          + '</div></td>'
+          + '</tr>'
+      }).join('')
+      dailyBlock = '<div class="fa-d1-section-title">Por dia da consulta</div>'
+        + '<table class="fa-d1-table"><thead>'
+        +   '<tr><th>Data</th><th>Enviados</th><th>Conf</th><th>Rec</th><th>Silent</th><th>Distribuicao</th></tr>'
+        + '</thead><tbody>' + rows + '</tbody></table>'
+    }
+
+    body.innerHTML = summary + stack + dailyBlock
+      + '<div class="fa-d1-hint">' + _f('info', 11)
+      + ' Resposta capturada automaticamente via trigger <b>wa_auto_confirm_appointment</b> (SIM/NAO/CONFIRMO/CANCELAR).'
+      + ' Atualiza <code>appointments.d1_response</code> + status da consulta.</div>'
   }
 
   // ── Duplicar regra ──────────────────────────────────────────
