@@ -1261,6 +1261,19 @@ function _buildFinModal(id, appt) {
           </div>
         </div>
 
+          <!-- Bloco fallback: Consentimento do Procedimento -->
+          <div id="finConsentBlock" style="background:#FEF3C7;padding:11px 13px;border-radius:10px;border:1px solid #FCD34D">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#92400E"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              <span style="font-size:10px;font-weight:800;color:#92400E;text-transform:uppercase;letter-spacing:.04em">Consentimento do Procedimento</span>
+            </div>
+            <div style="font-size:11px;color:#78350F;line-height:1.45;margin-bottom:8px">Agora enviado no <b>check-in (na clinica)</b>. Se o paciente pulou esse status, use o fallback:</div>
+            <button type="button" id="finConsentBtn" onclick="_finSendConsentProc('${id}')" style="width:100%;padding:8px 12px;background:#F59E0B;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Enviar consentimento agora
+            </button>
+          </div>
+
           <!-- Queixas do paciente -->
           <div id="finComplaintsSection" style="margin-bottom:12px">
             <label style="font-size:10px;font-weight:700;color:#7C3AED;display:block;margin-bottom:6px">QUEIXAS TRATADAS NESTA CONSULTA</label>
@@ -1453,6 +1466,39 @@ function removeFinProc(i) {
   document.getElementById('finProcList').innerHTML = _renderFinProcs()
   _finUpdateTotal()
   _finAutoRoute()
+}
+
+// Fallback: envia consentimento do procedimento do modal de finalizacao.
+// Usado quando paciente pulou na_clinica (que dispara o envio automatico).
+function _finSendConsentProc(apptId) {
+  var appts = []
+  try { appts = JSON.parse(localStorage.getItem('clinicai_appointments') || '[]') } catch(e) {}
+  var appt = appts.find(function(a) { return a.id === apptId })
+  if (!appt) {
+    if (window._showToast) window._showToast('Erro', 'Agendamento nao encontrado', 'error')
+    return
+  }
+  if (_consentRecent(apptId, 'procedimento')) {
+    if (window._showToast) window._showToast('Ja enviado', 'Consentimento enviado recentemente (aguarde 10min pra reenviar)', 'info')
+    return
+  }
+  // Estado visual: disabled + texto de envio
+  var btn = document.getElementById('finConsentBtn')
+  if (btn) {
+    btn.disabled = true
+    btn.style.opacity = '0.7'
+    btn.style.cursor = 'default'
+    btn.innerHTML = '<span style="font-size:11px">Enviando...</span>'
+  }
+  _enviarConsentimento(appt, 'procedimento')
+  // _enviarConsentimento e fire-and-forget (promise interna). Aguarda um tick
+  // pro toast aparecer e reflete estado "enviado".
+  setTimeout(function() {
+    if (btn) {
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Consentimento enviado'
+      btn.style.background = '#10B981'
+    }
+  }, 400)
 }
 
 // Auto-route logic:
@@ -2202,7 +2248,9 @@ function confirmFinalize(id) {
     }
   }
 
-  // Consent. procedimento: coberto pela regra on_finalize em wa_agenda_automations (editavel pelo Funil).
+  // Consent. procedimento: agora coberto pela regra on_status='na_clinica' em wa_agenda_automations
+  // (movido de on_finalize pra DURING em 17/04). Fallback disponivel no modal finalize via botao
+  // "Enviar consentimento agora" (_finSendConsentProc) quando paciente pulou o check-in.
   // Consent. pagamento: segue hardcoded (sem equivalente no banco — condicional a forma=boleto/parcelado/entrada_saldo).
   if (['boleto','parcelado','entrada_saldo'].includes(forma)) {
     _enviarConsentimento(apptFinal, 'pagamento')
@@ -2453,6 +2501,7 @@ window.finUpdateBalance       = finUpdateBalance
 window.finProcAutoPrice       = finProcAutoPrice
 window.finProcDesconto        = finProcDesconto
 window._finAutoRoute          = _finAutoRoute
+window._finSendConsentProc    = _finSendConsentProc
 window.finPayChanged          = finPayChanged
 window.finCredChanged         = finCredChanged
 window.finCredCalc            = finCredCalc
