@@ -59,6 +59,40 @@
     }
   }
 
+  function _buildCardUrl(partner) {
+    if (window.VPIEngine && typeof VPIEngine.cardUrl === 'function') {
+      return VPIEngine.cardUrl(partner)
+    }
+    if (!partner || !partner.card_token) return ''
+    var base = (window.ClinicEnv && window.ClinicEnv.DASHBOARD_URL) ||
+               (window.location && window.location.origin) || ''
+    base = String(base).replace(/\/+$/, '')
+    return base + '/public_embaixadora.html?token=' + encodeURIComponent(partner.card_token)
+  }
+
+  function _openCard(id) {
+    var btn = document.getElementById('vpiOpenCardBtn')
+    if (btn && btn.dataset && btn.dataset.url) {
+      window.open(btn.dataset.url, '_blank', 'noopener')
+    }
+  }
+
+  async function _copyLink(id) {
+    var btn = document.getElementById('vpiCopyLinkBtn')
+    if (!btn || !btn.dataset) return
+    var url = btn.dataset.url
+    if (!url) return
+    try {
+      await navigator.clipboard.writeText(url)
+      if (window._showToast) _showToast('Link', 'Copiado para a area de transferencia', 'success')
+      var orig = btn.innerHTML
+      btn.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copiado'
+      setTimeout(function () { if (btn) btn.innerHTML = orig }, 1800)
+    } catch (_) {
+      prompt('Copie o link abaixo:', url)
+    }
+  }
+
   async function _sendReativacao(id) {
     if (!confirm('Enviar WhatsApp de reativacao (criterio injetavel expirado) para esta parceira?')) return
     var sb = window._sbShared
@@ -181,6 +215,8 @@
         ? { bg:'#FEF3C7', cl:'#92400E', tx:'Convidado' }
         : { bg:'#FEF2F2', cl:'#991B1B', tx:'Inativo' }
 
+    var cardUrl = _buildCardUrl(p)
+
     var origemLabel = p.origem === 'auto'
       ? '<span style="background:#EFF6FF;color:#1D4ED8;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Auto-enroll</span>'
       : '<span style="background:#F5F3FF;color:#6D28D9;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">Manual</span>'
@@ -213,17 +249,29 @@
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px'
     overlay.innerHTML =
       '<div style="background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
-        '<div style="padding:20px 24px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between">' +
-          '<div style="display:flex;align-items:center;gap:12px">' +
-            '<div style="width:44px;height:44px;border-radius:50%;background:#F5F3FF;color:#7C3AED;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">' + _esc(initials) + '</div>' +
-            '<div>' +
-              '<div style="font-size:16px;font-weight:700;color:#111">' + _esc(p.nome) + '</div>' +
+        '<div style="padding:20px 24px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
+          '<div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">' +
+            '<div style="width:44px;height:44px;border-radius:50%;background:#F5F3FF;color:#7C3AED;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex:0 0 auto">' + _esc(initials) + '</div>' +
+            '<div style="min-width:0">' +
+              '<div style="font-size:16px;font-weight:700;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(p.nome) + '</div>' +
               '<div style="font-size:12px;color:#9CA3AF">' + _esc(p.profissao || '—') + (p.cidade ? ' &middot; ' + _esc(p.cidade) : '') + '</div>' +
             '</div>' +
           '</div>' +
-          '<button onclick="VPIPartnerModal.close()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;padding:4px">' +
-            '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
-          '</button>' +
+          '<div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">' +
+            (cardUrl
+              ? '<button id="vpiOpenCardBtn" data-url="' + _esc(cardUrl) + '" onclick="VPIPartnerModal.openCard(\'' + _esc(p.id) + '\')" title="Abrir cartao publico em nova aba" style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1.5px solid #DDD6FE;border-radius:8px;background:#fff;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">' +
+                  '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+                  'Abrir cartao' +
+                '</button>' +
+                '<button id="vpiCopyLinkBtn" data-url="' + _esc(cardUrl) + '" onclick="VPIPartnerModal.copyLink(\'' + _esc(p.id) + '\')" title="Copiar link" style="display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;background:#fff;color:#374151;font-size:11px;font-weight:700;cursor:pointer">' +
+                  '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+                  'Copiar link' +
+                '</button>'
+              : '<span title="Cartao ainda nao gerado (sem card_token)" style="font-size:10px;color:#9CA3AF;padding:6px 10px;border-radius:6px;background:#F9FAFB">Cartao nao disponivel</span>') +
+            '<button onclick="VPIPartnerModal.close()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;padding:4px">' +
+              '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
+            '</button>' +
+          '</div>' +
         '</div>' +
 
         '<div style="padding:20px 24px">' +
@@ -290,5 +338,7 @@
     close:           _close,
     recompute:       _recompute,
     sendReativacao:  _sendReativacao,
+    openCard:        _openCard,
+    copyLink:        _copyLink,
   }
 })()

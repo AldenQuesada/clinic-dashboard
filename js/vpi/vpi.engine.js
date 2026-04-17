@@ -285,5 +285,7 @@
     closeIndication:     closeIndication,
     scheduleInviteWA:    scheduleInviteWA,
     checkHighPerformance: checkHighPerformance,
+    cardUrl:             _cardUrl,
+    ensureShortLink:     _ensureShortLink,
   }
 })()
