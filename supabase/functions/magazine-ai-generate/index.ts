@@ -24,7 +24,9 @@
  */
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')!
-const MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-sonnet-4-6'
+// Haiku 4.5 = rapido + barato pra campos individuais (titulo, lede, corpo curto).
+// Use ANTHROPIC_MODEL env var pra overrride (ex: Sonnet pra geracao complexa).
+const MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-haiku-4-5-20251001'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
