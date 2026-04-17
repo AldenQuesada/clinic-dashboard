@@ -34,7 +34,7 @@
     switch (status) {
       case 'closed':       return 'fechada'
       case 'pending_close': return 'em andamento'
-      case 'invalid':      return 'invalida'
+      case 'invalid':      return 'inválida'
       default:             return status || ''
     }
   }
@@ -43,8 +43,8 @@
     if (!items || !items.length) {
       return '<div class="vpi-tl-empty">' +
         '<strong>Comece agora</strong>' +
-        'Sua jornada de embaixadora comeca com a primeira indicacao.<br>' +
-        'Cada amiga que fechar um procedimento gera creditos no seu cartao.' +
+        'Sua jornada de embaixadora começa com a primeira indicação.<br>' +
+        'Cada amiga que fechar um procedimento gera créditos no seu cartão.' +
       '</div>'
     }
     return items.map(function (i) {
@@ -53,7 +53,7 @@
       return '<div class="vpi-tl-item" data-status="' + _esc(i.status) + '">' +
         '<div class="vpi-tl-dot ' + (closed ? '' : 'pending') + '"></div>' +
         '<div class="vpi-tl-body">' +
-          '<div class="vpi-tl-proc">' + _esc(i.procedimento || 'Indicacao') + '</div>' +
+          '<div class="vpi-tl-proc">' + _esc(i.procedimento || 'Indicação') + '</div>' +
           '<div class="vpi-tl-date">' + date + ' - ' + _statusLabel(i.status) + '</div>' +
         '</div>' +
         '<div class="vpi-tl-credits">+' + (i.creditos || 0) + '</div>' +

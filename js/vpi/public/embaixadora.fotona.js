@@ -20,10 +20,10 @@
     { id: 'smooth_eyes', label: 'Smooth Eyes', desc: 'Tratamento de olheiras profundas' },
     { id: 'nx_runner',   label: 'NX Runner',   desc: 'Peeling laser de rejuvenescimento' },
     { id: 'estrias',     label: 'Estrias',     desc: 'Laser para estrias recentes e antigas' },
-    { id: 'capilar',     label: 'Capilar',     desc: 'Laser para estimulo capilar' },
-    { id: 'intimo',      label: 'Intimo',      desc: 'Rejuvenescimento intimo feminino' },
-    { id: 'depilacao',   label: 'Depilacao',   desc: 'Depilacao a laser' },
-    { id: 'generico',    label: 'Generico',    desc: 'Outro protocolo Fotona 4D' },
+    { id: 'capilar',     label: 'Capilar',     desc: 'Laser para estímulo capilar' },
+    { id: 'intimo',      label: 'Íntimo',      desc: 'Rejuvenescimento íntimo feminino' },
+    { id: 'depilacao',   label: 'Depilação',   desc: 'Depilação a laser' },
+    { id: 'generico',    label: 'Genérico',    desc: 'Outro protocolo Fotona 4D' },
   ]
 
   function _esc(s) {
@@ -73,15 +73,15 @@
         '<h3 style="margin:0;font-size:15px;font-weight:700;color:#111">Minhas Recompensas Fotona</h3>' +
       '</div>' +
       '<div style="font-size:12px;color:#6B7280;margin-bottom:14px">' +
-        'Voce tem ' + desbloqueadas + ' de ' + TOTAL + ' Fotonas 4D desbloqueadas este ano.' +
+        'Você tem ' + desbloqueadas + ' de ' + TOTAL + ' Fotonas 4D desbloqueadas este ano.' +
       '</div>' +
       '<div class="vpi-fotona-list" style="display:flex;flex-direction:column;gap:10px">'
 
     for (var i = 1; i <= TOTAL; i++) {
       var locked = i > desbloqueadas
       var used   = _isNumberUsed(i)
-      var label  = i === 1 ? '1a Fotona (5 ind.)' : i === 2 ? '2a Fotona (10 ind.)' : '3a Fotona (15 ind.)'
-      var statusLabel = locked ? 'Bloqueada' : used ? 'Utilizada' : 'Disponivel'
+      var label  = i === 1 ? '1ª Fotona (5 ind.)' : i === 2 ? '2ª Fotona (10 ind.)' : '3ª Fotona (15 ind.)'
+      var statusLabel = locked ? 'Bloqueada' : used ? 'Utilizada' : 'Disponível'
       var statusCol   = locked ? '#9CA3AF' : used ? '#6B7280' : '#059669'
 
       html += '<div style="padding:12px;border:1px solid ' + (locked ? '#F3F4F6' : used ? '#F3F4F6' : '#BBF7D0') + ';border-radius:10px;background:' + (locked ? '#FAFAFA' : used ? '#F9FAFB' : '#F0FDF4') + '">' +
@@ -114,7 +114,7 @@
       '<div style="display:flex;flex-direction:column;gap:12px">' +
         '<label style="display:flex;flex-direction:column;gap:4px">' +
           '<span style="font-size:11px;font-weight:700;color:#374151">Para outra embaixadora (token):</span>' +
-          '<input id="vpiFotTokenDest" type="text" placeholder="Cole o token do cartao dela" style="padding:9px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none"/>' +
+          '<input id="vpiFotTokenDest" type="text" placeholder="Cole o token do cartão dela" style="padding:9px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none"/>' +
         '</label>' +
         '<div style="font-size:10px;color:#9CA3AF;text-align:center">— OU —</div>' +
         '<label style="display:flex;flex-direction:column;gap:4px">' +
@@ -151,7 +151,7 @@
         if (res.error) throw new Error(res.error.message)
         var d = res.data || {}
         if (!d.ok) {
-          alert('Nao consegui transferir: ' + (d.reason || 'erro'))
+          alert('Não consegui transferir: ' + (d.reason || 'erro'))
           btn.disabled = false; btn.textContent = 'Transferir agora'
           return
         }
@@ -203,7 +203,7 @@
         if (res.error) throw new Error(res.error.message)
         var d = res.data || {}
         if (!d.ok) {
-          alert('Nao consegui trocar: ' + (d.reason || 'erro'))
+          alert('Não consegui trocar: ' + (d.reason || 'erro'))
           btn.disabled = false; btn.textContent = 'Trocar agora'
           return
         }

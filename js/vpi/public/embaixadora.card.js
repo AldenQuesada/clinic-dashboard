@@ -64,11 +64,11 @@
   }
 
   function _nextTierText(next) {
-    if (!next) return '<strong>Maximo atingido</strong><span>Voce desbloqueou todos os tiers</span>'
+    if (!next) return '<strong>Máximo atingido</strong><span>Você desbloqueou todos os tiers</span>'
     var faltam = next.faltam || 0
     var reward = _esc(next.recompensa || 'Recompensa exclusiva')
-    return '<strong>Proxima: ' + reward + '</strong>' +
-           '<span>Faltam ' + faltam + ' ' + (faltam === 1 ? 'indicacao fechada' : 'indicacoes fechadas') + '</span>'
+    return '<strong>Próxima: ' + reward + '</strong>' +
+           '<span>Faltam ' + faltam + ' ' + (faltam === 1 ? 'indicação fechada' : 'indicações fechadas') + '</span>'
   }
 
   function _progressPct(partner, next) {
@@ -114,7 +114,7 @@
         '<div class="vpi-card-flip" id="vpi-card-flip">' +
           // FRONT
           '<div class="vpi-card-face front tier-' + _esc(tier) + '">' +
-            '<div class="vpi-logo-slot">Cartao Digital<span class="sub">Clinica Mirian de Paula</span></div>' +
+            '<div class="vpi-logo-slot">Cartão Digital<span class="sub">Clínica Mirian de Paula</span></div>' +
             '<div class="vpi-avatar-wrap"><div class="vpi-avatar">' + avatar + '</div></div>' +
             '<h1 class="vpi-name">' + _esc(p.nome) + '</h1>' +
             '<div class="vpi-tier-label">' + _tierLabel(tier) + '</div>' +
@@ -131,7 +131,7 @@
                 '</svg>' +
                 '<div class="vpi-progress-center">' +
                   '<div class="big">' + (p.creditos_total || 0) + '</div>' +
-                  '<div class="small">creditos</div>' +
+                  '<div class="small">créditos</div>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -147,17 +147,17 @@
                 _ico('heart', 16) + 'Indicar uma amiga' +
               '</button>' +
               '<button class="vpi-btn vpi-btn-secondary" id="vpi-btn-share">' +
-                _ico('share-2', 16) + 'Compartilhar meu cartao' +
+                _ico('share-2', 16) + 'Compartilhar meu cartão' +
               '</button>' +
             '</div>' +
 
-            '<div class="vpi-flip-hint">' + _ico('refresh-cw', 10) + '&nbsp;Toque para ver historico</div>' +
+            '<div class="vpi-flip-hint">' + _ico('refresh-cw', 10) + '&nbsp;Toque para ver histórico</div>' +
           '</div>' +
 
           // BACK
           '<div class="vpi-card-face back tier-' + _esc(tier) + '">' +
-            '<div class="vpi-back-title">Suas Indicacoes</div>' +
-            '<div class="vpi-back-sub">Historico completo</div>' +
+            '<div class="vpi-back-title">Suas Indicações</div>' +
+            '<div class="vpi-back-sub">Histórico completo</div>' +
             '<div class="vpi-timeline" id="vpi-timeline">' + _renderTimeline(data.indications || []) + '</div>' +
             '<div id="vpi-qr-slot"></div>' +
             '<div class="vpi-flip-hint">' + _ico('rotate-ccw', 10) + '&nbsp;Toque para voltar</div>' +
@@ -207,8 +207,8 @@
     if (!items || !items.length) {
       return '<div class="vpi-tl-empty">' +
         '<strong>Comece agora</strong>' +
-        'Sua jornada de embaixadora comeca com a primeira indicacao.<br>' +
-        'Cada amiga que fechar um procedimento gera creditos no seu cartao.' +
+        'Sua jornada de embaixadora começa com a primeira indicação.<br>' +
+        'Cada amiga que fechar um procedimento gera créditos no seu cartão.' +
       '</div>'
     }
     return items.map(function (i) {
@@ -217,7 +217,7 @@
       return '<div class="vpi-tl-item">' +
         '<div class="vpi-tl-dot ' + (closed ? '' : 'pending') + '"></div>' +
         '<div class="vpi-tl-body">' +
-          '<div class="vpi-tl-proc">' + _esc(i.procedimento || 'Indicacao') + '</div>' +
+          '<div class="vpi-tl-proc">' + _esc(i.procedimento || 'Indicação') + '</div>' +
           '<div class="vpi-tl-date">' + date + (closed ? ' - fechada' : ' - pendente') + '</div>' +
         '</div>' +
         '<div class="vpi-tl-credits">+' + (i.creditos || 0) + '</div>' +
@@ -242,7 +242,7 @@
         if (window.VPIEmbIndicate && window.VPIEmbIndicate.open) {
           window.VPIEmbIndicate.open()
         } else {
-          _app().toast('Em breve: envie sua indicacao pelo WhatsApp da clinica.')
+          _app().toast('Em breve: envie sua indicação pelo WhatsApp da clínica.')
         }
       })
     }
@@ -267,7 +267,7 @@
         if (window.VPIEmbOptOut && window.VPIEmbOptOut.openModal) {
           window.VPIEmbOptOut.openModal()
         } else if (_app()) {
-          _app().toast('Modulo de opt-out nao carregou. Fale com a clinica.')
+          _app().toast('Módulo de opt-out não carregou. Fale com a clínica.')
         }
       })
     }
@@ -276,7 +276,7 @@
   function _fallbackShare() {
     var url = window.location.href
     if (navigator.share) {
-      navigator.share({ title: 'Meu cartao de embaixadora', url: url }).catch(function () {})
+      navigator.share({ title: 'Meu cartão de embaixadora', url: url }).catch(function () {})
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(function () {
         _app().toast('Link copiado')

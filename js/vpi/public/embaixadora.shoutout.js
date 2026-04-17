@@ -45,10 +45,10 @@
       // Sem lider (mes ainda sem indicacoes fechadas): mostra call-to-action sutil
       slot.innerHTML =
         '<div class="vpi-shoutout">' +
-          '<div class="vpi-shoutout-kicker">Embaixadora do mes</div>' +
+          '<div class="vpi-shoutout-kicker">Embaixadora do mês</div>' +
           '<div class="vpi-shoutout-crown">' + _ico('award', 32) + '</div>' +
-          '<div class="vpi-shoutout-name">Ainda nao definida</div>' +
-          '<div class="vpi-shoutout-stats">Seja voce a primeira a indicar este mes.</div>' +
+          '<div class="vpi-shoutout-name">Ainda não definida</div>' +
+          '<div class="vpi-shoutout-stats">Seja você a primeira a indicar este mês.</div>' +
         '</div>'
       if (window.feather && window.feather.replace) {
         try { window.feather.replace() } catch (_) {}
@@ -75,21 +75,21 @@
     slot.innerHTML =
       '<div class="vpi-shoutout">' +
         '<div class="vpi-shoutout-kicker">' +
-          (isSelfLeader ? 'Voce e a embaixadora do mes' : 'Embaixadora do mes') +
+          (isSelfLeader ? 'Você é a embaixadora do mês' : 'Embaixadora do mês') +
         '</div>' +
         '<div class="vpi-shoutout-crown">' + _ico('award', 32) + '</div>' +
         '<div class="vpi-shoutout-name">' + _esc(l.nome) + '</div>' +
-        '<div class="vpi-shoutout-stats">' + (l.qtd || 0) + ' indicacoes fechadas este mes</div>' +
+        '<div class="vpi-shoutout-stats">' + (l.qtd || 0) + ' indicações fechadas este mês</div>' +
         (isSelfLeader
-          ? '<div class="vpi-shoutout-self">Parabens! Compartilhe essa conquista com suas amigas.</div>' +
+          ? '<div class="vpi-shoutout-self">Parabéns! Compartilhe essa conquista com suas amigas.</div>' +
             '<div style="margin-top:12px">' +
               '<button class="vpi-btn vpi-btn-primary" id="vpi-shoutout-share">' +
                 _ico('share-2', 16) + ' Compartilhar conquista' +
               '</button>' +
             '</div>'
           : (_state.self_pos
-              ? '<div class="vpi-shoutout-self">Sua posicao: #' + _state.self_pos +
-                ' com ' + _state.self_qtd + ' indicacao' + (_state.self_qtd === 1 ? '' : 'es') + '</div>'
+              ? '<div class="vpi-shoutout-self">Sua posição: #' + _state.self_pos +
+                ' com ' + _state.self_qtd + ' indicação' + (_state.self_qtd === 1 ? '' : 'ões') + '</div>'
               : '')
         ) +
         rankingHtml +

@@ -275,8 +275,8 @@
           if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'cartao.png', { type: 'image/png' })] })) {
             await navigator.share({
               files: [new File([blob], 'cartao.png', { type: 'image/png' })],
-              title: 'Meu cartao de embaixadora',
-              text:  'Sou embaixadora oficial da Clinica Mirian de Paula',
+              title: 'Meu cartão de embaixadora',
+              text:  'Sou embaixadora oficial da Clínica Mirian de Paula',
             })
             resolve(true)
             return
@@ -293,7 +293,7 @@
   async function openModal() {
     if (document.getElementById('vpi-story-modal')) return
     var d = _data()
-    if (!d || !d.partner) { if (_app()) _app().toast('Cartao ainda carregando.'); return }
+    if (!d || !d.partner) { if (_app()) _app().toast('Cartão ainda carregando.'); return }
 
     var bg = document.createElement('div')
     bg.className = 'vpi-modal-backdrop'
@@ -301,7 +301,7 @@
     bg.innerHTML =
       '<div class="vpi-modal">' +
         '<h3>Story para Instagram</h3>' +
-        '<p class="sub">Imagem 1080x1920 pronta pra postar. Salve ou compartilhe direto.</p>' +
+        '<p class="sub">Imagem 1080×1920 pronta pra postar. Salve ou compartilhe direto.</p>' +
         '<div style="text-align:center;padding:8px 0">' +
           '<div class="vpi-loading"><div class="spinner"></div><div>Gerando sua imagem...</div></div>' +
           '<div id="vpi-story-preview" style="display:none"></div>' +
@@ -331,7 +331,7 @@
 
     var canvas = await generate()
     if (!canvas) {
-      loading.innerHTML = '<div>Nao foi possivel gerar a imagem.</div>'
+      loading.innerHTML = '<div>Não foi possível gerar a imagem.</div>'
       return
     }
     loading.style.display = 'none'

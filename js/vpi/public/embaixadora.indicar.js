@@ -15,7 +15,7 @@
 
   var PROCEDIMENTOS = [
     { v: 'Botox',          l: 'Botox' },
-    { v: 'Labios',         l: 'Labios / Preenchimento' },
+    { v: 'Labios',         l: 'Lábios / Preenchimento' },
     { v: 'Olheiras',       l: 'Olheiras' },
     { v: 'Bioestimulador', l: 'Bioestimulador' },
     { v: 'Full Face',      l: 'Full Face' },
@@ -78,7 +78,7 @@
     bg.innerHTML =
       '<div class="vpi-modal" role="document">' +
         '<h3>Indicar amiga</h3>' +
-        '<p class="sub">Nossa equipe entra em contato com ela com cuidado. Voce ganha creditos quando o procedimento fechar.</p>' +
+        '<p class="sub">Nossa equipe entra em contato com ela com cuidado. Você ganha créditos quando o procedimento fechar.</p>' +
         '<form id="vpi-ind-form" novalidate>' +
           '<div class="vpi-field">' +
             '<label for="vpi-ind-nome">Nome completo</label>' +
@@ -102,7 +102,7 @@
           '<div class="vpi-modal-actions">' +
             '<button type="button" class="vpi-btn vpi-btn-secondary" id="vpi-ind-cancel">Cancelar</button>' +
             '<button type="submit" class="vpi-btn vpi-btn-primary" id="vpi-ind-submit">' +
-              _ico('send', 16) + ' Enviar indicacao' +
+              _ico('send', 16) + ' Enviar indicação' +
             '</button>' +
           '</div>' +
         '</form>' +
@@ -140,12 +140,12 @@
       var proc  = form.procedimento.value
 
       if (!nome) { _showErr('Informe o nome.'); return }
-      if (phone.length < 10) { _showErr('Telefone invalido. Inclua DDD.'); return }
-      if (!_isValidEmail(email)) { _showErr('Email invalido.'); return }
+      if (phone.length < 10) { _showErr('Telefone inválido. Inclua DDD.'); return }
+      if (!_isValidEmail(email)) { _showErr('Email inválido.'); return }
 
       var sb = _sb()
       var token = _app() && _app().getToken()
-      if (!sb || !token) { _showErr('Conexao indisponivel. Tente novamente.'); return }
+      if (!sb || !token) { _showErr('Conexão indisponível. Tente novamente.'); return }
 
       btnSub.disabled = true
       btnSub.innerHTML = _ico('loader', 16) + ' Enviando...'
@@ -159,17 +159,17 @@
         var d = r.data || {}
         if (d.error) {
           if (d.error === 'rate_limit') {
-            _showErr('Voce ja indicou muitas amigas agora. Aguarde ' +
+            _showErr('Você já indicou muitas amigas agora. Aguarde ' +
                      (d.retry_after_minutes || 60) + ' min e tente novamente.')
           } else if (d.error === 'invalid_phone') {
-            _showErr('Telefone invalido.')
+            _showErr('Telefone inválido.')
           } else if (d.error === 'invalid_input') {
             _showErr(d.detail || 'Dados incompletos.')
           } else {
-            _showErr('Nao conseguimos salvar. Tente novamente em instantes.')
+            _showErr('Não conseguimos salvar. Tente novamente em instantes.')
           }
           btnSub.disabled = false
-          btnSub.innerHTML = _ico('send', 16) + ' Enviar indicacao'
+          btnSub.innerHTML = _ico('send', 16) + ' Enviar indicação'
           return
         }
 
@@ -177,14 +177,14 @@
         if (window.VPIEmbConfetti && window.VPIEmbConfetti.fire) {
           window.VPIEmbConfetti.fire({ tier: _tierCurrent(), count: 140, duration: 3200 })
         }
-        if (_app()) _app().toast('Indicacao enviada! Em breve entraremos em contato com ' + nome.split(' ')[0])
-        // Refresh cartao pra mostrar a indicacao pendente na timeline
+        if (_app()) _app().toast('Indicação enviada! Em breve entraremos em contato com ' + nome.split(' ')[0])
+        // Refresh cartão pra mostrar a indicação pendente na timeline
         if (_app() && _app().refresh) _app().refresh()
       } catch (err) {
         console.warn('[VPIEmbIndicar] submit fail:', err && err.message)
-        _showErr('Erro ao enviar. Verifique sua conexao.')
+        _showErr('Erro ao enviar. Verifique sua conexão.')
         btnSub.disabled = false
-        btnSub.innerHTML = _ico('send', 16) + ' Enviar indicacao'
+        btnSub.innerHTML = _ico('send', 16) + ' Enviar indicação'
       }
     })
 

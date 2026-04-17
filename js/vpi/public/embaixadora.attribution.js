@@ -90,7 +90,7 @@
       var topBadge = isTop10
         ? '<div style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 12px;background:linear-gradient(135deg,#FBBF24,#F59E0B);color:#78350F;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.04em">' +
             '<svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5 2 7.5L12 17l-6.5 4 2-7.5L2 9h7z"/></svg>' +
-            'VOCE ESTA NO TOP 10%' +
+            'VOCÊ ESTÁ NO TOP 10%' +
           '</div>'
         : ''
 
@@ -98,12 +98,12 @@
         '<div class="vpi-attr" style="background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(5,150,105,0.06));border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:18px;margin:12px auto;max-width:380px;color:#fff">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
             '<svg width="18" height="18" fill="none" stroke="#34D399" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' +
-            '<h3 style="margin:0;font-size:14px;font-weight:700;color:#fff">Sua Atribuicao</h3>' +
-            '<span style="margin-left:auto;font-size:10px;color:#A7F3D0;text-transform:uppercase;letter-spacing:.08em">Ultimos 30d</span>' +
+            '<h3 style="margin:0;font-size:14px;font-weight:700;color:#fff">Sua Atribuição</h3>' +
+            '<span style="margin-left:auto;font-size:10px;color:#A7F3D0;text-transform:uppercase;letter-spacing:.08em">Últimos 30d</span>' +
           '</div>' +
 
           '<div style="text-align:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:14px">' +
-            '<div style="font-size:11px;color:#A7F3D0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Voce gerou em receita</div>' +
+            '<div style="font-size:11px;color:#A7F3D0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Você gerou em receita</div>' +
             '<div id="vpi-attr-valor" style="font-size:36px;font-weight:800;color:#fff;line-height:1">' + _fmtBRL(0) + '</div>' +
             topBadge +
           '</div>' +

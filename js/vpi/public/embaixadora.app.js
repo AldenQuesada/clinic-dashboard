@@ -174,7 +174,7 @@
       var cached = _cacheGet(token)
       if (cached && cached.data) {
         _setState({ data: cached.data, error: null, loading: false, isOffline: true })
-        _toast('Modo offline - atualizado ha ' + _minutesAgo(cached.ts) + 'min')
+        _toast('Modo offline — atualizado há ' + _minutesAgo(cached.ts) + 'min')
       } else {
         _setState({ error: r.error, loading: false, data: null })
       }
@@ -201,7 +201,7 @@
     var token = _getToken()
     if (!token) {
       _setState({ loading: false, error: 'missing_token' })
-      _renderError('Link invalido', 'O endereco usado nao contem um token de cartao.')
+      _renderError('Link inválido', 'O endereço usado não contém um token de cartão.')
       return
     }
     _setState({ token: token, loading: true })
@@ -222,11 +222,11 @@
     }
 
     if (_state.error === 'not_found') {
-      _renderError('Cartao nao encontrado', 'Este link expirou ou foi desativado. Fale com a clinica.')
+      _renderError('Cartão não encontrado', 'Este link expirou ou foi desativado. Fale com a clínica.')
       return
     }
     if (_state.error && !_state.data) {
-      _renderError('Nao conseguimos carregar seu cartao', 'Verifique sua conexao e tente novamente.')
+      _renderError('Não conseguimos carregar seu cartão', 'Verifique sua conexão e tente novamente.')
       return
     }
 

@@ -58,12 +58,12 @@
 
     slot.innerHTML =
       '<div class="vpi-impact">' +
-        '<div class="vpi-impact-kicker">Nossas embaixadoras ja indicaram</div>' +
+        '<div class="vpi-impact-kicker">Nossas embaixadoras já indicaram</div>' +
         '<div class="vpi-impact-counter" id="vpi-impact-valor">R$ 0</div>' +
         '<div class="vpi-impact-desc">' +
-          'Em <strong id="vpi-impact-ano">0</strong> indicacoes fechadas em ' + (d.ano_ref || '') + ',' +
+          'Em <strong id="vpi-impact-ano">0</strong> indicações fechadas em ' + (d.ano_ref || '') + ',' +
           ' por <strong id="vpi-impact-emb">0</strong> embaixadoras ativas.<br>' +
-          '<span style="opacity:0.8">Voce faz parte desse movimento.</span>' +
+          '<span style="opacity:0.8">Você faz parte desse movimento.</span>' +
         '</div>' +
       '</div>'
 

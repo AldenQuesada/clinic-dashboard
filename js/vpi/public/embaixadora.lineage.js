@@ -104,8 +104,8 @@
           '</div>' +
 
           '<div style="margin-top:14px;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:10px;font-size:11px;color:#DDD6FE;line-height:1.5">' +
-            'A cada indicacao das suas filhas voce ganha *30% de credito cascata*. ' +
-            'Ja usou <strong>' + cascata + '</strong> de <strong>' + limite + '</strong> creditos cascata este ano.' +
+            'A cada indicação das suas filhas você ganha *30% de crédito cascata*. ' +
+            'Já usou <strong>' + cascata + '</strong> de <strong>' + limite + '</strong> créditos cascata este ano.' +
           '</div>' +
         '</div>'
     } catch (e) {

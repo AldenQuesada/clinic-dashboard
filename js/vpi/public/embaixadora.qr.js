@@ -86,7 +86,7 @@
     wrap.appendChild(canvas)
     var lbl = document.createElement('div')
     lbl.className = 'vpi-qr-label'
-    lbl.textContent = 'Escaneie para acessar meu cartao'
+    lbl.textContent = 'Escaneie para acessar meu cartão'
     wrap.appendChild(lbl)
     el.appendChild(wrap)
 

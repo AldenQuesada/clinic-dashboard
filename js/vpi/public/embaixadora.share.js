@@ -29,16 +29,16 @@
   }
 
   var SHARE_TEXT =
-    'Oi! Tenho um convite especial - sou embaixadora oficial da ' +
-    'Clinica Mirian de Paula e voce pode fazer seu proximo procedimento ' +
-    'com bonus exclusivo. Toca pra saber mais:'
+    'Oi! Tenho um convite especial — sou embaixadora oficial da ' +
+    'Clínica Mirian de Paula e você pode fazer seu próximo procedimento ' +
+    'com bônus exclusivo. Toca pra saber mais:'
 
   async function share() {
     var url = _shareUrl()
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'Convite exclusivo - Clinica Mirian de Paula',
+          title: 'Convite exclusivo — Clínica Mirian de Paula',
           text:  SHARE_TEXT,
           url:   url,
         })
@@ -66,7 +66,7 @@
     bg.id = 'vpi-share-modal'
     bg.innerHTML =
       '<div class="vpi-modal">' +
-        '<h3>Compartilhar meu cartao</h3>' +
+        '<h3>Compartilhar meu cartão</h3>' +
         '<p class="sub">Copie o link abaixo e cole no WhatsApp.</p>' +
         '<div class="vpi-field">' +
           '<input id="vpi-share-link" type="text" readonly value="' + _esc(url) + '" />' +
@@ -101,7 +101,7 @@
     if (window.VPIEmbStory && window.VPIEmbStory.openModal) {
       window.VPIEmbStory.openModal()
     } else if (_app()) {
-      _app().toast('Gerador de Story indisponivel.')
+      _app().toast('Gerador de Story indisponível.')
     }
   }
 

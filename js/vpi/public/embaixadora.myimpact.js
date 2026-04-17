@@ -83,21 +83,21 @@
       if (stories.length > 0) {
         var cards = stories.map(_storyCard).join('')
         sliderHtml =
-          '<div style="margin-top:14px;font-size:11px;color:#B8B0A3;text-transform:uppercase;letter-spacing:.06em;font-weight:700">As historias que voce ajudou a criar</div>' +
+          '<div style="margin-top:14px;font-size:11px;color:#B8B0A3;text-transform:uppercase;letter-spacing:.06em;font-weight:700">As histórias que você ajudou a criar</div>' +
           '<div style="display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 2px 4px;margin:0 -2px;-webkit-overflow-scrolling:touch">' +
             cards +
           '</div>'
       } else {
         sliderHtml =
           '<div style="margin-top:12px;padding:14px;background:rgba(255,255,255,.04);border-radius:10px;text-align:center;font-size:12px;color:#B8B0A3;line-height:1.5">' +
-            'Em breve suas historias aparecerao aqui, com autorizacao das suas indicadas.' +
+            'Em breve suas histórias aparecerão aqui, com autorização das suas indicadas.' +
           '</div>'
       }
 
       mount.innerHTML =
         '<div class="vpi-myimpact" style="background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(91,33,182,0.08));border:1px solid rgba(201,169,110,0.25);border-radius:14px;padding:18px;margin:12px auto;max-width:380px;color:#fff">' +
           '<div style="text-align:center;padding:8px 0 14px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:10px">' +
-            '<div style="font-size:11px;color:#C9A96E;text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:6px">Voce transformou</div>' +
+            '<div style="font-size:11px;color:#C9A96E;text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:6px">Você transformou</div>' +
             '<div style="display:flex;align-items:baseline;justify-content:center;gap:10px">' +
               '<div id="vpi-myimpact-counter" style="font-size:48px;font-weight:800;color:#fff;line-height:1">0</div>' +
               '<div style="font-size:14px;color:#F4F1EC;font-weight:500">' + (vidas === 1 ? 'vida' : 'vidas') + '</div>' +

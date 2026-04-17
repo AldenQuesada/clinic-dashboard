@@ -70,7 +70,7 @@
           '<div style="flex:1;min-width:0">' +
             '<div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.85">DESAFIO x' + _esc(multi) + (bonus ? ' +' + bonus : '') + '</div>' +
             '<div style="font-size:13px;font-weight:700;margin-top:1px">' + _esc(titulo) + '</div>' +
-            '<div style="font-size:10px;opacity:.8;margin-top:1px">Suas indicacoes valem mais — ' + _esc(fimLabel) + '</div>' +
+            '<div style="font-size:10px;opacity:.8;margin-top:1px">Suas indicações valem mais — ' + _esc(fimLabel) + '</div>' +
           '</div>' +
         '</div>'
 

@@ -121,9 +121,9 @@
           '<div style="font-size:16px;font-weight:700">Personalizar paleta</div>' +
           '<button id="vpi-palette-close" style="background:none;border:none;color:#B8B0A3;font-size:24px;line-height:1;cursor:pointer">×</button>' +
         '</div>' +
-        '<div style="font-size:12px;color:#B8B0A3;margin-bottom:16px">Escolha a vibe que combina com voce (' + _esc(tier.toUpperCase()) + ')</div>' +
+        '<div style="font-size:12px;color:#B8B0A3;margin-bottom:16px">Escolha a vibe que combina com você (' + _esc(tier.toUpperCase()) + ')</div>' +
         '<div style="display:flex;gap:8px;align-items:stretch">' + cards + '</div>' +
-        '<div style="font-size:10px;color:#B8B0A3;margin-top:16px;text-align:center">Voce pode trocar sempre que quiser</div>' +
+        '<div style="font-size:10px;color:#B8B0A3;margin-top:16px;text-align:center">Você pode trocar sempre que quiser</div>' +
       '</div>'
     document.body.appendChild(modal)
     requestAnimationFrame(function () { modal.style.opacity = '1' })
@@ -160,7 +160,7 @@
       if (window.console && console.warn) console.warn('[VPIEmbPalette]', e && e.message)
       // Reverte pra classico em caso de erro
       _applyVariant('classico')
-      if (_app() && _app().toast) _app().toast('Nao conseguimos salvar sua escolha. Tente de novo.')
+      if (_app() && _app().toast) _app().toast('Não conseguimos salvar sua escolha. Tente de novo.')
     }
     closeModal()
   }

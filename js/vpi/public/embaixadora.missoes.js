@@ -75,7 +75,7 @@
       '<div class="vpi-missao-card ' + (completed ? 'completed' : '') + '">' +
         '<div class="vpi-missao-head">' +
           _ico('target', 14) +
-          '<span class="kicker">Missao da Semana</span>' +
+          '<span class="kicker">Missão da Semana</span>' +
           (m.valid_until
             ? '<span class="vpi-missao-countdown" data-until="' + _esc(m.valid_until) + '">' +
                 _fmtCountdown(m.valid_until) + ' restantes' +

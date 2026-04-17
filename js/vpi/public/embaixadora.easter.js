@@ -223,7 +223,7 @@
       if (_tapTimes.length >= 5) {
         _tapTimes.length = 0
         _trigger('prata_taps', 'prata',
-          _firstName() + ', voce descobriu o easter egg PRATA!',
+          _firstName() + ', você descobriu o easter egg PRATA!',
           '#8A8A8A', _animPrata, 1100)
       } else if (_tapTimes.length === 3) {
         // Bronze com delay pra permitir continuar pra 5
@@ -231,7 +231,7 @@
           // So dispara bronze se nao virou prata no meio
           if (_tapTimes.length >= 3 && _tapTimes.length < 5) {
             _trigger('bronze_taps', 'bronze',
-              _firstName() + ', voce descobriu o easter egg BRONZE!',
+              _firstName() + ', você descobriu o easter egg BRONZE!',
               '#8B5A2B', _animBronze, 900)
             _tapTimes.length = 0
           }
