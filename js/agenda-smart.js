@@ -748,6 +748,7 @@ function _buildPanel(id) {
           <div style="margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="font-size:11px;font-weight:700;color:${sc.color};background:${sc.bg};padding:2px 9px;border-radius:20px">${sLb}</span>
             <span style="font-size:11px;color:#9CA3AF">${appt.data?_fmtD(appt.data):''} ${appt.horaInicio||''}</span>
+            ${(appt.recurrenceGroupId && appt.recurrenceIndex && appt.recurrenceTotal) ? `<span title="Serie recorrente${appt.recurrenceProcedure?' · '+appt.recurrenceProcedure:''}" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:20px"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sessao ${appt.recurrenceIndex}/${appt.recurrenceTotal}</span>` : ''}
           </div>
         </div>
         <button onclick="closeApptDetail()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9CA3AF;flex-shrink:0;line-height:1;padding:2px 4px">✕</button>

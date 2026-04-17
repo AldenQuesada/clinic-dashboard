@@ -586,6 +586,9 @@ function _mesHoverShow(iso, e) {
 
   var rows = appts.map(function(a) {
     var s = (window.APPT_STATUS_CFG || {})[a.status] || { color:'#6B7280', bg:'#F9FAFB', label:a.status }
+    var recBadge = (a.recurrenceGroupId && a.recurrenceIndex && a.recurrenceTotal)
+      ? ' <span style="display:inline-block;padding:0 5px;background:#EDE9FE;color:#6D28D9;border-radius:6px;font-size:8px;font-weight:800">' + a.recurrenceIndex + '/' + a.recurrenceTotal + '</span>'
+      : ''
     return '<div onclick="_mesHoverHide();openApptDetail(\'' + a.id + '\')" ' +
       'onmouseenter="this.style.background=\'#F5F3FF\'" onmouseleave="this.style.background=\'\'" ' +
       'style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer">' +
@@ -595,7 +598,7 @@ function _mesHoverShow(iso, e) {
         '</div>' +
         '<div style="width:7px;height:7px;border-radius:50%;background:' + s.color + ';flex-shrink:0"></div>' +
         '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:12px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (a.pacienteNome || 'Paciente') + '</div>' +
+          '<div style="font-size:12px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (a.pacienteNome || 'Paciente') + recBadge + '</div>' +
           '<div style="font-size:10px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (a.procedimento || '—') + '</div>' +
         '</div>' +
         '<span style="font-size:9px;font-weight:700;color:' + s.color + ';background:' + s.bg + ';padding:2px 7px;border-radius:20px;flex-shrink:0">' + (s.label || a.status) + '</span>' +
@@ -881,10 +884,14 @@ function _apptTip(e, id) {
   }
   function _ckLabel(st) { return st === 'ok' ? 'color:#6EE7B7' : 'color:#FCD34D' }
 
+  var tipRecBadge = (a.recurrenceGroupId && a.recurrenceIndex && a.recurrenceTotal)
+    ? ' <span style="display:inline-block;padding:1px 6px;background:rgba(167,139,250,.2);color:#C4B5FD;border-radius:6px;font-size:9px;font-weight:800;margin-left:4px">Sessao ' + a.recurrenceIndex + '/' + a.recurrenceTotal + '</span>'
+    : ''
+
   tip.innerHTML =
     // Secao 1: Paciente
     '<div style="padding:10px 13px;border-bottom:1px solid #374151">' +
-      '<div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (a.pacienteNome || 'Paciente') + '</div>' +
+      '<div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (a.pacienteNome || 'Paciente') + tipRecBadge + '</div>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px">' +
         (fmtPhone ? '<span style="font-size:10px;color:#9CA3AF">' + fmtPhone + '</span>' : '<span></span>') +
         '<span style="font-size:9px;font-weight:700;color:#A78BFA;background:rgba(167,139,250,.15);padding:1px 7px;border-radius:10px">' + tipoLabel + '</span>' +
@@ -962,13 +969,17 @@ function apptCard(a, profIdx) {
     return `<option value="${ns}" style="color:${(statusColors[ns]||{}).color||'#374151'}">${statusLabels[ns]||ns}</option>`
   }).join('')
 
+  const recBadge = (a.recurrenceGroupId && a.recurrenceIndex && a.recurrenceTotal)
+    ? `<span title="Serie recorrente${a.recurrenceProcedure?' · '+a.recurrenceProcedure:''}" style="display:inline-flex;align-items:center;gap:2px;padding:1px 5px;background:#EDE9FE;color:#6D28D9;border-radius:8px;font-size:8px;font-weight:800;margin-left:4px;vertical-align:1px"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>${a.recurrenceIndex}/${a.recurrenceTotal}</span>`
+    : ''
+
   return `<div data-apptid="${a.id}" draggable="${canDrag}"
     ondragstart="${canDrag ? `agendaDragStart(event,'${a.id}')` : `agendaDragStartBlocked(event,'${a.id}')`}"
     onclick="event.stopPropagation();openApptDetail('${a.id}')"
     onmouseenter="_apptTip(event,'${a.id}')" onmouseleave="_apptTipHide()"
     style="background:${s.bg};border-left:3px solid ${s.color};border-radius:7px;padding:6px 8px;cursor:${canDrag?'grab':'default'};min-width:140px;${cardOpacity}${['cancelado','no_show'].includes(a.status)?'border-left-style:dashed;':''}position:absolute;top:0;left:2px;right:2px;height:${cardHeight}px;z-index:2;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
 
-    <div style="font-size:11px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome || 'Paciente'}</div>
+    <div style="font-size:11px;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.pacienteNome || 'Paciente'}${recBadge}</div>
     <div style="font-size:10px;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px">${tipoLabel}</div>
     <div style="font-size:9px;color:#9CA3AF;margin-top:2px">${a.horaInicio||''}${a.horaFim?' – '+a.horaFim:''}</div>
 

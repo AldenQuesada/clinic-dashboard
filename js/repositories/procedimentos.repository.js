@@ -51,6 +51,7 @@
         p_contraindicacoes:     proc.contraindicacoes     ?? null,
         p_observacoes:          proc.observacoes          ?? null,
         p_insumos:              proc.insumos              ?? null,
+        p_intervalo_sessoes_dias: proc.intervalo_sessoes_dias ?? null,
       })
       if (error) return _err(error.message || String(error))
       return _ok(data)

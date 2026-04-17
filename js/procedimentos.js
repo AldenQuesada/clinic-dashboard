@@ -1036,6 +1036,7 @@ function _pfCollect() {
     case 4:
       _pfData.tipo       = document.querySelector('input[name="pf_tipo"]:checked')?.value || 'avulso'
       _pfData.sessoes    = parseInt(document.getElementById('pf_ses')?.value || '1') || 1
+      _pfData.intervalo_sessoes_dias = parseInt(document.getElementById('pf_intervalo')?.value || '0') || null
       _pfData.custo_estimado = parseFloat(document.getElementById('pf_custo')?.value || '0') || 0
       _pfData.preco      = parseFloat(document.getElementById('pf_preco')?.value || '0') || 0
       _pfData.preco_promo = parseFloat(document.getElementById('pf_promo')?.value || '0') || 0
@@ -1329,10 +1330,17 @@ function _pfStep4() {
       </div>
 
       <!-- Sessões -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div>
           <label class="proc-form-label">N.º de Sessões (avulso)</label>
           <input id="pf_ses" type="number" class="proc-form-input" min="1" value="${d.sessoes || 1}">
+        </div>
+        <div>
+          <label class="proc-form-label">Intervalo entre sessões (dias)</label>
+          <input id="pf_intervalo" type="number" class="proc-form-input" min="1" max="365"
+            placeholder="Ex: 7 (semanal), 30 (mensal)"
+            value="${d.intervalo_sessoes_dias > 0 ? d.intervalo_sessoes_dias : ''}">
+          <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Auto-preenche recorrência no agendamento</div>
         </div>
         <div>
           <label class="proc-form-label">Custo estimado / sessão (R$)</label>

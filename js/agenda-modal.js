@@ -535,7 +535,14 @@
       var res = await ProcedimentosRepository.getAll(true)
       if (res.ok && Array.isArray(res.data)) {
         res.data.forEach(function(p) {
-          procs.push({ nome: p.nome, categoria: p.categoria || 'Procedimentos', valor: parseFloat(p.preco) || 0, duracao: parseInt(p.duracao_min) || 60 })
+          procs.push({
+            nome: p.nome,
+            categoria: p.categoria || 'Procedimentos',
+            valor: parseFloat(p.preco) || 0,
+            duracao: parseInt(p.duracao_min) || 60,
+            sessoes: parseInt(p.sessoes) || 0,
+            intervalo_sessoes_dias: parseInt(p.intervalo_sessoes_dias) || 0,
+          })
         })
       }
     }
@@ -608,7 +615,16 @@
     Object.keys(cats).forEach(function(cat) {
       html += '<optgroup label="' + cat.replace(/"/g, '&quot;') + '">'
       cats[cat].forEach(function(p) {
-        html += '<option value="' + (p.nome || '').replace(/"/g, '&quot;') + '" data-valor="' + (p.valor || 0) + '" data-dur="' + (p.duracao || 60) + '">' + (p.nome || '').replace(/</g, '&lt;') + (p.valor > 0 ? ' — R$ ' + p.valor.toLocaleString('pt-BR') : '') + '</option>'
+        var sessoes = p.sessoes || 0
+        var intervalo = p.intervalo_sessoes_dias || 0
+        html += '<option value="' + (p.nome || '').replace(/"/g, '&quot;')
+          + '" data-valor="' + (p.valor || 0)
+          + '" data-dur="' + (p.duracao || 60)
+          + '" data-sessoes="' + sessoes
+          + '" data-intervalo="' + intervalo + '">'
+          + (p.nome || '').replace(/</g, '&lt;')
+          + (p.valor > 0 ? ' — R$ ' + p.valor.toLocaleString('pt-BR') : '')
+          + '</option>'
       })
       html += '</optgroup>'
     })
@@ -668,6 +684,12 @@
     var name = (selEl && selEl.value) || (nameEl && nameEl.value.trim())
     var valor = valorEl ? parseFloat(valorEl.value || '0') : 0
     if (!name) return
+    // Captura defaults de recorrencia do catalogo (data-sessoes/data-intervalo na option)
+    var defaultSessoes = 0, defaultIntervalo = 0
+    if (selEl && selEl.selectedOptions && selEl.selectedOptions[0]) {
+      defaultSessoes = parseInt(selEl.selectedOptions[0].dataset.sessoes) || 0
+      defaultIntervalo = parseInt(selEl.selectedOptions[0].dataset.intervalo) || 0
+    }
     _apptProcs.push({
       nome: name,
       valor: valor,
@@ -682,6 +704,33 @@
     _renderApptProcs()
     apptShowPagamentosBlock()
     apptSyncPagamentoTotal()
+
+    // Auto-preenche recorrencia se procedimento tem defaults no catalogo
+    // (so em novo agendamento, nao em edit)
+    var isEdit = (document.getElementById('appt_id') || {}).value
+    if (!isEdit && defaultSessoes > 1 && defaultIntervalo > 0) {
+      var recCheck = document.getElementById('appt_rec_check')
+      var recInterval = document.getElementById('appt_rec_interval')
+      var recTotal = document.getElementById('appt_rec_total')
+      var recProcSel = document.getElementById('appt_rec_proc')
+      if (recCheck && !recCheck.checked) {
+        recCheck.checked = true
+        apptToggleRecurrence(recCheck)
+      }
+      if (recInterval) recInterval.value = defaultIntervalo
+      if (recTotal) recTotal.value = defaultSessoes
+      // Aponta o select do procedimento recorrente pro que acabou de ser adicionado
+      if (recProcSel) {
+        var newIdx = _apptProcs.length - 1
+        recProcSel.value = String(newIdx)
+      }
+      _apptRecurrenceUpdatePreview()
+      if (window._showToast) window._showToast(
+        'Recorrencia sugerida',
+        name + ': ' + defaultSessoes + ' sessoes a cada ' + defaultIntervalo + ' dias',
+        'info'
+      )
+    }
 
     // Alerta se mais de 1 procedimento em 1h
     if (_apptProcs.length > 1) _checkMultiProcAlert()
