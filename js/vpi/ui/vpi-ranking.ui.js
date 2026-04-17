@@ -211,6 +211,17 @@
       var classe = p.score_classe || 'dormente'
       var scoreTotal = p.score_total != null ? p.score_total : 0
 
+      var cardUrl = ''
+      if (p.card_token) {
+        if (window.VPIEngine && typeof VPIEngine.cardUrl === 'function') {
+          cardUrl = VPIEngine.cardUrl(p)
+        } else {
+          var base = (window.ClinicEnv && window.ClinicEnv.DASHBOARD_URL) ||
+                     (window.location && window.location.origin) || ''
+          cardUrl = String(base).replace(/\/+$/, '') + '/public_embaixadora.html?token=' + encodeURIComponent(p.card_token)
+        }
+      }
+
       return '<tr style="border-bottom:1px solid #F9FAFB;cursor:pointer" onclick="vpiViewPartner(\'' + _esc(p.id) + '\')" onmouseover="this.style.background=\'#FAFAFA\'" onmouseout="this.style.background=\'\'">' +
         '<td style="padding:11px 14px;font-size:13px;font-weight:700;color:#6B7280;white-space:nowrap">' + _esc(rank) + '</td>' +
         '<td style="padding:11px 14px;font-size:13px;font-weight:600;color:#111">' + _esc(p.nome) + '</td>' +
@@ -233,6 +244,14 @@
           '<button onclick="event.stopPropagation();vpiViewPartner(\'' + _esc(p.id) + '\')" title="Detalhes" style="padding:5px 7px;border:1.5px solid #E5E7EB;border-radius:6px;background:#F9FAFB;color:#374151;cursor:pointer;margin-right:4px;display:inline-flex;align-items:center">' +
             '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>' +
           '</button>' +
+          (cardUrl
+            ? '<button onclick="event.stopPropagation();window.open(\'' + _esc(cardUrl) + '\',\'_blank\',\'noopener\')" title="Abrir cartao publico" style="padding:5px 7px;border:1.5px solid #DDD6FE;border-radius:6px;background:#F5F3FF;color:#6D28D9;cursor:pointer;margin-right:4px;display:inline-flex;align-items:center">' +
+                '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+              '</button>' +
+              '<button onclick="event.stopPropagation();vpiCopyCardLink(\'' + _esc(cardUrl) + '\',this)" title="Copiar link do cartao" style="padding:5px 7px;border:1.5px solid #E5E7EB;border-radius:6px;background:#F9FAFB;color:#374151;cursor:pointer;margin-right:4px;display:inline-flex;align-items:center">' +
+                '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+              '</button>'
+            : '') +
           '<button onclick="event.stopPropagation();vpiDeletePartner(\'' + _esc(p.id) + '\')" title="Remover" style="padding:5px 7px;border:1.5px solid #FEE2E2;border-radius:6px;background:#FEF2F2;color:#DC2626;cursor:pointer;display:inline-flex;align-items:center">' +
             '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>' +
           '</button>' +
@@ -240,6 +259,23 @@
       '</tr>'
     }).join('')
   }
+
+  async function vpiCopyCardLink(url, btn) {
+    if (!url) return
+    try {
+      await navigator.clipboard.writeText(url)
+      if (window._showToast) window._showToast('Link', 'Copiado', 'success')
+      if (btn) {
+        var orig = btn.innerHTML
+        btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="#10B981" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
+        setTimeout(function () { if (btn) btn.innerHTML = orig }, 1500)
+      }
+    } catch (_) {
+      prompt('Copie o link:', url)
+    }
+  }
+
+  window.vpiCopyCardLink = vpiCopyCardLink
 
   window.VPIRankingUI = {
     render:    render,
