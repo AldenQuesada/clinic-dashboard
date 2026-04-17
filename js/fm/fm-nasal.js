@@ -1193,57 +1193,78 @@
       return html
     }
 
-    // Metrics row: measured | ideal | status
-    if (valAntes == null) {
-      html += '<div style="font-size:10px;color:rgba(200,169,126,0.4)">Posicione os pontos para calcular.</div>'
-    } else {
-      var showDelta = is2x && valDepois != null
-      html += '<div style="display:flex;gap:10px;align-items:baseline;margin-bottom:6px;flex-wrap:wrap">' +
-        '<div style="flex:0 0 auto">' +
-          '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">MEDIDO</div>' +
-          '<div style="font-size:20px;font-weight:700;color:' + stColor + ';font-family:Montserrat,sans-serif;line-height:1">' + valAntes + '\u00B0</div>' +
-        '</div>' +
-        (showDelta
-          ? '<div style="flex:0 0 auto">' +
-              '<div style="font-size:8px;color:' + SLOT_ACCENT.depois + ';letter-spacing:0.1em;font-weight:700">DEPOIS</div>' +
-              '<div style="font-size:16px;font-weight:700;color:' + _statusColorExtreme(valDepois, range) + ';font-family:Montserrat,sans-serif;line-height:1">' + valDepois + '\u00B0</div>' +
-            '</div>' +
-            '<div style="flex:0 0 auto">' +
-              '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">DELTA</div>' +
-              '<div style="font-size:14px;font-weight:700;color:' + deltaColor + ';font-family:Montserrat,sans-serif;line-height:1">' + deltaStr + '</div>' +
-            '</div>'
-          : '') +
-        '<div style="flex:1;min-width:0;text-align:right">' +
-          '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">IDEAL</div>' +
-          '<div style="font-size:11px;color:rgba(245,240,232,0.7);font-family:Montserrat,sans-serif">' + range[0] + '\u2013' + range[1] + '\u00B0</div>' +
-        '</div>' +
-      '</div>'
-
-      // Status badge
-      var badgeBg = (st === 'normal') ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'
-      var badgeBorder = (st === 'normal') ? '#10B981' : '#F59E0B'
-      html += '<div style="display:inline-block;padding:3px 10px;border-radius:4px;background:' + badgeBg + ';border:1px solid ' + badgeBorder + ';margin-bottom:8px">' +
-        '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + badgeBorder + ';letter-spacing:0.1em;text-transform:uppercase">' + _statusLabel(st) + '</span>' +
-      '</div>'
-
-      // Clinical interpretation + conduct
-      if (conduct) {
-        html += '<div style="margin-top:6px;padding:8px 10px;background:rgba(200,169,126,0.04);border-radius:6px">' +
-          '<div style="font-family:Cormorant Garamond,serif;font-size:12px;font-style:italic;color:rgba(245,240,232,0.85);line-height:1.5;margin-bottom:6px">' + conduct.anatomic + '</div>' +
-          '<div style="font-size:10px;color:rgba(245,240,232,0.7);line-height:1.5;margin-bottom:6px"><strong style="color:' + m.color + '">Conduta:</strong> ' + conduct.action + '</div>' +
-          (conduct.procedures && conduct.procedures.length
-            ? '<div style="display:flex;flex-wrap:wrap;gap:3px">' +
-                conduct.procedures.map(function (p) {
-                  return '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:' + _withAlpha(m.color, 0.12) + ';border:1px solid ' + _withAlpha(m.color, 0.35) + ';color:' + m.color + ';font-weight:600">' + p + '</span>'
-                }).join('') +
+    // Bloco de referencia (antes) — se antes esta ligado
+    if (antesOn) {
+      if (valAntes == null) {
+        html += '<div style="font-size:10px;color:rgba(200,169,126,0.4);margin-bottom:6px">Posicione os pontos em ' + (is2x ? 'ANTES' : '') + ' para calcular.</div>'
+      } else {
+        var showDelta = is2x && valDepois != null
+        html += '<div style="display:flex;gap:10px;align-items:baseline;margin-bottom:6px;flex-wrap:wrap">' +
+          '<div style="flex:0 0 auto">' +
+            '<div style="font-size:8px;color:' + (is2x ? SLOT_ACCENT.antes : 'rgba(200,169,126,0.5)') + ';letter-spacing:0.1em;font-weight:700">' + (is2x ? 'ANTES' : 'MEDIDO') + '</div>' +
+            '<div style="font-size:20px;font-weight:700;color:' + stColor + ';font-family:Montserrat,sans-serif;line-height:1">' + valAntes + '\u00B0</div>' +
+          '</div>' +
+          (showDelta
+            ? '<div style="flex:0 0 auto">' +
+                '<div style="font-size:8px;color:' + SLOT_ACCENT.depois + ';letter-spacing:0.1em;font-weight:700">DEPOIS</div>' +
+                '<div style="font-size:16px;font-weight:700;color:' + _statusColorExtreme(valDepois, range) + ';font-family:Montserrat,sans-serif;line-height:1">' + valDepois + '\u00B0</div>' +
+              '</div>' +
+              '<div style="flex:0 0 auto">' +
+                '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">DELTA</div>' +
+                '<div style="font-size:14px;font-weight:700;color:' + deltaColor + ';font-family:Montserrat,sans-serif;line-height:1">' + deltaStr + '</div>' +
               '</div>'
             : '') +
+          '<div style="flex:1;min-width:0;text-align:right">' +
+            '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">IDEAL</div>' +
+            '<div style="font-size:11px;color:rgba(245,240,232,0.7);font-family:Montserrat,sans-serif">' + range[0] + '\u2013' + range[1] + '\u00B0</div>' +
+          '</div>' +
+        '</div>'
+
+        // Status badge (sempre baseado em antes, que e a referencia clinica)
+        var badgeBg = (st === 'normal') ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'
+        var badgeBorder = (st === 'normal') ? '#10B981' : '#F59E0B'
+        html += '<div style="display:inline-block;padding:3px 10px;border-radius:4px;background:' + badgeBg + ';border:1px solid ' + badgeBorder + ';margin-bottom:8px">' +
+          '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + badgeBorder + ';letter-spacing:0.1em;text-transform:uppercase">' + _statusLabel(st) + '</span>' +
+        '</div>'
+
+        // Clinical interpretation + conduct
+        if (conduct) {
+          html += '<div style="margin-top:6px;padding:8px 10px;background:rgba(200,169,126,0.04);border-radius:6px">' +
+            '<div style="font-family:Cormorant Garamond,serif;font-size:12px;font-style:italic;color:rgba(245,240,232,0.85);line-height:1.5;margin-bottom:6px">' + conduct.anatomic + '</div>' +
+            '<div style="font-size:10px;color:rgba(245,240,232,0.7);line-height:1.5;margin-bottom:6px"><strong style="color:' + m.color + '">Conduta:</strong> ' + conduct.action + '</div>' +
+            (conduct.procedures && conduct.procedures.length
+              ? '<div style="display:flex;flex-wrap:wrap;gap:3px">' +
+                  conduct.procedures.map(function (p) {
+                    return '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:' + _withAlpha(m.color, 0.12) + ';border:1px solid ' + _withAlpha(m.color, 0.35) + ';color:' + m.color + ';font-weight:600">' + p + '</span>'
+                  }).join('') +
+                '</div>'
+              : '') +
+          '</div>'
+        }
+      }
+    }
+
+    // Bloco apenas DEPOIS (antes desligado mas depois ligado)
+    if (is2x && !antesOn && depoisOn) {
+      if (valDepois == null) {
+        html += '<div style="font-size:10px;color:rgba(200,169,126,0.4);margin-bottom:6px">Posicione os pontos em DEPOIS para calcular.</div>'
+      } else {
+        var dColor = _statusColorExtreme(valDepois, range)
+        html += '<div style="display:flex;gap:10px;align-items:baseline;margin-bottom:6px;flex-wrap:wrap">' +
+          '<div style="flex:0 0 auto">' +
+            '<div style="font-size:8px;color:' + SLOT_ACCENT.depois + ';letter-spacing:0.1em;font-weight:700">DEPOIS</div>' +
+            '<div style="font-size:20px;font-weight:700;color:' + dColor + ';font-family:Montserrat,sans-serif;line-height:1">' + valDepois + '\u00B0</div>' +
+          '</div>' +
+          '<div style="flex:1;min-width:0;text-align:right">' +
+            '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">IDEAL</div>' +
+            '<div style="font-size:11px;color:rgba(245,240,232,0.7);font-family:Montserrat,sans-serif">' + range[0] + '\u2013' + range[1] + '\u00B0</div>' +
+          '</div>' +
         '</div>'
       }
     }
 
-    // Reset button
-    html += '<div style="margin-top:6px"><button class="fm-btn" style="width:100%;font-size:9px;padding:3px 6px" onclick="FaceMapping._resetNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')">Reposicionar pontos</button></div>'
+    // Reset button (por slot em 2x)
+    html += _resetButtonsHtml(m, is2x, antesOn, depoisOn)
 
     html += '</div>'
     return html
@@ -1272,7 +1293,8 @@
 
     if (!antes) {
       html += '<div style="font-size:10px;color:rgba(200,169,126,0.4)">Posicione os pontos (ponta, pogonio, labios sup/inf) para calcular.</div>'
-      html += '<div style="margin-top:6px"><button class="fm-btn" style="width:100%;font-size:9px;padding:3px 6px" onclick="FaceMapping._resetNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')">Reposicionar pontos</button></div></div>'
+      html += _resetButtonsHtml(m, is2x, antesOn, depoisOn)
+      html += '</div>'
       return html
     }
 
@@ -1326,9 +1348,27 @@
     html += _lipRow('lipUpper', 'Labio superior')
     html += _lipRow('lipLower', 'Labio inferior')
     html += '<div style="font-size:8px;color:rgba(200,169,126,0.35);margin-top:-4px;margin-bottom:6px;font-style:italic">Calculo baseado em ponta\u2192pogonio \u2248 52 mm (referencia adulta).</div>'
-    html += '<button class="fm-btn" style="width:100%;font-size:9px;padding:3px 6px" onclick="FaceMapping._resetNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')">Reposicionar pontos</button>'
+    html += _resetButtonsHtml(m, is2x, antesOn, depoisOn)
     html += '</div>'
     return html
+  }
+
+  // Botoes "Reposicionar pontos" — um por slot em 2x, unico em 1x.
+  // Desabilitado (opacity) se o slot estiver off.
+  function _resetButtonsHtml(m, is2x, antesOn, depoisOn) {
+    function _btn(slot, on, labelText) {
+      var disabledStyle = on ? '' : 'opacity:0.35;pointer-events:none'
+      return '<button class="fm-btn" style="flex:1;font-size:9px;padding:3px 6px;' + disabledStyle + '" onclick="FaceMapping._resetNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')">' + labelText + '</button>'
+    }
+    if (!is2x) {
+      return '<div style="margin-top:6px">' +
+        '<button class="fm-btn" style="width:100%;font-size:9px;padding:3px 6px' + (antesOn ? '' : ';opacity:0.35;pointer-events:none') + '" onclick="FaceMapping._resetNasalMeasurement(\'antes\',\'' + m.id + '\')">Reposicionar pontos</button>' +
+      '</div>'
+    }
+    return '<div style="display:flex;gap:4px;margin-top:6px">' +
+      _btn('antes',  antesOn,  'Reposicionar ANTES') +
+      _btn('depois', depoisOn, 'Reposicionar DEPOIS') +
+    '</div>'
   }
 
   function _refreshPanelValues() {
