@@ -95,7 +95,7 @@
         : ''
 
       mount.innerHTML =
-        '<div class="vpi-attr" style="background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(5,150,105,0.06));border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:18px;margin:14px 0;color:#fff">' +
+        '<div class="vpi-attr" style="background:linear-gradient(135deg,rgba(16,185,129,0.12),rgba(5,150,105,0.06));border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:18px;margin:12px auto;max-width:380px;color:#fff">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
             '<svg width="18" height="18" fill="none" stroke="#34D399" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' +
             '<h3 style="margin:0;font-size:14px;font-weight:700;color:#fff">Sua Atribuicao</h3>' +

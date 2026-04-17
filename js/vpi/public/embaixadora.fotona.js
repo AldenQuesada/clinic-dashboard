@@ -67,7 +67,7 @@
     var TOTAL  = 3
     var desbloqueadas = Math.min(usadas + 1, TOTAL)
 
-    var html = '<div class="vpi-fotona-card" style="background:#fff;border:1px solid #F3F4F6;border-radius:14px;padding:18px;margin:14px 0">' +
+    var html = '<div class="vpi-fotona-card" style="background:#fff;border:1px solid #F3F4F6;border-radius:14px;padding:18px;margin:12px auto;max-width:380px">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
         '<svg width="18" height="18" fill="none" stroke="#DB2777" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
         '<h3 style="margin:0;font-size:15px;font-weight:700;color:#111">Minhas Recompensas Fotona</h3>' +

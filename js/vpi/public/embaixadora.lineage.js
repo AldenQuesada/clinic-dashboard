@@ -87,7 +87,7 @@
       var filhasHtml = filhas.map(_chipFilha).join('')
 
       mount.innerHTML =
-        '<div class="vpi-lineage" style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:18px;margin:14px 0;color:#fff">' +
+        '<div class="vpi-lineage" style="background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:18px;margin:12px auto;max-width:380px;color:#fff">' +
           '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
             '<svg width="18" height="18" fill="none" stroke="#C4B5FD" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' +
             '<h3 style="margin:0;font-size:14px;font-weight:700;color:#fff">Minha Linhagem</h3>' +

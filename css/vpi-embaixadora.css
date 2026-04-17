@@ -87,7 +87,7 @@
 /* Diamante variants */
 .tier-diamante[data-palette="blackout"] {
   --t-main: #1a1a1a;
-  --t-glow: rgba(255,255,255,0.25);
+  --t-glow: rgba(255,255,255,0.45);
   --t-grad: linear-gradient(135deg,#000 0%,#1a1a1a 50%,#2a2a2a 100%);
 }
 .tier-diamante[data-palette="rainbow-hologram"] {
@@ -121,7 +121,6 @@ html, body {
 
 .vpi-emb-brand {
   text-align: center;
-  opacity: 0.8;
 }
 .vpi-emb-brand .brand-line {
   font-size: 11px;
@@ -151,7 +150,7 @@ html, body {
   width: 100%;
   max-width: 380px;
   perspective: 1600px;
-  margin: 8px auto;
+  margin: 12px auto;
 }
 .vpi-card-flip {
   position: relative;
@@ -264,7 +263,7 @@ html, body {
   letter-spacing: 1px;
   color: var(--vpi-ink);
   line-height: 1.1;
-  margin: 0;
+  margin: 8px 0 0;
 }
 .vpi-tier-label {
   text-align: center;
@@ -272,7 +271,7 @@ html, body {
   letter-spacing: 4px;
   text-transform: uppercase;
   font-weight: 700;
-  margin-top: 6px;
+  margin-top: 10px;
   background: var(--t-grad);
   -webkit-background-clip: text;
   background-clip: text;
@@ -283,7 +282,7 @@ html, body {
   font-size: 10px;
   color: var(--vpi-ink-dim);
   letter-spacing: 2px;
-  margin-top: 2px;
+  margin-top: 4px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -302,7 +301,7 @@ html, body {
   justify-content: center;
   flex-direction: column;
   gap: 8px;
-  margin: 6px 0 12px;
+  margin: 12px 0;
 }
 .vpi-progress-ring {
   position: relative;
@@ -354,7 +353,7 @@ html, body {
   font-size: 12px;
   color: var(--vpi-ink-dim);
   line-height: 1.5;
-  margin: 2px 0 8px;
+  margin: 4px 0 12px;
   padding: 0 12px;
 }
 .vpi-next-reward strong {
@@ -371,7 +370,7 @@ html, body {
   gap: 10px;
   justify-content: center;
   flex-wrap: wrap;
-  margin: 10px 0 16px;
+  margin: 12px 0 16px;
 }
 .vpi-chip {
   display: inline-flex;
@@ -397,8 +396,8 @@ html, body {
 .vpi-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 6px;
+  gap: 12px;
+  margin-top: 12px;
 }
 .vpi-btn {
   display: inline-flex;
@@ -419,7 +418,7 @@ html, body {
 .vpi-btn-primary {
   background: var(--t-grad);
   color: #0B0813;
-  box-shadow: var(--vpi-shadow-gold);
+  box-shadow: var(--vpi-shadow-gold), 0 4px 14px rgba(0,0,0,0.22);
 }
 .vpi-btn-primary:hover { filter: brightness(1.08); }
 .vpi-btn-secondary {
@@ -435,8 +434,8 @@ html, body {
   color: var(--vpi-ink-dim);
   letter-spacing: 2px;
   text-transform: uppercase;
-  margin-top: 14px;
-  opacity: 0.7;
+  margin-top: 16px;
+  opacity: 0.85;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -498,7 +497,7 @@ html, body {
   flex: 0 0 auto;
   margin-top: 5px;
 }
-.vpi-tl-dot.pending { background: var(--vpi-ink-dim); box-shadow: none; opacity: 0.4; }
+.vpi-tl-dot.pending { background: var(--vpi-ink-dim); box-shadow: none; opacity: 0.65; }
 .vpi-tl-body { flex: 1; min-width: 0; }
 .vpi-tl-proc {
   font-weight: 600;
@@ -569,7 +568,7 @@ html, body {
   background: rgba(0,0,0,0.75);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 9000;
+  z-index: 9300;
   display: flex; align-items: flex-end; justify-content: center;
   opacity: 0;
   transition: opacity 200ms ease;
@@ -638,7 +637,7 @@ html, body {
 .vpi-section {
   width: 100%;
   max-width: 380px;
-  margin: 8px auto;
+  margin: 12px auto;
 }
 .vpi-section-title {
   font-family: 'Cormorant Garamond', Georgia, serif;
@@ -677,7 +676,7 @@ html, body {
   transition: transform 180ms ease, border-color 200ms ease;
 }
 .vpi-badge:active { transform: scale(0.96); }
-.vpi-badge.locked { opacity: 0.35; filter: grayscale(0.9); }
+.vpi-badge.locked { opacity: 0.55; filter: grayscale(0.8); }
 .vpi-badge.unlocked {
   border-color: var(--vpi-gold);
   background: linear-gradient(135deg, rgba(201,169,110,0.18), rgba(91,33,182,0.1));
@@ -725,7 +724,7 @@ html, body {
 .vpi-missao-card {
   width: 100%;
   max-width: 380px;
-  margin: 8px auto;
+  margin: 12px auto;
   padding: 18px 20px;
   border-radius: 18px;
   background:
@@ -907,7 +906,7 @@ html, body {
 .vpi-shoutout {
   width: 100%;
   max-width: 380px;
-  margin: 8px auto;
+  margin: 12px auto;
   padding: 22px 20px;
   border-radius: 20px;
   background:
@@ -955,7 +954,7 @@ html, body {
 .vpi-impact {
   width: 100%;
   max-width: 380px;
-  margin: 8px auto;
+  margin: 12px auto;
   padding: 20px;
   border-radius: 18px;
   background: var(--vpi-glass);
@@ -1032,7 +1031,7 @@ html, body {
   padding: 12px 18px;
   color: var(--vpi-ink);
   font-size: 13px;
-  z-index: 9500;
+  z-index: 9200;
   box-shadow: var(--vpi-shadow-gold);
   transition: transform 300ms cubic-bezier(0.22, 0.9, 0.32, 1);
   max-width: 90%;
@@ -1055,4 +1054,6 @@ html, body {
   .vpi-avatar { width: 92px; height: 92px; font-size: 32px; }
   .vpi-name { font-size: 22px; }
   .vpi-progress-ring { width: 130px; height: 130px; }
+  .vpi-badges-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .vpi-badge-tooltip { max-width: 140px; bottom: calc(100% + 4px); }
 }

@@ -95,7 +95,7 @@
       }
 
       mount.innerHTML =
-        '<div class="vpi-myimpact" style="background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(91,33,182,0.08));border:1px solid rgba(201,169,110,0.25);border-radius:14px;padding:18px;margin:14px 0;color:#fff">' +
+        '<div class="vpi-myimpact" style="background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(91,33,182,0.08));border:1px solid rgba(201,169,110,0.25);border-radius:14px;padding:18px;margin:12px auto;max-width:380px;color:#fff">' +
           '<div style="text-align:center;padding:8px 0 14px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:10px">' +
             '<div style="font-size:11px;color:#C9A96E;text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-bottom:6px">Voce transformou</div>' +
             '<div style="display:flex;align-items:baseline;justify-content:center;gap:10px">' +
