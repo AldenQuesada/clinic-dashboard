@@ -1132,12 +1132,42 @@
     return html
   }
 
+  // Renderiza um ou dois toggles (ANTES / DEPOIS) com controle independente.
+  // Em modo 1x mostra apenas 1 toggle para 'antes'. Em 2x mostra os dois lado
+  // a lado com labels pequenas — cada canvas gerencia suas proprias medicoes.
+  function _slotTogglesHtml(m, is2x, antesOn, depoisOn) {
+    function _pill(slot, on) {
+      var bg = on ? m.color : 'rgba(200,169,126,0.15)'
+      var pos = on ? '16px' : '2px'
+      return '<div onclick="FaceMapping._toggleNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')"' +
+        ' title="Ativar / desativar em ' + (slot === 'antes' ? 'ANTES' : 'DEPOIS') + '"' +
+        ' style="width:30px;height:15px;border-radius:8px;cursor:pointer;position:relative;background:' + bg + ';transition:background .2s;flex-shrink:0">' +
+          '<div style="width:11px;height:11px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + pos + ';transition:left .2s"></div>' +
+        '</div>'
+    }
+    function _labeled(slotLabel, pill, accent) {
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px">' +
+        '<span style="font-size:8px;letter-spacing:0.1em;font-weight:700;color:' + accent + '">' + slotLabel + '</span>' +
+        pill +
+      '</div>'
+    }
+    if (!is2x) return _pill('antes', antesOn)
+    return '<div style="display:flex;gap:8px;align-items:flex-end">' +
+      _labeled('ANTES',  _pill('antes',  antesOn),  SLOT_ACCENT.antes) +
+      _labeled('DEPOIS', _pill('depois', depoisOn), SLOT_ACCENT.depois) +
+    '</div>'
+  }
+
   function _renderMeasurementCard(m, slot, gender, is2x) {
     if (m.type === 'line') return _renderRickettsCard(m, slot, gender, is2x)
-    var ms = _state[slot].measurements[m.id]
+    var msAntes = _state.antes.measurements[m.id]
+    var msDepois = _state.depois.measurements[m.id]
+    var antesOn = !!msAntes.enabled
+    var depoisOn = is2x && !!msDepois.enabled
+    var anyOn = antesOn || depoisOn
     var range = IDEAL[gender][m.id]
-    var valAntes = Nasal.compute('antes', m.id)
-    var valDepois = is2x ? Nasal.compute('depois', m.id) : null
+    var valAntes = antesOn ? Nasal.compute('antes', m.id) : null
+    var valDepois = (is2x && depoisOn) ? Nasal.compute('depois', m.id) : null
     var st = (valAntes != null) ? _status(valAntes, range) : null
     var stColor = st ? _statusColorExtreme(valAntes, range) : '#999'
     var conduct = (st && st !== 'normal') ? CONDUCT[m.id][st] : null
@@ -1148,17 +1178,16 @@
 
     var html = '<div class="fm-tool-section" style="border-left:3px solid ' + m.color + ';padding-left:10px">'
 
-    // Header: measurement name + toggle
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
-      '<div style="display:flex;align-items:center;gap:8px">' +
+    // Header: nome + toggle(s) por slot (antes/depois independentes em 2x)
+    var togglesHtml = _slotTogglesHtml(m, is2x, antesOn, depoisOn)
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px">' +
+      '<div style="display:flex;align-items:center;gap:8px;min-width:0">' +
         '<span style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:' + m.color + ';letter-spacing:0.06em">' + m.label + '</span>' +
       '</div>' +
-      '<div onclick="FaceMapping._toggleNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')" title="Ativar / desativar" style="width:30px;height:15px;border-radius:8px;cursor:pointer;position:relative;background:' + (ms.enabled ? m.color : 'rgba(200,169,126,0.15)') + ';transition:background .2s;flex-shrink:0">' +
-        '<div style="width:11px;height:11px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (ms.enabled ? '16px' : '2px') + ';transition:left .2s"></div>' +
-      '</div>' +
+      togglesHtml +
     '</div>'
 
-    if (!ms.enabled) {
+    if (!anyOn) {
       html += '<div style="font-size:10px;color:rgba(200,169,126,0.35);font-style:italic">Desativada</div>'
       html += '</div>'
       return html
@@ -1221,20 +1250,22 @@
   }
 
   function _renderRickettsCard(m, slot, gender, is2x) {
-    var ms = _state[slot].measurements[m.id]
+    var msAntes = _state.antes.measurements[m.id]
+    var msDepois = _state.depois.measurements[m.id]
+    var antesOn = !!msAntes.enabled
+    var depoisOn = is2x && !!msDepois.enabled
+    var anyOn = antesOn || depoisOn
     var rRange = IDEAL[gender].ricketts
-    var antes  = Nasal.compute('antes', m.id)
-    var depois = is2x ? Nasal.compute('depois', m.id) : null
+    var antes  = antesOn ? Nasal.compute('antes', m.id) : null
+    var depois = (is2x && depoisOn) ? Nasal.compute('depois', m.id) : null
 
     var html = '<div class="fm-tool-section" style="border-left:3px solid ' + m.color + ';padding-left:10px">'
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px">' +
       '<span style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:' + m.color + ';letter-spacing:0.06em">' + m.label + '</span>' +
-      '<div onclick="FaceMapping._toggleNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')" style="width:30px;height:15px;border-radius:8px;cursor:pointer;position:relative;background:' + (ms.enabled ? m.color : 'rgba(200,169,126,0.15)') + ';transition:background .2s;flex-shrink:0">' +
-        '<div style="width:11px;height:11px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (ms.enabled ? '16px' : '2px') + ';transition:left .2s"></div>' +
-      '</div>' +
+      _slotTogglesHtml(m, is2x, antesOn, depoisOn) +
     '</div>'
 
-    if (!ms.enabled) {
+    if (!anyOn) {
       html += '<div style="font-size:10px;color:rgba(200,169,126,0.35);font-style:italic">Desativada</div></div>'
       return html
     }
