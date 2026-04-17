@@ -560,6 +560,47 @@
     quiz: 'Quiz',
   }
 
+  // ── Tag filter (segmentacao AND/OR) ─────────────────────────
+  function renderTagFilter(cfg) {
+    cfg = cfg || {}
+    var mode = cfg.mode || 'off'
+    var tags = Array.isArray(cfg.tags) ? cfg.tags.join(', ') : ''
+    var modes = [
+      { v: 'off',  label: 'Sem filtro (dispara para todos)' },
+      { v: 'all',  label: 'Lead deve ter TODAS as tags (AND)' },
+      { v: 'any',  label: 'Lead deve ter QUALQUER uma (OR)' },
+      { v: 'none', label: 'Lead NAO pode ter NENHUMA (NOT)' },
+    ]
+    var opts = modes.map(function(m) {
+      return '<option value="' + m.v + '"' + (mode === m.v ? ' selected' : '') + '>' + m.label + '</option>'
+    }).join('')
+    var disabled = mode === 'off' ? ' disabled' : ''
+    return '<div class="fa-tag-filter" id="faTagFilter">'
+      + '<div class="fa-field"><label>Modo</label>'
+      +   '<select id="faTagFilterMode">' + opts + '</select>'
+      + '</div>'
+      + '<div class="fa-field"><label>Tags</label>'
+      +   '<input type="text" id="faTagFilterTags" placeholder="agendou, interessada, vip" value="' + _esc(tags) + '"' + disabled + '>'
+      + '</div>'
+      + '<div class="fa-tag-filter-hint">' + _feather('info', 11)
+      +   ' Separe por virgula. Comparacao case-insensitive contra tags do lead. '
+      +   'Ex: <code>vip, fidelidade</code> em modo OR dispara se lead tiver VIP <b>ou</b> Fidelidade.</div>'
+      + '</div>'
+  }
+
+  function readTagFilter(rootEl) {
+    var scope = rootEl || document
+    var modeEl = scope.querySelector('#faTagFilterMode')
+    var tagsEl = scope.querySelector('#faTagFilterTags')
+    if (!modeEl) return null
+    var mode = modeEl.value || 'off'
+    if (mode === 'off') return null
+    var raw = (tagsEl && tagsEl.value) || ''
+    var tags = raw.split(',').map(function(s) { return s.trim() }).filter(Boolean)
+    if (!tags.length) return null
+    return { mode: mode, tags: tags }
+  }
+
   function renderTemplateLibraryButton() {
     return '<button type="button" class="fa-tpl-btn" data-action="show-template-library" data-fae-action="show-template-library" title="Biblioteca de templates">'
       + _feather('bookOpen', 12) + ' Biblioteca</button>'
@@ -709,6 +750,8 @@
     renderAttachArea:   renderAttachArea,
     renderTemplateLibraryButton: renderTemplateLibraryButton,
     showTemplateLibrary: showTemplateLibrary,
+    renderTagFilter:    renderTagFilter,
+    readTagFilter:      readTagFilter,
     combineChannels:    combineChannels,
     channelIncludes:    channelIncludes,
     speakAlexa:         speakAlexa,

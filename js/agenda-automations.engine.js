@@ -139,6 +139,9 @@
         if (minLead > 0 && _dayDiffToAppt(appt.data) < minLead) return
       }
 
+      // Guard tag_filter: so dispara se lead bate com filtro de tags
+      if (!_matchesTagFilter(rule, _leadIdFromAppt(appt))) return
+
       // WhatsApp: enqueue in wa_outbox
       if (_channelIncludes(rule.channel, 'whatsapp') && phone && rule.content_template) {
         var ab = _renderWithAB(rule, vars)
@@ -173,6 +176,33 @@
     if (!cfg.patient_type) return true // regra generica — dispara sempre
     var apptType = (appt && appt.tipoPaciente) || 'novo' // default novo se nao especificado
     return cfg.patient_type === apptType
+  }
+
+  // Tag filter: trigger_config.tag_filter = { mode:'all'|'any'|'none', tags:[...] }
+  // Avalia contra lead.tags local. Retorna true se pode disparar.
+  function _matchesTagFilter(rule, leadId) {
+    var cfg = rule && rule.trigger_config || {}
+    var f = cfg.tag_filter
+    if (!f || !f.mode || f.mode === 'off' || !Array.isArray(f.tags) || !f.tags.length) return true
+    if (!leadId) return false
+    var tags = []
+    try {
+      var leads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
+      var lead = leads.find(function(l) { return l.id === leadId })
+      tags = (lead && Array.isArray(lead.tags)) ? lead.tags : []
+    } catch (e) { tags = [] }
+    var tagSet = Object.create(null)
+    tags.forEach(function(t) { tagSet[String(t).toLowerCase().trim()] = true })
+    var filterTags = f.tags.map(function(t) { return String(t).toLowerCase().trim() }).filter(Boolean)
+    if (!filterTags.length) return true
+    if (f.mode === 'all')  return filterTags.every(function(t) { return tagSet[t] })
+    if (f.mode === 'any')  return filterTags.some (function(t) { return tagSet[t] })
+    if (f.mode === 'none') return !filterTags.some(function(t) { return tagSet[t] })
+    return true
+  }
+
+  function _leadIdFromAppt(appt) {
+    return (appt && (appt.pacienteId || appt.leadId)) || ''
   }
 
   // ── VPI: resolve lookup "indicado por" do lead (cache por sessao) ──
@@ -238,6 +268,7 @@
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i]
       if (!_matchesPatientType(rule, appt)) continue
+      if (!_matchesTagFilter(rule, _leadIdFromAppt(appt))) continue
       // Vars tem escopo por iteracao pra enriquecer so na regra que precisa
       var varsRule = Object.assign({}, vars)
       var okGuard = await _matchesVpiGuards(rule, appt, varsRule)
@@ -261,7 +292,9 @@
 
     // on_finalize rules (immediate)
     var finalizeRules = svc.getByTrigger('on_finalize')
+    var apptLeadId = _leadIdFromAppt(appt)
     finalizeRules.forEach(function (rule) {
+      if (!_matchesTagFilter(rule, apptLeadId)) return
       _executeRule(rule, vars, phone, appt)
     })
 
@@ -269,6 +302,7 @@
     var afterRules = svc.getByTrigger('d_after')
     var now = new Date()
     afterRules.forEach(function (rule) {
+      if (!_matchesTagFilter(rule, apptLeadId)) return
       var cfg = rule.trigger_config || {}
       var scheduledAt = new Date(now)
       scheduledAt.setDate(scheduledAt.getDate() + (cfg.days || 1))
@@ -327,6 +361,10 @@
 
     for (var i = 0; i < rules.length; i++) {
       var rule = rules[i]
+      if (!_matchesTagFilter(rule, entityId)) {
+        console.info('[automations] skip tag_filter on_tag:', rule.name, 'lead', entityId)
+        continue
+      }
       var ok = await _canDispatch(rule)
       if (!ok) {
         console.info('[automations] skip duplicado on_tag:', rule.name, 'lead', entityId)

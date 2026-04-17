@@ -176,6 +176,15 @@
 .fa-tpl-footer { padding:10px 20px; background:#F0F9FF; border-top:1px solid #BAE6FD;
   font-size:10px; color:#0369A1; display:flex; align-items:center; gap:6px; border-radius:0 0 12px 12px; }
 
+/* Segmentacao por tags (AND/OR/NOT) */
+.fa-tag-filter { display:flex; flex-direction:column; gap:8px; }
+.fa-tag-filter input[type="text"] { font-family:ui-monospace, Menlo, monospace; font-size:12px; }
+.fa-tag-filter input[type="text"]:disabled { background:#F8FAFC; color:#94A3B8; cursor:not-allowed; }
+.fa-tag-filter-hint { padding:8px 10px; background:#FAFBFC; border:1px dashed #CBD5E1;
+  border-radius:8px; font-size:11px; color:#475569; display:flex; align-items:flex-start; gap:6px; line-height:1.5; }
+.fa-tag-filter-hint code { font-family:ui-monospace, Menlo, monospace; background:#E2E8F0; padding:1px 5px;
+  border-radius:4px; font-size:10px; color:#1E293B; }
+
 /* A/B testing toggle e bloco */
 .fa-channel-block-title { display:flex; align-items:center; gap:6px; }
 .fa-ab-toggle { margin-left:auto; display:inline-flex; align-items:center; gap:4px;

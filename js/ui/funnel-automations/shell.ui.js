@@ -49,6 +49,7 @@
       alexa_message: '', alexa_target: 'sala',
       is_active: true, sort_order: 0,
       recipient_type: 'patient',
+      tag_filter: null,
     }
   }
 
@@ -285,6 +286,11 @@
       +   '<div class="fa-section-title">' + _f('zap', 11) + ' Gatilho · ' + m.label + '</div>'
       +   '<div id="faTriggerFields">' + m.renderTriggerFields(f) + '</div>'
       + '</div>'
+      // Secao 2.5 — Filtro por tags (AND/OR/NOT)
+      + '<div class="fa-section">'
+      +   '<div class="fa-section-title">' + _f('filter', 11) + ' Segmentacao por tags · opcional</div>'
+      +   S().renderTagFilter(f.tag_filter)
+      + '</div>'
       // Secao 3 — Canal + config por canal
       + '<div class="fa-section">'
       +   '<div class="fa-section-title">' + _f('send', 11) + ' Como avisar</div>'
@@ -460,6 +466,7 @@
     out.is_active = r.is_active
     out.sort_order = r.sort_order || 0
     out.recipient_type = r.recipient_type || 'patient'
+    out.tag_filter = (r.trigger_config && r.trigger_config.tag_filter) || null
     return out
   }
 
@@ -497,6 +504,8 @@
     var chs = Array.prototype.slice.call(document.querySelectorAll('input[name=faChannel]:checked'))
       .map(function(el){ return el.value })
     _form.channel = S().combineChannels(chs)
+
+    _form.tag_filter = S().readTagFilter()
   }
 
   // ── Save ────────────────────────────────────────────────────
@@ -521,6 +530,13 @@
     }
 
     var trig = m.toTrigger(_form)
+    var triggerCfg = Object.assign({}, trig.trigger_config || {})
+    if (_form.tag_filter && _form.tag_filter.mode && _form.tag_filter.mode !== 'off'
+        && Array.isArray(_form.tag_filter.tags) && _form.tag_filter.tags.length) {
+      triggerCfg.tag_filter = _form.tag_filter
+    } else {
+      delete triggerCfg.tag_filter
+    }
     var data = {
       name: _form.name,
       description: _form.description,
@@ -542,7 +558,7 @@
       recipient_type: _form.recipient_type,
       category: _activeModule, // legacy, mantido por compat
       trigger_type: trig.trigger_type,
-      trigger_config: trig.trigger_config,
+      trigger_config: triggerCfg,
     }
     if (_selectedId && !_modalOpen) data.id = _selectedId
 
@@ -737,6 +753,12 @@
       if (e.target.name === 'faAttachPos') {
         _form.attachment_above_text = (e.target.value === 'above')
         _refreshPreview()
+        return
+      }
+      // Modo do tag_filter: habilita/desabilita o input de tags
+      if (e.target.id === 'faTagFilterMode') {
+        var tagsInput = document.getElementById('faTagFilterTags')
+        if (tagsInput) tagsInput.disabled = e.target.value === 'off'
         return
       }
       // Status select → aplica defaults do modulo (when + campos) + sugere nome

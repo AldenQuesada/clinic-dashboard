@@ -51,6 +51,7 @@
       task_title: '', task_assignee: 'sdr', task_priority: 'normal', task_deadline_hours: 24,
       alexa_message: '', alexa_target: 'sala',
       is_active: true, sort_order: 0, recipient_type: 'patient',
+      tag_filter: null,
     }
   }
 
@@ -86,6 +87,7 @@
     out.is_active = r.is_active !== false
     out.sort_order = r.sort_order || 0
     out.recipient_type = r.recipient_type || 'patient'
+    out.tag_filter = (r.trigger_config && r.trigger_config.tag_filter) || null
     return out
   }
 
@@ -157,6 +159,10 @@
       + '<div class="fa-section">'
       +   '<div class="fa-section-title">' + _f('zap', 11) + ' Gatilho · ' + m.label + '</div>'
       +   '<div id="faeTriggerFields">' + _renderTriggerFields(m, f) + '</div>'
+      + '</div>'
+      + '<div class="fa-section">'
+      +   '<div class="fa-section-title">' + _f('filter', 11) + ' Segmentacao por tags · opcional</div>'
+      +   S().renderTagFilter(f.tag_filter)
       + '</div>'
       + '<div class="fa-section">'
       +   '<div class="fa-section-title">' + _f('send', 11) + ' Como avisar</div>'
@@ -320,6 +326,8 @@
     var chs = Array.prototype.slice.call(_overlay.querySelectorAll('input[name=faChannel]:checked'))
       .map(function (el) { return el.value })
     _form.channel = S().combineChannels(chs)
+
+    _form.tag_filter = S().readTagFilter(_overlay)
   }
 
   async function _handleSave() {
@@ -339,6 +347,13 @@
     }
 
     var trig = m.toTrigger(_form)
+    var triggerCfg = Object.assign({}, trig.trigger_config || {})
+    if (_form.tag_filter && _form.tag_filter.mode && _form.tag_filter.mode !== 'off'
+        && Array.isArray(_form.tag_filter.tags) && _form.tag_filter.tags.length) {
+      triggerCfg.tag_filter = _form.tag_filter
+    } else {
+      delete triggerCfg.tag_filter
+    }
     var data = {
       name: _form.name,
       description: _form.description,
@@ -360,7 +375,7 @@
       recipient_type: _form.recipient_type,
       category: _moduleId,
       trigger_type: trig.trigger_type,
-      trigger_config: trig.trigger_config,
+      trigger_config: triggerCfg,
     }
     if (_ruleId) data.id = _ruleId
 
@@ -565,6 +580,11 @@
       if (e.target.name === 'faAttachPos') {
         _form.attachment_above_text = (e.target.value === 'above')
         _refreshPreview()
+        return
+      }
+      if (e.target.id === 'faTagFilterMode') {
+        var tagsInput = _overlay.querySelector('#faTagFilterTags')
+        if (tagsInput) tagsInput.disabled = e.target.value === 'off'
         return
       }
       if (e.target.id === 'faStatus') {
