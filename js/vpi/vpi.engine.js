@@ -119,6 +119,63 @@
   }
 
   // ══════════════════════════════════════════════════
+  //  Helpers de link do cartao digital
+  // ══════════════════════════════════════════════════
+  function _cardUrl(partner) {
+    // Base URL da clinica (dashboard atual)
+    var base = (window.ClinicEnv && window.ClinicEnv.DASHBOARD_URL) ||
+               (window.location && window.location.origin) ||
+               ''
+    if (!base || !partner || !partner.card_token) return ''
+    // Remove trailing slash
+    base = base.replace(/\/+$/, '')
+    return base + '/public_embaixadora.html?token=' + encodeURIComponent(partner.card_token)
+  }
+
+  async function _ensureShortLink(partner) {
+    try {
+      if (!_sb() || !partner) return null
+      var cardUrl = _cardUrl(partner)
+      if (!cardUrl) return null
+
+      // Slug preferencial do DB; se vazio, gera baseado no token
+      var slug = partner.short_link_slug
+      if (!slug) {
+        var firstRaw = String(partner.nome || 'parceira').toLowerCase().split(' ')[0]
+        var first = firstRaw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g,'')
+        var tokHead = String(partner.card_token || '').slice(0,6)
+        slug = 'emb-' + (first || 'parceira') + '-' + tokHead
+      }
+
+      // Tenta criar o short-link (idempotente via unique_violation=code_exists)
+      var res = await _sb().rpc('short_link_create', {
+        p_code:   slug,
+        p_url:    cardUrl,
+        p_title:  'Cartao de Embaixadora - ' + (partner.nome || ''),
+        p_pixels: {},
+      })
+      // Se retornou erro de code_exists, tudo bem - link ja existe
+      if (res && res.error) {
+        console.warn('[VPIEngine] short_link_create:', res.error.message)
+      }
+      // Persiste slug no partner (best-effort)
+      if (slug && slug !== partner.short_link_slug) {
+        try {
+          await _sb()
+            .from('vpi_partners')
+            .update({ short_link_slug: slug })
+            .eq('id', partner.id)
+        } catch (_) {}
+      }
+      var origin = (window.location && window.location.origin) || ''
+      return (origin || '').replace(/\/+$/, '') + '/r.html?c=' + encodeURIComponent(slug)
+    } catch (e) {
+      console.warn('[VPIEngine] _ensureShortLink falhou:', e && e.message || e)
+      return null
+    }
+  }
+
+  // ══════════════════════════════════════════════════
   //  scheduleInviteWA
   // ══════════════════════════════════════════════════
   async function scheduleInviteWA(partner, apptRef) {
@@ -129,13 +186,19 @@
       var tpl = null
       try { tpl = await _svc().getInviteTemplate() } catch (_) { tpl = null }
       var template = (tpl && tpl.content_template) ||
-        'Ola {{nome}}! Voce foi aprovada para o Programa de Parceiros da nossa clinica. A cada 5 amigas que indicar e realizarem um procedimento, voce ganha 1 sessao de Fotona 4D.'
+        'Ola {{nome}}! Voce foi aprovada para o Programa de Parceiros da nossa clinica. A cada 5 amigas que indicar e realizarem um procedimento, voce ganha 1 sessao de Fotona 4D. Seu cartao: {{link_cartao}}'
+
+      // Gera/obtem short-link; fallback para URL direta se falhar
+      var cardUrl  = _cardUrl(partner)
+      var shortUrl = await _ensureShortLink(partner)
+      var linkCartao = shortUrl || cardUrl || ''
 
       var firstName = String(partner.nome || 'Parceira').split(' ')[0]
       var vars = {
         nome:          firstName,
         nome_completo: partner.nome || '',
         clinica:       'Clinica Mirian de Paula Beauty & Health',
+        link_cartao:   linkCartao,
       }
       var content = _svc().renderTemplate(template, vars)
 
