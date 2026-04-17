@@ -40,13 +40,16 @@
       if (!d || !d.partner) return window.location.href
       var slug = d.partner.short_link_slug
       if (slug) {
-        // Sistema short_links padrao da clinica
-        var base = window.ClinicEnv && window.ClinicEnv.SHORT_LINK_BASE
-                    ? window.ClinicEnv.SHORT_LINK_BASE
-                    : (window.location.origin + '/s/')
-        return base + slug
+        // Sistema short_links padrao da clinica: redireciona via
+        // /r.html?c=<slug>, que incrementa clicks + dispara pixels
+        // antes do redirect 302. ENV override permite trocar o host
+        // em deploys alternativos sem recompilar.
+        var origin = (window.ClinicEnv && window.ClinicEnv.SHORT_LINK_HOST)
+                      ? window.ClinicEnv.SHORT_LINK_HOST
+                      : window.location.origin
+        return String(origin).replace(/\/+$/, '') + '/r.html?c=' + encodeURIComponent(slug)
       }
-      // Fallback: URL atual com token
+      // Fallback: URL atual com token (ainda funciona, so nao tem tracking)
       return window.location.href
     } catch (_) { return window.location.href }
   }
