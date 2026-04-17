@@ -38,6 +38,7 @@
 <script src="js/magazine/admin/analytics-panel.js"></script>
 <script src="js/magazine/admin/dispatch-scheduler.js"></script>
 <script src="js/magazine/admin/dispatch-analytics.js"></script>
+<script src="js/magazine/admin/page-regenerator.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -1272,6 +1273,9 @@
 <!-- DISPATCH ANALYTICS MODAL -->
 <div id="dispatchAnalyticsHost"></div>
 
+<!-- PAGE REGENERATOR DRAWER -->
+<div id="pageRegeneratorHost"></div>
+
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -1335,6 +1339,7 @@
     analyticsCtrl: null,
     dispatchScheduler: null,
     dispatchAnalytics: null,
+    pageRegen: null,
   }
 
   // ===== DOM =====
@@ -1573,6 +1578,7 @@
       <div id="scoreChecklistMount" class="score-checklist-mount"></div>
       <div class="slots-actions">
         <button class="btn save" id="saveSlotsBtn" disabled>Salvar alterações</button>
+        <button class="btn" id="regenPageBtn" title="Regerar pagina inteira com IA" style="background:#7a1f2b;color:#fff;border-color:#7a1f2b">✨ Regerar pagina</button>
         <span id="autosaveIndicator" class="autosave-indicator" data-state="idle"></span>
       </div>
     `
@@ -1642,6 +1648,32 @@
     })
 
     document.getElementById('saveSlotsBtn').addEventListener('click', saveSlots)
+
+    // B3 · Regerar pagina inteira com IA
+    const regenBtn = document.getElementById('regenPageBtn')
+    if (regenBtn && state.pageRegen) {
+      regenBtn.addEventListener('click', async () => {
+        const livePage = state.pages.find(p => p.id === state.currentPageId)
+        if (!livePage) { toast('Selecione uma página primeiro', 'err'); return }
+        // salva antes se dirty
+        if (state.dirty) await saveSlots()
+        state.pageRegen.open(
+          livePage,
+          {
+            title: state.currentEdition?.title,
+            subtitle: state.currentEdition?.subtitle,
+            theme: state.currentEdition?.theme,
+            slug: state.currentEdition?.slug,
+          },
+          async (newSlots, validation) => {
+            // Aplicou com sucesso — recarrega a edicao
+            toast(validation && !validation.ok ? 'Aplicado com avisos' : 'Regerado com sucesso', 'ok')
+            await selectEdition(state.currentEdition.id)
+            selectPage(livePage.id)
+          }
+        )
+      })
+    }
   }
 
   // ===== Upload Storage (integrado com widgets) =====
@@ -2368,6 +2400,11 @@ body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; 
           state.dispatchScheduler.open(state.currentEdition)
         })
       }
+    }
+
+    // Page regenerator (botao ✨ Regerar pagina dentro do painel de slots)
+    if (window.MagazineAdmin.PageRegenerator) {
+      state.pageRegen = window.MagazineAdmin.PageRegenerator.mount(document.getElementById('pageRegeneratorHost'), sb)
     }
 
     // Dispatch analytics (botao Performance)
