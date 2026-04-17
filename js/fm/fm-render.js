@@ -27,6 +27,8 @@
       rightPanel = FM._renderZonesPanel()
     } else if (activeTab === 'vectors') {
       rightPanel = FM._renderVectorsPanel()
+    } else if (activeTab === 'nasal') {
+      rightPanel = (FM._renderNasalPanel ? FM._renderNasalPanel() : FM._renderZonesPanel())
     } else {
       rightPanel = FM._renderZonesPanel()
     }
@@ -50,6 +52,7 @@
       { id: 'simetria',      label: 'Simetria',       icon: 'git-commit' },
       { id: 'zones',         label: 'Estruturação',   icon: 'layers' },
       { id: 'vectors',       label: 'Vetores',        icon: 'trending-up' },
+      { id: 'nasal',         label: 'Nasal',          icon: 'triangle' },
       { id: 'analysis',      label: 'Analise',        icon: 'activity' },
     ]
 

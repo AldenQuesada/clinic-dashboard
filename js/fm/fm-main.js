@@ -136,6 +136,11 @@
     _autoAngles: FM._autoAngles,
     _autoAsymmetryPairs: FM._autoAsymmetryPairs,
 
+    // Nasal analysis (isolated module FM.Nasal)
+    _setNasalGender: function (g) { if (FM.Nasal) FM.Nasal.setGender(g) },
+    _resetNasal: function () { if (FM.Nasal) FM.Nasal.reset() },
+    _autoSeedNasal: function () { if (FM.Nasal) FM.Nasal.autoSeed() },
+
     // Region overlay engine
     _toggleRegion: FM._toggleRegion,
     _selectRegion: FM._selectRegion,

@@ -103,6 +103,11 @@
 
     FM._ctx.drawImage(FM._img, 0, 0, FM._imgW, FM._imgH)
 
+    // NASAL TAB — isolated render (skips all other overlays)
+    if (FM._activeTab === 'nasal' && FM.Nasal) {
+      FM.Nasal.render(FM._ctx)
+    }
+
     // Wireframe overlay (any analysis sub-mode)
     if (FM._editorMode === 'analysis' && FM._drawWireframe) {
       FM._drawWireframe()
@@ -386,6 +391,12 @@
     var mx = e.offsetX, my = e.offsetY
     var inLabelArea = mx > FM._imgW
 
+    // NASAL TAB — delegate to isolated module
+    if (FM._activeTab === 'nasal' && FM.Nasal) {
+      if (FM.Nasal.onMouseDown(mx, my)) { FM._mode = 'move'; return }
+      return
+    }
+
     // METRICS MODE — Simetria tab or analysis+metrics
     var isMetricsMode = (FM._activeTab === 'simetria' && FM._analysisSubMode === 'metrics') ||
                         (FM._editorMode === 'analysis' && FM._analysisSubMode === 'metrics')
@@ -628,6 +639,12 @@
   FM._onMouseMove = function (e) {
     var mx = e.offsetX, my = e.offsetY
 
+    // NASAL TAB — delegate to isolated module
+    if (FM._activeTab === 'nasal' && FM.Nasal) {
+      FM.Nasal.onMouseMove(mx, my)
+      return
+    }
+
     // GUIDE LINE drag
     if (FM._guideDrag && FM._mode === 'move') {
       if (FM._guideDrag.type === 'hguide') {
@@ -821,6 +838,11 @@
   }
 
   FM._onMouseUp = function () {
+    // NASAL TAB — delegate to isolated module
+    if (FM._activeTab === 'nasal' && FM.Nasal) {
+      if (FM.Nasal.onMouseUp()) { FM._mode = 'idle'; return }
+    }
+
     // Guide line drag end
     if (FM._guideDrag) {
       FM._guideDrag = null

@@ -231,6 +231,17 @@
       if (FM._stopVecAnimation) FM._stopVecAnimation()
       FM._editorMode = 'analysis'
       FM._analysisSubMode = 'skin'
+    } else if (tabId === 'nasal') {
+      if (FM._stopVecAnimation) FM._stopVecAnimation()
+      FM._editorMode = 'nasal'
+      if (FM._photoUrls['lateral']) {
+        FM._activeAngle = 'lateral'
+      } else {
+        FM._showToast('Analise Nasal requer foto lateral.', 'warn')
+        FM._activeTab = 'simetria'
+        FM._editorMode = 'analysis'
+      }
+      if (FM.Nasal) FM.Nasal.init()
     }
     FM._render()
     setTimeout(FM._initCanvas, 50)

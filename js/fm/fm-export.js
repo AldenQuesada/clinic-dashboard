@@ -480,6 +480,11 @@
       html += '</div>'
     })
 
+    // ─── Nasal angular analysis (if points marked) ───
+    if (FM.Nasal && FM.Nasal.hasData()) {
+      html += '<div style="padding:0 32px">' + FM.Nasal.renderReportSection() + '</div>'
+    }
+
     // ─── PLANO A,Protocolo Completo (EDITABLE) ───
     html += _sectionTitle('Plano A \u2014 Protocolo Integrado de Harmonia', 'clipboard')
     html += '<div style="padding:0 32px 4px 32px">'
