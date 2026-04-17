@@ -89,6 +89,40 @@
     alert_task: 1, alert_alexa: 1, all: 1, both: 1,
   }
 
+  // Chave de trigger para agrupamento na UI.
+  // on_status -> 'status:<id>' | on_tag -> 'tag:<id>' | outros -> 'time:<type>'
+  function triggerKeyOf(rule) {
+    if (!rule || !rule.trigger_type) return 'time:unknown'
+    var cfg = rule.trigger_config || {}
+    if (rule.trigger_type === 'on_status') return 'status:' + (cfg.status || 'unknown')
+    if (rule.trigger_type === 'on_tag')    return 'tag:' + (cfg.tag || 'unknown')
+    return 'time:' + rule.trigger_type
+  }
+
+  // Agrupa regras por trigger key. Retorna objeto { key: { key, triggerType, refId, rules[] } }.
+  // Se category for informada, filtra por categoria antes.
+  function getGroupedByTrigger(category) {
+    var all = _readCache()
+    if (category) all = all.filter(function (r) { return r.category === category })
+    var groups = {}
+    for (var i = 0; i < all.length; i++) {
+      var r = all[i]
+      var key = triggerKeyOf(r)
+      if (!groups[key]) {
+        var parts = key.split(':')
+        groups[key] = {
+          key: key,
+          scope: parts[0],              // 'status' | 'tag' | 'time'
+          refId: parts.slice(1).join(':'),
+          triggerType: r.trigger_type,
+          rules: [],
+        }
+      }
+      groups[key].rules.push(r)
+    }
+    return groups
+  }
+
   // getByChannel: filtra regras por canal (ativas + inativas — UI decide).
   //   'whatsapp' | 'alexa' | 'task' | 'alert' -> exata
   //   'multi' -> qualquer canal agrupado
@@ -194,6 +228,7 @@
   window.AgendaAutomationsService = Object.freeze({
     loadAll, save, remove, toggle,
     getActive, getByTrigger, getByCategory, getByStatus, getByTag, getByChannel,
+    triggerKeyOf, getGroupedByTrigger,
     renderTemplate,
     TRIGGER_TYPES, RECIPIENT_TYPES, CHANNELS, CATEGORIES, TEMPLATE_VARS,
     TASK_ASSIGNEES, TASK_PRIORITIES, ALEXA_TARGETS,

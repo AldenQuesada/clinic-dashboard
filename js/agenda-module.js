@@ -8,6 +8,14 @@
 
 let _relTab    = 'semana'   // semana | mes | trimestre
 let _eventoTab = 'bloqueios' // bloqueios | feriados | campanhas | cursos
+// Tab ativa da pagina Tags/Fluxos — segue modulos do funil:
+// 'all' | 'pre_agendamento' | 'agendamento' | 'paciente' | 'orcamento' | 'paciente_orcamento' | 'perdido'
+let _autoCatTab = 'all'
+// Regra selecionada no drawer lateral (id ou null)
+let _autoSelectedId = null
+// Cache local de regras de wa_agenda_automations nesta pagina
+let _autoRules = []
+let _autoLoaded = false
 
 // ── Helpers ───────────────────────────────────────────────────
 function _fmtDate(d) { try { return new Date(d).toLocaleDateString('pt-BR') } catch { return '' } }
@@ -387,133 +395,327 @@ function agendaEventoRemover(id) {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  TAGS E FLUXOS (agenda)
+//  TAGS E FLUXOS (agenda) — views as 6 modulos do Funil de Automacoes
+//  Fonte: wa_agenda_automations (via AgendaAutomationsRepository)
+//  Tabs replicadas de js/ui/funnel-automations/shell.ui.js MODULE_ORDER
 // ══════════════════════════════════════════════════════════════
-function renderAgendaTagsFluxos() {
+const _FA_MODULE_ORDER = ['pre_agendamento','agendamento','paciente','orcamento','paciente_orcamento','perdido']
+
+// Labels para triggers (derivados dos statuses dos modulos, fallback generico)
+function _autoTriggerLabel(rule) {
+  if (!rule || !rule.trigger_type) return 'Sem gatilho'
+  const cfg = rule.trigger_config || {}
+  const mods = window.FAModules || {}
+  if (rule.trigger_type === 'on_status') {
+    const id = cfg.status || ''
+    for (const mid of _FA_MODULE_ORDER) {
+      const m = mods[mid]; if (!m || !m.statuses) continue
+      const s = m.statuses.find(x => x.id === id)
+      if (s) return s.label
+    }
+    return id || 'Status'
+  }
+  if (rule.trigger_type === 'on_tag') {
+    const id = cfg.tag || ''
+    for (const mid of _FA_MODULE_ORDER) {
+      const m = mods[mid]; if (!m || !m.statuses) continue
+      const s = m.statuses.find(x => x.id === id)
+      if (s) return s.label
+    }
+    return id ? 'Tag: ' + id : 'Tag'
+  }
+  if (rule.trigger_type === 'd_before')      return 'D-' + (cfg.days || '?') + ' (antes da consulta)'
+  if (rule.trigger_type === 'd_zero')        return 'Dia da consulta'
+  if (rule.trigger_type === 'min_before')    return (cfg.minutes || '?') + ' min antes'
+  if (rule.trigger_type === 'daily_summary') return 'Resumo diario'
+  return rule.trigger_type
+}
+
+function _autoActiveChannels(rule) {
+  const ch = String(rule && rule.channel || '')
+  if (ch === 'all' || ch === 'both') return ['whatsapp','alexa','task','alert']
+  const out = []
+  if (ch.indexOf('whatsapp') >= 0) out.push('whatsapp')
+  if (ch.indexOf('alexa') >= 0)    out.push('alexa')
+  if (ch.indexOf('task') >= 0)     out.push('task')
+  if (ch.indexOf('alert') >= 0)    out.push('alert')
+  return out.length ? out : [ch || 'whatsapp']
+}
+
+function _autoChannelMeta(id) {
+  return ({
+    whatsapp: { icon: 'message-circle', color: '#25D366', label: 'WhatsApp' },
+    alexa:    { icon: 'speaker',        color: '#1FCCB2', label: 'Alexa' },
+    task:     { icon: 'clipboard',      color: '#10B981', label: 'Tarefa' },
+    alert:    { icon: 'bell',           color: '#F59E0B', label: 'Alerta' },
+  })[id] || { icon: 'circle', color: '#9CA3AF', label: id || '—' }
+}
+
+function _autoRulesForActiveTab() {
+  if (_autoCatTab === 'all') return _autoRules
+  const m = (window.FAModules || {})[_autoCatTab]
+  if (!m || typeof m.matchesRule !== 'function') return []
+  return _autoRules.filter(r => m.matchesRule(r))
+}
+
+function _autoGroupByTrigger(rules) {
+  const groups = {}
+  for (const r of rules) {
+    const cfg = r.trigger_config || {}
+    let key
+    if (r.trigger_type === 'on_status')   key = 'status:' + (cfg.status || '?')
+    else if (r.trigger_type === 'on_tag') key = 'tag:' + (cfg.tag || '?')
+    else                                   key = 'time:' + (r.trigger_type || '?')
+    if (!groups[key]) groups[key] = { key, label: _autoTriggerLabel(r), rules: [] }
+    groups[key].rules.push(r)
+  }
+  return Object.values(groups).sort((a,b) => String(a.label).localeCompare(String(b.label)))
+}
+
+function _autoEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+// Converte nomes camelCase (usados nos modulos FA) para kebab-case do feather-icons (standalone)
+function _featherKebab(name) {
+  if (!name) return 'circle'
+  return String(name).replace(/([a-z])([A-Z0-9])/g, '$1-$2').toLowerCase()
+}
+
+function _agendaSetAutoTab(tabId) {
+  _autoCatTab = tabId
+  _autoSelectedId = null
+  renderAgendaTagsFluxos()
+}
+
+function _agendaSelectAuto(ruleId) {
+  _autoSelectedId = _autoSelectedId === ruleId ? null : ruleId
+  renderAgendaTagsFluxos()
+}
+
+function _autoRenderDrawer() {
+  const r = _autoRules.find(x => x.id === _autoSelectedId)
+  if (!r) return ''
+  const triggerLabel = _autoTriggerLabel(r)
+  const activeCh = _autoActiveChannels(r)
+  const sections = []
+  if (activeCh.includes('whatsapp') && r.content_template) {
+    sections.push({ icon: 'message-circle', color: '#25D366', label: 'WhatsApp',
+      body: `<div style="white-space:pre-wrap;font-size:12px;line-height:1.55;color:#111827;background:#F0FDF4;border-left:3px solid #25D366;padding:10px 12px;border-radius:6px">${_autoEsc(r.content_template)}</div>` })
+  }
+  if (activeCh.includes('alexa') && r.alexa_message) {
+    sections.push({ icon: 'speaker', color: '#1FCCB2', label: 'Alexa (' + (r.alexa_target||'sala') + ')',
+      body: `<div style="font-size:12px;color:#111827;background:#ECFEFF;border-left:3px solid #1FCCB2;padding:10px 12px;border-radius:6px">${_autoEsc(r.alexa_message)}</div>` })
+  }
+  if (activeCh.includes('task') && (r.task_title || r.task_assignee)) {
+    sections.push({ icon: 'clipboard', color: '#10B981', label: 'Tarefa',
+      body: `<div style="font-size:12px;color:#111827;background:#F0FDF4;border-left:3px solid #10B981;padding:10px 12px;border-radius:6px">
+        <div><b>${_autoEsc(r.task_title || '—')}</b></div>
+        <div style="color:#6B7280;margin-top:4px;font-size:11px">Responsavel: ${_autoEsc(r.task_assignee || 'sdr')} · Prioridade: ${_autoEsc(r.task_priority || 'normal')} · Prazo: ${r.task_deadline_hours || 24}h</div>
+      </div>` })
+  }
+  if (activeCh.includes('alert') && r.alert_title) {
+    sections.push({ icon: 'bell', color: '#F59E0B', label: 'Alerta',
+      body: `<div style="font-size:12px;color:#111827;background:#FFFBEB;border-left:3px solid #F59E0B;padding:10px 12px;border-radius:6px">
+        <div><b>${_autoEsc(r.alert_title)}</b></div>
+        <div style="color:#6B7280;margin-top:4px;font-size:11px">Tipo: ${_autoEsc(r.alert_type||'info')}</div>
+      </div>` })
+  }
+  return `
+    <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;overflow:hidden;align-self:start;position:sticky;top:80px;max-height:calc(100vh - 110px);overflow-y:auto">
+      <div style="padding:14px 16px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:800;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(r.name || 'Sem nome')}</div>
+          <div style="font-size:11px;color:#9CA3AF;margin-top:2px">${_autoEsc(triggerLabel)}</div>
+        </div>
+        <button onclick="window._agendaSelectAuto(null)" style="background:none;border:none;cursor:pointer;color:#9CA3AF;padding:4px">
+          <i data-feather="x" style="width:16px;height:16px"></i>
+        </button>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+        ${r.description ? `<div style="font-size:12px;color:#6B7280;line-height:1.5">${_autoEsc(r.description)}</div>` : ''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span style="font-size:10px;padding:3px 8px;border-radius:5px;background:${r.is_active?'#DCFCE7':'#F3F4F6'};color:${r.is_active?'#166534':'#6B7280'};font-weight:700">${r.is_active?'ATIVA':'PAUSADA'}</span>
+          <span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#EEF2FF;color:#4338CA;font-weight:700">${_autoEsc(r.trigger_type || '—')}</span>
+          ${r.category ? `<span style="font-size:10px;padding:3px 8px;border-radius:5px;background:#F3F4F6;color:#6B7280;font-weight:700">${_autoEsc(r.category)}</span>` : ''}
+        </div>
+        ${sections.map(s => `
+          <div>
+            <div style="font-size:11px;font-weight:700;color:${s.color};display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <i data-feather="${s.icon}" style="width:11px;height:11px"></i> ${s.label}
+            </div>
+            ${s.body}
+          </div>
+        `).join('')}
+        ${sections.length === 0 ? `<div style="font-size:12px;color:#9CA3AF;font-style:italic">Sem conteudo cadastrado para os canais ativos.</div>` : ''}
+        <button onclick="location.hash='funnel-automations'" style="margin-top:6px;padding:9px 12px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px">
+          <i data-feather="edit-3" style="width:12px;height:12px"></i> Editar no funil
+        </button>
+      </div>
+    </div>`
+}
+
+async function renderAgendaTagsFluxos() {
   const root = document.getElementById('agenda-tags-root')
   if (!root) return
 
-  const hasTags   = !!window.TagEngine
-  const agTags    = hasTags ? TagEngine.getTags().filter(t=>t.group_id==='agendamento') : []
-  const agFlows   = hasTags ? TagEngine.getFlows().filter(f=>f.group_id==='agendamento') : []
-  const cfg       = hasTags ? TagEngine.getCfg() : {}
-  const tipoCor   = c => ({error:'#EF4444',warning:'#F59E0B',success:'#10B981',info:'#3B82F6'})[c]||'#6B7280'
-  const prCor     = p => ({urgente:'#DC2626',alta:'#EF4444',normal:'#F59E0B',baixa:'#9CA3AF'})[p]||'#9CA3AF'
+  // 1a renderizacao: carrega regras de wa_agenda_automations
+  if (!_autoLoaded) {
+    root.innerHTML = `<div style="padding:48px;text-align:center;color:#9CA3AF;font-size:13px">Carregando automações…</div>`
+    try {
+      const repo = window.AgendaAutomationsRepository
+      if (repo) {
+        const res = await repo.list()
+        _autoRules = (res && res.ok && Array.isArray(res.data)) ? res.data : []
+      } else {
+        _autoRules = []
+      }
+    } catch (e) {
+      _autoRules = []
+    }
+    _autoLoaded = true
+  }
 
-  const pendingAlerts = hasTags ? TagEngine.getAlerts().filter(a=>!a.lido&&['alert_novo_agendamento','alert_reagendamento','alert_cancelamento','alert_noshow'].includes(a.template_id)) : []
-  const pendingTasks  = hasTags ? TagEngine.getOpTasks().filter(t=>t.status==='aberta'&&['task_confirmar_presenca','task_preparar_prontuario','task_recuperar_cancelamento','task_recuperar_noshow'].includes(t.template_id)) : []
+  // Mantido apenas para o bloco informativo "Tags do grupo Agendamento"
+  const hasTagEngine = !!window.TagEngine
+  const agTags = hasTagEngine ? TagEngine.getTags().filter(t => t.group_id === 'agendamento') : []
+
+  const mods = window.FAModules || {}
+  // Tabs dinamicas: Todas + modulos carregados na ordem MODULE_ORDER
+  const tabs = [{ id: 'all', label: 'Todas', color: '#6B7280', icon: 'grid', count: _autoRules.length }]
+  _FA_MODULE_ORDER.forEach(id => {
+    const m = mods[id]; if (!m) return
+    const count = _autoRules.filter(r => m.matchesRule(r)).length
+    tabs.push({ id, label: m.label, color: m.color, icon: _featherKebab(m.icon), count })
+  })
+
+  const visible = _autoRulesForActiveTab()
+  const groups  = _autoGroupByTrigger(visible)
+  const activeMod = _autoCatTab !== 'all' ? mods[_autoCatTab] : null
+  const headerColor = activeMod ? activeMod.color : '#6B7280'
+  const headerLabel = activeMod ? activeMod.label : 'Todas as fases'
 
   root.innerHTML = `
-    <div style="max-width:1100px;margin:0 auto;padding:28px 24px">
+    <div style="max-width:1180px;margin:0 auto;padding:28px 24px">
 
-      <div style="margin-bottom:22px">
-        <h1 style="font-size:22px;font-weight:800;color:#111827;margin:0">Tags e Fluxos da Agenda</h1>
-        <p style="font-size:13px;color:#6B7280;margin:4px 0 0">Automações ativas para o ciclo de agendamento · confirmações · lembretes · no-show</p>
+      <!-- Header -->
+      <div style="margin-bottom:18px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px">
+        <div>
+          <h1 style="font-size:22px;font-weight:800;color:#111827;margin:0">Tags e Fluxos da Agenda</h1>
+          <p style="font-size:13px;color:#6B7280;margin:4px 0 0">Visao consolidada das automacoes da agenda, agrupadas pelos gatilhos do funil.</p>
+        </div>
+        <button onclick="location.hash='funnel-automations'" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#111827;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">
+          <i data-feather="settings" style="width:13px;height:13px"></i> Configurar funil
+        </button>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+      <!-- Tabs dos modulos do funil + Todas -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid #E5E7EB;padding-bottom:0">
+        ${tabs.map(t => {
+          const active = _autoCatTab === t.id
+          return `
+            <button onclick="window._agendaSetAutoTab('${t.id}')" style="
+              display:inline-flex;align-items:center;gap:6px;padding:9px 14px;
+              background:${active?'#fff':'transparent'};
+              border:1px solid ${active?'#E5E7EB':'transparent'};
+              border-bottom:2px solid ${active?t.color:'transparent'};
+              border-radius:8px 8px 0 0;
+              font-size:12.5px;font-weight:${active?'700':'600'};
+              color:${active?t.color:'#6B7280'};
+              cursor:pointer;margin-bottom:-1px">
+              <i data-feather="${t.icon}" style="width:12px;height:12px"></i>
+              ${t.label}
+              <span style="background:${active?t.color+'18':'#F3F4F6'};color:${active?t.color:'#9CA3AF'};padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">${t.count}</span>
+            </button>`
+        }).join('')}
+      </div>
 
-        <!-- Alertas da agenda -->
-        <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;overflow:hidden">
-          <div style="padding:13px 16px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px">
-              <i data-feather="bell" style="width:13px;height:13px;color:#F59E0B"></i> Alertas da Agenda
-              ${pendingAlerts.length?`<span style="background:#EF4444;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700">${pendingAlerts.length}</span>`:''}
+      <!-- Corpo: lista + drawer lateral -->
+      <div style="display:grid;grid-template-columns:1fr ${_autoSelectedId?'380px':'0px'};gap:${_autoSelectedId?'16px':'0'};transition:grid-template-columns .2s">
+
+        <!-- Coluna 1: grupos por trigger -->
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <div style="width:4px;height:18px;border-radius:2px;background:${headerColor}"></div>
+            <div style="font-size:14px;font-weight:700;color:#111827">${_autoEsc(headerLabel)}</div>
+            <div style="font-size:11px;color:#9CA3AF">· ${visible.length} regra${visible.length===1?'':'s'} · ${groups.length} gatilho${groups.length===1?'':'s'}</div>
+          </div>
+
+          ${groups.length === 0 ? `
+            <div style="padding:60px 24px;text-align:center;background:#fff;border:1px dashed #E5E7EB;border-radius:12px">
+              <i data-feather="inbox" style="width:28px;height:28px;color:#D1D5DB"></i>
+              <div style="font-size:13px;color:#6B7280;margin-top:10px;font-weight:600">Nenhuma regra nesta fase</div>
+              <div style="font-size:11.5px;color:#9CA3AF;margin-top:4px">Crie automacoes em <b style="color:#7C3AED">Configurar funil</b>.</div>
             </div>
-            ${pendingAlerts.length?`<button onclick="TagEngine.markAllAlertsRead();renderAgendaTagsFluxos()" style="font-size:11px;color:#7C3AED;background:none;border:none;cursor:pointer;font-weight:600">Marcar lidos</button>`:''}
-          </div>
-          ${pendingAlerts.slice(0,6).map(a=>`
-            <div style="padding:9px 16px;border-bottom:1px solid #F9FAFB;display:flex;gap:8px;align-items:flex-start;background:#FEFCE8">
-              <div style="width:8px;height:8px;border-radius:50%;background:${tipoCor(a.tipo)};flex-shrink:0;margin-top:4px"></div>
-              <div style="flex:1">
-                <div style="font-size:12px;font-weight:700;color:#111827">${a.titulo}</div>
-                <div style="font-size:10.5px;color:#9CA3AF">${a.para}</div>
+          ` : groups.map(g => `
+            <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;margin-bottom:12px;overflow:hidden">
+              <div style="padding:11px 16px;background:#FAFAFA;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;gap:8px">
+                <i data-feather="zap" style="width:12px;height:12px;color:${headerColor}"></i>
+                <div style="font-size:12px;font-weight:700;color:#374151">${_autoEsc(g.label)}</div>
+                <div style="flex:1"></div>
+                <span style="font-size:10px;color:#9CA3AF;background:#F3F4F6;padding:2px 7px;border-radius:10px;font-weight:700">${g.rules.length}</span>
               </div>
-            </div>`).join('')||`<div style="padding:28px;text-align:center;font-size:12px;color:#D1D5DB">Nenhum alerta pendente</div>`}
+              <div>
+                ${g.rules.map(r => {
+                  const selected = _autoSelectedId === r.id
+                  const activeCh = _autoActiveChannels(r)
+                  return `
+                    <div onclick="window._agendaSelectAuto('${r.id}')" style="
+                      padding:11px 16px;border-bottom:1px solid #F9FAFB;display:flex;align-items:center;gap:10px;cursor:pointer;
+                      background:${selected?'#F5F3FF':'transparent'};
+                      border-left:3px solid ${selected?'#7C3AED':'transparent'}">
+                      <div style="width:8px;height:8px;border-radius:50%;background:${r.is_active?'#10B981':'#D1D5DB'};flex-shrink:0"></div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-size:12.5px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(r.name || 'Sem nome')}</div>
+                        <div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(r.description || '—')}</div>
+                      </div>
+                      <div style="display:flex;gap:3px;flex-shrink:0">
+                        ${activeCh.map(c => {
+                          const meta = _autoChannelMeta(c)
+                          return `<div title="${meta.label}" style="width:22px;height:22px;border-radius:6px;background:${meta.color}18;display:flex;align-items:center;justify-content:center">
+                            <i data-feather="${meta.icon}" style="width:11px;height:11px;color:${meta.color}"></i>
+                          </div>`
+                        }).join('')}
+                      </div>
+                      <span style="font-size:9.5px;padding:2px 7px;border-radius:5px;background:${r.is_active?'#DCFCE7':'#F3F4F6'};color:${r.is_active?'#166534':'#9CA3AF'};font-weight:700;flex-shrink:0">${r.is_active?'ON':'OFF'}</span>
+                    </div>`
+                }).join('')}
+              </div>
+            </div>
+          `).join('')}
         </div>
 
-        <!-- Tarefas da agenda -->
-        <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;overflow:hidden">
-          <div style="padding:13px 16px;border-bottom:1px solid #F3F4F6;font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px">
-            <i data-feather="check-square" style="width:13px;height:13px;color:#10B981"></i> Tarefas da Agenda
-            ${pendingTasks.length?`<span style="background:#F59E0B;color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700">${pendingTasks.length}</span>`:''}
-          </div>
-          ${pendingTasks.slice(0,6).map(t=>`
-            <div style="padding:9px 16px;border-bottom:1px solid #F9FAFB;display:flex;align-items:center;gap:9px">
-              <input type="checkbox" onclick="TagEngine.updateTaskStatus('${t.id}','concluida');renderAgendaTagsFluxos()"
-                style="width:14px;height:14px;cursor:pointer;accent-color:#7C3AED;flex-shrink:0">
-              <div style="flex:1;min-width:0">
-                <div style="font-size:12px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titulo}</div>
-                <div style="font-size:10.5px;color:#9CA3AF">${(window.TAREFA_PARA_OPTS||[]).find(o=>o.id===t.para)?.nome||t.para}</div>
-              </div>
-              <span style="font-size:10px;padding:2px 7px;border-radius:5px;background:${prCor(t.prioridade)}18;color:${prCor(t.prioridade)};font-weight:700;flex-shrink:0">${t.prioridade||'normal'}</span>
-            </div>`).join('')||`<div style="padding:28px;text-align:center;font-size:12px;color:#D1D5DB">Nenhuma tarefa pendente</div>`}
-        </div>
-
+        <!-- Coluna 2: drawer de detalhe -->
+        ${_autoSelectedId ? _autoRenderDrawer() : ''}
       </div>
 
-      <!-- Tags do grupo Agendamento -->
-      <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;overflow:hidden;margin-bottom:16px">
-        <div style="padding:13px 18px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between">
-          <div style="font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px">
-            <i data-feather="tag" style="width:13px;height:13px;color:#3B82F6"></i> Tags — Grupo Agendamento
+      <!-- Tags do grupo Agendamento (informativo) -->
+      ${agTags.length ? `
+        <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;overflow:hidden;margin-top:24px">
+          <div style="padding:13px 18px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px">
+              <i data-feather="tag" style="width:13px;height:13px;color:#3B82F6"></i> Tags — Grupo Agendamento
+            </div>
+            <button onclick="if(window.renderSettingsTags){location.hash='settings-tags';renderSettingsTags()}" style="font-size:11px;color:#7C3AED;background:none;border:none;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:4px">
+              <i data-feather="settings" style="width:11px;height:11px"></i> Configurar
+            </button>
           </div>
-          <button onclick="if(window.renderSettingsTags){location.hash='settings-tags';renderSettingsTags()}" style="font-size:11px;color:#7C3AED;background:none;border:none;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:4px">
-            <i data-feather="settings" style="width:11px;height:11px"></i> Configurar
-          </button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0">
-          ${agTags.map(tag=>{
-            const automations = [
-              tag.msg_template_id   && cfg.auto_mensagens  ? {icon:'message-circle',cor:'#3B82F6'} : null,
-              tag.task_template_id  && cfg.auto_tarefas    ? {icon:'check-square',  cor:'#10B981'} : null,
-              tag.kanban_coluna     && cfg.auto_kanban      ? {icon:'trello',        cor:'#8B5CF6'} : null,
-              tag.alert_template_id && cfg.auto_alertas    ? {icon:'bell',          cor:'#F59E0B'} : null,
-              tag.cor_calendario                           ? {icon:'calendar',      cor:tag.cor_calendario} : null,
-            ].filter(Boolean)
-            return `
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0">
+            ${agTags.map(tag => `
               <div style="padding:11px 16px;border-bottom:1px solid #F9FAFB;border-right:1px solid #F9FAFB;display:flex;align-items:center;gap:10px">
-                <div style="width:8px;height:8px;border-radius:50%;background:${tag.cor};flex-shrink:0"></div>
+                <div style="width:8px;height:8px;border-radius:50%;background:${tag.cor||'#9CA3AF'};flex-shrink:0"></div>
                 <div style="flex:1;min-width:0">
-                  <div style="font-size:12px;font-weight:700;color:#111827">${tag.nome}</div>
-                  <div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tag.regras||''}</div>
+                  <div style="font-size:12px;font-weight:700;color:#111827">${_autoEsc(tag.nome)}</div>
+                  <div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(tag.regras||'')}</div>
                 </div>
-                <div style="display:flex;gap:3px;flex-shrink:0">
-                  ${automations.map(b=>`<div style="width:20px;height:20px;border-radius:5px;background:${b.cor}15;display:flex;align-items:center;justify-content:center">
-                    <i data-feather="${b.icon}" style="width:10px;height:10px;color:${b.cor}"></i>
-                  </div>`).join('')}
-                </div>
-              </div>`}).join('')}
-        </div>
-      </div>
-
-      <!-- Fluxos de agendamento -->
-      <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;overflow:hidden">
-        <div style="padding:13px 18px;border-bottom:1px solid #F3F4F6;font-size:13px;font-weight:700;color:#374151;display:flex;align-items:center;gap:6px">
-          <i data-feather="git-branch" style="width:13px;height:13px;color:#7C3AED"></i> Fluxos de Automação — Agenda
-        </div>
-        <div style="padding:14px 16px;display:grid;gap:10px">
-          ${agFlows.length ? agFlows.map(f=>`
-            <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:#FAFAFA;border-radius:9px">
-              <div style="width:34px;height:34px;border-radius:9px;background:#3B82F615;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                <i data-feather="git-branch" style="width:14px;height:14px;color:#3B82F6"></i>
               </div>
-              <div style="flex:1">
-                <div style="font-size:12.5px;font-weight:700;color:#111827;margin-bottom:2px">${f.nome}</div>
-                <div style="font-size:11px;color:#9CA3AF">${f.descricao||''} · Delay: ${f.delay_entre_steps||0}h</div>
-              </div>
-              <span style="font-size:10px;padding:2px 9px;border-radius:6px;font-weight:700;background:${f.ativo?'#DCFCE7':'#F3F4F6'};color:${f.ativo?'#166534':'#9CA3AF'}">${f.ativo?'Ativo':'Pausado'}</span>
-              <button onclick="TagEngine.saveFlow({...TagEngine.getFlows().find(x=>x.id==='${f.id}'),ativo:${!f.ativo}});renderAgendaTagsFluxos()"
-                style="font-size:11px;padding:5px 11px;border:1px solid #E5E7EB;background:#fff;border-radius:7px;cursor:pointer;color:${f.ativo?'#EF4444':'#10B981'};font-weight:600">
-                ${f.ativo?'Pausar':'Ativar'}
-              </button>
-            </div>`).join('')
-          : `<div style="padding:24px;text-align:center;font-size:12px;color:#9CA3AF">Nenhum fluxo de agendamento configurado ainda.</div>`}
+            `).join('')}
+          </div>
         </div>
-      </div>
+      ` : ''}
 
     </div>`
-  featherIn(root)
+  if (typeof featherIn === 'function') featherIn(root)
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -540,5 +742,7 @@ window.agendaSetEventoTab      = agendaSetEventoTab
 window.agendaEventoNovo        = agendaEventoNovo
 window.agendaEventoSalvar      = agendaEventoSalvar
 window.agendaEventoRemover     = agendaEventoRemover
+window._agendaSetAutoTab       = _agendaSetAutoTab
+window._agendaSelectAuto       = _agendaSelectAuto
 
 })()
