@@ -123,26 +123,6 @@
         "></div>
       </div>
 
-      <!-- Period Selector — visível só no Dashboard (via JS) -->
-      <div class="header-period dropdown-wrapper" id="periodDropdown" style="display:none">
-        <button class="period-btn dropdown-trigger" data-dropdown="period">
-          <i data-feather="calendar"></i>
-          <span id="periodLabel">Últimos 30 dias</span>
-          <i data-feather="chevron-down" class="dropdown-arrow"></i>
-        </button>
-        <div class="dropdown-menu" id="periodMenu">
-          <div class="dropdown-item" data-period="today">Hoje</div>
-          <div class="dropdown-item" data-period="yesterday">Ontem</div>
-          <div class="dropdown-item" data-period="7days">Últimos 7 dias</div>
-          <div class="dropdown-item active" data-period="30days">Últimos 30 dias</div>
-          <div class="dropdown-item" data-period="90days">Últimos 90 dias</div>
-          <div class="dropdown-item" data-period="thismonth">Este mês</div>
-          <div class="dropdown-item" data-period="lastmonth">Mês passado</div>
-          <div class="dropdown-divider"></div>
-          <div class="dropdown-item" data-period="custom">Período personalizado</div>
-        </div>
-      </div>
-
       <!-- Fechar o Dia — expandido -->
       <button onclick="abrirFecharDia()" id="fecharDiaBtn"
         style="display:flex;align-items:center;gap:8px;padding:9px 18px;background:linear-gradient(135deg,#DC2626,#B91C1C);color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(220,38,38,.35);transition:all .2s;white-space:nowrap"

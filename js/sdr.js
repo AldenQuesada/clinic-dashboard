@@ -351,8 +351,6 @@ const _origNavigateTo = window.navigateTo
 if (_origNavigateTo) {
   window.navigateTo = function(pageId) {
     _origNavigateTo(pageId)
-    const _pd = document.getElementById('periodDropdown')
-    if (_pd) _pd.style.display = (pageId === 'dashboard-overview') ? '' : 'none'
 
     setTimeout(() => {
       if (pageId === 'agenda-overview') { loadAgendaOverview() }

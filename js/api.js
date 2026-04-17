@@ -2461,9 +2461,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       _renderNotificationBell()
       featherIn(document.getElementById('notifDropdown'))
-      // Mostrar seletor de período na página inicial (dashboard)
-      const _pd = document.getElementById('periodDropdown')
-      if (_pd) _pd.style.display = ''
     }, 600)
   }
 })
