@@ -56,22 +56,26 @@
     if (!_state.loaded || !_state.data) { slot.innerHTML = ''; return }
     var d = _state.data
 
+    var recompensas = Number(d.recompensas_emitidas_ano || 0)
+
+    // Se nenhuma recompensa com valor monetario foi registrada,
+    // oculta o card (evita mostrar "R$ 0" que confunde).
+    if (recompensas <= 0) { slot.innerHTML = ''; return }
+
     slot.innerHTML =
       '<div class="vpi-impact">' +
-        '<div class="vpi-impact-kicker">Nossas embaixadoras já indicaram</div>' +
+        '<div class="vpi-impact-kicker">Nossas parceiras já ganharam</div>' +
         '<div class="vpi-impact-counter" id="vpi-impact-valor">R$ 0</div>' +
         '<div class="vpi-impact-desc">' +
-          'Em <strong id="vpi-impact-ano">0</strong> indicações fechadas em ' + (d.ano_ref || '') + ',' +
-          ' por <strong id="vpi-impact-emb">0</strong> embaixadoras ativas.<br>' +
-          '<span style="opacity:0.8">Você faz parte desse movimento.</span>' +
+          'Em recompensas entregues em ' + (d.ano_ref || '') + ',' +
+          ' para <strong id="vpi-impact-emb">0</strong> parceiras ativas.<br>' +
+          '<span style="opacity:0.8">Indicar transforma a vida de quem você ama — e a sua também.</span>' +
         '</div>' +
       '</div>'
 
     var elValor = document.getElementById('vpi-impact-valor')
-    var elAno   = document.getElementById('vpi-impact-ano')
     var elEmb   = document.getElementById('vpi-impact-emb')
-    _animateCounter(elValor, d.valor_total_ano || 0, _fmtBRL, 2000)
-    _animateCounter(elAno,   d.total_indicacoes_ano || 0, _fmtInt, 1600)
+    _animateCounter(elValor, recompensas, _fmtBRL, 2000)
     _animateCounter(elEmb,   d.total_embaixadoras || 0, _fmtInt, 1600)
   }
 
