@@ -105,6 +105,7 @@
       +   '<div class="fa-top-actions">'
       +     '<button type="button" class="fa-btn-sec" data-action="show-lifecycle" title="Lifecycle — conversao por fase">' + _f('trendingUp', 14) + ' Lifecycle</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="show-d1tracking" title="Rastreamento SIM/NAO do D-1">' + _f('checkCircle', 14) + ' D-1 Tracking</button>'
+      +     '<button type="button" class="fa-btn-sec" data-action="show-absig" title="A/B com significancia estatistica">' + _f('zap', 14) + ' A/B Tests</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="show-deliverability" title="Entregabilidade (ultimos 30 dias)">' + _f('barChart2', 14) + ' Entregabilidade</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="export-json" title="Exportar regras desta fase como JSON">' + _f('download', 14) + ' Exportar</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="import-json" title="Importar regras de JSON">' + _f('upload', 14) + ' Importar</button>'
@@ -635,6 +636,7 @@
         }
         if (a === 'show-lifecycle') { _showLifecycle(); return }
         if (a === 'show-d1tracking') { _showD1Tracking(); return }
+        if (a === 'show-absig') { _showAbSignificance(); return }
         if (a === 'show-template-library') {
           var cat = _activeModule || 'agendamento'
           S().showTemplateLibrary(cat, function(tpl) {
@@ -1251,6 +1253,143 @@
       + '<div class="fa-d1-hint">' + _f('info', 11)
       + ' Resposta capturada automaticamente via trigger <b>wa_auto_confirm_appointment</b> (SIM/NAO/CONFIRMO/CANCELAR).'
       + ' Atualiza <code>appointments.d1_response</code> + status da consulta.</div>'
+  }
+
+  // ── A/B Significance testing ────────────────────────────────
+  function _showAbSignificance() {
+    var existing = document.getElementById('faAbSigModal')
+    if (existing) existing.remove()
+    var overlay = document.createElement('div')
+    overlay.id = 'faAbSigModal'
+    overlay.className = 'fa-modal-overlay'
+    overlay.innerHTML = '<div class="fa-modal fa-modal-absig" role="dialog">'
+      + '<div class="fa-modal-header">'
+      +   '<div class="fa-modal-title">' + _f('zap', 16) + ' Testes A/B · significancia estatistica</div>'
+      +   '<button type="button" class="fa-btn-icon" data-absig-close>' + _f('x', 16) + '</button>'
+      + '</div>'
+      + '<div class="fa-absig-filters">'
+      +   '<label>Periodo'
+      +     '<select id="faAbSigDays">'
+      +       '<option value="7">Ultimos 7 dias</option>'
+      +       '<option value="30" selected>Ultimos 30 dias</option>'
+      +       '<option value="60">Ultimos 60 dias</option>'
+      +       '<option value="90">Ultimos 90 dias</option>'
+      +     '</select>'
+      +   '</label>'
+      + '</div>'
+      + '<div class="fa-modal-body"><div class="fa-absig-loading">Carregando...</div></div>'
+      + '</div>'
+    document.body.appendChild(overlay)
+
+    function close() { overlay.remove() }
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) return close()
+      if (e.target.closest('[data-absig-close]')) return close()
+    })
+    overlay.querySelector('#faAbSigDays').addEventListener('change', function() {
+      _loadAbSignificance(parseInt(this.value, 10) || 30)
+    })
+    if (!window._faAbSigEscBound) {
+      window._faAbSigEscBound = true
+      document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return
+        var m = document.getElementById('faAbSigModal')
+        if (m) m.remove()
+      })
+    }
+
+    _loadAbSignificance(30)
+  }
+
+  async function _loadAbSignificance(days) {
+    var body = document.querySelector('#faAbSigModal .fa-modal-body')
+    if (!body) return
+    body.innerHTML = '<div class="fa-absig-loading">Carregando...</div>'
+    try {
+      if (!window._sbShared) throw new Error('Supabase indisponivel')
+      var res = await window._sbShared.rpc('wa_rule_ab_significance', { p_days: days })
+      if (res.error) throw new Error(res.error.message)
+      var payload = res.data || {}
+      if (payload.ok === false) throw new Error(payload.error || 'Erro na RPC')
+      _renderAbSignificance(payload.data || {}, body)
+    } catch (e) {
+      body.innerHTML = '<div class="fa-absig-error">' + _f('alertCircle', 14) + ' Erro: ' + S().esc(e.message) + '</div>'
+    }
+  }
+
+  function _renderAbSignificance(data, body) {
+    var rules = Array.isArray(data.rules) ? data.rules : []
+    if (!rules.length) {
+      body.innerHTML = '<div class="fa-absig-empty">' + _f('info', 14)
+        + ' Nenhuma regra com A/B ativo. Abra uma regra de WhatsApp e clique em '
+        + '<b>Testar variacao B</b> para comecar um experimento.</div>'
+      return
+    }
+
+    var cards = rules.map(function(r) {
+      var aRate = r.a_rate != null ? r.a_rate + '%' : '—'
+      var bRate = r.b_rate != null ? r.b_rate + '%' : '—'
+      var winnerBadge = ''
+      var verdictCls = 'fa-absig-verdict-none'
+      var verdictTxt = ''
+
+      if (r.n_total < 30) {
+        verdictTxt = 'Amostra pequena (' + r.n_total + ' envios). Precisa de pelo menos ~' + (r.min_sample_rec > 0 ? r.min_sample_rec : '200') + ' para decidir.'
+      } else if (r.chi_square == null) {
+        verdictTxt = 'Sem dados suficientes nas duas variantes.'
+      } else if (r.significant_99) {
+        verdictCls = 'fa-absig-verdict-strong'
+        winnerBadge = r.winner
+        verdictTxt = 'Vencedor ' + (r.winner || '?') + ' com 99% de confianca. x^2=' + r.chi_square
+      } else if (r.significant_95) {
+        verdictCls = 'fa-absig-verdict-good'
+        winnerBadge = r.winner
+        verdictTxt = 'Vencedor ' + (r.winner || '?') + ' com 95% de confianca. x^2=' + r.chi_square
+      } else {
+        verdictCls = 'fa-absig-verdict-weak'
+        verdictTxt = 'Diferenca nao significativa (x^2=' + r.chi_square + ' < 3.841). Continue rodando.'
+      }
+
+      var a_ratio = r.a_total > 0 ? Math.round((r.a_sent / r.a_total) * 100) : 0
+      var b_ratio = r.b_total > 0 ? Math.round((r.b_sent / r.b_total) * 100) : 0
+
+      return '<div class="fa-absig-card">'
+        + '<div class="fa-absig-card-head">'
+        +   '<div class="fa-absig-card-name">' + _f('zap', 13) + ' ' + S().esc(r.rule_name)
+        +     (r.is_active ? '' : ' <span class="fa-absig-off">OFF</span>') + '</div>'
+        +   (winnerBadge ? '<div class="fa-absig-winner">Vencedor ' + S().esc(winnerBadge) + '</div>' : '')
+        + '</div>'
+        + '<div class="fa-absig-variants">'
+        +   '<div class="fa-absig-variant' + (r.winner === 'A' ? ' fa-absig-variant-win' : '') + '">'
+        +     '<div class="fa-absig-var-label">Variante A</div>'
+        +     '<div class="fa-absig-var-text">' + S().esc(r.a_content || '—') + '</div>'
+        +     '<div class="fa-absig-var-stats">'
+        +       '<span class="fa-absig-var-rate">' + aRate + '</span>'
+        +       '<span class="fa-absig-var-counts">' + r.a_sent + '/' + r.a_total + '</span>'
+        +     '</div>'
+        +     '<div class="fa-absig-var-bar"><div style="width:' + a_ratio + '%;background:#10B981"></div></div>'
+        +   '</div>'
+        +   '<div class="fa-absig-variant' + (r.winner === 'B' ? ' fa-absig-variant-win' : '') + '">'
+        +     '<div class="fa-absig-var-label">Variante B</div>'
+        +     '<div class="fa-absig-var-text">' + S().esc(r.b_content || '—') + '</div>'
+        +     '<div class="fa-absig-var-stats">'
+        +       '<span class="fa-absig-var-rate">' + bRate + '</span>'
+        +       '<span class="fa-absig-var-counts">' + r.b_sent + '/' + r.b_total + '</span>'
+        +     '</div>'
+        +     '<div class="fa-absig-var-bar"><div style="width:' + b_ratio + '%;background:#6366F1"></div></div>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="fa-absig-verdict ' + verdictCls + '">'
+        +   '<strong>Veredicto:</strong> ' + S().esc(verdictTxt)
+        + '</div>'
+        + '</div>'
+    }).join('')
+
+    body.innerHTML = '<div class="fa-absig-list">' + cards + '</div>'
+      + '<div class="fa-absig-hint">' + _f('info', 11)
+      + ' Metrica usada: <b>taxa de entrega</b> (sent / (sent+failed)). '
+      + 'Chi-quadrado com 1 grau de liberdade. Criterios: > 3.841 = 95% / > 6.635 = 99%. '
+      + 'Recomendado rodar com N >= 200 envios totais para uma decisao confiavel.</div>'
   }
 
   // ── Duplicar regra ──────────────────────────────────────────
