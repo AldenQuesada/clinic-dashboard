@@ -255,6 +255,23 @@
   <div class="actions">
     <button class="save" id="saveBtn">Salvar rascunho</button>
     <button class="submit" id="submitBtn">Enviar pro Claude</button>
+    <button class="submit" id="processAIBtn" style="background:#7a1f2b" title="Gera a edicao completa com IA a partir do brief">Processar com IA</button>
+  </div>
+</div>
+
+<!-- Progress modal pra Processar com IA -->
+<div id="aiProcessOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;width:min(500px,92vw);max-height:80vh;overflow:auto;border-radius:10px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <h2 style="font-family:Playfair Display,serif;font-weight:700;font-size:20px;margin-bottom:12px">Processando com IA</h2>
+    <div id="aiProcessStatus" style="font-size:13px;color:#555;margin-bottom:14px">Iniciando…</div>
+    <div style="background:#f4f1ec;border-radius:6px;height:6px;overflow:hidden;margin-bottom:16px">
+      <div id="aiProcessBar" style="height:100%;width:0;background:#7a1f2b;transition:width .4s ease"></div>
+    </div>
+    <div id="aiProcessLog" style="font-size:11px;font-family:ui-monospace,monospace;color:#8a8178;max-height:200px;overflow:auto;background:#f7f3ec;padding:10px;border-radius:6px;white-space:pre-wrap"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <a id="aiProcessGoto" href="#" target="_blank" style="padding:8px 14px;background:#1a1a1a;color:#fff;border-radius:6px;text-decoration:none;font-size:13px;display:none">Abrir edicao</a>
+      <button id="aiProcessClose" style="padding:8px 14px;border:1px solid #e5ddd2;background:#fff;border-radius:6px;cursor:pointer;font-size:13px">Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -934,6 +951,110 @@
     }
   }
 
+  // ===== B2 · PROCESSAR COM IA (brief -> edicao completa) =====
+  async function processBriefWithAI() {
+    if (!state.briefId) { await saveDraft(); if (!state.briefId) return }
+    var overlay = document.getElementById('aiProcessOverlay')
+    var statusEl = document.getElementById('aiProcessStatus')
+    var logEl = document.getElementById('aiProcessLog')
+    var barEl = document.getElementById('aiProcessBar')
+    var gotoEl = document.getElementById('aiProcessGoto')
+    var closeBtn = document.getElementById('aiProcessClose')
+    overlay.style.display = 'flex'
+    statusEl.textContent = 'Salvando brief…'
+    logEl.textContent = ''
+    barEl.style.width = '10%'
+    gotoEl.style.display = 'none'
+    closeBtn.onclick = function () { overlay.style.display = 'none' }
+
+    function appendLog(s) { logEl.textContent += s + '\n'; logEl.scrollTop = logEl.scrollHeight }
+
+    try {
+      await saveDraft()
+      statusEl.textContent = 'Preparando brief e fotos…'
+      appendLog('Brief id: ' + state.briefId)
+      barEl.style.width = '20%'
+
+      // Busca fotos associadas
+      var photosRes = await sb.rpc('magazine_brief_photos', { p_brief_id: state.briefId })
+      if (photosRes.error) throw photosRes.error
+      var photos = photosRes.data || []
+      appendLog('Fotos: ' + photos.length)
+      barEl.style.width = '30%'
+
+      // Monta raw_content agregado
+      var rawContent = [
+        'Tema: ' + (state.theme || ''),
+        'Tom: ' + (state.tone || ''),
+        'Objetivo: ' + (state.objective || ''),
+        'Mes/ano: ' + (state.monthYear || ''),
+        'Referencias: ' + (state.referencesText || ''),
+        '',
+        'Secoes rascunhadas pela autora:',
+      ].join('\n')
+      var sectionsHint = state.sections.map(function (s) {
+        return { template_slug: s.slug, raw_content: JSON.stringify(s.content || {}).slice(0, 2000) }
+      })
+
+      var endpoint = (window.ClinicEnv && window.ClinicEnv.MAGAZINE_AI_ENDPOINT) || ''
+      // brief endpoint usa mesmo dominio, function diferente
+      var briefEndpoint = endpoint.replace('/magazine-ai-generate', '/magazine-brief-to-edition')
+      appendLog('Edge Function: ' + briefEndpoint)
+
+      statusEl.textContent = 'Chamando Claude Sonnet (pode demorar ~60s)…'
+      barEl.style.width = '45%'
+
+      var headers = { 'Content-Type': 'application/json' }
+      var anon = window.ClinicEnv && window.ClinicEnv.SUPABASE_KEY
+      if (anon) { headers['Authorization'] = 'Bearer ' + anon; headers['apikey'] = anon }
+
+      var resp = await fetch(briefEndpoint, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          mode: 'brief',
+          brief: {
+            theme: state.theme, tone: state.tone, objective: state.objective,
+            month_year: state.monthYear, raw_content: rawContent, sections_hint: sectionsHint,
+          },
+          photos: photos,
+        }),
+      })
+      if (!resp.ok) {
+        var errTxt = await resp.text()
+        throw new Error('Edge function ' + resp.status + ': ' + errTxt.slice(0, 300))
+      }
+      var plan = await resp.json()
+      if (!plan.pages || !Array.isArray(plan.pages)) throw new Error('Plano sem paginas')
+      appendLog('Plano recebido: ' + plan.pages.length + ' paginas')
+      barEl.style.width = '70%'
+
+      statusEl.textContent = 'Validando e criando paginas…'
+      var applyRes = await sb.rpc('magazine_brief_apply_plan', {
+        p_brief_id: state.briefId,
+        p_plan: plan,
+      })
+      if (applyRes.error) throw applyRes.error
+      var r = applyRes.data || {}
+      barEl.style.width = '100%'
+
+      appendLog('Paginas criadas: ' + (r.pages_created || 0))
+      if (r.warnings && r.warnings.length) appendLog('Warnings: ' + JSON.stringify(r.warnings).slice(0, 400))
+      if (r.errors && r.errors.length) appendLog('Erros por pagina: ' + JSON.stringify(r.errors).slice(0, 400))
+
+      if (r.ok && r.edition_id) {
+        statusEl.textContent = 'Edicao criada com sucesso.'
+        gotoEl.href = '/magazine-admin.html?edition=' + r.edition_id
+        gotoEl.style.display = ''
+      } else {
+        statusEl.textContent = 'Nenhuma pagina valida foi criada. Veja log.'
+      }
+    } catch (err) {
+      statusEl.textContent = 'Erro: ' + err.message
+      appendLog('ERR: ' + err.message)
+    }
+  }
+
   async function loadBrief(briefId) {
     try {
       const { data, error } = await sb.from('magazine_briefs').select('*').eq('id', briefId).single()
@@ -993,6 +1114,8 @@
     el.submitBtn.addEventListener('click', submitBrief)
     el.newDraftBtn.addEventListener('click', newDraft)
     el.loadDraftBtn.addEventListener('click', loadDraftDialog)
+    var processBtn = document.getElementById('processAIBtn')
+    if (processBtn) processBtn.addEventListener('click', processBriefWithAI)
 
     // tenta restaurar ultimo
     let restore = null
