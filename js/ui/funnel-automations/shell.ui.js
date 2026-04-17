@@ -102,6 +102,7 @@
       +     '<div class="fa-subtitle">' + total + ' regras nesta fase · isolamento total</div>'
       +   '</div>'
       +   '<div class="fa-top-actions">'
+      +     '<button type="button" class="fa-btn-sec" data-action="show-lifecycle" title="Lifecycle — conversao por fase">' + _f('trendingUp', 14) + ' Lifecycle</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="show-deliverability" title="Entregabilidade (ultimos 30 dias)">' + _f('barChart2', 14) + ' Entregabilidade</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="export-json" title="Exportar regras desta fase como JSON">' + _f('download', 14) + ' Exportar</button>'
       +     '<button type="button" class="fa-btn-sec" data-action="import-json" title="Importar regras de JSON">' + _f('upload', 14) + ' Importar</button>'
@@ -614,6 +615,7 @@
           if (mdv) mdv.remove()
           return
         }
+        if (a === 'show-lifecycle') { _showLifecycle(); return }
       }
 
       // Duplicar regra
@@ -865,6 +867,210 @@
     body.innerHTML = summary
       + '<table class="fa-deliv-table"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>'
       + '<div class="fa-deliv-hint">' + _f('info', 11) + ' Taxa = enviadas / (enviadas + falhas). Regras sem dados nao aparecem com valor.</div>'
+  }
+
+  // ── Dashboard de Lifecycle (conversao por fase) ─────────────
+  var PHASE_LABELS = {
+    lead: 'Lead',
+    agendado: 'Agendado',
+    reagendado: 'Reagendado',
+    compareceu: 'Compareceu',
+    orcamento: 'Orcamento',
+    paciente: 'Paciente',
+    perdido: 'Perdido',
+  }
+  var PHASE_COLORS = {
+    lead: '#64748B',
+    agendado: '#3B82F6',
+    reagendado: '#6366F1',
+    compareceu: '#8B5CF6',
+    orcamento: '#F59E0B',
+    paciente: '#10B981',
+    perdido: '#DC2626',
+  }
+  function _phaseLabel(p) { return PHASE_LABELS[p] || (p || '—') }
+  function _phaseColor(p) { return PHASE_COLORS[p] || '#94A3B8' }
+  function _hoursHuman(h) {
+    var n = Number(h) || 0
+    if (n < 1) return Math.round(n * 60) + 'm'
+    if (n < 24) return (Math.round(n * 10) / 10) + 'h'
+    return (Math.round((n / 24) * 10) / 10) + 'd'
+  }
+
+  function _showLifecycle() {
+    var existing = document.getElementById('faLifecycleModal')
+    if (existing) existing.remove()
+    var overlay = document.createElement('div')
+    overlay.id = 'faLifecycleModal'
+    overlay.className = 'fa-modal-overlay'
+    overlay.innerHTML = '<div class="fa-modal fa-modal-lc" role="dialog">'
+      + '<div class="fa-modal-header">'
+      +   '<div class="fa-modal-title">' + _f('trendingUp', 16) + ' Lifecycle · conversao por fase</div>'
+      +   '<button type="button" class="fa-btn-icon" data-lc-close>' + _f('x', 16) + '</button>'
+      + '</div>'
+      + '<div class="fa-lc-filters">'
+      +   '<label>Periodo'
+      +     '<select id="faLcDays">'
+      +       '<option value="7">Ultimos 7 dias</option>'
+      +       '<option value="30" selected>Ultimos 30 dias</option>'
+      +       '<option value="60">Ultimos 60 dias</option>'
+      +       '<option value="90">Ultimos 90 dias</option>'
+      +       '<option value="180">Ultimos 180 dias</option>'
+      +     '</select>'
+      +   '</label>'
+      +   '<label>Funil'
+      +     '<select id="faLcFunnel">'
+      +       '<option value="">Todos</option>'
+      +       '<option value="fullface">Full Face</option>'
+      +       '<option value="procedimentos">Procedimentos</option>'
+      +     '</select>'
+      +   '</label>'
+      + '</div>'
+      + '<div class="fa-modal-body"><div class="fa-lc-loading">Carregando metricas...</div></div>'
+      + '</div>'
+    document.body.appendChild(overlay)
+
+    function close() { overlay.remove() }
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) return close()
+      if (e.target.closest('[data-lc-close]')) return close()
+    })
+    overlay.querySelector('#faLcDays').addEventListener('change', function() {
+      _loadLifecycle(parseInt(this.value, 10) || 30, overlay.querySelector('#faLcFunnel').value || null)
+    })
+    overlay.querySelector('#faLcFunnel').addEventListener('change', function() {
+      _loadLifecycle(parseInt(overlay.querySelector('#faLcDays').value, 10) || 30, this.value || null)
+    })
+    if (!window._faLcEscBound) {
+      window._faLcEscBound = true
+      document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return
+        var m = document.getElementById('faLifecycleModal')
+        if (m) m.remove()
+      })
+    }
+
+    _loadLifecycle(30, null)
+  }
+
+  async function _loadLifecycle(days, funnel) {
+    var body = document.querySelector('#faLifecycleModal .fa-modal-body')
+    if (!body) return
+    body.innerHTML = '<div class="fa-lc-loading">Carregando metricas...</div>'
+    try {
+      if (!window._sbShared) throw new Error('Supabase indisponivel')
+      var res = await window._sbShared.rpc('sdr_lifecycle_metrics', { p_days: days, p_funnel: funnel })
+      if (res.error) throw new Error(res.error.message)
+      var payload = res.data || {}
+      if (payload.ok === false) throw new Error(payload.error || 'Erro na RPC')
+      _renderLifecycleDashboard(payload.data || {}, body)
+    } catch (e) {
+      body.innerHTML = '<div class="fa-lc-error">' + _f('alertCircle', 14) + ' Erro: ' + S().esc(e.message) + '</div>'
+    }
+  }
+
+  function _renderLifecycleDashboard(data, body) {
+    var phases = Array.isArray(data.phases) ? data.phases : []
+    var transitions = Array.isArray(data.transitions) ? data.transitions : []
+    var totals = data.totals || {}
+    var origins = data.origins || {}
+
+    if (!phases.length && !totals.events) {
+      body.innerHTML = '<div class="fa-lc-empty">' + _f('info', 14) + ' Sem movimentacoes no periodo selecionado.</div>'
+      return
+    }
+
+    var overallConv = totals.leads_touched > 0
+      ? Math.round((Number(totals.pacientes_period) / Number(totals.leads_touched)) * 1000) / 10
+      : null
+    var dropRate = totals.leads_touched > 0
+      ? Math.round((Number(totals.perdidos_period) / Number(totals.leads_touched)) * 1000) / 10
+      : null
+
+    var summary = '<div class="fa-lc-summary">'
+      + '<div class="fa-lc-stat"><div class="fa-lc-stat-label">Leads movimentados</div><div class="fa-lc-stat-val">' + (totals.leads_touched || 0) + '</div></div>'
+      + '<div class="fa-lc-stat"><div class="fa-lc-stat-label">Viraram Paciente</div><div class="fa-lc-stat-val" style="color:#10B981">' + (totals.pacientes_period || 0) + '</div></div>'
+      + '<div class="fa-lc-stat"><div class="fa-lc-stat-label">Viraram Perdido</div><div class="fa-lc-stat-val" style="color:#DC2626">' + (totals.perdidos_period || 0) + '</div></div>'
+      + '<div class="fa-lc-stat"><div class="fa-lc-stat-label">Conversao geral</div><div class="fa-lc-stat-val">' + (overallConv != null ? overallConv + '%' : '—') + '</div></div>'
+      + '<div class="fa-lc-stat"><div class="fa-lc-stat-label">Taxa de perda</div><div class="fa-lc-stat-val">' + (dropRate != null ? dropRate + '%' : '—') + '</div></div>'
+      + '<div class="fa-lc-stat"><div class="fa-lc-stat-label">Total eventos</div><div class="fa-lc-stat-val">' + (totals.events || 0) + '</div></div>'
+      + '</div>'
+
+    // Funnel bars — proporcao de entries em cada fase
+    var maxEntries = phases.reduce(function(m, p) { return Math.max(m, Number(p.entries) || 0) }, 0) || 1
+    var funnelBars = phases.map(function(p) {
+      var pct = Math.round((Number(p.entries) / maxEntries) * 100)
+      var color = _phaseColor(p.phase)
+      var convOut = Number(p.entries) > 0 ? Math.round((Number(p.exits) / Number(p.entries)) * 1000) / 10 : null
+      return '<div class="fa-lc-phase-row">'
+        + '<div class="fa-lc-phase-name" style="color:' + color + '">' + S().esc(_phaseLabel(p.phase)) + '</div>'
+        + '<div class="fa-lc-phase-bar-wrap">'
+        +   '<div class="fa-lc-phase-bar" style="width:' + pct + '%;background:' + color + '"></div>'
+        +   '<div class="fa-lc-phase-bar-label">' + (p.entries || 0) + ' entradas</div>'
+        + '</div>'
+        + '<div class="fa-lc-phase-meta">'
+        +   '<span title="Atualmente na fase">' + _f('users', 11) + ' ' + (p.current || 0) + '</span>'
+        +   '<span title="Sairam da fase no periodo">' + _f('logOut', 11) + ' ' + (p.exits || 0) + (convOut != null ? ' (' + convOut + '%)' : '') + '</span>'
+        +   '<span title="Tempo medio na fase">' + _f('clock', 11) + ' ' + (p.samples > 0 ? _hoursHuman(p.avg_hours) : '—') + '</span>'
+        + '</div>'
+        + '</div>'
+    }).join('')
+
+    // Transicoes
+    var transitionsBlock = ''
+    if (transitions.length) {
+      var rows = transitions.slice(0, 20).map(function(t) {
+        var fromColor = _phaseColor(t.from)
+        var toColor = _phaseColor(t.to)
+        return '<tr>'
+          + '<td><span class="fa-lc-chip" style="background:' + fromColor + '20;color:' + fromColor + '">' + S().esc(_phaseLabel(t.from)) + '</span></td>'
+          + '<td class="fa-lc-arrow">' + _f('arrowRight', 12) + '</td>'
+          + '<td><span class="fa-lc-chip" style="background:' + toColor + '20;color:' + toColor + '">' + S().esc(_phaseLabel(t.to)) + '</span></td>'
+          + '<td class="fa-lc-tnum">' + (t.count || 0) + '</td>'
+          + '</tr>'
+      }).join('')
+      transitionsBlock = '<div class="fa-lc-section-title">Transicoes mais frequentes</div>'
+        + '<table class="fa-lc-trans-table"><thead>'
+        +   '<tr><th>De</th><th></th><th>Para</th><th>Qtd</th></tr>'
+        + '</thead><tbody>' + rows + '</tbody></table>'
+    }
+
+    // Origin attribution
+    var originBlock = ''
+    var originKeys = Object.keys(origins)
+    if (originKeys.length) {
+      var totalOrig = originKeys.reduce(function(s, k) { return s + Number(origins[k] || 0) }, 0) || 1
+      var originLabelMap = {
+        auto_transition: 'Automatico (sistema)',
+        manual_override: 'Manual (usuario)',
+        rule:            'Regra de automacao',
+        unknown:         'Sem origem',
+      }
+      var origColorMap = {
+        auto_transition: '#3B82F6',
+        manual_override: '#F59E0B',
+        rule:            '#10B981',
+        unknown:         '#94A3B8',
+      }
+      var origRows = originKeys.map(function(k) {
+        var pct = Math.round((Number(origins[k]) / totalOrig) * 1000) / 10
+        var color = origColorMap[k] || '#94A3B8'
+        return '<div class="fa-lc-orig-row">'
+          + '<div class="fa-lc-orig-name">' + S().esc(originLabelMap[k] || k) + '</div>'
+          + '<div class="fa-lc-orig-bar-wrap"><div class="fa-lc-orig-bar" style="width:' + pct + '%;background:' + color + '"></div></div>'
+          + '<div class="fa-lc-orig-val">' + origins[k] + ' <span class="fa-lc-orig-pct">(' + pct + '%)</span></div>'
+          + '</div>'
+      }).join('')
+      originBlock = '<div class="fa-lc-section-title">Origem das transicoes</div>'
+        + '<div class="fa-lc-origins">' + origRows + '</div>'
+    }
+
+    body.innerHTML = summary
+      + '<div class="fa-lc-section-title">Funil por fase (entradas no periodo)</div>'
+      + '<div class="fa-lc-phases">' + funnelBars + '</div>'
+      + transitionsBlock
+      + originBlock
+      + '<div class="fa-lc-hint">' + _f('info', 11) + ' "Entradas" = leads que entraram na fase no periodo. "Atual" = leads que estao nela agora. "Tempo medio" = duracao tipica entre entrar e sair.</div>'
   }
 
   // ── Duplicar regra ──────────────────────────────────────────
