@@ -38,13 +38,18 @@
   var _state = null
 
   function _newSlot() {
-    return { photoB64: null, photoUrl: null, img: null, points: null, imgW: 0, imgH: 0 }
+    return {
+      photoB64: null, photoUrl: null, img: null, points: null,
+      imgW: 0, imgH: 0,
+      zoom: 1, panX: 0, panY: 0, locked: false,
+    }
   }
 
   function _newState(leadId) {
     return {
       leadId: leadId,
       gender: 'F',
+      syncViews: false,
       antes: _newSlot(),
       depois: _newSlot(),
     }
@@ -68,10 +73,17 @@
   function _saveToStorage() {
     if (!_state) return
     try {
+      function _slotPayload(s) {
+        return {
+          points: s.points, photoB64: s.photoB64,
+          zoom: s.zoom, panX: s.panX, panY: s.panY, locked: s.locked,
+        }
+      }
       var payload = {
         gender: _state.gender,
-        antes:  { points: _state.antes.points,  photoB64: _state.antes.photoB64 },
-        depois: { points: _state.depois.points, photoB64: _state.depois.photoB64 },
+        syncViews: _state.syncViews,
+        antes:  _slotPayload(_state.antes),
+        depois: _slotPayload(_state.depois),
         savedAt: new Date().toISOString(),
       }
       localStorage.setItem(_storageKey(_state.leadId), JSON.stringify(payload))
@@ -95,6 +107,7 @@
     var saved = _loadFromStorage(leadId)
     if (saved) {
       _state.gender = saved.gender || 'F'
+      _state.syncViews = !!saved.syncViews
       // Migrate old flat format → antes slot
       if (saved.photoB64 && !saved.antes) {
         _state.antes.photoB64 = saved.photoB64
@@ -106,6 +119,10 @@
             _state[k].photoB64 = saved[k].photoB64 || null
             _state[k].photoUrl = saved[k].photoB64 || null
             _state[k].points = saved[k].points || null
+            _state[k].zoom  = (typeof saved[k].zoom === 'number' && saved[k].zoom > 0) ? saved[k].zoom : 1
+            _state[k].panX  = saved[k].panX || 0
+            _state[k].panY  = saved[k].panY || 0
+            _state[k].locked = !!saved[k].locked
           }
         })
       }
@@ -211,6 +228,102 @@
     setTimeout(FM._initCanvas, 50)
   }
 
+  // ── Zoom / Pan / Lock / Sync API ─────────────────────────────
+  var MIN_ZOOM = 0.3, MAX_ZOOM = 6
+
+  function _clampZoom(z) { return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)) }
+
+  function _zoomAt(slot, factor, cx, cy) {
+    var s = _state[slot]
+    var newZoom = _clampZoom(s.zoom * factor)
+    var actual = newZoom / s.zoom
+    // Keep point under (cx, cy) stationary
+    s.panX = cx - (cx - s.panX) * actual
+    s.panY = cy - (cy - s.panY) * actual
+    s.zoom = newZoom
+    return actual
+  }
+
+  function _otherSlot(slot) { return slot === 'antes' ? 'depois' : 'antes' }
+
+  Nasal.zoomIn  = function (slot) { _doZoomStep(slot || 'antes', 1.2) }
+  Nasal.zoomOut = function (slot) { _doZoomStep(slot || 'antes', 1 / 1.2) }
+
+  function _doZoomStep(slot, factor) {
+    _ensureLoaded()
+    var s = _state[slot]
+    if (!s.photoUrl || s.locked) return
+    // Center-of-canvas zoom
+    var cx = (s.imgW) / 2
+    var cy = (s.imgH) / 2
+    var actual = _zoomAt(slot, factor, cx, cy)
+    if (_state.syncViews) {
+      var os = _state[_otherSlot(slot)]
+      if (!os.locked && os.photoUrl) {
+        _zoomAt(_otherSlot(slot), actual, os.imgW / 2, os.imgH / 2)
+      }
+    }
+    _redrawAll()
+    _saveToStorage()
+  }
+
+  Nasal.fitView = function (slot) {
+    _ensureLoaded()
+    slot = slot || 'antes'
+    var s = _state[slot]
+    if (!s.photoUrl || s.locked) return
+    s.zoom = 1; s.panX = 0; s.panY = 0
+    if (_state.syncViews) {
+      var os = _state[_otherSlot(slot)]
+      if (!os.locked && os.photoUrl) { os.zoom = 1; os.panX = 0; os.panY = 0 }
+    }
+    _redrawAll()
+    _saveToStorage()
+  }
+
+  Nasal.toggleLock = function (slot) {
+    _ensureLoaded()
+    slot = slot || 'antes'
+    _state[slot].locked = !_state[slot].locked
+    _saveToStorage()
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+  }
+
+  Nasal.toggleSync = function () {
+    _ensureLoaded()
+    _state.syncViews = !_state.syncViews
+    _saveToStorage()
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+  }
+
+  Nasal.getSync = function () { _ensureLoaded(); return !!_state.syncViews }
+  Nasal.getLock = function (slot) { _ensureLoaded(); return !!(_state[slot || 'antes'] && _state[slot || 'antes'].locked) }
+
+  // Wheel handler (zoom at cursor) — attached per canvas
+  Nasal.onWheel = function (e, canvasEl) {
+    if (FM._activeTab !== 'nasal') return
+    if (!canvasEl) return
+    var slot = _detectTargetSlot(canvasEl)
+    var s = _state[slot]
+    if (!s.photoUrl || s.locked) return
+    e.preventDefault()
+    var rect = canvasEl.getBoundingClientRect()
+    var mx = e.clientX - rect.left
+    var my = e.clientY - rect.top
+    var factor = e.deltaY < 0 ? 1.12 : 1 / 1.12
+    var actual = _zoomAt(slot, factor, mx, my)
+    if (_state.syncViews) {
+      var os = _state[_otherSlot(slot)]
+      if (!os.locked && os.photoUrl) {
+        _zoomAt(_otherSlot(slot), actual, os.imgW / 2, os.imgH / 2)
+      }
+    }
+    _redrawAll()
+    _saveToStorage()
+  }
+
   // ── Angle computation (per slot) ─────────────────────────────
   Nasal.compute = function (slot) {
     _ensureLoaded()
@@ -265,22 +378,57 @@
     ctx.restore()
   }
 
-  // Called for canvas 1 (antes) from _redraw
+  // Called from FM._redraw when tab=nasal (draws image + overlays with zoom/pan)
   Nasal.render = function (ctx) {
     if (!ctx) return
     if (FM._activeTab !== 'nasal') return
     _ensureLoaded()
-    if (!_state.antes.photoUrl) return
-    _renderSlotCanvas(ctx, 'antes', FM._imgW, FM._imgH)
+    var s = _state.antes
+    if (!s.photoUrl || !s.img) return
+    ctx.save()
+    ctx.translate(s.panX, s.panY)
+    ctx.scale(s.zoom, s.zoom)
+    ctx.drawImage(s.img, 0, 0, s.imgW, s.imgH)
+    _renderSlotCanvas(ctx, 'antes', s.imgW, s.imgH)
+    ctx.restore()
+    _drawLockBadge(ctx, s, ctx.canvas.width)
   }
 
-  // Called for canvas 2 (depois) from _redraw2
   Nasal.render2 = function (ctx) {
     if (!ctx) return
     if (FM._activeTab !== 'nasal') return
     _ensureLoaded()
-    if (!_state.depois.photoUrl) return
-    _renderSlotCanvas(ctx, 'depois', _state.depois.imgW, _state.depois.imgH)
+    var s = _state.depois
+    if (!s.photoUrl || !s.img) return
+    ctx.save()
+    ctx.translate(s.panX, s.panY)
+    ctx.scale(s.zoom, s.zoom)
+    ctx.drawImage(s.img, 0, 0, s.imgW, s.imgH)
+    _renderSlotCanvas(ctx, 'depois', s.imgW, s.imgH)
+    ctx.restore()
+    _drawLockBadge(ctx, s, ctx.canvas.width)
+  }
+
+  function _drawLockBadge(ctx, s, canvasW) {
+    if (!s.locked && (s.zoom == null || Math.abs(s.zoom - 1) < 0.01)) return
+    ctx.save()
+    var parts = []
+    if (s.zoom && Math.abs(s.zoom - 1) >= 0.01) parts.push(Math.round(s.zoom * 100) + '%')
+    if (s.locked) parts.push('TRAVADO')
+    var text = parts.join(' \u00B7 ')
+    if (!text) { ctx.restore(); return }
+    ctx.font = 'bold 10px Montserrat, sans-serif'
+    var tw = ctx.measureText(text).width + 14
+    var bx = canvasW - tw - 8, by = 8
+    ctx.fillStyle = s.locked ? 'rgba(239,68,68,0.92)' : 'rgba(26,24,22,0.85)'
+    ctx.strokeStyle = s.locked ? '#fff' : 'rgba(200,169,126,0.4)'
+    ctx.lineWidth = 1
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx, by, tw, 20, 4); ctx.fill(); ctx.stroke() }
+    else { ctx.fillRect(bx, by, tw, 20); ctx.strokeRect(bx, by, tw, 20) }
+    ctx.fillStyle = '#fff'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, bx + 7, by + 10)
+    ctx.restore()
   }
 
   // ── Mouse handling (per slot via target canvas) ──────────────
@@ -288,12 +436,16 @@
   Nasal._hoverPoint = null  // { slot, id }
 
   function _hitTestSlot(slot, mx, my, w, h) {
-    var pts = _state[slot] && _state[slot].points
+    var s = _state[slot]
+    var pts = s && s.points
     if (!pts || !w) return null
     var threshold = 14, closest = null, bestDist = threshold
     Object.keys(pts).forEach(function (id) {
       var pt = pts[id]
-      var d = Math.sqrt(Math.pow(mx - pt.x * w, 2) + Math.pow(my - pt.y * h, 2))
+      // Apply zoom+pan transform (image coords → screen coords)
+      var sx = pt.x * w * s.zoom + s.panX
+      var sy = pt.y * h * s.zoom + s.panY
+      var d = Math.sqrt(Math.pow(mx - sx, 2) + Math.pow(my - sy, 2))
       if (d < bestDist) { bestDist = d; closest = id }
     })
     return closest
@@ -311,6 +463,8 @@
     return { w: s.imgW, h: s.imgH }
   }
 
+  Nasal._panDrag = null  // { slot, lastMx, lastMy }
+
   Nasal.onMouseDown = function (mx, my, canvasEl) {
     if (FM._activeTab !== 'nasal') return false
     _ensureLoaded()
@@ -324,6 +478,12 @@
       if (canvasEl) canvasEl.style.cursor = 'grabbing'
       return true
     }
+    // No point hit — start pan if not locked
+    if (!_state[slot].locked) {
+      Nasal._panDrag = { slot: slot, lastMx: mx, lastMy: my }
+      if (canvasEl) canvasEl.style.cursor = 'grabbing'
+      return true
+    }
     return false
   }
 
@@ -333,12 +493,37 @@
     var slot = _detectTargetSlot(canvasEl)
     if (!slot || !_state[slot].photoUrl) return false
     var dims = _slotDims(slot)
+    var s = _state[slot]
 
+    // Point drag (image-space coords)
     if (Nasal._dragPoint && Nasal._dragPoint.slot === slot) {
-      _state[slot].points[Nasal._dragPoint.id].x = Math.max(0, Math.min(1, mx / dims.w))
-      _state[slot].points[Nasal._dragPoint.id].y = Math.max(0, Math.min(1, my / dims.h))
+      var imgX = (mx - s.panX) / (dims.w * s.zoom)
+      var imgY = (my - s.panY) / (dims.h * s.zoom)
+      s.points[Nasal._dragPoint.id].x = Math.max(0, Math.min(1, imgX))
+      s.points[Nasal._dragPoint.id].y = Math.max(0, Math.min(1, imgY))
       _redrawAll()
       _refreshPanelValues()
+      _saveToStorage()
+      return true
+    }
+
+    // Pan drag
+    if (Nasal._panDrag && Nasal._panDrag.slot === slot) {
+      var dx = mx - Nasal._panDrag.lastMx
+      var dy = my - Nasal._panDrag.lastMy
+      s.panX += dx
+      s.panY += dy
+      if (_state.syncViews) {
+        var other = _otherSlot(slot)
+        var os = _state[other]
+        if (!os.locked && os.photoUrl) {
+          os.panX += dx
+          os.panY += dy
+        }
+      }
+      Nasal._panDrag.lastMx = mx
+      Nasal._panDrag.lastMy = my
+      _redrawAll()
       _saveToStorage()
       return true
     }
@@ -350,7 +535,7 @@
                   (next && Nasal._hoverPoint && (next.slot !== Nasal._hoverPoint.slot || next.id !== Nasal._hoverPoint.id))
     if (changed) {
       Nasal._hoverPoint = next
-      if (canvasEl) canvasEl.style.cursor = hit ? 'grab' : 'crosshair'
+      if (canvasEl) canvasEl.style.cursor = hit ? 'grab' : (s.locked ? 'crosshair' : 'grab')
       _redrawAll()
     }
     return !!hit
@@ -361,6 +546,11 @@
       Nasal._dragPoint = null
       if (canvasEl) canvasEl.style.cursor = 'crosshair'
       _refreshPanelValues()
+      return true
+    }
+    if (Nasal._panDrag) {
+      Nasal._panDrag = null
+      if (canvasEl) canvasEl.style.cursor = 'grab'
       return true
     }
     return false
@@ -377,7 +567,6 @@
     var ctx2 = c2.getContext('2d')
     ctx2.fillStyle = '#000000'
     ctx2.fillRect(0, 0, c2.width, c2.height)
-    ctx2.drawImage(_state.depois.img, 0, 0, _state.depois.imgW, _state.depois.imgH)
     Nasal.render2(ctx2)
   }
 
@@ -425,15 +614,12 @@
       '</div>'
     }
     return '<div style="flex:1;display:flex;flex-direction:column;background:#0A0A0A;border-radius:8px;overflow:hidden;position:relative">' +
-      '<div style="padding:6px 14px;background:' + _withAlpha(accent, 0.12) + ';display:flex;justify-content:space-between;align-items:center">' +
-        '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + accent + ';letter-spacing:0.1em">' + label + '</span>' +
-        '<div style="display:flex;gap:4px">' +
-          '<button class="fm-btn" onclick="FaceMapping._uploadNasalPhoto(\'' + slot + '\')" title="Substituir" style="font-size:9px;padding:3px 8px">Trocar</button>' +
-          '<button class="fm-btn" onclick="FaceMapping._deleteNasalPhoto(\'' + slot + '\')" title="Remover" style="font-size:9px;padding:3px 8px;border-color:#EF4444;color:#EF4444">\u00D7</button>' +
-        '</div>' +
+      '<div style="padding:6px 10px;background:' + _withAlpha(accent, 0.12) + ';display:flex;justify-content:space-between;align-items:center;gap:6px">' +
+        '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + accent + ';letter-spacing:0.1em;flex-shrink:0">' + label + '</span>' +
+        _slotControls(slot) +
       '</div>' +
       '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">' +
-        '<canvas id="' + canvasId + '" style="max-width:100%;max-height:100%;cursor:crosshair"></canvas>' +
+        '<canvas id="' + canvasId + '" style="max-width:100%;max-height:100%;cursor:grab"></canvas>' +
       '</div>' +
     '</div>'
   }
@@ -441,12 +627,24 @@
   function _slotHeader(slot) {
     var accent = SLOT_ACCENT[slot]
     var label = SLOT_LABEL[slot]
-    return '<div style="padding:6px 14px;background:' + _withAlpha(accent, 0.12) + ';display:flex;justify-content:space-between;align-items:center">' +
-      '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + accent + ';letter-spacing:0.1em">' + label + ' \u2014 PERFIL</span>' +
-      '<div style="display:flex;gap:4px">' +
-        '<button class="fm-btn" onclick="FaceMapping._uploadNasalPhoto(\'' + slot + '\')" title="Substituir" style="font-size:9px;padding:3px 8px">Trocar</button>' +
-        '<button class="fm-btn" onclick="FaceMapping._deleteNasalPhoto(\'' + slot + '\')" title="Remover" style="font-size:9px;padding:3px 8px;border-color:#EF4444;color:#EF4444">\u00D7</button>' +
-      '</div>' +
+    return '<div style="padding:6px 14px;background:' + _withAlpha(accent, 0.12) + ';display:flex;justify-content:space-between;align-items:center;gap:6px">' +
+      '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + accent + ';letter-spacing:0.1em;flex-shrink:0">' + label + ' \u2014 PERFIL</span>' +
+      _slotControls(slot) +
+    '</div>'
+  }
+
+  function _slotControls(slot) {
+    var locked = !!_state[slot].locked
+    var btn = 'font-size:11px;padding:3px 8px;min-width:24px;line-height:1;display:inline-flex;align-items:center;justify-content:center'
+    return '<div style="display:flex;gap:3px;align-items:center">' +
+      '<button class="fm-btn" onclick="FaceMapping._nasalZoomOut(\'' + slot + '\')" title="Diminuir zoom" style="' + btn + '">\u2212</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._nasalZoomIn(\'' + slot + '\')" title="Aumentar zoom" style="' + btn + '">+</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._nasalFit(\'' + slot + '\')" title="Ajustar" style="' + btn + ';font-size:9px">Fit</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._nasalToggleLock(\'' + slot + '\')" title="' + (locked ? 'Destravar vista' : 'Travar vista') + '" style="' + btn + ';' + (locked ? 'background:#EF4444;border-color:#EF4444;color:#fff' : '') + '">' +
+        (locked ? '\uD83D\uDD12' : '\uD83D\uDD13') +
+      '</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._uploadNasalPhoto(\'' + slot + '\')" title="Substituir" style="font-size:9px;padding:3px 8px;margin-left:6px">Trocar</button>' +
+      '<button class="fm-btn" onclick="FaceMapping._deleteNasalPhoto(\'' + slot + '\')" title="Remover" style="font-size:9px;padding:3px 8px;border-color:#EF4444;color:#EF4444">\u00D7</button>' +
     '</div>'
   }
 
@@ -521,6 +719,8 @@
     canvas.addEventListener('mousedown', function (e) { FM._onMouseDown(_withTarget(e, canvas)) })
     canvas.addEventListener('mousemove', function (e) { FM._onMouseMove(_withTarget(e, canvas)) })
     canvas.addEventListener('mouseup',   function ()  { FM._onMouseUp() })
+    canvas.addEventListener('mouseleave', function () { Nasal._panDrag = null })
+    canvas.addEventListener('wheel', function (e) { Nasal.onWheel(e, canvas) }, { passive: false })
   }
 
   function _withTarget(e, canvas) {
@@ -555,6 +755,32 @@
         '<button class="fm-zone-btn' + (gender === 'M' ? ' active' : '') + '" onclick="FaceMapping._setNasalGender(\'M\')" style="flex:1;justify-content:center">Masculino</button>' +
       '</div>' +
     '</div>'
+
+    // Sync toggle — only relevant in 2x
+    if (is2x) {
+      var syncOn = !!_state.syncViews
+      html += '<div class="fm-tool-section">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center">' +
+          '<div>' +
+            '<div class="fm-tool-section-title" style="margin:0">Sincronizar vistas</div>' +
+            '<div style="font-size:9px;color:rgba(200,169,126,0.4);margin-top:2px">Zoom e pan replicam entre ANTES e DEPOIS</div>' +
+          '</div>' +
+          '<div onclick="FaceMapping._toggleNasalSync()" style="width:36px;height:18px;border-radius:9px;cursor:pointer;position:relative;background:' + (syncOn ? '#10B981' : 'rgba(200,169,126,0.15)') + ';transition:background .2s;flex-shrink:0">' +
+            '<div style="width:14px;height:14px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (syncOn ? '20px' : '2px') + ';transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    }
+
+    // Zoom controls (contextual — shown when photo loaded)
+    if (_state.antes.photoUrl || (is2x && _state.depois.photoUrl)) {
+      html += '<div class="fm-tool-section" style="font-size:10px;color:rgba(200,169,126,0.55);line-height:1.5">' +
+        '<div class="fm-tool-section-title">Navegacao</div>' +
+        '<div>\u00B7 Roda do mouse: zoom no ponto do cursor</div>' +
+        '<div>\u00B7 Arrastar area vazia: mover a foto</div>' +
+        '<div>\u00B7 Cadeado: trava zoom/pan, so pontos editaveis</div>' +
+      '</div>'
+    }
 
     html += '<div id="fmNasalMetrics" class="fm-tool-section">' +
       _renderMetricsBlock(is2x, aAntes, aDepois, ideal) +

@@ -106,11 +106,11 @@
     FM._ctx.fillStyle = '#000000'
     FM._ctx.fillRect(0, 0, FM._canvas.width, FM._canvas.height)
 
-    FM._ctx.drawImage(FM._img, 0, 0, FM._imgW, FM._imgH)
-
-    // NASAL TAB — isolated render (skips all other overlays)
+    // NASAL TAB — Nasal.render handles its own drawImage with zoom/pan transform
     if (FM._activeTab === 'nasal' && FM.Nasal) {
       FM.Nasal.render(FM._ctx)
+    } else {
+      FM._ctx.drawImage(FM._img, 0, 0, FM._imgW, FM._imgH)
     }
 
     // Wireframe overlay (any analysis sub-mode)

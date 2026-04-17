@@ -141,6 +141,11 @@
     _resetNasal: function (slot) { if (FM.Nasal) FM.Nasal.reset(slot) },
     _uploadNasalPhoto: function (slot) { if (FM.Nasal) FM.Nasal.triggerUpload(slot) },
     _deleteNasalPhoto: function (slot) { if (FM.Nasal) FM.Nasal.deletePhoto(slot) },
+    _nasalZoomIn: function (slot) { if (FM.Nasal) FM.Nasal.zoomIn(slot) },
+    _nasalZoomOut: function (slot) { if (FM.Nasal) FM.Nasal.zoomOut(slot) },
+    _nasalFit: function (slot) { if (FM.Nasal) FM.Nasal.fitView(slot) },
+    _nasalToggleLock: function (slot) { if (FM.Nasal) FM.Nasal.toggleLock(slot) },
+    _toggleNasalSync: function () { if (FM.Nasal) FM.Nasal.toggleSync() },
 
     // Region overlay engine
     _toggleRegion: FM._toggleRegion,
