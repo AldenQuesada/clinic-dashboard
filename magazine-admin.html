@@ -36,6 +36,7 @@
 <script src="js/magazine/admin/image-pipeline.js"></script>
 <script src="js/magazine/admin/cashback-counter.js"></script>
 <script src="js/magazine/admin/analytics-panel.js"></script>
+<script src="js/magazine/admin/dispatch-scheduler.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -1174,6 +1175,7 @@
       <button class="btn" id="dispatchBtn" title="Preview WhatsApp · mensagens do dispatch">💬 WA</button>
       <button class="btn" id="abBtn" title="A/B · comparar duas páginas lado a lado">A/B</button>
       <button class="btn" id="analyticsBtn" title="Métricas da edição publicada">📊 Analytics</button>
+      <button class="btn" id="scheduleBtn" title="Agendar distribuicao · segmento + reminders">📤 Distribuicao</button>
 
       <div class="spacer"></div>
 
@@ -1262,6 +1264,9 @@
 <!-- ANALYTICS PANEL MODAL -->
 <div id="analyticsHost"></div>
 
+<!-- DISPATCH SCHEDULER MODAL -->
+<div id="dispatchSchedulerHost"></div>
+
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -1323,6 +1328,7 @@
     dynamicAccent: null, // hex extraído da capa
     cashbackCtrl: null,
     analyticsCtrl: null,
+    dispatchScheduler: null,
   }
 
   // ===== DOM =====
@@ -2345,6 +2351,18 @@ body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; 
       if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
       state.analyticsCtrl.open(state.currentEdition)
     })
+
+    // Dispatch scheduler (botao Distribuicao)
+    if (window.MagazineAdmin.DispatchScheduler) {
+      state.dispatchScheduler = window.MagazineAdmin.DispatchScheduler.mount(document.getElementById('dispatchSchedulerHost'), sb)
+      const scheduleBtn = document.getElementById('scheduleBtn')
+      if (scheduleBtn && state.dispatchScheduler) {
+        scheduleBtn.addEventListener('click', () => {
+          if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
+          state.dispatchScheduler.open(state.currentEdition)
+        })
+      }
+    }
 
     // UX Polish (atalhos, busca, badges, undo, onboarding)
     window.MagazineAdmin.UxPolish.init({
