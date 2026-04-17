@@ -106,27 +106,8 @@
   }
 
   function init() {
-    // Adiciona botao extra "Gerar Story IG" abaixo dos botoes existentes
-    // via observer, ja que o card pode ser re-renderizado
-    function _attach() {
-      var actions = document.querySelector('.vpi-actions')
-      if (!actions) return
-      if (document.getElementById('vpi-btn-story')) return
-      var btn = document.createElement('button')
-      btn.className = 'vpi-btn vpi-btn-secondary'
-      btn.id = 'vpi-btn-story'
-      btn.innerHTML = _ico('instagram', 16) + ' Gerar Story para Instagram'
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation()
-        openStoryModal()
-      })
-      actions.appendChild(btn)
-      if (window.feather && window.feather.replace) {
-        try { window.feather.replace() } catch (_) {}
-      }
-    }
-    _attach()
-    window.addEventListener('vpi-emb-rendered', function () { setTimeout(_attach, 20) })
+    // Botao 'Gerar Story para Instagram' removido a pedido (abr/2026).
+    // openStoryModal() segue disponivel via API caso queiram religar no futuro.
   }
 
   window.VPIEmbShare = {
