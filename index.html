@@ -2717,12 +2717,13 @@
                 <button class="vpi-sort-btn" data-sort="ranking" onclick="vpiSetSort('ranking')" style="padding:6px 12px;border:1.5px solid #7C3AED;border-radius:6px;font-size:11px;font-weight:700;background:#7C3AED;color:#fff;cursor:pointer">Por Ranking</button>
                 <button class="vpi-sort-btn" data-sort="name"    onclick="vpiSetSort('name')"    style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Nome</button>
                 <button class="vpi-sort-btn" data-sort="recent"  onclick="vpiSetSort('recent')"  style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Período</button>
+                <button class="vpi-sort-btn" data-sort="score"   onclick="vpiSetSort('score')"   style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Score</button>
               </div>
               <input id="vpiSearchPartner" type="text" placeholder="Buscar parceiro..." oninput="vpiRenderRanking('')" style="padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;width:160px"/>
             </div>
           </div>
           <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;min-width:540px">
+          <table style="width:100%;border-collapse:collapse;min-width:640px">
             <thead>
               <tr style="background:#F9FAFB;border-bottom:1px solid #F3F4F6">
                 <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">#</th>
@@ -2730,12 +2731,13 @@
                 <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Ind. mês</th>
                 <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Total ano</th>
                 <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Créditos</th>
+                <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Score</th>
                 <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Status</th>
                 <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Ações</th>
               </tr>
             </thead>
             <tbody id="vpiRankingBody">
-              <tr><td colspan="7" style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">Nenhum parceiro ainda. Clique em <strong>Novo Parceiro</strong>.</td></tr>
+              <tr><td colspan="8" style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">Nenhum parceiro ainda. Clique em <strong>Novo Parceiro</strong>.</td></tr>
             </tbody>
           </table>
           </div>
@@ -2782,6 +2784,7 @@
                   <button class="vpi-sort-btn" data-sort="ranking" onclick="vpiSetSort('ranking')" style="padding:6px 12px;border:1.5px solid #7C3AED;border-radius:6px;font-size:11px;font-weight:700;background:#7C3AED;color:#fff;cursor:pointer">Por Ranking</button>
                   <button class="vpi-sort-btn" data-sort="name"    onclick="vpiSetSort('name')"    style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Nome</button>
                   <button class="vpi-sort-btn" data-sort="recent"  onclick="vpiSetSort('recent')"  style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Período</button>
+                  <button class="vpi-sort-btn" data-sort="score"   onclick="vpiSetSort('score')"   style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Score</button>
                 </div>
                 <input id="vpiSearchPartner2" type="text" placeholder="Buscar..." oninput="vpiRenderRanking('2')" style="padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;width:150px"/>
                 <button onclick="vpiCheckHighPerfNow()" title="Dispara vpi_high_performance_check imediatamente (pg_cron ja roda dia 1 de cada mes)" style="display:flex;align-items:center;gap:6px;background:#FFFBEB;color:#92400E;border:1.5px solid #FCD34D;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">
@@ -2795,7 +2798,7 @@
               </div>
             </div>
             <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;min-width:800px">
+            <table style="width:100%;border-collapse:collapse;min-width:900px">
               <thead>
                 <tr style="background:#F9FAFB;border-bottom:1px solid #F3F4F6">
                   <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">#</th>
@@ -2803,13 +2806,14 @@
                   <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Ind. mês</th>
                   <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Total ano</th>
                   <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Créditos</th>
+                  <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Score</th>
                   <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Status</th>
                   <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Ações</th>
                 </tr>
               </thead>
               <tbody id="vpiRankingBody2">
                 <tr>
-                  <td colspan="7" style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">
+                  <td colspan="8" style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">
                     Nenhum parceiro cadastrado ainda.
                   </td>
                 </tr>

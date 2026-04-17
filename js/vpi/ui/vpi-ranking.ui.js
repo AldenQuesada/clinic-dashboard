@@ -10,10 +10,28 @@
 
   var MEDAL = ['1', '2', '3']
 
+  // Paleta de classe de score (Fase 6)
+  var CLASSE = {
+    diamante: { bg: 'linear-gradient(135deg,#1e293b,#0f172a)', cl: '#fff',    label: 'Diamante', border: '#0ea5e9' },
+    quente:   { bg: 'linear-gradient(135deg,#F59E0B,#D97706)', cl: '#fff',    label: 'Quente',   border: '#F59E0B' },
+    morna:    { bg: '#FEF3C7',                                 cl: '#92400E', label: 'Morna',    border: '#FCD34D' },
+    fria:     { bg: '#F1F5F9',                                 cl: '#475569', label: 'Fria',     border: '#CBD5E1' },
+    dormente: { bg: '#FEE2E2',                                 cl: '#991B1B', label: 'Dormente', border: '#FCA5A5' },
+  }
+
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
     })
+  }
+
+  function _classeBadge(classe, score) {
+    var c = CLASSE[classe] || CLASSE.dormente
+    return '<div style="display:inline-flex;align-items:center;gap:4px;background:' + c.bg + ';color:' + c.cl + ';padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;border:1px solid ' + c.border + '">' +
+      '<span>' + (score || 0) + '</span>' +
+      '<span style="opacity:.8">·</span>' +
+      '<span>' + c.label + '</span>' +
+    '</div>'
   }
 
   async function render(suffix, sort) {
@@ -44,12 +62,19 @@
     }
 
     if (!partners.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">Nenhum parceiro encontrado.</td></tr>'
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">Nenhum parceiro encontrado.</td></tr>'
       return
     }
 
+    // Sort por score se solicitado
+    if (sort === 'score') {
+      partners = partners.slice().sort(function (a, b) {
+        return (b.score_total || 0) - (a.score_total || 0)
+      })
+    }
+
     tbody.innerHTML = partners.map(function (p, i) {
-      var rank    = (sort === 'ranking' && i < 3) ? MEDAL[i] : String(i + 1)
+      var rank    = ((sort === 'ranking' || sort === 'score') && i < 3) ? MEDAL[i] : String(i + 1)
       var indMes  = p.indicacoes_mes || 0
       var indAno  = p.indicacoes_ano || 0
       var cred    = p.creditos_total || 0
@@ -60,6 +85,8 @@
         : (p.status === 'convidado')
           ? { bg: '#FEF3C7', cl: '#92400E', tx: 'Convidado' }
           : { bg: '#FEF2F2', cl: '#991B1B', tx: 'Inativo' }
+      var classe = p.score_classe || 'dormente'
+      var scoreTotal = p.score_total != null ? p.score_total : 0
 
       return '<tr style="border-bottom:1px solid #F9FAFB;cursor:pointer" onclick="vpiViewPartner(\'' + _esc(p.id) + '\')" onmouseover="this.style.background=\'#FAFAFA\'" onmouseout="this.style.background=\'\'">' +
         '<td style="padding:11px 14px;font-size:13px;font-weight:700;color:#6B7280;white-space:nowrap">' + _esc(rank) + '</td>' +
@@ -75,6 +102,7 @@
           '</div>' +
           '<div style="font-size:10px;color:#9CA3AF;margin-top:2px">faltam ' + prox + '</div>' +
         '</td>' +
+        '<td style="padding:11px 14px;text-align:center">' + _classeBadge(classe, scoreTotal) + '</td>' +
         '<td style="padding:11px 14px;text-align:center">' +
           '<span style="background:' + st.bg + ';color:' + st.cl + ';padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700">' + st.tx + '</span>' +
         '</td>' +
