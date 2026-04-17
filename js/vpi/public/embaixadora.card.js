@@ -170,6 +170,8 @@
       '<div id="vpi-shoutout-slot"></div>' +
       // Fase 9: Attribution ROI (card "Sua Atribuicao")
       '<div id="vpi-emb-attribution"></div>' +
+      // Fase 9 Entrega 5: Meu Impacto ("voce transformou N vidas")
+      '<div id="vpi-emb-myimpact"></div>' +
       '<div id="vpi-impact-slot"></div>' +
       // Fase 8: Fotona transferivel + troca
       '<div id="vpi-emb-fotona"></div>' +

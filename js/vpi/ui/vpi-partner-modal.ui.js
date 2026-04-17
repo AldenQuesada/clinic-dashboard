@@ -194,12 +194,15 @@
             : i.status === 'invalid'
               ? '<span style="background:#FEE2E2;color:#991B1B;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Invalida</span>'
               : '<span style="background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Pendente</span>'
+          var storyBtn = (i.status === 'closed' && window.vpiOpenIndicationStory)
+            ? '<button onclick="vpiOpenIndicationStory(\'' + _esc(i.id) + '\', \'' + _esc(p.nome) + '\')" title="Editar historia pro cartao" style="margin-left:6px;padding:3px 8px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;font-size:10px;color:#7C3AED;cursor:pointer;font-weight:700">Historia</button>'
+            : ''
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F9FAFB;font-size:12px">' +
             '<div style="flex:1;min-width:0">' +
               '<div style="color:#374151;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + _esc(i.lead_id) + '</div>' +
               '<div style="color:#9CA3AF;font-size:11px">' + _esc(i.procedimento || '—') + '</div>' +
             '</div>' +
-            stBadge +
+            stBadge + storyBtn +
             '<span style="color:#9CA3AF;font-size:11px;margin-left:10px;white-space:nowrap">' + when + '</span>' +
           '</div>'
         }).join('')
