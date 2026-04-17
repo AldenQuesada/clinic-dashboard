@@ -126,8 +126,9 @@
         // Collagen bar at bottom of canvas
         if (FM._drawCollagenBar) FM._drawCollagenBar(FM._ctx, 10, FM._imgH - 18, FM._imgW - 20, 8, FM._vecAge || 25)
       }
-    } else if (FM._editorMode === 'analysis') {
-      // Metrics (H/V lines, angles) — ONLY in analysis mode
+    } else if (FM._editorMode === 'analysis' && FM._activeTab !== 'nasal') {
+      // Metrics (H/V lines, angles) — ONLY in analysis mode, never on nasal tab
+      // (nasal tab has its own overlays via Nasal.render → _renderSlotOverlays)
       var hasLines = FM._metricLines && (FM._metricLines.h.length > 0 || FM._metricLines.v.length > 0)
       var hasPoints = FM._metricPoints && FM._metricPoints.length > 0
       var hasAngles = FM._metricAngles && FM._metricAngles.points
