@@ -37,6 +37,7 @@
 <script src="js/magazine/admin/cashback-counter.js"></script>
 <script src="js/magazine/admin/analytics-panel.js"></script>
 <script src="js/magazine/admin/dispatch-scheduler.js"></script>
+<script src="js/magazine/admin/dispatch-analytics.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -1176,6 +1177,7 @@
       <button class="btn" id="abBtn" title="A/B · comparar duas páginas lado a lado">A/B</button>
       <button class="btn" id="analyticsBtn" title="Métricas da edição publicada">📊 Analytics</button>
       <button class="btn" id="scheduleBtn" title="Agendar distribuicao · segmento + reminders">📤 Distribuicao</button>
+      <button class="btn" id="perfBtn" title="Performance de dispatch · funil, segmentos, top 10">📈 Performance</button>
 
       <div class="spacer"></div>
 
@@ -1267,6 +1269,9 @@
 <!-- DISPATCH SCHEDULER MODAL -->
 <div id="dispatchSchedulerHost"></div>
 
+<!-- DISPATCH ANALYTICS MODAL -->
+<div id="dispatchAnalyticsHost"></div>
+
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -1329,6 +1334,7 @@
     cashbackCtrl: null,
     analyticsCtrl: null,
     dispatchScheduler: null,
+    dispatchAnalytics: null,
   }
 
   // ===== DOM =====
@@ -2360,6 +2366,18 @@ body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; 
         scheduleBtn.addEventListener('click', () => {
           if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
           state.dispatchScheduler.open(state.currentEdition)
+        })
+      }
+    }
+
+    // Dispatch analytics (botao Performance)
+    if (window.MagazineAdmin.DispatchAnalytics) {
+      state.dispatchAnalytics = window.MagazineAdmin.DispatchAnalytics.mount(document.getElementById('dispatchAnalyticsHost'), sb)
+      const perfBtn = document.getElementById('perfBtn')
+      if (perfBtn && state.dispatchAnalytics) {
+        perfBtn.addEventListener('click', () => {
+          if (!state.currentEdition) { toast('Selecione uma edição primeiro', 'err'); return }
+          state.dispatchAnalytics.open(state.currentEdition)
         })
       }
     }
