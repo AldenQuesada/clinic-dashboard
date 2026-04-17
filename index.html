@@ -2655,12 +2655,12 @@
         <div class="page-title-row">
           <div class="page-title-left">
             <h1 class="page-title">Parceiros</h1>
-            <p class="page-subtitle">Gerencie e acompanhe todos os parceiros do programa VPI</p>
+            <p class="page-subtitle">Visão executiva — bata o olho e tome decisão</p>
           </div>
           <div class="page-title-right">
-            <button onclick="vpiOpenAddPartner()" style="display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.3)">
-              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-              Novo Parceiro
+            <button onclick="navigateTo('growth-referral')" style="display:flex;align-items:center;gap:8px;background:#fff;color:#6D28D9;border:1.5px solid #DDD6FE;padding:9px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+              Gestão completa do Programa
             </button>
           </div>
         </div>
@@ -2670,43 +2670,8 @@
           <div style="grid-column:1/-1;padding:20px;text-align:center;color:#9CA3AF;font-size:12px">Carregando KPIs...</div>
         </div>
 
-        <!-- Ranking -->
-        <div style="background:#fff;border-radius:12px;border:1px solid #F3F4F6;overflow:hidden">
-          <div style="padding:14px 20px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-            <div style="display:flex;align-items:center;gap:8px">
-              <svg width="16" height="16" fill="none" stroke="#7C3AED" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-              <span style="font-size:14px;font-weight:700;color:#111">Ranking de Parceiros</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <div style="display:flex;gap:4px">
-                <button class="vpi-sort-btn" data-sort="ranking" onclick="vpiSetSort('ranking')" style="padding:6px 12px;border:1.5px solid #7C3AED;border-radius:6px;font-size:11px;font-weight:700;background:#7C3AED;color:#fff;cursor:pointer">Por Ranking</button>
-                <button class="vpi-sort-btn" data-sort="name"    onclick="vpiSetSort('name')"    style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Nome</button>
-                <button class="vpi-sort-btn" data-sort="recent"  onclick="vpiSetSort('recent')"  style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Período</button>
-                <button class="vpi-sort-btn" data-sort="score"   onclick="vpiSetSort('score')"   style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Score</button>
-              </div>
-              <input id="vpiSearchPartner" type="text" placeholder="Buscar parceiro..." oninput="vpiRenderRanking('')" style="padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;width:160px"/>
-            </div>
-          </div>
-          <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;min-width:640px">
-            <thead>
-              <tr style="background:#F9FAFB;border-bottom:1px solid #F3F4F6">
-                <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">#</th>
-                <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Nome</th>
-                <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Ind. mês</th>
-                <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Total ano</th>
-                <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Créditos</th>
-                <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Score</th>
-                <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Status</th>
-                <th style="padding:10px 14px;text-align:center;font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em">Ações</th>
-              </tr>
-            </thead>
-            <tbody id="vpiRankingBody">
-              <tr><td colspan="8" style="padding:40px;text-align:center;color:#9CA3AF;font-size:13px">Nenhum parceiro ainda. Clique em <strong>Novo Parceiro</strong>.</td></tr>
-            </tbody>
-          </table>
-          </div>
-        </div>
+        <!-- Dashboard sections injetadas por vpi-dashboard.ui.js -->
+        <div id="vpiDashboardContainer"></div>
       </div>
 
       <!-- ══════════════════════════════════════════════════════
@@ -5020,6 +4985,7 @@
   <script src="js/vpi/ui/vpi-indication-story.ui.js?v=20260417ortho" defer></script>
   <script src="js/vpi/ui/vpi-celebrations.ui.js?v=20260417ortho" defer></script>
   <script src="js/vpi/ui/vpi-resgates.ui.js?v=20260417pont" defer></script>
+  <script src="js/vpi/ui/vpi-dashboard.ui.js?v=20260417pont" defer></script>
   <script src="js/vpi/ui/vpi-partner-modal.ui.js?v=20260417ortho" defer></script>
 
   <script>

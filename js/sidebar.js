@@ -573,8 +573,9 @@
     _lazyLoad(pageId)
 
     // Hooks de módulos externos para páginas com init especial
-    if (pageId === 'growth-partners' && typeof window.vpiRefreshKpis === 'function') {
-      window.vpiRefreshKpis(''); window.vpiRenderRanking('')
+    if (pageId === 'growth-partners') {
+      if (typeof window.vpiRefreshKpis === 'function') window.vpiRefreshKpis('')
+      if (typeof window.vpiRenderDashboard === 'function') window.vpiRenderDashboard()
     }
     if (pageId === 'growth-referral' && typeof window.vpiRenderRanking === 'function') {
       window.vpiRenderRanking('2')
