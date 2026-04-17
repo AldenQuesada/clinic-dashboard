@@ -25,6 +25,13 @@
     default: ['#0B0813', '#5B21B6', '#C9A96E', '#E4C795'],
   }
 
+  // Cache de Images por URL pra reaproveitar entre regeneracoes.
+  // Evita alocar um novo Image a cada openModal (memory leak se
+  // tab fica aberta horas). WeakMap nao serve aqui (keys sao strings),
+  // entao usamos Map com LRU simples.
+  var _imgCache = new Map()
+  var _IMG_CACHE_MAX = 8
+
   function _app() { return window.VPIEmbApp }
   function _esc(s){ return _app() ? _app().esc(s) : (s == null ? '' : String(s)) }
 
@@ -37,15 +44,57 @@
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
   }
 
+  // Promove entry no LRU
+  function _lruTouch(key) {
+    if (!_imgCache.has(key)) return
+    var val = _imgCache.get(key)
+    _imgCache.delete(key)
+    _imgCache.set(key, val)
+  }
+
+  function _lruEvict() {
+    while (_imgCache.size > _IMG_CACHE_MAX) {
+      var firstKey = _imgCache.keys().next().value
+      if (!firstKey) break
+      var img = _imgCache.get(firstKey)
+      // Cleanup explicito: remove src e listeners pra GC
+      if (img) {
+        try { img.onload = null; img.onerror = null; img.src = '' } catch (_) {}
+      }
+      _imgCache.delete(firstKey)
+    }
+  }
+
   function _loadImg(src) {
     return new Promise(function (resolve) {
       if (!src) return resolve(null)
+      // Cache hit
+      if (_imgCache.has(src)) {
+        _lruTouch(src)
+        return resolve(_imgCache.get(src))
+      }
       var img = new Image()
       img.crossOrigin = 'anonymous'
-      img.onload  = function () { resolve(img) }
-      img.onerror = function () { resolve(null) }
+      img.onload  = function () {
+        _imgCache.set(src, img)
+        _lruEvict()
+        resolve(img)
+      }
+      img.onerror = function () {
+        try { img.onload = null; img.onerror = null; img.src = '' } catch (_) {}
+        resolve(null)
+      }
       img.src = src
     })
+  }
+
+  function _clearImgCache() {
+    _imgCache.forEach(function (img) {
+      if (img) {
+        try { img.onload = null; img.onerror = null; img.src = '' } catch (_) {}
+      }
+    })
+    _imgCache.clear()
   }
 
   function _fillGradient(ctx, stops) {
@@ -270,11 +319,15 @@
     var preview  = bg.querySelector('#vpi-story-preview')
     var loading  = bg.querySelector('.vpi-loading')
 
-    closeBtn.addEventListener('click', function () {
+    function _cleanupAndClose() {
+      // Cleanup explicito: remove preview img src pra liberar bitmap
+      var pv = bg.querySelector('#vpi-story-preview img')
+      if (pv) { try { pv.src = '' } catch (_) {} }
       bg.classList.remove('open')
-      setTimeout(function () { bg.remove() }, 260)
-    })
-    bg.addEventListener('click', function (e) { if (e.target === bg) closeBtn.click() })
+      setTimeout(function () { try { bg.remove() } catch (_) {} }, 260)
+    }
+    closeBtn.addEventListener('click', _cleanupAndClose)
+    bg.addEventListener('click', function (e) { if (e.target === bg) _cleanupAndClose() })
 
     var canvas = await generate()
     if (!canvas) {
@@ -304,9 +357,22 @@
     // Nada persistente; Share chama openModal
   }
 
+  // Libera pool de imagens quando tab fica em background prolongado
+  try {
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        // Schedule pra limpar cache se tab seguir oculta por 60s
+        setTimeout(function () {
+          if (document.hidden) _clearImgCache()
+        }, 60000)
+      }
+    })
+  } catch (_) {}
+
   window.VPIEmbStory = {
-    init:      init,
-    generate:  generate,
-    openModal: openModal,
+    init:           init,
+    generate:       generate,
+    openModal:      openModal,
+    clearImgCache:  _clearImgCache,
   }
 })()

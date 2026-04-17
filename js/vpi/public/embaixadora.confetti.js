@@ -28,6 +28,7 @@
   var _raf    = 0
   var _parts  = []
   var _endAt  = 0
+  var _paused = false
 
   function _ensureCanvas() {
     if (_canvas) return _canvas
@@ -37,6 +38,20 @@
     _ctx = _canvas.getContext('2d')
     _resize()
     window.addEventListener('resize', _resize, { passive: true })
+    // Pausa animacao quando tab fica oculto (evita workload em background)
+    try {
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          _paused = true
+          if (_raf) { cancelAnimationFrame(_raf); _raf = 0 }
+        } else if (_paused) {
+          _paused = false
+          if (_parts.length > 0 && !_raf) {
+            _raf = requestAnimationFrame(_step)
+          }
+        }
+      })
+    } catch (_) {}
     return _canvas
   }
 
@@ -103,13 +118,17 @@
       }
     }
 
-    if (alive > 0) {
+    if (alive > 0 && !_paused) {
+      // Defensivo: cancela raf anterior antes de reassign pra evitar loops duplos
+      if (_raf) cancelAnimationFrame(_raf)
       _raf = requestAnimationFrame(_step)
     } else {
-      cancelAnimationFrame(_raf)
-      _raf = 0
-      _parts = []
-      _ctx.clearRect(0, 0, _canvas.width, _canvas.height)
+      if (_raf) { cancelAnimationFrame(_raf); _raf = 0 }
+      // Limpa particulas quando todas se foram — libera memory
+      if (alive === 0) {
+        _parts.length = 0
+        _ctx.clearRect(0, 0, _canvas.width, _canvas.height)
+      }
     }
   }
 
@@ -130,7 +149,9 @@
     // Append novas particulas (permite re-fire)
     for (var i = 0; i < count; i++) _parts.push(_makeParticle(palette))
 
-    if (!_raf) _raf = requestAnimationFrame(_step)
+    // Defensivo: cancela raf anterior antes de reassign
+    if (_raf) { cancelAnimationFrame(_raf); _raf = 0 }
+    if (!_paused) _raf = requestAnimationFrame(_step)
   }
 
   window.VPIEmbConfetti = { fire: fire }
