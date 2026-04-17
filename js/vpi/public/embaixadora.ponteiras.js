@@ -59,10 +59,25 @@
     if (!mount) mount = document.getElementById('vpi-emb-fotona')  // compat
     if (!mount) return
 
+    // Proteje contra chamadas concorrentes (card pode re-renderizar varias vezes
+    // antes da primeira RPC retornar)
+    if (_state.loading) return
+
     if (!_state.resumo) {
-      _state.resumo = await _fetchResumo()
+      _state.loading = true
+      try {
+        _state.resumo = await _fetchResumo()
+      } finally {
+        _state.loading = false
+      }
       if (!_state.resumo) { mount.innerHTML = ''; return }
     }
+
+    // Re-busca o mount apos o await — card.render() pode ter recriado
+    mount = document.getElementById('vpi-emb-ponteiras')
+             || document.getElementById('vpi-emb-fotona')
+    if (!mount) return
+
     var d = _state.resumo
 
     var disponiveis = Number(d.disponiveis || 0)
@@ -294,11 +309,13 @@
   }
 
   function init() {
+    // NAO invalida cache a cada re-render do card — isso causava race
+    // conditions (multiplas RPCs concorrentes deixavam slot vazio).
+    // Cache so e invalidado apos confirmar resgate (handler do confirm).
     if (_app() && _app().onStateChange) {
-      _app().onStateChange(function () { _state.resumo = null; render() })
+      _app().onStateChange(function () { render() })
     }
     window.addEventListener('vpi-emb-rendered', function () {
-      _state.resumo = null
       setTimeout(render, 20)
     })
     render()
