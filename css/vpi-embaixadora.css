@@ -45,6 +45,58 @@
     #E0C3FC 55%, #7C3AED 70%, #1a1a2e 100%);
 }
 
+/* ── Fase 9 Entrega 4: variantes por tier (data-palette) ─ */
+/* Cada variant reseta 3 custom properties do tier. */
+
+/* Bronze variants */
+.tier-bronze[data-palette="rose"] {
+  --t-main: #D4A574;
+  --t-glow: rgba(212,165,116,0.55);
+  --t-grad: linear-gradient(135deg,#8B5A2B 0%,#C98B60 50%,#F5C8A5 100%);
+}
+.tier-bronze[data-palette="cobre"] {
+  --t-main: #B87333;
+  --t-glow: rgba(184,115,51,0.6);
+  --t-grad: linear-gradient(135deg,#6B3E1A 0%,#B87333 50%,#E6A968 100%);
+}
+
+/* Prata variants */
+.tier-prata[data-palette="sage"] {
+  --t-main: #B8C5B0;
+  --t-glow: rgba(184,197,176,0.55);
+  --t-grad: linear-gradient(135deg,#6B8065 0%,#B8C5B0 50%,#DCE5D6 100%);
+}
+.tier-prata[data-palette="perla"] {
+  --t-main: #E5E4E2;
+  --t-glow: rgba(229,228,226,0.65);
+  --t-grad: linear-gradient(135deg,#B8B5AE 0%,#E5E4E2 50%,#F7F5F0 100%);
+}
+
+/* Ouro variants */
+.tier-ouro[data-palette="rose-gold"] {
+  --t-main: #D4A574;
+  --t-glow: rgba(224,168,138,0.6);
+  --t-grad: linear-gradient(135deg,#B7776A 0%,#E0A88A 50%,#F3D1BE 100%);
+}
+.tier-ouro[data-palette="champagne"] {
+  --t-main: #F7E7CE;
+  --t-glow: rgba(247,231,206,0.6);
+  --t-grad: linear-gradient(135deg,#C9A96E 0%,#F7E7CE 50%,#FFF8ED 100%);
+}
+
+/* Diamante variants */
+.tier-diamante[data-palette="blackout"] {
+  --t-main: #1a1a1a;
+  --t-glow: rgba(255,255,255,0.25);
+  --t-grad: linear-gradient(135deg,#000 0%,#1a1a1a 50%,#2a2a2a 100%);
+}
+.tier-diamante[data-palette="rainbow-hologram"] {
+  --t-main: #FF00C8;
+  --t-glow: rgba(255,0,200,0.35);
+  --t-grad: conic-gradient(from 0deg,
+    #FF00C8 0%,#00E0FF 25%,#B9FF66 50%,#FFB400 75%,#FF00C8 100%);
+}
+
 /* ── Base ───────────────────────────────────────────────── */
 * { box-sizing: border-box; }
 html, body {
