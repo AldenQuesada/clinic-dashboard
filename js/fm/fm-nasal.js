@@ -549,10 +549,12 @@
       return out
     }
 
-    // Default: angle
+    // Default: angle (corrigido pelo aspect ratio da imagem)
     var pv = pts[m.vertex], p1 = pts[m.ray1], p2 = pts[m.ray2]
     if (!pv || !p1 || !p2) return null
-    var ang = _angleAt(pv, p1, p2)
+    var sa = _state[slot]
+    var aw = sa.imgW || 1, ah = sa.imgH || 1
+    var ang = _angleAt(pv, p1, p2, aw, ah)
     return Math.round(ang * 10) / 10
   }
 
@@ -624,7 +626,7 @@
       if (m.id === 'nasofacial') {
         _drawLine(ctx, pv, p1, w, h, _withAlpha('#64A0FF', 0.28), 1.1, [5, 4])
       }
-      var ang = _angleAt(pv, p1, p2)
+      var ang = _angleAt(pv, p1, p2, w, h)
       var d1 = _dist(pv, p1, w, h)
       var d2 = _dist(pv, p2, w, h)
       var radius = Math.min(d1, d2) * 0.28
@@ -1422,7 +1424,12 @@
   }
 
   // ── Geometry helpers ─────────────────────────────────────────
-  function _vec(a, b) { return { x: b.x - a.x, y: b.y - a.y } }
+  // Vetores com correcao de aspect ratio: as coordenadas sao normalizadas (0-1)
+  // mas a imagem nao e quadrada — multiplicamos por w, h para obter pixels reais.
+  function _vec(a, b, w, h) {
+    w = w || 1; h = h || 1
+    return { x: (b.x - a.x) * w, y: (b.y - a.y) * h }
+  }
 
   function _angleBetween(v1, v2) {
     var m1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y)
@@ -1432,8 +1439,8 @@
     return Math.acos(cos) * 180 / Math.PI
   }
 
-  function _angleAt(vertex, a, b) {
-    return _angleBetween(_vec(vertex, a), _vec(vertex, b))
+  function _angleAt(vertex, a, b, w, h) {
+    return _angleBetween(_vec(vertex, a, w, h), _vec(vertex, b, w, h))
   }
 
   function _dist(a, b, w, h) {
