@@ -56,6 +56,7 @@
       label: 'Nasofacial',
       short: 'NFC',
       color: '#A855F7',
+      type: 'angle',
       points: [
         { id: 'glabella', label: 'Glabela',  defX: 0.60, defY: 0.22 },
         { id: 'tip',      label: 'Ponta',    defX: 0.44, defY: 0.50 },
@@ -63,15 +64,48 @@
       ],
       vertex: 'glabella', ray1: 'pogonion', ray2: 'tip',
     },
+    {
+      id: 'ricketts',
+      label: 'Linha de Ricketts (E-line)',
+      short: 'LR',
+      color: '#0EA5E9',
+      type: 'line',
+      points: [
+        { id: 'tip',      label: 'Ponta',          defX: 0.44, defY: 0.50 },
+        { id: 'pogonion', label: 'Pogonio',        defX: 0.56, defY: 0.88 },
+        { id: 'lipUpper', label: 'Labio superior', defX: 0.54, defY: 0.65 },
+        { id: 'lipLower', label: 'Labio inferior', defX: 0.54, defY: 0.72 },
+      ],
+      lineA: 'tip', lineB: 'pogonion',
+      targets: ['lipUpper', 'lipLower'],
+    },
   ]
+
+  // Add type tag to angle measurements for backward compat
+  MEASUREMENTS.forEach(function (m) { if (!m.type) m.type = 'angle' })
 
   var MEAS_BY_ID = {}
   MEASUREMENTS.forEach(function (m) { MEAS_BY_ID[m.id] = m })
 
   var IDEAL = {
-    F: { nasofrontal: [120, 130], nasolabial: [100, 110], nasofacial: [30, 35] },
-    M: { nasofrontal: [115, 125], nasolabial: [90, 95],   nasofacial: [36, 40] },
+    F: {
+      nasofrontal: [120, 130],
+      nasolabial:  [100, 110],
+      nasofacial:  [30, 35],
+      // Ricketts: labios atras da linha (valor NEGATIVO em mm). F: lipUpper ~-2mm, lipLower ~0mm
+      ricketts:    { lipUpper: [-4, -1], lipLower: [-3, 0] },
+    },
+    M: {
+      nasofrontal: [115, 125],
+      nasolabial:  [90, 95],
+      nasofacial:  [36, 40],
+      ricketts:    { lipUpper: [-4, -2], lipLower: [-4, -1] },
+    },
   }
+
+  // Assumed anatomical reference: tip→pogonion distance ≈ 52mm in adults.
+  // Used to convert pixel distances to mm. Can be calibrated in a future sprint.
+  var TIP_POGONION_MM_DEFAULT = 52
 
   // Clinical conduct matrix (rinomodelação — HA + complementos)
   var CONDUCT = {
@@ -109,6 +143,33 @@
         anatomic: 'Nariz muito projetado em relacao ao plano facial.',
         action: 'Camuflagem: preencher pogonio se houver retrognatia para equilibrar o perfil; preencher supratip se houver convexidade. Reducao real da projecao requer rinoplastia cirurgica.',
         procedures: ['HA pogonio', 'HA supratip', 'Avaliacao cirurgica para reducao'],
+      },
+    },
+    // Ricketts uses per-lip conduct (protruso = labio a frente da linha, retroverso = muito atras)
+    ricketts: {
+      lipUpper: {
+        protruso: {
+          anatomic: 'Labio superior projetado alem da E-line — biprotrusao labial ou mento/nariz retraidos.',
+          action: 'Avaliar mento (pogonio): se retraido, preencher. Em biprotrusao real, encaminhar para ortodontia/cirurgia. Evitar preenchimento labial volumetrico.',
+          procedures: ['HA pogonio (se retrognata)', 'Encaminhamento ortodontia', 'Avaliar rinoplastia de aumento'],
+        },
+        retroverso: {
+          anatomic: 'Labio superior aquem do ideal — labio retraido ou projecao nasal/mento excessiva.',
+          action: 'Preencher labio superior (HA, 0.3–0.6 ml total) respeitando o filtro. Reavaliar projecao nasal e do mento — se exagerada, pode ser a causa.',
+          procedures: ['HA labio superior', 'Reavaliar nasofacial / mento'],
+        },
+      },
+      lipLower: {
+        protruso: {
+          anatomic: 'Labio inferior projetado alem da E-line — protrusao labial inferior ou mento retraido.',
+          action: 'Avaliar mento: preencher pogonio se retrognatia. Se protrusao dentaria, encaminhar para ortodontia. Evitar volumetrizacao do labio inferior.',
+          procedures: ['HA pogonio', 'Encaminhamento ortodontia'],
+        },
+        retroverso: {
+          anatomic: 'Labio inferior muito atras da linha — labio retraido ou mento projetado excessivo.',
+          action: 'Preencher labio inferior (HA, 0.3–0.7 ml). Avaliar projecao do mento — se excessiva, considerar camuflagem no terco medio.',
+          procedures: ['HA labio inferior', 'Reavaliar mento'],
+        },
       },
     },
   }
@@ -283,7 +344,8 @@
     if (!_state[slot] || !_state[slot].photoUrl) return false
     return MEASUREMENTS.some(function (m) {
       var ms = _state[slot].measurements[m.id]
-      return ms && ms.enabled && ms.points && Object.keys(ms.points).length === 3
+      if (!ms || !ms.enabled || !ms.points) return false
+      return Object.keys(ms.points).length === m.points.length
     })
   }
 
@@ -451,7 +513,10 @@
     _saveToStorage()
   }
 
-  // ── Compute angles (per measurement) ─────────────────────────
+  // ── Compute (per measurement) ────────────────────────────────
+  // Returns:
+  //   - angle type: number (degrees)
+  //   - line  type: { lipUpperMm, lipLowerMm } distances in mm (neg = behind line)
   Nasal.compute = function (slot, measId) {
     _ensureLoaded()
     slot = slot || 'antes'
@@ -460,10 +525,56 @@
     var ms = _state[slot].measurements[measId]
     if (!ms || !ms.enabled || !ms.points) return null
     var pts = ms.points
+
+    if (m.type === 'line') {
+      var lA = pts[m.lineA], lB = pts[m.lineB]
+      if (!lA || !lB) return null
+      var slotState = _state[slot]
+      var w = slotState.imgW || 1, h = slotState.imgH || 1
+      // Reference: distance A-B in pixels ≈ TIP_POGONION_MM_DEFAULT mm
+      var abPx = _dist(lA, lB, w, h)
+      if (abPx <= 0) return null
+      var mmPerPx = TIP_POGONION_MM_DEFAULT / abPx
+
+      var out = {}
+      m.targets.forEach(function (tid) {
+        var tp = pts[tid]
+        if (!tp) return
+        // Signed perpendicular distance from target to line A-B.
+        // Sign convention: NEGATIVE = behind line (toward face, posterior)
+        //                  POSITIVE = in front of line (protrusion, anterior)
+        var d = _perpSignedPx(tp, lA, lB, w, h)
+        out[tid] = Math.round(d * mmPerPx * 10) / 10
+      })
+      return out
+    }
+
+    // Default: angle
     var pv = pts[m.vertex], p1 = pts[m.ray1], p2 = pts[m.ray2]
     if (!pv || !p1 || !p2) return null
     var ang = _angleAt(pv, p1, p2)
     return Math.round(ang * 10) / 10
+  }
+
+  // Signed perpendicular distance (pixels).
+  // For a face looking LEFT in the image (lower x = front), "in front of E-line"
+  // means the target point has a more anterior (lower) x than the line projection.
+  // We compute cross product; sign convention adjusted so positive = protruso (frente).
+  function _perpSignedPx(p, a, b, w, h) {
+    var ax = a.x * w, ay = a.y * h
+    var bx = b.x * w, by = b.y * h
+    var px = p.x * w, py = p.y * h
+    var dx = bx - ax, dy = by - ay
+    var len = Math.sqrt(dx * dx + dy * dy)
+    if (len === 0) return 0
+    // cross product / len gives signed perpendicular distance
+    var cross = (px - ax) * dy - (py - ay) * dx
+    var d = cross / len
+    // Orientation heuristic: if the line goes from tip (top) to pogonion (bottom),
+    // dy > 0 and a positive cross means the point is to the LEFT of the line (in image).
+    // For a face looking left, left-of-line = BEHIND (nariz/mento já à esquerda da linha).
+    // Invert so that NEGATIVE = atras (ideal), POSITIVE = a frente (protruso).
+    return -d
   }
 
   function _status(val, range) {
@@ -493,24 +604,26 @@
   function _renderSlotOverlays(ctx, slot, w, h) {
     var s = _state[slot]
     if (!s) return
+    var gender = _state.gender
 
     MEASUREMENTS.forEach(function (m) {
       var ms = s.measurements[m.id]
       if (!ms || !ms.enabled) return
       var pts = ms.points
+
+      if (m.type === 'line') {
+        _renderRickettsOverlay(ctx, slot, m, pts, w, h, gender)
+        return
+      }
+
+      // angle type
       var pv = pts[m.vertex], p1 = pts[m.ray1], p2 = pts[m.ray2]
       if (!pv || !p1 || !p2) return
-
-      // Rays (faded)
       _drawLine(ctx, pv, p1, w, h, _withAlpha(m.color, 0.7), 1.5)
       _drawLine(ctx, pv, p2, w, h, _withAlpha(m.color, 0.7), 1.5)
-
-      // Facial reference line for nasofacial (glabella→pogonion)
       if (m.id === 'nasofacial') {
         _drawLine(ctx, pv, p1, w, h, _withAlpha('#64A0FF', 0.35), 1.2, [5, 4])
       }
-
-      // Arc with adaptive radius
       var ang = _angleAt(pv, p1, p2)
       var d1 = _dist(pv, p1, w, h)
       var d2 = _dist(pv, p2, w, h)
@@ -519,7 +632,7 @@
       _drawAngleArc(ctx, pv, p1, p2, w, h, radius, m.color, ang.toFixed(0) + '\u00B0', m.label)
     })
 
-    // Points on top (colored per measurement)
+    // Points on top
     MEASUREMENTS.forEach(function (m) {
       var ms = s.measurements[m.id]
       if (!ms || !ms.enabled) return
@@ -532,6 +645,76 @@
         _drawPoint(ctx, pt.x * w, pt.y * h, active, pd.label, m.color)
       })
     })
+  }
+
+  function _renderRickettsOverlay(ctx, slot, m, pts, w, h, gender) {
+    var lA = pts[m.lineA], lB = pts[m.lineB]
+    if (!lA || !lB) return
+    // The E-line itself
+    _drawLine(ctx, lA, lB, w, h, _withAlpha(m.color, 0.85), 1.8, [6, 4])
+
+    // Compute once to avoid recalc
+    var abPx = _dist(lA, lB, w, h)
+    if (abPx <= 0) return
+    var mmPerPx = TIP_POGONION_MM_DEFAULT / abPx
+    var rRange = IDEAL[gender].ricketts
+
+    m.targets.forEach(function (tid) {
+      var tp = pts[tid]
+      if (!tp) return
+      // Foot of perpendicular from tp onto line A-B
+      var ax = lA.x * w, ay = lA.y * h
+      var bx = lB.x * w, by = lB.y * h
+      var px = tp.x * w, py = tp.y * h
+      var dx = bx - ax, dy = by - ay
+      var len2 = dx * dx + dy * dy
+      if (len2 === 0) return
+      var t = ((px - ax) * dx + (py - ay) * dy) / len2
+      var fx = ax + t * dx, fy = ay + t * dy
+
+      // Draw perpendicular segment from point to its foot on the line
+      ctx.save()
+      ctx.strokeStyle = _withAlpha(m.color, 0.55)
+      ctx.lineWidth = 1
+      ctx.setLineDash([3, 3])
+      ctx.beginPath()
+      ctx.moveTo(px, py)
+      ctx.lineTo(fx, fy)
+      ctx.stroke()
+      ctx.restore()
+
+      // Label with mm distance
+      var distPx = _perpSignedPx(tp, lA, lB, w, h)
+      var mm = Math.round(distPx * mmPerPx * 10) / 10
+      var range = rRange[tid]
+      var st = _statusRicketts(mm, range)
+      var col = (st === 'ideal') ? '#10B981' : (st === 'protruso' ? '#EF4444' : '#F59E0B')
+      var sign = mm > 0 ? '+' : ''
+      var text = sign + mm.toFixed(1) + ' mm'
+
+      // Position label near the point, offset outward
+      var labelX = px + (px > fx ? 10 : -10)
+      var labelY = py
+      var align = px > fx ? 'left' : 'right'
+
+      ctx.save()
+      ctx.font = 'bold 10px Montserrat, sans-serif'
+      ctx.textAlign = align
+      ctx.textBaseline = 'middle'
+      ctx.strokeStyle = 'rgba(20,18,16,0.95)'
+      ctx.lineWidth = 3
+      ctx.strokeText(text, labelX, labelY)
+      ctx.fillStyle = col
+      ctx.fillText(text, labelX, labelY)
+      ctx.restore()
+    })
+  }
+
+  function _statusRicketts(mm, range) {
+    // range is [lo, hi] with lo <= hi, typically both negative (behind line)
+    if (mm >= range[0] && mm <= range[1]) return 'ideal'
+    if (mm > range[1]) return 'protruso'  // mais à frente que o permitido
+    return 'retroverso'                    // muito atrás da linha
   }
 
   // Called from FM._redraw for canvas 1 (antes)
@@ -929,6 +1112,7 @@
   }
 
   function _renderMeasurementCard(m, slot, gender, is2x) {
+    if (m.type === 'line') return _renderRickettsCard(m, slot, gender, is2x)
     var ms = _state[slot].measurements[m.id]
     var range = IDEAL[gender][m.id]
     var valAntes = Nasal.compute('antes', m.id)
@@ -1015,6 +1199,86 @@
     return html
   }
 
+  function _renderRickettsCard(m, slot, gender, is2x) {
+    var ms = _state[slot].measurements[m.id]
+    var rRange = IDEAL[gender].ricketts
+    var antes  = Nasal.compute('antes', m.id)
+    var depois = is2x ? Nasal.compute('depois', m.id) : null
+
+    var html = '<div class="fm-tool-section" style="border-left:3px solid ' + m.color + ';padding-left:10px">'
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+      '<span style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:' + m.color + ';letter-spacing:0.06em">' + m.label + '</span>' +
+      '<div onclick="FaceMapping._toggleNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')" style="width:30px;height:15px;border-radius:8px;cursor:pointer;position:relative;background:' + (ms.enabled ? m.color : 'rgba(200,169,126,0.15)') + ';transition:background .2s;flex-shrink:0">' +
+        '<div style="width:11px;height:11px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (ms.enabled ? '16px' : '2px') + ';transition:left .2s"></div>' +
+      '</div>' +
+    '</div>'
+
+    if (!ms.enabled) {
+      html += '<div style="font-size:10px;color:rgba(200,169,126,0.35);font-style:italic">Desativada</div></div>'
+      return html
+    }
+
+    if (!antes) {
+      html += '<div style="font-size:10px;color:rgba(200,169,126,0.4)">Posicione os pontos (ponta, pogonio, labios sup/inf) para calcular.</div>'
+      html += '<div style="margin-top:6px"><button class="fm-btn" style="width:100%;font-size:9px;padding:3px 6px" onclick="FaceMapping._resetNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')">Reposicionar pontos</button></div></div>'
+      return html
+    }
+
+    html += '<div style="font-size:9px;color:rgba(200,169,126,0.45);margin-bottom:8px;line-height:1.5">Distancia perpendicular dos labios a linha ponta\u2192pogonio. Valores <strong>negativos</strong> = atras da linha (ideal).</div>'
+
+    function _lipRow(tid, label) {
+      var mm = antes[tid]
+      var mmD = depois ? depois[tid] : null
+      var range = rRange[tid]
+      var st = _statusRicketts(mm, range)
+      var stColor = (st === 'ideal') ? '#10B981' : (st === 'protruso' ? '#EF4444' : '#F59E0B')
+      var stLabel = (st === 'ideal') ? 'Ideal' : (st === 'protruso' ? 'Protruso' : 'Retroverso')
+      var conduct = (st !== 'ideal') ? CONDUCT.ricketts[tid][st] : null
+
+      var delta = (mm != null && mmD != null) ? (mmD - mm) : null
+      var deltaStr = delta != null ? ((delta > 0 ? '+' : '') + (Math.round(delta * 10) / 10) + ' mm') : ''
+      var deltaColor = delta == null ? 'rgba(200,169,126,0.4)' : (Math.abs(delta) < 0.5 ? 'rgba(200,169,126,0.5)' : (delta > 0 ? '#EF4444' : '#10B981'))
+
+      var inner = '<div style="padding:8px 10px;background:rgba(200,169,126,0.04);border-radius:6px;margin-bottom:8px;border-left:2px solid ' + stColor + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">' +
+          '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;color:rgba(245,240,232,0.8);letter-spacing:0.04em">' + label + '</span>' +
+          '<span style="font-size:14px;font-weight:700;color:' + stColor + ';font-family:Montserrat,sans-serif">' + (mm >= 0 ? '+' : '') + mm.toFixed(1) + ' mm</span>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(200,169,126,0.5);margin-bottom:4px">' +
+          '<span>Ideal: ' + range[0] + ' a ' + range[1] + ' mm</span>' +
+          '<span style="color:' + stColor + ';font-weight:700;text-transform:uppercase;letter-spacing:0.1em">' + stLabel + '</span>' +
+        '</div>' +
+        (depois != null && mmD != null
+          ? '<div style="display:flex;gap:10px;font-size:9px;margin-top:4px">' +
+              '<span style="color:' + SLOT_ACCENT.depois + ';font-weight:600">Depois: ' + (mmD >= 0 ? '+' : '') + mmD.toFixed(1) + ' mm</span>' +
+              '<span style="color:' + deltaColor + ';font-weight:700">Delta: ' + deltaStr + '</span>' +
+            '</div>'
+          : '') +
+        (conduct
+          ? '<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(200,169,126,0.1)">' +
+              '<div style="font-family:Cormorant Garamond,serif;font-size:11px;font-style:italic;color:rgba(245,240,232,0.8);line-height:1.5;margin-bottom:4px">' + conduct.anatomic + '</div>' +
+              '<div style="font-size:10px;color:rgba(245,240,232,0.7);line-height:1.5;margin-bottom:4px"><strong style="color:' + m.color + '">Conduta:</strong> ' + conduct.action + '</div>' +
+              (conduct.procedures && conduct.procedures.length
+                ? '<div style="display:flex;flex-wrap:wrap;gap:3px">' +
+                    conduct.procedures.map(function (p) {
+                      return '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:' + _withAlpha(m.color, 0.12) + ';border:1px solid ' + _withAlpha(m.color, 0.35) + ';color:' + m.color + ';font-weight:600">' + p + '</span>'
+                    }).join('') +
+                  '</div>'
+                : '') +
+            '</div>'
+          : '') +
+      '</div>'
+      return inner
+    }
+
+    html += _lipRow('lipUpper', 'Labio superior')
+    html += _lipRow('lipLower', 'Labio inferior')
+    html += '<div style="font-size:8px;color:rgba(200,169,126,0.35);margin-top:-4px;margin-bottom:6px;font-style:italic">Calculo baseado em ponta\u2192pogonio \u2248 52 mm (referencia adulta).</div>'
+    html += '<button class="fm-btn" style="width:100%;font-size:9px;padding:3px 6px" onclick="FaceMapping._resetNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')">Reposicionar pontos</button>'
+    html += '</div>'
+    return html
+  }
+
   function _refreshPanelValues() {
     var el = document.getElementById('fmNasalMeasurements')
     if (!el) return
@@ -1027,13 +1291,19 @@
     if (!Nasal.hasData('antes')) return null
     var gender = _state.gender
     var is2x = FM._viewMode === '2x' && Nasal.hasData('depois')
-    var rows = []
+    var rows = [], rickettsData = null
     MEASUREMENTS.forEach(function (m) {
       var ms = _state.antes.measurements[m.id]
       if (!ms || !ms.enabled) return
       var va = Nasal.compute('antes', m.id)
       var vd = is2x ? Nasal.compute('depois', m.id) : null
       if (va == null) return
+
+      if (m.type === 'line') {
+        rickettsData = { id: m.id, label: m.label, color: m.color, antes: va, depois: vd, ranges: IDEAL[gender].ricketts }
+        return
+      }
+
       var range = IDEAL[gender][m.id]
       var st = _status(va, range)
       var conduct = (st !== 'normal') ? CONDUCT[m.id][st] : null
@@ -1042,8 +1312,8 @@
         antes: va, depois: vd, range: range, status: st, conduct: conduct,
       })
     })
-    if (rows.length === 0) return null
-    return { gender: gender, rows: rows, is2x: is2x }
+    if (rows.length === 0 && !rickettsData) return null
+    return { gender: gender, rows: rows, ricketts: rickettsData, is2x: is2x }
   }
 
   Nasal.renderReportSection = function () {
@@ -1091,13 +1361,63 @@
         '<th style="' + head + '">Ideal</th>' +
         '<th style="' + head + '">Status</th>'
 
+    var angleTable = data.rows.length
+      ? '<table style="width:100%;border-collapse:collapse;background:rgba(20,18,16,0.5);border-radius:8px;overflow:hidden">' +
+          '<thead><tr style="background:rgba(200,169,126,0.08)">' + cols + '</tr></thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table>'
+      : ''
+
+    var rickettsBlock = ''
+    if (data.ricketts) {
+      var r = data.ricketts
+      function _lipRow(tid, label) {
+        var mm = r.antes[tid]
+        var mmD = r.depois ? r.depois[tid] : null
+        var range = r.ranges[tid]
+        var st = _statusRicketts(mm, range)
+        var stColor = (st === 'ideal') ? '#10B981' : (st === 'protruso' ? '#EF4444' : '#F59E0B')
+        var stLabel = (st === 'ideal') ? 'Ideal' : (st === 'protruso' ? 'Protruso' : 'Retroverso')
+        var conduct = (st !== 'ideal') ? CONDUCT.ricketts[tid][st] : null
+        var deltaStr = ''
+        if (mmD != null) {
+          var dv = mmD - mm
+          deltaStr = (dv > 0 ? '+' : '') + (Math.round(dv * 10) / 10) + ' mm'
+        }
+        var conductHtml = conduct
+          ? '<div style="font-family:Cormorant Garamond,serif;font-size:12px;font-style:italic;color:rgba(245,240,232,0.85);margin-bottom:3px">' + conduct.anatomic + '</div>' +
+            '<div style="font-size:11px;color:rgba(245,240,232,0.75);line-height:1.5">' + conduct.action + '</div>'
+          : '<div style="font-size:11px;color:rgba(16,185,129,0.8)">Dentro da faixa ideal — manter.</div>'
+        return '<tr>' +
+          '<td style="' + cell + ';font-size:12px;color:rgba(245,240,232,0.88);border-left:3px solid ' + r.color + '"><strong>' + label + '</strong></td>' +
+          '<td style="' + cell + ';font-size:14px;font-weight:700;color:' + stColor + '">' + (mm >= 0 ? '+' : '') + mm.toFixed(1) + ' mm</td>' +
+          (data.is2x ? ('<td style="' + cell + ';font-size:14px;font-weight:700">' + (mmD != null ? (mmD >= 0 ? '+' : '') + mmD.toFixed(1) + ' mm' : '\u2014') + '</td>' +
+                        '<td style="' + cell + ';font-size:13px;font-weight:700">' + deltaStr + '</td>') : '') +
+          '<td style="' + cell + ';font-size:11px;color:rgba(200,169,126,0.7)">' + range[0] + ' a ' + range[1] + ' mm</td>' +
+          '<td style="' + cell + ';font-size:10px;font-weight:700;color:' + stColor + ';text-transform:uppercase;letter-spacing:0.1em">' + stLabel + '</td>' +
+        '</tr>' +
+        '<tr><td colspan="' + (data.is2x ? 6 : 5) + '" style="padding:4px 14px 14px 20px;border-bottom:1px solid rgba(200,169,126,0.1)">' + conductHtml + '</td></tr>'
+      }
+
+      var rickettsCols = data.is2x
+        ? '<th style="' + head + '">Labio</th><th style="' + head + ';color:' + SLOT_ACCENT.antes + '">Antes</th><th style="' + head + ';color:' + SLOT_ACCENT.depois + '">Depois</th><th style="' + head + '">Delta</th><th style="' + head + '">Ideal</th><th style="' + head + '">Status</th>'
+        : '<th style="' + head + '">Labio</th><th style="' + head + '">Medido</th><th style="' + head + '">Ideal</th><th style="' + head + '">Status</th>'
+
+      rickettsBlock = '<div style="margin-top:20px">' +
+        '<div style="font-family:Cormorant Garamond,serif;font-size:16px;font-style:italic;color:' + r.color + ';margin-bottom:6px">' + r.label + '</div>' +
+        '<div style="font-size:10px;color:rgba(200,169,126,0.5);margin-bottom:8px;line-height:1.5">Distancia perpendicular dos labios a linha ponta\u2192pogonio. Valores negativos = atras da linha (ideal). Calculo baseado em ponta\u2192pogonio \u2248 52 mm.</div>' +
+        '<table style="width:100%;border-collapse:collapse;background:rgba(20,18,16,0.5);border-radius:8px;overflow:hidden">' +
+          '<thead><tr style="background:rgba(200,169,126,0.08)">' + rickettsCols + '</tr></thead>' +
+          '<tbody>' + _lipRow('lipUpper', 'Labio superior') + _lipRow('lipLower', 'Labio inferior') + '</tbody>' +
+        '</table>' +
+      '</div>'
+    }
+
     return '<section style="margin:32px 0;padding:24px;background:rgba(26,24,22,0.55);border:1px solid rgba(200,169,126,0.12);border-radius:12px">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-style:italic;color:#C8A97E;margin-bottom:4px">Analise Angular do Nariz</div>' +
       '<div style="font-size:11px;color:rgba(200,169,126,0.55);margin-bottom:16px;letter-spacing:0.06em">Referencia: ' + (data.gender === 'F' ? 'Feminino' : 'Masculino') + (data.is2x ? ' \u00B7 Comparativo Antes/Depois' : '') + '</div>' +
-      '<table style="width:100%;border-collapse:collapse;background:rgba(20,18,16,0.5);border-radius:8px;overflow:hidden">' +
-        '<thead><tr style="background:rgba(200,169,126,0.08)">' + cols + '</tr></thead>' +
-        '<tbody>' + rowsHtml + '</tbody>' +
-      '</table>' +
+      angleTable +
+      rickettsBlock +
     '</section>'
   }
 
