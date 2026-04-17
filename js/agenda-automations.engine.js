@@ -175,6 +175,48 @@
     return cfg.patient_type === apptType
   }
 
+  // ── VPI: resolve lookup "indicado por" do lead (cache por sessao) ──
+  // Retorna {indicated, partner_nome, partner_first_name} ou {indicated:false}.
+  // Usado pelos guards only_if_indicated / only_if_not_indicated.
+  var _vpiLookupCache = {}  // key: leadId -> promise
+  async function _vpiLookupIndicado(leadId) {
+    var key = String(leadId || '')
+    if (!key) return { indicated: false }
+    if (_vpiLookupCache[key]) return _vpiLookupCache[key]
+    _vpiLookupCache[key] = (async function () {
+      try {
+        if (!window._sbShared) return { indicated: false }
+        var res = await window._sbShared.rpc('vpi_get_partner_name_by_lead', { p_lead_id: key })
+        if (res.error) return { indicated: false }
+        return res.data || { indicated: false }
+      } catch (e) { return { indicated: false } }
+    })()
+    return _vpiLookupCache[key]
+  }
+
+  // Avalia guards VPI indicado / not_indicated. Retorna true se a regra pode disparar.
+  // Se dispara e e indicado, enriquece vars com indicado_por_nome.
+  async function _matchesVpiGuards(rule, appt, vars) {
+    var cfg = rule && rule.trigger_config || {}
+    var needIndicated    = cfg.only_if_indicated    === true
+    var needNotIndicated = cfg.only_if_not_indicated === true
+    if (!needIndicated && !needNotIndicated) return true // sem guard — passa
+
+    var leadId = (appt && (appt.pacienteId || appt.leadId)) || ''
+    var info = await _vpiLookupIndicado(leadId)
+    var isIndicated = !!(info && info.indicated)
+
+    if (needIndicated && !isIndicated) return false
+    if (needNotIndicated && isIndicated) return false
+
+    // Passou: enriquece vars com dados do parceiro (seguro pra renderTemplate)
+    if (isIndicated && info) {
+      vars.indicado_por_nome        = info.partner_first_name || info.partner_nome || ''
+      vars.indicado_por_nome_completo = info.partner_nome || ''
+    }
+    return true
+  }
+
   // ══════════════════════════════════════════════════════════
   //  ENTRY POINT 2: processStatusChange
   //  Called from apptTransition() when status changes.
@@ -189,10 +231,19 @@
     var phone = (_getPhone(appt) || '').replace(/\D/g, '')
     var vars = _apptVars(appt)
     vars.status = newStatus
-    rules.forEach(function (rule) {
-      if (!_matchesPatientType(rule, appt)) return
-      _executeRule(rule, vars, phone, appt)
-    })
+
+    // Avalia regras sequencialmente (async por causa do lookup VPI).
+    // O lookup e cacheado por leadId, entao multiplas regras pro mesmo
+    // appt fazem no maximo 1 round-trip.
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i]
+      if (!_matchesPatientType(rule, appt)) continue
+      // Vars tem escopo por iteracao pra enriquecer so na regra que precisa
+      var varsRule = Object.assign({}, vars)
+      var okGuard = await _matchesVpiGuards(rule, appt, varsRule)
+      if (!okGuard) continue
+      _executeRule(rule, varsRule, phone, appt)
+    }
   }
 
   // ══════════════════════════════════════════════════════════
