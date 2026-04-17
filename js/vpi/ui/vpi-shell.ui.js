@@ -75,7 +75,10 @@
     })
     if (n === 1) refreshAll()
     if (n === 2) { refreshKpis('2') }
-    if (n === 4 && window.vpiRenderRewards) window.vpiRenderRewards()
+    if (n === 4) {
+      if (window.vpiRenderRewards) window.vpiRenderRewards()
+      vpiLoadStaffAlertConfig()
+    }
     if (n === 5 && window.vpiRenderMissoes) window.vpiRenderMissoes()
   }
 
@@ -542,6 +545,54 @@
   }
 
   // ══════════════════════════════════════════════════
+  //  Staff Alert Config (Fase 7 - Entrega 3)
+  // ══════════════════════════════════════════════════
+  async function vpiLoadStaffAlertConfig() {
+    var sb = window._sbShared
+    var phoneEl   = document.getElementById('vpiStaffAlertPhone')
+    var enEl      = document.getElementById('vpiStaffAlertEnabled')
+    var hintEl    = document.getElementById('vpiStaffAlertHint')
+    if (!sb || !phoneEl || !enEl) return
+    try {
+      var res = await sb.rpc('vpi_staff_alert_config')
+      if (res.error) throw new Error(res.error.message)
+      var cfg = res.data || {}
+      phoneEl.value = cfg.phone || ''
+      enEl.checked  = cfg.enabled !== false
+      if (hintEl) hintEl.textContent = cfg.phone
+        ? 'Staff alerts enviados pra ' + cfg.phone
+        : 'Sem telefone configurado — alertas ficam bloqueados.'
+    } catch (e) {
+      if (hintEl) hintEl.textContent = 'Nao carregou config: ' + (e.message || '')
+    }
+  }
+
+  async function vpiSaveStaffAlertConfig() {
+    var sb = window._sbShared
+    var phoneEl = document.getElementById('vpiStaffAlertPhone')
+    var enEl    = document.getElementById('vpiStaffAlertEnabled')
+    if (!sb) { _toast('Erro', 'Supabase indisponivel', 'error'); return }
+    var phone = _onlyDigits((phoneEl && phoneEl.value) || '')
+    var enabled = !!(enEl && enEl.checked)
+    if (phone && phone.length < 8) {
+      _toast('Telefone invalido', 'Digite o numero completo com DDI (ex 5544999999999)', 'warning')
+      return
+    }
+    try {
+      var res = await sb.rpc('vpi_staff_alert_config_update', { p_phone: phone, p_enabled: enabled })
+      if (res.error) throw new Error(res.error.message)
+      if (res.data && !res.data.ok) {
+        _toast('Erro', res.data.reason || 'falhou', 'error')
+        return
+      }
+      _toast('Salvo', 'Configuracao de alertas staff atualizada', 'success')
+      vpiLoadStaffAlertConfig()
+    } catch (e) {
+      _toast('Erro', e.message || 'falhou', 'error')
+    }
+  }
+
+  // ══════════════════════════════════════════════════
   //  Init
   // ══════════════════════════════════════════════════
   document.addEventListener('DOMContentLoaded', function () {
@@ -561,6 +612,8 @@
   window.vpiDeletePartner  = vpiDeletePartner
   window.vpiViewPartner    = vpiViewPartner
   window.vpiCheckHighPerfNow = vpiCheckHighPerfNow
+  window.vpiSaveStaffAlertConfig = vpiSaveStaffAlertConfig
+  window.vpiLoadStaffAlertConfig = vpiLoadStaffAlertConfig
   window.vpiPSetMode       = vpiPSetMode
   window.vpiPPickCandidate = vpiPPickCandidate
   window.vpiPClearSelected = vpiPClearSelected
