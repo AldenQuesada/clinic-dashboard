@@ -6,6 +6,41 @@
 
   var FM = window._FM
 
+  // Valida payload retornado pela API Python (MediaPipe). Garante que landmarks
+  // e pontos anatomicos chave estao em [0,1] e nao contem NaN/Infinity. Sem
+  // este check, render quebra silenciosamente e angulos retornam absurdos.
+  FM._validateScanData = function (data) {
+    function _validPt(p) {
+      if (!p || typeof p.x !== 'number' || typeof p.y !== 'number') return false
+      if (!isFinite(p.x) || !isFinite(p.y)) return false
+      // Pequena tolerancia (-0.02 a 1.02) — landmarks de borda da face podem
+      // estourar marginalmente sem indicar bug.
+      return p.x >= -0.02 && p.x <= 1.02 && p.y >= -0.02 && p.y <= 1.02
+    }
+    if (!data || typeof data !== 'object') return { ok: false, reason: 'no-data' }
+    if (data.landmarks && data.landmarks.length) {
+      // Sample 10 pontos espalhados no array (nao 100% — economia de CPU)
+      var n = data.landmarks.length, step = Math.max(1, Math.floor(n / 10))
+      for (var i = 0; i < n; i += step) {
+        if (!_validPt(data.landmarks[i])) {
+          return { ok: false, reason: 'landmark-out-of-bounds', sample: { idx: i, pt: data.landmarks[i] } }
+        }
+      }
+    }
+    if (data.thirds && data.thirds.points) {
+      var keys = ['trichion', 'glabela', 'subnasal', 'mento']
+      for (var k = 0; k < keys.length; k++) {
+        var p = data.thirds.points[keys[k]]
+        if (p && !_validPt(p)) return { ok: false, reason: 'thirds-invalid', sample: { key: keys[k], pt: p } }
+      }
+    }
+    if (data.ricketts) {
+      if (data.ricketts.nose_point && !_validPt(data.ricketts.nose_point)) return { ok: false, reason: 'ricketts-nose-invalid', sample: data.ricketts.nose_point }
+      if (data.ricketts.chin_point && !_validPt(data.ricketts.chin_point)) return { ok: false, reason: 'ricketts-chin-invalid', sample: data.ricketts.chin_point }
+    }
+    return { ok: true }
+  }
+
   FM._drawTercos = function () {
     var t = FM._tercoLines
     var w = FM._imgW, h = FM._imgH
@@ -364,6 +399,16 @@
         if (!silent) FM._hideLoading()
         if (!data.success) {
           if (!silent) FM._showToast('Nenhum rosto detectado na foto.', 'error')
+          return
+        }
+
+        // Sanidade: API as vezes retorna landmarks fora dos limites (NaN, Infinity,
+        // valores >1 ou <0) por bug interno do MediaPipe. Sem este check, render
+        // silenciosamente quebra ou produz angulos absurdos.
+        var validation = FM._validateScanData(data)
+        if (!validation.ok) {
+          console.warn('[FM] Scan data invalid:', validation.reason, validation.sample)
+          if (!silent) FM._showToast('Pontos faciais invalidos da API. Marque manualmente.', 'error')
           return
         }
 

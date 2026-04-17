@@ -842,7 +842,7 @@
     }
 
     // 1. AMF — Angulo Mandibular Frontal (Gonial E → Mento → Gonial D)
-    var amf = _calcAngle3Points(gonialL, mento, gonialR)
+    var amf = _calcAngle3Points(gonialL, mento, gonialR, w, h)
 
     // 2. RMZ — Ratio Mandibula / Zigoma
     var mandW = Math.sqrt(Math.pow((gonialR.x - gonialL.x) * w, 2) + Math.pow((gonialR.y - gonialL.y) * h, 2))
@@ -1353,7 +1353,7 @@
     var h = FM._imgH || 1
 
     // AMF
-    FM._metricAngles.amf = Math.round(_calcAngle3Points(pts.gonial_left, pts.mento, pts.gonial_right) * 10) / 10
+    FM._metricAngles.amf = Math.round(_calcAngle3Points(pts.gonial_left, pts.mento, pts.gonial_right, w, h) * 10) / 10
 
     // RMZ
     var mandW = Math.sqrt(Math.pow((pts.gonial_right.x - pts.gonial_left.x) * w, 2) + Math.pow((pts.gonial_right.y - pts.gonial_left.y) * h, 2))
@@ -1380,12 +1380,15 @@
     else FM._metricAngles.jawline = { label: 'Jawline Tensa', color: '#10B981' }
   }
 
-  function _calcAngle3Points(a, b, c) {
-    // Angle at point B formed by lines BA and BC
-    var baX = a.x - b.x
-    var baY = a.y - b.y
-    var bcX = c.x - b.x
-    var bcY = c.y - b.y
+  function _calcAngle3Points(a, b, c, w, h) {
+    // Angle at point B formed by lines BA and BC.
+    // Coords sao normalizadas (0-1) — multiplicar por w, h reais corrige
+    // a distorcao em fotos nao-quadradas (mesmo bug que afetava nasolabial).
+    w = w || 1; h = h || 1
+    var baX = (a.x - b.x) * w
+    var baY = (a.y - b.y) * h
+    var bcX = (c.x - b.x) * w
+    var bcY = (c.y - b.y) * h
     var dot = baX * bcX + baY * bcY
     var magBA = Math.sqrt(baX * baX + baY * baY)
     var magBC = Math.sqrt(bcX * bcX + bcY * bcY)

@@ -51,19 +51,34 @@
   }
 
   FM._saveSessionData = function (id, photoData, afterByAngle) {
-    try {
-      var photos = photoData || {}
-      var afterPhotos = afterByAngle || {}
-      var hasAngleData = FM._angleStore && Object.keys(FM._angleStore).length > 0
-      var hasRegions = FM._regionState && Object.keys(FM._regionState).some(function (k) { return FM._regionState[k].active })
-      var hasAnyData = Object.keys(photos).length > 0 || FM._annotations.length > 0 ||
-                       Object.keys(afterPhotos).length > 0 || hasAngleData || hasRegions
-      if (!hasAnyData) {
-        localStorage.removeItem('fm_session_' + id)
-        localStorage.removeItem('fm_last_session')
-        return
-      }
+    var photosPlain = photoData || {}
+    var afterPhotosPlain = afterByAngle || {}
+    var hasAngleData = FM._angleStore && Object.keys(FM._angleStore).length > 0
+    var hasRegions = FM._regionState && Object.keys(FM._regionState).some(function (k) { return FM._regionState[k].active })
+    var hasAnyData = Object.keys(photosPlain).length > 0 || FM._annotations.length > 0 ||
+                     Object.keys(afterPhotosPlain).length > 0 || hasAngleData || hasRegions
+    if (!hasAnyData) {
+      try { localStorage.removeItem('fm_session_' + id) } catch (e) {}
+      try { localStorage.removeItem('fm_last_session') } catch (e) {}
+      return
+    }
 
+    // Encripta fotos antes de persistir (LGPD/dados de saude). Async — Promise.all
+    // executa em paralelo. Em caso de falha de cripto, os helpers retornam o
+    // plaintext, garantindo que o save nunca quebre.
+    var encryptPhotos = (FM._encryptPhotoMap ? FM._encryptPhotoMap(photosPlain) : Promise.resolve(photosPlain))
+    var encryptAfter  = (FM._encryptPhotoMap ? FM._encryptPhotoMap(afterPhotosPlain) : Promise.resolve(afterPhotosPlain))
+
+    Promise.all([encryptPhotos, encryptAfter]).then(function (results) {
+      _writeSessionToStorage(id, results[0], results[1])
+    }).catch(function (e) {
+      console.warn('[FM] encrypt failed, saving plaintext as fallback:', e)
+      _writeSessionToStorage(id, photosPlain, afterPhotosPlain)
+    })
+  }
+
+  function _writeSessionToStorage(id, photos, afterPhotos) {
+    try {
       var session = {
         lead: { id: FM._lead.id || FM._lead.lead_id, nome: FM._lead.nome || FM._lead.name },
         activeAngle: FM._activeAngle,
@@ -162,50 +177,64 @@
       }
       FM._activeAngle = null  // will be set after photos restore
 
-      // Restore ANTES photos
-      var photos = session.photos || {}
-      Object.keys(photos).forEach(function (angle) {
-        if (photos[angle]) {
-          var binary = atob(photos[angle].split(',')[1])
-          var arr = new Uint8Array(binary.length)
-          for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
-          var blob = new Blob([arr], { type: 'image/jpeg' })
-          if (FM._photoUrls[angle]) URL.revokeObjectURL(FM._photoUrls[angle])
-          FM._photoUrls[angle] = URL.createObjectURL(blob)
-          FM._photos[angle] = blob
-        }
+      // Fotos sao desencriptadas em paralelo. _decryptPhotoMap reconhece
+      // o prefixo "enc1:" (encriptado) ou retorna como esta (legacy plain).
+      var photosEnc = session.photos || {}
+      var afterPhotosEnc = session.afterPhotos || {}
+      // Migra old single afterPhoto to 'front'
+      if (!afterPhotosEnc || Object.keys(afterPhotosEnc).length === 0) {
+        if (session.afterPhoto) afterPhotosEnc = { front: session.afterPhoto }
+      }
+
+      function _hydratePhotos(photos, afterPhotos) {
+        Object.keys(photos).forEach(function (angle) {
+          var dataUrl = photos[angle]
+          if (!dataUrl) return
+          try {
+            var binary = atob(dataUrl.split(',')[1])
+            var arr = new Uint8Array(binary.length)
+            for (var i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
+            var blob = new Blob([arr], { type: 'image/jpeg' })
+            if (FM._photoUrls[angle]) URL.revokeObjectURL(FM._photoUrls[angle])
+            FM._photoUrls[angle] = URL.createObjectURL(blob)
+            FM._photos[angle] = blob
+          } catch (e) { console.warn('[FM] failed to hydrate antes photo for', angle, e) }
+        })
+        Object.keys(afterPhotos).forEach(function (ang) {
+          var dataUrl = afterPhotos[ang]
+          if (!dataUrl) return
+          try {
+            var aBin = atob(dataUrl.split(',')[1])
+            var aArr = new Uint8Array(aBin.length)
+            for (var j = 0; j < aBin.length; j++) aArr[j] = aBin.charCodeAt(j)
+            if (FM._afterPhotoByAngle[ang]) URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
+            FM._afterPhotoByAngle[ang] = URL.createObjectURL(new Blob([aArr], { type: 'image/jpeg' }))
+          } catch (e) { /* silent */ }
+        })
+
+        // Determina activeAngle preferindo 'front' se houver foto
+        if (FM._photoUrls['front']) FM._activeAngle = 'front'
+        else if (FM._photoUrls['45']) FM._activeAngle = '45'
+        else if (FM._photoUrls['lateral']) FM._activeAngle = 'lateral'
+        else FM._activeAngle = session.activeAngle || null
+
+        // Re-render apos hydratacao assincrona — por hora a UI ja foi pintada,
+        // entao precisa redraw + reinit canvas.
+        if (FM._render) FM._render()
+        if (FM._initCanvas) setTimeout(FM._initCanvas, 50)
+      }
+
+      var decAntes = (FM._decryptPhotoMap ? FM._decryptPhotoMap(photosEnc) : Promise.resolve(photosEnc))
+      var decDepois = (FM._decryptPhotoMap ? FM._decryptPhotoMap(afterPhotosEnc) : Promise.resolve(afterPhotosEnc))
+      Promise.all([decAntes, decDepois]).then(function (results) {
+        _hydratePhotos(results[0], results[1])
+        console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'photos, angle:', FM._activeAngle)
+      }).catch(function (e) {
+        console.warn('[FM] failed to decrypt photos, attempting plain hydration:', e)
+        _hydratePhotos(photosEnc, afterPhotosEnc)
       })
 
-      // Restore DEPOIS photos (per angle)
-      var afterPhotos = session.afterPhotos || {}
-      // Migrate old single afterPhoto to 'front'
-      if (!afterPhotos || Object.keys(afterPhotos).length === 0) {
-        if (session.afterPhoto) afterPhotos = { front: session.afterPhoto }
-      }
-      Object.keys(afterPhotos).forEach(function (ang) {
-        if (!afterPhotos[ang]) return
-        try {
-          var aBin = atob(afterPhotos[ang].split(',')[1])
-          var aArr = new Uint8Array(aBin.length)
-          for (var j = 0; j < aBin.length; j++) aArr[j] = aBin.charCodeAt(j)
-          if (FM._afterPhotoByAngle[ang]) URL.revokeObjectURL(FM._afterPhotoByAngle[ang])
-          FM._afterPhotoByAngle[ang] = URL.createObjectURL(new Blob([aArr], { type: 'image/jpeg' }))
-        } catch (e) { /* silent */ }
-      })
-
-      // Set active angle: prefer 'front' if photo exists
-      if (FM._photoUrls['front']) {
-        FM._activeAngle = 'front'
-      } else if (FM._photoUrls['45']) {
-        FM._activeAngle = '45'
-      } else if (FM._photoUrls['lateral']) {
-        FM._activeAngle = 'lateral'
-      } else {
-        FM._activeAngle = session.activeAngle || null
-      }
       // No need to call _restoreAngleState — getter/setters auto-route to active angle
-
-      console.log('[FaceMapping] Session restored:', Object.keys(FM._photoUrls).length, 'photos, angle:', FM._activeAngle)
       return true
     } catch (e) {
       console.warn('[FaceMapping] Restore failed:', e)
