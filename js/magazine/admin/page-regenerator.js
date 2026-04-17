@@ -77,7 +77,13 @@
     applyBtn.addEventListener('click', applyProposed)
     savePromptBtn.addEventListener('click', savePrompt)
     savedPromptsEl.addEventListener('change', function () {
-      if (savedPromptsEl.value) promptEl.value = savedPromptsEl.value
+      if (savedPromptsEl.value) {
+        promptEl.value = savedPromptsEl.value
+        // Incrementa contador de uso (best-effort)
+        var promptId = savedPromptsEl.options[savedPromptsEl.selectedIndex] &&
+                       savedPromptsEl.options[savedPromptsEl.selectedIndex].dataset.id
+        if (promptId) sb.rpc('magazine_prompt_library_touch', { p_id: promptId }).catch(function () {})
+      }
     })
 
     async function open(page, editionContext, onApplied) {
@@ -168,7 +174,7 @@
         var rows = res.data || []
         var opts = ['<option value="">-- Prompts salvos --</option>']
         rows.forEach(function (p) {
-          opts.push('<option value="' + escapeAttr(p.prompt_text) + '">' + escapeHtml(p.nome) + '</option>')
+          opts.push('<option value="' + escapeAttr(p.prompt_text) + '" data-id="' + escapeAttr(p.id) + '">' + escapeHtml(p.nome) + (p.usado_n ? ' (' + p.usado_n + ')' : '') + '</option>')
         })
         savedPromptsEl.innerHTML = opts.join('')
       } catch (e) {
