@@ -3371,9 +3371,57 @@
 
       <!-- Modal: Novo Parceiro -->
       <div id="vpiAddPartnerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:16px">
-        <div style="background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);padding:28px">
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);padding:28px">
           <div style="font-size:16px;font-weight:800;color:#111;margin-bottom:4px">Novo Parceiro</div>
-          <div style="font-size:13px;color:#9CA3AF;margin-bottom:20px">Cadastro manual no Programa VPI</div>
+          <div style="font-size:13px;color:#9CA3AF;margin-bottom:16px">Busque uma paciente existente ou cadastre do zero</div>
+
+          <!-- Tabs: Buscar existente | Cadastrar do zero -->
+          <div style="display:flex;gap:0;border-bottom:2px solid #F3F4F6;margin-bottom:18px">
+            <button id="vpiPModeTab1" type="button" onclick="vpiPSetMode('search')" style="flex:1;padding:10px 16px;font-size:12px;font-weight:700;color:#7C3AED;background:none;border:none;border-bottom:2px solid #7C3AED;margin-bottom:-2px;cursor:pointer">
+              <span style="display:inline-flex;align-items:center;gap:6px">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Buscar existente
+              </span>
+            </button>
+            <button id="vpiPModeTab2" type="button" onclick="vpiPSetMode('new')" style="flex:1;padding:10px 16px;font-size:12px;font-weight:700;color:#9CA3AF;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer">
+              <span style="display:inline-flex;align-items:center;gap:6px">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+                Cadastrar do zero
+              </span>
+            </button>
+          </div>
+
+          <!-- Modo: BUSCAR -->
+          <div id="vpiPPanelSearch">
+            <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Nome ou telefone</label>
+            <div style="position:relative">
+              <input id="vpiPSearchInput" type="text" placeholder="Digite 2+ letras ou telefone..." autocomplete="off" style="padding:10px 12px 10px 36px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;width:100%;box-sizing:border-box"/>
+              <svg width="14" height="14" fill="none" stroke="#9CA3AF" stroke-width="2" viewBox="0 0 24 24" style="position:absolute;left:12px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
+            <div id="vpiPSearchResults" style="margin-top:10px;max-height:320px;overflow-y:auto;border:1.5px solid #F3F4F6;border-radius:10px;display:none"></div>
+            <div id="vpiPSearchEmpty" style="margin-top:14px;text-align:center;padding:24px;color:#9CA3AF;font-size:12px">Digite no minimo 2 caracteres pra buscar</div>
+
+            <!-- Resumo da selecao + opcao de editar -->
+            <div id="vpiPSelected" style="display:none;margin-top:14px;background:#F5F3FF;border:1.5px solid #DDD6FE;border-radius:10px;padding:14px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div id="vpiPSelAvatar" style="width:36px;height:36px;border-radius:50%;background:#7C3AED;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">?</div>
+                <div style="flex:1;min-width:0">
+                  <div id="vpiPSelName" style="font-size:13px;font-weight:700;color:#111">—</div>
+                  <div id="vpiPSelMeta" style="font-size:11px;color:#6B7280">—</div>
+                </div>
+                <button type="button" onclick="vpiPClearSelected()" title="Trocar selecao" style="background:none;border:none;color:#7C3AED;cursor:pointer;padding:4px;display:flex">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <button type="button" onclick="vpiPToggleEdit()" id="vpiPToggleEditBtn" style="display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #DDD6FE;color:#6D28D9;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">
+                <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                Editar dados antes de cadastrar
+              </button>
+            </div>
+          </div>
+
+          <!-- Modo: CADASTRAR DO ZERO (+ form auxiliar do modo busca) -->
+          <div id="vpiPPanelNew" style="display:none">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <!-- Nome -->
             <div style="grid-column:1/span 2">
@@ -3399,13 +3447,8 @@
                 <input id="vpiPTel" type="text" placeholder="(11) 99999-9999" style="padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;flex:1;box-sizing:border-box"/>
               </div>
             </div>
-            <!-- E-mail -->
-            <div>
-              <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">E-mail</label>
-              <input id="vpiPEmail" type="email" placeholder="ana@email.com" style="padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;width:100%;box-sizing:border-box"/>
-            </div>
             <!-- Profissão -->
-            <div>
+            <div style="grid-column:1/span 2">
               <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Profissão</label>
               <input id="vpiPProfissao" type="text" placeholder="Nutricionista, Empresária..." style="padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;width:100%;box-sizing:border-box"/>
             </div>
@@ -3457,13 +3500,14 @@
               </select>
             </div>
           </div>
+          </div>
           <div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:10px 12px;margin-top:14px;font-size:12px;color:#047857;display:flex;align-items:center;gap:8px">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Convite via WhatsApp será agendado automaticamente para 7 dias após o cadastro.
           </div>
           <div style="display:flex;gap:10px;margin-top:16px">
             <button onclick="vpiCloseAddPartner()" style="flex:1;padding:11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;font-weight:600;color:#374151;background:#fff;cursor:pointer">Cancelar</button>
-            <button onclick="vpiSavePartner()" style="flex:1;padding:11px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cadastrar</button>
+            <button onclick="vpiSavePartner()" id="vpiPSaveBtn" style="flex:1;padding:11px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Cadastrar</button>
           </div>
         </div>
       </div>
