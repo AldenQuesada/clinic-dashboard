@@ -52,6 +52,10 @@
         if (window.VPIEmbConfetti && window.VPIEmbConfetti.fire) {
           window.VPIEmbConfetti.fire({ tier: _tier(), count: 180, duration: 3800 })
         }
+        // Fase 9 Entrega 6: haptic + som
+        if (window.VPIEmbHaptic && window.VPIEmbHaptic.fire) {
+          window.VPIEmbHaptic.fire('indication')
+        }
         if (_app()) _app().toast('Indicacao fechada! Creditos atualizados.')
         if (_app() && _app().refresh) _app().refresh()
         if (window.VPIEmbBadges && window.VPIEmbBadges.refresh) {
@@ -73,6 +77,10 @@
       if (window.VPIEmbConfetti && window.VPIEmbConfetti.fire) {
         window.VPIEmbConfetti.fire({ tier: _tier(), count: 160, duration: 3500 })
       }
+      // Fase 9 Entrega 6: haptic + som
+      if (window.VPIEmbHaptic && window.VPIEmbHaptic.fire) {
+        window.VPIEmbHaptic.fire('badge')
+      }
       if (window.VPIEmbBadges && window.VPIEmbBadges.addUnlocked) {
         window.VPIEmbBadges.addUnlocked(b.badge_code, b.unlocked_at)
       } else if (window.VPIEmbBadges && window.VPIEmbBadges.refresh) {
@@ -81,7 +89,21 @@
     } catch (e) { console.warn('[VPIEmbRealtime] badge insert:', e && e.message) }
   }
 
-  function _onPartnerUpdate() {
+  var _lastKnownTier = null
+
+  function _onPartnerUpdate(payload) {
+    try {
+      var n = payload && payload.new
+      if (n && n.tier_atual) {
+        if (_lastKnownTier && _lastKnownTier !== n.tier_atual) {
+          // Tier subiu: haptic + som tier_up
+          if (window.VPIEmbHaptic && window.VPIEmbHaptic.fire) {
+            window.VPIEmbHaptic.fire('tier_up')
+          }
+        }
+        _lastKnownTier = n.tier_atual
+      }
+    } catch (_) {}
     if (_app() && _app().refresh) _app().refresh()
   }
 
@@ -93,6 +115,7 @@
       return
     }
     _partnerId = d.partner.id
+    _lastKnownTier = d.partner.tier_atual || null
 
     try {
       _ch = sb.channel('vpi-emb-' + _partnerId)

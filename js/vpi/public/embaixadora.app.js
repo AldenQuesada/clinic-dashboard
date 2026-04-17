@@ -249,6 +249,7 @@
       if (window.VPIEmbEaster && window.VPIEmbEaster.init)         window.VPIEmbEaster.init()
       if (window.VPIEmbPalette && window.VPIEmbPalette.init)       window.VPIEmbPalette.init()
       if (window.VPIEmbMyImpact && window.VPIEmbMyImpact.init)     window.VPIEmbMyImpact.init()
+      if (window.VPIEmbHaptic && window.VPIEmbHaptic.init)         window.VPIEmbHaptic.init()
       if (window.VPIEmbRealtime && window.VPIEmbRealtime.init)    window.VPIEmbRealtime.init()
     } catch (e) {
       console.warn('[VPIEmbApp] module init error:', e)

@@ -61,6 +61,16 @@
     var pct       = Math.min(100, (progresso / target) * 100)
     var completed = m.completed || progresso >= target
 
+    // Fase 9 Entrega 6: haptic + som quando missao recem-completou
+    try {
+      if (completed && _state._lastCompleted === false) {
+        if (window.VPIEmbHaptic && window.VPIEmbHaptic.fire) {
+          window.VPIEmbHaptic.fire('mission')
+        }
+      }
+      _state._lastCompleted = completed
+    } catch (_) {}
+
     slot.innerHTML =
       '<div class="vpi-missao-card ' + (completed ? 'completed' : '') + '">' +
         '<div class="vpi-missao-head">' +

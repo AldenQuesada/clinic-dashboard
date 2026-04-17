@@ -198,7 +198,14 @@
     if (!_cooldownExpired(code)) return false
     _markCooldown(code)
     _fireServer(code)
-    try { if (soundFreq) _playCrystal(soundFreq, 0.6) } catch (_) {}
+    try {
+      // Fase 9 Entrega 6: reusa VPIEmbHaptic quando carregado
+      if (window.VPIEmbHaptic && window.VPIEmbHaptic.fire) {
+        window.VPIEmbHaptic.fire('egg')
+      } else if (soundFreq) {
+        _playCrystal(soundFreq, 0.6)
+      }
+    } catch (_) {}
     try { animFn && animFn() } catch (_) {}
     _eggToast(msg, color)
     return true
