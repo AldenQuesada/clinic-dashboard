@@ -169,8 +169,12 @@
     try {
       if (window.VPIEmbMissoes && window.VPIEmbMissoes.init)      window.VPIEmbMissoes.init()
       if (window.VPIEmbBadges && window.VPIEmbBadges.init)        window.VPIEmbBadges.init()
+      if (window.VPIEmbIndicar && window.VPIEmbIndicar.init)      window.VPIEmbIndicar.init()
       if (window.VPIEmbShoutout && window.VPIEmbShoutout.init)    window.VPIEmbShoutout.init()
+      if (window.VPIEmbImpact && window.VPIEmbImpact.init)        window.VPIEmbImpact.init()
       if (window.VPIEmbShare && window.VPIEmbShare.init)          window.VPIEmbShare.init()
+      if (window.VPIEmbStory && window.VPIEmbStory.init)          window.VPIEmbStory.init()
+      if (window.VPIEmbQR && window.VPIEmbQR.init)                window.VPIEmbQR.init()
       if (window.VPIEmbRealtime && window.VPIEmbRealtime.init)    window.VPIEmbRealtime.init()
     } catch (e) {
       console.warn('[VPIEmbApp] module init error:', e)

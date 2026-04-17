@@ -747,6 +747,109 @@ html, body {
   font-style: italic;
   opacity: 0.85;
 }
+.vpi-missao-countdown {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--vpi-gold-hi);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.vpi-missao-card.completed {
+  animation: none;
+  border-color: #6EE7B7;
+  background:
+    radial-gradient(ellipse at top right, rgba(110,231,183,0.18), transparent 70%),
+    linear-gradient(145deg, rgba(16,185,129,0.2), rgba(5,46,22,0.25));
+}
+.vpi-missao-card.completed .vpi-missao-head .kicker { color: #6EE7B7; }
+
+/* Badge "recent" pulse gold */
+.vpi-badge.recent {
+  animation: vpi-badge-pulse 1.8s ease-in-out infinite;
+}
+@keyframes vpi-badge-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(201,169,110,0.55),
+                0 0 16px rgba(201,169,110,0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(201,169,110,0),
+                0 0 22px rgba(201,169,110,0.55);
+  }
+}
+
+/* Loader spin inline */
+.vpi-btn svg.feather-loader,
+.vpi-btn .feather-loader {
+  animation: vpi-spin 800ms linear infinite;
+}
+
+/* Fase 3 - Share modal extras */
+.vpi-story-preview {
+  width: 100%;
+  max-width: 260px;
+  margin: 0 auto 12px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--vpi-border);
+  box-shadow: var(--vpi-shadow-deep);
+  background: #000;
+  aspect-ratio: 9 / 16;
+  display: block;
+}
+.vpi-story-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.vpi-shoutout-ranking {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+.vpi-rank-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--vpi-glass);
+  border: 1px solid rgba(255,255,255,0.05);
+  font-size: 12px;
+  color: var(--vpi-ink);
+}
+.vpi-rank-item .pos {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 16px;
+  color: var(--vpi-gold);
+  min-width: 26px;
+  font-weight: 600;
+}
+.vpi-rank-item .nm { flex: 1; }
+.vpi-rank-item .qt {
+  font-size: 11px;
+  color: var(--vpi-ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+.vpi-rank-item.blur .nm {
+  filter: blur(6px);
+  color: var(--vpi-ink-dim);
+  user-select: none;
+}
+.vpi-rank-item.self {
+  background: linear-gradient(135deg, rgba(201,169,110,0.2), rgba(124,58,237,0.15));
+  border-color: var(--vpi-gold);
+}
+.vpi-rank-item.self .pos { color: var(--vpi-gold-hi); }
+
+/* QR code */
+.vpi-qr-back {
+  margin: 14px auto 0;
+}
+.vpi-qr canvas, .vpi-qr svg {
+  display: block;
+}
 
 /* ── Fase 3 - Shoutout ──────────────────────────────────── */
 .vpi-shoutout {
