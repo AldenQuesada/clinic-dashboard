@@ -136,6 +136,10 @@
     if (window.VPIEmbApp && window.VPIEmbApp.onStateChange) {
       window.VPIEmbApp.onStateChange(function () { render() })
     }
+    // Re-render apos card principal redesenhar (card.js reseta root.innerHTML)
+    window.addEventListener('vpi-emb-rendered', function () {
+      setTimeout(render, 20)
+    })
     render()
   }
 
