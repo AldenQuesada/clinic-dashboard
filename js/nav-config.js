@@ -192,11 +192,11 @@
       icon:    'trending-up',
       label:   'Growth e Mkt',
       roles:   [ROLES.OWNER, ROLES.ADMIN],
-      plans:   [PLANS.PREMIUM],  // módulo exclusivo do plano Premium
+      plans:   [],
       pages: [
         { page: 'growth-wa-links',       label: 'Gerador de Links WA',        breadcrumb: 'Growth > Gerador de Links WhatsApp' },
         { page: 'growth-partners',       label: 'Parceiros',                  breadcrumb: 'Growth > Parceiros' },
-        { page: 'growth-referral',       label: 'Programa de Indicação',      breadcrumb: 'Growth > Programa de Indicação' },
+        { page: 'growth-referral',       label: 'Programa de Indicação',      breadcrumb: 'Growth > Programa de Indicação', highlight: true },
       ],
     },
 

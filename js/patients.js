@@ -839,8 +839,12 @@ async function showNewPatientModal() {
                 </select>
               </div>
               <div>
-                <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Indicado por</label>
-                <input id="np_indicado_por" type="text" placeholder="Nome do paciente que indicou" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box" autocomplete="off"/>
+                <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Indicado por (Parceiro VPI)</label>
+                <select id="np_indicado_por_id" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;background:#fff;box-sizing:border-box" onchange="_npSyncIndicadoPorName()">
+                  <option value="">— Nenhum —</option>
+                </select>
+                <input id="np_indicado_por" type="hidden"/>
+                <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Lista parceiros ativos do Programa de Indicacao</div>
               </div>
               <div>
                 <label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Campanha / UTM</label>
@@ -919,7 +923,34 @@ async function showNewPatientModal() {
       </div>
     </div>`
   document.body.appendChild(m)
+
+  // VPI: popular dropdown de parceiros ativos para "Indicado por"
+  if (window.VPIService) {
+    VPIService.loadPartners({ force: false }).then(function () {
+      var sel = document.getElementById('np_indicado_por_id')
+      if (!sel) return
+      var partners = VPIService.getActivePartners()
+      partners.sort(function (a, b) { return (a.nome || '').localeCompare(b.nome || '', 'pt-BR') })
+      partners.forEach(function (p) {
+        var opt = document.createElement('option')
+        opt.value = p.id
+        opt.textContent = p.nome + (p.cidade ? ' — ' + p.cidade : '')
+        opt.dataset.name = p.nome
+        sel.appendChild(opt)
+      })
+    }).catch(function () { /* silencioso */ })
+  }
 }
+
+// Mantem compat: ao mudar o select, atualiza o input hidden com o nome
+function _npSyncIndicadoPorName() {
+  var sel = document.getElementById('np_indicado_por_id')
+  var hid = document.getElementById('np_indicado_por')
+  if (!sel || !hid) return
+  var opt = sel.options[sel.selectedIndex]
+  hid.value = opt && opt.dataset ? (opt.dataset.name || '') : ''
+}
+window._npSyncIndicadoPorName = _npSyncIndicadoPorName
 
 // Auto-preencher preço e duração ao selecionar procedimento
 // ── Sexo biológico — toggle de botões ─────────────────────────
@@ -1121,7 +1152,9 @@ async function saveNewPatient() {
   if (g('np_uf'))         addr.estado = g('np_uf')
   if (Object.keys(addr).length) customFields.endereco = addr
 
+  var indicadoPorId = g('np_indicado_por_id')
   if (g('np_indicado_por'))   customFields.indicadoPor          = g('np_indicado_por')
+  if (indicadoPorId)          customFields.indicadoPorPartnerId = indicadoPorId
   if (g('np_utm_campaign'))   customFields.utmCampaign           = g('np_utm_campaign')
   if (procedimento)           customFields.procedimentoInteresse = procedimento
   if (g('np_valor'))          customFields.valorEstimado         = parseFloat(g('np_valor')) || 0
@@ -1162,6 +1195,12 @@ async function saveNewPatient() {
     // (evita race condition: getTags no viewLead rodaria antes do assign gravar)
     if (window.SdrService) {
       await window.SdrService.assignTag('lead_novo', 'lead', newLead.id).catch(function(e) { console.warn("[patients]", e.message || e) })
+    }
+
+    // VPI: se foi indicado por um parceiro, cria indicacao pending_close
+    if (indicadoPorId && window.VPIRepository) {
+      window.VPIRepository.indications.create(indicadoPorId, newLead.id, null)
+        .catch(function (e) { console.warn('[VPI] indication.create:', e && e.message || e) })
     }
 
     document.getElementById('newPatientModal')?.remove()

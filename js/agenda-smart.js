@@ -2143,6 +2143,12 @@ function confirmFinalize(id) {
     try { localStorage.setItem('clinic_op_tasks', JSON.stringify(payTasks)) } catch(e) { /* quota */ }
   }
 
+  // VPI — Programa de Indicacao (fire-and-forget, nunca quebra finalize)
+  if (window.VPIEngine) {
+    try { VPIEngine.autoEnroll(apptFinal).catch(function(e){ console.warn('[VPI] autoEnroll:', e) }) } catch(e) {}
+    try { VPIEngine.closeIndication(apptFinal).catch(function(e){ console.warn('[VPI] closeIndication:', e) }) } catch(e) {}
+  }
+
   _finalizingInProgress = false
   closeFinalizeModal(true)
   if (window._showToast) _showToast('Finalizado', apptFinal.pacienteNome + ' finalizado com sucesso', 'success')
