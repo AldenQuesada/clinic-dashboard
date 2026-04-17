@@ -2784,6 +2784,10 @@
                   <button class="vpi-sort-btn" data-sort="recent"  onclick="vpiSetSort('recent')"  style="padding:6px 12px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:11px;font-weight:700;background:#F3F4F6;color:#374151;cursor:pointer">Por Período</button>
                 </div>
                 <input id="vpiSearchPartner2" type="text" placeholder="Buscar..." oninput="vpiRenderRanking('2')" style="padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;width:150px"/>
+                <button onclick="vpiCheckHighPerfNow()" title="Dispara vpi_high_performance_check imediatamente (pg_cron ja roda dia 1 de cada mes)" style="display:flex;align-items:center;gap:6px;background:#FFFBEB;color:#92400E;border:1.5px solid #FCD34D;padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>
+                  Verificar alta performance
+                </button>
                 <button onclick="vpiOpenAddPartner()" style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">
                   <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
                   Novo

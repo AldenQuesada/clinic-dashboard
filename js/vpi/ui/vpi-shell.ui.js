@@ -171,6 +171,34 @@
   }
 
   // ══════════════════════════════════════════════════
+  //  Alta Performance — trigger manual
+  // ══════════════════════════════════════════════════
+  async function vpiCheckHighPerfNow() {
+    var sb = window._sbShared
+    if (!sb) { _toast('Erro', 'Supabase indisponivel', 'error'); return }
+    if (!confirm('Verificar todas as parceiras agora?\n\nIsso checa Niveis 1/2/3 (50/100/150 indicacoes em 11 meses) e, se algum partner bater o criterio, registra a recompensa e envia a msg WA.\n\npg_cron ja roda isso automaticamente todo dia 1 as 11h BRT — use so pra teste ou emergencia.')) return
+    _toast('Alta Performance', 'Verificando...', 'info')
+    try {
+      var res = await sb.rpc('vpi_high_performance_check')
+      if (res.error) throw new Error(res.error.message)
+      var r = res.data || {}
+      var hits = Array.isArray(r.hits) ? r.hits : []
+      var msg = 'Check concluido: ' + hits.length + ' hit(s), ' +
+        (r.emitted_count || 0) + ' recompensa(s) registrada(s), ' +
+        (r.wa_count || 0) + ' WA enviada(s)' +
+        ((r.wa_failed || 0) > 0 ? ' (' + r.wa_failed + ' falha WA)' : '')
+      _toast('Alta Performance', msg, hits.length > 0 ? 'success' : 'info')
+      if (hits.length > 0) {
+        var detail = hits.map(function (h) { return '- ' + (h.partner_nome || h.partner_id) + ': ' + (h.recompensa || h.threshold) }).join('\n')
+        alert('Hits encontrados:\n\n' + detail)
+      }
+    } catch (e) {
+      console.error('[VPI] vpiCheckHighPerfNow:', e)
+      _toast('Erro', e.message || 'Falha ao verificar', 'error')
+    }
+  }
+
+  // ══════════════════════════════════════════════════
   //  Init
   // ══════════════════════════════════════════════════
   document.addEventListener('DOMContentLoaded', function () {
@@ -189,6 +217,7 @@
   window.vpiSavePartner    = vpiSavePartner
   window.vpiDeletePartner  = vpiDeletePartner
   window.vpiViewPartner    = vpiViewPartner
+  window.vpiCheckHighPerfNow = vpiCheckHighPerfNow
   // Legacy: vpiAutoEnroll/vpiScheduleWA ficam como shims para quem chama old code
   window.vpiAutoEnroll     = function (appt) { return window.VPIEngine && VPIEngine.autoEnroll(appt) }
   window.vpiScheduleWA     = function (p)    { return window.VPIEngine && VPIEngine.scheduleInviteWA(p) }
