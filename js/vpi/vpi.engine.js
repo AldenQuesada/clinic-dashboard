@@ -97,7 +97,10 @@
         cidade:    (appt.cidade    || '') || null,
         tipo:      'paciente',
         origem:    'auto',
-        status:    'convidado',
+        // LGPD: autoEnroll cria em pending_consent ate aceite no WA.
+        // O convite ainda e enviado (legitimo interesse + pede ACEITO).
+        // So vira 'ativo' via vpi_grant_consent_by_phone ou vpi_admin_grant_consent.
+        status:    'pending_consent',
       }
 
       var id = await _svc().upsertPartner(data)

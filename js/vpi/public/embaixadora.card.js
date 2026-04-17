@@ -168,7 +168,13 @@
       '<div id="vpi-missao-slot"></div>' +
       '<div id="vpi-badges-slot"></div>' +
       '<div id="vpi-shoutout-slot"></div>' +
-      '<div id="vpi-impact-slot"></div>'
+      '<div id="vpi-impact-slot"></div>' +
+
+      // Footer LGPD opt-out
+      '<div class="vpi-optout-footer" style="margin:32px auto 16px;max-width:420px;text-align:center;padding:16px;font-size:11px;color:rgba(245,245,245,0.45);line-height:1.5">' +
+        'Voce pode sair do programa a qualquer momento. ' +
+        '<a href="javascript:void(0)" id="vpi-optout-link" style="color:rgba(245,245,245,0.75);text-decoration:underline;font-weight:500">Sair do programa</a>' +
+      '</div>'
 
     root.innerHTML = html
 
@@ -241,6 +247,19 @@
           window.VPIEmbShare.share()
         } else {
           _fallbackShare()
+        }
+      })
+    }
+
+    var optOutLink = document.getElementById('vpi-optout-link')
+    if (optOutLink) {
+      optOutLink.addEventListener('click', function (e) {
+        e.stopPropagation()
+        e.preventDefault()
+        if (window.VPIEmbOptOut && window.VPIEmbOptOut.openModal) {
+          window.VPIEmbOptOut.openModal()
+        } else if (_app()) {
+          _app().toast('Modulo de opt-out nao carregou. Fale com a clinica.')
         }
       })
     }
