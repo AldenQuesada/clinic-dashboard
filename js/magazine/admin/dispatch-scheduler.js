@@ -77,6 +77,11 @@
       '            <input type="checkbox" data-name="auto-reminders" checked />',
       '            <span style="font-size:12px;color:#555">Agendar reminders automaticos (D+1 e D+7) pra quem nao abrir</span>',
       '          </label>',
+      '          <div data-role="reminders-preview" style="font-size:11px;color:#555;background:#f7f3ec;border-radius:6px;padding:8px 10px;display:none">',
+      '            <div><strong>D+1</strong> <span data-role="d1-when"></span></div>',
+      '            <div><strong>D+7</strong> <span data-role="d7-when"></span></div>',
+      '            <div style="margin-top:4px;font-style:italic;color:#8a8178">Apenas para quem ainda nao abriu a edicao.</div>',
+      '          </div>',
       '          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;background:#f7f3ec;border-radius:6px">',
       '            <div style="font-size:12px">',
       '              <div>Elegiveis: <strong data-role="est-eligible">—</strong></div>',
@@ -117,6 +122,9 @@
     var estNoPhone = host.querySelector('[data-role="est-no-phone"]')
     var estBlacklist = host.querySelector('[data-role="est-blacklist"]')
     var errEl = host.querySelector('[data-role="form-err"]')
+    var remindersPrev = host.querySelector('[data-role="reminders-preview"]')
+    var d1WhenEl = host.querySelector('[data-role="d1-when"]')
+    var d7WhenEl = host.querySelector('[data-role="d7-when"]')
 
     var currentEdition = null
 
@@ -130,10 +138,24 @@
       var key = tipoEl.value
       if (DEFAULT_TEMPLATES[key]) tplEl.value = DEFAULT_TEMPLATES[key]
       renderPreview()
+      updateRemindersPreview()
     })
     tplEl.addEventListener('input', renderPreview)
     segEl.addEventListener('change', refreshEstimate)
+    whenEl.addEventListener('change', updateRemindersPreview)
+    autoRemEl.addEventListener('change', updateRemindersPreview)
     form.addEventListener('submit', onSubmit)
+
+    function updateRemindersPreview() {
+      var shown = autoRemEl.checked && tipoEl.value === 'initial' && whenEl.value
+      remindersPrev.style.display = shown ? '' : 'none'
+      if (!shown) return
+      var d0 = new Date(whenEl.value)
+      var d1 = new Date(d0.getTime() + 24 * 60 * 60 * 1000)
+      var d7 = new Date(d0.getTime() + 7 * 24 * 60 * 60 * 1000)
+      d1WhenEl.textContent = d1.toLocaleString('pt-BR')
+      d7WhenEl.textContent = d7.toLocaleString('pt-BR')
+    }
 
     function open(edition) {
       currentEdition = edition
@@ -151,6 +173,7 @@
       renderPreview()
       refreshEstimate()
       loadList()
+      updateRemindersPreview()
     }
 
     function close() {
