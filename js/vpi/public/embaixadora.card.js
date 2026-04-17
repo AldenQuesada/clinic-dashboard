@@ -169,6 +169,10 @@
       '<div id="vpi-badges-slot"></div>' +
       '<div id="vpi-shoutout-slot"></div>' +
       '<div id="vpi-impact-slot"></div>' +
+      // Fase 8: Fotona transferivel + troca
+      '<div id="vpi-emb-fotona"></div>' +
+      // Fase 8: Linhagem (arvore de filhas)
+      '<div id="vpi-emb-lineage"></div>' +
 
       // Footer LGPD opt-out
       '<div class="vpi-optout-footer" style="margin:32px auto 16px;max-width:420px;text-align:center;padding:16px;font-size:11px;color:rgba(245,245,245,0.45);line-height:1.5">' +

@@ -203,6 +203,8 @@
       if (window.VPIEmbShare && window.VPIEmbShare.init)          window.VPIEmbShare.init()
       if (window.VPIEmbStory && window.VPIEmbStory.init)          window.VPIEmbStory.init()
       if (window.VPIEmbQR && window.VPIEmbQR.init)                window.VPIEmbQR.init()
+      if (window.VPIEmbFotona && window.VPIEmbFotona.init)        window.VPIEmbFotona.init()
+      if (window.VPIEmbLineage && window.VPIEmbLineage.init)      window.VPIEmbLineage.init()
       if (window.VPIEmbRealtime && window.VPIEmbRealtime.init)    window.VPIEmbRealtime.init()
     } catch (e) {
       console.warn('[VPIEmbApp] module init error:', e)
