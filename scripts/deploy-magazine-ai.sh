@@ -30,6 +30,9 @@ npx supabase secrets set ANTHROPIC_API_KEY="$KEY" --project-ref "$PROJECT_REF"
 echo "==> deploy da função ${FN_NAME}..."
 npx supabase functions deploy "$FN_NAME" --project-ref "$PROJECT_REF" --no-verify-jwt=false
 
+echo "==> deploy da função magazine-brief-to-edition (B2)..."
+npx supabase functions deploy magazine-brief-to-edition --project-ref "$PROJECT_REF" --no-verify-jwt=false
+
 echo ""
 echo "✓ Deploy completo."
 echo "  Endpoint: https://${PROJECT_REF}.supabase.co/functions/v1/${FN_NAME}"
