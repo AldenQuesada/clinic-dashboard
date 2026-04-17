@@ -136,9 +136,11 @@
     _autoAngles: FM._autoAngles,
     _autoAsymmetryPairs: FM._autoAsymmetryPairs,
 
-    // Nasal analysis (isolated module FM.Nasal — own photos per slot, own state)
+    // Nasal analysis (isolated module FM.Nasal — 3 independent measurements per slot)
     _setNasalGender: function (g) { if (FM.Nasal) FM.Nasal.setGender(g) },
     _resetNasal: function (slot) { if (FM.Nasal) FM.Nasal.reset(slot) },
+    _resetNasalMeasurement: function (slot, measId) { if (FM.Nasal) FM.Nasal.reset(slot, measId) },
+    _toggleNasalMeasurement: function (slot, measId) { if (FM.Nasal) FM.Nasal.toggleMeasurement(slot, measId) },
     _uploadNasalPhoto: function (slot) { if (FM.Nasal) FM.Nasal.triggerUpload(slot) },
     _deleteNasalPhoto: function (slot) { if (FM.Nasal) FM.Nasal.deletePhoto(slot) },
     _nasalZoomIn: function (slot) { if (FM.Nasal) FM.Nasal.zoomIn(slot) },

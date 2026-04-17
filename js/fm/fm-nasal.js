@@ -3,9 +3,19 @@
  *
  * Namespace: FM.Nasal
  * Tab: 'nasal'
- * Storage: localStorage key "fm_nasal_{leadId}" — ISOLATED from angleStore
- * Photo: OWN uploads (antes / depois), independent from FM._photoUrls
- * Modes: 1x (só ANTES) | 2x (ANTES + DEPOIS side-by-side with delta)
+ * Storage: localStorage key "fm_nasal_{leadId}" — ISOLATED
+ *
+ * 3 independent measurements per slot (antes/depois):
+ *   - nasofrontal (azul)   : glabella / radix / tip
+ *   - nasolabial  (dourado): tip / subnasal / lipUpper
+ *   - nasofacial  (roxo)   : glabella / tip / pogonion
+ * Each measurement has its OWN points and enabled flag.
+ *
+ * Features:
+ *   - Upload independente por slot
+ *   - Zoom/pan/lock por slot + toggle sincronizar no 2x
+ *   - Raio adaptativo do arco (cabe dentro dos raios)
+ *   - Conduta clínica sugerida por medição (baseada em boas práticas de rinomodelação)
  */
 ;(function () {
   'use strict'
@@ -15,33 +25,115 @@
 
   var Nasal = {}
 
-  // ── Point definitions ────────────────────────────────────────
-  var POINT_DEFS = [
-    { id: 'glabella', label: 'Glabela',          desc: 'Testa mais anterior entre sobrancelhas',   defX: 0.62, defY: 0.22 },
-    { id: 'radix',    label: 'Nasion (Radix)',   desc: 'Ponto mais profundo da raiz nasal',        defX: 0.60, defY: 0.30 },
-    { id: 'tip',      label: 'Ponta (Pronasal)', desc: 'Ponto mais anterior da ponta do nariz',    defX: 0.46, defY: 0.48 },
-    { id: 'subnasal', label: 'Subnasal',         desc: 'Junção entre columela e labio superior',   defX: 0.55, defY: 0.58 },
-    { id: 'lipUpper', label: 'Labio Superior',   desc: 'Ponto mais anterior do labio superior',    defX: 0.56, defY: 0.63 },
-    { id: 'pogonion', label: 'Pogonio',          desc: 'Ponto mais anterior do mento',             defX: 0.58, defY: 0.88 },
+  // ── Measurement definitions ──────────────────────────────────
+  var MEASUREMENTS = [
+    {
+      id: 'nasofrontal',
+      label: 'Nasofrontal',
+      short: 'NF',
+      color: '#3B82F6',
+      points: [
+        { id: 'glabella', label: 'Glabela',  defX: 0.60, defY: 0.22 },
+        { id: 'radix',    label: 'Radix',    defX: 0.58, defY: 0.30 },
+        { id: 'tip',      label: 'Ponta',    defX: 0.44, defY: 0.50 },
+      ],
+      vertex: 'radix', ray1: 'glabella', ray2: 'tip',
+    },
+    {
+      id: 'nasolabial',
+      label: 'Nasolabial',
+      short: 'NL',
+      color: '#C8A97E',
+      points: [
+        { id: 'tip',      label: 'Ponta',          defX: 0.44, defY: 0.50 },
+        { id: 'subnasal', label: 'Subnasal',       defX: 0.52, defY: 0.60 },
+        { id: 'lipUpper', label: 'Labio superior', defX: 0.54, defY: 0.65 },
+      ],
+      vertex: 'subnasal', ray1: 'tip', ray2: 'lipUpper',
+    },
+    {
+      id: 'nasofacial',
+      label: 'Nasofacial',
+      short: 'NFC',
+      color: '#A855F7',
+      points: [
+        { id: 'glabella', label: 'Glabela',  defX: 0.60, defY: 0.22 },
+        { id: 'tip',      label: 'Ponta',    defX: 0.44, defY: 0.50 },
+        { id: 'pogonion', label: 'Pogonio',  defX: 0.56, defY: 0.88 },
+      ],
+      vertex: 'glabella', ray1: 'pogonion', ray2: 'tip',
+    },
   ]
+
+  var MEAS_BY_ID = {}
+  MEASUREMENTS.forEach(function (m) { MEAS_BY_ID[m.id] = m })
 
   var IDEAL = {
     F: { nasofrontal: [120, 130], nasolabial: [100, 110], nasofacial: [30, 35] },
     M: { nasofrontal: [115, 125], nasolabial: [90, 95],   nasofacial: [36, 40] },
   }
 
+  // Clinical conduct matrix (rinomodelação — HA + complementos)
+  var CONDUCT = {
+    nasofrontal: {
+      fechado: {
+        anatomic: 'Giba dorsal / dorso nasal proeminente. Transicao fronto-nasal abrupta.',
+        action: 'Preencher radix (HA supraperiosteal, 0.2–0.4 ml) para suavizar a transicao fronto-nasal e camuflar o dorso alto. Microbolus no supratip pode refinar.',
+        procedures: ['HA radix', 'HA supratip (camuflagem)'],
+      },
+      aberto: {
+        anatomic: 'Raiz nasal baixa ou plana (perfil em sela).',
+        action: 'Preencher radix (HA supraperiosteal, 0.2–0.4 ml) para elevar a raiz e criar projecao harmonica com a fronte.',
+        procedures: ['HA radix'],
+      },
+    },
+    nasolabial: {
+      fechado: {
+        anatomic: 'Ponta nasal caida (hiporrotacionada). Angulo columelo-labial agudo.',
+        action: 'Elevar a ponta: HA na espinha nasal / base da columela (0.2–0.4 ml, bolus profundo). Avaliar botox em musculo depressor septi nasi (LLSAN) se a ponta caer ao sorrir. Fios PDO columelares como sustentacao complementar.',
+        procedures: ['HA columela', 'HA espinha nasal', 'Botox depressor septi', 'Fios PDO'],
+      },
+      aberto: {
+        anatomic: 'Ponta hiperrotacionada (arrebitada). Exposicao excessiva das narinas no perfil.',
+        action: 'Preencher supratip (microbolus 0.1–0.2 ml) para alongar visualmente o dorso e reduzir a rotacao. Rotacao extrema requer avaliacao de rinoplastia.',
+        procedures: ['HA supratip', 'Avaliacao cirurgica se limite ultrapassado'],
+      },
+    },
+    nasofacial: {
+      fechado: {
+        anatomic: 'Projecao nasal reduzida / nariz pouco projetado.',
+        action: 'Aumentar projecao: HA na ponta (0.1–0.2 ml supraperichondrial) + radix. Avaliar mento: se retraido (retrognatia), preencher pogonio para equilibrar o perfil antero-posterior.',
+        procedures: ['HA ponta', 'HA radix', 'HA pogonio (se retrognata)'],
+      },
+      aberto: {
+        anatomic: 'Nariz muito projetado em relacao ao plano facial.',
+        action: 'Camuflagem: preencher pogonio se houver retrognatia para equilibrar o perfil; preencher supratip se houver convexidade. Reducao real da projecao requer rinoplastia cirurgica.',
+        procedures: ['HA pogonio', 'HA supratip', 'Avaliacao cirurgica para reducao'],
+      },
+    },
+  }
+
   var SLOTS = ['antes', 'depois']
   var SLOT_LABEL = { antes: 'ANTES', depois: 'DEPOIS' }
   var SLOT_ACCENT = { antes: '#EF4444', depois: '#10B981' }
 
-  // ── ISOLATED STATE ───────────────────────────────────────────
+  // ── State ────────────────────────────────────────────────────
   var _state = null
 
-  function _newSlot() {
+  function _newMeasurementState(measDef) {
+    var pts = {}
+    measDef.points.forEach(function (p) { pts[p.id] = { x: p.defX, y: p.defY } })
+    return { enabled: true, points: pts }
+  }
+
+  function _newSlotState() {
+    var meas = {}
+    MEASUREMENTS.forEach(function (m) { meas[m.id] = _newMeasurementState(m) })
     return {
-      photoB64: null, photoUrl: null, img: null, points: null,
+      photoB64: null, photoUrl: null, img: null,
       imgW: 0, imgH: 0,
       zoom: 1, panX: 0, panY: 0, locked: false,
+      measurements: meas,
     }
   }
 
@@ -50,8 +142,8 @@
       leadId: leadId,
       gender: 'F',
       syncViews: false,
-      antes: _newSlot(),
-      depois: _newSlot(),
+      antes: _newSlotState(),
+      depois: _newSlotState(),
     }
   }
 
@@ -74,9 +166,15 @@
     if (!_state) return
     try {
       function _slotPayload(s) {
+        var meas = {}
+        MEASUREMENTS.forEach(function (m) {
+          var ms = s.measurements[m.id]
+          meas[m.id] = { enabled: ms.enabled, points: ms.points }
+        })
         return {
-          points: s.points, photoB64: s.photoB64,
+          photoB64: s.photoB64,
           zoom: s.zoom, panX: s.panX, panY: s.panY, locked: s.locked,
+          measurements: meas,
         }
       }
       var payload = {
@@ -90,10 +188,32 @@
     } catch (e) { /* silent */ }
   }
 
+  function _migrateLegacy(saved, target) {
+    // Legacy formats:
+    //  v0 (flat): { photoB64, points:{glabella,radix,tip,subnasal,lipUpper,pogonion}, gender, ... }
+    //  v1 (per slot): { gender, antes:{photoB64, points:{...}, zoom,...}, depois:{...} }
+    // Both store SHARED points across all 3 measurements. Migrate by copying relevant pts.
+    function _copyLegacyPoints(slot, legacySlot) {
+      if (!legacySlot || !legacySlot.points) return
+      MEASUREMENTS.forEach(function (m) {
+        var ms = slot.measurements[m.id]
+        m.points.forEach(function (pd) {
+          var legacyPt = legacySlot.points[pd.id]
+          if (legacyPt) ms.points[pd.id] = { x: legacyPt.x, y: legacyPt.y }
+        })
+      })
+    }
+    // v0
+    if (saved.photoB64 && !saved.antes) {
+      target.antes.photoB64 = saved.photoB64
+      target.antes.photoUrl = saved.photoB64
+      _copyLegacyPoints(target.antes, saved)
+    }
+  }
+
   function _ensureLoaded() {
     var leadId = _currentLeadId()
     if (_state && _state.leadId === leadId) return
-    // revoke old objectURLs
     if (_state) {
       SLOTS.forEach(function (k) {
         var s = _state[k]
@@ -105,48 +225,51 @@
     _state = _newState(leadId)
 
     var saved = _loadFromStorage(leadId)
-    if (saved) {
-      _state.gender = saved.gender || 'F'
-      _state.syncViews = !!saved.syncViews
-      // Migrate old flat format → antes slot
-      if (saved.photoB64 && !saved.antes) {
-        _state.antes.photoB64 = saved.photoB64
-        _state.antes.photoUrl = saved.photoB64
-        _state.antes.points = saved.points || null
-      } else {
-        SLOTS.forEach(function (k) {
-          if (saved[k]) {
-            _state[k].photoB64 = saved[k].photoB64 || null
-            _state[k].photoUrl = saved[k].photoB64 || null
-            _state[k].points = saved[k].points || null
-            _state[k].zoom  = (typeof saved[k].zoom === 'number' && saved[k].zoom > 0) ? saved[k].zoom : 1
-            _state[k].panX  = saved[k].panX || 0
-            _state[k].panY  = saved[k].panY || 0
-            _state[k].locked = !!saved[k].locked
+    if (!saved) return
+
+    _state.gender = saved.gender || 'F'
+    _state.syncViews = !!saved.syncViews
+
+    // v0 flat legacy
+    if (saved.photoB64 && !saved.antes) { _migrateLegacy(saved, _state); return }
+
+    SLOTS.forEach(function (slotKey) {
+      var savedSlot = saved[slotKey]
+      if (!savedSlot) return
+      var target = _state[slotKey]
+      target.photoB64 = savedSlot.photoB64 || null
+      target.photoUrl = savedSlot.photoB64 || null
+      target.zoom  = (typeof savedSlot.zoom === 'number' && savedSlot.zoom > 0) ? savedSlot.zoom : 1
+      target.panX  = savedSlot.panX || 0
+      target.panY  = savedSlot.panY || 0
+      target.locked = !!savedSlot.locked
+
+      // v1 legacy: had single points on slot — migrate to each measurement
+      if (savedSlot.points && !savedSlot.measurements) {
+        _migrateLegacy({ photoB64: savedSlot.photoB64, points: savedSlot.points }, { antes: target, depois: target })
+        return
+      }
+
+      // v2 current: measurements per id
+      if (savedSlot.measurements) {
+        MEASUREMENTS.forEach(function (m) {
+          var savedMeas = savedSlot.measurements[m.id]
+          if (!savedMeas) return
+          var targetMeas = target.measurements[m.id]
+          targetMeas.enabled = (savedMeas.enabled !== false)
+          if (savedMeas.points) {
+            m.points.forEach(function (pd) {
+              var sp = savedMeas.points[pd.id]
+              if (sp) targetMeas.points[pd.id] = { x: sp.x, y: sp.y }
+            })
           }
         })
       }
-    }
-  }
-
-  function _seedIfEmpty(slotKey) {
-    var s = _state[slotKey]
-    if (s.points && Object.keys(s.points).length === 6) return
-    s.points = {}
-    POINT_DEFS.forEach(function (p) { s.points[p.id] = { x: p.defX, y: p.defY } })
+    })
   }
 
   // ── Public API ───────────────────────────────────────────────
-  Nasal.init = function () {
-    _ensureLoaded()
-    // Seed points on whichever slot has a photo (or antes by default)
-    SLOTS.forEach(function (k) {
-      if (_state[k].photoUrl && !(_state[k].points && Object.keys(_state[k].points).length === 6)) {
-        _seedIfEmpty(k)
-      }
-    })
-    if (!_state.antes.points) _seedIfEmpty('antes')
-  }
+  Nasal.init = function () { _ensureLoaded() }
 
   Nasal.hasPhoto = function (slot) {
     _ensureLoaded()
@@ -157,8 +280,11 @@
   Nasal.hasData = function (slot) {
     _ensureLoaded()
     slot = slot || 'antes'
-    var s = _state[slot]
-    return !!(s && s.photoUrl && s.points && Object.keys(s.points).length === 6)
+    if (!_state[slot] || !_state[slot].photoUrl) return false
+    return MEASUREMENTS.some(function (m) {
+      var ms = _state[slot].measurements[m.id]
+      return ms && ms.enabled && ms.points && Object.keys(ms.points).length === 3
+    })
   }
 
   Nasal.getGender = function () { _ensureLoaded(); return _state.gender }
@@ -171,13 +297,30 @@
     setTimeout(FM._initCanvas, 50)
   }
 
-  Nasal.reset = function (slot) {
+  Nasal.reset = function (slot, measId) {
     _ensureLoaded()
     slot = slot || 'antes'
-    _state[slot].points = null
-    _seedIfEmpty(slot)
+    var s = _state[slot]
+    if (measId) {
+      var m = MEAS_BY_ID[measId]
+      if (m) s.measurements[measId] = _newMeasurementState(m)
+    } else {
+      MEASUREMENTS.forEach(function (m) { s.measurements[m.id] = _newMeasurementState(m) })
+    }
     _saveToStorage()
-    FM._redraw()
+    _redrawAll()
+    FM._render()
+    setTimeout(FM._initCanvas, 50)
+  }
+
+  Nasal.toggleMeasurement = function (slot, measId) {
+    _ensureLoaded()
+    slot = slot || 'antes'
+    var ms = _state[slot].measurements[measId]
+    if (!ms) return
+    ms.enabled = !ms.enabled
+    _saveToStorage()
+    _redrawAll()
     FM._render()
     setTimeout(FM._initCanvas, 50)
   }
@@ -200,7 +343,6 @@
         s.photoB64 = ev.target.result
         s.photoUrl = ev.target.result
         s.img = null
-        _seedIfEmpty(slot)
         _saveToStorage()
         FM._render()
         setTimeout(FM._initCanvas, 50)
@@ -219,25 +361,22 @@
     if (s.photoUrl && s.photoUrl.indexOf('blob:') === 0) {
       try { URL.revokeObjectURL(s.photoUrl) } catch (e) {}
     }
-    s.photoUrl = null
-    s.photoB64 = null
-    s.img = null
-    s.points = null
+    s.photoUrl = null; s.photoB64 = null; s.img = null
+    // Reset measurements to defaults on photo removal
+    MEASUREMENTS.forEach(function (m) { s.measurements[m.id] = _newMeasurementState(m) })
     _saveToStorage()
     FM._render()
     setTimeout(FM._initCanvas, 50)
   }
 
-  // ── Zoom / Pan / Lock / Sync API ─────────────────────────────
+  // ── Zoom / Pan / Lock / Sync ─────────────────────────────────
   var MIN_ZOOM = 0.3, MAX_ZOOM = 6
-
   function _clampZoom(z) { return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)) }
 
   function _zoomAt(slot, factor, cx, cy) {
     var s = _state[slot]
     var newZoom = _clampZoom(s.zoom * factor)
     var actual = newZoom / s.zoom
-    // Keep point under (cx, cy) stationary
     s.panX = cx - (cx - s.panX) * actual
     s.panY = cy - (cy - s.panY) * actual
     s.zoom = newZoom
@@ -253,15 +392,10 @@
     _ensureLoaded()
     var s = _state[slot]
     if (!s.photoUrl || s.locked) return
-    // Center-of-canvas zoom
-    var cx = (s.imgW) / 2
-    var cy = (s.imgH) / 2
-    var actual = _zoomAt(slot, factor, cx, cy)
+    var actual = _zoomAt(slot, factor, s.imgW / 2, s.imgH / 2)
     if (_state.syncViews) {
       var os = _state[_otherSlot(slot)]
-      if (!os.locked && os.photoUrl) {
-        _zoomAt(_otherSlot(slot), actual, os.imgW / 2, os.imgH / 2)
-      }
+      if (!os.locked && os.photoUrl) _zoomAt(_otherSlot(slot), actual, os.imgW / 2, os.imgH / 2)
     }
     _redrawAll()
     _saveToStorage()
@@ -298,13 +432,8 @@
     setTimeout(FM._initCanvas, 50)
   }
 
-  Nasal.getSync = function () { _ensureLoaded(); return !!_state.syncViews }
-  Nasal.getLock = function (slot) { _ensureLoaded(); return !!(_state[slot || 'antes'] && _state[slot || 'antes'].locked) }
-
-  // Wheel handler (zoom at cursor) — attached per canvas
   Nasal.onWheel = function (e, canvasEl) {
-    if (FM._activeTab !== 'nasal') return
-    if (!canvasEl) return
+    if (FM._activeTab !== 'nasal' || !canvasEl) return
     var slot = _detectTargetSlot(canvasEl)
     var s = _state[slot]
     if (!s.photoUrl || s.locked) return
@@ -316,69 +445,96 @@
     var actual = _zoomAt(slot, factor, mx, my)
     if (_state.syncViews) {
       var os = _state[_otherSlot(slot)]
-      if (!os.locked && os.photoUrl) {
-        _zoomAt(_otherSlot(slot), actual, os.imgW / 2, os.imgH / 2)
-      }
+      if (!os.locked && os.photoUrl) _zoomAt(_otherSlot(slot), actual, os.imgW / 2, os.imgH / 2)
     }
     _redrawAll()
     _saveToStorage()
   }
 
-  // ── Angle computation (per slot) ─────────────────────────────
-  Nasal.compute = function (slot) {
+  // ── Compute angles (per measurement) ─────────────────────────
+  Nasal.compute = function (slot, measId) {
     _ensureLoaded()
     slot = slot || 'antes'
-    var s = _state[slot]
-    if (!s || !s.points) return null
-    var p = s.points
-    if (!p.glabella || !p.radix || !p.tip || !p.subnasal || !p.lipUpper || !p.pogonion) return null
-
-    var nasofrontal = _angleAt(p.radix, p.glabella, p.tip)
-    var nasolabial  = _angleAt(p.subnasal, p.tip, p.lipUpper)
-    var nasofacial  = _angleBetween(_vec(p.glabella, p.pogonion), _vec(p.glabella, p.tip))
-
-    return {
-      nasofrontal: Math.round(nasofrontal * 10) / 10,
-      nasolabial:  Math.round(nasolabial * 10) / 10,
-      nasofacial:  Math.round(nasofacial * 10) / 10,
-    }
+    var m = MEAS_BY_ID[measId]
+    if (!m) return null
+    var ms = _state[slot].measurements[measId]
+    if (!ms || !ms.enabled || !ms.points) return null
+    var pts = ms.points
+    var pv = pts[m.vertex], p1 = pts[m.ray1], p2 = pts[m.ray2]
+    if (!pv || !p1 || !p2) return null
+    var ang = _angleAt(pv, p1, p2)
+    return Math.round(ang * 10) / 10
   }
 
-  // ── Canvas render (per slot) ─────────────────────────────────
-  function _renderSlotCanvas(ctx, slot, w, h) {
+  function _status(val, range) {
+    if (val < range[0]) return 'fechado'
+    if (val > range[1]) return 'aberto'
+    return 'normal'
+  }
+
+  function _statusLabel(st) {
+    return st === 'fechado' ? 'Fechado' : (st === 'aberto' ? 'Aberto' : 'Normal')
+  }
+
+  function _statusColor(st) {
+    if (st === 'normal') return '#10B981'
+    return '#F59E0B'  // warn for both desvio directions; vermelho reservado para extremo
+  }
+
+  function _statusColorExtreme(val, range) {
+    var lo = range[0], hi = range[1]
+    if (val >= lo && val <= hi) return '#10B981'
+    var margin = (hi - lo) * 0.8
+    if (val < lo - margin || val > hi + margin) return '#EF4444'
+    return '#F59E0B'
+  }
+
+  // ── Render (per measurement, per slot) ───────────────────────
+  function _renderSlotOverlays(ctx, slot, w, h) {
     var s = _state[slot]
-    if (!s || !s.points) return
-    var p = s.points
-    var gender = _state.gender
-    var ideal = IDEAL[gender]
-    var a = Nasal.compute(slot)
+    if (!s) return
 
-    ctx.save()
+    MEASUREMENTS.forEach(function (m) {
+      var ms = s.measurements[m.id]
+      if (!ms || !ms.enabled) return
+      var pts = ms.points
+      var pv = pts[m.vertex], p1 = pts[m.ray1], p2 = pts[m.ray2]
+      if (!pv || !p1 || !p2) return
 
-    _drawLine(ctx, p.glabella, p.pogonion, w, h, 'rgba(100,160,255,0.55)', 1.2, [5, 4])
-    _drawLine(ctx, p.glabella, p.radix,    w, h, 'rgba(200,169,126,0.45)', 1)
-    _drawLine(ctx, p.radix,    p.tip,      w, h, 'rgba(200,169,126,0.85)', 1.5)
-    _drawLine(ctx, p.tip,      p.subnasal, w, h, 'rgba(200,169,126,0.85)', 1.5)
-    _drawLine(ctx, p.subnasal, p.lipUpper, w, h, 'rgba(200,169,126,0.85)', 1.5)
+      // Rays (faded)
+      _drawLine(ctx, pv, p1, w, h, _withAlpha(m.color, 0.7), 1.5)
+      _drawLine(ctx, pv, p2, w, h, _withAlpha(m.color, 0.7), 1.5)
 
-    if (a) {
-      _drawAngleArc(ctx, p.glabella, p.pogonion, p.tip,      w, h, 80, _statusColor(a.nasofacial,  ideal.nasofacial),  a.nasofacial.toFixed(0)  + '\u00B0', 'Nasofacial')
-      _drawAngleArc(ctx, p.radix,    p.glabella, p.tip,      w, h, 64, _statusColor(a.nasofrontal, ideal.nasofrontal), a.nasofrontal.toFixed(0) + '\u00B0', 'Nasofrontal')
-      _drawAngleArc(ctx, p.subnasal, p.tip,      p.lipUpper, w, h, 54, _statusColor(a.nasolabial,  ideal.nasolabial),  a.nasolabial.toFixed(0)  + '\u00B0', 'Nasolabial')
-    }
+      // Facial reference line for nasofacial (glabella→pogonion)
+      if (m.id === 'nasofacial') {
+        _drawLine(ctx, pv, p1, w, h, _withAlpha('#64A0FF', 0.35), 1.2, [5, 4])
+      }
 
-    POINT_DEFS.forEach(function (def) {
-      var pt = p[def.id]
-      if (!pt) return
-      var active = (Nasal._hoverPoint && Nasal._hoverPoint.slot === slot && Nasal._hoverPoint.id === def.id) ||
-                   (Nasal._dragPoint  && Nasal._dragPoint.slot === slot  && Nasal._dragPoint.id === def.id)
-      _drawPoint(ctx, pt.x * w, pt.y * h, active, def.label)
+      // Arc with adaptive radius
+      var ang = _angleAt(pv, p1, p2)
+      var d1 = _dist(pv, p1, w, h)
+      var d2 = _dist(pv, p2, w, h)
+      var radius = Math.min(d1, d2) * 0.45
+      radius = Math.max(22, Math.min(70, radius))
+      _drawAngleArc(ctx, pv, p1, p2, w, h, radius, m.color, ang.toFixed(0) + '\u00B0', m.label)
     })
 
-    ctx.restore()
+    // Points on top (colored per measurement)
+    MEASUREMENTS.forEach(function (m) {
+      var ms = s.measurements[m.id]
+      if (!ms || !ms.enabled) return
+      var pts = ms.points
+      m.points.forEach(function (pd) {
+        var pt = pts[pd.id]
+        if (!pt) return
+        var active = (Nasal._hoverPoint && Nasal._hoverPoint.slot === slot && Nasal._hoverPoint.measId === m.id && Nasal._hoverPoint.id === pd.id) ||
+                     (Nasal._dragPoint && Nasal._dragPoint.slot === slot && Nasal._dragPoint.measId === m.id && Nasal._dragPoint.id === pd.id)
+        _drawPoint(ctx, pt.x * w, pt.y * h, active, pd.label, m.color)
+      })
+    })
   }
 
-  // Called from FM._redraw when tab=nasal (draws image + overlays with zoom/pan)
+  // Called from FM._redraw for canvas 1 (antes)
   Nasal.render = function (ctx) {
     if (!ctx) return
     if (FM._activeTab !== 'nasal') return
@@ -389,9 +545,9 @@
     ctx.translate(s.panX, s.panY)
     ctx.scale(s.zoom, s.zoom)
     ctx.drawImage(s.img, 0, 0, s.imgW, s.imgH)
-    _renderSlotCanvas(ctx, 'antes', s.imgW, s.imgH)
+    _renderSlotOverlays(ctx, 'antes', s.imgW, s.imgH)
     ctx.restore()
-    _drawLockBadge(ctx, s, ctx.canvas.width)
+    _drawBadges(ctx, s, ctx.canvas.width)
   }
 
   Nasal.render2 = function (ctx) {
@@ -404,19 +560,18 @@
     ctx.translate(s.panX, s.panY)
     ctx.scale(s.zoom, s.zoom)
     ctx.drawImage(s.img, 0, 0, s.imgW, s.imgH)
-    _renderSlotCanvas(ctx, 'depois', s.imgW, s.imgH)
+    _renderSlotOverlays(ctx, 'depois', s.imgW, s.imgH)
     ctx.restore()
-    _drawLockBadge(ctx, s, ctx.canvas.width)
+    _drawBadges(ctx, s, ctx.canvas.width)
   }
 
-  function _drawLockBadge(ctx, s, canvasW) {
-    if (!s.locked && (s.zoom == null || Math.abs(s.zoom - 1) < 0.01)) return
+  function _drawBadges(ctx, s, canvasW) {
+    if (!s.locked && Math.abs(s.zoom - 1) < 0.01) return
     ctx.save()
     var parts = []
-    if (s.zoom && Math.abs(s.zoom - 1) >= 0.01) parts.push(Math.round(s.zoom * 100) + '%')
+    if (Math.abs(s.zoom - 1) >= 0.01) parts.push(Math.round(s.zoom * 100) + '%')
     if (s.locked) parts.push('TRAVADO')
     var text = parts.join(' \u00B7 ')
-    if (!text) { ctx.restore(); return }
     ctx.font = 'bold 10px Montserrat, sans-serif'
     var tw = ctx.measureText(text).width + 14
     var bx = canvasW - tw - 8, by = 8
@@ -431,25 +586,10 @@
     ctx.restore()
   }
 
-  // ── Mouse handling (per slot via target canvas) ──────────────
-  Nasal._dragPoint = null   // { slot, id }
-  Nasal._hoverPoint = null  // { slot, id }
-
-  function _hitTestSlot(slot, mx, my, w, h) {
-    var s = _state[slot]
-    var pts = s && s.points
-    if (!pts || !w) return null
-    var threshold = 14, closest = null, bestDist = threshold
-    Object.keys(pts).forEach(function (id) {
-      var pt = pts[id]
-      // Apply zoom+pan transform (image coords → screen coords)
-      var sx = pt.x * w * s.zoom + s.panX
-      var sy = pt.y * h * s.zoom + s.panY
-      var d = Math.sqrt(Math.pow(mx - sx, 2) + Math.pow(my - sy, 2))
-      if (d < bestDist) { bestDist = d; closest = id }
-    })
-    return closest
-  }
+  // ── Mouse handling ───────────────────────────────────────────
+  Nasal._dragPoint = null   // { slot, measId, id }
+  Nasal._hoverPoint = null
+  Nasal._panDrag = null     // { slot, lastMx, lastMy }
 
   function _detectTargetSlot(canvasEl) {
     if (!canvasEl) return null
@@ -458,27 +598,41 @@
   }
 
   function _slotDims(slot) {
-    if (slot === 'antes') return { w: FM._imgW, h: FM._imgH }
-    var s = _state.depois
+    var s = _state[slot]
     return { w: s.imgW, h: s.imgH }
   }
 
-  Nasal._panDrag = null  // { slot, lastMx, lastMy }
+  function _hitTest(slot, mx, my, w, h) {
+    var s = _state[slot]
+    var threshold = 14
+    var closest = null, bestDist = threshold
+    MEASUREMENTS.forEach(function (m) {
+      var ms = s.measurements[m.id]
+      if (!ms || !ms.enabled) return
+      m.points.forEach(function (pd) {
+        var pt = ms.points[pd.id]
+        if (!pt) return
+        var sx = pt.x * w * s.zoom + s.panX
+        var sy = pt.y * h * s.zoom + s.panY
+        var d = Math.sqrt(Math.pow(mx - sx, 2) + Math.pow(my - sy, 2))
+        if (d < bestDist) { bestDist = d; closest = { measId: m.id, id: pd.id } }
+      })
+    })
+    return closest
+  }
 
   Nasal.onMouseDown = function (mx, my, canvasEl) {
     if (FM._activeTab !== 'nasal') return false
     _ensureLoaded()
     var slot = _detectTargetSlot(canvasEl)
     if (!slot || !_state[slot].photoUrl) return false
-    _seedIfEmpty(slot)
     var dims = _slotDims(slot)
-    var hit = _hitTestSlot(slot, mx, my, dims.w, dims.h)
+    var hit = _hitTest(slot, mx, my, dims.w, dims.h)
     if (hit) {
-      Nasal._dragPoint = { slot: slot, id: hit }
+      Nasal._dragPoint = { slot: slot, measId: hit.measId, id: hit.id }
       if (canvasEl) canvasEl.style.cursor = 'grabbing'
       return true
     }
-    // No point hit — start pan if not locked
     if (!_state[slot].locked) {
       Nasal._panDrag = { slot: slot, lastMx: mx, lastMy: my }
       if (canvasEl) canvasEl.style.cursor = 'grabbing'
@@ -495,44 +649,37 @@
     var dims = _slotDims(slot)
     var s = _state[slot]
 
-    // Point drag (image-space coords)
     if (Nasal._dragPoint && Nasal._dragPoint.slot === slot) {
       var imgX = (mx - s.panX) / (dims.w * s.zoom)
       var imgY = (my - s.panY) / (dims.h * s.zoom)
-      s.points[Nasal._dragPoint.id].x = Math.max(0, Math.min(1, imgX))
-      s.points[Nasal._dragPoint.id].y = Math.max(0, Math.min(1, imgY))
+      var pt = s.measurements[Nasal._dragPoint.measId].points[Nasal._dragPoint.id]
+      pt.x = Math.max(0, Math.min(1, imgX))
+      pt.y = Math.max(0, Math.min(1, imgY))
       _redrawAll()
       _refreshPanelValues()
       _saveToStorage()
       return true
     }
 
-    // Pan drag
     if (Nasal._panDrag && Nasal._panDrag.slot === slot) {
       var dx = mx - Nasal._panDrag.lastMx
       var dy = my - Nasal._panDrag.lastMy
-      s.panX += dx
-      s.panY += dy
+      s.panX += dx; s.panY += dy
       if (_state.syncViews) {
-        var other = _otherSlot(slot)
-        var os = _state[other]
-        if (!os.locked && os.photoUrl) {
-          os.panX += dx
-          os.panY += dy
-        }
+        var os = _state[_otherSlot(slot)]
+        if (!os.locked && os.photoUrl) { os.panX += dx; os.panY += dy }
       }
-      Nasal._panDrag.lastMx = mx
-      Nasal._panDrag.lastMy = my
+      Nasal._panDrag.lastMx = mx; Nasal._panDrag.lastMy = my
       _redrawAll()
       _saveToStorage()
       return true
     }
 
-    var hit = _hitTestSlot(slot, mx, my, dims.w, dims.h)
-    var next = hit ? { slot: slot, id: hit } : null
+    var hit = _hitTest(slot, mx, my, dims.w, dims.h)
+    var next = hit ? { slot: slot, measId: hit.measId, id: hit.id } : null
     var changed = (next && !Nasal._hoverPoint) ||
                   (!next && Nasal._hoverPoint) ||
-                  (next && Nasal._hoverPoint && (next.slot !== Nasal._hoverPoint.slot || next.id !== Nasal._hoverPoint.id))
+                  (next && Nasal._hoverPoint && (next.slot !== Nasal._hoverPoint.slot || next.measId !== Nasal._hoverPoint.measId || next.id !== Nasal._hoverPoint.id))
     if (changed) {
       Nasal._hoverPoint = next
       if (canvasEl) canvasEl.style.cursor = hit ? 'grab' : (s.locked ? 'crosshair' : 'grab')
@@ -570,20 +717,19 @@
     Nasal.render2(ctx2)
   }
 
-  // ── Canvas area (replaces fm canvas area when tab=nasal) ─────
+  // ── Canvas area ──────────────────────────────────────────────
   Nasal.renderCanvasArea = function () {
     _ensureLoaded()
     var is2x = FM._viewMode === '2x'
-    if (!is2x) return _renderSingleCanvas()
-    return _renderDualCanvas()
+    return is2x ? _renderDualCanvas() : _renderSingleCanvas()
   }
 
   function _renderSingleCanvas() {
-    if (!_state.antes.photoUrl) return _emptySlotArea('antes', true)
+    if (!_state.antes.photoUrl) return _emptySlotArea('antes')
     return '<div class="fm-canvas-area" id="fmCanvasArea" style="display:flex;flex-direction:column;background:#0A0A0A;border-radius:8px;overflow:hidden;position:relative">' +
       _slotHeader('antes') +
       '<div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">' +
-        '<canvas id="fmCanvas" style="max-width:100%;max-height:100%;cursor:crosshair"></canvas>' +
+        '<canvas id="fmCanvas" style="max-width:100%;max-height:100%;cursor:grab"></canvas>' +
       '</div>' +
     '</div>'
   }
@@ -648,19 +794,14 @@
     '</div>'
   }
 
-  function _emptySlotArea(slot, isOnly) {
+  function _emptySlotArea(slot) {
     var accent = SLOT_ACCENT[slot]
     var label = SLOT_LABEL[slot]
     return '<div class="fm-canvas-area" id="fmCanvasArea" style="display:flex;align-items:center;justify-content:center;background:#0A0A0A;border-radius:8px">' +
       '<div style="text-align:center;max-width:420px;padding:40px 20px">' +
         '<div style="font-family:Cormorant Garamond,serif;font-size:24px;font-style:italic;color:#C8A97E;margin-bottom:8px">Analise Angular do Nariz</div>' +
-        '<div style="font-size:13px;color:rgba(245,240,232,0.6);line-height:1.6;margin-bottom:24px">' +
-          (isOnly
-            ? 'Esta analise usa uma foto lateral dedicada, independente das outras abas.'
-            : 'Carregue a foto ' + label.toLowerCase() + '.') +
-        '</div>' +
-        '<button onclick="FaceMapping._uploadNasalPhoto(\'' + slot + '\')" style="padding:14px 28px;border:none;border-radius:8px;background:' + accent + ';color:#fff;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">Carregar Foto ' + label + '</button>' +
-        '<div style="margin-top:16px;font-size:10px;color:rgba(200,169,126,0.4);letter-spacing:0.04em">Idealmente vista de perfil 90\u00B0</div>' +
+        '<div style="font-size:13px;color:rgba(245,240,232,0.6);line-height:1.6;margin-bottom:24px">Esta analise usa uma foto lateral dedicada. 3 medicoes independentes: Nasofrontal, Nasolabial e Nasofacial.</div>' +
+        '<button onclick="FaceMapping._uploadNasalPhoto(\'' + slot + '\')" style="padding:14px 28px;border:none;border-radius:8px;background:' + accent + ';color:#fff;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer">Carregar Foto Lateral</button>' +
       '</div>' +
     '</div>'
   }
@@ -669,9 +810,7 @@
   Nasal.initCanvas = function () {
     _ensureLoaded()
     _initSlotCanvas('antes', 'fmCanvas')
-    if (FM._viewMode === '2x') {
-      _initSlotCanvas('depois', 'fmNasalCanvas2')
-    }
+    if (FM._viewMode === '2x') _initSlotCanvas('depois', 'fmNasalCanvas2')
   }
 
   function _initSlotCanvas(slot, canvasId) {
@@ -727,24 +866,19 @@
     return { offsetX: e.offsetX, offsetY: e.offsetY, _canvas: canvas }
   }
 
-  // ── Panel ────────────────────────────────────────────────────
+  // ── Panel (right sidebar) ────────────────────────────────────
   Nasal.renderPanel = function () {
     _ensureLoaded()
-    SLOTS.forEach(function (k) { if (_state[k].photoUrl) _seedIfEmpty(k) })
-
     var gender = _state.gender
-    var ideal = IDEAL[gender]
     var is2x = FM._viewMode === '2x'
-    var aAntes  = _state.antes.photoUrl  ? (Nasal.compute('antes')  || {}) : {}
-    var aDepois = _state.depois.photoUrl ? (Nasal.compute('depois') || {}) : {}
+    var slot = 'antes'  // panel focuses ANTES for clinical plan; DEPOIS acts as comparative
 
-    var html = '<div class="fm-toolbar">'
+    var html = '<div class="fm-toolbar" style="overflow-y:auto">'
 
     html += '<div class="fm-tool-section" style="padding-bottom:8px">' +
       '<div class="fm-tool-section-title">Analise Angular do Nariz</div>' +
       '<div style="font-size:10px;color:rgba(200,169,126,0.5);line-height:1.5;margin-top:4px">' +
-        (is2x ? 'Modo 2x: ANTES + DEPOIS. Cada foto tem 6 pontos editaveis independentes.'
-              : 'Arraste os 6 pontos sobre a foto. Ative 2x no topo para comparar ANTES x DEPOIS.') +
+        '3 medicoes independentes. Cada uma tem seus proprios pontos e conduta clinica sugerida.' +
       '</div>' +
     '</div>'
 
@@ -756,7 +890,6 @@
       '</div>' +
     '</div>'
 
-    // Sync toggle — only relevant in 2x
     if (is2x) {
       var syncOn = !!_state.syncViews
       html += '<div class="fm-tool-section">' +
@@ -772,209 +905,200 @@
       '</div>'
     }
 
-    // Zoom controls (contextual — shown when photo loaded)
+    html += '<div id="fmNasalMeasurements">' + _renderMeasurementsBlock(slot, gender, is2x) + '</div>'
+
     if (_state.antes.photoUrl || (is2x && _state.depois.photoUrl)) {
-      html += '<div class="fm-tool-section" style="font-size:10px;color:rgba(200,169,126,0.55);line-height:1.5">' +
+      html += '<div class="fm-tool-section" style="font-size:10px;color:rgba(200,169,126,0.5);line-height:1.5">' +
         '<div class="fm-tool-section-title">Navegacao</div>' +
-        '<div>\u00B7 Roda do mouse: zoom no ponto do cursor</div>' +
-        '<div>\u00B7 Arrastar area vazia: mover a foto</div>' +
+        '<div>\u00B7 Roda do mouse: zoom no cursor</div>' +
+        '<div>\u00B7 Arrastar area vazia: mover foto</div>' +
         '<div>\u00B7 Cadeado: trava zoom/pan, so pontos editaveis</div>' +
       '</div>'
     }
-
-    html += '<div id="fmNasalMetrics" class="fm-tool-section">' +
-      _renderMetricsBlock(is2x, aAntes, aDepois, ideal) +
-    '</div>'
-
-    html += '<div class="fm-tool-section" style="display:flex;flex-direction:column;gap:4px">' +
-      (_state.antes.photoUrl ? '<button class="fm-btn" style="width:100%" onclick="FaceMapping._resetNasal(\'antes\')">Reposicionar pontos ANTES</button>' : '') +
-      (is2x && _state.depois.photoUrl ? '<button class="fm-btn" style="width:100%" onclick="FaceMapping._resetNasal(\'depois\')">Reposicionar pontos DEPOIS</button>' : '') +
-    '</div>'
-
-    html += '<div class="fm-tool-section" style="font-size:10px;color:rgba(200,169,126,0.55);line-height:1.55">' +
-      '<div class="fm-tool-section-title">Pontos</div>' +
-      POINT_DEFS.map(function (pt) {
-        return '<div style="margin-bottom:4px"><strong style="color:#C8A97E">' + pt.label + ':</strong> ' + pt.desc + '</div>'
-      }).join('') +
-    '</div>'
 
     html += '</div>'
     return html
   }
 
-  function _renderMetricsBlock(is2x, aAntes, aDepois, ideal) {
-    if (!is2x) {
-      return '<div class="fm-tool-section-title">Angulos</div>' +
-        _metricRow1x('Nasofrontal', aAntes.nasofrontal, ideal.nasofrontal) +
-        _metricRow1x('Nasolabial',  aAntes.nasolabial,  ideal.nasolabial) +
-        _metricRow1x('Nasofacial',  aAntes.nasofacial,  ideal.nasofacial)
-    }
-    return '<div class="fm-tool-section-title">Angulos \u2014 Antes / Depois</div>' +
-      _metricRow2x('Nasofrontal', aAntes.nasofrontal, aDepois.nasofrontal, ideal.nasofrontal) +
-      _metricRow2x('Nasolabial',  aAntes.nasolabial,  aDepois.nasolabial,  ideal.nasolabial) +
-      _metricRow2x('Nasofacial',  aAntes.nasofacial,  aDepois.nasofacial,  ideal.nasofacial)
+  function _renderMeasurementsBlock(slot, gender, is2x) {
+    var html = ''
+    MEASUREMENTS.forEach(function (m) {
+      html += _renderMeasurementCard(m, slot, gender, is2x)
+    })
+    return html
   }
 
-  function _metricRow1x(label, val, range) {
-    if (val == null) return '<div style="font-size:11px;color:rgba(200,169,126,0.4);margin-bottom:10px">' + label + ': —</div>'
-    var color = _statusColor(val, range)
-    var status = (val >= range[0] && val <= range[1]) ? 'Ideal' : (val < range[0] ? 'Abaixo' : 'Acima')
-    return '<div style="margin-bottom:12px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">' +
-        '<span style="font-size:10px;color:rgba(245,240,232,0.7);letter-spacing:0.03em">' + label + '</span>' +
-        '<span style="font-size:16px;font-weight:700;color:' + color + ';font-family:Montserrat,sans-serif">' + val + '\u00B0</span>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(200,169,126,0.4)">' +
-        '<span>Ideal: ' + range[0] + '\u2013' + range[1] + '\u00B0</span>' +
-        '<span style="color:' + color + ';font-weight:600">' + status + '</span>' +
-      '</div>' +
-    '</div>'
-  }
+  function _renderMeasurementCard(m, slot, gender, is2x) {
+    var ms = _state[slot].measurements[m.id]
+    var range = IDEAL[gender][m.id]
+    var valAntes = Nasal.compute('antes', m.id)
+    var valDepois = is2x ? Nasal.compute('depois', m.id) : null
+    var st = (valAntes != null) ? _status(valAntes, range) : null
+    var stColor = st ? _statusColorExtreme(valAntes, range) : '#999'
+    var conduct = (st && st !== 'normal') ? CONDUCT[m.id][st] : null
 
-  function _metricRow2x(label, a, d, range) {
-    var cA = a != null ? _statusColor(a, range) : 'rgba(200,169,126,0.3)'
-    var cD = d != null ? _statusColor(d, range) : 'rgba(200,169,126,0.3)'
-    var delta = (a != null && d != null) ? (d - a) : null
-    var deltaStr = delta != null ? ((delta > 0 ? '+' : '') + (Math.round(delta * 10) / 10) + '\u00B0') : '—'
+    var delta = (valAntes != null && valDepois != null) ? (valDepois - valAntes) : null
+    var deltaStr = delta != null ? ((delta > 0 ? '+' : '') + (Math.round(delta * 10) / 10) + '\u00B0') : ''
     var deltaColor = delta == null ? 'rgba(200,169,126,0.4)' : (Math.abs(delta) < 1 ? 'rgba(200,169,126,0.5)' : (delta > 0 ? '#10B981' : '#F59E0B'))
-    return '<div style="margin-bottom:14px;padding:8px 10px;background:rgba(200,169,126,0.04);border-radius:6px">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:6px">' +
-        '<span style="font-size:10px;color:rgba(245,240,232,0.7);letter-spacing:0.03em;font-weight:600">' + label + '</span>' +
-        '<span style="font-size:9px;color:rgba(200,169,126,0.45)">Ideal: ' + range[0] + '\u2013' + range[1] + '\u00B0</span>' +
+
+    var html = '<div class="fm-tool-section" style="border-left:3px solid ' + m.color + ';padding-left:10px">'
+
+    // Header: measurement name + toggle
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;color:' + m.color + ';letter-spacing:0.06em">' + m.label + '</span>' +
       '</div>' +
-      '<div style="display:flex;gap:8px;align-items:baseline">' +
-        '<div style="flex:1">' +
-          '<div style="font-size:8px;color:' + SLOT_ACCENT.antes + ';font-weight:700;letter-spacing:0.1em">ANTES</div>' +
-          '<div style="font-size:15px;font-weight:700;color:' + cA + ';font-family:Montserrat,sans-serif">' + (a != null ? a + '\u00B0' : '—') + '</div>' +
-        '</div>' +
-        '<div style="flex:1">' +
-          '<div style="font-size:8px;color:' + SLOT_ACCENT.depois + ';font-weight:700;letter-spacing:0.1em">DEPOIS</div>' +
-          '<div style="font-size:15px;font-weight:700;color:' + cD + ';font-family:Montserrat,sans-serif">' + (d != null ? d + '\u00B0' : '—') + '</div>' +
-        '</div>' +
-        '<div style="flex:1;text-align:right">' +
-          '<div style="font-size:8px;color:rgba(200,169,126,0.6);font-weight:700;letter-spacing:0.1em">DELTA</div>' +
-          '<div style="font-size:15px;font-weight:700;color:' + deltaColor + ';font-family:Montserrat,sans-serif">' + deltaStr + '</div>' +
-        '</div>' +
+      '<div onclick="FaceMapping._toggleNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')" title="Ativar / desativar" style="width:30px;height:15px;border-radius:8px;cursor:pointer;position:relative;background:' + (ms.enabled ? m.color : 'rgba(200,169,126,0.15)') + ';transition:background .2s;flex-shrink:0">' +
+        '<div style="width:11px;height:11px;border-radius:50%;background:#fff;position:absolute;top:2px;left:' + (ms.enabled ? '16px' : '2px') + ';transition:left .2s"></div>' +
       '</div>' +
     '</div>'
+
+    if (!ms.enabled) {
+      html += '<div style="font-size:10px;color:rgba(200,169,126,0.35);font-style:italic">Desativada</div>'
+      html += '</div>'
+      return html
+    }
+
+    // Metrics row: measured | ideal | status
+    if (valAntes == null) {
+      html += '<div style="font-size:10px;color:rgba(200,169,126,0.4)">Posicione os pontos para calcular.</div>'
+    } else {
+      var showDelta = is2x && valDepois != null
+      html += '<div style="display:flex;gap:10px;align-items:baseline;margin-bottom:6px;flex-wrap:wrap">' +
+        '<div style="flex:0 0 auto">' +
+          '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">MEDIDO</div>' +
+          '<div style="font-size:20px;font-weight:700;color:' + stColor + ';font-family:Montserrat,sans-serif;line-height:1">' + valAntes + '\u00B0</div>' +
+        '</div>' +
+        (showDelta
+          ? '<div style="flex:0 0 auto">' +
+              '<div style="font-size:8px;color:' + SLOT_ACCENT.depois + ';letter-spacing:0.1em;font-weight:700">DEPOIS</div>' +
+              '<div style="font-size:16px;font-weight:700;color:' + _statusColorExtreme(valDepois, range) + ';font-family:Montserrat,sans-serif;line-height:1">' + valDepois + '\u00B0</div>' +
+            '</div>' +
+            '<div style="flex:0 0 auto">' +
+              '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">DELTA</div>' +
+              '<div style="font-size:14px;font-weight:700;color:' + deltaColor + ';font-family:Montserrat,sans-serif;line-height:1">' + deltaStr + '</div>' +
+            '</div>'
+          : '') +
+        '<div style="flex:1;min-width:0;text-align:right">' +
+          '<div style="font-size:8px;color:rgba(200,169,126,0.5);letter-spacing:0.1em;font-weight:700">IDEAL</div>' +
+          '<div style="font-size:11px;color:rgba(245,240,232,0.7);font-family:Montserrat,sans-serif">' + range[0] + '\u2013' + range[1] + '\u00B0</div>' +
+        '</div>' +
+      '</div>'
+
+      // Status badge
+      var badgeBg = (st === 'normal') ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'
+      var badgeBorder = (st === 'normal') ? '#10B981' : '#F59E0B'
+      html += '<div style="display:inline-block;padding:3px 10px;border-radius:4px;background:' + badgeBg + ';border:1px solid ' + badgeBorder + ';margin-bottom:8px">' +
+        '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + badgeBorder + ';letter-spacing:0.1em;text-transform:uppercase">' + _statusLabel(st) + '</span>' +
+      '</div>'
+
+      // Clinical interpretation + conduct
+      if (conduct) {
+        html += '<div style="margin-top:6px;padding:8px 10px;background:rgba(200,169,126,0.04);border-radius:6px">' +
+          '<div style="font-family:Cormorant Garamond,serif;font-size:12px;font-style:italic;color:rgba(245,240,232,0.85);line-height:1.5;margin-bottom:6px">' + conduct.anatomic + '</div>' +
+          '<div style="font-size:10px;color:rgba(245,240,232,0.7);line-height:1.5;margin-bottom:6px"><strong style="color:' + m.color + '">Conduta:</strong> ' + conduct.action + '</div>' +
+          (conduct.procedures && conduct.procedures.length
+            ? '<div style="display:flex;flex-wrap:wrap;gap:3px">' +
+                conduct.procedures.map(function (p) {
+                  return '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:' + _withAlpha(m.color, 0.12) + ';border:1px solid ' + _withAlpha(m.color, 0.35) + ';color:' + m.color + ';font-weight:600">' + p + '</span>'
+                }).join('') +
+              '</div>'
+            : '') +
+        '</div>'
+      }
+    }
+
+    // Reset button
+    html += '<div style="margin-top:6px"><button class="fm-btn" style="width:100%;font-size:9px;padding:3px 6px" onclick="FaceMapping._resetNasalMeasurement(\'' + slot + '\',\'' + m.id + '\')">Reposicionar pontos</button></div>'
+
+    html += '</div>'
+    return html
   }
 
   function _refreshPanelValues() {
-    var el = document.getElementById('fmNasalMetrics')
+    var el = document.getElementById('fmNasalMeasurements')
     if (!el) return
-    var is2x = FM._viewMode === '2x'
-    var aAntes  = _state.antes.photoUrl  ? (Nasal.compute('antes')  || {}) : {}
-    var aDepois = _state.depois.photoUrl ? (Nasal.compute('depois') || {}) : {}
-    var ideal = IDEAL[Nasal.getGender()]
-    el.innerHTML = _renderMetricsBlock(is2x, aAntes, aDepois, ideal)
+    el.innerHTML = _renderMeasurementsBlock('antes', _state.gender, FM._viewMode === '2x')
   }
 
   // ── Report section ───────────────────────────────────────────
   Nasal.getReportData = function () {
     _ensureLoaded()
     if (!Nasal.hasData('antes')) return null
-    var aAntes = Nasal.compute('antes')
-    var aDepois = Nasal.hasData('depois') ? Nasal.compute('depois') : null
     var gender = _state.gender
-    return {
-      gender: gender,
-      antes: aAntes,
-      depois: aDepois,
-      ideal: IDEAL[gender],
-      interpretation: _interpret(aAntes, gender),
-    }
+    var is2x = FM._viewMode === '2x' && Nasal.hasData('depois')
+    var rows = []
+    MEASUREMENTS.forEach(function (m) {
+      var ms = _state.antes.measurements[m.id]
+      if (!ms || !ms.enabled) return
+      var va = Nasal.compute('antes', m.id)
+      var vd = is2x ? Nasal.compute('depois', m.id) : null
+      if (va == null) return
+      var range = IDEAL[gender][m.id]
+      var st = _status(va, range)
+      var conduct = (st !== 'normal') ? CONDUCT[m.id][st] : null
+      rows.push({
+        id: m.id, label: m.label, color: m.color,
+        antes: va, depois: vd, range: range, status: st, conduct: conduct,
+      })
+    })
+    if (rows.length === 0) return null
+    return { gender: gender, rows: rows, is2x: is2x }
   }
 
   Nasal.renderReportSection = function () {
     var data = Nasal.getReportData()
     if (!data) return ''
-    var a = data.antes
-    var d = data.depois
-    var ideal = data.ideal
-    var has2x = !!d
+    var head = 'padding:11px 14px;text-align:left;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#C8A97E;letter-spacing:0.12em;text-transform:uppercase'
+    var cell = 'padding:11px 14px;border-bottom:1px solid rgba(200,169,126,0.1);font-family:Montserrat,sans-serif;vertical-align:top'
 
-    var head = 'padding:11px 16px;text-align:left;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:#C8A97E;letter-spacing:0.12em;text-transform:uppercase'
-    var cell = 'padding:11px 16px;border-bottom:1px solid rgba(200,169,126,0.1);font-family:Montserrat,sans-serif'
+    var colSpan = data.is2x ? 6 : 5
+    var rowsHtml = data.rows.map(function (r) {
+      var stColor = _statusColorExtreme(r.antes, r.range)
+      var dcell, dstr
+      if (data.is2x && r.depois != null) {
+        var dv = r.depois - r.antes
+        dstr = (dv > 0 ? '+' : '') + (Math.round(dv * 10) / 10) + '\u00B0'
+        dcell = '<td style="' + cell + ';font-size:14px;font-weight:700;color:' + _statusColorExtreme(r.depois, r.range) + '">' + r.depois + '\u00B0</td>' +
+                '<td style="' + cell + ';font-size:13px;font-weight:700;color:' + (Math.abs(dv) < 1 ? 'rgba(200,169,126,0.5)' : (dv > 0 ? '#10B981' : '#F59E0B')) + '">' + dstr + '</td>'
+      } else {
+        dcell = data.is2x ? '<td style="' + cell + '">\u2014</td><td style="' + cell + '">\u2014</td>' : ''
+      }
+      var conductHtml = r.conduct
+        ? '<div style="font-family:Cormorant Garamond,serif;font-size:12px;font-style:italic;color:rgba(245,240,232,0.85);margin-bottom:3px">' + r.conduct.anatomic + '</div>' +
+          '<div style="font-size:11px;color:rgba(245,240,232,0.75);line-height:1.5">' + r.conduct.action + '</div>'
+        : '<div style="font-size:11px;color:rgba(16,185,129,0.8)">Dentro da faixa ideal — manter.</div>'
 
-    function _row1x(label, val, range) {
-      var color = _statusColor(val, range)
-      var statusText = (val >= range[0] && val <= range[1]) ? 'Dentro da faixa ideal' : (val < range[0] ? 'Abaixo da faixa' : 'Acima da faixa')
       return '<tr>' +
-        '<td style="' + cell + ';font-size:12px;color:rgba(245,240,232,0.85)">' + label + '</td>' +
-        '<td style="' + cell + ';font-size:15px;font-weight:700;color:' + color + '">' + val + '\u00B0</td>' +
-        '<td style="' + cell + ';font-size:11px;color:rgba(200,169,126,0.65)">' + range[0] + '\u2013' + range[1] + '\u00B0</td>' +
-        '<td style="' + cell + ';font-size:11px;color:' + color + '">' + statusText + '</td>' +
-      '</tr>'
-    }
+        '<td style="' + cell + ';font-size:12px;color:rgba(245,240,232,0.88);border-left:3px solid ' + r.color + '"><strong style="color:' + r.color + '">' + r.label + '</strong></td>' +
+        '<td style="' + cell + ';font-size:14px;font-weight:700;color:' + stColor + '">' + r.antes + '\u00B0</td>' +
+        dcell +
+        '<td style="' + cell + ';font-size:11px;color:rgba(200,169,126,0.7)">' + r.range[0] + '\u2013' + r.range[1] + '\u00B0</td>' +
+        '<td style="' + cell + ';font-size:10px;font-weight:700;color:' + (r.status === 'normal' ? '#10B981' : '#F59E0B') + ';text-transform:uppercase;letter-spacing:0.1em">' + _statusLabel(r.status) + '</td>' +
+      '</tr>' +
+      '<tr><td colspan="' + colSpan + '" style="padding:4px 14px 14px 20px;border-bottom:1px solid rgba(200,169,126,0.1)">' + conductHtml + '</td></tr>'
+    }).join('')
 
-    function _row2x(label, va, vd, range) {
-      var cA = _statusColor(va, range)
-      var cD = _statusColor(vd, range)
-      var delta = vd - va
-      var deltaColor = Math.abs(delta) < 1 ? 'rgba(200,169,126,0.5)' : (delta > 0 ? '#10B981' : '#F59E0B')
-      var deltaStr = (delta > 0 ? '+' : '') + (Math.round(delta * 10) / 10) + '\u00B0'
-      return '<tr>' +
-        '<td style="' + cell + ';font-size:12px;color:rgba(245,240,232,0.85)">' + label + '</td>' +
-        '<td style="' + cell + ';font-size:14px;font-weight:700;color:' + cA + '">' + va + '\u00B0</td>' +
-        '<td style="' + cell + ';font-size:14px;font-weight:700;color:' + cD + '">' + vd + '\u00B0</td>' +
-        '<td style="' + cell + ';font-size:13px;font-weight:700;color:' + deltaColor + '">' + deltaStr + '</td>' +
-        '<td style="' + cell + ';font-size:11px;color:rgba(200,169,126,0.65)">' + range[0] + '\u2013' + range[1] + '\u00B0</td>' +
-      '</tr>'
-    }
-
-    var table
-    if (has2x) {
-      table = '<table style="width:100%;border-collapse:collapse;background:rgba(20,18,16,0.5);border-radius:8px;overflow:hidden">' +
-        '<thead><tr style="background:rgba(200,169,126,0.08)">' +
-          '<th style="' + head + '">Angulo</th>' +
-          '<th style="' + head + ';color:' + SLOT_ACCENT.antes + '">Antes</th>' +
-          '<th style="' + head + ';color:' + SLOT_ACCENT.depois + '">Depois</th>' +
-          '<th style="' + head + '">Delta</th>' +
-          '<th style="' + head + '">Ideal</th>' +
-        '</tr></thead><tbody>' +
-          _row2x('Nasofrontal', a.nasofrontal, d.nasofrontal, ideal.nasofrontal) +
-          _row2x('Nasolabial',  a.nasolabial,  d.nasolabial,  ideal.nasolabial) +
-          _row2x('Nasofacial',  a.nasofacial,  d.nasofacial,  ideal.nasofacial) +
-        '</tbody></table>'
-    } else {
-      table = '<table style="width:100%;border-collapse:collapse;background:rgba(20,18,16,0.5);border-radius:8px;overflow:hidden">' +
-        '<thead><tr style="background:rgba(200,169,126,0.08)">' +
-          '<th style="' + head + '">Angulo</th>' +
-          '<th style="' + head + '">Medido</th>' +
-          '<th style="' + head + '">Ideal</th>' +
-          '<th style="' + head + '">Status</th>' +
-        '</tr></thead><tbody>' +
-          _row1x('Nasofrontal', a.nasofrontal, ideal.nasofrontal) +
-          _row1x('Nasolabial',  a.nasolabial,  ideal.nasolabial) +
-          _row1x('Nasofacial',  a.nasofacial,  ideal.nasofacial) +
-        '</tbody></table>'
-    }
+    var cols = data.is2x
+      ? '<th style="' + head + '">Angulo</th>' +
+        '<th style="' + head + ';color:' + SLOT_ACCENT.antes + '">Antes</th>' +
+        '<th style="' + head + ';color:' + SLOT_ACCENT.depois + '">Depois</th>' +
+        '<th style="' + head + '">Delta</th>' +
+        '<th style="' + head + '">Ideal</th>' +
+        '<th style="' + head + '">Status</th>'
+      : '<th style="' + head + '">Angulo</th>' +
+        '<th style="' + head + '">Medido</th>' +
+        '<th style="' + head + '">Ideal</th>' +
+        '<th style="' + head + '">Status</th>'
 
     return '<section style="margin:32px 0;padding:24px;background:rgba(26,24,22,0.55);border:1px solid rgba(200,169,126,0.12);border-radius:12px">' +
       '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-style:italic;color:#C8A97E;margin-bottom:4px">Analise Angular do Nariz</div>' +
-      '<div style="font-size:11px;color:rgba(200,169,126,0.55);margin-bottom:16px;letter-spacing:0.06em">Referencia: ' + (data.gender === 'F' ? 'Feminino' : 'Masculino') + (has2x ? ' \u00B7 Comparativo Antes/Depois' : '') + '</div>' +
-      table +
-      (data.interpretation ? '<div style="margin-top:16px;padding:14px 18px;background:rgba(200,169,126,0.05);border-left:3px solid #C8A97E;font-family:Cormorant Garamond,serif;font-size:14px;line-height:1.7;color:rgba(245,240,232,0.82);font-style:italic">' + data.interpretation + '</div>' : '') +
+      '<div style="font-size:11px;color:rgba(200,169,126,0.55);margin-bottom:16px;letter-spacing:0.06em">Referencia: ' + (data.gender === 'F' ? 'Feminino' : 'Masculino') + (data.is2x ? ' \u00B7 Comparativo Antes/Depois' : '') + '</div>' +
+      '<table style="width:100%;border-collapse:collapse;background:rgba(20,18,16,0.5);border-radius:8px;overflow:hidden">' +
+        '<thead><tr style="background:rgba(200,169,126,0.08)">' + cols + '</tr></thead>' +
+        '<tbody>' + rowsHtml + '</tbody>' +
+      '</table>' +
     '</section>'
-  }
-
-  function _interpret(a, gender) {
-    var ideal = IDEAL[gender]
-    var parts = []
-    function _dir(v, r) { if (v >= r[0] && v <= r[1]) return 'ok'; return v < r[0] ? 'below' : 'above' }
-    var nf = _dir(a.nasofrontal, ideal.nasofrontal)
-    if (nf === 'below') parts.push('angulo nasofrontal fechado (dorso proeminente ou raiz baixa)')
-    else if (nf === 'above') parts.push('angulo nasofrontal aberto (raiz nasal baixa ou testa retraida)')
-    var nl = _dir(a.nasolabial, ideal.nasolabial)
-    if (nl === 'below') parts.push('ponta nasal hiporotacionada (tendencia a caida)')
-    else if (nl === 'above') parts.push('ponta nasal hiperrotacionada (excessivamente elevada)')
-    var nfc = _dir(a.nasofacial, ideal.nasofacial)
-    if (nfc === 'below') parts.push('projecao nasal reduzida em relacao ao plano facial')
-    else if (nfc === 'above') parts.push('projecao nasal acentuada em relacao ao plano facial')
-    if (parts.length === 0) {
-      return 'Proporcoes nasais alinhadas com os parametros esteticos de referencia ' + (gender === 'F' ? 'femininos' : 'masculinos') + '.'
-    }
-    return 'Observacoes: ' + parts.join('; ') + '.'
   }
 
   // ── Geometry helpers ─────────────────────────────────────────
@@ -992,13 +1116,9 @@
     return _angleBetween(_vec(vertex, a), _vec(vertex, b))
   }
 
-  function _statusColor(val, range) {
-    if (val == null) return '#999'
-    var lo = range[0], hi = range[1]
-    if (val >= lo && val <= hi) return '#10B981'
-    var margin = (hi - lo) * 0.6
-    if ((val >= lo - margin && val < lo) || (val > hi && val <= hi + margin)) return '#F59E0B'
-    return '#EF4444'
+  function _dist(a, b, w, h) {
+    var dx = (b.x - a.x) * w, dy = (b.y - a.y) * h
+    return Math.sqrt(dx * dx + dy * dy)
   }
 
   function _withAlpha(hex, alpha) {
@@ -1022,15 +1142,15 @@
     ctx.restore()
   }
 
-  function _drawPoint(ctx, x, y, active, label) {
+  function _drawPoint(ctx, x, y, active, label, color) {
     ctx.save()
     var grad = ctx.createRadialGradient(x, y, 0, x, y, active ? 14 : 10)
-    grad.addColorStop(0, active ? 'rgba(200,169,126,0.55)' : 'rgba(200,169,126,0.3)')
-    grad.addColorStop(1, 'rgba(200,169,126,0)')
+    grad.addColorStop(0, _withAlpha(color, active ? 0.6 : 0.35))
+    grad.addColorStop(1, _withAlpha(color, 0))
     ctx.fillStyle = grad
     ctx.beginPath(); ctx.arc(x, y, active ? 14 : 10, 0, Math.PI * 2); ctx.fill()
 
-    ctx.fillStyle = active ? '#C8A97E' : '#F5F0E8'
+    ctx.fillStyle = active ? color : '#F5F0E8'
     ctx.strokeStyle = '#1a1816'
     ctx.lineWidth = 1.8
     ctx.beginPath(); ctx.arc(x, y, active ? 6 : 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
@@ -1039,13 +1159,12 @@
       ctx.font = 'bold 11px Montserrat, sans-serif'
       var tw = ctx.measureText(label).width + 12
       ctx.fillStyle = 'rgba(26,24,22,0.92)'
-      ctx.strokeStyle = 'rgba(200,169,126,0.5)'
+      ctx.strokeStyle = _withAlpha(color, 0.55)
       ctx.lineWidth = 1
       var bx = x + 10, by = y - 20
-      ctx.beginPath()
-      if (ctx.roundRect) ctx.roundRect(bx, by, tw, 18, 4); else ctx.rect(bx, by, tw, 18)
-      ctx.fill(); ctx.stroke()
-      ctx.fillStyle = '#C8A97E'
+      if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(bx, by, tw, 18, 4); ctx.fill(); ctx.stroke() }
+      else { ctx.fillRect(bx, by, tw, 18); ctx.strokeRect(bx, by, tw, 18) }
+      ctx.fillStyle = color
       ctx.textBaseline = 'middle'
       ctx.fillText(label, bx + 6, by + 9)
     }
@@ -1082,19 +1201,19 @@
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font = 'bold 18px Montserrat, sans-serif'
+    ctx.font = 'bold 15px Montserrat, sans-serif'
     ctx.strokeStyle = 'rgba(20,18,16,0.95)'
     ctx.lineWidth = 4
     ctx.strokeText(numberText, tx, ty)
     ctx.fillStyle = color
     ctx.fillText(numberText, tx, ty)
 
-    ctx.font = '600 9px Montserrat, sans-serif'
+    ctx.font = '600 8px Montserrat, sans-serif'
     ctx.strokeStyle = 'rgba(20,18,16,0.95)'
     ctx.lineWidth = 3
-    ctx.strokeText(labelText, tx, ty + 15)
+    ctx.strokeText(labelText, tx, ty + 13)
     ctx.fillStyle = 'rgba(245,240,232,0.85)'
-    ctx.fillText(labelText, tx, ty + 15)
+    ctx.fillText(labelText, tx, ty + 13)
 
     ctx.restore()
   }
