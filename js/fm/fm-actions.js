@@ -138,6 +138,10 @@
     // explicitamente, senao o paciente anterior vaza ao trocar.
     FM._imgCache = {}
     if (FM.Nasal && FM.Nasal.resetState) FM.Nasal.resetState()
+    // Scanner desativado por padrao em cada paciente novo — usuario deve
+    // ativar explicitamente via toggle. Garante que biometria nao seja
+    // processada automaticamente sem consentimento por paciente (LGPD).
+    FM._scanEnabled = false
 
     FM._restoreSession(leadId)
     FM._cleanupStorage()
@@ -173,6 +177,7 @@
     FM._scanDataByAngle = {}
     FM._imgCache = {}
     if (FM.Nasal && FM.Nasal.resetState) FM.Nasal.resetState()
+    FM._scanEnabled = false  // consentimento por paciente
 
     var leadId = lead && (lead.id || lead.lead_id)
     if (leadId) FM._restoreSession(leadId)
@@ -196,6 +201,7 @@
     FM._scanDataByAngle = {}
     FM._imgCache = {}
     FM._activeAngle = null
+    FM._scanEnabled = false  // consentimento renovado a cada entrada
     if (FM.Nasal && FM.Nasal.resetState) FM.Nasal.resetState()
     FM._restorePage()
   }

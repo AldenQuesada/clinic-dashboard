@@ -25,6 +25,21 @@
   var _currentAngle = null     // 'front' | '45' | 'lateral'
   var _availableAngles = []
 
+  // Verifica se o angulo ativo do comparador esta travado em qualquer
+  // contexto (analise/zonas, 1x ou 2x). Se sim, bloqueia uploads de fotos
+  // pelo comparador para evitar sobrescrita acidental de foto travada.
+  function _isAngleLocked() {
+    if (!FM._isLocked || !_currentAngle) return false
+    var tabs = ['simetria', 'zones', 'vectors', 'analysis', 'nasal']
+    var canvases = ['1x', '2x']
+    for (var i = 0; i < tabs.length; i++) {
+      for (var j = 0; j < canvases.length; j++) {
+        if (FM._isLocked(tabs[i], canvases[j], _currentAngle)) return true
+      }
+    }
+    return false
+  }
+
   // Auto timer state
   var _autoPlaying = false
   var _autoRAF = null
@@ -174,18 +189,28 @@
             '<svg id="fmcAutoIcon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5,3 19,12 5,21"/></svg>' +
             '<span class="fmc-auto-label">Auto</span>' +
           '</button>' +
-          '<div class="fmc-uploads" style="display:flex;gap:4px;margin-left:8px">' +
-            '<label style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#EF4444;font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:500">' +
-              FM._icon('upload', 11) + ' ANTES<input type="file" accept="image/*" onchange="FaceMapping._compareUpload(\'before\',this)" style="display:none">' +
-            '</label>' +
-            '<label style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(16,185,129,0.3);border-radius:6px;color:#10B981;font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:500">' +
-              FM._icon('upload', 11) + ' DEPOIS<input type="file" accept="image/*" onchange="FaceMapping._compareUpload(\'after\',this)" style="display:none">' +
-            '</label>' +
-            '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(239,68,68,0.15);border-radius:6px;background:transparent;color:rgba(239,68,68,0.5);font-size:8px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl(\'before\')">' +
-              FM._icon('link', 9) + ' URL</button>' +
-            '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(16,185,129,0.15);border-radius:6px;background:transparent;color:rgba(16,185,129,0.5);font-size:8px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl(\'after\')">' +
-              FM._icon('link', 9) + ' URL</button>' +
-          '</div>' +
+          // Uploads: ocultos quando o angulo ativo esta travado em qualquer canvas
+          // (evita sobrescrever foto travada via comparador). Badge "TRAVADO" no
+          // lugar para sinalizar.
+          (_isAngleLocked() ?
+            '<div style="display:flex;align-items:center;gap:6px;margin-left:8px;padding:4px 10px;border:1px solid rgba(239,68,68,0.4);border-radius:6px;background:rgba(239,68,68,0.08);color:#EF4444;font-size:10px;font-weight:700;letter-spacing:0.08em;font-family:Montserrat,sans-serif">' +
+              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
+              ' TRAVADO' +
+            '</div>'
+          :
+            '<div class="fmc-uploads" style="display:flex;gap:4px;margin-left:8px">' +
+              '<label style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(239,68,68,0.3);border-radius:6px;color:#EF4444;font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:500">' +
+                FM._icon('upload', 11) + ' ANTES<input type="file" accept="image/*" onchange="FaceMapping._compareUpload(\'before\',this)" style="display:none">' +
+              '</label>' +
+              '<label style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(16,185,129,0.3);border-radius:6px;color:#10B981;font-size:9px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:500">' +
+                FM._icon('upload', 11) + ' DEPOIS<input type="file" accept="image/*" onchange="FaceMapping._compareUpload(\'after\',this)" style="display:none">' +
+              '</label>' +
+              '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(239,68,68,0.15);border-radius:6px;background:transparent;color:rgba(239,68,68,0.5);font-size:8px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl(\'before\')">' +
+                FM._icon('link', 9) + ' URL</button>' +
+              '<button style="display:flex;align-items:center;gap:3px;padding:4px 10px;border:1px solid rgba(16,185,129,0.15);border-radius:6px;background:transparent;color:rgba(16,185,129,0.5);font-size:8px;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._compareFromUrl(\'after\')">' +
+                FM._icon('link', 9) + ' URL</button>' +
+            '</div>'
+          ) +
           '<div class="fmc-actions">' +
             '<button class="fmc-btn-icon' + (_annotationMode ? ' active' : '') + '" id="fmcAnnotateBtn" title="Anotar fotos">' +
               '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
@@ -1293,6 +1318,11 @@
 
   // ── Upload photo directly into comparator ──
   FM._compareUpload = function (which, input) {
+    if (_isAngleLocked()) {
+      FM._showToast && FM._showToast('Angulo travado — destrave na analise para alterar fotos.', 'warn')
+      input.value = ''
+      return
+    }
     var file = input.files[0]
     if (!file) return
     var url = URL.createObjectURL(file)
@@ -1310,6 +1340,10 @@
   }
 
   FM._compareFromUrl = function (which) {
+    if (_isAngleLocked()) {
+      FM._showToast && FM._showToast('Angulo travado — destrave na analise para alterar fotos.', 'warn')
+      return
+    }
     var label = which === 'before' ? 'ANTES' : 'DEPOIS'
     var url = prompt('Cole a URL da imagem ' + label + ' (Google Drive, link direto):')
     if (!url) return

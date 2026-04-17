@@ -143,8 +143,19 @@
       ctx.restore()
 
       c.toBlob(function (blob) {
-        if (FM._simPhotoByAngle[canvasTargetAngle]) URL.revokeObjectURL(FM._simPhotoByAngle[canvasTargetAngle])
-        FM._simPhotoByAngle[canvasTargetAngle] = URL.createObjectURL(blob)
+        // Try/catch envolvendo a atribuicao previne blob orfao quando o
+        // createObjectURL falha (raro) — sem o try/catch a URL antiga ja
+        // foi revogada e a nova nunca chegou ao mapa.
+        if (!blob) { if (callback) callback(); return }
+        try {
+          var url = URL.createObjectURL(blob)
+          if (FM._simPhotoByAngle[canvasTargetAngle]) {
+            try { URL.revokeObjectURL(FM._simPhotoByAngle[canvasTargetAngle]) } catch (e) {}
+          }
+          FM._simPhotoByAngle[canvasTargetAngle] = url
+        } catch (e) {
+          console.warn('[FM sim] toBlob assignment failed:', e)
+        }
         if (callback) callback()
       }, 'image/jpeg', 0.95)
     }

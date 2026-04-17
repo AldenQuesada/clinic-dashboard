@@ -386,7 +386,12 @@
 
       var apiUrl = FM.FACIAL_API_URL
       var controller = new AbortController()
-      var timeout = setTimeout(function () { controller.abort() }, 12000)
+      var timedOut = false
+      // Atualizacao progressiva: apos 5s, avisa que API esta demorando
+      var slowWarnTimer = setTimeout(function () {
+        if (!silent) FM._showLoading('API demorando, aguardando resposta...')
+      }, 5000)
+      var timeout = setTimeout(function () { timedOut = true; controller.abort() }, 12000)
 
       fetch(apiUrl + FM.API.scanFace, {
         method: 'POST',
@@ -394,7 +399,7 @@
         signal: controller.signal,
         body: JSON.stringify({ photo_base64: b64, include_landmarks: true, include_measurements: true }),
       })
-      .then(function (res) { clearTimeout(timeout); return res.json() })
+      .then(function (res) { clearTimeout(timeout); clearTimeout(slowWarnTimer); return res.json() })
       .then(function (data) {
         if (!silent) FM._hideLoading()
         if (!data.success) {
@@ -456,8 +461,19 @@
       })
       .catch(function (err) {
         clearTimeout(timeout)
+        clearTimeout(slowWarnTimer)
         if (!silent) FM._hideLoading()
-        if (!silent) FM._showToast('API offline. Posicione manualmente.', 'warn')
+        if (silent) return
+        // Distingue causas para mensagem clara ao usuario
+        var msg
+        if (timedOut || (err && err.name === 'AbortError')) {
+          msg = 'API nao respondeu em 12s. Tente novamente ou posicione manualmente.'
+        } else if (err && (err.message || '').toLowerCase().indexOf('failed to fetch') >= 0) {
+          msg = 'Sem conexao com a API. Posicione manualmente.'
+        } else {
+          msg = 'Erro na API: ' + (err && err.message ? err.message : 'desconhecido') + '. Posicione manualmente.'
+        }
+        FM._showToast(msg, 'warn')
       })
     }
     img.src = FM._photoUrls[angle]

@@ -322,6 +322,8 @@
       tercoLines: FM._tercoLines,
       rickettsPoints: FM._rickettsPoints,
       regionState: FM._regionState,
+      // Guide lines (Estruturacao) — incluidas para que undo cubra o fluxo completo
+      guideLinesByAngle: FM._guideLinesByAngle,
     })
   }
 
@@ -339,6 +341,7 @@
     FM._tercoLines = s.tercoLines || { hairline: 0.05, brow: 0.33, noseBase: 0.62, chin: 0.95 }
     FM._rickettsPoints = s.rickettsPoints || { nose: { x: 0.35, y: 0.38 }, chin: { x: 0.40, y: 0.85 } }
     FM._regionState = s.regionState || {}
+    if (s.guideLinesByAngle) FM._guideLinesByAngle = s.guideLinesByAngle
   }
 
   // Push current state to undo stack (call BEFORE making a change)
@@ -413,7 +416,17 @@
     setTimeout(function () { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(function () { el.remove() }, 300) }, 4000)
   }
 
-  // Cleanup old sessions from localStorage (keep last 5, delete >7 days)
+  // Cleanup com soft limit por tamanho + LRU. Estrategia:
+  //   1. Mantem ate FM_MAX_SESSIONS (default 30) sessoes
+  //   2. Se total > FM_SOFT_LIMIT_BYTES (default 8 MB), comeca a deletar
+  //      mais antigas ate caber abaixo do limite
+  //   3. Sempre apaga sessoes >30 dias (era 7 — muito agressivo)
+  //   4. Avisa via toast (apos 1 dispara) quando passa de 80% do limite
+  FM._FM_MAX_SESSIONS = 30
+  FM._FM_SOFT_LIMIT_BYTES = 8 * 1024 * 1024  // 8 MB
+  FM._FM_HARD_LIMIT_DAYS = 30
+  var _quotaWarned = false
+
   FM._cleanupStorage = function () {
     try {
       var keys = []
@@ -421,36 +434,39 @@
         var k = localStorage.key(i)
         if (k && k.startsWith('fm_session_')) keys.push(k)
       }
-      if (keys.length <= 5) return // nothing to clean
+      if (!keys.length) return
 
-      // Parse and sort by savedAt
+      // Parse + size + savedAt
       var sessions = keys.map(function (k) {
-        try {
-          var d = JSON.parse(localStorage.getItem(k))
-          return { key: k, savedAt: d.savedAt || '2000-01-01' }
-        } catch (e) { return { key: k, savedAt: '2000-01-01' } }
-      }).sort(function (a, b) { return b.savedAt.localeCompare(a.savedAt) })
+        var raw = localStorage.getItem(k) || ''
+        var savedAt = '2000-01-01'
+        try { var d = JSON.parse(raw); savedAt = d.savedAt || savedAt } catch (e) {}
+        return { key: k, savedAt: savedAt, size: raw.length }
+      }).sort(function (a, b) { return b.savedAt.localeCompare(a.savedAt) })  // mais recente primeiro
 
-      // Keep 5 most recent, delete the rest
-      var sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString()
-      sessions.forEach(function (s, idx) {
-        if (idx >= 5 || s.savedAt < sevenDaysAgo) {
-          localStorage.removeItem(s.key)
+      var hardCutoff = new Date(Date.now() - FM._FM_HARD_LIMIT_DAYS * 86400000).toISOString()
+      var totalSize = 0
+      var kept = []
+      sessions.forEach(function (s) {
+        var tooOld = s.savedAt < hardCutoff
+        var overCount = kept.length >= FM._FM_MAX_SESSIONS
+        var overSize = (totalSize + s.size) > FM._FM_SOFT_LIMIT_BYTES && kept.length >= 5  // sempre garante 5 mais recentes
+        if (tooOld || overCount || overSize) {
+          try { localStorage.removeItem(s.key) } catch (e) {}
+        } else {
+          kept.push(s)
+          totalSize += s.size
         }
       })
 
-      // Also estimate total size and warn if >4MB
-      var totalSize = 0
-      for (var j = 0; j < localStorage.length; j++) {
-        var key = localStorage.key(j)
-        if (key && key.startsWith('fm_')) {
-          totalSize += (localStorage.getItem(key) || '').length
-        }
+      // Aviso visual ao chegar em 80% do limite — uma vez por sessao do navegador
+      if (!_quotaWarned && totalSize > FM._FM_SOFT_LIMIT_BYTES * 0.8 && FM._showToast) {
+        _quotaWarned = true
+        FM._showToast('Armazenamento facial proximo do limite (' + Math.round(totalSize / 1024 / 1024 * 10) / 10 + ' MB / ' + Math.round(FM._FM_SOFT_LIMIT_BYTES / 1024 / 1024) + ' MB). Sessoes antigas serao removidas automaticamente.', 'warn')
       }
-      if (totalSize > 4000000) {
-        console.warn('[FaceMapping] localStorage usage high:', Math.round(totalSize / 1024) + 'KB')
-      }
-    } catch (e) { /* silent */ }
+
+      console.log('[FaceMapping] Storage cleanup: kept ' + kept.length + ' sessions, total ' + Math.round(totalSize / 1024) + 'KB')
+    } catch (e) { console.warn('[FM cleanup] failed:', e) }
   }
 
 })()
