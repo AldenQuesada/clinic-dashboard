@@ -444,10 +444,10 @@ function _autoActiveChannels(rule) {
 
 function _autoChannelMeta(id) {
   return ({
-    whatsapp: { icon: 'message-circle', color: '#25D366', label: 'WhatsApp' },
-    alexa:    { icon: 'speaker',        color: '#1FCCB2', label: 'Alexa' },
-    task:     { icon: 'clipboard',      color: '#10B981', label: 'Tarefa' },
+    whatsapp: { icon: 'message-circle', color: '#10B981', label: 'WhatsApp' },
     alert:    { icon: 'bell',           color: '#F59E0B', label: 'Alerta' },
+    task:     { icon: 'check-square',   color: '#3B82F6', label: 'Tarefa' },
+    alexa:    { icon: 'volume-2',       color: '#8B5CF6', label: 'Alexa' },
   })[id] || { icon: 'circle', color: '#9CA3AF', label: id || '—' }
 }
 
@@ -548,7 +548,7 @@ function _autoRenderDrawer() {
           </div>
         `).join('')}
         ${sections.length === 0 ? `<div style="font-size:12px;color:#9CA3AF;font-style:italic">Sem conteudo cadastrado para os canais ativos.</div>` : ''}
-        <button onclick="location.hash='funnel-automations'" style="margin-top:6px;padding:9px 12px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px">
+        <button onclick="if(window.navigateTo){window.navigateTo('funnel-automations')}else{location.hash='funnel-automations'}" style="margin-top:6px;padding:9px 12px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px">
           <i data-feather="edit-3" style="width:12px;height:12px"></i> Editar no funil
         </button>
       </div>
@@ -590,7 +590,7 @@ async function renderAgendaTagsFluxos() {
   })
 
   const visible = _autoRulesForActiveTab()
-  const groups  = _autoGroupByTrigger(visible)
+  const groups  = _autoGroupByTrigger(visible).filter(g => g.rules.some(r => r.is_active))
   const activeMod = _autoCatTab !== 'all' ? mods[_autoCatTab] : null
   const headerColor = activeMod ? activeMod.color : '#6B7280'
   const headerLabel = activeMod ? activeMod.label : 'Todas as fases'
@@ -604,7 +604,7 @@ async function renderAgendaTagsFluxos() {
           <h1 style="font-size:22px;font-weight:800;color:#111827;margin:0">Tags e Fluxos da Agenda</h1>
           <p style="font-size:13px;color:#6B7280;margin:4px 0 0">Visao consolidada das automacoes da agenda, agrupadas pelos gatilhos do funil.</p>
         </div>
-        <button onclick="location.hash='funnel-automations'" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#111827;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">
+        <button onclick="if(window.navigateTo){window.navigateTo('funnel-automations')}else{location.hash='funnel-automations'}" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#111827;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">
           <i data-feather="settings" style="width:13px;height:13px"></i> Configurar funil
         </button>
       </div>
@@ -647,13 +647,30 @@ async function renderAgendaTagsFluxos() {
               <div style="font-size:13px;color:#6B7280;margin-top:10px;font-weight:600">Nenhuma regra nesta fase</div>
               <div style="font-size:11.5px;color:#9CA3AF;margin-top:4px">Crie automacoes em <b style="color:#7C3AED">Configurar funil</b>.</div>
             </div>
-          ` : groups.map(g => `
+          ` : groups.map(g => {
+            const activeN = g.rules.filter(r => r.is_active).length
+            const pausedN = g.rules.length - activeN
+            const chCountG = { whatsapp:0, alexa:0, task:0, alert:0 }
+            for (const r of g.rules) {
+              if (!r.is_active) continue
+              for (const c of _autoActiveChannels(r)) chCountG[c] = (chCountG[c]||0) + 1
+            }
+            const chBadgesG = Object.keys(chCountG).filter(c => chCountG[c] > 0).map(c => {
+              const m = _autoChannelMeta(c)
+              return `<div title="${m.label}: ${chCountG[c]}" style="display:flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;background:${m.color}18">
+                <i data-feather="${_featherKebab(m.icon)}" style="width:11px;height:11px;color:${m.color}"></i>
+                <span style="font-size:10px;font-weight:700;color:${m.color}">${chCountG[c]}</span>
+              </div>`
+            }).join('')
+            return `
             <div style="background:#fff;border:1px solid #F3F4F6;border-radius:12px;margin-bottom:12px;overflow:hidden">
               <div style="padding:11px 16px;background:#FAFAFA;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;gap:8px">
                 <i data-feather="zap" style="width:12px;height:12px;color:${headerColor}"></i>
                 <div style="font-size:12px;font-weight:700;color:#374151">${_autoEsc(g.label)}</div>
+                <span style="font-size:10px;color:#166534;background:#DCFCE7;padding:2px 7px;border-radius:10px;font-weight:700">${activeN} ativa${activeN===1?'':'s'}</span>
+                ${pausedN ? `<span style="font-size:10px;color:#9CA3AF;background:#F3F4F6;padding:2px 7px;border-radius:10px;font-weight:700">${pausedN} pausada${pausedN===1?'':'s'}</span>` : ''}
                 <div style="flex:1"></div>
-                <span style="font-size:10px;color:#9CA3AF;background:#F3F4F6;padding:2px 7px;border-radius:10px;font-weight:700">${g.rules.length}</span>
+                <div style="display:flex;gap:4px;flex-shrink:0">${chBadgesG}</div>
               </div>
               <div>
                 ${g.rules.map(r => {
@@ -681,8 +698,8 @@ async function renderAgendaTagsFluxos() {
                     </div>`
                 }).join('')}
               </div>
-            </div>
-          `).join('')}
+            </div>`
+          }).join('')}
         </div>
 
         <!-- Coluna 2: drawer de detalhe -->
@@ -701,15 +718,28 @@ async function renderAgendaTagsFluxos() {
             </button>
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0">
-            ${agTags.map(tag => `
-              <div style="padding:11px 16px;border-bottom:1px solid #F9FAFB;border-right:1px solid #F9FAFB;display:flex;align-items:center;gap:10px">
-                <div style="width:8px;height:8px;border-radius:50%;background:${tag.cor||'#9CA3AF'};flex-shrink:0"></div>
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:12px;font-weight:700;color:#111827">${_autoEsc(tag.nome)}</div>
-                  <div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(tag.regras||'')}</div>
-                </div>
-              </div>
-            `).join('')}
+            ${agTags.map(tag => {
+              const rulesForStatus = _autoRules.filter(r => r.is_active && r.trigger_type === 'on_status' && (r.trigger_config||{}).status === tag.id)
+              const chCount = { whatsapp:0, alexa:0, task:0, alert:0 }
+              for (const r of rulesForStatus) {
+                for (const c of _autoActiveChannels(r)) chCount[c] = (chCount[c]||0) + 1
+              }
+              const badges = Object.keys(chCount).filter(c => chCount[c] > 0).map(c => {
+                const m = _autoChannelMeta(c)
+                return `<div title="${m.label}: ${chCount[c]}" style="width:22px;height:22px;border-radius:5px;background:${m.color}18;display:flex;align-items:center;justify-content:center">
+                  <i data-feather="${_featherKebab(m.icon)}" style="width:11px;height:11px;color:${m.color}"></i>
+                </div>`
+              }).join('')
+              return `
+                <div style="padding:11px 16px;border-bottom:1px solid #F9FAFB;border-right:1px solid #F9FAFB;display:flex;align-items:center;gap:10px">
+                  <div style="width:8px;height:8px;border-radius:50%;background:${tag.cor||'#9CA3AF'};flex-shrink:0"></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12px;font-weight:700;color:#111827">${_autoEsc(tag.nome)}</div>
+                    <div style="font-size:10.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_autoEsc(tag.regras||'')}</div>
+                  </div>
+                  <div style="display:flex;gap:3px;flex-shrink:0">${badges || '<span style="font-size:10px;color:#D1D5DB">sem regra</span>'}</div>
+                </div>`
+            }).join('')}
           </div>
         </div>
       ` : ''}
