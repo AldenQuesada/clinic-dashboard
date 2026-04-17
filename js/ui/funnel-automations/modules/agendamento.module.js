@@ -26,6 +26,7 @@
     { id: 'finalizado',             label: 'Finalizado',             kind: 'status' },
     { id: 'encaixe',                label: 'Encaixe',                kind: 'tag' },
     { id: 'inbound_match',          label: 'Resposta do Paciente (SIM/NAO)', kind: 'inbound' },
+    { id: 'recurrence_created',     label: 'Serie Recorrente Criada', kind: 'special' },
   ]
 
   var MATCH_TYPES = [
@@ -55,6 +56,7 @@
     em_consulta:            ['immediate', 'hours'],
     finalizado:             ['immediate', 'hours', 'days'],
     inbound_match:          ['immediate'],
+    recurrence_created:     ['immediate'],
   }
 
   // Defaults inteligentes por status (when + campos do tempo)
@@ -70,6 +72,7 @@
     finalizado:             { when: 'immediate' },
     encaixe:                { when: 'immediate' },
     inbound_match:          { when: 'immediate', match_type: 'confirm' },
+    recurrence_created:     { when: 'immediate' },
   }
 
   // Nomes sugeridos para regras por combinacao
@@ -94,6 +97,7 @@
     'confirmado|same_day':              'Bom Dia — Consulta Hoje',
     'confirmado|min_before':            'Lembrete Minutos Antes',
     'inbound_match|immediate':          'Resposta Automatica SIM/NAO',
+    'recurrence_created|immediate':     'Confirmacao de Serie Recorrente',
   }
 
   function timeOptionsFor(statusId) {
@@ -148,10 +152,14 @@
     if (t === 'on_tag' && cfg.tag === 'encaixe') return true
     if (t === 'd_before' || t === 'd_zero' || t === 'min_before' || t === 'daily_summary') return true
     if (t === 'on_inbound_match') return true
+    if (t === 'on_recurrence_created') return true
     return false
   }
 
   function toTrigger(form) {
+    if (form.status === 'recurrence_created') {
+      return { trigger_type: 'on_recurrence_created', trigger_config: { scope: 'series' } }
+    }
     if (form.status === 'inbound_match') {
       return { trigger_type: 'on_inbound_match', trigger_config: { match: form.match_type || 'confirm' } }
     }
@@ -195,6 +203,7 @@
   function fromRule(rule) {
     var t = rule.trigger_type
     var cfg = rule.trigger_config || {}
+    if (t === 'on_recurrence_created') return { status: 'recurrence_created', when: 'immediate' }
     if (t === 'on_inbound_match') return { status: 'inbound_match', when: 'immediate', match_type: cfg.match || 'confirm' }
     if (t === 'on_status') return { status: cfg.status, when: 'immediate' }
     if (t === 'on_tag' && cfg.tag === 'encaixe') return { status: 'encaixe', when: 'immediate' }
@@ -221,6 +230,9 @@
 
   function validate(form) {
     if (!form.status) return { ok: false, error: 'Escolha um status do agendamento' }
+    if (form.status === 'recurrence_created') {
+      return { ok: true }
+    }
     if (form.status === 'inbound_match') {
       if (!form.match_type || !MATCH_TYPES.some(function(m) { return m.id === form.match_type })) {
         return { ok: false, error: 'Escolha o tipo de resposta (SIM ou NAO)' }
@@ -244,6 +256,17 @@
     var statusOpts = STATUSES.map(function(s) {
       return '<option value="'+s.id+'"'+(form.status===s.id?' selected':'')+'>'+s.label+'</option>'
     }).join('')
+
+    // on_recurrence_created: UI especial — dispara na criacao de uma serie recorrente
+    if (form.status === 'recurrence_created') {
+      return '<div class="fa-field"><label>Status do agendamento</label>'
+        + '<select id="faStatus"><option value="">Selecione...</option>'+statusOpts+'</select></div>'
+        + '<div class="fa-hint-small" style="margin-top:8px;padding:8px 10px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:6px;color:#5B21B6">'
+        +   'Essa regra dispara <b>1 vez</b> quando uma serie de sessoes e agendada em lote no modal de agendamento. '
+        +   'Envia UMA msg WhatsApp com todas as datas da serie. '
+        +   'Variaveis especiais disponiveis: <code>{{procedimento}}</code>, <code>{{lista_datas}}</code>, <code>{{total_sessoes}}</code>, <code>{{intervalo}}</code>.'
+        + '</div>'
+    }
 
     // on_inbound_match: UI especial — sem "quando disparar", apenas tipo de match
     if (form.status === 'inbound_match') {

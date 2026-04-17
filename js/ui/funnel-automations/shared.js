@@ -53,6 +53,10 @@
     { id: 'status',             label: 'Status do agendamento',     example: 'agendado' },
     { id: 'obs',                label: 'Observacoes',               example: '' },
     { id: 'queixas',            label: 'Queixas do lead (quiz)',    example: 'bigode chines' },
+    // Variaveis disponiveis SO em on_recurrence_created (serie recorrente)
+    { id: 'lista_datas',        label: 'Lista datas da serie',      example: 'Sessao 1: 24/04...' },
+    { id: 'total_sessoes',      label: 'Total sessoes da serie',    example: '8' },
+    { id: 'intervalo',          label: 'Intervalo em dias',         example: '7' },
   ]
 
   // Validador de placeholders: extrai {{var}} e retorna invalidas.

@@ -3780,6 +3780,37 @@
               </div>
             </div>
             <div id="apptProcsTotal" style="font-size:11px;font-weight:700;color:#4F46E5;margin-top:6px"></div>
+
+            <!-- Recorrencia de sessoes -->
+            <div id="apptRecurrenceBlock" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #DDD6FE">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:8px">
+                <input type="checkbox" id="appt_rec_check" onchange="apptToggleRecurrence(this)" style="width:13px;height:13px;accent-color:#7C3AED;cursor:pointer"/>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:#7C3AED"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span style="font-size:11px;font-weight:700;color:#7C3AED">Agendar sessoes recorrentes</span>
+              </label>
+              <div id="apptRecurrenceFields" style="display:none;padding:10px;background:#F5F3FF;border-radius:8px;border:1px solid #DDD6FE">
+                <div id="apptRecurrenceProcWrap" style="margin-bottom:8px;display:none">
+                  <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Procedimento recorrente</label>
+                  <select id="appt_rec_proc" style="width:100%;padding:6px 9px;border:1.5px solid #C7D2FE;border-radius:6px;font-size:11px;background:#fff"></select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <div>
+                    <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">A cada (dias)</label>
+                    <input type="number" id="appt_rec_interval" min="1" max="365" value="7" style="width:100%;padding:6px 9px;border:1.5px solid #C7D2FE;border-radius:6px;font-size:11px;box-sizing:border-box"/>
+                  </div>
+                  <div>
+                    <label style="font-size:10px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Total de sessoes</label>
+                    <input type="number" id="appt_rec_total" min="2" max="52" value="8" style="width:100%;padding:6px 9px;border:1.5px solid #C7D2FE;border-radius:6px;font-size:11px;box-sizing:border-box"/>
+                  </div>
+                </div>
+                <div id="apptRecurrencePreview" style="margin-top:8px;font-size:10px;color:#6D28D9;line-height:1.5"></div>
+                <div style="display:flex;gap:6px;margin-top:8px">
+                  <button type="button" onclick="apptCreateNextSessionOnly()" style="flex:1;padding:7px;background:#fff;color:#7C3AED;border:1.5px solid #C7D2FE;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Apenas proxima sessao</button>
+                  <button type="button" onclick="apptSaveWithSeries()" style="flex:2;padding:7px;background:#7C3AED;color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">Salvar + agendar serie</button>
+                </div>
+                <div style="margin-top:6px;padding:6px 8px;background:#fff;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.4"><b>Dica:</b> Cada sessao fica editavel individualmente depois. Paciente recebe WhatsApp com todas as datas ao salvar a serie.</div>
+              </div>
+            </div>
           </div>
           <!-- Pagamentos (compartilhado: Consulta Paga ou Procedimento) -->
           <div id="apptPagamentosBlock" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #C7D2FE">

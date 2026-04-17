@@ -700,13 +700,57 @@
   function dispatchCampaignForLead() { /* no-op */ }
   function dispatchCampaignForTag() { /* no-op */ }
 
+  // ══════════════════════════════════════════════════════════
+  //  ENTRY POINT 5: processRecurrenceCreated
+  //  Called by agenda-modal.js after a recurrence series is saved.
+  //  Handles: on_recurrence_created rules — envia UMA msg WA
+  //  consolidada com todas as datas da serie.
+  // ══════════════════════════════════════════════════════════
+  function _recBuildDateList(dates, inicio) {
+    var days = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab']
+    return dates.map(function(iso, i) {
+      var d = new Date(iso + 'T12:00:00')
+      var dn = days[d.getDay()]
+      var dayStr = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')
+      return 'Sessao ' + (i + 1) + ': ' + dayStr + ' (' + dn + ')' + (inicio ? ' as ' + inicio : '')
+    }).join('\n')
+  }
+
+  async function processRecurrenceCreated(info) {
+    await _ensureLoaded()
+    var svc = _svc()
+    if (!svc) return
+    if (!info || !info.appt) return
+
+    var appt = info.appt
+    var active = (svc.getByTrigger ? svc.getByTrigger('on_recurrence_created') : [])
+      .filter(function(r) { return r && r.is_active })
+    if (!active.length) return
+
+    var phone = (_getPhone(appt) || '').replace(/\D/g, '')
+    if (!phone) return
+
+    var vars = _apptVars(appt)
+    vars.procedimento  = info.procedureName || appt.procedimento || ''
+    vars.total_sessoes = String(info.totalSessions || (info.dates ? info.dates.length : 0))
+    vars.intervalo     = String(info.intervalDays || '')
+    vars.lista_datas   = _recBuildDateList(info.dates || [], info.inicio || '')
+
+    active.forEach(function(rule) {
+      if (!_channelIncludes(rule.channel, 'whatsapp') || !rule.content_template) return
+      var rendered = svc.renderTemplate(rule.content_template, vars)
+      _enqueueWA(phone, rendered, appt, new Date(), rule.name, rule.id, null, vars)
+    })
+  }
+
   // ── Public API ─────────────────────────────────────────────
   window.AutomationsEngine = Object.freeze({
-    processAppointment:       processAppointment,
-    processStatusChange:      processStatusChange,
-    processFinalize:          processFinalize,
-    processTag:               processTag,
-    dispatchCampaignForLead:  dispatchCampaignForLead,
-    dispatchCampaignForTag:   dispatchCampaignForTag,
+    processAppointment:        processAppointment,
+    processStatusChange:       processStatusChange,
+    processFinalize:           processFinalize,
+    processTag:                processTag,
+    processRecurrenceCreated:  processRecurrenceCreated,
+    dispatchCampaignForLead:   dispatchCampaignForLead,
+    dispatchCampaignForTag:    dispatchCampaignForTag,
   })
 })()
