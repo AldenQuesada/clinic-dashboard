@@ -1516,16 +1516,16 @@
     ctx.stroke()
 
     var midAng = ang1 + diff / 2
-    var tx = vx + Math.cos(midAng) * (radius * 0.58)
-    var ty = vy + Math.sin(midAng) * (radius * 0.58)
+    var tx = vx + Math.cos(midAng) * (radius + 14)
+    var ty = vy + Math.sin(midAng) * (radius + 14)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font = 'bold 12px Montserrat, sans-serif'
-    ctx.strokeStyle = 'rgba(20,18,16,0.75)'
+    ctx.font = 'bold 10px Montserrat, sans-serif'
+    ctx.strokeStyle = 'rgba(20,18,16,0.85)'
     ctx.lineWidth = 2.5
     ctx.strokeText(numberText, tx, ty)
-    ctx.fillStyle = '#F5F0E8'
+    ctx.fillStyle = _withAlpha(color, 0.95)
     ctx.fillText(numberText, tx, ty)
 
     ctx.restore()
