@@ -184,7 +184,11 @@
   function _newMeasurementState(measDef) {
     var pts = {}
     measDef.points.forEach(function (p) { pts[p.id] = { x: p.defX, y: p.defY } })
-    return { enabled: true, points: pts }
+    // Por defeito so o nasolabial vem ativo. Nasofrontal, nasofacial e
+    // ricketts ficam off para nao sobreporem na primeira visualizacao —
+    // o usuario ativa manualmente conforme o caso clinico.
+    var defaultEnabled = (measDef.id === 'nasolabial')
+    return { enabled: defaultEnabled, points: pts }
   }
 
   function _newSlotState() {
