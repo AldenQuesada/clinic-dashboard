@@ -98,6 +98,8 @@
     var toolbar = '<div style="width:794px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 0 16px 0">' +
       '<div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:600;color:#F5F0E8;letter-spacing:0.04em">Harmonia Facial</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.5);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._previewReport()">' +
+          FM._icon('eye', 13) + ' Preview</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:none;border-radius:10px;background:#C8A97E;color:#0A0A0A;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._downloadReport()">' +
           FM._icon('download', 13) + ' Baixar PNG</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:none;border-radius:10px;background:linear-gradient(135deg,#C8A97E,#A8875E);color:#0A0A0A;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._exportReportHTML()">' +
@@ -1210,6 +1212,60 @@
       }
       vecImg.src = FM._photoUrls[srcAngle]
     }
+  }
+
+  // Preview do report como PNG antes de baixar — mostra exatamente como vai
+  // ficar o arquivo final em uma modal sobreposta. Util para detectar
+  // overflow, fonte truncada, ou layout quebrado sem precisar fazer download.
+  FM._previewReport = function () {
+    var report = document.getElementById('fmReportCard')
+    if (!report) return
+    if (!window.html2canvas) {
+      FM._showToast('Preview indisponivel (html2canvas nao carregado)', 'warn')
+      return
+    }
+    FM._showLoading('Gerando preview...')
+    window.html2canvas(report, {
+      backgroundColor: '#2C2C2C',
+      scale: 1,  // metade da escala do download para ser rapido
+      useCORS: true,
+    }).then(function (canvas) {
+      FM._hideLoading()
+      var dataUrl = canvas.toDataURL('image/png')
+      var modal = document.createElement('div')
+      modal.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(10px)'
+      modal.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;width:100%;max-width:900px;margin-bottom:12px">' +
+          '<div style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:600;color:#C8A97E;letter-spacing:0.06em">PREVIEW \u00B7 ' + canvas.width + '\u00D7' + canvas.height + 'px</div>' +
+          '<div style="display:flex;gap:8px">' +
+            '<button id="fmPreviewDownload" style="padding:8px 16px;border:none;border-radius:8px;background:#C8A97E;color:#0A0A0A;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif">Confirmar e baixar</button>' +
+            '<button id="fmPreviewClose" style="padding:8px 16px;border:1px solid rgba(245,240,232,0.2);border-radius:8px;background:transparent;color:rgba(245,240,232,0.7);font-size:12px;cursor:pointer;font-family:Montserrat,sans-serif">Fechar</button>' +
+          '</div>' +
+        '</div>' +
+        '<div style="flex:1;width:100%;max-width:900px;overflow:auto;border-radius:8px;background:#1a1a1a;padding:12px;box-sizing:border-box">' +
+          '<img src="' + dataUrl + '" style="width:100%;display:block;border-radius:4px"/>' +
+        '</div>'
+      document.body.appendChild(modal)
+      modal.querySelector('#fmPreviewClose').onclick = function () { modal.remove() }
+      modal.querySelector('#fmPreviewDownload').onclick = function () {
+        var link = document.createElement('a')
+        var name = (FM._lead.nome || FM._lead.name || 'paciente').replace(/\s+/g, '-').toLowerCase()
+        link.download = 'analise-facial-' + name + '-' + FM._dateStr() + '.png'
+        // Re-renderiza em escala 2x para download de qualidade
+        FM._showLoading('Gerando PNG final...')
+        window.html2canvas(report, { backgroundColor: '#2C2C2C', scale: 2, useCORS: true })
+          .then(function (hd) {
+            FM._hideLoading()
+            link.href = hd.toDataURL('image/png')
+            link.click()
+            modal.remove()
+            FM._showToast('Report exportado!', 'success')
+          }).catch(function () { FM._hideLoading(); modal.remove() })
+      }
+    }).catch(function (e) {
+      FM._hideLoading()
+      FM._showToast('Falha ao gerar preview: ' + (e && e.message ? e.message : ''), 'error')
+    })
   }
 
   FM._downloadReport = function () {

@@ -33,6 +33,50 @@
     }
   }
 
+  // localStorage defensive wrapper — Safari modo privado, Firefox restritivo,
+  // ou cookies bloqueados podem fazer localStorage lancar excecao em qualquer
+  // get/set. Re-wrapamos para silenciar e logar uma vez. Sem isso, qualquer
+  // _saveSession quebra todo o fluxo do FM em browsers em modo privado.
+  ;(function () {
+    var lsBroken = false
+    try {
+      var k = '__fm_ls_test__'
+      localStorage.setItem(k, '1')
+      localStorage.removeItem(k)
+    } catch (e) { lsBroken = true }
+    if (lsBroken) {
+      console.warn('[FM] localStorage indisponivel (modo privado?). Persistencia desabilitada — sessoes nao serao salvas.')
+      var noop = function () {}
+      var memStore = {}
+      window.localStorage = {
+        getItem: function (k) { return memStore[k] != null ? memStore[k] : null },
+        setItem: function (k, v) { memStore[k] = String(v) },
+        removeItem: function (k) { delete memStore[k] },
+        clear: function () { memStore = {} },
+        key: function (i) { return Object.keys(memStore)[i] || null },
+        get length() { return Object.keys(memStore).length },
+      }
+    }
+  })()
+
+  // Feature detection: avisa no console se faltar algo critico. Permite
+  // diagnostico rapido em bug reports de usuarios em browsers exoticos.
+  FM._browserSupportCheck = function () {
+    var missing = []
+    if (typeof CanvasRenderingContext2D === 'undefined') missing.push('Canvas 2D')
+    if (typeof Blob === 'undefined') missing.push('Blob API')
+    if (typeof URL === 'undefined' || !URL.createObjectURL) missing.push('URL.createObjectURL')
+    if (typeof FileReader === 'undefined') missing.push('FileReader')
+    if (typeof Promise === 'undefined') missing.push('Promise')
+    if (typeof fetch === 'undefined') missing.push('fetch')
+    if (!window.crypto || !window.crypto.subtle) missing.push('crypto.subtle (fotos serao salvas em texto plano)')
+    if (missing.length) {
+      console.warn('[FM] APIs ausentes neste browser:', missing.join(', '))
+    }
+    return missing
+  }
+  FM._browserSupportCheck()
+
   // ── Python Facial API URL ──────────────────────────────────
   // Priority: ClinicEnv > localStorage > default localhost
   FM.FACIAL_API_URL = (window.ClinicEnv && window.ClinicEnv.FACIAL_API_URL)

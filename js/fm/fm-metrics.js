@@ -868,6 +868,15 @@
     else if (avgAij > 25) jawlineTension = { label: 'Jawline Suave', color: '#F59E0B' }
     else jawlineTension = { label: 'Jawline Tensa', color: '#10B981' }
 
+    // Validacao anatomica: avisa se valores estao fora do range fisiologico
+    // possivel. Sinaliza posicionamento errado de pontos antes que o protocolo
+    // clinico seja gerado em cima de medicao absurda.
+    var warnings = []
+    if (amf < 90 || amf > 180) warnings.push('AMF ' + Math.round(amf) + '\u00B0 fora do range fisiologico (90-180)')
+    if (aijL < 10 || aijL > 70) warnings.push('AIJ E ' + Math.round(aijL) + '\u00B0 fora do esperado (10-70)')
+    if (aijR < 10 || aijR > 70) warnings.push('AIJ D ' + Math.round(aijR) + '\u00B0 fora do esperado (10-70)')
+    if (rmz < 0.5 || rmz > 1.3) warnings.push('Ratio M/Z ' + (Math.round(rmz * 100) / 100) + ' fora do esperado (0.5-1.3)')
+
     FM._metricAngles = {
       amf: Math.round(amf * 10) / 10,
       rmz: Math.round(rmz * 1000) / 1000,
@@ -876,6 +885,7 @@
       aij_avg: Math.round(avgAij * 10) / 10,
       classification: classification,
       jawline: jawlineTension,
+      anatomicalWarnings: warnings,
       points: {
         gonial_left: { x: gonialL.x, y: gonialL.y },
         gonial_right: { x: gonialR.x, y: gonialR.y },
@@ -883,6 +893,10 @@
         zigoma_left: { x: zigomaL.x, y: zigomaL.y },
         zigoma_right: { x: zigomaR.x, y: zigomaR.y },
       },
+    }
+
+    if (warnings.length) {
+      FM._showToast('Atencao anatomica: ' + warnings[0] + '. Reposicione os pontos.', 'warn')
     }
 
     // Also set on canvas2 (DEPOIS) — independent copy

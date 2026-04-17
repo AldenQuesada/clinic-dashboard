@@ -107,6 +107,20 @@
   // Used to convert pixel distances to mm. Can be calibrated in a future sprint.
   var TIP_POGONION_MM_DEFAULT = 52
 
+  // Range fisiologicamente possivel (nao confundir com IDEAL clinico).
+  // Fora deste range = posicionamento errado dos pontos, nao variacao normal.
+  var ANATOMICAL_PLAUSIBLE = {
+    nasofrontal: [90, 170],
+    nasolabial:  [60, 140],
+    nasofacial:  [15, 60],
+  }
+
+  function _isImplausible(measId, value) {
+    var range = ANATOMICAL_PLAUSIBLE[measId]
+    if (!range || value == null) return false
+    return value < range[0] || value > range[1]
+  }
+
   // Clinical conduct matrix (rinomodelação — HA + complementos)
   var CONDUCT = {
     nasofrontal: {
@@ -1064,6 +1078,59 @@
     canvas.addEventListener('mouseup',   function ()  { FM._onMouseUp() })
     canvas.addEventListener('mouseleave', function () { Nasal._panDrag = null })
     canvas.addEventListener('wheel', function (e) { Nasal.onWheel(e, canvas) }, { passive: false })
+
+    // Pinch zoom (touch) — 2 dedos: detecta distancia entre touches e aplica
+    // como factor proporcional. 1 dedo continua sendo arrastar/marcar via
+    // Mouse handlers convertidos. Centro do gesto = midpoint entre os dois
+    // toques, mantendo zoom ancorado onde os dedos estao.
+    var _pinchInitialDist = null
+    var _pinchInitialZoom = null
+    function _touchDist(t1, t2) {
+      var dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    }
+    canvas.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        e.preventDefault()
+        _pinchInitialDist = _touchDist(e.touches[0], e.touches[1])
+        var slot = _detectTargetSlot(canvas)
+        _pinchInitialZoom = _state[slot] ? _state[slot].zoom : 1
+      } else if (e.touches.length === 1) {
+        var t = e.touches[0], rect = canvas.getBoundingClientRect()
+        FM._onMouseDown(_withTarget({ offsetX: t.clientX - rect.left, offsetY: t.clientY - rect.top }, canvas))
+      }
+    }, { passive: false })
+    canvas.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 2 && _pinchInitialDist != null) {
+        e.preventDefault()
+        var slot = _detectTargetSlot(canvas)
+        var s = _state[slot]
+        if (!s.photoUrl || s.locked) return
+        var d = _touchDist(e.touches[0], e.touches[1])
+        var scale = d / _pinchInitialDist
+        var targetZoom = Math.max(0.3, Math.min(8, _pinchInitialZoom * scale))
+        var rect = canvas.getBoundingClientRect()
+        var cx = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left
+        var cy = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top
+        // _zoomAt espera factor — convertemos comparando com o atual
+        var factor = targetZoom / s.zoom
+        if (Math.abs(factor - 1) > 0.005) {
+          _zoomAt(slot, factor, cx, cy)
+          _redrawAll()
+        }
+      } else if (e.touches.length === 1 && _pinchInitialDist == null) {
+        var t = e.touches[0], rect = canvas.getBoundingClientRect()
+        FM._onMouseMove(_withTarget({ offsetX: t.clientX - rect.left, offsetY: t.clientY - rect.top }, canvas))
+      }
+    }, { passive: false })
+    canvas.addEventListener('touchend', function (e) {
+      if (e.touches.length < 2) {
+        if (_pinchInitialDist != null) { _saveToStorage() }
+        _pinchInitialDist = null
+        _pinchInitialZoom = null
+      }
+      if (e.touches.length === 0) FM._onMouseUp()
+    }, { passive: true })
   }
 
   function _withTarget(e, canvas) {
@@ -1226,6 +1293,16 @@
         html += '<div style="display:inline-block;padding:3px 10px;border-radius:4px;background:' + badgeBg + ';border:1px solid ' + badgeBorder + ';margin-bottom:8px">' +
           '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;color:' + badgeBorder + ';letter-spacing:0.1em;text-transform:uppercase">' + _statusLabel(st) + '</span>' +
         '</div>'
+
+        // Aviso de implausibilidade anatomica — diferente de status clinico.
+        // Status clinico avalia se esta na faixa ideal; este aviso indica que
+        // o valor esta fora do range fisiologicamente possivel (ponto mal posto).
+        if (_isImplausible(m.id, valAntes)) {
+          html += '<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:4px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);margin-bottom:8px">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+            '<span style="font-size:9px;color:#EF4444;font-weight:600;line-height:1.3">Valor fora do range fisiologico (' + ANATOMICAL_PLAUSIBLE[m.id][0] + '-' + ANATOMICAL_PLAUSIBLE[m.id][1] + '\u00B0). Reposicione os pontos.</span>' +
+          '</div>'
+        }
 
         // Clinical interpretation + conduct
         if (conduct) {
