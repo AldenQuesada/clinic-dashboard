@@ -156,6 +156,57 @@
     '</div>'
   }
 
+  // Mini-stats row (Fase 8 - Entrega 3)
+  async function _renderMiniStats(suffix) {
+    var miniId = 'vpiMiniStats' + (suffix || '')
+    var container = document.getElementById(miniId)
+    if (!container) {
+      // Injeta container logo depois do #vpiStratKpis{suffix}
+      var main = document.getElementById('vpiStratKpis' + (suffix || ''))
+      if (!main || !main.parentNode) return
+      container = document.createElement('div')
+      container.id = miniId
+      container.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:-12px 0 24px 0'
+      main.parentNode.insertBefore(container, main.nextSibling)
+    }
+
+    var sb = window._sbShared
+    if (!sb) { container.innerHTML = ''; return }
+
+    try {
+      var res = await sb.rpc('vpi_mini_stats')
+      if (res.error) throw new Error(res.error.message)
+      var s = res.data || {}
+
+      function tile(iconSvg, label, value, colorHex) {
+        return '<div style="background:#fff;border:1px solid #F3F4F6;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">' +
+          '<div style="width:28px;height:28px;border-radius:7px;background:' + colorHex + '22;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + iconSvg + '</div>' +
+          '<div style="min-width:0">' +
+            '<div style="font-size:10px;color:#6B7280;font-weight:600;text-transform:uppercase;letter-spacing:.05em">' + _esc(label) + '</div>' +
+            '<div style="font-size:18px;font-weight:800;color:#111;line-height:1.1">' + _fmtNum(value) + '</div>' +
+          '</div>' +
+        '</div>'
+      }
+
+      var eyeSvg    = '<svg width="14" height="14" fill="none" stroke="#7C3AED" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+      var shareSvg  = '<svg width="14" height="14" fill="none" stroke="#0891B2" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>'
+      var clockSvg  = '<svg width="14" height="14" fill="none" stroke="#F59E0B" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+
+      container.innerHTML =
+        tile(eyeSvg,   'Aberturas do mes',     s.aberturas_mes          || 0, '#7C3AED') +
+        tile(shareSvg, 'Compartilhamentos mes', s.compartilhamentos_mes || 0, '#0891B2') +
+        tile(clockSvg, 'Indicacoes pendentes',  s.ind_pending           || 0, '#F59E0B')
+    } catch (e) {
+      // Graceful: se RPC nao existe, oculta sem poluir o console
+      if (e && /vpi_mini_stats/.test(e.message || '')) {
+        container.innerHTML = ''
+      } else {
+        console.warn('[VPIStrategicKpis] mini stats:', e)
+        container.innerHTML = ''
+      }
+    }
+  }
+
   async function render(suffix) {
     suffix = suffix || ''
     var root = document.getElementById('vpiStratKpis' + suffix)
@@ -178,6 +229,9 @@
         _cardFaturamento(d.faturamento_mes || {}) +
         _cardIndicacoes(d.ind_fechadas_mes || {}) +
         _cardDormentes(d.dormentes || {}, suffix)
+
+      // Mini-stats (fire-and-forget)
+      _renderMiniStats(suffix)
     } catch (e) {
       console.error('[VPIStrategicKpis] render:', e)
       _renderError(suffix, e.message || 'erro desconhecido')

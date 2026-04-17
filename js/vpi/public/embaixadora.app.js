@@ -83,6 +83,29 @@
     }
   }
 
+  // Tracking de abertura (Fase 8 - Entrega 3)
+  // Throttle por sessao: 1 registro por token por aba.
+  function _trackCardOpen(token) {
+    if (!token) return
+    var key = 'vpi_tracked_' + token
+    try {
+      if (sessionStorage.getItem(key)) return
+      sessionStorage.setItem(key, String(Date.now()))
+    } catch (_) { /* ignore private mode */ }
+
+    var sb = _initSupabase()
+    if (!sb) return
+    // Fire-and-forget
+    try {
+      sb.rpc('vpi_pub_track_card_open', { p_token: token })
+        .then(function () { /* silent ok */ })
+        .catch(function (e) {
+          // Silencioso — abertura e best-effort
+          if (window.console && console.debug) console.debug('[VPIEmbApp] track open skip:', e && e.message)
+        })
+    } catch (_) { /* ignore */ }
+  }
+
   function _setState(patch) {
     Object.keys(patch).forEach(function (k) { _state[k] = patch[k] })
     _listeners.forEach(function (fn) {
@@ -153,6 +176,11 @@
 
     // 2) Busca fresh do servidor
     await refresh()
+
+    // 2b) Registra abertura (throttle por sessao)
+    if (_state.data && !_state.error) {
+      _trackCardOpen(token)
+    }
 
     if (_state.error === 'not_found') {
       _renderError('Cartao nao encontrado', 'Este link expirou ou foi desativado. Fale com a clinica.')
