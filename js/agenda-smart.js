@@ -2111,10 +2111,8 @@ function confirmFinalize(id) {
     }
   }
 
-  // Enviar consentimento de procedimento automaticamente
-  _enviarConsentimento(apptFinal, 'procedimento')
-
-  // Enviar consentimento de pagamento se boleto/parcelado/entrada_saldo
+  // Consent. procedimento: coberto pela regra on_finalize em wa_agenda_automations (editavel pelo Funil).
+  // Consent. pagamento: segue hardcoded (sem equivalente no banco — condicional a forma=boleto/parcelado/entrada_saldo).
   if (['boleto','parcelado','entrada_saldo'].includes(forma)) {
     _enviarConsentimento(apptFinal, 'pagamento')
   }

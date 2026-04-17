@@ -1001,51 +1001,7 @@ function _apptCardStatusChange(id, newStatus) {
 }
 window._apptCardStatusChange = _apptCardStatusChange
 
-// ── Marcar Compareceu ─────────────────────────────────────────
-function marcarCompareceu(id) {
-  const appts = getAppointments()
-  const a = appts.find(x => x.id === id)
-  if (!a) return
-
-  const nome = _nomeEnxuto(a.pacienteNome || 'Paciente')
-
-  if (!confirm(`Confirmar chegada de ${nome}?`)) return
-  if (!confirm(`Paciente ${nome} está presente e será registrado como "Compareceu". Confirmar?`)) return
-
-  // Atualiza presença + status
-  a.presenca = 'compareceu'
-  if (a.status === 'agendado' || a.status === 'confirmado') a.status = 'em_atendimento'
-  a.chegada_em = new Date().toISOString()
-  saveAppointments(appts)
-  // Sync Supabase (fire-and-forget)
-  window.AppointmentsService?.syncOne(a)
-
-  renderAgenda()
-
-  // ── Mensagem 1: Boas-vindas (imediata) ───────────────────────
-  const clinica = _getClinicaNome()
-  const msgBoasVindas = _wppMsgBoasVindas(nome, clinica)
-  _simularEnvioWpp(a, 'boas_vindas', msgBoasVindas, 0)
-
-  // ── Mensagem 2: Consentimentos (após 1 minuto) ───────────────
-  const temProcedimento = !!(a.procedimento && a.procedimento.trim())
-  setTimeout(() => {
-    const msgImagem = _wppMsgConsentimentoImagem(nome, clinica)
-    _simularEnvioWpp(a, 'consent_imagem', msgImagem, 0)
-
-    if (temProcedimento) {
-      setTimeout(() => {
-        const msgProc = _wppMsgConsentimentoProcedimento(nome, a.procedimento, clinica)
-        _simularEnvioWpp(a, 'consent_proc', msgProc, 0)
-      }, 8000) // 8 segundos depois do consentimento de imagem
-    }
-  }, 60000) // 1 minuto depois das boas-vindas
-
-  // Toast imediato de confirmação
-  _showToast('Chegada registrada', `${nome} marcado como Compareceu`, 'success')
-}
-
-// ── Templates de mensagens WhatsApp ──────────────────────────
+// ── Helpers de nome/clinica (expostos em window para outros modulos) ─────
 function _nomeEnxuto(nomeCompleto) {
   // Retorna apenas o primeiro nome. Truncar no 2o nome quebrava casos
   // como "Mirian de Paula" → "Mirian de" (markdown WA ficava "*Mirian de*")
@@ -1063,88 +1019,6 @@ function _getClinicaNome() {
     cfg = JSON.parse(localStorage.getItem('clinic_settings') || '{}')
     return cfg.nome || cfg.clinicName || 'Clinica Mirian de Paula'
   } catch { return 'Clinica Mirian de Paula' }
-}
-
-function _wppMsgBoasVindas(nome, clinica) {
-  return `Olá, ${nome}! 😊
-
-Seja bem-vindo(a) à *${clinica}*! ✨
-
-Estamos muito felizes em te receber hoje! Enquanto aguarda seu atendimento, temos a *poltrona de massagem* disponível para você relaxar. 💆‍♀️
-
-Aproveite também nosso *menu virtual*:
-👉 ${_getMenuVirtualLink()}
-
-Por lá você pode solicitar água, chá, café ou qualquer outra coisa para tornar sua espera ainda mais confortável. ☕
-
-Em breve nosso time estará com você! 🌟`
-}
-
-function _wppMsgConsentimentoImagem(nome, clinica) {
-  return `${nome}, para continuarmos com o seu atendimento precisamos do seu *Consentimento de Uso de Imagem*. 📸
-
-Suas fotos serão utilizadas exclusivamente para acompanhar a evolução do seu tratamento e, caso você autorize, poderão ser compartilhadas em nossas redes sociais (sempre preservando sua identidade, se preferir).
-
-*Você autoriza o uso das suas imagens para fins de acompanhamento e divulgação?*
-
-✅ Sim — pode fotografar e divulgar
-📷 Parcial — pode fotografar, mas não divulgar
-❌ Não — apenas para registro interno
-
-Por favor, responda com uma das opções acima ou informe sua preferência à nossa equipe. 🙏`
-}
-
-function _wppMsgConsentimentoProcedimento(nome, procedimento, clinica) {
-  return `${nome}, sobre o procedimento de hoje ✨
-
-Você tem agendado: *${procedimento}*
-
-Antes de iniciarmos, pedimos que leia e assine o *Termo de Consentimento Informado* sobre esse procedimento, que contém:
-
-📋 Descrição do procedimento
-⚠️ Riscos e contraindicações
-✅ Cuidados pré e pós-procedimento
-📌 O que esperar dos resultados
-
-Nossa equipe entregará o documento para você assinar na recepção, ou responda *LI E ACEITO* caso já tenha sido orientado(a) anteriormente.
-
-Qualquer dúvida, estamos à disposição! 💜`
-}
-
-function _getMenuVirtualLink() {
-  try {
-    const cfg = JSON.parse(localStorage.getItem('clinic_settings') || '{}')
-    return cfg.menu_virtual_link || cfg.site || 'link do menu virtual'
-  } catch { return 'link do menu virtual' }
-}
-
-// ── Simular envio WhatsApp (mock) ─────────────────────────────
-function _simularEnvioWpp(appt, tipo, mensagem, delay) {
-  const fila = store.get('clinic_wpp_fila', [])
-  const item = {
-    id:        'wpp_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-    appt_id:   appt.id,
-    paciente:  appt.pacienteNome,
-    tipo,
-    mensagem,
-    status:    'enviado',
-    enviado_em: new Date().toISOString()
-  }
-  fila.push(item)
-  store.set('clinic_wpp_fila', fila)
-
-  // Toast mostrando o envio
-  const labels = {
-    boas_vindas:    '💬 Boas-vindas enviado',
-    consent_imagem: '📸 Consentimento de imagem enviado',
-    consent_proc:   '📋 Consentimento do procedimento enviado'
-  }
-  const subtitles = {
-    boas_vindas:    `WhatsApp de boas-vindas para ${_nomeEnxuto(appt.pacienteNome)}`,
-    consent_imagem: `Consentimento de imagem para ${_nomeEnxuto(appt.pacienteNome)}`,
-    consent_proc:   `Consentimento de "${appt.procedimento}" para ${_nomeEnxuto(appt.pacienteNome)}`
-  }
-  _showToast(labels[tipo] || 'WhatsApp enviado', subtitles[tipo] || '', 'info')
 }
 
 function apptCardSmall(a, colIndex, colTotal) {
@@ -1790,89 +1664,6 @@ async function _gerarLinkAnamnese(apptId, pacienteId) {
   }
 }
 
-// ── Preview do WhatsApp (painel slide-in) ─────────────────────
-function _mostrarPreviewWpp(nome, telefone, mensagem, apptId) {
-  document.getElementById('wppPreviewPanel')?.remove()
-
-  const _digits = telefone ? telefone.replace(/\D/g,'') : ''
-  const _waNum = _digits.startsWith('55') ? _digits : '55' + _digits
-  const fmtTel = telefone
-    ? `<a href="https://wa.me/${_waNum}?text=${encodeURIComponent(mensagem)}"
-         target="_blank"
-         style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#25D366;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;text-decoration:none">
-         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-         Abrir no WhatsApp
-       </a>`
-    : `<div style="font-size:12px;color:#EF4444;padding:8px 12px;background:#FEF2F2;border-radius:8px">⚠ Nenhum telefone cadastrado para este paciente</div>`
-
-  // Converte markdown (*bold*) para exibição
-  const msgHtml = mensagem
-    .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>')
-
-  const panel = document.createElement('div')
-  panel.id = 'wppPreviewPanel'
-  panel.style.cssText = `
-    position:fixed;right:0;top:0;bottom:0;width:400px;max-width:95vw;z-index:9500;
-    background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.15);
-    display:flex;flex-direction:column;animation:slideInRight .3s ease
-  `
-  panel.innerHTML = `
-    <div style="padding:16px 20px;background:#075E54;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <div style="display:flex;align-items:center;gap:10px">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-        <div>
-          <div style="font-size:14px;font-weight:700">Mensagem de Agendamento</div>
-          <div style="font-size:11px;opacity:.8">Para: ${nome}${telefone ? ' · ' + telefone : ''}</div>
-        </div>
-      </div>
-      <button onclick="document.getElementById('wppPreviewPanel').remove()"
-        style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0;line-height:1">&times;</button>
-    </div>
-
-    <!-- Bolha de mensagem estilo WhatsApp -->
-    <div style="flex:1;overflow-y:auto;padding:20px;background:#ECE5DD">
-      <div style="max-width:88%;margin-left:auto">
-        <div style="background:#DCF8C6;border-radius:12px 2px 12px 12px;padding:12px 14px;font-size:13px;color:#111;line-height:1.6;box-shadow:0 1px 2px rgba(0,0,0,.13)">
-          ${msgHtml}
-        </div>
-        <div style="font-size:10px;color:#9CA3AF;text-align:right;margin-top:4px">
-          ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} ✓✓
-        </div>
-      </div>
-    </div>
-
-    <!-- Ações -->
-    <div style="padding:16px 20px;border-top:1px solid #F3F4F6;background:#fff;flex-shrink:0">
-      <div style="margin-bottom:12px">${fmtTel}</div>
-      <button onclick="_copiarMsgWpp('${apptId}')"
-        style="width:100%;padding:9px;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151">
-        📋 Copiar mensagem
-      </button>
-    </div>
-  `
-  document.body.appendChild(panel)
-
-  // Garante a animação CSS
-  const style = document.getElementById('wppSlideStyle')
-  if (!style) {
-    const s = document.createElement('style')
-    s.id = 'wppSlideStyle'
-    s.textContent = '@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}}'
-    document.head.appendChild(s)
-  }
-}
-
-function _copiarMsgWpp(apptId) {
-  const fila = store.get('clinic_wpp_fila', [])
-  const item = [...fila].reverse().find(i => i.appt_id === apptId && i.tipo === 'agendamento_boas_vindas')
-  if (!item) return
-  navigator.clipboard?.writeText(item.mensagem).then(() => {
-    _showToast('Copiado!', 'Mensagem copiada para a área de transferência', 'success')
-  }).catch(() => {
-    _showToast('Erro', 'Não foi possível copiar automaticamente', 'error')
-  })
-}
 
 function deleteAppt() {
   const id = document.getElementById('appt_id')?.value
@@ -2571,9 +2362,7 @@ window._apptFinishProducts  = function(v) { if (v !== undefined) _finishProducts
 window._apptDeductStock     = _deductStock
 
 // Expor globais
-window.marcarCompareceu     = marcarCompareceu
 window._nomeEnxuto          = _nomeEnxuto
-window._copiarMsgWpp        = _copiarMsgWpp
 window.renderAgenda         = renderAgenda
 window.setAgendaView        = setAgendaView
 window.navAgenda            = navAgenda
