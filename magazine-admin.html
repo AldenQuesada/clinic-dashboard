@@ -39,6 +39,7 @@
 <script src="js/magazine/admin/dispatch-scheduler.js"></script>
 <script src="js/magazine/admin/dispatch-analytics.js"></script>
 <script src="js/magazine/admin/page-regenerator.js"></script>
+<script src="js/magazine/admin/autofix-panel.js"></script>
 <style>
   :root {
     --bg: #f4f1ec;
@@ -1276,6 +1277,9 @@
 <!-- PAGE REGENERATOR DRAWER -->
 <div id="pageRegeneratorHost"></div>
 
+<!-- AUTOFIX PANEL -->
+<div id="autofixHost"></div>
+
 <!-- AUTH OVERLAY -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
@@ -1340,6 +1344,7 @@
     dispatchScheduler: null,
     dispatchAnalytics: null,
     pageRegen: null,
+    autofix: null,
   }
 
   // ===== DOM =====
@@ -1579,6 +1584,7 @@
       <div class="slots-actions">
         <button class="btn save" id="saveSlotsBtn" disabled>Salvar alterações</button>
         <button class="btn" id="regenPageBtn" title="Regerar pagina inteira com IA" style="background:#7a1f2b;color:#fff;border-color:#7a1f2b">✨ Regerar pagina</button>
+        <button class="btn" id="autofixBtn" title="Corrigir erros de validacao com IA">🔧 Corrigir tudo</button>
         <span id="autosaveIndicator" class="autosave-indicator" data-state="idle"></span>
       </div>
     `
@@ -1648,6 +1654,21 @@
     })
 
     document.getElementById('saveSlotsBtn').addEventListener('click', saveSlots)
+
+    // B5 · Autofix: corrige todos os erros da pagina com IA
+    const autofixBtn = document.getElementById('autofixBtn')
+    if (autofixBtn && state.autofix) {
+      autofixBtn.addEventListener('click', async () => {
+        const livePage = state.pages.find(p => p.id === state.currentPageId)
+        if (!livePage) { toast('Selecione uma pagina primeiro', 'err'); return }
+        if (state.dirty) await saveSlots()
+        state.autofix.open(livePage.id, async () => {
+          toast('Correcoes aplicadas', 'ok')
+          await selectEdition(state.currentEdition.id)
+          selectPage(livePage.id)
+        })
+      })
+    }
 
     // B3 · Regerar pagina inteira com IA
     const regenBtn = document.getElementById('regenPageBtn')
@@ -2405,6 +2426,10 @@ body { overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; 
     // Page regenerator (botao ✨ Regerar pagina dentro do painel de slots)
     if (window.MagazineAdmin.PageRegenerator) {
       state.pageRegen = window.MagazineAdmin.PageRegenerator.mount(document.getElementById('pageRegeneratorHost'), sb)
+    }
+    // Autofix panel (B5)
+    if (window.MagazineAdmin.AutofixPanel) {
+      state.autofix = window.MagazineAdmin.AutofixPanel.mount(document.getElementById('autofixHost'), sb)
     }
 
     // Dispatch analytics (botao Performance)
