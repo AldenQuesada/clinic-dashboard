@@ -142,7 +142,7 @@
       // WhatsApp: enqueue in wa_outbox
       if (_channelIncludes(rule.channel, 'whatsapp') && phone && rule.content_template) {
         var ab = _renderWithAB(rule, vars)
-        _enqueueWA(phone, ab.content, appt, scheduledAt, rule.name, rule.id, ab.variant)
+        _enqueueWA(phone, ab.content, appt, scheduledAt, rule.name, rule.id, ab.variant, vars)
       }
 
       // Alert: schedule client-side (only fires if dashboard open)
@@ -225,7 +225,7 @@
 
       if (_channelIncludes(rule.channel, 'whatsapp') && phone && rule.content_template) {
         var ab2 = _renderWithAB(rule, vars)
-        _enqueueWA(phone, ab2.content, appt, scheduledAt, rule.name, rule.id, ab2.variant)
+        _enqueueWA(phone, ab2.content, appt, scheduledAt, rule.name, rule.id, ab2.variant, vars)
       }
       if (_channelIncludes(rule.channel, 'task') && rule.task_title) {
         _scheduleTask(rule, vars, scheduledAt, appt.id)
@@ -294,7 +294,7 @@
           scheduledAt.setHours(scheduledAt.getHours() + delayHours)
           scheduledAt.setMinutes(scheduledAt.getMinutes() + delayMinutes)
           var ab3 = _renderWithAB(rule, vars)
-          _enqueueWA(phone, ab3.content, fakeAppt, scheduledAt, rule.name, rule.id, ab3.variant)
+          _enqueueWA(phone, ab3.content, fakeAppt, scheduledAt, rule.name, rule.id, ab3.variant, vars)
         }
         if (_channelIncludes(rule.channel, 'task') && rule.task_title) {
           var sched2 = new Date()
@@ -321,7 +321,7 @@
     // WhatsApp
     if (_channelIncludes(rule.channel, 'whatsapp') && phone && rule.content_template) {
       var ab4 = _renderWithAB(rule, vars)
-      _enqueueWA(phone, ab4.content, appt, new Date(), rule.name, rule.id, ab4.variant)
+      _enqueueWA(phone, ab4.content, appt, new Date(), rule.name, rule.id, ab4.variant, vars)
     }
 
     // Alert
@@ -344,17 +344,18 @@
   }
 
   // ── WhatsApp: enqueue in wa_outbox (server-side) ───────────
-  function _enqueueWA(phone, content, appt, scheduledAt, ruleName, ruleId, abVariant) {
+  function _enqueueWA(phone, content, appt, scheduledAt, ruleName, ruleId, abVariant, vars) {
     if (!window._sbShared || !phone) return
     window._sbShared.rpc('wa_outbox_schedule_automation', {
-      p_phone:        phone,
-      p_content:      content,
-      p_lead_id:      appt.pacienteId || '',
-      p_lead_name:    appt.pacienteNome || 'Paciente',
-      p_scheduled_at: scheduledAt.toISOString(),
-      p_appt_ref:     appt.id || null,
-      p_rule_id:      ruleId || null,
-      p_ab_variant:   abVariant || null,
+      p_phone:         phone,
+      p_content:       content,
+      p_lead_id:       appt.pacienteId || '',
+      p_lead_name:     appt.pacienteNome || 'Paciente',
+      p_scheduled_at:  scheduledAt.toISOString(),
+      p_appt_ref:      appt.id || null,
+      p_rule_id:       ruleId || null,
+      p_ab_variant:    abVariant || null,
+      p_vars_snapshot: vars || null,
     }).then(function (res) {
       if (res.error) console.error('[Engine] WA falha:', ruleName, res.error.message)
     }).catch(function (e) { console.error('[Engine] WA exception:', e) })

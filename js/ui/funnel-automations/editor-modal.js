@@ -28,6 +28,7 @@
   var _rulesLoaded = false
   var _moduleId = 'agendamento'
   var _ruleId = null
+  var _originalRule = null
   var _form = _emptyForm()
   var _saving = false
   var _onSave = null
@@ -369,12 +370,50 @@
     if (res.ok) {
       S().showToast('Salvo', (_form.name || 'Regra') + ' gravada', 'success')
       var saved = res.data || data
+      var savedId = (saved && saved.id) || _ruleId
+      await _resyncOutbox(savedId, _originalRule, data)
       var cb = _onSave
       close()
       if (typeof cb === 'function') { try { cb(saved) } catch (e) {} }
     } else {
       S().showToast('Erro', res.error || 'Falha ao salvar', 'error')
       _render()
+    }
+  }
+
+  async function _resyncOutbox(ruleId, oldRule, newData) {
+    if (!ruleId || !window._sbShared) return
+    var cancelOnly = false
+    if (oldRule) {
+      var oldType = oldRule.trigger_type || ''
+      var newType = newData.trigger_type || ''
+      var oldCfg = JSON.stringify(oldRule.trigger_config || {})
+      var newCfg = JSON.stringify(newData.trigger_config || {})
+      if (oldType !== newType || oldCfg !== newCfg) cancelOnly = true
+    }
+    try {
+      var r = await window._sbShared.rpc('wa_outbox_resync_rule', {
+        p_rule_id: ruleId,
+        p_cancel_only: cancelOnly,
+      })
+      if (r.error) { console.warn('[FAEditor] resync falhou:', r.error); return }
+      var d = r.data || {}
+      var cancelled = parseInt(d.cancelled, 10) || 0
+      var reenq = parseInt(d.reenqueued, 10) || 0
+      var skipped = parseInt(d.skipped_past, 10) || 0
+      if (cancelled > 0 || reenq > 0) {
+        var title = 'Mensagens atualizadas'
+        var msg
+        if (cancelOnly && cancelled > 0) {
+          msg = cancelled + ' cancelada(s). Novos envios usarao config nova.'
+        } else {
+          msg = reenq + ' re-enfileirada(s), ' + cancelled + ' cancelada(s)'
+          if (skipped > 0) msg += ', ' + skipped + ' no passado (ignorada)'
+        }
+        S().showToast(title, msg, 'info')
+      }
+    } catch (e) {
+      console.warn('[FAEditor] resync exception:', e)
     }
   }
 
@@ -583,10 +622,12 @@
       }
       if (!r) { S().showToast('Erro', 'Regra nao encontrada', 'error'); return }
       _ruleId = r.id
+      _originalRule = r
       _moduleId = _pickModuleFor(r)
       _form = _formFromRule(r)
     } else {
       _ruleId = null
+      _originalRule = null
       var prefill = opts.prefill || null
       if (prefill && prefill.category && (window.FAModules || {})[prefill.category]) {
         _moduleId = prefill.category
@@ -614,6 +655,7 @@
     _onSave = null
     _form = _emptyForm()
     _ruleId = null
+    _originalRule = null
   }
 
   window.FAEditor = Object.freeze({ open: open, close: close })
