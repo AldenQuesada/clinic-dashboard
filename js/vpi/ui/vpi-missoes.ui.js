@@ -102,6 +102,75 @@
     return h + 'h restantes'
   }
 
+  function _renderCard(m) {
+    var expired = !!m.is_expired
+    var badge = expired
+      ? '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:#FEF2F2;color:#B91C1C;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Expirada</span>'
+      : (m.is_active
+        ? '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:#ECFDF5;color:#047857;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Ativa</span>'
+        : '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:#F3F4F6;color:#6B7280;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Pausada</span>')
+
+    var pendentes = m.total_pendentes || 0
+    var toggleTxt = m.is_active ? 'Pausar' : 'Ativar'
+    var toggleStyle = m.is_active
+      ? 'background:#FFFBEB;color:#92400E;border-color:#FCD34D'
+      : 'background:#ECFDF5;color:#047857;border-color:#6EE7B7'
+    var pendBadge = pendentes > 0
+      ? '<div style="margin-top:6px;font-size:11px;color:#DC2626;font-weight:700">' + pendentes + ' recompensa(s) pendente(s) de envio</div>'
+      : ''
+
+    // Expirada: substitui botao "Pausar/Ativar" por "Reativar (+7d)"
+    var actionBtn = expired
+      ? '<button onclick="vpiReativarMissao(\'' + _esc(m.id) + '\')" style="flex:1;padding:7px;border:1.5px solid #6EE7B7;border-radius:6px;background:#ECFDF5;color:#047857;font-size:11px;font-weight:700;cursor:pointer;min-width:90px">Reativar +7d</button>'
+      : '<button onclick="vpiToggleMissao(\'' + _esc(m.id) + '\',' + (!m.is_active) + ')" style="flex:1;padding:7px;border:1px solid;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;min-width:90px;' + toggleStyle + '">' + toggleTxt + '</button>'
+
+    return '<div style="border:1.5px solid ' + (expired ? '#FECACA' : (m.is_active ? '#DDD6FE' : '#E5E7EB')) + ';border-radius:12px;padding:16px;background:' + (expired ? '#FFFBFB' : '#fff') + ';position:relative' + (expired ? ';opacity:.85' : '') + '">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap">' + badge +
+            '<span style="font-size:10px;color:#9CA3AF">' + _esc(_countdown(m.valid_until)) + '</span>' +
+          '</div>' +
+          '<div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;word-wrap:break-word">' + _esc(m.titulo) + '</div>' +
+          '<div style="font-size:11px;color:#6B7280;line-height:1.4;min-height:28px">' + _esc(m.descricao) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">' +
+          '<button onclick="vpiOpenMissaoModal(\'' + _esc(m.id) + '\')" title="Editar" style="padding:4px 6px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer;color:#374151;display:inline-flex;align-items:center;justify-content:center">' +
+            '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+          '</button>' +
+          '<button onclick="vpiDeleteMissao(\'' + _esc(m.id) + '\')" title="Remover" style="padding:4px 6px;border:1px solid #FEE2E2;border-radius:6px;background:#FEF2F2;cursor:pointer;color:#DC2626;display:inline-flex;align-items:center;justify-content:center">' +
+            '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div style="background:#F9FAFB;border-radius:8px;padding:10px;margin:10px 0">' +
+        '<div style="font-size:10px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Criterio</div>' +
+        '<div style="font-size:12px;color:#374151">' + _esc(_criterioDesc(m.criterio)) + '</div>' +
+        '<div style="font-size:10px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:8px;margin-bottom:3px">Recompensa</div>' +
+        '<div style="font-size:12px;color:#111;font-weight:600">' + _esc(m.recompensa_texto || '—') + (m.recompensa_valor > 0 ? ' <span style="color:#9CA3AF;font-weight:500">(R$ ' + Number(m.recompensa_valor).toFixed(0) + ')</span>' : '') + '</div>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">' +
+        '<div style="text-align:center;padding:6px;background:#F3F4F6;border-radius:6px"><div style="font-size:16px;font-weight:800;color:#7C3AED">' + (m.total_completos || 0) + '</div><div style="font-size:10px;color:#6B7280">Completos</div></div>' +
+        '<div style="text-align:center;padding:6px;background:#F3F4F6;border-radius:6px"><div style="font-size:16px;font-weight:800;color:#10B981">' + (m.total_emitidos || 0) + '</div><div style="font-size:10px;color:#6B7280">Emitidos</div></div>' +
+        '<div style="text-align:center;padding:6px;background:' + (pendentes > 0 ? '#FEF2F2' : '#F3F4F6') + ';border-radius:6px"><div style="font-size:16px;font-weight:800;color:' + (pendentes > 0 ? '#DC2626' : '#6B7280') + '">' + pendentes + '</div><div style="font-size:10px;color:#6B7280">Pendentes</div></div>' +
+      '</div>' +
+      pendBadge +
+      '<div style="font-size:10px;color:#9CA3AF;margin-top:10px">Valido ate ' + _esc(_fmtDateShort(m.valid_until)) + '</div>' +
+      '<div style="display:flex;gap:6px;margin-top:10px;border-top:1px solid #F3F4F6;padding-top:10px;flex-wrap:wrap">' +
+        '<button onclick="vpiOpenMissaoCompletions(\'' + _esc(m.id) + '\')" style="flex:1;padding:7px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;color:#374151;font-size:11px;font-weight:600;cursor:pointer;min-width:90px">Ver completos</button>' +
+        '<button onclick="vpiEmitMissaoRewards(\'' + _esc(m.id) + '\')" ' + (pendentes === 0 ? 'disabled' : '') + ' style="flex:1;padding:7px;border:1px solid ' + (pendentes > 0 ? '#6EE7B7' : '#E5E7EB') + ';border-radius:6px;background:' + (pendentes > 0 ? '#ECFDF5' : '#F9FAFB') + ';color:' + (pendentes > 0 ? '#047857' : '#9CA3AF') + ';font-size:11px;font-weight:700;cursor:' + (pendentes > 0 ? 'pointer' : 'not-allowed') + ';min-width:90px">Emitir (' + pendentes + ')</button>' +
+        actionBtn +
+      '</div>' +
+    '</div>'
+  }
+
+  function _sectionHeader(label, count, color, desc) {
+    return '<div style="margin:6px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+      '<div style="font-size:12px;font-weight:800;color:' + color + ';text-transform:uppercase;letter-spacing:.06em">' + _esc(label) + '</div>' +
+      '<span style="display:inline-block;padding:1px 8px;border-radius:99px;background:' + color + '15;color:' + color + ';font-size:10px;font-weight:700">' + count + '</span>' +
+      (desc ? '<span style="font-size:11px;color:#9CA3AF">' + _esc(desc) + '</span>' : '') +
+    '</div>'
+  }
+
   async function render() {
     var container = _ensureContainer()
     if (!container) return
@@ -121,63 +190,28 @@
       return
     }
 
-    var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">'
+    // Split: expired separado das ativas/pausadas
+    var active = []
+    var expired = []
     list.forEach(function (m) {
-      var expired = !!m.is_expired
-      var badge = expired
-        ? '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:#FEF2F2;color:#B91C1C;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Expirada</span>'
-        : (m.is_active
-          ? '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:#ECFDF5;color:#047857;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Ativa</span>'
-          : '<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:#F3F4F6;color:#6B7280;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">Pausada</span>')
-
-      var pendentes = m.total_pendentes || 0
-      var toggleTxt = m.is_active ? 'Pausar' : 'Ativar'
-      var toggleStyle = m.is_active
-        ? 'background:#FFFBEB;color:#92400E;border-color:#FCD34D'
-        : 'background:#ECFDF5;color:#047857;border-color:#6EE7B7'
-      var pendBadge = pendentes > 0
-        ? '<div style="margin-top:6px;font-size:11px;color:#DC2626;font-weight:700">' + pendentes + ' recompensa(s) pendente(s) de envio</div>'
-        : ''
-
-      html += '<div style="border:1.5px solid ' + (expired ? '#FECACA' : (m.is_active ? '#DDD6FE' : '#E5E7EB')) + ';border-radius:12px;padding:16px;background:' + (expired ? '#FFFBFB' : '#fff') + ';position:relative">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">' +
-          '<div style="flex:1;min-width:0">' +
-            '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap">' + badge +
-              '<span style="font-size:10px;color:#9CA3AF">' + _esc(_countdown(m.valid_until)) + '</span>' +
-            '</div>' +
-            '<div style="font-size:14px;font-weight:700;color:#111;margin-bottom:4px;word-wrap:break-word">' + _esc(m.titulo) + '</div>' +
-            '<div style="font-size:11px;color:#6B7280;line-height:1.4;min-height:28px">' + _esc(m.descricao) + '</div>' +
-          '</div>' +
-          '<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">' +
-            '<button onclick="vpiOpenMissaoModal(\'' + _esc(m.id) + '\')" title="Editar" style="padding:4px 6px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer;color:#374151;display:inline-flex;align-items:center;justify-content:center">' +
-              '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
-            '</button>' +
-            '<button onclick="vpiDeleteMissao(\'' + _esc(m.id) + '\')" title="Remover" style="padding:4px 6px;border:1px solid #FEE2E2;border-radius:6px;background:#FEF2F2;cursor:pointer;color:#DC2626;display:inline-flex;align-items:center;justify-content:center">' +
-              '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>' +
-            '</button>' +
-          '</div>' +
-        '</div>' +
-        '<div style="background:#F9FAFB;border-radius:8px;padding:10px;margin:10px 0">' +
-          '<div style="font-size:10px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Criterio</div>' +
-          '<div style="font-size:12px;color:#374151">' + _esc(_criterioDesc(m.criterio)) + '</div>' +
-          '<div style="font-size:10px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:8px;margin-bottom:3px">Recompensa</div>' +
-          '<div style="font-size:12px;color:#111;font-weight:600">' + _esc(m.recompensa_texto || '—') + (m.recompensa_valor > 0 ? ' <span style="color:#9CA3AF;font-weight:500">(R$ ' + Number(m.recompensa_valor).toFixed(0) + ')</span>' : '') + '</div>' +
-        '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">' +
-          '<div style="text-align:center;padding:6px;background:#F3F4F6;border-radius:6px"><div style="font-size:16px;font-weight:800;color:#7C3AED">' + (m.total_completos || 0) + '</div><div style="font-size:10px;color:#6B7280">Completos</div></div>' +
-          '<div style="text-align:center;padding:6px;background:#F3F4F6;border-radius:6px"><div style="font-size:16px;font-weight:800;color:#10B981">' + (m.total_emitidos || 0) + '</div><div style="font-size:10px;color:#6B7280">Emitidos</div></div>' +
-          '<div style="text-align:center;padding:6px;background:' + (pendentes > 0 ? '#FEF2F2' : '#F3F4F6') + ';border-radius:6px"><div style="font-size:16px;font-weight:800;color:' + (pendentes > 0 ? '#DC2626' : '#6B7280') + '">' + pendentes + '</div><div style="font-size:10px;color:#6B7280">Pendentes</div></div>' +
-        '</div>' +
-        pendBadge +
-        '<div style="font-size:10px;color:#9CA3AF;margin-top:10px">Valido ate ' + _esc(_fmtDateShort(m.valid_until)) + '</div>' +
-        '<div style="display:flex;gap:6px;margin-top:10px;border-top:1px solid #F3F4F6;padding-top:10px;flex-wrap:wrap">' +
-          '<button onclick="vpiOpenMissaoCompletions(\'' + _esc(m.id) + '\')" style="flex:1;padding:7px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;color:#374151;font-size:11px;font-weight:600;cursor:pointer;min-width:90px">Ver completos</button>' +
-          '<button onclick="vpiEmitMissaoRewards(\'' + _esc(m.id) + '\')" ' + (pendentes === 0 ? 'disabled' : '') + ' style="flex:1;padding:7px;border:1px solid ' + (pendentes > 0 ? '#6EE7B7' : '#E5E7EB') + ';border-radius:6px;background:' + (pendentes > 0 ? '#ECFDF5' : '#F9FAFB') + ';color:' + (pendentes > 0 ? '#047857' : '#9CA3AF') + ';font-size:11px;font-weight:700;cursor:' + (pendentes > 0 ? 'pointer' : 'not-allowed') + ';min-width:90px">Emitir (' + pendentes + ')</button>' +
-          '<button onclick="vpiToggleMissao(\'' + _esc(m.id) + '\',' + (!m.is_active) + ')" style="flex:1;padding:7px;border:1px solid;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;min-width:90px;' + toggleStyle + '">' + toggleTxt + '</button>' +
-        '</div>' +
-      '</div>'
+      if (m.is_expired) expired.push(m); else active.push(m)
     })
-    html += '</div>'
+
+    var html = ''
+    if (active.length) {
+      html += _sectionHeader('Missoes vigentes', active.length, '#7C3AED', 'ativas e pausadas — dentro do prazo')
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">'
+      active.forEach(function (m) { html += _renderCard(m) })
+      html += '</div>'
+    }
+    if (expired.length) {
+      html += '<div style="margin-top:' + (active.length ? '24' : '0') + 'px">' +
+        _sectionHeader('Missoes expiradas', expired.length, '#DC2626',
+          'valid_until ja passou. Expiradas automaticamente pelo pg_cron diario (3h BRT). Clique "Reativar +7d" pra prorrogar.')
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">'
+      expired.forEach(function (m) { html += _renderCard(m) })
+      html += '</div></div>'
+    }
     body.innerHTML = html
   }
 
@@ -521,6 +555,30 @@
   }
 
   // ══════════════════════════════════════════════════
+  //  Reativar missao expirada (+7 dias)
+  // ══════════════════════════════════════════════════
+  async function reativarMissao(id) {
+    if (!id) return
+    var dias = 7
+    var input = prompt('Prorrogar por quantos dias?\n(default: 7 dias — valid_until = max(agora, atual) + dias)', '7')
+    if (input === null) return
+    var n = parseInt(input, 10)
+    if (!isNaN(n) && n > 0) dias = n
+    try {
+      var res = await _rpc('vpi_missao_reativar', { p_id: id, p_dias: dias })
+      if (!res || res.ok === false) {
+        _toast('Erro', (res && res.error) || 'Falha ao reativar', 'error')
+        return
+      }
+      _toast('Missao reativada', 'Prorrogada por +' + dias + ' dia(s).', 'success')
+      await render()
+    } catch (e) {
+      console.error('[VPI] reativarMissao:', e)
+      _toast('Erro', e.message || 'Falha ao reativar', 'error')
+    }
+  }
+
+  // ══════════════════════════════════════════════════
   //  Exports
   // ══════════════════════════════════════════════════
   window.vpiRenderMissoes           = render
@@ -532,6 +590,7 @@
   window.vpiEmitMissaoRewards       = emitRewards
   window.vpiOpenMissaoCompletions   = openCompletions
   window.vpiCloseMissaoCompletions  = _closeCompletions
+  window.vpiReativarMissao          = reativarMissao
   window._vpiMissaoTipoChange       = _onTipoChange
   window._vpiMissaoPreview          = _preview
 })()
