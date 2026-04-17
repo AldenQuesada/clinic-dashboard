@@ -134,6 +134,10 @@
     FM._simPhotoByAngle = {}
     FM._angleStore = {}
     FM._scanDataByAngle = {}
+    // Cache de imagens e estado isolado do modulo nasal precisam ser invalidados
+    // explicitamente, senao o paciente anterior vaza ao trocar.
+    FM._imgCache = {}
+    if (FM.Nasal && FM.Nasal.resetState) FM.Nasal.resetState()
 
     FM._restoreSession(leadId)
     FM._cleanupStorage()
@@ -166,6 +170,12 @@
     FM._afterPhotoByAngle = {}
     FM._simPhotoByAngle = {}
     FM._angleStore = {}
+    FM._scanDataByAngle = {}
+    FM._imgCache = {}
+    if (FM.Nasal && FM.Nasal.resetState) FM.Nasal.resetState()
+
+    var leadId = lead && (lead.id || lead.lead_id)
+    if (leadId) FM._restoreSession(leadId)
 
     FM._skipSelectorReset = true
     if (window.navigateTo) window.navigateTo('facial-analysis')
@@ -176,6 +186,17 @@
     if (FM._skipSelectorReset) return
     FM._lead = null
     FM._selectorFilter = ''
+    // Saindo da ferramenta: invalida caches em memoria para que a proxima
+    // entrada (mesmo paciente diferente) comece limpa.
+    FM._photos = {}
+    FM._photoUrls = {}
+    FM._afterPhotoByAngle = {}
+    FM._simPhotoByAngle = {}
+    FM._angleStore = {}
+    FM._scanDataByAngle = {}
+    FM._imgCache = {}
+    FM._activeAngle = null
+    if (FM.Nasal && FM.Nasal.resetState) FM.Nasal.resetState()
     FM._restorePage()
   }
 

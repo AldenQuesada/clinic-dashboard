@@ -332,6 +332,21 @@
   // ── Public API ───────────────────────────────────────────────
   Nasal.init = function () { _ensureLoaded() }
 
+  // Limpa explicitamente o estado em memoria; usado ao trocar de paciente
+  // ou ao sair da ferramenta. Proxima chamada a _ensureLoaded recriara
+  // o estado para o lead atual a partir do localStorage (ou fresco).
+  Nasal.resetState = function () {
+    if (_state) {
+      SLOTS.forEach(function (k) {
+        var s = _state[k]
+        if (s && s.photoUrl && typeof s.photoUrl === 'string' && s.photoUrl.indexOf('blob:') === 0) {
+          try { URL.revokeObjectURL(s.photoUrl) } catch (e) {}
+        }
+      })
+    }
+    _state = null
+  }
+
   Nasal.hasPhoto = function (slot) {
     _ensureLoaded()
     slot = slot || 'antes'
