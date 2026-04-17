@@ -1059,6 +1059,61 @@ function openFinalizeModal(id) {
     _finalProcs = appt.procedimentos.map(function(p) { return { nome: p.nome, valor: parseFloat(p.valor) || 0 } })
   }
   _buildFinModal(id, appt)
+  // Async: enriquece catalog com partner_pricing se lead tem partner VPI ativo.
+  // Fallback silencioso: modal renderiza com preco base e depois re-aplica se RPC responder.
+  _finLoadPartnerPricing(appt)
+}
+
+// Enrichment assincrono: VPI partner pricing. Chama RPC, atualiza
+// window._finProcCatalog com campos partner_*; se o usuario ja
+// selecionou um procedimento, re-aplica finProcAutoPrice pra
+// atualizar o valor na tela.
+function _finLoadPartnerPricing(appt) {
+  try {
+    var sb = window._sbShared
+    if (!sb) return
+    var leadId = appt && (appt.pacienteId || appt.patient_id || '')
+    if (!leadId) return
+    sb.rpc('procedures_with_partner_pricing', { p_lead_id: leadId }).then(function (res) {
+      if (res.error) { console.warn('[VPI partner pricing] RPC erro:', res.error.message); return }
+      var data = res.data || {}
+      var isPartner = !!data.is_partner_active
+      window._finIsPartnerActive = isPartner
+      var list = Array.isArray(data.procedures) ? data.procedures : []
+      var cat = window._finProcCatalog || {}
+      list.forEach(function (p) {
+        var key = p.nome
+        if (!key) return
+        if (!cat[key]) cat[key] = { preco: p.preco || 0, preco_promo: p.preco_promo || 0 }
+        cat[key].partner_pricing          = p.partner_pricing || null
+        cat[key].partner_eligible         = !!p.partner_eligible
+        cat[key].partner_preco_total      = p.partner_preco_total || null
+        cat[key].partner_parcelas         = p.partner_parcelas || null
+        cat[key].partner_valor_por_parcela = p.partner_valor_por_parcela || null
+        cat[key].preco_efetivo            = p.preco_efetivo != null ? p.preco_efetivo : cat[key].preco
+      })
+      window._finProcCatalog = cat
+      // Re-aplica preco no select atual (se houver selecao)
+      if (typeof finProcAutoPrice === 'function') finProcAutoPrice()
+      // Badge indicando modo parceiro
+      _finRenderPartnerBadge(isPartner)
+    }).catch(function (e) { console.warn('[VPI partner pricing] falha:', e && e.message) })
+  } catch (e) { console.warn('[VPI partner pricing] abortado:', e && e.message) }
+}
+
+function _finRenderPartnerBadge(isPartner) {
+  var modal = document.getElementById('smartFinalizeModal')
+  if (!modal) return
+  var existing = modal.querySelector('#finPartnerBadge')
+  if (!isPartner) { if (existing) existing.remove(); return }
+  if (existing) return
+  var header = modal.querySelector('.modal-subtitle')
+  if (!header) return
+  var span = document.createElement('span')
+  span.id = 'finPartnerBadge'
+  span.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-left:10px;padding:2px 8px;border-radius:99px;background:linear-gradient(135deg,#FEF3C7,#FCD34D);color:#78350F;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border:1px solid #F59E0B'
+  span.innerHTML = '<svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg> Parceira VPI'
+  header.appendChild(span)
 }
 
 // Calcula valor da consulta em aberto (paga ainda nao quitada)
@@ -1338,10 +1393,21 @@ function _renderFinProcs() {
       descontoInfo = '<div style="font-size:10px;color:#F59E0B;font-weight:600">Desc: -R$ ' + _fmtBRL(p.desconto) + ' (' + pct + '%)</div>'
     }
     var valorFinal = ((p.precoOriginal || 0) - (p.desconto || 0)) * (p.qtd || 1)
+    // Badge dourado "Preco Parceiro VPI" + economia em relacao ao preco publico
+    var partnerInfo = ''
+    if (p.partnerPricing && p.partnerParcelas && p.partnerValorParc) {
+      var economia = Math.max(0, (p.precoBasePublico||0) - (p.precoOriginal||0)) * (p.qtd||1)
+      partnerInfo = '<div style="margin-top:3px;display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;background:linear-gradient(135deg,#FEF3C7,#FCD34D);color:#78350F;font-size:10px;font-weight:700;border:1px solid #F59E0B">' +
+        '<svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>' +
+        'Preco Parceiro VPI &mdash; ' + p.partnerParcelas + 'x R$ ' + _fmtBRL(p.partnerValorParc) +
+        (economia > 0 ? ' <span style="color:#047857">(economia R$ ' + _fmtBRL(economia) + ')</span>' : '') +
+      '</div>'
+    }
     return '<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid #F3F4F6">' +
       '<div style="flex:1;min-width:0">' +
         '<div style="font-size:12px;font-weight:600;color:#374151">' + (window.escHtml||String)(p.nome) + ' <span style="color:#9CA3AF;font-weight:400">x' + p.qtd + '</span></div>' +
         (p.precoOriginal > 0 ? '<div style="font-size:11px;color:#10B981;font-weight:600">R$ ' + _fmtBRL(p.precoOriginal) + '/un</div>' : '') +
+        partnerInfo +
         descontoInfo +
       '</div>' +
       '<div style="text-align:right;flex-shrink:0">' +
@@ -1360,8 +1426,20 @@ function addFinProc() {
   var n = (sel?.value||'').trim()
   if (!n) return
   var info = _findProcInCatalog(n) || {}
-  var preco = info.preco || 0
-  _finalProcs.push({ nome:n, qtd:1, precoOriginal:preco, desconto:0 })
+  // Preco efetivo: parceiro VPI se elegivel, senao base
+  var partnerApplied = !!(info.partner_eligible && info.partner_preco_total > 0)
+  var preco = partnerApplied ? info.partner_preco_total : (info.preco || 0)
+  var precoBase = info.preco || 0
+  _finalProcs.push({
+    nome: n,
+    qtd: 1,
+    precoOriginal: preco,
+    desconto: 0,
+    partnerPricing: partnerApplied,
+    partnerParcelas: partnerApplied ? (info.partner_parcelas||5) : null,
+    partnerValorParc: partnerApplied ? (info.partner_valor_por_parcela||0) : null,
+    precoBasePublico: precoBase,
+  })
   document.getElementById('finProcList').innerHTML = _renderFinProcs()
   if (sel) sel.value = ''
   var valEl = document.getElementById('finProcValor')
@@ -1469,10 +1547,23 @@ function finProcAutoPrice() {
   var n = (document.getElementById('finProcNome')?.value||'').trim()
   var info = _findProcInCatalog(n)
   var valEl = document.getElementById('finProcValor')
-  if (valEl && info && info.preco > 0) {
+  if (!valEl) return
+  if (info && info.partner_eligible && info.partner_preco_total > 0) {
+    // Preco parceiro VPI
+    valEl.value = 'R$ ' + _fmtBRL(info.partner_preco_total)
+    valEl.title = 'Preco Parceiro VPI: ' + (info.partner_parcelas||5) + 'x R$' + _fmtBRL(info.partner_valor_por_parcela||0)
+    valEl.style.background = '#FFFBEB'
+    valEl.style.color = '#78350F'
+  } else if (info && info.preco > 0) {
     valEl.value = 'R$ ' + _fmtBRL(info.preco)
-  } else if (valEl) {
+    valEl.title = ''
+    valEl.style.background = '#F9FAFB'
+    valEl.style.color = '#10B981'
+  } else {
     valEl.value = ''
+    valEl.title = ''
+    valEl.style.background = '#F9FAFB'
+    valEl.style.color = '#10B981'
   }
 }
 
