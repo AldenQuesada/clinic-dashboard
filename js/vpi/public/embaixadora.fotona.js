@@ -67,35 +67,40 @@
     var TOTAL  = 3
     var desbloqueadas = Math.min(usadas + 1, TOTAL)
 
-    var html = '<div class="vpi-fotona-card" style="background:#fff;border:1px solid #F3F4F6;border-radius:14px;padding:18px;margin:12px auto;max-width:380px">' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
-        '<svg width="18" height="18" fill="none" stroke="#DB2777" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-        '<h3 style="margin:0;font-size:15px;font-weight:700;color:#111">Minhas Recompensas Fotona</h3>' +
+    var html = '<div class="vpi-fotona-card" style="background:radial-gradient(ellipse at top right,rgba(201,169,110,0.14),transparent 65%),linear-gradient(145deg,rgba(22,17,31,0.95),rgba(11,8,19,0.98));border:1px solid rgba(201,169,110,0.3);border-radius:18px;padding:20px;margin:12px auto;max-width:380px;color:#F4F1EC;box-shadow:0 12px 40px -12px rgba(0,0,0,0.5)">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+        '<svg width="16" height="16" fill="none" stroke="#C9A96E" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+        '<h3 style="margin:0;font-size:11px;font-weight:700;color:#C9A96E;text-transform:uppercase;letter-spacing:.14em">Recompensas Fotona</h3>' +
       '</div>' +
-      '<div style="font-size:12px;color:#6B7280;margin-bottom:14px">' +
-        'Você tem ' + desbloqueadas + ' de ' + TOTAL + ' Fotonas 4D desbloqueadas este ano.' +
+      '<div style="font-size:13px;color:#F4F1EC;margin-bottom:14px;line-height:1.5">' +
+        'Você tem <strong style="color:#C9A96E">' + desbloqueadas + '</strong> de <strong>' + TOTAL + '</strong> Fotonas 4D desbloqueadas este ano.' +
       '</div>' +
-      '<div class="vpi-fotona-list" style="display:flex;flex-direction:column;gap:10px">'
+      '<div class="vpi-fotona-list" style="display:flex;flex-direction:column;gap:8px">'
 
     for (var i = 1; i <= TOTAL; i++) {
       var locked = i > desbloqueadas
       var used   = _isNumberUsed(i)
       var label  = i === 1 ? '1ª Fotona (5 ind.)' : i === 2 ? '2ª Fotona (10 ind.)' : '3ª Fotona (15 ind.)'
       var statusLabel = locked ? 'Bloqueada' : used ? 'Utilizada' : 'Disponível'
-      var statusCol   = locked ? '#9CA3AF' : used ? '#6B7280' : '#059669'
+      var statusCol   = locked ? 'rgba(184,176,163,0.6)' : used ? 'rgba(184,176,163,0.85)' : '#6EE7B7'
 
-      html += '<div style="padding:12px;border:1px solid ' + (locked ? '#F3F4F6' : used ? '#F3F4F6' : '#BBF7D0') + ';border-radius:10px;background:' + (locked ? '#FAFAFA' : used ? '#F9FAFB' : '#F0FDF4') + '">' +
+      var itemBg     = locked ? 'rgba(255,255,255,0.03)' : used ? 'rgba(255,255,255,0.05)' : 'rgba(16,185,129,0.1)'
+      var itemBorder = locked ? 'rgba(255,255,255,0.06)' : used ? 'rgba(255,255,255,0.08)' : 'rgba(110,231,183,0.35)'
+      var itemOpacity = locked ? '0.6' : '1'
+      var labelColor = locked ? 'rgba(244,241,236,0.55)' : '#F4F1EC'
+
+      html += '<div style="padding:12px 14px;border:1px solid ' + itemBorder + ';border-radius:12px;background:' + itemBg + ';opacity:' + itemOpacity + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
           '<div>' +
-            '<div style="font-size:13px;font-weight:700;color:#111">' + _esc(label) + '</div>' +
-            '<div style="font-size:11px;color:' + statusCol + ';margin-top:2px">' + _esc(statusLabel) + '</div>' +
+            '<div style="font-size:13px;font-weight:700;color:' + labelColor + '">' + _esc(label) + '</div>' +
+            '<div style="font-size:11px;color:' + statusCol + ';margin-top:2px;font-weight:600">' + _esc(statusLabel) + '</div>' +
           '</div>'
 
       if (!locked && !used) {
         html += '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-          '<button onclick="VPIEmbFotona.onSchedule(' + i + ')" style="padding:6px 10px;border:none;border-radius:7px;background:#059669;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Agendar</button>' +
-          '<button onclick="VPIEmbFotona.openTransfer(' + i + ')" style="padding:6px 10px;border:1.5px solid #7C3AED;border-radius:7px;background:#fff;color:#7C3AED;font-size:11px;font-weight:700;cursor:pointer">Transferir</button>' +
-          '<button onclick="VPIEmbFotona.openExchange(' + i + ')" style="padding:6px 10px;border:1.5px solid #F59E0B;border-radius:7px;background:#fff;color:#B45309;font-size:11px;font-weight:700;cursor:pointer">Trocar</button>' +
+          '<button onclick="VPIEmbFotona.onSchedule(' + i + ')" style="padding:7px 12px;border:none;border-radius:8px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(16,185,129,0.3)">Agendar</button>' +
+          '<button onclick="VPIEmbFotona.openTransfer(' + i + ')" style="padding:7px 12px;border:1px solid rgba(201,169,110,0.45);border-radius:8px;background:rgba(201,169,110,0.08);color:#E4C795;font-size:11px;font-weight:700;cursor:pointer">Transferir</button>' +
+          '<button onclick="VPIEmbFotona.openExchange(' + i + ')" style="padding:7px 12px;border:1px solid rgba(245,158,11,0.45);border-radius:8px;background:rgba(245,158,11,0.08);color:#FBBF24;font-size:11px;font-weight:700;cursor:pointer">Trocar</button>' +
         '</div>'
       }
 
@@ -109,20 +114,21 @@
 
   // ── Transferir ────────────────────────────────────────────
   function openTransfer(numero) {
+    var inputCss = 'padding:10px 12px;border:1px solid rgba(201,169,110,0.25);border-radius:10px;font-size:13px;outline:none;background:rgba(255,255,255,0.06);color:#F4F1EC;font-family:inherit'
     var modal = _buildModal(
       'Transferir Fotona ' + numero,
-      '<div style="display:flex;flex-direction:column;gap:12px">' +
-        '<label style="display:flex;flex-direction:column;gap:4px">' +
-          '<span style="font-size:11px;font-weight:700;color:#374151">Para outra embaixadora (token):</span>' +
-          '<input id="vpiFotTokenDest" type="text" placeholder="Cole o token do cartão dela" style="padding:9px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none"/>' +
+      '<div style="display:flex;flex-direction:column;gap:14px">' +
+        '<label style="display:flex;flex-direction:column;gap:6px">' +
+          '<span style="font-size:11px;font-weight:700;color:#C9A96E;text-transform:uppercase;letter-spacing:.08em">Para outra embaixadora (token)</span>' +
+          '<input id="vpiFotTokenDest" type="text" placeholder="Cole o token do cartão dela" style="' + inputCss + '"/>' +
         '</label>' +
-        '<div style="font-size:10px;color:#9CA3AF;text-align:center">— OU —</div>' +
-        '<label style="display:flex;flex-direction:column;gap:4px">' +
-          '<span style="font-size:11px;font-weight:700;color:#374151">Para uma pessoa externa:</span>' +
-          '<input id="vpiFotExtNome"  type="text"  placeholder="Nome completo" style="padding:9px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none"/>' +
-          '<input id="vpiFotExtPhone" type="tel"   placeholder="WhatsApp (11) 9xxxx-xxxx" style="padding:9px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;margin-top:6px"/>' +
+        '<div style="font-size:10px;color:rgba(184,176,163,0.6);text-align:center;letter-spacing:.1em;text-transform:uppercase;font-weight:700">— OU —</div>' +
+        '<label style="display:flex;flex-direction:column;gap:6px">' +
+          '<span style="font-size:11px;font-weight:700;color:#C9A96E;text-transform:uppercase;letter-spacing:.08em">Para uma pessoa externa</span>' +
+          '<input id="vpiFotExtNome"  type="text"  placeholder="Nome completo" style="' + inputCss + '"/>' +
+          '<input id="vpiFotExtPhone" type="tel"   placeholder="WhatsApp (11) 9xxxx-xxxx" style="' + inputCss + '"/>' +
         '</label>' +
-        '<button id="vpiFotTransfBtn" style="padding:10px;border:none;border-radius:8px;background:#7C3AED;color:#fff;font-size:12px;font-weight:700;cursor:pointer">Transferir agora</button>' +
+        '<button id="vpiFotTransfBtn" style="padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#8E7543,#C9A96E,#E4C795);color:#0B0813;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.04em;box-shadow:0 6px 20px rgba(201,169,110,0.35);margin-top:4px">Transferir agora</button>' +
       '</div>'
     )
 
@@ -169,11 +175,11 @@
   // ── Trocar ────────────────────────────────────────────────
   function openExchange(numero) {
     var opts = PROTOCOLOS.map(function (p) {
-      return '<label style="display:flex;align-items:flex-start;gap:10px;padding:10px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer" onmouseover="this.style.background=\'#FAFAFA\'" onmouseout="this.style.background=\'\'">' +
-        '<input type="radio" name="vpiFotProt" value="' + p.id + '" style="margin-top:3px"/>' +
+      return '<label style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid rgba(201,169,110,0.2);border-radius:10px;cursor:pointer;background:rgba(255,255,255,0.04);transition:background 160ms ease,border-color 160ms ease" onmouseover="this.style.background=\'rgba(201,169,110,0.08)\';this.style.borderColor=\'rgba(201,169,110,0.5)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.04)\';this.style.borderColor=\'rgba(201,169,110,0.2)\'">' +
+        '<input type="radio" name="vpiFotProt" value="' + p.id + '" style="margin-top:3px;accent-color:#C9A96E"/>' +
         '<div>' +
-          '<div style="font-size:13px;font-weight:700;color:#111">' + _esc(p.label) + '</div>' +
-          '<div style="font-size:11px;color:#6B7280;margin-top:2px">' + _esc(p.desc) + '</div>' +
+          '<div style="font-size:13px;font-weight:700;color:#F4F1EC">' + _esc(p.label) + '</div>' +
+          '<div style="font-size:11px;color:rgba(184,176,163,0.85);margin-top:2px">' + _esc(p.desc) + '</div>' +
         '</div>' +
       '</label>'
     }).join('')
@@ -182,7 +188,7 @@
       'Trocar Fotona ' + numero + ' por outro protocolo',
       '<div style="display:flex;flex-direction:column;gap:8px">' +
         opts +
-        '<button id="vpiFotExcBtn" style="padding:10px;border:none;border-radius:8px;background:#F59E0B;color:#fff;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">Trocar agora</button>' +
+        '<button id="vpiFotExcBtn" style="padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#D97706,#F59E0B,#FBBF24);color:#0B0813;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.04em;box-shadow:0 6px 20px rgba(245,158,11,0.35);margin-top:10px">Trocar agora</button>' +
       '</div>'
     )
 
@@ -230,16 +236,16 @@
   function _buildModal(title, bodyHtml) {
     var overlay = document.createElement('div')
     overlay.className = 'vpi-fotona-overlay'
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)'
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9400;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)'
 
     var card = document.createElement('div')
-    card.style.cssText = 'background:#fff;border-radius:16px;max-width:380px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.3)'
+    card.style.cssText = 'background:linear-gradient(145deg,#16111F 0%,#0B0813 100%);border:1px solid rgba(201,169,110,0.3);border-radius:18px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px -12px rgba(0,0,0,0.7),0 0 0 1px rgba(255,255,255,0.04) inset;color:#F4F1EC'
     card.innerHTML =
-      '<div style="padding:14px 18px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between">' +
-        '<h3 style="margin:0;font-size:14px;font-weight:700;color:#111">' + _esc(title) + '</h3>' +
-        '<button type="button" aria-label="Fechar" style="background:none;border:none;font-size:20px;color:#9CA3AF;cursor:pointer;padding:0;line-height:1">&times;</button>' +
+      '<div style="padding:16px 20px;border-bottom:1px solid rgba(201,169,110,0.2);display:flex;align-items:center;justify-content:space-between">' +
+        '<h3 style="margin:0;font-size:14px;font-weight:700;color:#F4F1EC;font-family:\'Cormorant Garamond\',Georgia,serif;font-size:18px;letter-spacing:.02em">' + _esc(title) + '</h3>' +
+        '<button type="button" aria-label="Fechar" style="background:none;border:none;font-size:22px;color:rgba(184,176,163,0.75);cursor:pointer;padding:0;line-height:1;transition:color 160ms ease" onmouseover="this.style.color=\'#F4F1EC\'" onmouseout="this.style.color=\'rgba(184,176,163,0.75)\'">&times;</button>' +
       '</div>' +
-      '<div style="padding:16px 18px">' + bodyHtml + '</div>'
+      '<div style="padding:18px 20px">' + bodyHtml + '</div>'
 
     overlay.appendChild(card)
     document.body.appendChild(overlay)
