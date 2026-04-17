@@ -316,6 +316,7 @@
       : ''
     return '<div class="fa-channel-block fa-wa-block">'
       +   '<div class="fa-channel-block-title">' + _f('messageCircle', 12) + ' WhatsApp'
+      +     S().renderTemplateLibraryButton()
       +     '<button type="button" class="fa-ab-toggle" data-action="ab-toggle" title="A/B testing de copy">' + _f(abIcon, 11) + ' ' + abLabel + '</button>'
       +   '</div>'
       +   S().renderChipsBar('var')
@@ -616,6 +617,19 @@
           return
         }
         if (a === 'show-lifecycle') { _showLifecycle(); return }
+        if (a === 'show-template-library') {
+          var cat = _activeModule || 'agendamento'
+          S().showTemplateLibrary(cat, function(tpl) {
+            _readForm()
+            var append = _form.content_template && _form.content_template.trim()
+              ? confirm('Ja existe texto. OK = substituir. Cancelar = anexar no fim.')
+              : true
+            _form.content_template = append ? tpl.content : (_form.content_template + '\n\n' + tpl.content)
+            _render()
+            S().showToast('Template aplicado', tpl.name, 'success')
+          })
+          return
+        }
       }
 
       // Duplicar regra

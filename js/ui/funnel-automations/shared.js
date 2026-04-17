@@ -470,11 +470,231 @@
     if (window._showToast) window._showToast(title, msg, type || 'info')
   }
 
+  // ── Biblioteca de templates WhatsApp ────────────────────────
+  // Templates curados por fase do funil. Tags ([nome], [data], etc.) sao
+  // substituidas server-side em wa_outbox_fetch_pending. Tons: premium, Lara.
+  var TEMPLATE_LIBRARY = [
+    // ── Pre-agendamento ───────────────────────────────────────
+    { id: 'prea_lembrete_lead', category: 'pre_agendamento', intent: 'lembrete', name: 'Lembrete lead novo (D+1)',
+      description: 'Primeiro follow-up no dia seguinte a captacao se lead nao agendou.',
+      content: 'Oi [nome], aqui e a Lara da Clinica Mirian de Paula \uD83D\uDC96\n\nVi que voce demonstrou interesse ontem mas ainda nao conseguimos agendar sua avaliacao.\n\nPosso separar um horario pra voce essa semana? E gratuito e dura uns 30 minutos.' },
+    { id: 'prea_reativacao_frio', category: 'pre_agendamento', intent: 'reativacao', name: 'Reativacao de lead frio',
+      description: 'Lead parado ha mais de 30 dias sem agendamento.',
+      content: 'Oi [nome], faz um tempinho que nao conversamos.\n\nSe ainda tiver curiosidade em conhecer nossos procedimentos, aqui esta seu espaco. Posso te mostrar os resultados reais das pacientes que fizeram seu caso?' },
+    { id: 'prea_quiz_resultado', category: 'pre_agendamento', intent: 'quiz', name: 'Pos-quiz com resultado',
+      description: 'Enviado logo apos o paciente finalizar o quiz. Usa [queixa].',
+      content: 'Oi [nome], recebi seu quiz \uD83D\uDCCB\n\nPelo que voce respondeu, o caminho mais indicado pro seu caso de *[queixa]* seria uma avaliacao presencial. La a gente fecha o protocolo ideal pra voce.\n\nQuer que eu veja horario pra essa semana?' },
+
+    // ── Agendamento ───────────────────────────────────────────
+    { id: 'agd_confirmacao', category: 'agendamento', intent: 'confirmacao', name: 'Confirmacao de agendamento',
+      description: 'Disparo imediato apos criar agendamento.',
+      content: 'Oi [nome], tudo certo! \u2705\n\nSua avaliacao foi marcada:\n*[data] as [hora]*\n[linha_procedimento]\nCom [profissional]\n\nEndereco: [endereco_clinica]\n\nAte la! Qualquer coisa, estou por aqui.' },
+    { id: 'agd_d1_confirmar', category: 'agendamento', intent: 'lembrete', name: 'Lembrete D-1 (com SIM/NAO)',
+      description: 'Dia anterior as 8h30. Pede confirmacao SIM ou NAO.',
+      content: 'Bom dia [nome]! \u263C\n\nSo pra lembrar: amanha *[data] as [hora]* e sua avaliacao com [profissional].\n\nConsegue confirmar sua presenca? Responde *SIM* pra confirmar ou *NAO* se precisar remarcar.' },
+    { id: 'agd_d0_manha', category: 'agendamento', intent: 'lembrete', name: 'Lembrete dia zero (manha)',
+      description: 'No proprio dia da consulta, pela manha.',
+      content: 'Oi [nome], hoje e o dia! \uD83D\uDCC5\n\n*[hora]* com [profissional]\n[endereco_clinica]\n\nDica: venha com 10 min de antecedencia pra conversarmos com calma. Te espero aqui!' },
+    { id: 'agd_preparo', category: 'agendamento', intent: 'preparo', name: 'Preparo para o procedimento',
+      description: 'Envia orientacoes de preparo D-2 ou D-3.',
+      content: 'Oi [nome], tudo bem?\n\nAntes da sua consulta em [data], separei algumas orientacoes importantes de preparo:\n\n- Evitar bebida alcoolica 48h antes\n- Nao usar acido na regiao 3 dias antes\n- Vir com rosto limpo, sem maquiagem\n\nSe tiver duvida, me chama!' },
+    { id: 'agd_1h_antes', category: 'agendamento', intent: 'lembrete', name: 'Lembrete 1h antes',
+      description: 'Ultimo lembrete, 1 hora antes da consulta.',
+      content: 'Oi [nome], ja estou te esperando! \uD83D\uDC8E\n\nSua avaliacao comeca em 1 hora - [hora] com [profissional].\n\nSe precisar de qualquer coisa, e so chamar.' },
+
+    // ── Pos-consulta ──────────────────────────────────────────
+    { id: 'pac_agradecimento', category: 'paciente', intent: 'pos_consulta', name: 'Agradecimento pos-consulta',
+      description: 'Logo apos finalizar o procedimento.',
+      content: 'Oi [nome], foi um prazer te receber hoje! \uD83D\uDC97\n\nQualquer duvida sobre os cuidados pos-procedimento, me chama aqui. Estou a disposicao.\n\nEm breve te mando as orientacoes detalhadas por aqui mesmo.' },
+    { id: 'pac_pos_d1', category: 'paciente', intent: 'pos_consulta', name: 'Check pos-procedimento D+1',
+      description: 'No dia seguinte ao procedimento.',
+      content: 'Oi [nome], como voce esta hoje?\n\nQualquer vermelhidao, inchaco ou duvida, me avisa. Isso pode ser normal mas gosto de acompanhar de perto.\n\n[profissional] pediu pra te dar um oi \uD83D\uDC8B' },
+    { id: 'pac_review', category: 'paciente', intent: 'pedido_review', name: 'Pedido de avaliacao Google',
+      description: 'D+7 pos-procedimento, pede avaliacao.',
+      content: 'Oi [nome], espero que esteja amando o resultado! \uD83C\uDF38\n\nSeu depoimento ajuda outras mulheres que tem duvida sobre o procedimento. Pode me fazer um favorzinho e deixar uma avaliacao no Google?\n\n(Me manda o print depois que eu te mando uma surpresa \uD83C\uDF81)' },
+
+    // ── Orcamento ─────────────────────────────────────────────
+    { id: 'orc_envio', category: 'orcamento', intent: 'envio', name: 'Envio de orcamento personalizado',
+      description: 'Apos a consulta, com o protocolo fechado.',
+      content: 'Oi [nome], aqui esta seu orcamento personalizado! \uD83D\uDCC4\n\n[linha_procedimento]\n\nTudo foi pensado com [profissional] pra alcancar o resultado que a gente conversou. O investimento pode ser dividido em ate 10x sem juros.\n\nO que voce achou?' },
+    { id: 'orc_followup_d2', category: 'orcamento', intent: 'followup', name: 'Follow-up 48h sem resposta',
+      description: 'Se passou 48h sem retorno do orcamento.',
+      content: 'Oi [nome], consegui pensar mais no seu caso.\n\n[profissional] tambem ficou animada com o seu perfil - voce tem tudo pra ter um resultado lindo. Se tiver alguma duvida do orcamento, me fala pra gente conversar.' },
+    { id: 'orc_objecao_preco', category: 'orcamento', intent: 'objecao', name: 'Objecao de preco',
+      description: 'Quando paciente diz que esta caro.',
+      content: 'Entendo, [nome]. E um investimento importante mesmo.\n\nO que eu sempre falo: o valor se paga na primeira vez que voce sai de casa e nao pensa mais em maquiagem pesada pra disfarcar. E o efeito dura 12 a 18 meses.\n\nSe ajudar, posso ver se conseguimos dividir em mais vezes ou encaixar em condicao especial. O que voce acha mais justo pra voce?' },
+
+    // ── Paciente orcamento ────────────────────────────────────
+    { id: 'po_retomar', category: 'paciente_orcamento', intent: 'reativacao', name: 'Retomar orcamento parado',
+      description: 'Paciente que ja veio mas nao fechou o orcamento ha semanas.',
+      content: 'Oi [nome], faz um tempo que nao conversamos sobre seu protocolo.\n\nTenho espacos bons esse mes e lembrei de voce. Se quiser, posso reservar uma data pra comecarmos ja? O orcamento anterior continua valido.' },
+
+    // ── Perdido ───────────────────────────────────────────────
+    { id: 'per_reativacao', category: 'perdido', intent: 'reativacao', name: 'Reativacao de paciente perdido',
+      description: 'Paciente sumido ha 3+ meses.',
+      content: 'Oi [nome], quanto tempo! \uD83D\uDC95\n\nEstava revisando minha agenda e lembrei de voce. Como voce esta? Se ainda pensa em cuidar do [queixa], posso te contar uma novidade.\n\nQuer conversar?' },
+    { id: 'per_promocao', category: 'perdido', intent: 'promocao', name: 'Oferta especial perdido',
+      description: 'Promocao sazonal (aniversario da clinica, black).',
+      content: 'Oi [nome], temos uma condicao especial esse mes que lembrei de voce.\n\nPrimeira sessao com 20% off e brinde exclusivo. E por tempo limitado - valido so ate [data].\n\nQuer que eu reserve um horario?' },
+  ]
+
+  var CATEGORY_LABELS = {
+    pre_agendamento: 'Pre-agendamento',
+    agendamento: 'Agendamento',
+    paciente: 'Paciente',
+    orcamento: 'Orcamento',
+    paciente_orcamento: 'Paciente + Orcamento',
+    perdido: 'Perdido',
+  }
+  var INTENT_LABELS = {
+    lembrete: 'Lembrete',
+    confirmacao: 'Confirmacao',
+    reativacao: 'Reativacao',
+    preparo: 'Preparo',
+    pos_consulta: 'Pos-consulta',
+    pedido_review: 'Pedido Review',
+    objecao: 'Objecao',
+    promocao: 'Promocao',
+    envio: 'Envio',
+    followup: 'Follow-up',
+    quiz: 'Quiz',
+  }
+
+  function renderTemplateLibraryButton() {
+    return '<button type="button" class="fa-tpl-btn" data-action="show-template-library" data-fae-action="show-template-library" title="Biblioteca de templates">'
+      + _feather('bookOpen', 12) + ' Biblioteca</button>'
+  }
+
+  function showTemplateLibrary(defaultCategory, onSelect) {
+    var existing = document.getElementById('faTemplateLibraryModal')
+    if (existing) existing.remove()
+    var overlay = document.createElement('div')
+    overlay.id = 'faTemplateLibraryModal'
+    overlay.className = 'fa-modal-overlay'
+    var categories = Object.keys(CATEGORY_LABELS)
+    var activeCategory = defaultCategory && categories.indexOf(defaultCategory) >= 0 ? defaultCategory : 'agendamento'
+    var activeIntent = ''
+    var searchQ = ''
+
+    function filtered() {
+      return TEMPLATE_LIBRARY.filter(function(t) {
+        if (activeCategory !== 'all' && t.category !== activeCategory) return false
+        if (activeIntent && t.intent !== activeIntent) return false
+        if (searchQ) {
+          var q = searchQ.toLowerCase()
+          if (t.name.toLowerCase().indexOf(q) < 0
+              && (t.description || '').toLowerCase().indexOf(q) < 0
+              && (t.content || '').toLowerCase().indexOf(q) < 0) return false
+        }
+        return true
+      })
+    }
+
+    function availableIntents() {
+      var intents = {}
+      TEMPLATE_LIBRARY.forEach(function(t) {
+        if (activeCategory === 'all' || t.category === activeCategory) intents[t.intent] = true
+      })
+      return Object.keys(intents)
+    }
+
+    function render() {
+      var tabs = [{ id: 'all', label: 'Todos' }].concat(categories.map(function(c) {
+        return { id: c, label: CATEGORY_LABELS[c] }
+      })).map(function(t) {
+        var cls = t.id === activeCategory ? ' fa-tpl-tab-active' : ''
+        return '<button type="button" class="fa-tpl-tab' + cls + '" data-tpl-cat="' + t.id + '">'
+          + _esc(t.label) + '</button>'
+      }).join('')
+
+      var intents = availableIntents()
+      var intentPills = intents.length
+        ? '<div class="fa-tpl-intents">'
+          + '<button type="button" class="fa-tpl-pill' + (!activeIntent ? ' fa-tpl-pill-active' : '') + '" data-tpl-intent="">Todas intencoes</button>'
+          + intents.map(function(i) {
+            var cls = activeIntent === i ? ' fa-tpl-pill-active' : ''
+            return '<button type="button" class="fa-tpl-pill' + cls + '" data-tpl-intent="' + i + '">'
+              + _esc(INTENT_LABELS[i] || i) + '</button>'
+          }).join('')
+          + '</div>'
+        : ''
+
+      var list = filtered()
+      var listHtml = list.length
+        ? list.map(function(t) {
+            var preview = (t.content || '').substring(0, 160).replace(/\n/g, ' ')
+            return '<div class="fa-tpl-card" data-tpl-select="' + t.id + '">'
+              +   '<div class="fa-tpl-card-head">'
+              +     '<div class="fa-tpl-card-name">' + _esc(t.name) + '</div>'
+              +     '<div class="fa-tpl-card-intent">' + _esc(INTENT_LABELS[t.intent] || t.intent) + '</div>'
+              +   '</div>'
+              +   (t.description ? '<div class="fa-tpl-card-desc">' + _esc(t.description) + '</div>' : '')
+              +   '<div class="fa-tpl-card-preview">' + _esc(preview) + (t.content.length > 160 ? '...' : '') + '</div>'
+              +   '<div class="fa-tpl-card-action">' + _feather('plus', 12) + ' Usar este template</div>'
+              + '</div>'
+          }).join('')
+        : '<div class="fa-tpl-empty">' + _feather('inbox', 16) + ' Nenhum template corresponde aos filtros.</div>'
+
+      overlay.innerHTML = '<div class="fa-modal fa-modal-tpl" role="dialog">'
+        + '<div class="fa-modal-header">'
+        +   '<div class="fa-modal-title">' + _feather('bookOpen', 16) + ' Biblioteca de templates</div>'
+        +   '<button type="button" class="fa-btn-icon" data-tpl-close>' + _feather('x', 16) + '</button>'
+        + '</div>'
+        + '<div class="fa-tpl-filters">'
+        +   '<div class="fa-tpl-tabs">' + tabs + '</div>'
+        +   '<input type="search" class="fa-tpl-search" placeholder="Buscar por texto ou nome..." value="' + _esc(searchQ) + '">'
+        + '</div>'
+        + intentPills
+        + '<div class="fa-modal-body fa-tpl-body">'
+        +   '<div class="fa-tpl-list">' + listHtml + '</div>'
+        + '</div>'
+        + '<div class="fa-tpl-footer">' + _feather('info', 11)
+        +   ' ' + TEMPLATE_LIBRARY.length + ' templates · tags [nome], [data], [hora], [profissional], [queixa] sao substituidas ao enviar.</div>'
+        + '</div>'
+    }
+
+    render()
+    document.body.appendChild(overlay)
+
+    function close() { overlay.remove() }
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) return close()
+      if (e.target.closest('[data-tpl-close]')) return close()
+      var tab = e.target.closest('[data-tpl-cat]')
+      if (tab) { activeCategory = tab.dataset.tplCat; activeIntent = ''; render(); return }
+      var pill = e.target.closest('[data-tpl-intent]')
+      if (pill) { activeIntent = pill.dataset.tplIntent; render(); return }
+      var card = e.target.closest('[data-tpl-select]')
+      if (card) {
+        var id = card.dataset.tplSelect
+        var tpl = TEMPLATE_LIBRARY.find(function(t) { return t.id === id })
+        if (tpl && typeof onSelect === 'function') onSelect(tpl)
+        close()
+        return
+      }
+    })
+    overlay.addEventListener('input', function(e) {
+      var search = e.target.closest('.fa-tpl-search')
+      if (search) { searchQ = search.value || ''; render(); search.focus(); }
+    })
+    if (!window._faTplEscBound) {
+      window._faTplEscBound = true
+      document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return
+        var m = document.getElementById('faTemplateLibraryModal')
+        if (m) m.remove()
+      })
+    }
+  }
+
   // ── Public API ──────────────────────────────────────────────
   window.AAShared = Object.freeze({
     TEMPLATE_VARS: TEMPLATE_VARS,
     SAMPLE_VARS: SAMPLE_VARS,
     VALID_VAR_IDS: VALID_VAR_IDS,
+    TEMPLATE_LIBRARY: TEMPLATE_LIBRARY,
+    TEMPLATE_CATEGORY_LABELS: CATEGORY_LABELS,
+    TEMPLATE_INTENT_LABELS: INTENT_LABELS,
     validatePlaceholders: validatePlaceholders,
     validatePlaceholdersInForm: validatePlaceholdersInForm,
     simulateDispatches: simulateDispatches,
@@ -487,6 +707,8 @@
     renderChipsBar:     renderChipsBar,
     renderFormatToolbar: renderFormatToolbar,
     renderAttachArea:   renderAttachArea,
+    renderTemplateLibraryButton: renderTemplateLibraryButton,
+    showTemplateLibrary: showTemplateLibrary,
     combineChannels:    combineChannels,
     channelIncludes:    channelIncludes,
     speakAlexa:         speakAlexa,

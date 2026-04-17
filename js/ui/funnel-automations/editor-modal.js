@@ -199,6 +199,7 @@
       : ''
     return '<div class="fa-channel-block fa-wa-block">'
       +   '<div class="fa-channel-block-title">' + _f('messageCircle', 12) + ' WhatsApp'
+      +     S().renderTemplateLibraryButton()
       +     '<button type="button" class="fa-ab-toggle" data-fae-action="ab-toggle" title="A/B testing">' + _f(abActive ? 'zap' : 'plus', 11) + ' ' + (abActive ? 'A/B ativo' : 'Testar variacao B') + '</button>'
       +   '</div>'
       +   S().renderChipsBar('var')
@@ -456,6 +457,18 @@
           _render(); return
         }
         if (a === 'ab-remove') { _readForm(); _form.ab_variant_template = ''; _render(); return }
+        if (a === 'show-template-library') {
+          _readForm()
+          S().showTemplateLibrary(_moduleId || 'agendamento', function(tpl) {
+            var append = _form.content_template && _form.content_template.trim()
+              ? confirm('Ja existe texto. OK = substituir. Cancelar = anexar no fim.')
+              : true
+            _form.content_template = append ? tpl.content : (_form.content_template + '\n\n' + tpl.content)
+            _render()
+            S().showToast('Template aplicado', tpl.name, 'success')
+          })
+          return
+        }
       }
 
       var shellAct = e.target.closest('[data-action]')
