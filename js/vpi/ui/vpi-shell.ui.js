@@ -545,6 +545,33 @@
   }
 
   // ══════════════════════════════════════════════════
+  //  Saudade (Fase 7 - Entrega 7)
+  // ══════════════════════════════════════════════════
+  async function vpiRunSaudadeNow() {
+    var sb = window._sbShared
+    if (!sb) { _toast('Erro', 'Supabase indisponivel', 'error'); return }
+    if (!confirm('Disparar varredura "sentindo sua falta" agora?\n\n' +
+      'Vai procurar parceiras VPI ativas + consent LGPD sem procedimento ha 5+ meses e enviar o WA.\n\n' +
+      'pg_cron ja roda isso dia 15 de cada mes as 14h BRT — use so pra teste ou urgencia.')) return
+    _toast('Saudade', 'Varredura iniciada...', 'info')
+    try {
+      var res = await sb.rpc('vpi_saudade_send_batch', { p_months: 5 })
+      if (res.error) throw new Error(res.error.message)
+      var r = res.data || {}
+      var msg = 'Scan: ' + (r.total_scanned || 0) + ' | Enviado: ' + (r.sent_count || 0) +
+                ' | Skip: ' + (r.skipped_count || 0) + ' | Falhou: ' + (r.failed_count || 0)
+      _toast('Saudade', msg, (r.sent_count || 0) > 0 ? 'success' : 'info')
+      if ((r.sent_count || 0) === 0 && (r.total_scanned || 0) === 0) {
+        alert('Nenhuma parceira elegivel encontrada.\n\n' +
+              'Criterios: status=ativo, consent LGPD, sem procedimento ha 5+ meses, sem saudade recente (60d).')
+      }
+    } catch (e) {
+      console.error('[VPI] saudade batch:', e)
+      _toast('Erro', e.message || 'falhou', 'error')
+    }
+  }
+
+  // ══════════════════════════════════════════════════
   //  Staff Alert Config (Fase 7 - Entrega 3)
   // ══════════════════════════════════════════════════
   async function vpiLoadStaffAlertConfig() {
@@ -614,6 +641,7 @@
   window.vpiCheckHighPerfNow = vpiCheckHighPerfNow
   window.vpiSaveStaffAlertConfig = vpiSaveStaffAlertConfig
   window.vpiLoadStaffAlertConfig = vpiLoadStaffAlertConfig
+  window.vpiRunSaudadeNow        = vpiRunSaudadeNow
   window.vpiPSetMode       = vpiPSetMode
   window.vpiPPickCandidate = vpiPPickCandidate
   window.vpiPClearSelected = vpiPClearSelected
