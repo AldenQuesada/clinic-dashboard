@@ -226,65 +226,64 @@ BEGIN
 
   v_alertas := '[]'::jsonb;
 
-  -- Cadastro incompleto
-  IF v_campos < v_campos_total THEN
+  IF v_sc_cad < 70 THEN
     v_alertas := v_alertas || jsonb_build_array(jsonb_build_object(
-      'tipo', 'cadastro_incompleto',
-      'label', 'Cadastro incompleto',
-      'campos_faltam', v_campos_faltam
+      'tipo',  'cadastro_incompleto',
+      'texto', 'Faltam campos: ' || COALESCE(NULLIF(v_campos_faltam, ''), '—'),
+      'cor',   'orange'
     ));
   END IF;
 
-  -- Criterio expirado
-  IF v_criterio = 0 THEN
+  IF v_sc_cri = 0 THEN
     v_alertas := v_alertas || jsonb_build_array(jsonb_build_object(
-      'tipo', 'criterio_expirado',
-      'label', 'Sem injetavel em 12m',
-      'cta',   'enviar_reativacao'
+      'tipo',  'criterio_expirado',
+      'texto', 'Nao fez injetavel ha 12m — reativar',
+      'cor',   'red',
+      'cta',   jsonb_build_object('label', 'Enviar WA reativacao', 'action', 'vpi_send_reativacao')
     ));
   END IF;
 
-  -- Dormente
-  IF v_days_sem_ind IS NOT NULL AND v_days_sem_ind >= 60 THEN
+  IF v_days_sem_ind >= 30 AND v_last_closed IS NOT NULL THEN
     v_alertas := v_alertas || jsonb_build_array(jsonb_build_object(
-      'tipo', 'dormente',
-      'label', v_days_sem_ind || ' dias sem indicar'
+      'tipo',  'dormente',
+      'texto', v_days_sem_ind::text || ' dias sem indicar',
+      'cor',   'yellow'
     ));
   END IF;
 
-  -- Em crescimento (streak >= 3)
   IF COALESCE(v_p.streak_meses, 0) >= 3 THEN
     v_alertas := v_alertas || jsonb_build_array(jsonb_build_object(
-      'tipo', 'em_crescimento',
-      'label', COALESCE(v_p.streak_meses, 0) || 'm consecutivos'
+      'tipo',  'em_crescimento',
+      'texto', COALESCE(v_p.streak_meses, 0)::text || ' meses consecutivos',
+      'cor',   'green'
     ));
   END IF;
 
   UPDATE public.vpi_partners
-     SET score_produtividade = v_sc_prod,
-         score_engajamento   = v_sc_eng,
-         score_recorrencia   = v_sc_rec,
-         score_cadastro      = v_sc_cad,
-         score_criterio      = v_sc_cri,
-         score_total         = v_sc_total,
-         classe              = v_classe,
-         alertas             = v_alertas,
-         campos_faltam       = v_campos_faltam,
-         score_atualizado_em = now()
+     SET score_total            = v_sc_total,
+         score_produtividade    = v_sc_prod,
+         score_engajamento      = v_sc_eng,
+         score_recorrencia      = v_sc_rec,
+         score_cadastro         = v_sc_cad,
+         score_criterio_entrada = v_sc_cri,
+         score_classe           = v_classe,
+         alertas                = v_alertas,
+         score_atualizado_em    = now()
    WHERE id = v_p.id;
 
   RETURN jsonb_build_object(
-    'ok', true,
-    'score_total', v_sc_total,
-    'classe', v_classe,
-    'alertas', v_alertas,
-    'components', jsonb_build_object(
-      'produtividade', v_sc_prod,
-      'engajamento',   v_sc_eng,
-      'recorrencia',   v_sc_rec,
-      'cadastro',      v_sc_cad,
-      'criterio',      v_sc_cri
-    )
+    'ok',                     true,
+    'partner_id',             v_p.id,
+    'score_total',            v_sc_total,
+    'score_produtividade',    v_sc_prod,
+    'score_engajamento',      v_sc_eng,
+    'score_recorrencia',      v_sc_rec,
+    'score_cadastro',         v_sc_cad,
+    'score_criterio_entrada', v_sc_cri,
+    'score_classe',           v_classe,
+    'alertas',                v_alertas,
+    'aberturas_mes',          v_aberturas_mes,
+    'clicks_30',              v_clicks_30
   );
 END $$;
 
