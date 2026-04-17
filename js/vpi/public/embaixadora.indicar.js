@@ -66,8 +66,10 @@
   function open() {
     if (document.getElementById('vpi-indicate-modal')) return
 
-    var procOpts = PROCEDIMENTOS.map(function (p) {
-      return '<option value="' + _esc(p.v) + '">' + _esc(p.l) + '</option>'
+    var procChips = PROCEDIMENTOS.map(function (p, i) {
+      return '<button type="button" class="vpi-ind-chip" data-proc="' + _esc(p.v) + '" ' +
+        'style="padding:9px 14px;border:1.5px solid var(--vpi-border);border-radius:999px;background:var(--vpi-glass);color:var(--vpi-ink);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 160ms ease">' +
+        _esc(p.l) + '</button>'
     }).join('')
 
     var bg = document.createElement('div')
@@ -76,16 +78,18 @@
     bg.setAttribute('role', 'dialog')
     bg.setAttribute('aria-modal', 'true')
     bg.innerHTML =
-      '<div class="vpi-modal" role="document">' +
-        '<h3>Indicar amiga</h3>' +
-        '<p class="sub">Nossa equipe entra em contato com ela com cuidado. Você ganha créditos quando o procedimento fechar.</p>' +
-        '<form id="vpi-ind-form" novalidate>' +
+      '<div class="vpi-modal" role="document" style="padding-bottom:0">' +
+        '<div style="padding:0 0 18px">' +
+          '<h3>Indicar amiga</h3>' +
+          '<p class="sub">Nossa equipe entra em contato com ela com cuidado. Você ganha créditos quando o procedimento fechar.</p>' +
+        '</div>' +
+        '<form id="vpi-ind-form" novalidate style="padding-bottom:100px">' +
           '<div class="vpi-field">' +
-            '<label for="vpi-ind-nome">Nome completo</label>' +
+            '<label for="vpi-ind-nome">Nome completo *</label>' +
             '<input id="vpi-ind-nome" name="nome" type="text" autocomplete="name" required />' +
           '</div>' +
           '<div class="vpi-field">' +
-            '<label for="vpi-ind-phone">WhatsApp (com DDD)</label>' +
+            '<label for="vpi-ind-phone">WhatsApp (com DDD) *</label>' +
             '<input id="vpi-ind-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(00) 00000-0000" required />' +
           '</div>' +
           '<div class="vpi-field">' +
@@ -93,19 +97,20 @@
             '<input id="vpi-ind-email" name="email" type="email" autocomplete="email" />' +
           '</div>' +
           '<div class="vpi-field">' +
-            '<label for="vpi-ind-proc">Procedimento de interesse</label>' +
-            '<select id="vpi-ind-proc" name="procedimento">' +
-              procOpts +
-            '</select>' +
+            '<label>Procedimento de interesse</label>' +
+            '<div id="vpi-ind-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">' + procChips + '</div>' +
+            '<input type="hidden" id="vpi-ind-proc" name="procedimento" value="' + _esc(PROCEDIMENTOS[0].v) + '"/>' +
           '</div>' +
-          '<div class="vpi-ind-err" id="vpi-ind-err" style="display:none;color:#FFB4B4;font-size:12px;margin-top:-6px;margin-bottom:10px"></div>' +
-          '<div class="vpi-modal-actions">' +
+          '<div class="vpi-ind-err" id="vpi-ind-err" style="display:none;color:#FFB4B4;font-size:12px;margin-top:8px;padding:10px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:8px"></div>' +
+        '</form>' +
+        '<div style="position:sticky;bottom:0;left:0;right:0;padding:14px 0;background:linear-gradient(to top,var(--vpi-bg-1) 70%,transparent);margin:0 -22px;padding-left:22px;padding-right:22px;border-top:1px solid rgba(201,169,110,0.15)">' +
+          '<div class="vpi-modal-actions" style="margin:0">' +
             '<button type="button" class="vpi-btn vpi-btn-secondary" id="vpi-ind-cancel">Cancelar</button>' +
-            '<button type="submit" class="vpi-btn vpi-btn-primary" id="vpi-ind-submit">' +
+            '<button type="button" class="vpi-btn vpi-btn-primary" id="vpi-ind-submit">' +
               _ico('send', 16) + ' Enviar indicação' +
             '</button>' +
           '</div>' +
-        '</form>' +
+        '</div>' +
       '</div>'
 
     document.body.appendChild(bg)
@@ -116,6 +121,28 @@
     var errEl   = bg.querySelector('#vpi-ind-err')
     var btnSub  = bg.querySelector('#vpi-ind-submit')
     var btnCan  = bg.querySelector('#vpi-ind-cancel')
+    var procHidden = bg.querySelector('#vpi-ind-proc')
+    var chipsWrap  = bg.querySelector('#vpi-ind-chips')
+
+    // Seleciona primeiro chip por padrao
+    function _selectChip(val) {
+      procHidden.value = val
+      var chips = chipsWrap.querySelectorAll('.vpi-ind-chip')
+      for (var i = 0; i < chips.length; i++) {
+        var isActive = chips[i].getAttribute('data-proc') === val
+        chips[i].style.background = isActive ? 'var(--t-grad, linear-gradient(135deg,#8E7543,#C9A96E,#E4C795))' : 'var(--vpi-glass)'
+        chips[i].style.color      = isActive ? '#0B0813' : 'var(--vpi-ink)'
+        chips[i].style.borderColor = isActive ? 'transparent' : 'var(--vpi-border)'
+        chips[i].style.fontWeight = isActive ? '700' : '500'
+      }
+    }
+    _selectChip(PROCEDIMENTOS[0].v)
+
+    chipsWrap.addEventListener('click', function (e) {
+      var chip = e.target.closest('.vpi-ind-chip')
+      if (!chip) return
+      _selectChip(chip.getAttribute('data-proc'))
+    })
 
     phoneEl.addEventListener('input', function () {
       phoneEl.value = _maskPhone(phoneEl.value)
@@ -129,15 +156,17 @@
       if (e.key === 'Escape') { _close(); document.removeEventListener('keydown', esc) }
     })
 
-    form.addEventListener('submit', async function (e) {
-      e.preventDefault()
+    btnSub.addEventListener('click', function () { _handleSubmit() })
+    form.addEventListener('submit', function (e) { e.preventDefault(); _handleSubmit() })
+
+    async function _handleSubmit() {
       errEl.style.display = 'none'
       errEl.textContent = ''
 
       var nome  = (form.nome.value || '').trim()
       var phone = _digits(form.phone.value)
       var email = (form.email.value || '').trim()
-      var proc  = form.procedimento.value
+      var proc  = procHidden.value
 
       if (!nome) { _showErr('Informe o nome.'); return }
       if (phone.length < 10) { _showErr('Telefone inválido. Inclua DDD.'); return }
@@ -186,7 +215,7 @@
         btnSub.disabled = false
         btnSub.innerHTML = _ico('send', 16) + ' Enviar indicação'
       }
-    })
+    }
 
     function _showErr(msg) {
       errEl.textContent = msg
