@@ -64,7 +64,7 @@
   //  Tabs
   // ══════════════════════════════════════════════════
   function vpiSwitchTab(n) {
-    [1, 2, 3, 4, 5, 6].forEach(function (i) {
+    [1, 2, 3, 4, 5, 6, 7].forEach(function (i) {
       var panel = document.getElementById('vpiPanel' + i)
       var tab   = document.getElementById('vpiTab'   + i)
       if (!panel || !tab) return
@@ -79,8 +79,9 @@
       if (window.vpiRenderRewards) window.vpiRenderRewards()
       vpiLoadStaffAlertConfig()
     }
-    if (n === 5 && window.vpiRenderMissoes)    window.vpiRenderMissoes()
-    if (n === 6 && window.vpiRenderChallenges) window.vpiRenderChallenges()
+    if (n === 5 && window.vpiRenderMissoes)       window.vpiRenderMissoes()
+    if (n === 6 && window.vpiRenderChallenges)    window.vpiRenderChallenges()
+    if (n === 7 && window.vpiRenderCelebrations)  window.vpiRenderCelebrations()
   }
 
   function vpiToggle(id) {
