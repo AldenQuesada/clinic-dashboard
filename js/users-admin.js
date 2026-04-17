@@ -38,6 +38,10 @@ const ERROR_MESSAGES = {
   cannot_change_owner:             'Nao e possivel alterar o proprietario por este fluxo.',
   user_not_found_or_already_active:'Usuario nao encontrado ou ja esta ativo.',
   invite_not_found:                'Convite nao encontrado ou ja foi cancelado.',
+  user_not_found:                  'Usuario nao encontrado nesta clinica.',
+  professional_not_found:          'Profissional nao encontrado nesta clinica.',
+  professional_already_linked:     'Este profissional ja esta vinculado a outro usuario.',
+  user_already_linked_to_another:  'Este usuario ja esta vinculado a outro profissional.',
 }
 function _errMsg(code) { return ERROR_MESSAGES[code] || code || 'Erro desconhecido' }
 
@@ -407,7 +411,15 @@ function _renderAll(container) {
                 + (!u.is_active ? ' <span style="background:#FEE2E2;color:#DC2626;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;margin-left:4px">Inativo</span>' : '')
               + '</div>'
               + '<div class="_ua-email">' + _esc(u.email) + '</div>'
-              + '<div class="_ua-module-chips">' + _renderModuleAccess(u.role, u.id) + '</div>'
+              + (u.professional
+                  ? '<div style="margin-top:4px;display:inline-flex;align-items:center;gap:6px;background:#EDE9FE;color:#6D28D9;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600">'
+                    + _feather('link', 11) + ' ' + _esc(u.professional.display_name)
+                    + (canManage ? ' <button class="_ua-unlink" data-id="' + u.id + '" data-name="' + _esc(_fullName(u)) + '" data-prof="' + _esc(u.professional.display_name) + '" style="background:none;border:none;cursor:pointer;color:#6D28D9;padding:0;margin-left:2px;display:inline-flex;align-items:center" title="Desvincular profissional">' + _feather('x', 11) + '</button>' : '')
+                  + '</div>'
+                  : (canManage
+                      ? '<button class="_ua-link" data-id="' + u.id + '" data-name="' + _esc(_fullName(u)) + '" style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#F3F4F6;color:#6B7280;border:1px dashed #D1D5DB;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer">' + _feather('link', 11) + ' Vincular a profissional</button>'
+                      : ''))
+              + '<div class="_ua-module-chips" style="margin-top:6px">' + _renderModuleAccess(u.role, u.id) + '</div>'
             + '</div>'
           + '</div>'
           + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap">'
@@ -466,6 +478,19 @@ function _renderAll(container) {
   container.querySelectorAll('._ua-revoke').forEach(btn => {
     btn.addEventListener('click', () => _confirmAction('revoke', btn.dataset.id, btn.dataset.email))
   })
+  container.querySelectorAll('._ua-link').forEach(btn => {
+    btn.addEventListener('click', () => openLinkProfessionalModal(btn.dataset.id, btn.dataset.name))
+  })
+  container.querySelectorAll('._ua-unlink').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('Desvincular ' + btn.dataset.name + ' do profissional "' + btn.dataset.prof + '"?')) return
+      window.UsersRepository.unlinkFromProfessional(btn.dataset.id).then(r => {
+        if (!r.ok) { _toast(_errMsg(r.error), 'error'); return }
+        _toast('Vinculo removido', 'ok')
+        loadUsersAdmin()
+      })
+    })
+  })
   // Toggle detail panel (load user perms on first expand)
   container.querySelectorAll('._ua-toggle-detail').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -522,6 +547,67 @@ function _renderAll(container) {
 }
 
 // ── INVITE MODAL ────────────────────────────────────────────────
+// ── LINK USER TO PROFESSIONAL MODAL ────────────────────────────
+async function openLinkProfessionalModal(userId, userName) {
+  const modal = _createModal('linkProfModal', ''
+    + '<div style="padding:22px 24px;border-bottom:1px solid #f3f4f6;display:flex;align-items:flex-start;justify-content:space-between">'
+      + '<div><h3 style="margin:0;font-size:18px;font-weight:700;color:#111827">Vincular a Profissional</h3><p style="margin:3px 0 0;font-size:12px;color:#6b7280">Usuario: <strong>' + _esc(userName) + '</strong></p></div>'
+      + '<button onclick="_closeModal(\'linkProfModal\')" class="_ua-btn-icon">' + _feather('x', 18) + '</button>'
+    + '</div>'
+    + '<div style="padding:24px;max-height:70vh;overflow-y:auto">'
+      + '<div id="_linkProfErr" style="display:none;background:#FEE2E2;color:#DC2626;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px"></div>'
+      + '<div id="_linkProfList" style="display:flex;flex-direction:column;gap:8px">'
+        + '<div style="padding:20px;text-align:center;color:#9ca3af;font-size:12px">Carregando profissionais...</div>'
+      + '</div>'
+    + '</div>'
+    + '<div style="padding:16px 24px;border-top:1px solid #f3f4f6;display:flex;gap:8px;justify-content:flex-end">'
+      + '<button onclick="_closeModal(\'linkProfModal\')" style="background:#fff;color:#374151;border:1.5px solid #e5e7eb;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer">Fechar</button>'
+    + '</div>')
+
+  const r = await window.UsersRepository.listUnlinkedProfessionals()
+  const listEl = document.getElementById('_linkProfList')
+  if (!listEl) return
+  if (!r.ok) {
+    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:#DC2626;font-size:12px">Erro: ' + _esc(_errMsg(r.error)) + '</div>'
+    return
+  }
+  const profs = Array.isArray(r.data) ? r.data : []
+  if (!profs.length) {
+    listEl.innerHTML = '<div style="padding:28px;text-align:center;color:#6b7280;font-size:13px">'
+      + _feather('users', 22) + '<br><br><strong>Sem profissionais disponiveis.</strong><br>Todos os profissionais ja tem usuario vinculado ou nenhum foi cadastrado em Equipe.</div>'
+    if (window.feather) feather.replace({ root: listEl })
+    return
+  }
+  listEl.innerHTML = profs.map(p => ''
+    + '<button class="_link-pick-prof" data-prof-id="' + p.id + '" data-name="' + _esc(p.display_name) + '" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;text-align:left;cursor:pointer;transition:all .15s">'
+      + '<div style="min-width:0">'
+        + '<div style="font-size:13px;font-weight:700;color:#111">' + _esc(p.display_name) + '</div>'
+        + '<div style="font-size:11px;color:#6b7280;margin-top:2px">' + _esc(p.specialty || p.nivel || '—') + (p.email ? ' · ' + _esc(p.email) : '') + '</div>'
+      + '</div>'
+      + '<span style="color:#7C3AED;font-size:12px;font-weight:600">Vincular ' + _feather('chevron-right', 12) + '</span>'
+    + '</button>').join('')
+  if (window.feather) feather.replace({ root: listEl })
+
+  listEl.querySelectorAll('._link-pick-prof').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const errEl = document.getElementById('_linkProfErr')
+      if (errEl) errEl.style.display = 'none'
+      btn.disabled = true
+      btn.style.opacity = '0.6'
+      const res = await window.UsersRepository.linkToProfessional(userId, btn.dataset.profId)
+      if (!res.ok) {
+        if (errEl) { errEl.textContent = _errMsg(res.error); errEl.style.display = 'block' }
+        btn.disabled = false; btn.style.opacity = '1'
+        return
+      }
+      _toast('Usuario vinculado a ' + btn.dataset.name, 'ok')
+      _closeModal('linkProfModal')
+      loadUsersAdmin()
+    })
+  })
+}
+window.openLinkProfessionalModal = openLinkProfessionalModal
+
 function openInviteModal() {
   const canInviteAdmin = window.PermissionsService?.isAtLeast('owner') ?? false
   const roleOpts = Object.entries(ROLE_CONFIG)

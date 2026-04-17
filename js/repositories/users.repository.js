@@ -160,6 +160,40 @@
     } catch (e) { return _err(e) }
   }
 
+  // ── linkToProfessional ────────────────────────────────────────
+  async function linkToProfessional(userId, professionalId) {
+    try {
+      var { data, error } = await _sb().rpc('link_user_to_professional', {
+        p_user_id: userId, p_professional_id: professionalId,
+      })
+      if (error) return _err(error)
+      if (data && data.ok === false) return _err(data.error)
+      return _ok(data)
+    } catch (e) { return _err(e) }
+  }
+
+  // ── unlinkFromProfessional ────────────────────────────────────
+  async function unlinkFromProfessional(userId) {
+    try {
+      var { data, error } = await _sb().rpc('unlink_user_from_professional', {
+        p_user_id: userId,
+      })
+      if (error) return _err(error)
+      if (data && data.ok === false) return _err(data.error)
+      return _ok(data)
+    } catch (e) { return _err(e) }
+  }
+
+  // ── listUnlinkedProfessionals ─────────────────────────────────
+  async function listUnlinkedProfessionals() {
+    try {
+      var { data, error } = await _sb().rpc('list_unlinked_professionals')
+      if (error) return _err(error)
+      if (data && data.ok === false) return _err(data.error)
+      return _ok(data && data.professionals ? data.professionals : [])
+    } catch (e) { return _err(e) }
+  }
+
   // ── revokeInvite ──────────────────────────────────────────────
   /**
    * Revoga um convite pendente.
@@ -217,6 +251,9 @@
     getStaff,
     inviteStaff,
     inviteProfessionalAsUser,
+    linkToProfessional,
+    unlinkFromProfessional,
+    listUnlinkedProfessionals,
     updateRole,
     deactivateStaff,
     activateStaff,
