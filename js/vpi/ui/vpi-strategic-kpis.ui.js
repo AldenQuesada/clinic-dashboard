@@ -137,7 +137,7 @@
       '<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:2px">' +
         '<span style="font-size:32px;font-weight:800;color:' + textCol + '">' + _fmtNum(value) + '</span>' +
       '</div>' +
-      '<div style="font-size:10px;color:' + textCol + ';opacity:.85">sem indicar nos ultimos 30d</div>' +
+      '<div style="font-size:10px;color:' + textCol + ';opacity:.85">sem indicar nos últimos 30d</div>' +
       actionHtml +
     '</div>'
   }
@@ -152,7 +152,7 @@
     var root = document.getElementById('vpiStratKpis' + (suffix || ''))
     if (!root) return
     root.innerHTML = '<div style="grid-column:1/-1;padding:16px;text-align:center;color:#DC2626;font-size:12px;background:#FEF2F2;border-radius:10px;border:1px solid #FECACA">' +
-      'KPIs indisponiveis: ' + _esc(msg || 'erro') +
+      'KPIs indisponíveis: ' + _esc(msg || 'erro') +
     '</div>'
   }
 
@@ -193,9 +193,9 @@
       var clockSvg  = '<svg width="14" height="14" fill="none" stroke="#F59E0B" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
 
       container.innerHTML =
-        tile(eyeSvg,   'Aberturas do mes',     s.aberturas_mes          || 0, '#7C3AED') +
-        tile(shareSvg, 'Compartilhamentos mes', s.compartilhamentos_mes || 0, '#0891B2') +
-        tile(clockSvg, 'Indicacoes pendentes',  s.ind_pending           || 0, '#F59E0B')
+        tile(eyeSvg,   'Aberturas do mês',     s.aberturas_mes          || 0, '#7C3AED') +
+        tile(shareSvg, 'Compartilhamentos mês', s.compartilhamentos_mes || 0, '#0891B2') +
+        tile(clockSvg, 'Indicações pendentes',  s.ind_pending           || 0, '#F59E0B')
     } catch (e) {
       // Graceful: se RPC nao existe, oculta sem poluir o console
       if (e && /vpi_mini_stats/.test(e.message || '')) {

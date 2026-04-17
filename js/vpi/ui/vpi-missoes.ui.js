@@ -34,9 +34,9 @@
     return res.data
   }
 
-  var PERIODO_LABEL = { '7d': '7 dias', '30d': '30 dias', 'mes': 'Mes calendario', '90d': '90 dias' }
+  var PERIODO_LABEL = { '7d': '7 dias', '30d': '30 dias', 'mes': 'Mês calendário', '90d': '90 dias' }
   var TIPO_LABEL = {
-    indicacoes_fechadas: 'Indicacoes fechadas',
+    indicacoes_fechadas: 'Indicações fechadas',
     full_face_fechado:   'Full Face fechado',
     streak_dias:         'Streak (dias consecutivos)',
   }
@@ -78,12 +78,12 @@
     block.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">' +
         '<div>' +
-          '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:2px">Missoes do Programa</div>' +
-          '<div style="font-size:12px;color:#9CA3AF">Crie e gerencie missoes semanais/mensais. A recompensa e enviada automaticamente por WhatsApp quando a parceira completa.</div>' +
+          '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:2px">Missões do Programa</div>' +
+          '<div style="font-size:12px;color:#9CA3AF">Crie e gerencie missões semanais/mensais. A recompensa é enviada automaticamente por WhatsApp quando a parceira completa.</div>' +
         '</div>' +
         '<button onclick="vpiOpenMissaoModal()" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:9px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer">' +
           '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>' +
-          'Nova missao' +
+          'Nova missão' +
         '</button>' +
       '</div>' +
       '<div id="vpiMissoesBody"><div style="text-align:center;color:#9CA3AF;font-size:13px;padding:20px">Carregando...</div></div>'
@@ -143,7 +143,7 @@
         '</div>' +
       '</div>' +
       '<div style="background:#F9FAFB;border-radius:8px;padding:10px;margin:10px 0">' +
-        '<div style="font-size:10px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Criterio</div>' +
+        '<div style="font-size:10px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Critério</div>' +
         '<div style="font-size:12px;color:#374151">' + _esc(_criterioDesc(m.criterio)) + '</div>' +
         '<div style="font-size:10px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:8px;margin-bottom:3px">Recompensa</div>' +
         '<div style="font-size:12px;color:#111;font-weight:600">' + _esc(m.recompensa_texto || '—') + (m.recompensa_valor > 0 ? ' <span style="color:#9CA3AF;font-weight:500">(R$ ' + Number(m.recompensa_valor).toFixed(0) + ')</span>' : '') + '</div>' +
@@ -186,7 +186,7 @@
     }
 
     if (!list || !list.length) {
-      body.innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:13px;padding:30px">Nenhuma missao criada. Clique em <strong>Nova missao</strong> para comecar.</div>'
+      body.innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:13px;padding:30px">Nenhuma missão criada. Clique em <strong>Nova missão</strong> para começar.</div>'
       return
     }
 
@@ -207,7 +207,7 @@
     if (expired.length) {
       html += '<div style="margin-top:' + (active.length ? '24' : '0') + 'px">' +
         _sectionHeader('Missoes expiradas', expired.length, '#DC2626',
-          'valid_until ja passou. Expiradas automaticamente pelo pg_cron diario (3h BRT). Clique "Reativar +7d" pra prorrogar.')
+          'valid_until já passou. Expiradas automaticamente pelo pg_cron diário (3h BRT). Clique "Reativar +7d" pra prorrogar.')
       html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">'
       expired.forEach(function (m) { html += _renderCard(m) })
       html += '</div></div>'
@@ -230,7 +230,7 @@
       titulo: '', descricao: '',
       criterio: { tipo: 'indicacoes_fechadas', quantidade: 1, periodo: '7d' },
       recompensa_texto: '', recompensa_valor: 0,
-      msg_template_sucesso: 'Parabens {{nome}}! Voce completou a missao *{{missao_titulo}}* e ganhou {{recompensa_texto}}. Fale com a clinica para resgatar.',
+      msg_template_sucesso: 'Parabéns {{nome}}! Você completou a missão *{{missao_titulo}}* e ganhou {{recompensa_texto}}. Fale com a clínica para resgatar.',
       valid_from: null, valid_until: null, is_active: true, sort_order: 0,
     }
     var crit = m.criterio || {}
@@ -238,7 +238,7 @@
     overlay.innerHTML =
       '<div style="background:#fff;border-radius:14px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
         '<div style="padding:20px 24px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1">' +
-          '<div style="font-size:15px;font-weight:700;color:#111">' + (m.id ? 'Editar missao' : 'Nova missao') + '</div>' +
+          '<div style="font-size:15px;font-weight:700;color:#111">' + (m.id ? 'Editar missão' : 'Nova missão') + '</div>' +
           '<button onclick="vpiCloseMissaoModal()" style="background:none;border:none;cursor:pointer;color:#9CA3AF"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
         '</div>' +
         '<div style="padding:20px 24px">' +
@@ -260,7 +260,7 @@
               '<div>' +
                 '<label style="font-size:10px;font-weight:600;color:#6B7280;display:block;margin-bottom:3px">Tipo</label>' +
                 '<select id="mTipo" onchange="_vpiMissaoTipoChange()" style="width:100%;padding:7px 9px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">' +
-                  '<option value="indicacoes_fechadas"' + (crit.tipo === 'indicacoes_fechadas' ? ' selected' : '') + '>Indicacoes fechadas</option>' +
+                  '<option value="indicacoes_fechadas"' + (crit.tipo === 'indicacoes_fechadas' ? ' selected' : '') + '>Indicações fechadas</option>' +
                   '<option value="full_face_fechado"' +   (crit.tipo === 'full_face_fechado'   ? ' selected' : '') + '>Full Face fechado</option>' +
                   '<option value="streak_dias"' +         (crit.tipo === 'streak_dias'         ? ' selected' : '') + '>Streak (dias consec.)</option>' +
                 '</select>' +
@@ -274,7 +274,7 @@
                 '<select id="mPeriodo" style="width:100%;padding:7px 9px;border:1.5px solid #E5E7EB;border-radius:6px;font-size:12px;outline:none;box-sizing:border-box;background:#fff">' +
                   '<option value="7d"'  + (crit.periodo === '7d'  ? ' selected' : '') + '>7 dias</option>' +
                   '<option value="30d"' + (crit.periodo === '30d' ? ' selected' : '') + '>30 dias</option>' +
-                  '<option value="mes"' + (crit.periodo === 'mes' ? ' selected' : '') + '>Mes calendario</option>' +
+                  '<option value="mes"' + (crit.periodo === 'mes' ? ' selected' : '') + '>Mês calendário</option>' +
                   '<option value="90d"' + (crit.periodo === '90d' ? ' selected' : '') + '>90 dias</option>' +
                 '</select>' +
               '</div>' +
@@ -401,8 +401,8 @@
     var active    = !!document.getElementById('mActive').checked
     var order     = parseInt(g('mOrder'), 10) || 0
 
-    if (!titulo) { alert('Titulo e obrigatorio'); return }
-    if (!rtxt)   { alert('Recompensa e obrigatoria'); return }
+    if (!titulo) { alert('Título é obrigatório'); return }
+    if (!rtxt)   { alert('Recompensa é obrigatória'); return }
 
     var criterio = { tipo: tipo }
     if (tipo === 'indicacoes_fechadas') {
@@ -449,7 +449,7 @@
   }
 
   async function deleteMissao(id) {
-    if (!confirm('Remover esta missao? Todo o progresso dela sera apagado tambem.')) return
+    if (!confirm('Remover esta missão? Todo o progresso dela será apagado também.')) return
     try {
       var res = await _rpc('vpi_missao_delete', { p_id: id })
       if (!res || !res.ok) throw new Error((res && res.error) || 'Falhou')
@@ -464,7 +464,7 @@
     try {
       var list = await _rpc('vpi_missao_list', { p_include_inactive: true })
       var m = (list || []).find(function (x) { return x.id === id })
-      if (!m) throw new Error('Missao nao encontrada')
+      if (!m) throw new Error('Missão não encontrada')
       m.is_active = !!makeActive
       var res = await _rpc('vpi_missao_upsert', { p_data: m })
       if (!res || !res.ok) throw new Error((res && res.error) || 'Falhou')
@@ -476,7 +476,7 @@
   }
 
   async function emitRewards(missaoId) {
-    if (!confirm('Emitir recompensas pendentes desta missao? Uma msg WhatsApp sera enviada para cada parceira.')) return
+    if (!confirm('Emitir recompensas pendentes desta missão? Uma msg WhatsApp será enviada para cada parceira.')) return
     try {
       var res = await _rpc('vpi_emit_missao_rewards_batch', { p_missao_id: missaoId })
       if (!res || !res.ok) throw new Error((res && res.error) || 'Falhou')

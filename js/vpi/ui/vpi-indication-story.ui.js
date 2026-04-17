@@ -61,7 +61,7 @@
       '<div style="background:#fff;width:100%;max-width:520px;height:100%;overflow-y:auto;box-shadow:-12px 0 40px rgba(0,0,0,.2);padding:26px">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">' +
           '<div>' +
-            '<div style="font-size:16px;font-weight:700;color:#111">Historia desta indicacao</div>' +
+            '<div style="font-size:16px;font-weight:700;color:#111">História desta indicação</div>' +
             '<div style="font-size:12px;color:#9CA3AF;margin-top:2px">' + _esc(partnerName || '') + (story.procedimento ? ' · ' + _esc(story.procedimento) : '') + '</div>' +
           '</div>' +
           '<button onclick="vpiCloseIndicationStory()" style="background:none;border:none;font-size:24px;color:#9CA3AF;cursor:pointer;line-height:1">×</button>' +
@@ -92,8 +92,8 @@
         '<div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;padding:12px;background:#FEF3C7;border-radius:8px;border:1px solid #FCD34D">' +
           '<input id="vpiStoConsent" type="checkbox" ' + (story.consent_mostrar_na_historia ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;margin-top:2px"/>' +
           '<label for="vpiStoConsent" style="font-size:12px;color:#78350F;line-height:1.45;cursor:pointer">' +
-            '<strong>Consent da indicada pra aparecer no cartao da parceira.</strong><br/>' +
-            'So marque se voce tem autorizacao explicita dela (formulario, print de msg, TCLE assinado).' +
+            '<strong>Consent da indicada pra aparecer no cartão da parceira.</strong><br/>' +
+            'Só marque se você tem autorização explícita dela (formulário, print de msg, TCLE assinado).' +
           '</label>' +
         '</div>' +
 

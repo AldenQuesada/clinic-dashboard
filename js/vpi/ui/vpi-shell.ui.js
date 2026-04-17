@@ -263,7 +263,7 @@
     _pState.editUnlocked = !_pState.editUnlocked
     var btn = document.getElementById('vpiPToggleEditBtn')
     if (btn) {
-      btn.textContent = _pState.editUnlocked ? 'Bloquear edicao' : 'Editar dados antes de cadastrar'
+      btn.textContent = _pState.editUnlocked ? 'Bloquear edição' : 'Editar dados antes de cadastrar'
       // reaplica icone
       btn.innerHTML = _pState.editUnlocked
         ? '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Bloquear edicao'
@@ -286,7 +286,7 @@
     var c = _pLastResults[idx]
     if (!c) return
     if (c.is_already_partner) {
-      _toast('Ja e parceira', (c.nome || 'Esta pessoa') + ' ja esta no programa', 'warning')
+      _toast('Já é parceira', (c.nome || 'Esta pessoa') + ' já está no programa', 'warning')
       return
     }
     _pState.selected = c
@@ -347,7 +347,7 @@
   async function _doSearch(q) {
     var reqId = ++_pLastReqSeq
     var sb = window._sbShared
-    if (!sb) { _renderSearchResults([], q, 'Supabase indisponivel'); return }
+    if (!sb) { _renderSearchResults([], q, 'Supabase indisponível'); return }
     try {
       var res = await sb.rpc('vpi_search_candidates', { p_query: q, p_limit: 15 })
       if (res.error) throw new Error(res.error.message)
@@ -377,7 +377,7 @@
     if (!q || q.length < 2) {
       box.style.display = 'none'
       empty.style.display = ''
-      empty.textContent = 'Digite no minimo 2 caracteres pra buscar'
+      empty.textContent = 'Digite no mínimo 2 caracteres pra buscar'
       return
     }
 
@@ -398,10 +398,10 @@
       var dim      = disabled ? '0.7' : '1'
       var badges = []
       if (c.is_already_partner) {
-        badges.push('<span style="background:#FEE2E2;color:#991B1B;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Ja esta no programa</span>')
+        badges.push('<span style="background:#FEE2E2;color:#991B1B;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Já está no programa</span>')
       }
       if (c.has_injetavel_12m && !c.is_already_partner) {
-        badges.push('<span style="background:#D1FAE5;color:#065F46;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Fez injetavel 12m</span>')
+        badges.push('<span style="background:#D1FAE5;color:#065F46;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Fez injetável 12m</span>')
       }
       if (c.source === 'patient') {
         badges.push('<span style="background:#EFF6FF;color:#1D4ED8;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Paciente</span>')
@@ -508,7 +508,7 @@
       await refreshAll()
     } catch (e) {
       console.error('[VPI] deletePartner:', e)
-      alert('Nao foi possivel remover: ' + (e.message || ''))
+      alert('Não foi possível remover: ' + (e.message || ''))
     }
   }
 
@@ -523,15 +523,15 @@
   // ══════════════════════════════════════════════════
   async function vpiCheckHighPerfNow() {
     var sb = window._sbShared
-    if (!sb) { _toast('Erro', 'Supabase indisponivel', 'error'); return }
-    if (!confirm('Verificar todas as parceiras agora?\n\nIsso checa Niveis 1/2/3 (50/100/150 indicacoes em 11 meses) e, se algum partner bater o criterio, registra a recompensa e envia a msg WA.\n\npg_cron ja roda isso automaticamente todo dia 1 as 11h BRT — use so pra teste ou emergencia.')) return
+    if (!sb) { _toast('Erro', 'Supabase indisponível', 'error'); return }
+    if (!confirm('Verificar todas as parceiras agora?\n\nIsso checa Níveis 1/2/3 (50/100/150 indicações em 11 meses) e, se algum partner bater o critério, registra a recompensa e envia a msg WA.\n\npg_cron já roda isso automaticamente todo dia 1 às 11h BRT — use só pra teste ou emergência.')) return
     _toast('Alta Performance', 'Verificando...', 'info')
     try {
       var res = await sb.rpc('vpi_high_performance_check')
       if (res.error) throw new Error(res.error.message)
       var r = res.data || {}
       var hits = Array.isArray(r.hits) ? r.hits : []
-      var msg = 'Check concluido: ' + hits.length + ' hit(s), ' +
+      var msg = 'Check concluído: ' + hits.length + ' hit(s), ' +
         (r.emitted_count || 0) + ' recompensa(s) registrada(s), ' +
         (r.wa_count || 0) + ' WA enviada(s)' +
         ((r.wa_failed || 0) > 0 ? ' (' + r.wa_failed + ' falha WA)' : '')
@@ -551,10 +551,10 @@
   // ══════════════════════════════════════════════════
   async function vpiRunSaudadeNow() {
     var sb = window._sbShared
-    if (!sb) { _toast('Erro', 'Supabase indisponivel', 'error'); return }
+    if (!sb) { _toast('Erro', 'Supabase indisponível', 'error'); return }
     if (!confirm('Disparar varredura "sentindo sua falta" agora?\n\n' +
-      'Vai procurar parceiras VPI ativas + consent LGPD sem procedimento ha 5+ meses e enviar o WA.\n\n' +
-      'pg_cron ja roda isso dia 15 de cada mes as 14h BRT — use so pra teste ou urgencia.')) return
+      'Vai procurar parceiras VPI ativas + consent LGPD sem procedimento há 5+ meses e enviar o WA.\n\n' +
+      'pg_cron já roda isso dia 15 de cada mês às 14h BRT — use só pra teste ou urgência.')) return
     _toast('Saudade', 'Varredura iniciada...', 'info')
     try {
       var res = await sb.rpc('vpi_saudade_send_batch', { p_months: 5 })
@@ -564,8 +564,8 @@
                 ' | Skip: ' + (r.skipped_count || 0) + ' | Falhou: ' + (r.failed_count || 0)
       _toast('Saudade', msg, (r.sent_count || 0) > 0 ? 'success' : 'info')
       if ((r.sent_count || 0) === 0 && (r.total_scanned || 0) === 0) {
-        alert('Nenhuma parceira elegivel encontrada.\n\n' +
-              'Criterios: status=ativo, consent LGPD, sem procedimento ha 5+ meses, sem saudade recente (60d).')
+        alert('Nenhuma parceira elegível encontrada.\n\n' +
+              'Critérios: status=ativo, consent LGPD, sem procedimento há 5+ meses, sem saudade recente (60d).')
       }
     } catch (e) {
       console.error('[VPI] saudade batch:', e)
@@ -592,7 +592,7 @@
         ? 'Staff alerts enviados pra ' + cfg.phone
         : 'Sem telefone configurado — alertas ficam bloqueados.'
     } catch (e) {
-      if (hintEl) hintEl.textContent = 'Nao carregou config: ' + (e.message || '')
+      if (hintEl) hintEl.textContent = 'Não carregou config: ' + (e.message || '')
     }
   }
 
@@ -600,7 +600,7 @@
     var sb = window._sbShared
     var phoneEl = document.getElementById('vpiStaffAlertPhone')
     var enEl    = document.getElementById('vpiStaffAlertEnabled')
-    if (!sb) { _toast('Erro', 'Supabase indisponivel', 'error'); return }
+    if (!sb) { _toast('Erro', 'Supabase indisponível', 'error'); return }
     var phone = _onlyDigits((phoneEl && phoneEl.value) || '')
     var enabled = !!(enEl && enEl.checked)
     if (phone && phone.length < 8) {

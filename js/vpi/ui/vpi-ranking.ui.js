@@ -30,8 +30,8 @@
   }
 
   var PERIODS = [
-    { id: 'month', label: 'Este mes' },
-    { id: '90d',   label: 'Ultimos 90d' },
+    { id: 'month', label: 'Este mês' },
+    { id: '90d',   label: 'Últimos 90d' },
     { id: 'year',  label: 'Este ano' },
     { id: 'all',   label: 'Acumulado' },
   ]
@@ -245,10 +245,10 @@
             '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12S5 4 12 4s11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>' +
           '</button>' +
           (cardUrl
-            ? '<button onclick="event.stopPropagation();window.open(\'' + _esc(cardUrl) + '\',\'_blank\',\'noopener\')" title="Abrir cartao publico" style="padding:5px 7px;border:1.5px solid #DDD6FE;border-radius:6px;background:#F5F3FF;color:#6D28D9;cursor:pointer;margin-right:4px;display:inline-flex;align-items:center">' +
+            ? '<button onclick="event.stopPropagation();window.open(\'' + _esc(cardUrl) + '\',\'_blank\',\'noopener\')" title="Abrir cartão público" style="padding:5px 7px;border:1.5px solid #DDD6FE;border-radius:6px;background:#F5F3FF;color:#6D28D9;cursor:pointer;margin-right:4px;display:inline-flex;align-items:center">' +
                 '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
               '</button>' +
-              '<button onclick="event.stopPropagation();vpiCopyCardLink(\'' + _esc(cardUrl) + '\',this)" title="Copiar link do cartao" style="padding:5px 7px;border:1.5px solid #E5E7EB;border-radius:6px;background:#F9FAFB;color:#374151;cursor:pointer;margin-right:4px;display:inline-flex;align-items:center">' +
+              '<button onclick="event.stopPropagation();vpiCopyCardLink(\'' + _esc(cardUrl) + '\',this)" title="Copiar link do cartão" style="padding:5px 7px;border:1.5px solid #E5E7EB;border-radius:6px;background:#F9FAFB;color:#374151;cursor:pointer;margin-right:4px;display:inline-flex;align-items:center">' +
                 '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
               '</button>'
             : '') +

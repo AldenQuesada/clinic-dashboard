@@ -84,7 +84,7 @@
     if (!url) return
     try {
       await navigator.clipboard.writeText(url)
-      if (window._showToast) _showToast('Link', 'Copiado para a area de transferencia', 'success')
+      if (window._showToast) _showToast('Link', 'Copiado para a área de transferência', 'success')
       var orig = btn.innerHTML
       btn.innerHTML = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copiado'
       setTimeout(function () { if (btn) btn.innerHTML = orig }, 1800)
@@ -94,7 +94,7 @@
   }
 
   async function _sendReativacao(id) {
-    if (!confirm('Enviar WhatsApp de reativacao (criterio injetavel expirado) para esta parceira?')) return
+    if (!confirm('Enviar WhatsApp de reativação (critério injetável expirado) para esta parceira?')) return
     var sb = window._sbShared
     if (!sb) return
     try {
@@ -102,7 +102,7 @@
       if (res.error) throw new Error(res.error.message)
       var r = res.data || {}
       if (r.ok) {
-        if (window._showToast) _showToast('Reativacao', 'WA enfileirada', 'success')
+        if (window._showToast) _showToast('Reativação', 'WA enfileirada', 'success')
       } else {
         alert('Falha: ' + (r.error || 'desconhecida'))
       }
@@ -185,7 +185,7 @@
     var data
     try { data = await VPIRepository.partners.get(id) } catch (e) { data = null }
     if (!data || !data.partner) {
-      alert('Nao foi possivel carregar detalhes do parceiro')
+      alert('Não foi possível carregar detalhes do parceiro')
       return
     }
     var p = data.partner
@@ -228,10 +228,10 @@
           var stBadge = i.status === 'closed'
             ? '<span style="background:#D1FAE5;color:#065F46;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Fechada +' + (i.creditos || 1) + '</span>'
             : i.status === 'invalid'
-              ? '<span style="background:#FEE2E2;color:#991B1B;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Invalida</span>'
+              ? '<span style="background:#FEE2E2;color:#991B1B;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Inválida</span>'
               : '<span style="background:#FEF3C7;color:#92400E;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:700">Pendente</span>'
           var storyBtn = (i.status === 'closed' && window.vpiOpenIndicationStory)
-            ? '<button onclick="vpiOpenIndicationStory(\'' + _esc(i.id) + '\', \'' + _esc(p.nome) + '\')" title="Editar historia pro cartao" style="margin-left:6px;padding:3px 8px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;font-size:10px;color:#7C3AED;cursor:pointer;font-weight:700">Historia</button>'
+            ? '<button onclick="vpiOpenIndicationStory(\'' + _esc(i.id) + '\', \'' + _esc(p.nome) + '\')" title="Editar história pro cartão" style="margin-left:6px;padding:3px 8px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;font-size:10px;color:#7C3AED;cursor:pointer;font-weight:700">História</button>'
             : ''
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F9FAFB;font-size:12px">' +
             '<div style="flex:1;min-width:0">' +
@@ -242,7 +242,7 @@
             '<span style="color:#9CA3AF;font-size:11px;margin-left:10px;white-space:nowrap">' + when + '</span>' +
           '</div>'
         }).join('')
-      : '<div style="color:#9CA3AF;font-size:12px;text-align:center;padding:20px">Nenhuma indicacao registrada ainda</div>'
+      : '<div style="color:#9CA3AF;font-size:12px;text-align:center;padding:20px">Nenhuma indicação registrada ainda</div>'
 
     var overlay = document.createElement('div')
     overlay.id = 'vpiViewModal'
@@ -259,15 +259,15 @@
           '</div>' +
           '<div style="display:flex;align-items:center;gap:6px;flex:0 0 auto">' +
             (cardUrl
-              ? '<button id="vpiOpenCardBtn" data-url="' + _esc(cardUrl) + '" onclick="VPIPartnerModal.openCard(\'' + _esc(p.id) + '\')" title="Abrir cartao publico em nova aba" style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1.5px solid #DDD6FE;border-radius:8px;background:#fff;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">' +
+              ? '<button id="vpiOpenCardBtn" data-url="' + _esc(cardUrl) + '" onclick="VPIPartnerModal.openCard(\'' + _esc(p.id) + '\')" title="Abrir cartão público em nova aba" style="display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border:1.5px solid #DDD6FE;border-radius:8px;background:#fff;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">' +
                   '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-                  'Abrir cartao' +
+                  'Abrir cartão' +
                 '</button>' +
                 '<button id="vpiCopyLinkBtn" data-url="' + _esc(cardUrl) + '" onclick="VPIPartnerModal.copyLink(\'' + _esc(p.id) + '\')" title="Copiar link" style="display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1.5px solid #E5E7EB;border-radius:8px;background:#fff;color:#374151;font-size:11px;font-weight:700;cursor:pointer">' +
                   '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
                   'Copiar link' +
                 '</button>'
-              : '<span title="Cartao ainda nao gerado (sem card_token)" style="font-size:10px;color:#9CA3AF;padding:6px 10px;border-radius:6px;background:#F9FAFB">Cartao nao disponivel</span>') +
+              : '<span title="Cartão ainda não gerado (sem card_token)" style="font-size:10px;color:#9CA3AF;padding:6px 10px;border-radius:6px;background:#F9FAFB">Cartão não disponível</span>') +
             '<button onclick="VPIPartnerModal.close()" style="background:none;border:none;cursor:pointer;color:#9CA3AF;padding:4px">' +
               '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
             '</button>' +
@@ -295,7 +295,7 @@
           '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">' +
             '<div style="background:#F5F3FF;border-radius:10px;padding:12px;text-align:center">' +
               '<div style="font-size:22px;font-weight:800;color:#7C3AED">' + closedThisMonth + '</div>' +
-              '<div style="font-size:10px;color:#9CA3AF;font-weight:600">Ind. mes</div>' +
+              '<div style="font-size:10px;color:#9CA3AF;font-weight:600">Ind. mês</div>' +
             '</div>' +
             '<div style="background:#F5F3FF;border-radius:10px;padding:12px;text-align:center">' +
               '<div style="font-size:22px;font-weight:800;color:#7C3AED">' + closedThisYear + '</div>' +
@@ -303,13 +303,13 @@
             '</div>' +
             '<div style="background:#F5F3FF;border-radius:10px;padding:12px;text-align:center">' +
               '<div style="font-size:22px;font-weight:800;color:#7C3AED">' + cred + '</div>' +
-              '<div style="font-size:10px;color:#9CA3AF;font-weight:600">Creditos</div>' +
+              '<div style="font-size:10px;color:#9CA3AF;font-weight:600">Créditos</div>' +
             '</div>' +
           '</div>' +
 
           '<div style="background:#F9FAFB;border-radius:10px;padding:14px;margin-bottom:18px">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-              '<span style="font-size:12px;font-weight:600;color:#374151">Progresso para proxima recompensa</span>' +
+              '<span style="font-size:12px;font-weight:600;color:#374151">Progresso para próxima recompensa</span>' +
               '<span style="font-size:11px;color:#9CA3AF">faltam ' + prox + '</span>' +
             '</div>' +
             '<div style="height:8px;background:#E9D5FF;border-radius:99px;overflow:hidden">' +
@@ -323,7 +323,7 @@
           '</div>' +
 
           '<div>' +
-            '<div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">Historico de indicacoes</div>' +
+            '<div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">Histórico de indicações</div>' +
             indRowsHtml +
           '</div>' +
         '</div>' +

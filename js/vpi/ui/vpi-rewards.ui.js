@@ -20,7 +20,7 @@
   }
 
   var TIPO_LABEL = {
-    per_indication:   'Por indicacao',
+    per_indication:   'Por indicação',
     milestone:        'Milestone',
     high_performance: 'Alta Performance',
   }
@@ -120,7 +120,7 @@
     overlay.id = 'vpiTierModal'
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px'
 
-    var t = tier || { tipo: 'milestone', threshold: 5, recompensa: '', recompensa_valor: 0, msg_template: 'Parabens {{nome}}! {{threshold}} indicacoes = {{recompensa}}', required_consecutive_months: null, is_active: true, sort_order: 0 }
+    var t = tier || { tipo: 'milestone', threshold: 5, recompensa: '', recompensa_valor: 0, msg_template: 'Parabéns {{nome}}! {{threshold}} indicações = {{recompensa}}', required_consecutive_months: null, is_active: true, sort_order: 0 }
 
     overlay.innerHTML =
       '<div style="background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
@@ -135,7 +135,7 @@
             '<div>' +
               '<label style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px">Tipo</label>' +
               '<select id="tierTipo" onchange="_vpiTierOnTipoChange()" style="width:100%;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:13px;outline:none;box-sizing:border-box">' +
-                '<option value="per_indication"' +   (t.tipo === 'per_indication'   ? ' selected' : '') + '>Por indicacao (1a)</option>' +
+                '<option value="per_indication"' +   (t.tipo === 'per_indication'   ? ' selected' : '') + '>Por indicação (1ª)</option>' +
                 '<option value="milestone"' +        (t.tipo === 'milestone'        ? ' selected' : '') + '>Milestone acumulativo</option>' +
                 '<option value="high_performance"' + (t.tipo === 'high_performance' ? ' selected' : '') + '>Alta Performance (11 meses)</option>' +
               '</select>' +

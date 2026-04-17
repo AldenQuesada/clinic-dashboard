@@ -100,7 +100,7 @@
       if (!rows.length) {
         body.innerHTML =
           '<div style="padding:30px;text-align:center;color:#9CA3AF;font-size:13px">' +
-            (_mode === 'pending' ? 'Nenhuma celebracao pendente agora. Bora esperar a proxima reacao.' : 'Nenhuma celebracao registrada ainda.') +
+            (_mode === 'pending' ? 'Nenhuma celebração pendente agora. Bora esperar a próxima reação.' : 'Nenhuma celebração registrada ainda.') +
           '</div>'
         return
       }

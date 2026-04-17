@@ -29,7 +29,7 @@
   function _sb() { return window._sbShared || null }
   async function _rpc(name, args) {
     var sb = _sb()
-    if (!sb) throw new Error('Supabase indisponivel')
+    if (!sb) throw new Error('Supabase indisponível')
     var res = await sb.rpc(name, args || {})
     if (res.error) throw new Error(res.error.message)
     return res.data
@@ -89,7 +89,7 @@
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">' +
         '<div>' +
           '<div style="font-size:15px;font-weight:700;color:#111;margin-bottom:2px">Desafios sazonais</div>' +
-          '<div style="font-size:12px;color:#9CA3AF">Carnaval, Dia das Maes, Black November... multiplicador temporario nos creditos por periodo limitado.</div>' +
+          '<div style="font-size:12px;color:#9CA3AF">Carnaval, Dia das Mães, Black November... multiplicador temporário nos créditos por período limitado.</div>' +
         '</div>' +
         '<button onclick="vpiOpenChallengeModal()" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;padding:9px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer">' +
           '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>' +
@@ -258,14 +258,14 @@
     var titulo = (g('vpiChTitulo') || '').trim()
     var slug   = (g('vpiChSlug') || '').trim()
     if (!titulo || !slug) {
-      _toast('Atencao', 'Titulo e slug obrigatorios', 'warning'); return
+      _toast('Atenção', 'Título e slug obrigatórios', 'warning'); return
     }
     var ini = g('vpiChIni'), fim = g('vpiChFim')
     if (!ini || !fim) {
-      _toast('Atencao', 'Datas de inicio e fim obrigatorias', 'warning'); return
+      _toast('Atenção', 'Datas de início e fim obrigatórias', 'warning'); return
     }
     if (new Date(fim).getTime() <= new Date(ini).getTime()) {
-      _toast('Atencao', 'Fim precisa ser depois do inicio', 'warning'); return
+      _toast('Atenção', 'Fim precisa ser depois do início', 'warning'); return
     }
 
     var payload = {
@@ -299,7 +299,7 @@
     try {
       var list = await _rpc('vpi_challenge_list')
       var ch = (list || []).find(function (x) { return x.id === id })
-      if (!ch) { _toast('Erro', 'Nao encontrado', 'error'); return }
+      if (!ch) { _toast('Erro', 'Não encontrado', 'error'); return }
       ch.id = id
       ch.is_active = !!turnOn
       await _rpc('vpi_challenge_upsert', { p_data: ch })
@@ -311,7 +311,7 @@
   }
 
   async function vpiDeleteChallenge(id, titulo) {
-    if (!confirm('Remover o desafio "' + titulo + '"? Isso nao remove auditoria, so o registro.')) return
+    if (!confirm('Remover o desafio "' + titulo + '"? Isso não remove auditoria, só o registro.')) return
     try {
       await _rpc('vpi_challenge_delete', { p_id: id })
       _toast('Removido', titulo, 'success')
