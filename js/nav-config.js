@@ -114,8 +114,6 @@
         { page: 'leads-fullface',              label: 'Leads',                   breadcrumb: 'Full Face > Leads' },
         { page: 'sdh-fullface',                label: 'SDR',                     breadcrumb: 'Full Face > SDR',                     highlight: true, roles: [ROLES.OWNER, ROLES.ADMIN] },
         { page: 'quiz-fullface',               label: 'Quiz',                    breadcrumb: 'Full Face > Quiz',                    roles: [ROLES.OWNER, ROLES.ADMIN] },
-        { page: 'facial-analysis',             label: 'Análise Facial IA',       breadcrumb: 'Full Face > Análise Facial IA' },
-        { page: 'facial-simulations',          label: 'Simulações',              breadcrumb: 'Full Face > Simulações' },
       ],
     },
 
@@ -164,6 +162,7 @@
         { page: 'orcamentos',                  label: 'Orçamentos',                   breadcrumb: 'Pacientes > Orçamentos' },
         { page: 'patients-prontuario',         label: 'Prontuario Clinico',           breadcrumb: 'Pacientes > Prontuario Clinico',         roles: [ROLES.OWNER, ROLES.ADMIN, ROLES.THERAPIST] },
         { page: 'patients-docs',               label: 'Documentos do Paciente',       breadcrumb: 'Pacientes > Documentos do Paciente' },
+        { page: 'facial-analysis',             label: 'Análise Facial IA',            breadcrumb: 'Pacientes > Análise Facial IA',          roles: [ROLES.OWNER, ROLES.ADMIN, ROLES.THERAPIST], highlight: true },
       ],
     },
 
@@ -224,19 +223,6 @@
       pages: [
         { page: 'fin-goals',    label: 'Metas Financeiras',      breadcrumb: 'Financeiro > Metas Financeiras' },
         { page: 'fin-reports',  label: 'Relatórios Financeiros', breadcrumb: 'Financeiro > Relatórios Financeiros' },
-      ],
-    },
-
-    // ── Ferramentas ─────────────────────────────────────────────
-    {
-      section: 'ferramentas',
-      icon:    'tool',
-      label:   'Ferramentas',
-      roles:   [ROLES.OWNER, ROLES.ADMIN],
-      plans:   [],
-      pages: [
-        { page: 'facial-analysis',    label: 'Análise Facial',  breadcrumb: 'Ferramentas > Análise Facial',  highlight: true },
-        { page: 'facial-simulations', label: 'Simulações',      breadcrumb: 'Ferramentas > Simulações' },
       ],
     },
 
