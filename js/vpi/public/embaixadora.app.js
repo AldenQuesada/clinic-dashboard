@@ -244,7 +244,7 @@
       if (window.VPIEmbQR && window.VPIEmbQR.init)                window.VPIEmbQR.init()
       if (window.VPIEmbPonteiras && window.VPIEmbPonteiras.init)  window.VPIEmbPonteiras.init()
       if (window.VPIEmbLineage && window.VPIEmbLineage.init)      window.VPIEmbLineage.init()
-      if (window.VPIEmbAttribution && window.VPIEmbAttribution.init) window.VPIEmbAttribution.init()
+      // VPIEmbAttribution removido — expunha receita gerada pra clinica
       if (window.VPIEmbChallenge && window.VPIEmbChallenge.init)   window.VPIEmbChallenge.init()
       if (window.VPIEmbEaster && window.VPIEmbEaster.init)         window.VPIEmbEaster.init()
       if (window.VPIEmbPalette && window.VPIEmbPalette.init)       window.VPIEmbPalette.init()

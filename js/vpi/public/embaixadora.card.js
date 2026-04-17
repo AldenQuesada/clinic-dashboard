@@ -168,8 +168,7 @@
       '<div id="vpi-missao-slot"></div>' +
       '<div id="vpi-badges-slot"></div>' +
       '<div id="vpi-shoutout-slot"></div>' +
-      // Fase 9: Attribution ROI (card "Sua Atribuicao")
-      '<div id="vpi-emb-attribution"></div>' +
+      // Attribution removido — expunha receita gerada pra clinica (antietico)
       // Fase 9 Entrega 5: Meu Impacto ("voce transformou N vidas")
       '<div id="vpi-emb-myimpact"></div>' +
       '<div id="vpi-impact-slot"></div>' +
