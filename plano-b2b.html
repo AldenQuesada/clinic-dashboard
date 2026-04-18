@@ -207,6 +207,7 @@
       <li class="nav-section">Ritmo</li>
       <li><a href="#meta-mensal">Meta mensal</a></li>
       <li><a href="#scout">Scout de candidatos</a></li>
+      <li><a href="#custo-controle">Custo &amp; controle</a></li>
 
       <li class="nav-section">Execução</li>
       <li><a href="#fase-1">Fase 1 — Fundação</a></li>
@@ -373,7 +374,67 @@
       </div>
 
       <div class="callout">
-        <p><strong>Custo operacional estimado:</strong> R$30-80/mês (Apify scraping + Claude API). Cada varredura custa centavos. Autogestão real: você só aprova, sistema faz o resto.</p>
+        <p><strong>Autogestão real:</strong> você só aprova, sistema faz o resto. Cada varredura custa centavos. Custo detalhado na seção seguinte.</p>
+      </div>
+    </section>
+
+    <!-- CUSTO & CONTROLE -->
+    <section id="custo-controle">
+      <h2><span class="num">04c</span>Custo &amp; controle de gastos</h2>
+      <p class="lead">Transparência total sobre o que o programa consome. Budget cap, alertas automáticos e relatório mensal pra você decidir se ampliar ou segurar.</p>
+
+      <h3>Estrutura de custo (unitário)</h3>
+      <table>
+        <thead>
+          <tr><th style="width: 28%">Item</th><th style="width: 22%">Custo unit.</th><th>Quando dispara</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Apify · Google Maps scraper</strong></td><td>≈ R$ 0,40 / varredura</td><td>1x por categoria escolhida</td></tr>
+          <tr><td><strong>Apify · Instagram enrich</strong></td><td>≈ R$ 0,15 / perfil</td><td>Para cada candidato com IG</td></tr>
+          <tr><td><strong>Claude API · Score DNA + fit/riscos</strong></td><td>≈ R$ 0,08 / candidato</td><td>Para cada candidato analisado</td></tr>
+          <tr><td><strong>Claude API · Mensagem de abordagem</strong></td><td>≈ R$ 0,05 / candidato</td><td>Quando você clica "Abordar"</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Projeção mensal — 3 cenários</h3>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lbl">Conservador</div><div class="val">R$ 30</div><div class="desc">2 varreduras/mês · 30 candidatos analisados · 10 abordagens. Ramp-up.</div></div>
+        <div class="kpi"><div class="lbl">Operacional</div><div class="val">R$ 55</div><div class="desc">4 varreduras/mês · 60 candidatos analisados · 20 abordagens. Mês típico.</div></div>
+        <div class="kpi"><div class="lbl">Teto</div><div class="val">R$ 100</div><div class="desc">Budget cap proposto. Acima disso, sistema pausa novas buscas até aprovação.</div></div>
+      </div>
+
+      <h3>Controles automáticos</h3>
+      <div class="card-grid">
+        <div class="card">
+          <div class="pillar">Controle 1</div>
+          <div class="title">Budget cap mensal</div>
+          <div class="desc">Teto configurável (default R$ 100). Ao atingir 80%, dispara alerta; aos 100%, pausa automaticamente novas varreduras até o próximo mês ou aprovação manual.</div>
+        </div>
+        <div class="card">
+          <div class="pillar">Controle 2</div>
+          <div class="title">Dedup inteligente</div>
+          <div class="desc">Candidato já varrido nos últimos 90 dias não é recobrado. Evita custo duplicado ao rodar a mesma categoria 2x.</div>
+        </div>
+        <div class="card">
+          <div class="pillar">Controle 3</div>
+          <div class="title">Rate limit por categoria</div>
+          <div class="desc">Máx 1 varredura/categoria/dia. Impede cliques acidentais de estourar o orçamento.</div>
+        </div>
+        <div class="card">
+          <div class="pillar">Controle 4</div>
+          <div class="title">Relatório mensal de custo</div>
+          <div class="desc">Dia 01 de cada mês: PDF com breakdown por item (varreduras, enrich, análises), candidatos gerados, taxa de conversão e projeção para o mês seguinte.</div>
+        </div>
+      </div>
+
+      <h3>Ritmo mensal automatizado</h3>
+      <div class="callout">
+        <p><strong>Cron mensal (dia 05):</strong> sistema varre automaticamente as categorias do Tier atual em falta (ex: se falta 1 parceria pra meta, varre 2-3 categorias candidatas). Você recebe no dia 06 uma lista curada de 5-10 candidatos top-score — revisa e aprova em 10 min. Autogestão real.</p>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lbl">Meta de custo/parceria fechada</div><div class="val">&lt; R$ 15</div><div class="desc">Custo operacional do scout dividido por novas parcerias/mês. Proxy de eficiência do sistema.</div></div>
+        <div class="kpi"><div class="lbl">ROI estimado mínimo</div><div class="val">20x</div><div class="desc">1 parceria Tier 1 ativa gera R$ 2-5k em procedimentos indicados/ano. Custo scout: R$ 100-200/ano. ROI assimétrico.</div></div>
       </div>
     </section>
 
@@ -589,6 +650,9 @@
       { id: 'b2b-fase2-scout-schema', title: 'Scout: schema b2b_candidates + RPCs',      meta: 'Tabela candidatos + triagem + tracking' },
       { id: 'b2b-fase2-scout-crawl',  title: 'Scout: edge function Apify + Claude',      meta: 'Varredura Google Maps + enriquecimento IA + score DNA' },
       { id: 'b2b-fase2-scout-ui',     title: 'Scout: aba Candidatos na página B2B',      meta: 'Lista ordenada por score · triagem · status negociação' },
+      { id: 'b2b-fase2-scout-budget', title: 'Scout: tracker de custo + budget cap',     meta: 'Teto mensal R$ 100 · alerta 80% · pausa em 100% · breakdown por item' },
+      { id: 'b2b-fase2-scout-cron',   title: 'Scout: varredura mensal automática',       meta: 'Dia 05 varre categorias em falta · dia 06 lista curada pronta' },
+      { id: 'b2b-fase2-scout-report', title: 'Scout: relatório mensal de custo (PDF)',   meta: 'Breakdown por item · candidatos gerados · taxa conversão · projeção' },
       { id: 'b2b-fase2-meta-tracker', title: 'Meta mensal — tracker + alerta',           meta: 'Cron verifica se atingiu meta · sugere top 5 candidatos se abaixo' },
     ],
     'b2b-fase3': [
