@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano Estratégico de Growth — Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #0F0D0A;
+    --bg-1: #1A1713;
+    --bg-2: #211D17;
+    --bg-3: #2A2520;
+    --champagne: #C9A96E;
+    --champagne-light: #DFC5A0;
+    --champagne-dark: #A8895E;
+    --ivory: #F5F0E8;
+    --text-primary: #F5F0E8;
+    --text-secondary: #B5A894;
+    --text-muted: #7A7165;
+    --sage: #8A9E88;
+    --rosa: #C4937A;
+    --border: rgba(201, 169, 110, 0.15);
+    --border-strong: rgba(201, 169, 110, 0.35);
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    background: var(--bg-0);
+    color: var(--text-primary);
+    line-height: 1.7;
+    min-height: 100vh;
+    letter-spacing: 0.01em;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--bg-1);
+    border-right: 1px solid var(--border);
+    padding: 40px 24px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-brand {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-brand .eyebrow {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--champagne);
+    font-weight: 500;
+  }
+  .sidebar-brand .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ivory);
+    margin-top: 8px;
+    line-height: 1.2;
+  }
+  .nav { list-style: none; }
+  .nav li { margin-bottom: 4px; }
+  .nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 400;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .nav a:hover {
+    background: var(--bg-2);
+    color: var(--champagne-light);
+  }
+  .nav a.active {
+    background: var(--bg-2);
+    color: var(--champagne);
+    border-left: 2px solid var(--champagne);
+  }
+  .nav a svg { flex-shrink: 0; }
+  .nav-section {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 20px 12px 8px;
+    font-weight: 500;
+  }
+
+  /* Main */
+  .main {
+    padding: 56px 72px;
+    max-width: 1100px;
+  }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 64px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero .eyebrow {
+    font-size: 11px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--champagne);
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 56px;
+    font-weight: 300;
+    font-style: italic;
+    line-height: 1.1;
+    color: var(--ivory);
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+  .hero .subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--champagne-light);
+    margin-bottom: 32px;
+    line-height: 1.4;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 40px;
+    margin-top: 24px;
+  }
+  .hero-meta-item {
+    display: flex;
+    flex-direction: column;
+  }
+  .hero-meta-item .label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .hero-meta-item .value {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 400;
+  }
+
+  /* Section */
+  section {
+    margin-bottom: 80px;
+    scroll-margin-top: 40px;
+  }
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 38px;
+    font-weight: 400;
+    color: var(--ivory);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  h2 .num {
+    color: var(--champagne);
+    font-size: 22px;
+    font-weight: 500;
+    margin-right: 14px;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 3px;
+    vertical-align: middle;
+  }
+  h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--champagne);
+    margin-top: 36px;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  h4 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ivory);
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+  p { margin-bottom: 16px; color: var(--text-primary); font-size: 15px; }
+  .lead {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--champagne-light);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+  strong { color: var(--champagne-light); font-weight: 500; }
+  em { color: var(--text-primary); font-style: italic; }
+  code {
+    font-family: 'Consolas', 'Monaco', monospace;
+    background: var(--bg-2);
+    color: var(--champagne-light);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+  }
+  pre {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--champagne);
+    padding: 20px 24px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    overflow-x: auto;
+    margin: 20px 0;
+  }
+  ul, ol { padding-left: 24px; margin-bottom: 20px; color: var(--text-primary); }
+  li { margin-bottom: 8px; font-size: 15px; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 24px 0;
+    font-size: 14px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  th {
+    background: var(--bg-2);
+    color: var(--champagne);
+    font-weight: 500;
+    text-align: left;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-strong);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(201, 169, 110, 0.03); }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .card {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    transition: all 0.2s;
+  }
+  .card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+  }
+  .card-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--champagne);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .card-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 400;
+    color: var(--ivory);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .card-desc { font-size: 13px; color: var(--text-secondary); }
+
+  /* Callout */
+  .callout {
+    background: var(--bg-1);
+    border-left: 3px solid var(--champagne);
+    padding: 20px 24px;
+    border-radius: 4px;
+    margin: 24px 0;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .callout svg { flex-shrink: 0; color: var(--champagne); margin-top: 2px; }
+  .callout p { margin-bottom: 0; font-size: 14px; }
+  .callout.risk { border-left-color: var(--rosa); }
+  .callout.risk svg { color: var(--rosa); }
+  .callout.win { border-left-color: var(--sage); }
+  .callout.win svg { color: var(--sage); }
+
+  /* Sprint box */
+  .sprint {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 32px;
+    margin: 24px 0;
+    position: relative;
+  }
+  .sprint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .sprint-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--ivory);
+    line-height: 1.2;
+  }
+  .sprint-range {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--champagne);
+    padding: 6px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 20px;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .sprint-output {
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: var(--bg-2);
+    border-radius: 4px;
+    font-size: 14px;
+    border-left: 2px solid var(--sage);
+  }
+  .sprint-output strong { color: var(--sage); }
+
+  /* Loop diagram */
+  .loop-box {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin: 16px 0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--champagne-light);
+  }
+
+  /* Status tag */
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .tag.ready { background: rgba(138, 158, 136, 0.12); color: var(--sage); border: 1px solid rgba(138, 158, 136, 0.3); }
+  .tag.build { background: rgba(196, 147, 122, 0.12); color: var(--rosa); border: 1px solid rgba(196, 147, 122, 0.3); }
+  .tag.activate { background: rgba(201, 169, 110, 0.12); color: var(--champagne); border: 1px solid var(--border-strong); }
+
+  /* RICE highlight */
+  .rice-high { color: var(--sage); font-weight: 600; }
+  .rice-mid { color: var(--champagne); font-weight: 600; }
+  .rice-low { color: var(--text-secondary); }
+
+  /* Footer */
+  .footer {
+    margin-top: 100px;
+    padding: 48px 0 24px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--champagne);
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+  .footer-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+  }
+
+  /* CTA */
+  .cta-block {
+    background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    padding: 48px;
+    text-align: center;
+    margin: 40px 0;
+  }
+  .cta-block h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 400;
+    color: var(--ivory);
+    margin-bottom: 16px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .cta-block p { font-size: 16px; color: var(--text-secondary); margin-bottom: 24px; }
+  .cta-options {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .cta-option {
+    background: var(--bg-0);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px 28px;
+    text-align: left;
+    min-width: 280px;
+    max-width: 340px;
+  }
+  .cta-option .label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--champagne);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .cta-option .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    color: var(--ivory);
+    margin-bottom: 6px;
+  }
+  .cta-option .meta { font-size: 12px; color: var(--text-muted); }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    margin: 40px 0;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border);
+  }
+  .divider-diamond {
+    width: 8px;
+    height: 8px;
+    background: var(--champagne);
+    transform: rotate(45deg);
+    margin: 0 16px;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 4px;
+    background: var(--bg-2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--champagne-dark), var(--champagne));
+    border-radius: 2px;
+  }
+
+  /* Print */
+  @media print {
+    .sidebar { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    .main { padding: 20px; max-width: 100%; }
+    body { background: white; color: black; }
+    h2, h3, h4, p, li, td, th, strong, em, .card-value, .sprint-title { color: black !important; }
+    .card, .sprint, table { border: 1px solid #ccc; background: white; }
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    .main { padding: 32px 24px; }
+    .hero h1 { font-size: 38px; }
+    h2 { font-size: 28px; }
+    .sprint-header { flex-direction: column; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="eyebrow">Clínica Mirian</div>
+      <div class="title">Plano<br>de Growth</div>
+    </div>
+    <div class="nav-section">Análise</div>
+    <ul class="nav">
+      <li><a href="#diagnostico">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Diagnóstico</a></li>
+      <li><a href="#north-star">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        North Star</a></li>
+      <li><a href="#loops">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        Growth Loops</a></li>
+    </ul>
+    <div class="nav-section">Execução</div>
+    <ul class="nav">
+      <li><a href="#roadmap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+        Roadmap 90 dias</a></li>
+      <li><a href="#quick-wins">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Quick Wins</a></li>
+      <li><a href="#rice">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Priorização RICE</a></li>
+    </ul>
+    <div class="nav-section">Governança</div>
+    <ul class="nav">
+      <li><a href="#metricas">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 12l3-3 3 3 5-5"/></svg>
+        Métricas</a></li>
+      <li><a href="#riscos">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Riscos</a></li>
+      <li><a href="#proximo-passo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        Próximo passo</a></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="eyebrow">Análise Estratégica — Growth</div>
+      <h1>Plano Estratégico de Growth</h1>
+      <div class="subtitle">O motor está pronto. Agora é orquestrar ciclos e ativar os assets parados.</div>
+      <div class="hero-meta">
+        <div class="hero-meta-item">
+          <span class="label">Data</span>
+          <span class="value">17 de abril de 2026</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="label">Horizonte</span>
+          <span class="value">90 dias (3 sprints)</span>
+        </div>
+        <div class="hero-meta-item">
+          <span class="label">Base instalada</span>
+          <span class="value">VPI 9 fases + Cashflow P1-P7 + Lara + Quiz</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- DIAGNÓSTICO -->
+    <section id="diagnostico">
+      <h2><span class="num">01</span>Diagnóstico</h2>
+      <p class="lead">A infraestrutura construída nos últimos 30 dias é de nível enterprise. O gap real agora é ativação e orquestração de ciclos — motor V12 com 3 marchas engatadas.</p>
+
+      <h3>Vazamentos identificados</h3>
+      <table>
+        <thead>
+          <tr><th style="width: 35%">Vazamento</th><th style="width: 30%">Impacto</th><th>Causa-raiz</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Challenges desativados</td><td>Zero urgência sazonal</td><td>Admin nunca ativou na aba "Desafios"</td></tr>
+          <tr><td>Hook attribution não plugado em <code>patients.js</code></td><td>ROI por canal = indefinido</td><td>Gancho deixado, não fechado</td></tr>
+          <tr><td>Quiz → VPI desconectado</td><td>Lead quente sai sem convite embaixadora</td><td>Loops isolados</td></tr>
+          <tr><td>Aniversário → VPI desconectado</td><td>Aniversariante ativa = candidata óbvia sem convite</td><td>Idem</td></tr>
+          <tr><td>Saudade só para parceiras</td><td>Paciente inativa não-parceira sem reativação</td><td>Escopo restrito ao VPI</td></tr>
+          <tr><td>NPS não coletado sistematicamente</td><td>Sem sinal para selecionar embaixadoras</td><td>Nunca foi implementado</td></tr>
+          <tr><td>Revista não publicada</td><td>Canal de conteúdo zerado</td><td>Editor admin pendente</td></tr>
+          <tr><td>K-factor sem meta definida</td><td>Time não sabe se está bom ou ruim</td><td>Falta NSM acordada</td></tr>
+          <tr><td>Staff alert phone vazio</td><td>Tier alto não avisa ninguém</td><td>Configuração admin pendente</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>Leitura do consultor:</strong> o problema não é mais código. É disciplina operacional. Cada semana com challenge desligado e saudade restrita é receita deixada na mesa.</p>
+      </div>
+    </section>
+
+    <!-- NORTH STAR -->
+    <section id="north-star">
+      <h2><span class="num">02</span>North Star Metric</h2>
+      <p class="lead">Proponho: Agendamentos finalizados por mês como métrica-mãe. Proxy direto de receita executada, leading indicator semanal, controlável pelo time.</p>
+
+      <p>Por que não "faturamento"? Porque receita tem lag de caixa. Finalizações mostra o que a operação controla agora, com feedback rápido para corrigir rota.</p>
+
+      <h3>Input metrics (sub-métricas)</h3>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">K-factor</div>
+          <div class="card-value">≥ 0,7</div>
+          <div class="card-desc">Indicações fechadas por parceira ativa. Já calculado em <code>vpi_kpis_strategic</code>.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 70%"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">CAC por canal</div>
+          <div class="card-value">Baseline</div>
+          <div class="card-desc">Orgânico, indicação, pago, parceria. Requer hook attribution plugado.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">LTV 12m / CAC</div>
+          <div class="card-value">≥ 3</div>
+          <div class="card-desc">Razão mínima para investir em aquisição paga. LTV já existe em cashflow P4.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ativação embaixadora</div>
+          <div class="card-value">≥ 25%</div>
+          <div class="card-desc">% de convites que viram 1ª indicação fechada em 30 dias.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 25%"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOOPS -->
+    <section id="loops">
+      <h2><span class="num">03</span>Três Growth Loops</h2>
+      <p class="lead">Growth não acontece em funil. Acontece em loops — ciclos que se retroalimentam. Três estão desenhados; um roda, dois precisam fechar.</p>
+
+      <h3>Loop A — Referral <span class="tag ready">Amplificar</span></h3>
+      <div class="loop-box">
+Paciente finaliza<br>
+&nbsp;&nbsp;→ autoEnroll VPI<br>
+&nbsp;&nbsp;→ convite WA D+1<br>
+&nbsp;&nbsp;→ aceita LGPD<br>
+&nbsp;&nbsp;→ indica amiga<br>
+&nbsp;&nbsp;→ amiga finaliza<br>
+&nbsp;&nbsp;→ vira embaixadora<br>
+&nbsp;&nbsp;→ (loop)
+      </div>
+      <p><strong>Status:</strong> motor pronto, falta combustível — challenges ativos, metas visíveis para parceiras, pressão cultural do cartão digital circulando.</p>
+
+      <h3>Loop B — Conteúdo → Lead <span class="tag build">Construir</span></h3>
+      <div class="loop-box">
+Revista publicada<br>
+&nbsp;&nbsp;→ SEO + Instagram + WA broadcast<br>
+&nbsp;&nbsp;→ tráfego qualificado<br>
+&nbsp;&nbsp;→ quiz qualificador<br>
+&nbsp;&nbsp;→ lead captado<br>
+&nbsp;&nbsp;→ agendamento<br>
+&nbsp;&nbsp;→ caso vira matéria da próxima edição<br>
+&nbsp;&nbsp;→ (loop)
+      </div>
+      <p><strong>Status:</strong> peças existem isoladas. Precisa integrar Revista ↔ SEO ↔ Quiz ↔ VPI em uma cadeia automatizada.</p>
+
+      <h3>Loop C — Reativação <span class="tag activate">Ativar</span></h3>
+      <div class="loop-box">
+RFM classifica inativa / em_risco<br>
+&nbsp;&nbsp;→ saudade personalizada<br>
+&nbsp;&nbsp;→ retorno<br>
+&nbsp;&nbsp;→ upsell com preço parceira<br>
+&nbsp;&nbsp;→ nova finalização<br>
+&nbsp;&nbsp;→ (loop)
+      </div>
+      <p><strong>Status:</strong> RFM roda no cashflow P4, mas saudade só dispara para parceiras. Expandir para inativas gerais libera ROI imediato.</p>
+    </section>
+
+    <!-- ROADMAP -->
+    <section id="roadmap">
+      <h2><span class="num">04</span>Roadmap 90 dias</h2>
+      <p class="lead">Três sprints com saída clara. Cada um destrava o seguinte.</p>
+
+      <!-- SPRINT 1 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <div class="sprint-title">Sprint 1 — Fechar torneiras abertas</div>
+          <div class="sprint-range">Dias 1 – 15</div>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Ação</th><th>Onde</th><th>Esforço</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Plugar <code>vpi_link_attribution_to_lead</code></td><td><code>js/patients.js</code> createLead + modal agendamento</td><td>2h</td></tr>
+            <tr><td>2</td><td>Ativar 1 challenge sazonal (Maio — Mês da Mãe 1.5x)</td><td>Aba "Desafios" admin</td><td>10min</td></tr>
+            <tr><td>3</td><td>Configurar <code>vpi_staff_alert_phone</code></td><td>Aba Config VPI</td><td>5min</td></tr>
+            <tr><td>4</td><td>Revisar 5 templates WA (saudade, alerta tier, dormente, reativação, cortesia)</td><td>Funil de Automações</td><td>1h</td></tr>
+            <tr><td>5</td><td>Publicar edição 1 da revista</td><td>Editor admin (destravar pendência)</td><td>1 dia</td></tr>
+            <tr><td>6</td><td>Definir NSM + metas com Mirian</td><td>Reunião 1:1</td><td>30min</td></tr>
+            <tr><td>7</td><td>Expandir saudade para inativas não-parceiras</td><td>RPC + scan semelhante ao VPI</td><td>4h</td></tr>
+          </tbody>
+        </table>
+        <div class="sprint-output">
+          <strong>Output:</strong> operação medindo ROI por canal, primeiro challenge rodando, NSM acordado com a clínica.
+        </div>
+      </div>
+
+      <!-- SPRINT 2 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <div class="sprint-title">Sprint 2 — Integrar os três loops</div>
+          <div class="sprint-range">Dias 16 – 45</div>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Ação</th><th>Implementação</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Quiz → VPI bridge</td><td>No close do quiz: se lead finalizar procedimento em ≤30d, disparar autoEnroll VPI</td></tr>
+            <tr><td>2</td><td>Aniversário → VPI bridge</td><td>Aniversariante ativa (2+ appts, sem VPI) recebe convite embaixadora no mesmo envio</td></tr>
+            <tr><td>3</td><td>NPS pós-procedimento D+7</td><td>WA automation: "De 0-10, indicaria?" → nota ≥9 dispara convite VPI + pedido de depoimento com consent</td></tr>
+            <tr><td>4</td><td>Depoimentos → Revista</td><td>Celebration feed consentido vira matéria automática na próxima edição</td></tr>
+            <tr><td>5</td><td>Instagram auto-post</td><td>Meta Graph API (backlog tech) ou staff manual com template pronto story/post</td></tr>
+            <tr><td>6</td><td>Dashboard LTV/CAC por canal</td><td>RPC agrupa <code>vpi_partner_attribution</code> + cashflow por canal, nova aba em Growth</td></tr>
+          </tbody>
+        </table>
+        <div class="sprint-output">
+          <strong>Output:</strong> os 3 loops conversando entre si; time vendo CAC/LTV por canal; decisões de budget passam a ser data-driven.
+        </div>
+      </div>
+
+      <!-- SPRINT 3 -->
+      <div class="sprint">
+        <div class="sprint-header">
+          <div class="sprint-title">Sprint 3 — Abrir novos canais</div>
+          <div class="sprint-range">Dias 46 – 90</div>
+        </div>
+        <table>
+          <thead><tr><th>#</th><th>Ação</th><th>Investimento</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>SEO básico na revista</td><td>meta tags, sitemap, schema.org Article, links internos — 1 dia</td></tr>
+            <tr><td>2</td><td>Página Parceiros B2B2C ativada</td><td>dermato vizinha, spa, salão com deep-link + comissão VPI — 2 dias</td></tr>
+            <tr><td>3</td><td>Paid ads track</td><td>campanhas com UTM padronizado; attribution já rastreia 302 no r.html — 1 dia infra</td></tr>
+            <tr><td>4</td><td>Landing pages por queixa</td><td>Smooth Eyes, Full Face, Lifting 5D — cada uma com quiz específico + CTA VPI — 3 dias</td></tr>
+            <tr><td>5</td><td>Email/SMS como canal secundário</td><td>WA primário, email como backup para LGPD opt-out — 2 dias</td></tr>
+            <tr><td>6</td><td>Eventos presenciais Diamante</td><td>1 jantar trimestral com parceiras top — custo baixo, ROI emocional alto — operacional</td></tr>
+          </tbody>
+        </table>
+        <div class="sprint-output">
+          <strong>Output:</strong> clínica com 5+ canais medidos, SEO ranqueando, parcerias gerando leads qualificados com atribuição clara.
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK WINS -->
+    <section id="quick-wins">
+      <h2><span class="num">05</span>Quick Wins nas próximas 48h</h2>
+      <p class="lead">Cinco ações que somadas levam menos de 1 dia e valem mais que qualquer feature nova.</p>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">01 — 2h</div>
+          <h4>Plugar hook attribution</h4>
+          <p style="font-size: 13px; margin-bottom: 0;">Conectar <code>vpi_link_attribution_to_lead</code> em <code>patients.js:createLead</code> e no modal de agendamento. Destrava medição de ROI.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">02 — 10min</div>
+          <h4>Ativar challenge sazonal</h4>
+          <p style="font-size: 13px; margin-bottom: 0;">Ligar "Maio — Mês da Mãe 1.5x" na aba Desafios. Injeção de urgência com multiplier automático.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">03 — 5min</div>
+          <h4>Configurar staff alert</h4>
+          <p style="font-size: 13px; margin-bottom: 0;">Preencher <code>vpi_staff_alert_phone</code> em Config VPI. Sem isso, tier alto bate e ninguém sabe.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">04 — 1min</div>
+          <h4>Disparar lembretes dormentes</h4>
+          <p style="font-size: 13px; margin-bottom: 0;">Clicar "Enviar lembretes agora" na aba Ranking. Batch já existe. ROI imediato.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">05 — 1h</div>
+          <h4>Revisar 5 templates WA</h4>
+          <p style="font-size: 13px; margin-bottom: 0;">saudade, alerta tier, dormente, reativação, cortesia. Texto, não código. Quem fala é a marca.</p>
+        </div>
+      </div>
+
+      <div class="callout win">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <p><strong>Essas 5 ações destravam medição.</strong> Sem elas, toda decisão de priorização a partir daqui vira chute. Com elas, as próximas 4 semanas ficam data-driven.</p>
+      </div>
+    </section>
+
+    <!-- RICE -->
+    <section id="rice">
+      <h2><span class="num">06</span>Priorização RICE</h2>
+      <p class="lead">Reach × Impact × Confidence ÷ Effort. Fórmula pragmática para decidir o que fazer agora vs depois.</p>
+
+      <table>
+        <thead>
+          <tr><th>Iniciativa</th><th>Reach</th><th>Impact</th><th>Confidence</th><th>Effort</th><th>RICE</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Quiz → VPI bridge</td><td>500/mês</td><td>3</td><td>80%</td><td>1 dia</td><td class="rice-high">1200</td></tr>
+          <tr><td>SEO básico revista</td><td>2000/mês</td><td>2</td><td>50%</td><td>1 dia</td><td class="rice-high">2000</td></tr>
+          <tr><td>Hook attribution</td><td>todos leads</td><td>3</td><td>100%</td><td>2h</td><td class="rice-high">altíssimo</td></tr>
+          <tr><td>Challenge Mês da Mãe</td><td>30 parceiras</td><td>2</td><td>90%</td><td>10min</td><td class="rice-high">altíssimo</td></tr>
+          <tr><td>Landing pages por queixa</td><td>1000/mês</td><td>3</td><td>70%</td><td>3 dias</td><td class="rice-mid">700</td></tr>
+          <tr><td>NPS D+7 + depoimento</td><td>200/mês</td><td>3</td><td>70%</td><td>2 dias</td><td class="rice-mid">420</td></tr>
+          <tr><td>Revista publicada</td><td>1000/mês</td><td>2</td><td>60%</td><td>3 dias</td><td class="rice-mid">400</td></tr>
+          <tr><td>Paid ads</td><td>3000/mês</td><td>2</td><td>40%</td><td>contínuo</td><td class="rice-low">depende</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <p><strong>Top 3 para atacar agora:</strong> hook attribution (2h, altíssimo), challenge sazonal (10min, altíssimo), quiz → VPI bridge (1d, RICE 1200). Essa combinação fecha o diagnóstico e abre o próximo horizonte.</p>
+      </div>
+    </section>
+
+    <!-- MÉTRICAS -->
+    <section id="metricas">
+      <h2><span class="num">07</span>Cadência de Métricas</h2>
+      <p class="lead">Ritmo de revisão. Semanal para operação, mensal para estratégia.</p>
+
+      <h3>Weekly review — 30 minutos, toda segunda</h3>
+      <ul>
+        <li><strong>NSM:</strong> finalizações da semana vs semana anterior</li>
+        <li><strong>K-factor 7d:</strong> subindo ou descendo?</li>
+        <li><strong>CAC por canal:</strong> se hook attribution plugado</li>
+        <li><strong>Top 5 parceiras por score:</strong> quem celebrar, quem cutucar</li>
+        <li><strong>Dormentes reativadas:</strong> quantas voltaram no ciclo</li>
+      </ul>
+
+      <h3>Monthly review — 2 horas, todo dia 1</h3>
+      <ul>
+        <li><strong>NSM mês vs mês:</strong> tendência de 90 dias</li>
+        <li><strong>LTV 12m / CAC por canal:</strong> onde está sobrando margem, onde está queimando</li>
+        <li><strong>Churn 90d:</strong> % pacientes sem retorno em 90 dias</li>
+        <li><strong>Revenue mix por canal:</strong> concentração de risco</li>
+        <li><strong>Challenges ROI:</strong> vale repetir, ajustar ou trocar</li>
+      </ul>
+    </section>
+
+    <!-- RISCOS -->
+    <section id="riscos">
+      <h2><span class="num">08</span>Riscos e Sinalizações</h2>
+      <p class="lead">Growth bem executado escala também os riscos. Detectar cedo evita recolher depois.</p>
+
+      <table>
+        <thead>
+          <tr><th>Risco</th><th>Como detectar</th><th>Mitigação</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Saturação WA (opt-out ≥ 5%)</td><td><code>vpi_partners.opt_out_at</code></td><td>Reduzir frequência, A/B em tom</td></tr>
+          <tr><td>Canibalização preço parceira</td><td>Margem por procedimento cai</td><td>Cap de 1x/mês por parceira</td></tr>
+          <tr><td>Spam Instagram (algoritmo pune)</td><td>Alcance despenca</td><td>Variar formatos: story vs post vs reels</td></tr>
+          <tr><td>Tier high_perf inflacionado</td><td>Recompensa custa mais que LTV</td><td>Auditoria mensal por tier</td></tr>
+          <tr><td>Challenges viciantes</td><td>K-factor cai sem challenge ativo</td><td>Sempre ter 1 rodando, mas alternar temas</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout risk">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <p><strong>Sinalização crítica:</strong> se opt-out passar de 5% em qualquer semana, pausar imediatamente campanhas broadcast e revisar cadência. Reputação WhatsApp leva meses para recuperar.</p>
+      </div>
+    </section>
+
+    <!-- PRÓXIMO PASSO -->
+    <section id="proximo-passo">
+      <h2><span class="num">09</span>Próximo Passo</h2>
+
+      <div class="cta-block">
+        <h3>Por onde começar?</h3>
+        <p>Duas trilhas possíveis. Ambas defensáveis, com trade-off diferente.</p>
+
+        <div class="cta-options">
+          <div class="cta-option">
+            <div class="label">Opção A — Recomendada</div>
+            <div class="title">Quick Wins 48h</div>
+            <div class="meta">Hook attribution + challenge + staff alert + dormentes + templates</div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px; margin-bottom: 0;">Destrava medição. Toda priorização a partir daqui vira data-driven. Menor esforço, maior RICE.</p>
+          </div>
+          <div class="cta-option">
+            <div class="label">Opção B — Bigger bet</div>
+            <div class="title">Quiz → VPI bridge</div>
+            <div class="meta">1 dia de trabalho · RICE 1200 · integra 2 loops</div>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px; margin-bottom: 0;">Fecha Loop A e B de uma vez. Maior impacto único, mas depende da base de medição (Opção A) para validar.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider">
+        <div class="divider-diamond"></div>
+      </div>
+
+      <p style="text-align: center; color: var(--text-secondary); font-size: 14px;">A ordem ótima é A → B. Mas se a clínica quer ver movimento grande antes de medir, B primeiro também funciona.</p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-logo">Clínica Mirian de Paula</div>
+      <div class="footer-tagline">HARMONIA QUE REVELA — PRECISÃO QUE DURA</div>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // Active nav on scroll
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('.nav a');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
