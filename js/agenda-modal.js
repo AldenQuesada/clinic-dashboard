@@ -85,6 +85,13 @@
     const modal = document.getElementById('apptModal')
     if (!modal) return
 
+    // Estado limpo a cada abertura. Splice preserva refs compartilhadas
+    // (_apptProcs -> _apptState.procs, _apptPagamentos -> _apptState.pagamentos).
+    // Deve rodar antes de carregar dados de edicao (linha ~154).
+    _apptStateReset()
+    _apptCleanupHandlers()
+    _apptEnableSave()
+
     // Preenche profissionais
     const profSel = document.getElementById('appt_prof')
     if (profSel) {
@@ -149,17 +156,19 @@
         apptSetAval(a.tipoAvaliacao)
       }
       const motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = a.cortesiaMotivo || ''
-      // Carrega procedimentos salvos com todos os campos novos
+      // Carrega procedimentos salvos com todos os campos novos.
+      // Push in-place para preservar a ref compartilhada com _apptState.procs
+      // (_apptStateReset ja limpou o array no topo de openApptModal).
       if (Array.isArray(a.procedimentos) && a.procedimentos.length > 0) {
-        _apptProcs = a.procedimentos.map(function(p) {
-          return {
+        a.procedimentos.forEach(function(p) {
+          _apptProcs.push({
             nome:             p.nome || '',
             valor:            parseFloat(p.valor) || 0,
             cortesia:         !!p.cortesia,
             cortesiaMotivo:   p.cortesiaMotivo || '',
             retornoTipo:      p.retornoTipo === 'retorno' ? 'retorno' : 'avulso',
             retornoIntervalo: parseInt(p.retornoIntervalo) || 0,
-          }
+          })
         })
         _renderApptProcs()
       }
@@ -198,7 +207,6 @@
     var indicado = document.getElementById('appt_indicado_por'); if (indicado) indicado.value = ''
     var indicadoId = document.getElementById('appt_indicado_por_id'); if (indicadoId) indicadoId.value = ''
     var indicadoDrop = document.getElementById('apptIndicadoDrop'); if (indicadoDrop) indicadoDrop.style.display = 'none'
-    _apptProcs.length = 0  // muta in-place pra preservar ref compartilhada com _apptState.procs
     var procsList = document.getElementById('apptProcsList'); if (procsList) procsList.innerHTML = ''
     var procsTotal = document.getElementById('apptProcsTotal'); if (procsTotal) procsTotal.textContent = ''
     // Reset tipo buttons
@@ -227,6 +235,8 @@
     const m = document.getElementById('apptModal')
     if (m) m.style.display = 'none'
     document.body.style.overflow = ''
+    _apptCleanupHandlers()
+    _apptEnableSave()
   }
 
   // ── apptProcAutofill ──────────────────────────────────────────
@@ -278,9 +288,62 @@
     multiProcChoice: null,
   }
   function _apptStateReset() {
-    _apptState.procs.length = 0
-    _apptState.pagamentos.length = 0
+    _apptState.procs.splice(0)
+    _apptState.pagamentos.splice(0)
     _apptState.multiProcChoice = null
+  }
+
+  // ── Listeners ativos do modal (cleanup preventivo de memory leak) ─
+  // Qualquer addEventListener em document/window feito enquanto o modal
+  // esta aberto deve ser registrado aqui; closeApptModal / _apptDetailClose
+  // iteram e removem tudo na saida.
+  var _apptActiveHandlers = []
+  function _apptRegisterHandler(target, type, handler, options) {
+    target.addEventListener(type, handler, options)
+    _apptActiveHandlers.push({ target: target, type: type, handler: handler, options: options })
+  }
+  function _apptCleanupHandlers() {
+    while (_apptActiveHandlers.length) {
+      var h = _apptActiveHandlers.pop()
+      try { h.target.removeEventListener(h.type, h.handler, h.options) } catch (e) { /* noop */ }
+    }
+  }
+
+  // ── Controle de duplo submit / validacao inline ──────────────
+  // Botao #apptSaveBtn e desabilitado durante sync + enquanto houver
+  // erros inline ativos (bordas em var(--danger) marcadas por _inlineValidate).
+  function _apptSaveBtn() { return document.getElementById('apptSaveBtn') }
+  function _apptDisableSave(reason) {
+    var btn = _apptSaveBtn()
+    if (!btn) return
+    btn.disabled = true
+    btn.style.opacity = '0.6'
+    btn.style.cursor = 'not-allowed'
+    if (reason === 'syncing') {
+      var lbl = btn.querySelector('[data-appt-save-label]')
+      if (lbl) lbl.textContent = 'Salvando...'
+    }
+  }
+  function _apptEnableSave() {
+    var btn = _apptSaveBtn()
+    if (!btn) return
+    btn.disabled = false
+    btn.style.opacity = ''
+    btn.style.cursor = ''
+    var lbl = btn.querySelector('[data-appt-save-label]')
+    if (lbl) lbl.textContent = 'Salvar'
+  }
+  // Varre campos do modal por borda danger (erro inline) — bloqueia save
+  // quando houver erro visivel ao usuario.
+  function _apptHasInlineErrors() {
+    var modal = document.getElementById('apptModal')
+    if (!modal) return false
+    var fields = modal.querySelectorAll('input, select, textarea')
+    for (var i = 0; i < fields.length; i++) {
+      var s = fields[i].style && fields[i].style.borderColor
+      if (s && /var\(--danger\)|#DC2626|#EF4444|rgb\(220,\s*38,\s*38\)/i.test(s)) return true
+    }
+    return false
   }
 
   // ── Auto-save draft ─────────────────────────────────────────
@@ -435,7 +498,7 @@
   }
 
   function _apptClearProcedimentoData() {
-    _apptProcs.length = 0  // muta in-place pra preservar ref compartilhada
+    _apptProcs.splice(0)  // muta in-place; preserva ref compartilhada com _apptState.procs
     var procsList = document.getElementById('apptProcsList'); if (procsList) procsList.innerHTML = ''
     var procsTotal = document.getElementById('apptProcsTotal'); if (procsTotal) procsTotal.textContent = ''
     var procSel = document.getElementById('appt_proc_select'); if (procSel) procSel.value = ''
@@ -1443,7 +1506,19 @@
   }
 
   // ── saveAppt ──────────────────────────────────────────────────
-  function saveAppt() {
+  // Fluxo: validar → salvar localStorage otimistico → syncOneAwait →
+  //        toast+close+refresh (sucesso) OU reverter localStorage (falha).
+  // Botao disable impede duplo submit. Se houver erros inline, aborta
+  // imediatamente sem submit.
+  async function saveAppt() {
+    // Guard de duplo submit: se ja esta rodando, ignora.
+    var _saveBtn = _apptSaveBtn()
+    if (_saveBtn && _saveBtn.disabled) return
+    // Guard de erros inline: nao submete se houver campos com borda danger.
+    if (_apptHasInlineErrors()) {
+      _warn('Corrija os campos destacados em vermelho antes de salvar.')
+      return
+    }
     const nome = document.getElementById('appt_paciente_q') && document.getElementById('appt_paciente_q').value.trim()
     if (!nome) { _warn('Selecione o paciente'); return }
     const data   = document.getElementById('appt_data') && document.getElementById('appt_data').value
@@ -1676,29 +1751,67 @@
       isNew = true
     }
 
-    // Snapshot para rollback
+    // Snapshot pra rollback em caso de falha de sync.
+    // prevAppts restaura localStorage; prevState restaura procs+pagamentos
+    // do modal (importante quando usuario tenta novamente).
     const prevAppts = JSON.parse(JSON.stringify(_getAppts()))
+    const prevState = {
+      procs:      JSON.parse(JSON.stringify(_apptState.procs)),
+      pagamentos: JSON.parse(JSON.stringify(_apptState.pagamentos)),
+    }
 
+    // 1) Grava otimisticamente no localStorage (UX rapida)
     _saveAppts(appts)
+    _apptDisableSave('syncing')
+
+    // 2) Sincroniza com Supabase ANTES de fechar/toast/refresh.
+    // Se falhar, reverte localStorage e state do modal; nao fecha.
+    const savedId = editId || novoId
+    const saved = appts.find(a => a.id === savedId)
+    try {
+      if (window.AppointmentsService && saved) {
+        const result = await AppointmentsService.syncOneAwait(saved)
+        if (!result.ok && !result.queued) {
+          // Rollback duro: sem conexao mas servidor rejeitou (ex: validacao, RLS)
+          _saveAppts(prevAppts)
+          _apptState.procs.splice(0); prevState.procs.forEach(function(p) { _apptState.procs.push(p) })
+          _apptState.pagamentos.splice(0); prevState.pagamentos.forEach(function(p) { _apptState.pagamentos.push(p) })
+          _refresh()
+          if (window._showToast) _showToast('Falha ao sincronizar com servidor', (result.error || 'Tente novamente.'), 'error')
+          _apptEnableSave()
+          return
+        }
+        // Se result.queued (offline), avisa mas segue o fluxo — fica no offline queue
+        if (result.queued) {
+          if (window._showToast) _showToast('Salvo offline', 'Sera sincronizado quando voltar a conexao.', 'info')
+        }
+      }
+    } catch (err) {
+      // Defesa extra: excecao inesperada
+      _saveAppts(prevAppts)
+      _apptState.procs.splice(0); prevState.procs.forEach(function(p) { _apptState.procs.push(p) })
+      _apptState.pagamentos.splice(0); prevState.pagamentos.forEach(function(p) { _apptState.pagamentos.push(p) })
+      _refresh()
+      if (window._showToast) _showToast('Falha ao sincronizar com servidor', (err && err.message) || 'Tente novamente.', 'error')
+      _apptEnableSave()
+      return
+    }
+
+    // 3) Sucesso: fecha modal, limpa draft, toast e refresca
     closeApptModal()
     _refresh()
-
     _clearDraft()
     if (window._showToast) _showToast(isNew ? 'Agendamento criado' : 'Agendamento atualizado', nome, 'success')
 
-    // Ao criar novo agendamento: loop fechado (disparado imediatamente)
+    // 4) Automacoes e hooks pos-save (best-effort; nao quebra fluxo)
     if (isNew) {
       const apptCompleto = Object.assign({}, apptData, { id: novoId, profissionalNome: profs[profIdx] && profs[profIdx].nome || '' })
-      // Gera link anamnese (paciente novo) e dispara automacoes. Async fire-and-forget.
       const isNovo = (apptCompleto.tipoPaciente || 'novo') !== 'retorno'
       const linkPromise = (isNovo && typeof _gerarLinkAnamnese === 'function')
         ? _gerarLinkAnamnese(apptCompleto.id, apptCompleto.pacienteId).catch(function(e) { console.warn('[Agenda-modal] falha link:', e); return null })
         : Promise.resolve(null)
       linkPromise.then(function(link) {
         if (link) apptCompleto.link_anamnese = link
-        // scheduleAutomations agenda regras time-based (d_before/d_zero/min_before).
-        // processStatusChange dispara regras on_status do status inicial ('agendado').
-        // Separacao evita double-insert quando apptTransition e usado depois.
         if (typeof scheduleAutomations === 'function') scheduleAutomations(apptCompleto)
         if (window.AutomationsEngine && window.AutomationsEngine.processStatusChange) {
           AutomationsEngine.processStatusChange(apptCompleto, apptCompleto.status || 'agendado')
@@ -1713,21 +1826,6 @@
       }
       if (window.SdrService && apptCompleto.pacienteId) {
         SdrService.onLeadScheduled(apptCompleto.pacienteId, apptCompleto)
-      }
-    }
-
-    // Sync Supabase (optimistic — revert on failure)
-    if (window.AppointmentsService) {
-      const savedId = editId || novoId
-      const saved = appts.find(a => a.id === savedId)
-      if (saved) {
-        AppointmentsService.syncOneAwait(saved).then(function (result) {
-          if (!result.ok && !result.queued) {
-            _saveAppts(prevAppts)
-            _refresh()
-            if (window._showToast) _showToast('Erro ao sincronizar', result.error || 'Falha no servidor — revertido', 'error')
-          }
-        })
       }
     }
   }
@@ -1950,7 +2048,42 @@
   }
   function _esc(s) { return String(s == null ? '' : s).replace(/[<>&"']/g, function(c) { return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c] }) }
 
-  function openApptDetail(id) {
+  // openApptDetail agora async: sincroniza com Supabase antes de renderizar
+  // para evitar versao stale quando outra aba/dispositivo editou.
+  // Fallback: se sync falha, renderiza versao local com warning.
+  async function openApptDetail(id) {
+    var apptsPre = _getAppts()
+    var aPre = apptsPre.find(function(x) { return x.id === id })
+    if (!aPre) return
+
+    // Overlay leve de sync (nao bloqueia se renderizacao vier rapido)
+    var syncOverlay = null
+    try {
+      syncOverlay = document.createElement('div')
+      syncOverlay.id = 'apptDetailSyncOverlay'
+      syncOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;z-index:9997'
+      syncOverlay.innerHTML = '<div style="background:#fff;padding:14px 22px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);font-size:13px;color:#374151;display:flex;align-items:center;gap:10px">'
+        + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+        + '<span>Sincronizando agendamento...</span>'
+        + '</div>'
+        + '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>'
+      document.body.appendChild(syncOverlay)
+    } catch (e) { /* noop */ }
+
+    // Tenta sincronizar pelo periodo da data do appt (loadForPeriod mescla
+    // local + Supabase e atualiza localStorage). Se falhar, usa versao local.
+    try {
+      if (window.AppointmentsService && window.AppointmentsService.loadForPeriod && aPre.data) {
+        await window.AppointmentsService.loadForPeriod(aPre.data, aPre.data)
+      }
+    } catch (err) {
+      console.warn('[openApptDetail] sync falhou, usando versao local:', err && err.message || err)
+      if (window._showToast) _showToast('Aviso', 'Nao foi possivel sincronizar com servidor — exibindo versao local.', 'warn')
+    } finally {
+      if (syncOverlay && syncOverlay.parentNode) syncOverlay.parentNode.removeChild(syncOverlay)
+    }
+
+    // Re-le pos-sync (Supabase pode ter trazido versao mais nova)
     const appts = _getAppts()
     const a = appts.find(x => x.id === id)
     if (!a) return
@@ -1992,6 +2125,8 @@
 
     var existing = document.getElementById('apptDetailDlg')
     if (existing) existing.remove()
+    // Limpa handlers da render anterior (ex: keydown esc) antes de re-registrar
+    _apptCleanupHandlers()
 
     var dlg = document.createElement('div')
     dlg.id = 'apptDetailDlg'
@@ -2001,17 +2136,19 @@
     dlg.addEventListener('click', function (e) {
       if (e.target === dlg && mode === 'view') dlg.remove()
     })
-    document.addEventListener('keydown', function esc(e) {
-      if (e.key === 'Escape') {
-        if (_apptDetailState.mode === 'edit') {
-          if (confirm('Descartar alteracoes em andamento?')) {
-            _apptDetailState.mode = 'view'; _renderApptDetail()
-          }
-        } else {
-          dlg.remove(); document.removeEventListener('keydown', esc)
+    // Keydown handler registrado no _apptActiveHandlers para cleanup em _apptDetailClose.
+    // Evita acumulo de listeners quando detail e reaberto multiplas vezes.
+    var escHandler = function(e) {
+      if (e.key !== 'Escape') return
+      if (_apptDetailState.mode === 'edit') {
+        if (confirm('Descartar alteracoes em andamento?')) {
+          _apptDetailState.mode = 'view'; _renderApptDetail()
         }
+      } else {
+        _apptDetailClose()
       }
-    })
+    }
+    _apptRegisterHandler(document, 'keydown', escHandler)
     document.body.appendChild(dlg)
   }
 
@@ -2293,6 +2430,7 @@
     }
     _apptDetailState.mode = 'view'
     _apptDetailEditBuf = {}
+    _apptCleanupHandlers()
     var dlg = document.getElementById('apptDetailDlg')
     if (dlg) dlg.remove()
   }
@@ -2731,8 +2869,8 @@
     var childrenDates = dates.slice(1)
     var conflicts = _apptCheckSeriesConflicts(childrenDates, inicio, duracao, profIdx, isNaN(salaIdx) ? null : salaIdx, null)
 
-    function proceed(decisions) {
-      _apptPersistSeries({
+    async function proceed(decisions) {
+      await _apptPersistSeries({
         dates: dates, interval: interval, total: total, procName: procName,
         decisions: decisions || {}, inicio: inicio, duracao: duracao,
       })
@@ -2744,37 +2882,49 @@
         proceed(decisions)
       })
     } else {
-      proceed({})
+      await proceed({})
     }
   }
 
-  function _apptPersistSeries(opts) {
+  // Persiste serie de recorrencia com sync transacional.
+  // Sequencia: salva base (via saveAppt async) -> cria filhos em memoria ->
+  // grava localStorage otimistico -> syncOneAwait de cada filho -> se QUALQUER
+  // falhar, reverte TUDO (base + filhos) e restaura prevAppts.
+  // So dispara processRecurrenceCreated depois de todas confirmadas.
+  async function _apptPersistSeries(opts) {
     var dates = opts.dates, interval = opts.interval, total = opts.total, procName = opts.procName
     var decisions = opts.decisions || {}
 
-    // 1. Salva o appt base via saveAppt normal — mas antes pinta recurrence fields
+    // Snapshot pre-operacao (rollback completo se algo falhar)
+    var prevAppts = JSON.parse(JSON.stringify(_getAppts()))
+
+    // 1. Salva o appt base via saveAppt (agora async) injetando recurrence fields
     var groupId = _recUuid()
     window.__apptPendingRecurrence = {
       groupId: groupId, index: 1, total: total, procName: procName, interval: interval,
     }
-    // Chama saveAppt — ele le __apptPendingRecurrence e injeta as colunas no apptData
-    saveAppt()
-    window.__apptPendingRecurrence = null
+    try {
+      await saveAppt()
+    } finally {
+      window.__apptPendingRecurrence = null
+    }
 
-    // Re-le appts pra pegar o que foi salvo (saveAppt pode ser sync OU async;
-    // como e sync e grava em localStorage na mesma thread, _getAppts() ja retorna)
+    // Re-le pra pegar o appt base salvo. Se saveAppt falhou/revertou,
+    // a base nao estara la e abortamos.
     var all = _getAppts()
     var base = all.filter(function(a) { return a.recurrenceGroupId === groupId && a.recurrenceIndex === 1 })[0]
     if (!base) {
-      if (window._showToast) _showToast('Erro', 'Nao foi possivel criar a serie (appt base nao encontrado).', 'error')
+      // saveAppt ja mostrou erro de sync/rollback; so abortamos a serie
+      if (window._showToast) _showToast('Serie cancelada', 'Falha ao salvar primeira sessao — reverta manualmente se necessario.', 'error')
       return
     }
 
-    // 2. Cria os N-1 appointments filhos
+    // 2. Gera filhos em memoria
     var created = [{ iso: dates[0], appt: base }]
     var skipped = []
+    var childrenOnly = []
     for (var i = 1; i < dates.length; i++) {
-      var decision = decisions[i - 1] || 'create' // conflicts indexados a partir do children array
+      var decision = decisions[i - 1] || 'create'
       if (decision === 'skip') { skipped.push(dates[i]); continue }
       var childDate = dates[i]
       if (decision === 'next') {
@@ -2784,10 +2934,34 @@
       var child = _apptCloneForSeries(base, childDate, i + 1, total, groupId, interval, procName)
       all.push(child)
       created.push({ iso: childDate, appt: child })
+      childrenOnly.push(child)
     }
     _saveAppts(all)
 
-    // 3. Dispara msg WA consolidada via engine
+    // 3. Sync de cada filho em paralelo. Se qualquer um falhar de forma dura
+    // (nao ok E nao queued), reverte TUDO — incluindo a base.
+    if (window.AppointmentsService && window.AppointmentsService.syncOneAwait && childrenOnly.length) {
+      try {
+        var results = await Promise.all(childrenOnly.map(function(c) {
+          return AppointmentsService.syncOneAwait(c)
+        }))
+        var hardFailure = results.find(function(r) { return !r.ok && !r.queued })
+        if (hardFailure) {
+          // Rollback completo: apaga base + filhos
+          _saveAppts(prevAppts)
+          _refresh()
+          if (window._showToast) _showToast('Falha ao sincronizar serie', (hardFailure.error || 'Servidor rejeitou uma das sessoes.') + ' Tente novamente.', 'error')
+          return
+        }
+      } catch (err) {
+        _saveAppts(prevAppts)
+        _refresh()
+        if (window._showToast) _showToast('Falha ao sincronizar serie', (err && err.message) || 'Erro inesperado.', 'error')
+        return
+      }
+    }
+
+    // 4. So agora dispara msg WA consolidada — todas as sessoes confirmadas
     if (window.AutomationsEngine && window.AutomationsEngine.processRecurrenceCreated) {
       try {
         window.AutomationsEngine.processRecurrenceCreated({
@@ -2809,7 +2983,7 @@
     _refresh()
   }
 
-  function apptCreateNextSessionOnly() {
+  async function apptCreateNextSessionOnly() {
     var baseDateStr = (document.getElementById('appt_data') || {}).value
     if (!baseDateStr) { _warn('Informe a data'); return }
     var interval = parseInt((document.getElementById('appt_rec_interval') || {}).value) || 7
@@ -2827,18 +3001,44 @@
 
     var conflicts = _apptCheckSeriesConflicts([nextIso], inicio, duracao, profIdx, isNaN(salaIdx) ? null : salaIdx, null)
 
-    function proceed() {
+    // Sync transacional: se sync do filho falhar, reverte base + filho.
+    async function proceed() {
+      var prevAppts = JSON.parse(JSON.stringify(_getAppts()))
       var groupId = _recUuid()
       window.__apptPendingRecurrence = { groupId: groupId, index: 1, total: 2, procName: procName, interval: interval }
-      saveAppt()
-      window.__apptPendingRecurrence = null
+      try {
+        await saveAppt()
+      } finally {
+        window.__apptPendingRecurrence = null
+      }
 
       var all = _getAppts()
       var base = all.filter(function(a) { return a.recurrenceGroupId === groupId && a.recurrenceIndex === 1 })[0]
-      if (!base) { if (window._showToast) _showToast('Erro', 'Falha ao criar proxima sessao', 'error'); return }
+      if (!base) {
+        if (window._showToast) _showToast('Erro', 'Falha ao criar proxima sessao', 'error')
+        return
+      }
       var child = _apptCloneForSeries(base, nextIso, 2, 2, groupId, interval, procName)
       all.push(child)
       _saveAppts(all)
+
+      // Sync do filho com rollback se falhar
+      if (window.AppointmentsService && window.AppointmentsService.syncOneAwait) {
+        try {
+          var r = await AppointmentsService.syncOneAwait(child)
+          if (!r.ok && !r.queued) {
+            _saveAppts(prevAppts)
+            _refresh()
+            if (window._showToast) _showToast('Falha ao sincronizar', (r.error || 'Proxima sessao revertida.') + ' Tente novamente.', 'error')
+            return
+          }
+        } catch (err) {
+          _saveAppts(prevAppts)
+          _refresh()
+          if (window._showToast) _showToast('Falha ao sincronizar', (err && err.message) || 'Erro inesperado.', 'error')
+          return
+        }
+      }
 
       if (window.AutomationsEngine && window.AutomationsEngine.processRecurrenceCreated) {
         try {
@@ -2863,7 +3063,7 @@
         proceed()
       })
     } else {
-      proceed()
+      await proceed()
     }
   }
 

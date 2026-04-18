@@ -3869,9 +3869,9 @@
         <button id="apptDeleteBtn" onclick="deleteAppt()" style="display:none;padding:8px 14px;background:none;color:#EF4444;border:1px solid #FECACA;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Excluir</button>
         <div style="display:flex;gap:8px;margin-left:auto">
           <button onclick="closeApptModal()" style="padding:8px 18px;background:#F3F4F6;color:#374151;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer">Cancelar</button>
-          <button onclick="saveAppt()" style="padding:8px 22px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(124,58,237,0.3)">
+          <button id="apptSaveBtn" onclick="saveAppt()" style="padding:8px 22px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(124,58,237,0.3)">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Salvar
+            <span data-appt-save-label>Salvar</span>
           </button>
         </div>
       </div>
