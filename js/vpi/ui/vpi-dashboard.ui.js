@@ -340,6 +340,7 @@
     ])
 
     container.innerHTML =
+      '<div id="vpiRisksSection"></div>' +
       '<div id="vpiStaffAlertSection"></div>' +
       '<div id="vpiChannelLTVCACSection"></div>' +
       '<div id="vpiNPSSection"></div>' +
@@ -349,6 +350,10 @@
       _renderRisco() +
       _renderFeed(results[2])
 
+    // Riscos operacionais (Fase 4 — rk-1..rk-5)
+    if (typeof window.renderRisksDashboard === 'function') {
+      window.renderRisksDashboard('vpiRisksSection')
+    }
     // Staff alert config (s1-3)
     if (typeof window.renderStaffAlertConfig === 'function') {
       window.renderStaffAlertConfig('vpiStaffAlertSection')
