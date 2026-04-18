@@ -340,10 +340,16 @@
     ])
 
     container.innerHTML =
+      '<div id="vpiChannelLTVCACSection"></div>' +
       _renderPendencias(results[0]) +
       _renderTop10(results[1]) +
       _renderRisco() +
       _renderFeed(results[2])
+
+    // Channel LTV/CAC analytics (s2-6) — modulo separado, render async
+    if (typeof window.renderChannelLTVCAC === 'function') {
+      window.renderChannelLTVCAC('vpiChannelLTVCACSection')
+    }
   }
 
   window.vpiRenderDashboard = vpiRenderDashboard
