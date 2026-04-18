@@ -340,19 +340,41 @@
     ])
 
     container.innerHTML =
+      // ── NSM: North Star Metric (agendamentos finalizados/mes) ──
+      '<div id="vpiNSMSection"></div>' +
+
+      // ── PULSO: riscos + pendencias urgentes ──
+      _sectionHeader('Pulso', 'Status geral agora') +
       '<div id="vpiRisksSection"></div>' +
-      '<div id="vpiStaffAlertSection"></div>' +
+      _renderPendencias(results[0]) +
+
+      // ── CANAIS: origem de leads e receita ──
+      _sectionHeader('Canais', 'LTV/CAC por origem') +
       '<div id="vpiChannelLTVCACSection"></div>' +
-      // NPS + Oportunidades IG lado a lado (listas com scroll interno)
+
+      // ── AÇÕES: listas de tarefas claras lado a lado ──
+      _sectionHeader('Ações', 'Próximos passos — clicar e resolver') +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" class="vpi-lists-grid">' +
         '<div id="vpiNPSSection"></div>' +
         '<div id="vpiContentIGSection"></div>' +
       '</div>' +
-      _renderPendencias(results[0]) +
+
+      // ── PARCEIRAS: top + feed + em risco ──
+      _sectionHeader('Parceiras', 'Quem está produzindo, quem precisa de atenção') +
       _renderTop10(results[1]) +
       _renderRisco() +
-      _renderFeed(results[2])
+      _renderFeed(results[2]) +
 
+      // ── CONFIG: recolhível no fim ──
+      _sectionHeader('Configurações', 'Alertas e ajustes do programa', true) +
+      '<details style="margin-bottom:20px"><summary style="cursor:pointer;padding:8px 0;color:#6B7280;font-size:12px;font-weight:500">Abrir configurações</summary>' +
+      '<div id="vpiStaffAlertSection" style="margin-top:10px"></div>' +
+      '</details>'
+
+    // NSM hero (metrica-mae)
+    if (typeof window.renderNSMCard === 'function') {
+      window.renderNSMCard('vpiNSMSection')
+    }
     // Riscos operacionais (Fase 4 — rk-1..rk-5)
     if (typeof window.renderRisksDashboard === 'function') {
       window.renderRisksDashboard('vpiRisksSection')
@@ -373,6 +395,15 @@
     if (typeof window.renderContentIG === 'function') {
       window.renderContentIG('vpiContentIGSection')
     }
+  }
+
+  // Header de secao — divisor visual entre grupos
+  function _sectionHeader(title, subtitle, muted) {
+    var color = muted ? '#9CA3AF' : '#111827'
+    return '<div style="margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid #E5E7EB">' +
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#7C3AED;margin-bottom:2px">' + title + '</div>' +
+      '<div style="font-size:12px;color:' + color + ';font-weight:500">' + subtitle + '</div>' +
+    '</div>'
   }
 
   window.vpiRenderDashboard = vpiRenderDashboard

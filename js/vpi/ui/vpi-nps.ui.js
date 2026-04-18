@@ -69,10 +69,13 @@
     container.innerHTML =
       '<div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:20px;margin-bottom:16px">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">' +
-          '<div>' +
-            '<div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#9CA3AF;font-weight:700">Satisfa\u00e7\u00e3o</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+              '<div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#9CA3AF;font-weight:700">Satisfa\u00e7\u00e3o</div>' +
+              '<span id="npsCounter" style="padding:2px 9px;background:#F5F3FF;color:#7C3AED;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.05em;display:none">0 depoimentos</span>' +
+            '</div>' +
             '<div style="font-size:16px;font-weight:700;color:#111827;margin-top:4px">NPS p\u00f3s-procedimento (D+7)</div>' +
-            '<div style="font-size:11px;color:#6B7280;margin-top:2px">Coleta autom\u00e1tica 7 dias ap\u00f3s finalizar \u2014 promotoras viram fonte de depoimentos, detratoras geram task alta prioridade</div>' +
+            '<div style="font-size:11px;color:#6B7280;margin-top:2px">Coleta autom\u00e1tica 7 dias ap\u00f3s finalizar — clicar em depoimento o leva à revista em 1 toque</div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;align-items:center">' +
             '<select id="npsPeriod" onchange="window._npsOnPeriodChange(this.value)" style="padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;background:#fff">' +
@@ -226,6 +229,20 @@
     _state.testimonials = res.testimonials
     body.innerHTML = _renderBody(res.kpis, res.testimonials)
     _state.loading = false
+    // Contador no header
+    var counter = document.getElementById('npsCounter')
+    if (counter) {
+      var total = (res.testimonials || []).length
+      var pending = (res.testimonials || []).filter(function (t) { return t.testimonial_text && !t.magazine_page_id }).length
+      if (total > 0) {
+        counter.textContent = pending > 0 ? (pending + ' p/ revista · ' + total + ' total') : (total + ' depoimentos')
+        counter.style.display = 'inline-block'
+        counter.style.background = pending > 0 ? '#FEF3C7' : '#F5F3FF'
+        counter.style.color = pending > 0 ? '#92400E' : '#7C3AED'
+      } else {
+        counter.style.display = 'none'
+      }
+    }
   }
 
   function _onPeriodChange(val) {

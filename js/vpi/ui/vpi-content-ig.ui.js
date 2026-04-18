@@ -81,10 +81,13 @@
     c.innerHTML =
       '<div style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:20px;margin-bottom:16px">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">' +
-          '<div>' +
-            '<div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#9CA3AF;font-weight:700">Conte\u00fado</div>' +
+          '<div style="flex:1;min-width:0">' +
+            '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+              '<div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#9CA3AF;font-weight:700">Conte\u00fado</div>' +
+              '<span id="contentIGCounter" style="padding:2px 9px;background:#FEF3C7;color:#92400E;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.05em;display:none">0 p/ postar</span>' +
+            '</div>' +
             '<div style="font-size:16px;font-weight:700;color:#111827;margin-top:4px">Oportunidades pra Instagram</div>' +
-            '<div style="font-size:11px;color:#6B7280;margin-top:2px">Depoimentos NPS + celebra\u00e7\u00f5es VPI + tier upgrades \u2014 copy pronta pra colar</div>' +
+            '<div style="font-size:11px;color:#6B7280;margin-top:2px">Depoimentos NPS + celebra\u00e7\u00f5es VPI + tier upgrades — copy pronta pra colar</div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;align-items:center">' +
             '<select id="contentIGPeriod" onchange="window._contentIGOnPeriodChange(this.value)" style="padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;background:#fff">' +
@@ -176,6 +179,18 @@
     body.innerHTML = _renderBody(_state.data)
     _wireCardEvents(body)
     _state.loading = false
+    // Contador no header
+    var counter = document.getElementById('contentIGCounter')
+    if (counter) {
+      var opps = (_state.data && _state.data.opportunities) || []
+      var pending = opps.filter(function (o) { return !o.posted }).length
+      if (pending > 0) {
+        counter.textContent = pending + ' p/ postar'
+        counter.style.display = 'inline-block'
+      } else {
+        counter.style.display = 'none'
+      }
+    }
   }
 
   function _wireCardEvents(container) {

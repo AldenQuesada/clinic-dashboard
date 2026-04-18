@@ -42,13 +42,29 @@
   function _riskCard(rk) {
     var status = rk.status || 'unknown'
     var c = COLORS[status] || COLORS.unknown
+
+    // Delta badge — so mostra se delta existir e for != 0 e direction_good definido
+    var deltaBadge = ''
+    var delta = Number(rk.delta)
+    if (!isNaN(delta) && delta !== 0 && rk.delta_direction_good) {
+      var isGood = (delta > 0 && rk.delta_direction_good === 'up') ||
+                   (delta < 0 && rk.delta_direction_good === 'down')
+      var arrow = delta > 0 ? '↑' : '↓'
+      var deltaColor = isGood ? '#059669' : '#DC2626'
+      var deltaFmt = Math.abs(delta).toFixed(1)
+      deltaBadge = '<span style="font-size:10px;font-weight:700;color:' + deltaColor + ';margin-left:6px">' +
+        arrow + ' ' + deltaFmt + '</span>'
+    }
+
     return '<div style="background:' + c.bg + ';border:1px solid ' + c.border + ';border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">' +
         '<div style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:' + c.fg + ';font-weight:700">' + _esc(rk.id || '?') + '</div>' +
         '<div style="padding:2px 8px;background:' + c.fg + ';color:#fff;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase">' + _esc(c.label) + '</div>' +
       '</div>' +
       '<div style="font-size:13px;font-weight:600;color:#111827;line-height:1.3">' + _esc(rk.label || '?') + '</div>' +
-      '<div style="font-size:22px;font-weight:800;color:' + c.fg + ';letter-spacing:-0.02em">' + _esc(_fmtValue(rk.value, rk.unit)) + '</div>' +
+      '<div style="font-size:22px;font-weight:800;color:' + c.fg + ';letter-spacing:-0.02em">' +
+        _esc(_fmtValue(rk.value, rk.unit)) + deltaBadge +
+      '</div>' +
       '<div style="font-size:11px;color:#6B7280;line-height:1.4">' + _esc(rk.hint || '') + '</div>' +
     '</div>'
   }
