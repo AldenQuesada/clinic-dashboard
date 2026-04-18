@@ -100,7 +100,7 @@
           '<div style="font-size:13px;font-weight:700;color:#111">Riscos operacionais</div>' +
           '<button id="vpiRisksReload" style="padding:5px 10px;background:#F5F3FF;color:#7C3AED;border:1px solid #E9D5FF;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer">Atualizar</button>' +
         '</div>' +
-        '<div style="font-size:11px;color:#6B7280;margin-bottom:16px">5 alavancas monitoradas automaticamente · ultima leitura ' + _esc(generated) + '</div>' +
+        '<div style="font-size:11px;color:#6B7280;margin-bottom:16px">5 alavancas monitoradas automaticamente · última leitura ' + _esc(generated) + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">' +
           risks.map(_riskCard).join('') +
         '</div>' +
@@ -112,7 +112,7 @@
 
   async function _load(forceFresh) {
     var sb = _sb()
-    if (!sb) { _state.error = 'Supabase indisponivel'; _render(); return }
+    if (!sb) { _state.error = 'Supabase indisponível'; _render(); return }
     _state.loading = true
     if (forceFresh) _state.data = null
     _render()

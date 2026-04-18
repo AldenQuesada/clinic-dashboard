@@ -51,10 +51,10 @@
 
   function _scoreLabel(score) {
     if (score >= 70) return 'Excelente'
-    if (score >= 50) return 'Otimo'
+    if (score >= 50) return 'Ótimo'
     if (score >= 30) return 'Bom'
-    if (score >= 0)  return 'Razoavel'
-    return 'Critico'
+    if (score >= 0)  return 'Razoável'
+    return 'Crítico'
   }
 
   // ── Render ──────────────────────────────────────────────────
@@ -75,7 +75,7 @@
               '<span id="npsCounter" style="padding:2px 9px;background:#F5F3FF;color:#7C3AED;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.05em;display:none">0 depoimentos</span>' +
             '</div>' +
             '<div style="font-size:16px;font-weight:700;color:#111827;margin-top:4px">NPS p\u00f3s-procedimento (D+7)</div>' +
-            '<div style="font-size:11px;color:#6B7280;margin-top:2px">Coleta autom\u00e1tica 7 dias ap\u00f3s finalizar — clicar em depoimento o leva à revista em 1 toque</div>' +
+            '<div style="font-size:11px;color:#6B7280;margin-top:2px">Coleta automática 7 dias após finalizar — clicar em um depoimento leva à revista em 1 toque</div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;align-items:center">' +
             '<select id="npsPeriod" onchange="window._npsOnPeriodChange(this.value)" style="padding:7px 11px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;outline:none;background:#fff">' +
@@ -151,18 +151,18 @@
         '</div>' +
         (hasText
           ? '<div style="font-size:12px;color:#374151;line-height:1.5;margin-bottom:10px">' + _esc(t.testimonial_text) + '</div>'
-          : '<div style="font-size:11px;color:#9CA3AF;font-style:italic;margin-bottom:10px">Consent dado via WA \u2014 aguardando texto/foto da paciente</div>') +
-        // Acao "adicionar a revista"
+          : '<div style="font-size:11px;color:#9CA3AF;font-style:italic;margin-bottom:10px">Consentimento dado via WhatsApp — aguardando texto/foto da paciente</div>') +
+        // Ação "adicionar à revista"
         (hasText
           ? (alreadyInMag
             ? '<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#059669;font-weight:600;padding:6px 10px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px">' +
                 '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
-                'Ja na revista' +
+                'Já na revista' +
               '</div>'
             : '<button onclick="window._npsToMagazine(\'' + _esc(t.id) + '\', this)" ' +
                 'style="width:100%;padding:8px 12px;background:#fff;color:#7C3AED;border:1.5px solid #E9D5FF;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">' +
                 '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>' +
-                'Adicionar a revista' +
+                'Adicionar à revista' +
               '</button>')
           : '') +
       '</div>'
@@ -258,7 +258,7 @@
 
   async function _npsToMagazine(npsId, btn) {
     var sb = _sb()
-    if (!sb) { _toast && _toast('Supabase indisponivel', 'error'); return }
+    if (!sb) { _toast && _toast('Supabase indisponível', 'error'); return }
     if (btn) { btn.disabled = true; btn.style.opacity = '.6'; btn.innerHTML = 'Adicionando...' }
     try {
       var r = await sb.rpc('nps_testimonial_to_magazine', { p_nps_id: npsId })
@@ -267,13 +267,13 @@
       if (!data.ok) {
         var reason = data.reason === 'no_consent'        ? 'Depoimento sem consentimento'
                    : data.reason === 'empty_testimonial' ? 'Depoimento sem texto'
-                   : data.reason === 'nps_not_found'     ? 'NPS nao encontrado'
+                   : data.reason === 'nps_not_found'     ? 'NPS não encontrado'
                    : 'Falha: ' + (data.reason || 'desconhecida')
         _toast && _toast(reason, 'error')
         if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = 'Tentar novamente' }
         return
       }
-      _toast && _toast(data.already_existed ? 'Ja estava na revista' : 'Pagina adicionada a edicao draft', 'success')
+      _toast && _toast(data.already_existed ? 'Já estava na revista' : 'Página adicionada à edição rascunho', 'success')
       _reload()
     } catch (e) {
       console.error('[NPS→Magazine]', e)

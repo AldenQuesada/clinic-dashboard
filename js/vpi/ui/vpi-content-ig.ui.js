@@ -33,24 +33,24 @@
       if (text) {
         return 'Depoimento da ' + nome + ':\n\n' +
           '"' + text + '"\n\n' +
-          'Obrigada pela confianca, ' + nome + '! \u2728\n\n' +
+          'Obrigada pela confiança, ' + nome + '! \u2728\n\n' +
           '#ClinicaMirianDePaula #HarmoniaFacial #Estetica'
       }
       return nome + ' respondeu nosso NPS com nota ' + (opp.score || 10) + ' \u2014 mais uma harmonia revelada.\n\n' +
-        'Cada historia e unica. A sua tambem pode ser.\n\n' +
+        'Cada história é única. A sua também pode ser.\n\n' +
         '#ClinicaMirianDePaula #HarmoniaFacial'
     }
     if (opp.type === 'vpi_celebration') {
       return 'Nossa embaixadora ' + nome + ' celebrando uma nova conquista! \u2728\n\n' +
         (text ? '"' + text + '"\n\n' : '') +
-        'Gratidao por escolher a nossa clinica pra essa jornada.\n\n' +
+        'Gratidão por escolher a nossa clínica pra essa jornada.\n\n' +
         '#EmbaixadoraMirianDePaula #ClinicaMirianDePaula'
     }
     if (opp.type === 'tier_upgrade') {
       var tierLabel = (opp.tag || 'parceira').toLowerCase()
-      return nome + ' agora e nossa embaixadora ' + tierLabel + '! \u2728\n\n' +
-        'Parceiras como ela constroem essa rede de cuidado e confianca que nos orgulha.\n\n' +
-        'Parabens, ' + nome + '!\n\n' +
+      return nome + ' agora é nossa embaixadora ' + tierLabel + '! \u2728\n\n' +
+        'Parceiras como ela constroem essa rede de cuidado e confiança que nos orgulha.\n\n' +
+        'Parabéns, ' + nome + '!\n\n' +
         '#EmbaixadoraMirianDePaula #ClinicaMirianDePaula'
     }
     return nome + ' compartilhando um momento com a gente.\n\n#ClinicaMirianDePaula'
