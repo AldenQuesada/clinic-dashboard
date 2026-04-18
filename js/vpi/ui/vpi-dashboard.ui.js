@@ -340,6 +340,7 @@
     ])
 
     container.innerHTML =
+      '<div id="vpiStaffAlertSection"></div>' +
       '<div id="vpiChannelLTVCACSection"></div>' +
       '<div id="vpiNPSSection"></div>' +
       '<div id="vpiContentIGSection"></div>' +
@@ -348,6 +349,10 @@
       _renderRisco() +
       _renderFeed(results[2])
 
+    // Staff alert config (s1-3)
+    if (typeof window.renderStaffAlertConfig === 'function') {
+      window.renderStaffAlertConfig('vpiStaffAlertSection')
+    }
     // Channel LTV/CAC analytics (s2-6)
     if (typeof window.renderChannelLTVCAC === 'function') {
       window.renderChannelLTVCAC('vpiChannelLTVCACSection')
