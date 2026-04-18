@@ -146,6 +146,7 @@
         { page: 'agenda-reports',   label: 'Relatorios',    breadcrumb: 'Agenda > Relatorios' },
         { page: 'agenda-eventos',   label: 'Eventos',       breadcrumb: 'Agenda > Eventos' },
         { page: 'agenda-tags',      label: 'Tags e Fluxos', breadcrumb: 'Agenda > Tags e Fluxos' },
+        { page: 'retoques-dashboard', label: 'Retoques',    breadcrumb: 'Agenda > Retoques pos-procedimento', highlight: true },
         { page: 'funnel-automations', label: 'Automacoes (Funis)', breadcrumb: 'Agenda > Automacoes (Funis)' },
       ],
     },
