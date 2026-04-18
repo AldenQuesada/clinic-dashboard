@@ -30,8 +30,18 @@
     return _rpc('b2b_task_resolve', { p_id: id, p_status: status || 'done' })
   }
 
+  // ─── WA ações ──────────────────────────────────────────────
+  function briefSend(partnershipId, taskId) {
+    return _rpc('b2b_brief_send', { p_partnership_id: partnershipId, p_task_id: taskId || null })
+  }
+  function briefSendAllActive() {
+    return _rpc('b2b_brief_send_all_active')
+  }
+
   window.B2BTasksRepository = Object.freeze({
     list: list,
     resolve: resolve,
+    briefSend: briefSend,
+    briefSendAllActive: briefSendAllActive,
   })
 })()

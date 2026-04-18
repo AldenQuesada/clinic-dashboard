@@ -93,6 +93,9 @@
         '</div>' +
       '</div>' +
       '<div class="b2b-task-acts">' +
+        (t.kind === 'brief_monthly' && t.partnership_id
+          ? '<button class="b2b-btn b2b-btn-primary" data-task-send-brief data-id="' + _esc(t.partnership_id) + '" data-task-id="' + _esc(t.id) + '">Enviar WhatsApp</button>'
+          : '') +
         (t.partnership_id ? '<button class="b2b-btn" data-task-open-partnership data-id="' + _esc(t.partnership_id) + '">Abrir parceria</button>' : '') +
         '<button class="b2b-btn" data-task-resolve data-id="' + _esc(t.id) + '" data-status="done">Feito</button>' +
         '<button class="b2b-btn" data-task-resolve data-id="' + _esc(t.id) + '" data-status="dismissed">Dispensar</button>' +
@@ -111,6 +114,8 @@
   }
 
   function _renderModal() {
+    var pendingBriefs = _state.tasks.filter(function (t) { return t.kind === 'brief_monthly' }).length
+
     return '<div class="b2b-overlay" data-tasks-overlay>' +
       '<div class="b2b-modal b2b-modal-wide">' +
         '<header class="b2b-modal-hdr">' +
@@ -118,7 +123,11 @@
           '<button type="button" class="b2b-close" data-tasks-close>&times;</button>' +
         '</header>' +
         '<div class="b2b-modal-body">' +
-          '<div class="b2b-tasks-filter">' + _renderKindFilter() + '</div>' +
+          '<div class="b2b-tasks-filter">' + _renderKindFilter() +
+            (pendingBriefs > 0
+              ? '<button type="button" class="b2b-btn b2b-btn-primary" id="b2bBriefSendAll">Enviar ' + pendingBriefs + ' brief(s) agora</button>'
+              : '') +
+          '</div>' +
           (_state.loading
             ? '<div class="b2b-empty">Carregando…</div>'
             : (_state.tasks.length
@@ -181,6 +190,52 @@
         _closeModal()
       })
     })
+    host.querySelectorAll('[data-task-send-brief]').forEach(function (btn) {
+      btn.addEventListener('click', _onSendBrief)
+    })
+    var sendAllBtn = host.querySelector('#b2bBriefSendAll')
+    if (sendAllBtn) sendAllBtn.addEventListener('click', _onSendAllBriefs)
+  }
+
+  async function _onSendBrief(e) {
+    var btn = e.currentTarget
+    var partnershipId = btn.getAttribute('data-id')
+    var taskId = btn.getAttribute('data-task-id')
+    btn.disabled = true; btn.textContent = 'Enviando…'
+    try {
+      var r = await _repo().briefSend(partnershipId, taskId)
+      if (!r || !r.ok) {
+        var reason = r && r.error === 'invalid_phone'    ? 'Telefone inválido ou ausente'
+                   : r && r.error === 'template_missing' ? 'Template WA não configurado'
+                   : r && r.error === 'enqueue_failed'   ? 'Falha ao enfileirar: ' + (r.detail || '')
+                   : 'Falha: ' + (r && r.error || 'desconhecida')
+        alert(reason)
+        btn.disabled = false; btn.textContent = 'Enviar WhatsApp'
+        return
+      }
+      await _load()
+    } catch (err) {
+      alert('Erro: ' + err.message)
+      btn.disabled = false; btn.textContent = 'Enviar WhatsApp'
+    }
+  }
+
+  async function _onSendAllBriefs(e) {
+    var btn = e.currentTarget
+    if (!confirm('Enviar brief WhatsApp pra todas as parcerias ativas? O sistema vai enfileirar as mensagens.')) return
+    btn.disabled = true; btn.textContent = 'Enviando…'
+    try {
+      var r = await _repo().briefSendAllActive()
+      var msg = 'Enviados: ' + (r.sent || 0) + ' · Falhas: ' + (r.failed || 0)
+      if (r.failures && r.failures.length) {
+        msg += '\n\nFalhas:\n' + r.failures.map(function (f) { return '· ' + f.name + ' — ' + f.error }).join('\n')
+      }
+      alert(msg)
+      await _load()
+    } catch (err) {
+      alert('Erro: ' + err.message)
+      btn.disabled = false
+    }
   }
 
   async function _onResolve(e) {

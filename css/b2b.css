@@ -467,7 +467,11 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
 .b2b-tasks-banner-left { font-size: 13px; }
 .b2b-tasks-banner-left strong { color: var(--b2b-ivory); font-weight: 600; }
 
-.b2b-tasks-filter { margin-bottom: 16px; }
+.b2b-tasks-filter {
+  display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;
+  padding-bottom: 12px; border-bottom: 1px solid var(--b2b-border);
+}
+.b2b-tasks-filter .b2b-btn { margin-left: auto; }
 .b2b-task-list { display: flex; flex-direction: column; gap: 8px; }
 .b2b-task-row {
   display: grid; grid-template-columns: 1fr auto;
