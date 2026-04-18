@@ -1685,6 +1685,11 @@
         <div id="retoques-dashboard-root"></div>
       </div>
 
+      <!-- ==================== PAGE: CASE GALLERY ==================== -->
+      <div class="page" id="page-case-gallery">
+        <div id="case-gallery-admin-root"></div>
+      </div>
+
       <!-- ==================== PAGE: MENU DA CLINICA ==================== -->
       <div class="page" id="page-clinic-menu">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
@@ -5037,6 +5042,15 @@
        Retoques pos-procedimento (modular em js/retoques/)
        Ordem: config -> service -> engine -> modal
   ═══════════════════════════════════════════════ -->
+  <!-- Case Gallery — banco antes/depois reutilizavel em reports -->
+  <script src="js/case-gallery/case-gallery.service.js?v=20260417a" defer></script>
+  <script src="js/case-gallery/case-gallery.admin.ui.js?v=20260417a" defer></script>
+
+  <!-- Report Luxury — pricing + modal pre-export + renderer (substitui _exportReport) -->
+  <script src="js/report-luxury/report-luxury.pricing.js?v=20260417a" defer></script>
+  <script src="js/report-luxury/report-luxury.preexport-modal.js?v=20260417a" defer></script>
+  <script src="js/report-luxury/report-luxury.renderer.js?v=20260417a" defer></script>
+
   <!-- ═══════════════════════════════════════════════
        Share FM (modular em js/share-fm/) — link compartilhavel publico
        Ordem: config -> service -> engine -> modal
