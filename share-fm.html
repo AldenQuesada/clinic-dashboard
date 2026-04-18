@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Sua analise facial</title>
+<link rel="preconnect" href="https://oqboitkpcvuaudouwvkl.supabase.co">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0A0A0A;color:#F5F0E8;font-family:-apple-system,'SF Pro Display','Montserrat',sans-serif;min-height:100vh;line-height:1.5}
+  .container{max-width:780px;margin:0 auto;padding:24px 16px 48px}
+  .header{text-align:center;padding:24px 0 32px;border-bottom:1px solid rgba(200,169,126,0.12);margin-bottom:32px}
+  .clinic-name{font-family:'Cormorant Garamond',Georgia,serif;font-size:32px;font-weight:300;font-style:italic;color:#C8A97E;letter-spacing:0.02em;margin-bottom:6px}
+  .subtitle{font-size:11px;color:rgba(245,240,232,0.5);letter-spacing:0.15em;text-transform:uppercase;font-weight:600}
+  .patient-line{font-size:13px;color:rgba(245,240,232,0.7);margin-top:14px}
+  .loading,.error{text-align:center;padding:80px 20px;color:rgba(245,240,232,0.6)}
+  .error h2{color:#EF4444;font-family:'Cormorant Garamond',serif;font-size:24px;margin-bottom:12px;font-style:italic}
+  .spinner{width:36px;height:36px;border:3px solid rgba(200,169,126,0.2);border-top-color:#C8A97E;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .compare{position:relative;width:100%;background:#000;border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.5);user-select:none;touch-action:none}
+  .compare img{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none}
+  .compare .after-wrap{position:absolute;inset:0;overflow:hidden;clip-path:inset(0 50% 0 0)}
+  .compare .after-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .compare .label{position:absolute;top:12px;padding:6px 14px;background:rgba(10,10,10,0.7);backdrop-filter:blur(6px);border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.12em;color:#C8A97E;text-transform:uppercase}
+  .compare .label.before{left:12px}
+  .compare .label.after{right:12px}
+  .compare .handle{position:absolute;top:0;bottom:0;left:50%;width:2px;background:#C8A97E;cursor:ew-resize;transform:translateX(-1px)}
+  .compare .handle::before{content:'';position:absolute;top:50%;left:50%;width:38px;height:38px;background:#C8A97E;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 4px 12px rgba(0,0,0,0.4)}
+  .compare .handle::after{content:'';position:absolute;top:50%;left:50%;width:14px;height:14px;background:#0A0A0A;border-radius:2px;transform:translate(-50%,-50%) rotate(45deg)}
+
+  .single-img{width:100%;border-radius:16px;display:block;box-shadow:0 24px 60px rgba(0,0,0,0.5)}
+
+  .metrics{margin-top:32px;padding:20px;background:rgba(245,240,232,0.04);border:1px solid rgba(200,169,126,0.15);border-radius:12px}
+  .metrics-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:#C8A97E;margin-bottom:14px}
+  .metric-row{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid rgba(200,169,126,0.08)}
+  .metric-row:last-child{border:none}
+  .metric-label{font-size:12px;color:rgba(245,240,232,0.7);text-transform:capitalize}
+  .metric-value{font-size:16px;font-weight:700;color:#F5F0E8;font-family:'Montserrat',sans-serif}
+
+  .analysis{margin-top:24px;padding:18px;background:rgba(200,169,126,0.04);border-left:3px solid #C8A97E;border-radius:0 10px 10px 0;font-family:'Cormorant Garamond',serif;font-size:15px;font-style:italic;color:rgba(245,240,232,0.85);line-height:1.7}
+
+  .cta{margin-top:36px;text-align:center}
+  .cta a{display:inline-flex;align-items:center;gap:8px;padding:16px 28px;background:#25D366;color:#fff;text-decoration:none;border-radius:12px;font-size:14px;font-weight:700;font-family:'Montserrat',sans-serif;letter-spacing:0.04em;box-shadow:0 8px 20px rgba(37,211,102,0.3);transition:transform .15s}
+  .cta a:hover{transform:translateY(-2px)}
+
+  .footer{margin-top:48px;padding-top:24px;border-top:1px solid rgba(200,169,126,0.1);text-align:center;font-size:10px;color:rgba(245,240,232,0.4);line-height:1.6}
+  .footer .professional{font-size:11px;color:rgba(200,169,126,0.7);margin-bottom:6px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="content">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Carregando sua analise...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict'
+  var SB_URL = 'https://oqboitkpcvuaudouwvkl.supabase.co'
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0'
+  var BUCKET = 'facial-shares'
+  var SIGNED_TTL = 300
+
+  function $(sel) { return document.querySelector(sel) }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[<>&"']/g, function (c) {
+      return ({ '<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;' })[c]
+    })
+  }
+
+  function showError(title, msg) {
+    $('#content').innerHTML =
+      '<div class="error">' +
+        '<h2>' + esc(title) + '</h2>' +
+        '<div style="font-size:13px">' + esc(msg) + '</div>' +
+      '</div>'
+  }
+
+  function fetchRpc(name, body) {
+    return fetch(SB_URL + '/rest/v1/rpc/' + name, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body || {}),
+    }).then(function (r) { return r.json() })
+  }
+
+  function getSignedUrl(path) {
+    if (!path) return Promise.resolve(null)
+    return fetch(SB_URL + '/storage/v1/object/sign/' + BUCKET + '/' + encodeURI(path), {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ expiresIn: SIGNED_TTL }),
+    }).then(function (r) { return r.json() }).then(function (j) {
+      if (!j || !j.signedURL) return null
+      // signedURL e relativa — concatena com base
+      return SB_URL + '/storage/v1' + j.signedURL
+    }).catch(function () { return null })
+  }
+
+  function whatsappLink(phone, msg) {
+    if (!phone) return null
+    var p = String(phone).replace(/\D/g, '')
+    if (p.length === 10 || p.length === 11) p = '55' + p
+    return 'https://wa.me/' + p + '?text=' + encodeURIComponent(msg || 'Olá! Vi minha análise facial e gostaria de agendar.')
+  }
+
+  function render(data, signedBefore, signedAfter) {
+    var hasBoth = !!(signedBefore && signedAfter)
+    var clinicName = esc(data.clinic_name || 'Clinica')
+    var prof = esc(data.professional_name || '')
+    var procedure = esc(data.procedure_label || '')
+    var patient = esc(data.lead_name || 'Paciente')
+    var cta = whatsappLink(data.cta_phone, 'Olá! Vi minha análise facial via link e gostaria de agendar.')
+
+    var compareHtml = ''
+    if (hasBoth) {
+      compareHtml =
+        '<div class="compare" id="compare">' +
+          '<img src="' + esc(signedBefore) + '" alt="Antes">' +
+          '<div class="after-wrap" id="afterWrap">' +
+            '<img src="' + esc(signedAfter) + '" alt="Depois">' +
+          '</div>' +
+          '<div class="label before">Antes</div>' +
+          '<div class="label after">Depois</div>' +
+          '<div class="handle" id="handle"></div>' +
+        '</div>'
+    } else if (signedBefore || signedAfter) {
+      compareHtml = '<img class="single-img" src="' + esc(signedBefore || signedAfter) + '" alt="Analise">'
+    } else {
+      compareHtml = '<div style="padding:40px;text-align:center;color:rgba(239,68,68,0.7)">Imagens indisponiveis no momento.</div>'
+    }
+
+    // Metricas
+    var metricsHtml = ''
+    var metrics = data.metrics || {}
+    var keys = Object.keys(metrics)
+    if (keys.length) {
+      metricsHtml =
+        '<div class="metrics">' +
+          '<div class="metrics-title">Metricas</div>' +
+          keys.map(function (k) {
+            var v = metrics[k]
+            var label = k.replace(/_/g, ' ')
+            var valStr = (typeof v === 'number') ? (Math.round(v * 10) / 10) + (k.indexOf('angle') >= 0 || ['nasolabial','nasofrontal','nasofacial','amf','aij'].indexOf(k) >= 0 ? '\u00B0' : '') : esc(v)
+            return '<div class="metric-row"><div class="metric-label">' + esc(label) + '</div><div class="metric-value">' + valStr + '</div></div>'
+          }).join('') +
+        '</div>'
+    }
+
+    var analysisHtml = data.analysis_text
+      ? '<div class="analysis">' + esc(data.analysis_text) + '</div>'
+      : ''
+
+    var ctaHtml = cta
+      ? '<div class="cta"><a href="' + esc(cta) + '" target="_blank" rel="noopener noreferrer">Agendar avaliacao</a></div>'
+      : ''
+
+    $('#content').innerHTML =
+      '<div class="header">' +
+        '<div class="clinic-name">' + clinicName + '</div>' +
+        '<div class="subtitle">Analise Facial</div>' +
+        '<div class="patient-line">' + patient + (procedure ? ' · ' + procedure : '') + '</div>' +
+      '</div>' +
+      compareHtml +
+      metricsHtml +
+      analysisHtml +
+      ctaHtml +
+      '<div class="footer">' +
+        (prof ? '<div class="professional">' + prof + '</div>' : '') +
+        '<div>Conteudo confidencial · acesso temporario · uso pessoal da paciente</div>' +
+      '</div>'
+
+    if (hasBoth) bindCompare()
+  }
+
+  function bindCompare() {
+    var compare = $('#compare')
+    var wrap = $('#afterWrap')
+    var handle = $('#handle')
+    var dragging = false
+    function set(pct) {
+      pct = Math.max(0, Math.min(100, pct))
+      wrap.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)'
+      handle.style.left = pct + '%'
+    }
+    function onMove(clientX) {
+      var rect = compare.getBoundingClientRect()
+      var pct = ((clientX - rect.left) / rect.width) * 100
+      set(pct)
+    }
+    compare.addEventListener('mousedown', function (e) { dragging = true; onMove(e.clientX) })
+    document.addEventListener('mousemove', function (e) { if (dragging) onMove(e.clientX) })
+    document.addEventListener('mouseup', function () { dragging = false })
+    compare.addEventListener('touchstart', function (e) { dragging = true; if (e.touches[0]) onMove(e.touches[0].clientX) }, { passive: true })
+    document.addEventListener('touchmove', function (e) { if (dragging && e.touches[0]) onMove(e.touches[0].clientX) }, { passive: true })
+    document.addEventListener('touchend', function () { dragging = false })
+    set(50)
+  }
+
+  // Main
+  var token = new URLSearchParams(window.location.search).get('t')
+  if (!token || token.length < 32) {
+    showError('Link invalido', 'O endereco esta incompleto ou foi alterado.')
+    return
+  }
+
+  fetchRpc('fm_share_resolve', { p_token: token, p_user_agent: navigator.userAgent, p_ip_hash: null })
+    .then(function (data) {
+      if (!data || (data && data.code)) {
+        return showError('Link expirado ou revogado', 'Este compartilhamento nao esta mais disponivel. Entre em contato com a clinica para receber um novo.')
+      }
+      // Resolve signed URLs em paralelo
+      return Promise.all([
+        getSignedUrl(data.before_photo_path),
+        getSignedUrl(data.after_photo_path),
+      ]).then(function (urls) {
+        render(data, urls[0], urls[1])
+      })
+    })
+    .catch(function (e) {
+      console.error(e)
+      showError('Falha ao carregar', 'Tente novamente em alguns instantes.')
+    })
+})()
+</script>
+</body>
+</html>

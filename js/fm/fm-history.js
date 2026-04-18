@@ -244,4 +244,74 @@
     }
   }
 
+  // ── Share via Public Link (Supabase Storage + token) ──────────
+  // Diferente de _shareReport (que copia imagem). Aqui geramos URL publica
+  // temporaria via ShareFmEngine — paciente abre no celular sem login.
+
+  function _blobFromUrl(url) {
+    if (!url) return Promise.resolve(null)
+    return fetch(url).then(function (r) { return r.blob() }).catch(function () { return null })
+  }
+
+  function _collectMetrics() {
+    var out = {}
+    try {
+      if (FM._metricAngles) {
+        if (FM._metricAngles.amf      != null) out.amf       = FM._metricAngles.amf
+        if (FM._metricAngles.aij_avg  != null) out.aij       = FM._metricAngles.aij_avg
+        if (FM._metricAngles.rmz      != null) out.ratio_m_z = FM._metricAngles.rmz
+      }
+      if (FM.Nasal && FM.Nasal.compute) {
+        ['nasofrontal', 'nasolabial', 'nasofacial'].forEach(function (m) {
+          var v = FM.Nasal.compute('antes', m)
+          if (v != null) out[m] = v
+        })
+      }
+    } catch (e) { /* silent */ }
+    return out
+  }
+
+  FM._shareReportLink = function () {
+    if (!FM._lead) { FM._showToast('Nenhum paciente selecionado.', 'warn'); return }
+    if (!window.ShareFmEngine) { FM._showToast('Modulo de compartilhamento nao carregado.', 'error'); return }
+
+    var ang = FM._activeAngle || 'front'
+    var beforeUrl = FM._photoUrls && FM._photoUrls[ang]
+    var afterUrl  = FM._afterPhotoByAngle && FM._afterPhotoByAngle[ang]
+
+    if (!beforeUrl && !afterUrl) {
+      FM._showToast('Carregue uma foto antes de gerar link.', 'warn')
+      return
+    }
+
+    Promise.all([_blobFromUrl(beforeUrl), _blobFromUrl(afterUrl)]).then(function (blobs) {
+      var clinicName = (window.ClinicContext && window.ClinicContext.getSetting)
+        ? window.ClinicContext.getSetting('nome', 'Clinica')
+        : (FM._clinicName ? FM._clinicName() : 'Clinica')
+      var clinicPhone = (window.ClinicContext && window.ClinicContext.getSetting)
+        ? window.ClinicContext.getSetting('telefone', '')
+        : ''
+      var profName = (FM._profName ? FM._profName() : null)
+
+      window.ShareFmEngine.start({
+        leadId:              FM._lead.id || FM._lead.lead_id,
+        leadName:            FM._lead.nome || FM._lead.name,
+        leadPhone:           FM._lead.telefone || FM._lead.phone,
+        clinicName:          clinicName,
+        clinicPhone:         clinicPhone,
+        professionalName:    profName,
+        procedureLabel:      'Analise facial',
+        sourceAppointmentId: null,
+        beforeBlob:          blobs[0],
+        afterBlob:           blobs[1],
+        metrics:             _collectMetrics(),
+        analysisText:        FM._lastAnalysis || null,
+        ctaPhone:            clinicPhone,
+      })
+    }).catch(function (e) {
+      console.error('[FM] shareReportLink:', e)
+      FM._showToast('Falha ao preparar fotos: ' + (e.message || ''), 'error')
+    })
+  }
+
 })()

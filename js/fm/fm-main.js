@@ -89,6 +89,7 @@
     _showNoteEditor: FM._showNoteEditor,
     _saveNote: FM._saveNote,
     _shareReport: FM._shareReport,
+    _shareReportLink: FM._shareReportLink,
     _restoreFromHistory: FM._restoreFromHistory,
     _showTemplates: FM._showTemplates,
     _applyTemplate: FM._applyTemplate,

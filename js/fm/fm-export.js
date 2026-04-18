@@ -107,7 +107,9 @@
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._printReport()">' +
           FM._icon('printer', 13) + ' Imprimir</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._shareReport()">' +
-          FM._icon('share-2', 13) + ' Compartilhar</button>' +
+          FM._icon('share-2', 13) + ' Copiar img</button>' +
+        '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(16,185,129,0.4);border-radius:10px;background:rgba(16,185,129,0.08);color:#10B981;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._shareReportLink()">' +
+          FM._icon('link', 13) + ' Link compartilhavel</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:none;border-radius:10px;background:#25D366;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._sendReportWhatsApp()">' +
           FM._icon('send', 13) + ' WhatsApp</button>' +
         '<button style="display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid rgba(200,169,126,0.3);border-radius:10px;background:transparent;color:#C8A97E;font-size:12px;font-weight:500;cursor:pointer;font-family:Montserrat,sans-serif" onclick="FaceMapping._presentReport()">' +
