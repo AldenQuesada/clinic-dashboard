@@ -406,22 +406,32 @@
       <h3>Controles automáticos</h3>
       <div class="card-grid">
         <div class="card">
+          <div class="pillar">Controle 0 · Master</div>
+          <div class="title">Toggle global do scout</div>
+          <div class="desc">Liga/desliga a varredura inteira. Quando desligado, nada é processado, zero custo. Visível no topo da página B2B — 1 clique basta.</div>
+        </div>
+        <div class="card">
           <div class="pillar">Controle 1</div>
+          <div class="title">Badge de consumo sempre visível</div>
+          <div class="desc">Barra permanente no dashboard B2B mostra consumo do mês em tempo real (R$ X de R$ 100 · 34%). Cor muda: verde &lt; 50%, âmbar 50-80%, vermelho &gt; 80%.</div>
+        </div>
+        <div class="card">
+          <div class="pillar">Controle 2</div>
           <div class="title">Budget cap mensal</div>
           <div class="desc">Teto configurável (default R$ 100). Ao atingir 80%, dispara alerta; aos 100%, pausa automaticamente novas varreduras até o próximo mês ou aprovação manual.</div>
         </div>
         <div class="card">
-          <div class="pillar">Controle 2</div>
+          <div class="pillar">Controle 3</div>
           <div class="title">Dedup inteligente</div>
           <div class="desc">Candidato já varrido nos últimos 90 dias não é recobrado. Evita custo duplicado ao rodar a mesma categoria 2x.</div>
         </div>
         <div class="card">
-          <div class="pillar">Controle 3</div>
+          <div class="pillar">Controle 4</div>
           <div class="title">Rate limit por categoria</div>
           <div class="desc">Máx 1 varredura/categoria/dia. Impede cliques acidentais de estourar o orçamento.</div>
         </div>
         <div class="card">
-          <div class="pillar">Controle 4</div>
+          <div class="pillar">Controle 5</div>
           <div class="title">Relatório mensal de custo</div>
           <div class="desc">Dia 01 de cada mês: PDF com breakdown por item (varreduras, enrich, análises), candidatos gerados, taxa de conversão e projeção para o mês seguinte.</div>
         </div>
@@ -647,6 +657,8 @@
       { id: 'b2b-fase2-brief',        title: 'Brief WhatsApp automático',               meta: 'Envia pro parceiro no dia 01 de cada mês' },
       { id: 'b2b-fase2-voucher',      title: 'Sistema voucher digital (QR + landing)',  meta: 'Emissão pelo parceiro · tracking 4 estágios' },
       { id: 'b2b-fase2-dashboard',    title: 'Dashboard verde/amarelo/vermelho',        meta: 'Saúde por parceria · Mirian vê só exceções' },
+      { id: 'b2b-fase2-scout-toggle', title: 'Scout: toggle master on/off',              meta: 'Controle global · desligado = zero custo · 1 clique no topo da página' },
+      { id: 'b2b-fase2-scout-badge',  title: 'Scout: badge de consumo sempre visível',   meta: 'Barra permanente R$ X de R$ 100 · cor dinâmica verde/âmbar/vermelho' },
       { id: 'b2b-fase2-scout-schema', title: 'Scout: schema b2b_candidates + RPCs',      meta: 'Tabela candidatos + triagem + tracking' },
       { id: 'b2b-fase2-scout-crawl',  title: 'Scout: edge function Apify + Claude',      meta: 'Varredura Google Maps + enriquecimento IA + score DNA' },
       { id: 'b2b-fase2-scout-ui',     title: 'Scout: aba Candidatos na página B2B',      meta: 'Lista ordenada por score · triagem · status negociação' },
