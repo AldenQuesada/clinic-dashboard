@@ -171,22 +171,13 @@
     }
 
     if (action === 'approve') {
-      var ok = window.B2BToast
-        ? await window.B2BToast.confirm(
-            '• Status vira "closed"\n• Vouchers abertos são cancelados automaticamente\n• Tasks pendentes viram auto_resolved\n• Carta formal é gerada (você copia + envia)',
-            { title: 'Encerrar "' + name + '"?', okLabel: 'Encerrar definitivamente' })
-        : confirm('Encerrar parceria "' + name + '"?')
-      if (!ok) return
-
-      var reason = window.B2BToast
-        ? await window.B2BToast.prompt('Motivo final do encerramento (aparece na carta):', '',
-            { title: 'Motivo do encerramento', okLabel: 'Encerrar' })
-        : (prompt('Motivo final do encerramento (aparece na carta):', '') || null)
-      if (reason === null) return
+      // Pede template + motivo via modal custom (Fraqueza #13)
+      var choice = await _askTemplateAndReason(name)
+      if (!choice) return
 
       btn.disabled = true; btn.textContent = 'Encerrando…'
       try {
-        var r = await _repo().approve(id, reason || null)
+        var r = await _repo().approve(id, choice.reason || null, choice.templateKey)
         if (!r || !r.ok) throw new Error(r && r.error || 'falha')
         _state.lastLetter = r.letter
         _emit('b2b:partnership-closed', { id: id })
@@ -198,6 +189,76 @@
         btn.disabled = false; btn.textContent = 'Encerrar'
       }
     }
+  }
+
+  // Mini-modal pra escolher template + motivo (Fraqueza #13)
+  async function _askTemplateAndReason(partnershipName) {
+    var templates = []
+    if (window.B2BClosureTemplatesRepository) {
+      try { templates = await window.B2BClosureTemplatesRepository.list() || [] } catch (_) {}
+    }
+    if (!templates.length) {
+      // Sem templates — fallback ao prompt antigo (só motivo, template default)
+      var rOld = window.B2BToast
+        ? await window.B2BToast.prompt('Motivo final do encerramento (aparece na carta):', '',
+            { title: 'Encerrar "' + partnershipName + '"', okLabel: 'Encerrar' })
+        : (prompt('Motivo final:', '') || null)
+      if (rOld === null) return null
+      return { templateKey: 'default', reason: rOld || '' }
+    }
+
+    return new Promise(function (resolve) {
+      var host = document.getElementById('b2bClosureAskHost')
+      if (!host) {
+        host = document.createElement('div')
+        host.id = 'b2bClosureAskHost'
+        document.body.appendChild(host)
+      }
+
+      var opts = templates.map(function (t) {
+        var lbl = t.key + (t.subject ? ' — ' + t.subject : '')
+        return '<option value="' + _esc(t.key) + '"' + (t.key === 'default' ? ' selected' : '') + '>' + _esc(lbl) + '</option>'
+      }).join('')
+
+      host.innerHTML =
+        '<div class="b2b-overlay" data-clos-ask>' +
+          '<div class="b2b-modal">' +
+            '<header class="b2b-modal-hdr">' +
+              '<h2>Encerrar "' + _esc(partnershipName) + '"</h2>' +
+              '<button type="button" class="b2b-close" data-clos-ask-close>&times;</button>' +
+            '</header>' +
+            '<div class="b2b-modal-body">' +
+              '<p style="font-size:12px;color:var(--b2b-text-muted);margin-top:0">' +
+                'Status vira "closed" · vouchers cancelados · tasks auto-resolvidas · carta formal gerada.' +
+              '</p>' +
+              '<label class="b2b-field"><span class="b2b-field-lbl">Template da carta</span>' +
+                '<select class="b2b-input" id="b2bClosAskTpl">' + opts + '</select></label>' +
+              '<label class="b2b-field"><span class="b2b-field-lbl">Motivo final (aparece na carta)</span>' +
+                '<textarea class="b2b-input" id="b2bClosAskReason" rows="3" placeholder="Ex: Queda de engajamento nos últimos 90 dias"></textarea></label>' +
+              '<div class="b2b-form-actions">' +
+                '<button type="button" class="b2b-btn" data-clos-ask-close>Cancelar</button>' +
+                '<button type="button" class="b2b-btn b2b-btn-primary" id="b2bClosAskOk">Encerrar</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>'
+
+      function cleanup(result) {
+        host.innerHTML = ''
+        resolve(result)
+      }
+
+      host.querySelectorAll('[data-clos-ask-close]').forEach(function (el) {
+        el.addEventListener('click', function () { cleanup(null) })
+      })
+      var ov = host.querySelector('[data-clos-ask]')
+      if (ov) ov.addEventListener('click', function (e) { if (e.target === ov) cleanup(null) })
+      host.querySelector('#b2bClosAskOk').addEventListener('click', function () {
+        var tpl = host.querySelector('#b2bClosAskTpl').value
+        var reason = (host.querySelector('#b2bClosAskReason').value || '').trim()
+        cleanup({ templateKey: tpl, reason: reason })
+      })
+    })
   }
 
   async function _load() {

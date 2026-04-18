@@ -642,6 +642,26 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
 }
 .b2b-clos-letter textarea { font-family: 'Cormorant Garamond', serif; font-size: 14px; line-height: 1.7; }
 
+/* ── Config tab / Closure templates (Fraqueza #13) ── */
+.b2b-config-sec { margin-bottom: 32px; }
+.b2b-tpl-card {
+  background: var(--b2b-bg-1); border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 14px 16px; margin-bottom: 14px;
+}
+.b2b-tpl-card.b2b-tpl-editing { border-color: var(--b2b-champagne); }
+.b2b-tpl-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.b2b-tpl-preview {
+  background: var(--b2b-bg-0); border: 1px solid var(--b2b-border);
+  border-radius: 6px; padding: 12px; margin: 0;
+  font-family: 'Cormorant Garamond', serif; font-size: 13px; line-height: 1.65;
+  color: var(--b2b-text); white-space: pre-wrap; word-wrap: break-word;
+  max-height: 280px; overflow-y: auto;
+}
+.b2b-tpl-preview-wrap { margin: 12px 0; }
+
 /* ── Similar warn (fuzzy dedup no candidate-form) ── */
 .b2b-similar-warn {
   margin: 12px 0; padding: 12px 14px;

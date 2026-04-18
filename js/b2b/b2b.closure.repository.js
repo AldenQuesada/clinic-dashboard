@@ -18,7 +18,13 @@
 
   function detectInactive()                { return _rpc('b2b_closure_detect_inactive') }
   function listPending()                   { return _rpc('b2b_closure_list_pending') }
-  function approve(id, reason)             { return _rpc('b2b_closure_approve', { p_id: id, p_reason: reason || null }) }
+  function approve(id, reason, templateKey) {
+    return _rpc('b2b_closure_approve', {
+      p_id: id,
+      p_reason: reason || null,
+      p_template_key: templateKey || 'default',
+    })
+  }
   function dismiss(id, note)               { return _rpc('b2b_closure_dismiss', { p_id: id, p_note: note || null }) }
 
   window.B2BClosureRepository = Object.freeze({
