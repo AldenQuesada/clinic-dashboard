@@ -55,6 +55,11 @@
     return _rpc('b2b_scout_config_update', { p_payload: payload, p_user: user || null })
   }
 
+  // ─── Export (Fraqueza #10) ──────────────────────────────────
+  function exportAll(status) {
+    return _rpc('b2b_partnership_export', { p_status: status || null })
+  }
+
   // ─── Meta mensal da clínica ─────────────────────────────────
   function monthlyTargetGet(monthISO) {
     return _rpc('b2b_monthly_target_get', { p_month: monthISO || null })
@@ -74,6 +79,7 @@
     get: get,
     upsert: upsert,
     setStatus: setStatus,
+    exportAll: exportAll,
     scoutConfigGet: scoutConfigGet,
     scoutConfigUpdate: scoutConfigUpdate,
     monthlyTargetGet: monthlyTargetGet,

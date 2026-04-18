@@ -131,9 +131,15 @@
   }
 
   function _renderShell() {
+    var exportBtn = _state.filter === 'active'
+      ? '<button type="button" class="b2b-btn" data-action="export" title="Baixar planilha CSV com todas as parcerias">Exportar CSV</button>'
+      : ''
     return '<div class="b2b-list-head">' +
       '<div class="b2b-list-count" data-count></div>' +
-      '<button type="button" class="b2b-btn b2b-btn-primary" data-action="new">+ Nova parceria</button>' +
+      '<div class="b2b-list-head-acts" style="display:flex;gap:8px;flex-wrap:wrap">' +
+        exportBtn +
+        '<button type="button" class="b2b-btn b2b-btn-primary" data-action="new">+ Nova parceria</button>' +
+      '</div>' +
     '</div>' +
     '<div class="b2b-list-body" data-list-body></div>'
   }
@@ -188,11 +194,37 @@
     var btn = root.querySelector('[data-action="new"]')
     if (btn) btn.addEventListener('click', function () { _emit('b2b:open-form', { mode: 'new' }) })
 
+    var exportBtn = root.querySelector('[data-action="export"]')
+    if (exportBtn) exportBtn.addEventListener('click', _onExport)
+
     root.querySelectorAll('.b2b-row').forEach(function (row) {
       row.addEventListener('click', function () {
         _emit('b2b:open-detail', { id: row.getAttribute('data-id') })
       })
     })
+  }
+
+  async function _onExport(ev) {
+    var btn = ev.currentTarget
+    if (!window.B2BExportService) {
+      window.B2BToast ? window.B2BToast.error('Serviço de export não carregado') : alert('Export não carregado')
+      return
+    }
+    var origLabel = btn.textContent
+    btn.disabled = true; btn.textContent = 'Exportando…'
+    try {
+      var rows = await _repo().exportAll(null)
+      if (!Array.isArray(rows) || !rows.length) {
+        window.B2BToast ? window.B2BToast.warn('Nenhuma parceria para exportar') : alert('Nenhuma parceria')
+        return
+      }
+      window.B2BExportService.downloadCSV(null, rows)
+      window.B2BToast && window.B2BToast.success(rows.length + ' parceria(s) exportada(s)')
+    } catch (e) {
+      window.B2BToast ? window.B2BToast.error('Erro: ' + (e.message || e)) : alert('Erro: ' + (e.message || e))
+    } finally {
+      btn.disabled = false; btn.textContent = origLabel
+    }
   }
 
   // ─── Bind global ────────────────────────────────────────────
