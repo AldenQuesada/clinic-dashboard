@@ -225,8 +225,10 @@
     document.body.style.overflow = 'hidden'
     apptUpdateEndTime()
 
-    // Auto-preencher sala do profissional selecionado
+    // Auto-preencher sala + valor de consulta do profissional selecionado.
+    // skipIfFilled=true preserva valor salvo em agendamentos antigos (edit).
     apptAutoSala()
+    apptAutoValorConsulta({ skipIfFilled: true })
 
     // Restaurar draft se novo (sem id) e existe draft salvo
     if (!id) _restoreDraft()
@@ -1080,7 +1082,8 @@
     apptAutoValorConsulta()
   }
 
-  function apptAutoValorConsulta() {
+  function apptAutoValorConsulta(opts) {
+    var skipIfFilled = !!(opts && opts.skipIfFilled)
     var profSel = document.getElementById('appt_prof')
     if (!profSel) return
     var profIdx = parseInt(profSel.value)
@@ -1091,7 +1094,12 @@
     var v = parseFloat(prof.valor_consulta) || 0
     if (v <= 0) return
     var valEl = document.getElementById('appt_valor')
-    if (valEl) valEl.value = v.toFixed(2)
+    if (!valEl) return
+    // Na abertura do modal (skipIfFilled), preserva valor existente —
+    // agendamentos antigos podem ter valor cobrado diferente do default atual.
+    // Na troca manual do select (sem flag), sobrescreve com valor do novo prof.
+    if (skipIfFilled && valEl.value && parseFloat(valEl.value) > 0) return
+    valEl.value = v.toFixed(2)
     // Só mexe nos pagamentos se o tipo for consulta (ou indefinido).
     // Em procedimento, o total vem da soma dos procs, não da consulta.
     var tipoEl = document.getElementById('appt_tipo')
