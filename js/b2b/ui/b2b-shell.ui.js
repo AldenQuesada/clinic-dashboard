@@ -22,6 +22,7 @@
     { id: 'active',     label: 'Parcerias Ativas' },
     { id: 'prospects',  label: 'Prospects' },
     { id: 'candidates', label: 'Candidatos (Scout)' },
+    { id: 'gaps',       label: 'Gaps do plano' },
     { id: 'health',     label: 'Saúde' },
     { id: 'config',     label: 'Configurações' },
   ]
