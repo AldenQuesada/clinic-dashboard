@@ -341,14 +341,19 @@
 
     container.innerHTML =
       '<div id="vpiChannelLTVCACSection"></div>' +
+      '<div id="vpiNPSSection"></div>' +
       _renderPendencias(results[0]) +
       _renderTop10(results[1]) +
       _renderRisco() +
       _renderFeed(results[2])
 
-    // Channel LTV/CAC analytics (s2-6) — modulo separado, render async
+    // Channel LTV/CAC analytics (s2-6)
     if (typeof window.renderChannelLTVCAC === 'function') {
       window.renderChannelLTVCAC('vpiChannelLTVCACSection')
+    }
+    // NPS dashboard (s2-3)
+    if (typeof window.renderNPSDashboard === 'function') {
+      window.renderNPSDashboard('vpiNPSSection')
     }
   }
 
