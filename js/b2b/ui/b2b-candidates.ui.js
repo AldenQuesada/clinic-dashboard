@@ -93,16 +93,31 @@
     var enabled = !!c.scout_enabled
     var consumed = Number(c.total_brl || 0)
     var budget   = Number(c.budget_cap_brl || 100)
-    var pct = Number(c.pct_used || 0)
+    var balance  = Math.max(0, budget - consumed)
+    var pct      = Number(c.pct_used || 0)
+    var brk      = c.breakdown || {}
+    var scans    = (brk.google_maps_scan && brk.google_maps_scan.count) || 0
+    var lastScan = c.last_scan_at ? _fmtRelative(c.last_scan_at) : null
 
     var statusText = !enabled
       ? '<strong style="color:#EF4444">Scout desligado</strong> · ative no toggle do topo pra buscar candidatos.'
       : (c.capped
-          ? '<strong style="color:#EF4444">Budget cap atingido</strong> · novas varreduras pausadas até próximo mês ou aumentar cap.'
-          : '<strong style="color:#10B981">Scout ativo</strong> · consumo do mês: R$ ' + consumed.toFixed(2) + ' de R$ ' + budget.toFixed(2) + ' (' + pct + '%).')
+          ? '<strong style="color:#EF4444">Budget cap atingido</strong> · pausado até próximo mês.'
+          : '<strong style="color:#10B981">Scout ativo</strong>')
+
+    // Linha compacta de stats (só aparece se o scout está ativo)
+    var statsLine = enabled
+      ? '<div class="b2b-scout-stats">' +
+          '<span>' + scans + ' varredura' + (scans === 1 ? '' : 's') + '</span>' +
+          '<span>R$ ' + consumed.toFixed(2) + ' usados</span>' +
+          '<span>R$ ' + balance.toFixed(2) + ' saldo</span>' +
+          '<span>' + pct + '% do cap</span>' +
+          (lastScan ? '<span>últ. ' + lastScan + '</span>' : '') +
+        '</div>'
+      : ''
 
     return '<div class="b2b-scout-banner" data-scout-banner>' +
-      '<div class="b2b-scout-banner-txt">' + statusText + '</div>' +
+      '<div class="b2b-scout-banner-txt">' + statusText + statsLine + '</div>' +
       (enabled && !c.capped
         ? '<div class="b2b-scout-scan">' +
             '<select class="b2b-input" id="b2bScoutCatSel" style="max-width:260px">' +
@@ -115,6 +130,50 @@
           '</div>'
         : '') +
     '</div>'
+  }
+
+  function _fmtRelative(iso) {
+    if (!iso) return ''
+    try {
+      var diff = Date.now() - new Date(iso).getTime()
+      var min  = Math.floor(diff / 60000)
+      if (min < 1)   return 'agora'
+      if (min < 60)  return min + 'min'
+      var h = Math.floor(min / 60)
+      if (h < 24)    return h + 'h'
+      var d = Math.floor(h / 24)
+      if (d < 30)    return d + 'd'
+      return new Date(iso).toLocaleDateString('pt-BR')
+    } catch (_) { return '' }
+  }
+
+  function _renderCandidateStats() {
+    if (!_state.candidates.length) return ''
+    var byStatus = {}
+    _state.candidates.forEach(function (c) {
+      byStatus[c.contact_status] = (byStatus[c.contact_status] || 0) + 1
+    })
+    var total = _state.candidates.length
+    var parts = ['<span><strong>' + total + '</strong> candidatos</span>']
+    ;[
+      ['new',         'novos'],
+      ['approved',    'aprovados'],
+      ['approached',  'abordados'],
+      ['responded',   'responderam'],
+      ['negotiating', 'negociando'],
+      ['signed',      'fechados'],
+    ].forEach(function (pair) {
+      var n = byStatus[pair[0]] || 0
+      if (n > 0) parts.push('<span>' + n + ' ' + pair[1] + '</span>')
+    })
+
+    // Score médio dos com dna_score
+    var withScore = _state.candidates.filter(function (c) { return c.dna_score != null })
+    if (withScore.length) {
+      var avg = withScore.reduce(function (s, c) { return s + Number(c.dna_score) }, 0) / withScore.length
+      parts.push('<span>score médio <strong>' + avg.toFixed(1) + '</strong></span>')
+    }
+    return '<div class="b2b-cand-stats">' + parts.join('') + '</div>'
   }
 
   function _renderFilters() {
@@ -179,6 +238,7 @@
     body.innerHTML =
       _renderBanner() +
       _renderFilters() +
+      _renderCandidateStats() +
       (_state.loading
         ? '<div class="b2b-empty">Carregando candidatos…</div>'
         : _state.error
