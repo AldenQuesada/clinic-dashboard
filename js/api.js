@@ -393,6 +393,10 @@ function renderAgenda() {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Horários
       </button>
+      <button onclick="if(window.openFinalizarDiaModal)openFinalizarDiaModal()" title="Validar pendências e encerrar o dia" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid #10B981;background:#fff;color:#047857;display:inline-flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Finalizar Dia
+      </button>
       <div style="display:flex;gap:4px;background:#F3F4F6;padding:4px;border-radius:10px">
         ${viewBtn('mes','Mês')}${viewBtn('semana','Semana')}${viewBtn('hoje','Hoje')}
       </div>
