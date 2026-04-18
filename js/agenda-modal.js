@@ -235,8 +235,15 @@
     apptAutoSala()
     apptAutoValorConsulta({ skipIfFilled: true })
 
-    // Restaurar draft se novo (sem id) e existe draft salvo
-    if (!id) _restoreDraft()
+    // Restaurar draft se novo (sem id) e existe draft salvo.
+    // Campos passados explicitamente pelo caller (slot da agenda) tem precedencia.
+    if (!id) {
+      var skipFields = []
+      if (date) skipFields.push('appt_data')
+      if (time) skipFields.push('appt_inicio')
+      if (profIdx != null) skipFields.push('appt_prof')
+      _restoreDraft({ skipFields: skipFields })
+    }
     _bindDraftListeners()
 
     // Carregar procedimentos da BD (async, popula select quando pronto)
@@ -424,7 +431,7 @@
     if (_draftTimer) { clearTimeout(_draftTimer); _draftTimer = null }
   }
 
-  function _restoreDraft() {
+  function _restoreDraft(opts) {
     try {
       var raw = localStorage.getItem(DRAFT_KEY)
       if (!raw) return false
@@ -436,7 +443,11 @@
       var hasProcs    = Array.isArray(d._procs) && d._procs.length
       var hasPagto    = Array.isArray(d._pagamentos) && d._pagamentos.length
       if (!hasPaciente && !hasProcs && !hasPagto) { _clearDraft(); return false }
+      // Campos que o caller passou explicitamente nao devem ser sobrescritos
+      // pelo rascunho (ex: clique em slot da agenda define data/hora/profissional).
+      var skipFields = (opts && Array.isArray(opts.skipFields)) ? opts.skipFields : []
       _draftFieldIds().forEach(function (fid) {
+        if (skipFields.indexOf(fid) >= 0) return
         var el = document.getElementById(fid)
         if (el && d[fid]) el.value = d[fid]
       })
