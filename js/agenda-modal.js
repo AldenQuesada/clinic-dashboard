@@ -194,11 +194,12 @@
       const valEl2  = document.getElementById('appt_valor'); if (valEl2)  valEl2.value  = ''
       apptResetPagamentos()
       apptTipoChange()
-      if (profIdx !== undefined && profSel) {
+      if (profIdx != null && profSel) {
         profSel.value = profIdx
       } else if (profSel) {
         // Pré-seleção do profissional principal (Mirian) quando secretária ou
-        // dona está logada — poupa um clique no fluxo de agendamento.
+        // dona está logada — vista semana não tem coluna por profissional,
+        // então abre no slot sem profIdx e cai aqui. Poupa um clique.
         var _principalIdx = _apptFindPrincipalIdx()
         if (_principalIdx >= 0) profSel.value = _principalIdx
       }

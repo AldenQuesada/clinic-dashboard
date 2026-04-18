@@ -734,7 +734,7 @@ function buildSemanaGrid() {
       const clickable = (!isPast && !slotInfo.blocked) || hasCards
       const title = slotInfo.blocked && !hasCards ? `title="${slotInfo.reason || 'Bloqueado'}"` : ''
       return `<td ${title} ${clickable?'ondragover="agendaDragOver(event,\''+iso+'\',\''+slot+'\')" ondragleave="agendaDragLeave(event)" ondrop="agendaDrop(event,\''+iso+'\',\''+slot+'\',0)"':''}
-        ${clickable&&!slotInfo.blocked?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\',0)"':''}
+        ${clickable&&!slotInfo.blocked?'onclick="if(!event.target.closest(\'[data-apptid]\'))openApptModal(null,\''+iso+'\',\''+slot+'\',null)"':''}
         data-slot-blocked="${slotInfo.blocked?'1':'0'}" data-slot-kind="${slotInfo.kind||''}"
         style="width:${colW};padding:2px 3px;border-right:1px solid #E5E7EB;border-bottom:1px solid ${isHour?'#E5E7EB':'#F3F4F6'};height:34px;vertical-align:top;cursor:${clickable?(slotInfo.blocked?'not-allowed':'pointer'):'default'};position:relative;background:${isToday?'#FEFCE8':isPast&&!hasCards?'#F9FAFB':''};${blockedBg}${isPast&&!hasCards?'opacity:0.5;':''}"
         >${cards}</td>`
