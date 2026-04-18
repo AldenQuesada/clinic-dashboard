@@ -342,6 +342,7 @@
     container.innerHTML =
       '<div id="vpiChannelLTVCACSection"></div>' +
       '<div id="vpiNPSSection"></div>' +
+      '<div id="vpiContentIGSection"></div>' +
       _renderPendencias(results[0]) +
       _renderTop10(results[1]) +
       _renderRisco() +
@@ -354,6 +355,10 @@
     // NPS dashboard (s2-3)
     if (typeof window.renderNPSDashboard === 'function') {
       window.renderNPSDashboard('vpiNPSSection')
+    }
+    // Content Instagram opportunities (s2-5)
+    if (typeof window.renderContentIG === 'function') {
+      window.renderContentIG('vpiContentIGSection')
     }
   }
 
