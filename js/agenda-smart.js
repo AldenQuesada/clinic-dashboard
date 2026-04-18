@@ -2289,6 +2289,11 @@ function confirmFinalize(id) {
     try { VPIEngine.closeIndication(apptFinal).catch(function(e){ console.warn('[VPI] closeIndication:', e) }) } catch(e) {}
   }
 
+  // Retoques — popup sugerindo intervalo de retoque (fire-and-forget)
+  if (window.RetoquesEngine) {
+    try { RetoquesEngine.openSuggestionModal(apptFinal) } catch(e) { console.warn('[Retoques] openSuggestionModal:', e) }
+  }
+
   _finalizingInProgress = false
   closeFinalizeModal(true)
   if (window._showToast) _showToast('Finalizado', apptFinal.pacienteNome + ' finalizado com sucesso', 'success')
