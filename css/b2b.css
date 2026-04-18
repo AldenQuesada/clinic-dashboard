@@ -579,7 +579,31 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
 }
 .b2b-groups-table .num { text-align: right; }
 
+/* ── Closure list ── */
+.b2b-clos-row {
+  display: grid; grid-template-columns: 12px 1fr auto;
+  gap: 14px; align-items: center;
+  background: var(--b2b-bg-1); border: 1px solid rgba(217,122,122,0.3);
+  border-radius: 6px; padding: 14px 16px; margin-bottom: 8px;
+}
+.b2b-clos-body { min-width: 0; }
+.b2b-clos-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.b2b-clos-top strong { color: var(--b2b-ivory); font-size: 13px; }
+.b2b-clos-meta { font-size: 11px; color: var(--b2b-text-muted); line-height: 1.5; }
+.b2b-clos-meta strong { color: var(--b2b-red); font-weight: 600; }
+.b2b-clos-acts { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+.b2b-clos-acts .b2b-btn { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
+.b2b-clos-letter {
+  margin-top: 24px; background: var(--b2b-bg-1);
+  border: 1px solid var(--b2b-border); border-radius: 8px; padding: 16px;
+}
+.b2b-clos-letter textarea { font-family: 'Cormorant Garamond', serif; font-size: 14px; line-height: 1.7; }
+
 /* ── Responsive ── */
+@media (max-width: 640px) {
+  .b2b-clos-row { grid-template-columns: 1fr; }
+  .b2b-clos-acts { flex-direction: row; flex-wrap: wrap; }
+}
 @media (max-width: 640px) {
   .b2b-groups-kpis { grid-template-columns: repeat(2, 1fr); }
 }

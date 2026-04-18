@@ -24,6 +24,7 @@
     { id: 'candidates', label: 'Candidatos (Scout)' },
     { id: 'gaps',       label: 'Gaps do plano' },
     { id: 'health',     label: 'Saúde' },
+    { id: 'closure',    label: 'Encerramentos' },
     { id: 'config',     label: 'Configurações' },
   ]
 
