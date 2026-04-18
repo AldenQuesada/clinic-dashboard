@@ -1379,7 +1379,6 @@ function _buildFinFlowChecks() {
       { id:'finWAPos',          label:'Enviar WhatsApp p\u00f3s-atendimento (cuidados)', checked:true },
       { id:'finAvalGoogle',     label:'Solicitar avalia\u00e7\u00e3o Google',                  checked:true },
       { id:'finGerarRetorno',   label:'Gerar retorno / pr\u00f3ximo agendamento',         checked:true },
-      { id:'finFluxoParceria',  label:'Fluxo de parceria / indica\u00e7\u00e3o',               checked:false },
       { id:'finEnviarOrcamento',label:'Enviar or\u00e7amento',                            checked:true },
     ]
   }
@@ -1389,6 +1388,17 @@ function _buildFinFlowChecks() {
   if (!hasOrc) {
     checks.push({ id:'finEnviarOrcamento', label:'Enviar orcamento', checked:true })
   }
+
+  // SEMPRE: check dedicado VPI — decisao de convidar pra virar embaixadora.
+  // Default TRUE: todo paciente que finaliza procedimento vira candidata.
+  // Desmarca manualmente quem nao deve receber convite (ex: paciente conhecida
+  // que ja recusou, teste interno, etc). autoEnroll cria em pending_consent
+  // e WA convite pede ACEITO pra virar ativa (LGPD).
+  checks.push({
+    id: 'finVPIEnroll',
+    label: 'Incluir no Programa de Indica\u00e7\u00e3o (VPI) \u2014 convite WA D+1',
+    checked: true,
+  })
 
   return checks.map(function(c) {
     return '<label style="' + _lbl + '">' +
@@ -1949,7 +1959,10 @@ function confirmFinalize(id) {
   const obs      = document.getElementById('finObs')?.value?.trim()
   const waPos    = document.getElementById('finWAPos')?.checked
   const avalGoogle = document.getElementById('finAvalGoogle')?.checked
-  const parceria = document.getElementById('finFluxoParceria')?.checked
+  // VPI enrollment: default true (padrao "convidar"). Checkbox inexistente
+  // cai no fallback true pra nao quebrar comportamento prevvio se render falhar.
+  const vpiEnroll = document.getElementById('finVPIEnroll')
+  const vpiEnrollChecked = vpiEnroll ? !!vpiEnroll.checked : true
   const route    = document.querySelector('input[name="finRoute"]:checked')?.value || 'nenhum'
 
   // ── Validacao completa ──
@@ -2209,7 +2222,7 @@ function confirmFinalize(id) {
     _saveQueue(q)
     _logAuto(id, 'fluxo_avaliacao_google', 'agendado_d3')
   }
-  if (parceria)   _logAuto(id, 'fluxo_parceria', 'pendente')
+  if (vpiEnrollChecked) _logAuto(id, 'vpi_enroll', 'pendente')
 
   // Bloco 4: Routing — muda fase do lead baseado no resultado da consulta
   // Regra de negocio:
@@ -2284,8 +2297,17 @@ function confirmFinalize(id) {
   }
 
   // VPI — Programa de Indicacao (fire-and-forget, nunca quebra finalize)
+  //
+  // autoEnroll: convida paciente pra virar embaixadora. Respeita o check
+  //   finVPIEnroll (default true) — secretaria pode desmarcar pra nao convidar.
+  // closeIndication: SEMPRE roda — fecha indicacao pendente se paciente foi
+  //   indicada por alguem (fluxo independente de virar embaixadora).
   if (window.VPIEngine) {
-    try { VPIEngine.autoEnroll(apptFinal).catch(function(e){ console.warn('[VPI] autoEnroll:', e) }) } catch(e) {}
+    if (vpiEnrollChecked) {
+      try { VPIEngine.autoEnroll(apptFinal).catch(function(e){ console.warn('[VPI] autoEnroll:', e) }) } catch(e) {}
+    } else {
+      console.info('[VPI] autoEnroll skipped — checkbox desmarcado no finalize')
+    }
     try { VPIEngine.closeIndication(apptFinal).catch(function(e){ console.warn('[VPI] closeIndication:', e) }) } catch(e) {}
   }
 
