@@ -642,6 +642,33 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
 }
 .b2b-clos-letter textarea { font-family: 'Cormorant Garamond', serif; font-size: 14px; line-height: 1.7; }
 
+/* ── Similar warn (fuzzy dedup no candidate-form) ── */
+.b2b-similar-warn {
+  margin: 12px 0; padding: 12px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  color: var(--b2b-text);
+}
+.b2b-similar-hdr {
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  color: #F59E0B; font-weight: 600; margin-bottom: 8px;
+}
+.b2b-similar-item {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; padding: 6px 0; font-size: 12px;
+  border-top: 1px solid rgba(245, 158, 11, 0.15);
+}
+.b2b-similar-item:first-of-type { border-top: 0; }
+.b2b-similar-main { flex: 1; min-width: 0; }
+.b2b-similar-link {
+  background: transparent; border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #F59E0B; padding: 4px 10px; border-radius: 4px; cursor: pointer;
+  font-size: 11px; font-family: inherit; font-weight: 500;
+  transition: all 0.15s; white-space: nowrap;
+}
+.b2b-similar-link:hover { background: rgba(245, 158, 11, 0.15); }
+
 /* ── Comments (inline dentro do detail) ── */
 .b2b-comments-wrap {
   margin-top: 8px; background: var(--b2b-bg-1);
@@ -814,4 +841,28 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
   .b2b-voucher-form-wrap { grid-template-columns: 1fr; }
   .b2b-voucher-preview { position: static; }
   .b2b-search-overlay { padding: 20px; }
+}
+
+/* Priority bucket (candidatos top pra abordar hoje) */
+.b2b-cand-priority {
+  background: linear-gradient(180deg, rgba(201,169,110,0.08), transparent);
+  border: 1px solid var(--b2b-border-strong);
+  border-radius: 8px; padding: 14px 12px 8px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.b2b-cand-priority::before {
+  content: ""; position: absolute; left: -1px; top: 20%; bottom: 20%; width: 3px;
+  background: var(--b2b-champagne); border-radius: 3px;
+}
+.b2b-cand-priority-hdr {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--b2b-champagne); font-weight: 700;
+  padding: 0 4px 10px; margin-bottom: 2px;
+}
+.b2b-cand-rest-hdr {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--b2b-text-muted); font-weight: 600;
+  padding-bottom: 8px; margin: 16px 0 8px;
+  border-bottom: 1px solid var(--b2b-border);
 }

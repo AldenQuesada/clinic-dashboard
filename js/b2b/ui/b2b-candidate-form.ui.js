@@ -24,7 +24,67 @@
     return (window.B2BCandidates && window.B2BCandidates.CATEGORIES) || []
   }
 
-  var _state = { saving: false, error: null }
+  var _state = { saving: false, error: null, similar: [] }
+
+  function _esc2(s) { return _esc(s) }
+
+  // Fuzzy lookup no blur do nome (Fraqueza #11)
+  async function _checkSimilar(formEl) {
+    if (!window.B2BScoutRepository || !_sbRpcAvailable()) return
+    var name  = (formEl.querySelector('[name="name"]').value || '').trim()
+    var phone = (formEl.querySelector('[name="phone"]').value || '').trim()
+    if (name.length < 3) { _state.similar = []; _renderSimilarHint(formEl); return }
+
+    try {
+      var r = await window._sbShared.rpc('b2b_candidate_find_similar', { p_name: name, p_phone: phone || null })
+      if (r.error) throw new Error(r.error.message)
+      _state.similar = Array.isArray(r.data) ? r.data : []
+      _renderSimilarHint(formEl)
+    } catch (e) {
+      console.warn('[B2BCandidateForm] find_similar falhou:', e.message)
+    }
+  }
+
+  function _sbRpcAvailable() {
+    return !!(window._sbShared && typeof window._sbShared.rpc === 'function')
+  }
+
+  function _renderSimilarHint(formEl) {
+    var host = formEl.querySelector('[data-similar-host]')
+    if (!host) return
+    if (!_state.similar.length) { host.innerHTML = ''; return }
+
+    var items = _state.similar.slice(0, 5).map(function (s) {
+      var simPct = s.similarity != null ? Math.round(Number(s.similarity) * 100) + '%' : '—'
+      var reason = s.match_reason === 'phone' ? 'telefone bate' : 'nome ' + simPct
+      return '<div class="b2b-similar-item">' +
+        '<div class="b2b-similar-main">' +
+          '<strong>' + _esc2(s.name) + '</strong>' +
+          (s.phone ? ' · <span>' + _esc2(s.phone) + '</span>' : '') +
+          (s.category ? ' · <span>' + _esc2(s.category) + '</span>' : '') +
+          ' · <span style="color:#F59E0B">' + reason + '</span>' +
+        '</div>' +
+        '<button type="button" class="b2b-similar-link" data-similar-open="' + _esc2(s.id) + '">Ver existente</button>' +
+      '</div>'
+    }).join('')
+
+    host.innerHTML =
+      '<div class="b2b-similar-warn">' +
+        '<div class="b2b-similar-hdr">Já existe candidato parecido — revise antes de salvar:</div>' +
+        items +
+      '</div>'
+
+    host.querySelectorAll('[data-similar-open]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-similar-open')
+        // Dispara evento que a UI de candidatos possa abrir (não bloqueia aqui)
+        document.dispatchEvent(new CustomEvent('b2b:focus-candidate', { detail: { id: id } }))
+        _toast() && _toast().info('Candidato existente marcado — feche esse form e abra na tab Candidatos')
+      })
+    })
+  }
+
+  function _toast() { return window.B2BToast }
 
   function _renderForm() {
     var cats = _categories()
@@ -42,6 +102,7 @@
             '<option value="">Escolher…</option>' + catOpts +
           '</select></label>' +
       '</div>' +
+      '<div data-similar-host></div>' +
 
       '<div class="b2b-form-sec">Contato</div>' +
       '<div class="b2b-grid-2">' +
@@ -168,7 +229,19 @@
     var ov = host.querySelector('[data-cand-form-overlay]')
     if (ov) ov.addEventListener('click', function (e) { if (e.target === ov) _close() })
     var form = host.querySelector('#b2bCandNewForm')
-    if (form) form.addEventListener('submit', _onSubmit)
+    if (form) {
+      form.addEventListener('submit', _onSubmit)
+
+      // Fuzzy similar check no blur de nome + phone (Fraqueza #11)
+      var nameInput  = form.querySelector('[name="name"]')
+      var phoneInput = form.querySelector('[name="phone"]')
+      if (nameInput) {
+        nameInput.addEventListener('blur', function () { _checkSimilar(form) })
+      }
+      if (phoneInput) {
+        phoneInput.addEventListener('blur', function () { _checkSimilar(form) })
+      }
+    }
   }
 
   function open() { _mount() }
