@@ -162,6 +162,10 @@
     } finally {
       _state.loading = false
       _renderIntoBody()
+      // Atualiza contador da tab correspondente
+      document.dispatchEvent(new CustomEvent('b2b:tab-count', {
+        detail: { tab: _state.filter, count: _state.items.length }
+      }))
     }
   }
 

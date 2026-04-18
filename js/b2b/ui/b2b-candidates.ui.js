@@ -282,20 +282,26 @@
     var sel = document.getElementById('b2bScoutCatSel')
     var btn = document.getElementById('b2bScoutScanBtn')
     var cat = sel && sel.value
-    if (!cat) { alert('Escolha uma categoria'); return }
+    if (!cat) { window.B2BToast && window.B2BToast.warn('Escolha uma categoria'); return }
 
     try {
       var canRun = await _repo().canScan(cat)
       if (!canRun || !canRun.ok) {
-        alert('Varredura bloqueada: ' + (canRun && canRun.reason || 'desconhecido'))
+        window.B2BToast && window.B2BToast.error('Varredura bloqueada: ' + (canRun && canRun.reason || 'desconhecido'))
         return
       }
     } catch (e) {
-      alert('Erro na validação: ' + (e.message || e))
+      window.B2BToast && window.B2BToast.error('Erro na validação: ' + (e.message || e))
       return
     }
 
-    if (!confirm('Disparar varredura da categoria "' + cat + '"?\n\nCusto estimado: R$ 0,40 (Google Maps) + ~R$ 1,20 (15 candidatos × R$ 0,08 Claude).\nTempo: 30-90 segundos.')) return
+    var ok = window.B2BToast
+      ? await window.B2BToast.confirm(
+          'Disparar varredura da categoria "' + cat + '"?\n\nCusto estimado: R$ 1,60 (Google Maps + ~15 candidatos × Claude).\nTempo: 30-90 segundos.',
+          { title: 'Confirmar varredura', okLabel: 'Varrer agora' }
+        )
+      : confirm('Varrer "' + cat + '"? Custo ~R$ 1,60')
+    if (!ok) return
 
     btn.disabled = true
     btn.textContent = 'Varrendo…'
@@ -320,19 +326,18 @@
       var data = await resp.json()
 
       if (!resp.ok || !data.ok) {
-        alert('Falha: ' + (data.error || resp.status + ' ' + resp.statusText))
+        window.B2BToast && window.B2BToast.error('Falha: ' + (data.error || resp.status + ' ' + resp.statusText))
         return
       }
 
       document.dispatchEvent(new CustomEvent('b2b:scout-scan-done', { detail: data }))
-      alert('Varredura concluída!\n\n' +
-        'Resultados Apify: ' + data.results + '\n' +
-        'Candidatos criados: ' + data.created + '\n' +
-        'Falhas: ' + data.failed + '\n' +
-        'Custo: R$ ' + data.total_cost_brl)
+      window.B2BToast && window.B2BToast.success(
+        data.created + ' candidatos criados · ' + data.failed + ' falhas · R$ ' + data.total_cost_brl,
+        { title: 'Varredura concluída · ' + data.results + ' encontrados', duration: 6000 }
+      )
       await _load()
     } catch (e) {
-      alert('Erro: ' + (e.message || e))
+      window.B2BToast && window.B2BToast.error('Erro: ' + (e.message || e))
     } finally {
       btn.disabled = false
       btn.textContent = 'Varrer'
@@ -404,6 +409,13 @@
     } finally {
       _state.loading = false
       _renderBody()
+      // Contador — só "new" (abertos pra triagem)
+      var openCount = _state.candidates.filter(function (c) {
+        return ['new','approved','approached','responded','negotiating'].indexOf(c.contact_status) !== -1
+      }).length
+      document.dispatchEvent(new CustomEvent('b2b:tab-count', {
+        detail: { tab: 'candidates', count: openCount }
+      }))
     }
   }
 

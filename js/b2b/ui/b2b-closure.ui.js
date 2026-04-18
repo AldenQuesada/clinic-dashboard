@@ -188,6 +188,9 @@
     } finally {
       _state.loading = false
       _renderBody()
+      document.dispatchEvent(new CustomEvent('b2b:tab-count', {
+        detail: { tab: 'closure', count: _state.pending.length }
+      }))
     }
   }
 
