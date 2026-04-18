@@ -96,6 +96,9 @@
         (t.kind === 'brief_monthly' && t.partnership_id
           ? '<button class="b2b-btn b2b-btn-primary" data-task-send-brief data-id="' + _esc(t.partnership_id) + '" data-task-id="' + _esc(t.id) + '">Enviar WhatsApp</button>'
           : '') +
+        '<button class="b2b-btn" data-task-assign data-id="' + _esc(t.id) + '" data-owner="' + _esc(t.owner || '') + '">' +
+          (t.owner ? 'Atribuído a ' + _esc(t.owner) : 'Atribuir') +
+        '</button>' +
         (t.partnership_id ? '<button class="b2b-btn" data-task-open-partnership data-id="' + _esc(t.partnership_id) + '">Abrir parceria</button>' : '') +
         '<button class="b2b-btn" data-task-resolve data-id="' + _esc(t.id) + '" data-status="done">Feito</button>' +
         '<button class="b2b-btn" data-task-resolve data-id="' + _esc(t.id) + '" data-status="dismissed">Dispensar</button>' +
@@ -193,6 +196,9 @@
     host.querySelectorAll('[data-task-send-brief]').forEach(function (btn) {
       btn.addEventListener('click', _onSendBrief)
     })
+    host.querySelectorAll('[data-task-assign]').forEach(function (btn) {
+      btn.addEventListener('click', _onAssign)
+    })
     var sendAllBtn = host.querySelector('#b2bBriefSendAll')
     if (sendAllBtn) sendAllBtn.addEventListener('click', _onSendAllBriefs)
   }
@@ -244,6 +250,25 @@
       await _load()
     } catch (err) {
       window.B2BToast && window.B2BToast.error('Erro: ' + err.message)
+      btn.disabled = false
+    }
+  }
+
+  async function _onAssign(e) {
+    var btn = e.currentTarget
+    var id = btn.getAttribute('data-id')
+    var current = btn.getAttribute('data-owner') || ''
+    var owner = window.B2BToast
+      ? await window.B2BToast.prompt('Quem vai cuidar desta tarefa? (email ou nome)', current, { title: 'Atribuir tarefa' })
+      : (prompt('Atribuir a:', current) || null)
+    if (owner === null) return
+    btn.disabled = true
+    try {
+      await _repo().assign(id, owner || null)
+      window.B2BToast && window.B2BToast.success(owner ? 'Atribuído a ' + owner : 'Atribuição removida')
+      await _load()
+    } catch (err) {
+      window.B2BToast && window.B2BToast.error('Falha: ' + err.message)
       btn.disabled = false
     }
   }

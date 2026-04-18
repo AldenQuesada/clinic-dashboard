@@ -192,6 +192,32 @@
     '</div>'
   }
 
+  // Top-priority bucket: candidatos 'new' ou 'approved' com DNA >= 8, sem contato recente
+  function _renderWithPriority() {
+    var all = _state.candidates
+    var priority = all.filter(function (c) {
+      return !_state.filterStatus   // só mostra destaque quando sem filtro
+        && ['new','approved'].indexOf(c.contact_status) !== -1
+        && c.dna_score != null && Number(c.dna_score) >= 8
+    }).slice(0, 3)
+
+    var priorityIds = new Set(priority.map(function (c) { return c.id }))
+    var rest = all.filter(function (c) { return !priorityIds.has(c.id) })
+
+    var out = ''
+    if (priority.length) {
+      out += '<div class="b2b-cand-priority">' +
+        '<div class="b2b-cand-priority-hdr">Abordar hoje · top ' + priority.length + ' com DNA ≥ 8</div>' +
+        '<div class="b2b-cand-list">' + priority.map(_renderRow).join('') + '</div>' +
+      '</div>'
+    }
+    if (rest.length) {
+      out += (priority.length ? '<div class="b2b-cand-rest-hdr">Demais candidatos</div>' : '') +
+        '<div class="b2b-cand-list">' + rest.map(_renderRow).join('') + '</div>'
+    }
+    return out
+  }
+
   function _renderRow(c) {
     var scoreColor = _scoreColor(c.dna_score)
     var score = c.dna_score != null ? Number(c.dna_score).toFixed(1) : '—'
@@ -250,7 +276,7 @@
         : _state.error
           ? '<div class="b2b-empty b2b-empty-err">' + _esc(_state.error) + '</div>'
           : (_state.candidates.length
-              ? '<div class="b2b-cand-list">' + _state.candidates.map(_renderRow).join('') + '</div>'
+              ? _renderWithPriority()
               : '<div class="b2b-empty">Nenhum candidato ainda. Ative o scout e dispare uma varredura.</div>'))
     _bind(body)
   }

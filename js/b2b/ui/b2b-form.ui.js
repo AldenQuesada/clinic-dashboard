@@ -121,6 +121,9 @@
         _numInput('voucher_min_notice_days', 'Antecedência (dias)', p.voucher_min_notice_days || 15) +
         _numInput('voucher_monthly_cap',     'Cap mensal (un.)',  p.voucher_monthly_cap) +
       '</div>' +
+      '<div class="b2b-grid-2">' +
+        _numInput('voucher_unit_cost_brl', 'Custo real por voucher (R$)', p.voucher_unit_cost_brl, 0) +
+      '</div>' +
       _arrayInput('voucher_delivery', 'Entrega do voucher', p.voucher_delivery || ['digital'], 'digital, print, gamified') +
 
       _section('Contrapartida do parceiro') +

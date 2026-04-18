@@ -23,8 +23,12 @@
     return _rpc('b2b_tasks_list', {
       p_status: filters.status || 'open',
       p_kind:   filters.kind   || null,
+      p_owner:  filters.owner  || null,
       p_limit:  filters.limit  || 200,
     })
+  }
+  function assign(id, owner) {
+    return _rpc('b2b_task_assign', { p_id: id, p_owner: owner || null })
   }
   function resolve(id, status) {
     return _rpc('b2b_task_resolve', { p_id: id, p_status: status || 'done' })
@@ -41,6 +45,7 @@
   window.B2BTasksRepository = Object.freeze({
     list: list,
     resolve: resolve,
+    assign: assign,
     briefSend: briefSend,
     briefSendAllActive: briefSendAllActive,
   })

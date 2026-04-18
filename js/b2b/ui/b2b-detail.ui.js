@@ -148,6 +148,8 @@
       (_arr(d.targets).length ? _renderTargets(d.targets)   : '') +
       (_arr(d.events).length  ? _renderEvents(d.events)     : '') +
       (_arr(d.content).length ? _renderContent(d.content)   : '') +
+      '<div id="b2bCostSection"></div>' +
+      '<div id="b2bTrendSection"></div>' +
       '<div id="b2bCommentsSection"></div>' +
       '<div id="b2bTimelineSection"></div>' +
     '</div>'
@@ -164,6 +166,16 @@
   function _mountComments(id) {
     if (window.B2BComments) {
       setTimeout(function () { window.B2BComments.mount('b2bCommentsSection', id) }, 80)
+    }
+  }
+
+  // Monta custo real (Fraqueza #8) + tendência (Fraqueza #9)
+  function _mountCostAndTrend(id) {
+    if (window.B2BCostPanel) {
+      setTimeout(function () { window.B2BCostPanel.mount('b2bCostSection', id) }, 60)
+    }
+    if (window.B2BTrendPanel) {
+      setTimeout(function () { window.B2BTrendPanel.mount('b2bTrendSection', id) }, 70)
     }
   }
 
@@ -256,6 +268,7 @@
       if (_state.data && _state.data.partnership) {
         _mountTimeline(_state.data.partnership.id)
         _mountComments(_state.data.partnership.id)
+        _mountCostAndTrend(_state.data.partnership.id)
       }
     }
   }

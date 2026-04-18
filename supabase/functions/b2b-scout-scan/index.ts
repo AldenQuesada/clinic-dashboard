@@ -91,29 +91,51 @@ async function rpc(name: string, args: Record<string, unknown>) {
   return text ? JSON.parse(text) : null
 }
 
+// ─── Retry com backoff exponencial (500ms · 1.5s · 4.5s) ────
+async function withRetry<T>(fn: () => Promise<T>, label: string, maxAttempts = 3): Promise<T> {
+  let lastErr: Error | null = null
+  for (let i = 0; i < maxAttempts; i++) {
+    try { return await fn() }
+    catch (e) {
+      lastErr = e as Error
+      const msg = lastErr.message || ''
+      // Não retry em erros definitivos (auth, validation)
+      if (msg.includes('401') || msg.includes('403') || msg.includes('ausente')) throw lastErr
+      if (i < maxAttempts - 1) {
+        const delay = 500 * Math.pow(3, i)
+        console.log(`[retry ${label}] tentativa ${i+1} falhou (${msg.slice(0,80)}); aguardando ${delay}ms...`)
+        await new Promise(r => setTimeout(r, delay))
+      }
+    }
+  }
+  throw lastErr || new Error(`${label} falhou após ${maxAttempts} tentativas`)
+}
+
 // ─── Apify: run actor sync and get items ────────────────────
 // deno-lint-ignore no-explicit-any
 async function apifyRunSync(query: string, limit: number): Promise<any[]> {
   if (!_APIFY_TOKEN) throw new Error('APIFY_TOKEN ausente')
 
-  const url = `https://api.apify.com/v2/acts/${APIFY_ACTOR}/run-sync-get-dataset-items?token=${_APIFY_TOKEN}`
-  const body = {
-    searchStringsArray: [query],
-    locationQuery: 'Maringá, PR, Brazil',
-    maxCrawledPlacesPerSearch: limit,
-    language: 'pt-BR',
-    countryCode: 'br',
-  }
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!resp.ok) {
-    const t = await resp.text()
-    throw new Error(`Apify falhou ${resp.status}: ${t.slice(0, 200)}`)
-  }
-  return await resp.json()
+  return withRetry(async () => {
+    const url = `https://api.apify.com/v2/acts/${APIFY_ACTOR}/run-sync-get-dataset-items?token=${_APIFY_TOKEN}`
+    const body = {
+      searchStringsArray: [query],
+      locationQuery: 'Maringá, PR, Brazil',
+      maxCrawledPlacesPerSearch: limit,
+      language: 'pt-BR',
+      countryCode: 'br',
+    }
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!resp.ok) {
+      const t = await resp.text()
+      throw new Error(`Apify falhou ${resp.status}: ${t.slice(0, 200)}`)
+    }
+    return await resp.json()
+  }, 'apify')
 }
 
 // ─── Claude: score DNA + fit + risks ────────────────────────
@@ -209,37 +231,23 @@ function _extractJson(text: string): any | null {
   return null
 }
 
-// ─── Handler principal ──────────────────────────────────────
-Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') return new Response('', { headers: corsHeaders })
-  if (req.method !== 'POST')    return err('Método inválido', 405)
-
-  let body: { category?: string; tier_target?: number; limit?: number }
-  try { body = await req.json() } catch { return err('JSON inválido') }
-
-  const category = body.category
-  if (!category) return err('category obrigatório')
-  const limit = Math.min(Math.max(body.limit || 15, 1), 30)
+// ─── Processa UMA categoria (extraído pra reuso) ────────────
+// deno-lint-ignore no-explicit-any
+async function processCategory(category: string, limit: number, tier_target: number | null) {
   const query = CATEGORY_TO_QUERY[category] || category.replace(/_/g, ' ')
 
-  // 1) Gate — pode rodar?
-  try {
-    const canScan = await rpc('b2b_scout_can_scan', { p_category: category })
-    if (!canScan?.ok) return err(`Bloqueado: ${canScan?.reason || 'unknown'}`, 403)
-  } catch (e) {
-    return err(`Falha validação: ${(e as Error).message}`, 500)
+  const canScan = await rpc('b2b_scout_can_scan', { p_category: category })
+  if (!canScan?.ok) {
+    return { ok: false, category, reason: canScan?.reason || 'unknown', created: 0, failed: 0, results: 0, cost: 0 }
   }
 
-  // 2) Varredura Google Maps via Apify
-  // deno-lint-ignore no-explicit-any
   let places: any[] = []
   try {
     places = await apifyRunSync(query, limit)
   } catch (e) {
-    return err(`Apify falhou: ${(e as Error).message}`, 502)
+    return { ok: false, category, reason: `apify:${(e as Error).message}`, created: 0, failed: 0, results: 0, cost: 0 }
   }
 
-  // 3) Log custo da varredura (independente de quantos resultados)
   try {
     await rpc('b2b_scout_usage_log', {
       p_event_type: 'google_maps_scan',
@@ -248,28 +256,24 @@ Deno.serve(async (req: Request) => {
       p_candidate_id: null,
       p_meta:       { query, results: places.length },
     })
-  } catch (_) { /* segue mesmo se log falhar */ }
+  } catch (_) {}
 
   let created = 0
   let failed = 0
-  let totalCost = COSTS.google_maps_scan
+  let cost = COSTS.google_maps_scan
   const createdIds: string[] = []
 
-  // 4) Enrich + register
   for (const place of places) {
     try {
       const enrichment = await claudeScore(place, category)
-      totalCost += COSTS.claude_dna
+      cost += COSTS.claude_dna
 
       const payload = {
         category,
-        tier_target: body.tier_target || null,
+        tier_target: tier_target || null,
         name: place.title || place.name || 'Sem nome',
         address: place.address || null,
         phone: place.phone || null,
-        whatsapp: null,
-        email: null,
-        instagram_handle: null,
         website: place.website || null,
         google_rating: place.totalScore || null,
         google_reviews: place.reviewsCount || null,
@@ -299,14 +303,63 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  return { ok: true, category, results: places.length, created, failed, cost, candidate_ids: createdIds.slice(0, 10) }
+}
+
+// ─── Handler principal ──────────────────────────────────────
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response('', { headers: corsHeaders })
+  if (req.method !== 'POST')    return err('Método inválido', 405)
+
+  let body: { category?: string; categories?: string[]; tier_target?: number; limit?: number }
+  try { body = await req.json() } catch { return err('JSON inválido') }
+
+  // Suporta tanto single category (legacy) quanto array
+  const categories = body.categories && body.categories.length
+    ? body.categories.slice(0, 5)  // máx 5 em batch pra respeitar budget
+    : body.category ? [body.category] : []
+
+  if (!categories.length) return err('category ou categories obrigatório')
+
+  const limit = Math.min(Math.max(body.limit || 15, 1), 30)
+  const tier = body.tier_target || null
+
+  // Processa cada categoria em sequência (não paralelo — respeita rate limit Apify)
+  const perCategory = []
+  let totalCreated = 0, totalFailed = 0, totalResults = 0, totalCost = 0
+
+  for (const cat of categories) {
+    const r = await processCategory(cat, limit, tier)
+    perCategory.push(r)
+    totalCreated += r.created || 0
+    totalFailed  += r.failed  || 0
+    totalResults += r.results || 0
+    totalCost    += r.cost    || 0
+  }
+
+  // Se foi só 1 categoria, mantém formato legado pra compatibilidade
+  if (categories.length === 1) {
+    const r = perCategory[0]
+    if (!r.ok) return err(`Bloqueado: ${r.reason}`, 403)
+    return ok({
+      ok: true,
+      category: r.category,
+      results: r.results,
+      created: r.created,
+      failed: r.failed,
+      total_cost_brl: r.cost.toFixed(2),
+      candidate_ids: r.candidate_ids,
+    })
+  }
+
+  // Batch: resultado agregado + detalhe por categoria
   return ok({
     ok: true,
-    category,
-    query,
-    results: places.length,
-    created,
-    failed,
+    categories_processed: perCategory.length,
+    total_created: totalCreated,
+    total_failed: totalFailed,
+    total_results: totalResults,
     total_cost_brl: totalCost.toFixed(2),
-    candidate_ids: createdIds.slice(0, 10),
+    per_category: perCategory,
   })
 })

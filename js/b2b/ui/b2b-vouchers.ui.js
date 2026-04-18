@@ -75,26 +75,58 @@
 
   function _renderForm() {
     if (!_state.showForm) return '<button type="button" class="b2b-btn b2b-btn-primary" data-voucher-new>+ Emitir voucher</button>'
-    return '<form class="b2b-voucher-form" id="b2bVoucherNewForm">' +
-      '<div class="b2b-grid-2">' +
-        '<label class="b2b-field"><span class="b2b-field-lbl">Nome do destinatário</span>' +
-          '<input name="recipient_name" class="b2b-input" required></label>' +
-        '<label class="b2b-field"><span class="b2b-field-lbl">WhatsApp (opcional)</span>' +
-          '<input name="recipient_phone" class="b2b-input" placeholder="+55 44 9..."></label>' +
-      '</div>' +
-      '<div class="b2b-grid-2">' +
-        '<label class="b2b-field"><span class="b2b-field-lbl">CPF (opcional)</span>' +
-          '<input name="recipient_cpf" class="b2b-input"></label>' +
-        '<label class="b2b-field"><span class="b2b-field-lbl">Combo (padrão da parceria se vazio)</span>' +
-          '<input name="combo" class="b2b-input" placeholder="veu_noiva+anovator"></label>' +
-      '</div>' +
-      '<label class="b2b-field"><span class="b2b-field-lbl">Observações</span>' +
-        '<textarea name="notes" rows="2" class="b2b-input"></textarea></label>' +
-      '<div class="b2b-form-actions">' +
-        '<button type="button" class="b2b-btn" data-voucher-cancel>Cancelar</button>' +
-        '<button type="submit" class="b2b-btn b2b-btn-primary">Emitir</button>' +
-      '</div>' +
-    '</form>'
+    return '<div class="b2b-voucher-form-wrap">' +
+      '<form class="b2b-voucher-form" id="b2bVoucherNewForm">' +
+        '<div class="b2b-grid-2">' +
+          '<label class="b2b-field"><span class="b2b-field-lbl">Nome do destinatário</span>' +
+            '<input name="recipient_name" id="b2bvRcpName" class="b2b-input" required placeholder="Mariana" oninput="window._b2bvPrev()"></label>' +
+          '<label class="b2b-field"><span class="b2b-field-lbl">WhatsApp (opcional)</span>' +
+            '<input name="recipient_phone" id="b2bvRcpPhone" class="b2b-input" placeholder="+55 44 9..." oninput="window._b2bvPrev()"></label>' +
+        '</div>' +
+        '<div class="b2b-grid-2">' +
+          '<label class="b2b-field"><span class="b2b-field-lbl">CPF (opcional)</span>' +
+            '<input name="recipient_cpf" class="b2b-input"></label>' +
+          '<label class="b2b-field"><span class="b2b-field-lbl">Combo (padrão se vazio)</span>' +
+            '<input name="combo" id="b2bvRcpCombo" class="b2b-input" placeholder="veu_noiva+anovator" oninput="window._b2bvPrev()"></label>' +
+        '</div>' +
+        '<label class="b2b-field"><span class="b2b-field-lbl">Observações</span>' +
+          '<textarea name="notes" rows="2" class="b2b-input"></textarea></label>' +
+        '<div class="b2b-form-actions">' +
+          '<button type="button" class="b2b-btn" data-voucher-cancel>Cancelar</button>' +
+          '<button type="submit" class="b2b-btn b2b-btn-primary">Emitir</button>' +
+        '</div>' +
+      '</form>' +
+      '<div class="b2b-voucher-preview" id="b2bvPreview"></div>' +
+    '</div>'
+  }
+
+  function _renderPreview() {
+    var nameInput = document.getElementById('b2bvRcpName')
+    var comboInput = document.getElementById('b2bvRcpCombo')
+    var name = (nameInput && nameInput.value.trim()) || '(nome)'
+    var firstName = name.split(/\s+/)[0]
+    var combo = (comboInput && comboInput.value.trim()) || '(combo padrão)'
+    var pname = _state.partnershipName || 'parceiro'
+
+    return '<div class="b2b-voucher-preview-hdr">Pré-visualização · como vai chegar no WhatsApp</div>' +
+      '<div class="b2b-wa-screen">' +
+        '<div class="b2b-wa-msg">' +
+          '<strong>🎁 Presente exclusivo!</strong><br><br>' +
+          'Oi ' + _esc(firstName) + ', tudo bem?<br><br>' +
+          'Você acabou de ganhar um voucher especial da <strong>' + _esc(pname) + '</strong> em parceria com a <strong>Clínica Mirian de Paula</strong>.<br><br>' +
+          'O que está incluso: <em>' + _esc(combo) + '</em><br><br>' +
+          'Clique no link pra ver seu voucher e agendar:<br>' +
+          '<span class="b2b-wa-link">clinicmirian.com.br/voucher.html?t=xxxxxx</span><br><br>' +
+          'Válido por 30 dias. Te esperamos!' +
+          '<div class="b2b-wa-time">agora</div>' +
+        '</div>' +
+      '</div>'
+  }
+
+  // Hook global pra input oninput não perder o scope
+  window._b2bvPrev = function () {
+    var el = document.getElementById('b2bvPreview')
+    if (el) el.innerHTML = _renderPreview()
   }
 
   function _renderVoucherRow(v) {

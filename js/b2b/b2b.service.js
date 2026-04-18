@@ -87,7 +87,7 @@
     })
     // Valores numéricos vazios viram null
     ;['tier','dna_excelencia','dna_estetica','dna_proposito',
-      'voucher_validity_days','voucher_min_notice_days','voucher_monthly_cap',
+      'voucher_validity_days','voucher_min_notice_days','voucher_monthly_cap','voucher_unit_cost_brl',
       'monthly_value_cap_brl','contract_duration_months','review_cadence_months'].forEach(function (k) {
       if (p[k] === '' || p[k] == null) delete p[k]
     })
