@@ -317,6 +317,98 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
   border-radius: 5px; margin-bottom: 4px; white-space: pre-wrap;
 }
 
+/* ── Scout banner (candidates tab) ── */
+.b2b-scout-banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  background: var(--b2b-bg-1); border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.b2b-scout-banner-txt { font-size: 13px; color: var(--b2b-text-dim); flex: 1; min-width: 240px; }
+.b2b-scout-scan { display: flex; gap: 8px; align-items: center; }
+
+/* ── Candidate filters ── */
+.b2b-cand-filters { margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ── Candidate rows ── */
+.b2b-cand-list { display: flex; flex-direction: column; gap: 10px; }
+.b2b-cand-row {
+  display: grid; grid-template-columns: 60px 1fr auto;
+  gap: 16px; align-items: start;
+  padding: 14px 16px; background: var(--b2b-bg-1);
+  border: 1px solid var(--b2b-border); border-radius: 6px;
+}
+.b2b-cand-score {
+  font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 400;
+  text-align: center; line-height: 1;
+}
+.b2b-cand-body { min-width: 0; }
+.b2b-cand-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.b2b-cand-top strong { color: var(--b2b-ivory); font-size: 14px; }
+.b2b-cand-meta {
+  font-size: 11px; color: var(--b2b-text-muted);
+  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+}
+.b2b-cand-just {
+  font-size: 12px; color: var(--b2b-text-dim);
+  padding: 6px 10px; background: var(--b2b-bg-2); border-radius: 4px;
+  margin: 4px 0; font-style: italic;
+}
+.b2b-cand-reasons, .b2b-cand-risks { font-size: 11px; color: var(--b2b-text-dim); padding: 2px 0; }
+.b2b-cand-reasons strong { color: var(--b2b-sage); }
+.b2b-cand-risks strong { color: var(--b2b-red); }
+.b2b-cand-actions {
+  display: flex; flex-direction: column; gap: 4px; min-width: 130px;
+}
+.b2b-cand-actions .b2b-btn { font-size: 11px; padding: 6px 10px; }
+
+/* ── Voucher overlay ── */
+.b2b-voucher-funnel {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  background: var(--b2b-bg-2); border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 16px; margin-bottom: 20px;
+}
+.b2b-funnel-step { text-align: center; }
+.b2b-funnel-val {
+  font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; line-height: 1;
+}
+.b2b-funnel-lbl {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--b2b-text-muted); font-weight: 600; margin-top: 4px;
+}
+.b2b-funnel-note {
+  grid-column: 1/-1; font-size: 11px; color: var(--b2b-text-muted);
+  text-align: center; margin-top: 8px; padding-top: 10px;
+  border-top: 1px solid var(--b2b-border);
+}
+.b2b-voucher-actions-top { margin-bottom: 16px; }
+.b2b-voucher-form {
+  background: var(--b2b-bg-2); border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 18px; margin-bottom: 14px;
+}
+.b2b-voucher-list { display: flex; flex-direction: column; gap: 8px; }
+.b2b-voucher-row {
+  display: grid; grid-template-columns: 12px 1fr auto;
+  gap: 12px; align-items: center;
+  padding: 12px 14px; background: var(--b2b-bg-1);
+  border: 1px solid var(--b2b-border); border-radius: 6px;
+}
+.b2b-voucher-status { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.b2b-voucher-info { min-width: 0; }
+.b2b-voucher-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.b2b-voucher-top strong { color: var(--b2b-ivory); font-size: 13px; }
+.b2b-voucher-token {
+  font-family: monospace; font-size: 11px; color: var(--b2b-text-muted);
+  background: var(--b2b-bg-3); padding: 2px 6px; border-radius: 3px;
+}
+.b2b-voucher-meta { font-size: 11px; color: var(--b2b-text-muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.b2b-voucher-url a {
+  font-size: 11px; color: var(--b2b-champagne); text-decoration: none;
+  word-break: break-all;
+}
+.b2b-voucher-url a:hover { text-decoration: underline; }
+.b2b-voucher-acts { display: flex; flex-direction: column; gap: 4px; }
+.b2b-voucher-acts .b2b-btn { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
+
 /* ── Responsive ── */
 @media (max-width: 780px) {
   .b2b-page-container { padding: 20px 16px 60px; }
@@ -324,4 +416,8 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
   .b2b-detail-cols { grid-template-columns: 1fr; }
   .b2b-grid-2, .b2b-grid-3 { grid-template-columns: 1fr; }
   .b2b-header-top { flex-direction: column; align-items: flex-start; }
+  .b2b-cand-row { grid-template-columns: 1fr; }
+  .b2b-cand-actions { flex-direction: row; flex-wrap: wrap; }
+  .b2b-voucher-funnel { grid-template-columns: repeat(2, 1fr); }
+  .b2b-voucher-row { grid-template-columns: 1fr; }
 }

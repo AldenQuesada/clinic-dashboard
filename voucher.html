@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voucher — Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0:#0F0D0A; --bg-1:#1A1713; --bg-2:#211D17;
+    --champagne:#C9A96E; --champagne-light:#DFC5A0;
+    --ivory:#F5F0E8; --text-muted:#7A7165;
+    --border:rgba(201,169,110,0.2);
+    --red:#D97A7A;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'Montserrat',sans-serif; font-weight:300;
+    background:linear-gradient(135deg, var(--bg-0) 0%, var(--bg-1) 100%);
+    color:var(--ivory); min-height:100vh;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+    line-height:1.6;
+  }
+  .voucher-card {
+    background:var(--bg-1); border:1px solid var(--border); border-radius:12px;
+    max-width:520px; width:100%; padding:48px 40px; text-align:center;
+    box-shadow:0 24px 72px rgba(0,0,0,0.4);
+    position:relative; overflow:hidden;
+  }
+  .voucher-card::before {
+    content:""; position:absolute; top:0; left:0; right:0; height:4px;
+    background:linear-gradient(90deg, var(--champagne-light), var(--champagne), var(--champagne-light));
+  }
+  .eyebrow {
+    font-size:10px; letter-spacing:4px; text-transform:uppercase;
+    color:var(--champagne); font-weight:500;
+  }
+  .recipient {
+    font-family:'Cormorant Garamond', serif; font-size:42px; font-weight:300;
+    margin:24px 0 12px; color:var(--ivory); line-height:1.1;
+  }
+  .recipient em { font-style:italic; color:var(--champagne); }
+  .slogan {
+    font-family:'Cormorant Garamond', serif; font-style:italic;
+    font-size:18px; color:var(--champagne-light);
+    margin:16px 0 28px; padding:16px 20px;
+    border-left:2px solid var(--champagne); background:var(--bg-2);
+    text-align:left;
+  }
+  .combo-box {
+    background:var(--bg-2); border:1px solid var(--border); border-radius:8px;
+    padding:20px; margin:24px 0; text-align:center;
+  }
+  .combo-label {
+    font-size:9px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--text-muted); font-weight:600; margin-bottom:8px;
+  }
+  .combo-value {
+    font-family:'Cormorant Garamond', serif; font-size:24px; color:var(--champagne);
+    font-weight:400;
+  }
+  .validity {
+    font-size:11px; color:var(--text-muted); margin-top:16px;
+  }
+  .cta {
+    display:inline-block; margin-top:24px;
+    background:var(--champagne); color:var(--bg-0);
+    padding:14px 36px; border-radius:6px; text-decoration:none;
+    font-weight:600; font-size:13px; letter-spacing:1px; text-transform:uppercase;
+    transition:background 0.2s;
+  }
+  .cta:hover { background:var(--champagne-light); }
+  .signature {
+    margin-top:36px; padding-top:24px; border-top:1px solid var(--border);
+    font-family:'Cormorant Garamond', serif; font-style:italic;
+    color:var(--champagne-light); font-size:14px;
+  }
+  .token { font-family:monospace; font-size:11px; color:var(--text-muted); margin-top:12px; }
+  .status-pill {
+    display:inline-block; padding:3px 12px; font-size:10px; letter-spacing:1px;
+    text-transform:uppercase; border-radius:10px; margin-bottom:12px; font-weight:600;
+  }
+  .status-redeemed { color:#10B981; border:1px solid rgba(16,185,129,0.4); background:rgba(16,185,129,0.08); }
+  .status-expired,.status-cancelled { color:var(--red); border:1px solid rgba(217,122,122,0.4); background:rgba(217,122,122,0.08); }
+  .error-msg {
+    font-size:14px; color:var(--red); padding:20px; text-align:center;
+  }
+  .loading {
+    font-size:12px; color:var(--text-muted); text-align:center; padding:40px;
+  }
+</style>
+</head>
+<body>
+
+<div id="voucherCard" class="voucher-card">
+  <div class="loading">Carregando…</div>
+</div>
+
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<script>
+;(function () {
+  'use strict'
+  function _q() {
+    var p = new URLSearchParams(location.search)
+    return p.get('t') || p.get('token')
+  }
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
+    })
+  }
+  function _firstName(full) {
+    if (!full) return ''
+    return String(full).trim().split(/\s+/)[0] || ''
+  }
+  function _fmtDate(iso) {
+    if (!iso) return '—'
+    try { return new Date(iso).toLocaleDateString('pt-BR', { day:'numeric', month:'long', year:'numeric' }) }
+    catch (_) { return iso }
+  }
+  function _waUrl(partnershipName) {
+    // CTA genérico — usa o número de contato da clínica (env)
+    var phone = (window.ClinicEnv && window.ClinicEnv.CLINIC_WA) || ''
+    var msg = 'Olá! Vim pelo voucher da parceria ' + (partnershipName || 'Clínica Mirian') + '. Gostaria de agendar minha avaliação.'
+    return phone ? 'https://wa.me/' + phone.replace(/\D/g,'') + '?text=' + encodeURIComponent(msg) : '#'
+  }
+
+  function _renderError(msg) {
+    document.getElementById('voucherCard').innerHTML =
+      '<div class="eyebrow">Voucher</div>' +
+      '<div class="recipient"><em>não disponível</em></div>' +
+      '<div class="error-msg">' + _esc(msg) + '</div>'
+  }
+
+  function _renderVoucher(v) {
+    var p = v.partnership || {}
+    var slogan = (Array.isArray(p.slogans) && p.slogans.length) ? p.slogans[0] : ''
+    var statusPill = ''
+    var ctaDisabled = false
+
+    if (v.status === 'redeemed')  { statusPill = '<span class="status-pill status-redeemed">Voucher já utilizado</span>'; ctaDisabled = true }
+    if (v.status === 'expired')   { statusPill = '<span class="status-pill status-expired">Voucher expirado</span>';   ctaDisabled = true }
+    if (v.status === 'cancelled') { statusPill = '<span class="status-pill status-cancelled">Voucher cancelado</span>'; ctaDisabled = true }
+
+    document.getElementById('voucherCard').innerHTML =
+      '<div class="eyebrow">Clínica Mirian de Paula</div>' +
+      '<div class="recipient">Para ' + (v.recipient_name ? _esc(_firstName(v.recipient_name)) : '<em>você</em>') + '</div>' +
+      (statusPill || '') +
+      (slogan ? '<div class="slogan">' + _esc(slogan) + '</div>' : '') +
+      '<div class="combo-box">' +
+        '<div class="combo-label">Você recebeu</div>' +
+        '<div class="combo-value">' + _esc(v.combo) + '</div>' +
+        '<div class="validity">Válido até ' + _fmtDate(v.valid_until) + '</div>' +
+      '</div>' +
+      (!ctaDisabled
+        ? '<a href="' + _waUrl(p.name) + '" class="cta" target="_blank">Agendar minha avaliação</a>'
+        : '') +
+      '<div class="signature">— Mirian de Paula & ' + _esc(p.name || '') + '</div>' +
+      '<div class="token">#' + _esc(v.token) + '</div>'
+  }
+
+  async function boot() {
+    var token = _q()
+    if (!token) return _renderError('Voucher sem identificação. Verifique o link recebido.')
+
+    // Espera _sbShared
+    if (!window._sbShared) { setTimeout(boot, 200); return }
+
+    try {
+      var r = await window._sbShared.rpc('b2b_voucher_get_by_token', { p_token: token })
+      if (r.error) throw r.error
+      var data = r.data || {}
+      if (!data.ok) return _renderError('Voucher não encontrado ou inválido.')
+      _renderVoucher(data.voucher)
+    } catch (e) {
+      _renderError('Erro ao carregar: ' + (e.message || e))
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else boot()
+})()
+</script>
+
+</body>
+</html>

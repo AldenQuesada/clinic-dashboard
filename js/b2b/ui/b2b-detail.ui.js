@@ -86,6 +86,7 @@
           '</div>' +
         '</div>' +
         '<div class="b2b-detail-actions">' +
+          '<button type="button" class="b2b-btn" data-action="vouchers" data-id="' + _esc(p.id) + '" data-name="' + _esc(p.name) + '">Vouchers</button>' +
           '<button type="button" class="b2b-btn" data-action="edit" data-id="' + _esc(p.id) + '">Editar</button>' +
           '<select class="b2b-input b2b-status-sel" data-action="status" data-id="' + _esc(p.id) + '" data-current="' + _esc(p.status) + '">' +
             _statusOptions(p.status) +
@@ -257,6 +258,15 @@
         var id = editBtn.getAttribute('data-id')
         close()
         document.dispatchEvent(new CustomEvent('b2b:open-form', { detail: { mode: 'edit', id: id } }))
+      })
+    }
+
+    var vouchBtn = host.querySelector('[data-action="vouchers"]')
+    if (vouchBtn) {
+      vouchBtn.addEventListener('click', function () {
+        var id   = vouchBtn.getAttribute('data-id')
+        var name = vouchBtn.getAttribute('data-name')
+        document.dispatchEvent(new CustomEvent('b2b:open-vouchers', { detail: { partnershipId: id, partnershipName: name } }))
       })
     }
 

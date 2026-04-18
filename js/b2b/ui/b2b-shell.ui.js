@@ -28,6 +28,7 @@
   var _state = {
     activeTab: 'active',
     scoutConfig: null,
+    consumption: null,
     mountedIn: null,
   }
 
@@ -60,7 +61,7 @@
         '</div>' +
         '<div class="b2b-header-ctrl">' +
           _renderScoutToggle(enabled) +
-          _renderBudgetBadge(budget) +
+          _renderBudgetBadge(budget, _state.consumption) +
         '</div>' +
       '</div>' +
       _renderTabs() +
@@ -79,17 +80,19 @@
     '</div>'
   }
 
-  function _renderBudgetBadge(budget) {
-    // Fase 1: consumo real vira 0 (sem varreduras ainda). Na Fase 2 vira RPC.
-    var consumed = 0
-    var pct = budget > 0 ? Math.round((consumed / budget) * 100) : 0
+  function _renderBudgetBadge(budget, consumptionData) {
+    var consumed = 0, pct = 0
+    if (consumptionData && typeof consumptionData.total_brl !== 'undefined') {
+      consumed = Number(consumptionData.total_brl || 0)
+      pct = Number(consumptionData.pct_used || 0)
+    }
     var cls = pct >= 80 ? 'red' : (pct >= 50 ? 'amber' : 'green')
     return '<div class="b2b-budget-badge ' + cls + '" data-budget-badge title="Consumo de varreduras no mês atual">' +
       '<div class="b2b-budget-row">' +
         '<span class="b2b-budget-lbl">Consumo scout</span>' +
-        '<span class="b2b-budget-val">R$ ' + consumed.toFixed(2) + ' / R$ ' + budget.toFixed(2) + '</span>' +
+        '<span class="b2b-budget-val">R$ ' + consumed.toFixed(2) + ' / R$ ' + Number(budget).toFixed(2) + '</span>' +
       '</div>' +
-      '<div class="b2b-budget-bar"><div class="b2b-budget-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="b2b-budget-bar"><div class="b2b-budget-fill" style="width:' + Math.min(100, pct) + '%"></div></div>' +
       '<div class="b2b-budget-pct">' + pct + '%</div>' +
     '</div>'
   }
@@ -152,14 +155,23 @@
   function _refreshHeaderControls() {
     var root = _state.mountedIn ? document.getElementById(_state.mountedIn) : null
     if (!root) return
-    // Regenera só a área de controles
     var ctrl = root.querySelector('.b2b-header-ctrl')
     if (!ctrl) return
     var cfg = _state.scoutConfig || {}
     ctrl.innerHTML = _renderScoutToggle(!!cfg.scout_enabled) +
-                     _renderBudgetBadge(Number(cfg.budget_cap_monthly || 100))
+                     _renderBudgetBadge(Number(cfg.budget_cap_monthly || 100), _state.consumption)
     var tBtn = ctrl.querySelector('.b2b-toggle-btn')
     if (tBtn) tBtn.addEventListener('click', _onToggleScout)
+  }
+
+  async function _refreshConsumption() {
+    if (!window.B2BScoutRepository) return
+    try {
+      _state.consumption = await window.B2BScoutRepository.consumedCurrentMonth()
+      _refreshHeaderControls()
+    } catch (e) {
+      // silencioso — mostra R$ 0 até dados carregarem
+    }
   }
 
   // ─── API pública ────────────────────────────────────────────
@@ -172,13 +184,24 @@
     root.innerHTML = _renderHeader()
     _bind(root)
 
-    // Carrega config real
+    // Carrega config real + consumption em paralelo
     try {
-      _state.scoutConfig = await _repo().scoutConfigGet()
+      var results = await Promise.all([
+        _repo().scoutConfigGet(),
+        window.B2BScoutRepository
+          ? window.B2BScoutRepository.consumedCurrentMonth().catch(function () { return null })
+          : Promise.resolve(null),
+      ])
+      _state.scoutConfig = results[0]
+      _state.consumption = results[1]
       _refreshHeaderControls()
     } catch (e) {
-      console.warn('[B2BShell] scoutConfigGet falhou:', e.message)
+      console.warn('[B2BShell] carga inicial falhou:', e.message)
     }
+
+    // Escuta mudanças externas que impactam o header
+    document.addEventListener('b2b:voucher-issued', _refreshConsumption)
+    document.addEventListener('b2b:candidate-status-changed', _refreshConsumption)
 
     // Emite tab-change inicial pra list renderizar
     _emit('b2b:tab-change', { tab: _state.activeTab })

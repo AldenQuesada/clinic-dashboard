@@ -1,0 +1,294 @@
+/**
+ * ClinicAI — B2B Candidates UI (tab Scout)
+ *
+ * Renderiza a tab 'candidates' do shell. Consome B2BScoutRepository.
+ * Ignora outras UIs (lista, form, detail). Zero código cruzado.
+ *
+ * Features:
+ *   - Top banner: scout ativo/bloqueado + consumo vs budget
+ *   - Botão "Nova varredura" (chama can_scan antes; se OK, dispara evento)
+ *   - Lista ordenada por dna_score desc
+ *   - Ações por candidato: aprovar · abordar · promover · descartar
+ *
+ * Eventos ouvidos:
+ *   'b2b:tab-change' (tab === 'candidates')
+ *   'b2b:scout-config-updated' (reload banner)
+ *
+ * Eventos emitidos:
+ *   'b2b:scout-scan-request'       { category }     // edge function (Fase 2b)
+ *   'b2b:partnership-saved'        { id }           // quando promove
+ *   'b2b:candidate-status-changed' { id, status }
+ *
+ * Expõe window.B2BCandidates.
+ */
+;(function () {
+  'use strict'
+  if (window.B2BCandidates) return
+
+  var CATEGORIES = [
+    // Tier 1
+    { value: 'salao_premium',        label: 'Salão premium',               tier: 1 },
+    { value: 'endocrino_menopausa',  label: 'Endócrino menopausa',         tier: 1 },
+    { value: 'acim_confraria',       label: 'ACIM / Confraria / 40+',      tier: 1 },
+    { value: 'fotografo_casamento',  label: 'Fotógrafo de casamento',      tier: 1 },
+    { value: 'joalheria',            label: 'Joalheria',                   tier: 1 },
+    { value: 'perfumaria_nicho',     label: 'Perfumaria de nicho',         tier: 1 },
+    { value: 'psicologia_40plus',    label: 'Psicologia / coaching 40+',   tier: 1 },
+    { value: 'ortomolecular',        label: 'Ortomolecular / integrativa', tier: 1 },
+    // Tier 2
+    { value: 'nutri_funcional',      label: 'Nutri funcional',             tier: 2 },
+    { value: 'otica_premium',        label: 'Ótica premium',               tier: 2 },
+    { value: 'vet_boutique',         label: 'Vet boutique',                tier: 2 },
+    { value: 'fotografo_familia',    label: 'Fotógrafo família',           tier: 2 },
+    { value: 'atelier_noiva',        label: 'Atelier de noiva',            tier: 2 },
+    { value: 'farmacia_manipulacao', label: 'Farmácia manipulação',        tier: 2 },
+    { value: 'floricultura_assinatura', label: 'Floricultura assinatura',  tier: 2 },
+    { value: 'personal_stylist',     label: 'Personal stylist',            tier: 2 },
+    { value: 'spa_wellness',         label: 'SPA / wellness',              tier: 2 },
+  ]
+
+  var STATUS_OPTIONS = [
+    { value: 'new',          label: 'Novo' },
+    { value: 'approved',     label: 'Aprovado' },
+    { value: 'approached',   label: 'Abordado' },
+    { value: 'responded',    label: 'Respondeu' },
+    { value: 'negotiating',  label: 'Negociando' },
+    { value: 'signed',       label: 'Fechado' },
+    { value: 'declined',     label: 'Recusou' },
+    { value: 'archived',     label: 'Arquivado' },
+  ]
+
+  var _state = {
+    candidates: [],
+    consumption: null,
+    loading: false,
+    error: null,
+    filterStatus: null,
+    filterCategory: null,
+  }
+
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
+    })
+  }
+
+  function _repo() { return window.B2BScoutRepository }
+
+  function _statusLabel(s) {
+    var o = STATUS_OPTIONS.find(function (x) { return x.value === s })
+    return o ? o.label : s
+  }
+
+  function _scoreColor(score) {
+    if (score == null) return '#9CA3AF'
+    if (score >= 8) return '#10B981'
+    if (score >= 6) return '#F59E0B'
+    return '#EF4444'
+  }
+
+  // ─── Render ─────────────────────────────────────────────────
+  function _renderBanner() {
+    var c = _state.consumption || {}
+    var enabled = !!c.scout_enabled
+    var consumed = Number(c.total_brl || 0)
+    var budget   = Number(c.budget_cap_brl || 100)
+    var pct = Number(c.pct_used || 0)
+
+    var statusText = !enabled
+      ? '<strong style="color:#EF4444">Scout desligado</strong> · ative no toggle do topo pra buscar candidatos.'
+      : (c.capped
+          ? '<strong style="color:#EF4444">Budget cap atingido</strong> · novas varreduras pausadas até próximo mês ou aumentar cap.'
+          : '<strong style="color:#10B981">Scout ativo</strong> · consumo do mês: R$ ' + consumed.toFixed(2) + ' de R$ ' + budget.toFixed(2) + ' (' + pct + '%).')
+
+    return '<div class="b2b-scout-banner" data-scout-banner>' +
+      '<div class="b2b-scout-banner-txt">' + statusText + '</div>' +
+      (enabled && !c.capped
+        ? '<div class="b2b-scout-scan">' +
+            '<select class="b2b-input" id="b2bScoutCatSel" style="max-width:260px">' +
+              '<option value="">Escolher categoria…</option>' +
+              CATEGORIES.map(function (cat) {
+                return '<option value="' + cat.value + '">T' + cat.tier + ' · ' + _esc(cat.label) + '</option>'
+              }).join('') +
+            '</select>' +
+            '<button type="button" class="b2b-btn b2b-btn-primary" id="b2bScoutScanBtn">Varrer</button>' +
+          '</div>'
+        : '') +
+    '</div>'
+  }
+
+  function _renderFilters() {
+    var statusOpts = STATUS_OPTIONS.map(function (o) {
+      return '<option value="' + o.value + '"' + (_state.filterStatus === o.value ? ' selected' : '') + '>' + _esc(o.label) + '</option>'
+    }).join('')
+    return '<div class="b2b-cand-filters">' +
+      '<label class="b2b-field" style="margin:0">' +
+        '<span class="b2b-field-lbl">Status</span>' +
+        '<select class="b2b-input" id="b2bCandStatusFilter" style="min-width:160px">' +
+          '<option value="">Todos</option>' + statusOpts +
+        '</select>' +
+      '</label>' +
+    '</div>'
+  }
+
+  function _renderRow(c) {
+    var scoreColor = _scoreColor(c.dna_score)
+    var score = c.dna_score != null ? Number(c.dna_score).toFixed(1) : '—'
+    return '<div class="b2b-cand-row" data-cand-id="' + _esc(c.id) + '">' +
+      '<div class="b2b-cand-score" style="color:' + scoreColor + '">' + score + '</div>' +
+      '<div class="b2b-cand-body">' +
+        '<div class="b2b-cand-top">' +
+          '<strong>' + _esc(c.name) + '</strong>' +
+          '<span class="b2b-pill">' + _esc(_statusLabel(c.contact_status)) + '</span>' +
+          (c.tier_target ? '<span class="b2b-pill b2b-pill-tier">T' + c.tier_target + '</span>' : '') +
+          '<span class="b2b-pill">' + _esc(c.category) + '</span>' +
+        '</div>' +
+        '<div class="b2b-cand-meta">' +
+          (c.address    ? '<span>' + _esc(c.address) + '</span>' : '') +
+          (c.phone      ? '<span>' + _esc(c.phone) + '</span>' : '') +
+          (c.instagram_handle ? '<span>IG: ' + _esc(c.instagram_handle) + '</span>' : '') +
+          (c.google_rating ? '<span>★ ' + c.google_rating + ' (' + (c.google_reviews || 0) + ')</span>' : '') +
+        '</div>' +
+        (c.dna_justification ? '<div class="b2b-cand-just">' + _esc(c.dna_justification) + '</div>' : '') +
+        (c.fit_reasons && c.fit_reasons.length ?
+          '<div class="b2b-cand-reasons"><strong>Fit:</strong> ' + c.fit_reasons.map(_esc).join(' · ') + '</div>' : '') +
+        (c.risk_flags && c.risk_flags.length ?
+          '<div class="b2b-cand-risks"><strong>Riscos:</strong> ' + c.risk_flags.map(_esc).join(' · ') + '</div>' : '') +
+      '</div>' +
+      '<div class="b2b-cand-actions">' +
+        _actionsFor(c) +
+      '</div>' +
+    '</div>'
+  }
+
+  function _actionsFor(c) {
+    var btns = []
+    if (c.contact_status === 'new') btns.push('<button class="b2b-btn" data-cand-action="approved"  data-id="' + c.id + '">Aprovar</button>')
+    if (c.contact_status === 'approved' || c.contact_status === 'new') btns.push('<button class="b2b-btn" data-cand-action="approached" data-id="' + c.id + '">Abordar</button>')
+    if (c.contact_status === 'approached') btns.push('<button class="b2b-btn" data-cand-action="responded" data-id="' + c.id + '">Respondeu</button>')
+    if (['approached','responded'].indexOf(c.contact_status) !== -1) btns.push('<button class="b2b-btn" data-cand-action="negotiating" data-id="' + c.id + '">Negociando</button>')
+    if (['negotiating','responded'].indexOf(c.contact_status) !== -1) btns.push('<button class="b2b-btn b2b-btn-primary" data-cand-action="promote" data-id="' + c.id + '">Promover</button>')
+    if (['new','approved','approached','responded','negotiating'].indexOf(c.contact_status) !== -1) btns.push('<button class="b2b-btn" data-cand-action="declined" data-id="' + c.id + '">Recusou</button>')
+    btns.push('<button class="b2b-btn" data-cand-action="archived" data-id="' + c.id + '">Arquivar</button>')
+    return btns.join('')
+  }
+
+  function _renderBody() {
+    var body = window.B2BShell ? window.B2BShell.getTabBody() : document.getElementById('b2bTabBody')
+    if (!body) return
+    body.innerHTML =
+      _renderBanner() +
+      _renderFilters() +
+      (_state.loading
+        ? '<div class="b2b-empty">Carregando candidatos…</div>'
+        : _state.error
+          ? '<div class="b2b-empty b2b-empty-err">' + _esc(_state.error) + '</div>'
+          : (_state.candidates.length
+              ? '<div class="b2b-cand-list">' + _state.candidates.map(_renderRow).join('') + '</div>'
+              : '<div class="b2b-empty">Nenhum candidato ainda. Ative o scout e dispare uma varredura.</div>'))
+    _bind(body)
+  }
+
+  // ─── Bind ───────────────────────────────────────────────────
+  function _bind(root) {
+    var scanBtn = root.querySelector('#b2bScoutScanBtn')
+    if (scanBtn) scanBtn.addEventListener('click', _onScanClick)
+
+    var statusFilter = root.querySelector('#b2bCandStatusFilter')
+    if (statusFilter) {
+      statusFilter.addEventListener('change', function (e) {
+        _state.filterStatus = e.target.value || null
+        _load()
+      })
+    }
+
+    root.querySelectorAll('[data-cand-action]').forEach(function (btn) {
+      btn.addEventListener('click', _onAction)
+    })
+  }
+
+  async function _onScanClick() {
+    var sel = document.getElementById('b2bScoutCatSel')
+    var cat = sel && sel.value
+    if (!cat) { alert('Escolha uma categoria'); return }
+
+    try {
+      var canRun = await _repo().canScan(cat)
+      if (!canRun || !canRun.ok) {
+        alert('Varredura bloqueada: ' + (canRun && canRun.reason || 'desconhecido'))
+        return
+      }
+      document.dispatchEvent(new CustomEvent('b2b:scout-scan-request', { detail: { category: cat } }))
+      alert('Varredura enfileirada para categoria "' + cat + '". A edge function processará em breve. (Stub — a integração Apify+Claude virá na Fase 2b.)')
+    } catch (e) {
+      alert('Erro: ' + (e.message || e))
+    }
+  }
+
+  async function _onAction(e) {
+    var btn = e.currentTarget
+    var action = btn.getAttribute('data-cand-action')
+    var id = btn.getAttribute('data-id')
+    if (!id) return
+
+    try {
+      if (action === 'promote') {
+        if (!confirm('Promover candidato a parceria (status=prospect)?')) return
+        var sb = window._sbShared
+        var r = await sb.rpc('b2b_candidate_promote', { p_id: id })
+        if (r.error) throw r.error
+        var data = r.data || {}
+        if (!data.ok) throw new Error(data.error || 'falha')
+        document.dispatchEvent(new CustomEvent('b2b:partnership-saved', { detail: { id: data.partnership_id } }))
+        alert('Candidato promovido a parceria (em status prospect).')
+        await _load()
+      } else {
+        var notes = (action === 'declined' || action === 'archived')
+          ? (prompt('Motivo (opcional):') || null)
+          : null
+        await _repo().setStatus(id, action, notes)
+        document.dispatchEvent(new CustomEvent('b2b:candidate-status-changed', { detail: { id: id, status: action } }))
+        await _load()
+      }
+    } catch (err) {
+      alert('Erro: ' + (err.message || err))
+    }
+  }
+
+  // ─── Data ───────────────────────────────────────────────────
+  async function _load() {
+    _state.loading = true
+    _state.error = null
+    _renderBody()
+    try {
+      var results = await Promise.all([
+        _repo().list({ status: _state.filterStatus, limit: 200 }),
+        _repo().consumedCurrentMonth(),
+      ])
+      _state.candidates  = results[0] || []
+      _state.consumption = results[1] || null
+    } catch (e) {
+      _state.error = e.message || String(e)
+      _state.candidates = []
+    } finally {
+      _state.loading = false
+      _renderBody()
+    }
+  }
+
+  // ─── Bind global ────────────────────────────────────────────
+  document.addEventListener('b2b:tab-change', function (e) {
+    if (e.detail && e.detail.tab === 'candidates') _load()
+  })
+
+  document.addEventListener('b2b:scout-config-updated', function () {
+    var cur = window.B2BShell && window.B2BShell.getActiveTab()
+    if (cur === 'candidates') _load()
+  })
+
+  // ─── API pública ────────────────────────────────────────────
+  window.B2BCandidates = Object.freeze({
+    reload: _load,
+    CATEGORIES: CATEGORIES,
+  })
+})()
