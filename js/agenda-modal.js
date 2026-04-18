@@ -610,7 +610,11 @@
       // Limpa motivo cortesia (não se aplica a paga)
       var motEl = document.getElementById('appt_cortesia_motivo'); if (motEl) motEl.value = ''
       if (_apptPagamentos.length === 0) apptResetPagamentos()
+      // Se valor está vazio (típico voltando de cortesia que zerou), repreenche
+      // com o valor_consulta do profissional selecionado. skipIfFilled respeita
+      // se o user já digitou valor customizado antes.
       var valElP = document.getElementById('appt_valor')
+      if (valElP && !valElP.value) apptAutoValorConsulta({ skipIfFilled: true })
       if (valElP && valElP.value && _apptPagamentos.length === 1 && !_apptPagamentos[0].valor) {
         _apptPagamentos[0].valor = parseFloat(valElP.value) || 0
       }
