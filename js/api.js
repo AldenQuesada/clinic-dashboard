@@ -1293,97 +1293,10 @@ function btnPrimary() {
   return 'padding:8px 18px;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer'
 }
 
-// ── Modal: Nova / Editar consulta ─────────────────────────────
-function openApptModal(id, date, time, profIdx) {
-  const modal = document.getElementById('apptModal')
-  if (!modal) return
-
-  // Preenche profissionais
-  const profSel = document.getElementById('appt_prof')
-  if (profSel) {
-    const profs = getProfessionals()
-    profSel.innerHTML = '<option value="">Selecione...</option>' +
-      profs.map((p,i) => `<option value="${i}">${escHtml(p.nome)}${p.especialidade?' – '+escHtml(p.especialidade):''}</option>`).join('')
-  }
-
-  // Preenche salas
-  const salaSel = document.getElementById('appt_sala')
-  if (salaSel) {
-    const salas = getRooms()
-    salaSel.innerHTML = '<option value="">Selecione...</option>' +
-      salas.map((s,i) => { const resp = Array.isArray(s.responsaveis) ? s.responsaveis : (s.responsavel ? [s.responsavel] : []); return `<option value="${i}">${escHtml(s.nome)}${resp.length?' – '+escHtml(resp.join(', ')):''}` + '</option>' }).join('')
-  }
-
-  // Preenche procedimentos (datalist)
-  const procList = document.getElementById('apptProcList')
-  if (procList) {
-    const techs = getTechnologies ? getTechnologies() : []
-    procList.innerHTML = techs.map(t => `<option value="${t.nome}"/>`).join('')
-  }
-
-  const deleteBtn = document.getElementById('apptDeleteBtn')
-
-  if (id) {
-    // Editar existente
-    const a = getAppointments().find(x => x.id === id)
-    if (!a) return
-    document.getElementById('apptModalTitle').textContent = 'Editar Consulta'
-    document.getElementById('appt_id').value = id
-    document.getElementById('appt_paciente_q').value = a.pacienteNome || ''
-    document.getElementById('appt_paciente_id').value = a.pacienteId || ''
-    document.getElementById('appt_proc').value = a.procedimento || ''
-    document.getElementById('appt_data').value = a.data || ''
-    document.getElementById('appt_inicio').value = a.horaInicio || ''
-    document.getElementById('appt_status').value = a.status || 'agendado'
-    document.getElementById('appt_confirmacao').checked = !!a.confirmacaoEnviada
-    document.getElementById('appt_consentimento').checked = !!a.consentimentoImagem
-    document.getElementById('appt_obs').value = a.obs || ''
-    if (profSel && a.profissionalIdx !== undefined) profSel.value = a.profissionalIdx
-    if (salaSel && a.salaIdx !== undefined) salaSel.value = a.salaIdx
-    // Duração
-    const [hs, ms] = a.horaInicio.split(':').map(Number)
-    const [he, me] = a.horaFim.split(':').map(Number)
-    const dur = (he*60+me) - (hs*60+ms)
-    document.getElementById('appt_duracao').value = dur > 0 ? dur : 60
-    // Novos campos
-    const tipoEl = document.getElementById('appt_tipo'); if(tipoEl) tipoEl.value = a.tipoConsulta || ''
-    const origEl = document.getElementById('appt_origem'); if(origEl) origEl.value = a.origem || ''
-    const valEl  = document.getElementById('appt_valor'); if(valEl)  valEl.value  = a.valor || ''
-    const pagEl  = document.getElementById('appt_forma_pag'); if(pagEl) pagEl.value = a.formaPagamento || ''
-    if (a.tipoAvaliacao) {
-      const rad = document.querySelector(`input[name="appt_tipo_aval"][value="${a.tipoAvaliacao}"]`)
-      if (rad) rad.checked = true
-    }
-    apptTipoChange()
-    if (deleteBtn) deleteBtn.style.display = 'inline-flex'
-  } else {
-    // Nova
-    document.getElementById('apptModalTitle').textContent = 'Nova Consulta'
-    document.getElementById('appt_id').value = ''
-    document.getElementById('appt_paciente_q').value = ''
-    document.getElementById('appt_paciente_id').value = ''
-    document.getElementById('appt_proc').value = ''
-    document.getElementById('appt_data').value = date || dateToISO(new Date())
-    document.getElementById('appt_inicio').value = time || '08:00'
-    document.getElementById('appt_status').value = 'agendado'
-    document.getElementById('appt_confirmacao').checked = false
-    document.getElementById('appt_consentimento').checked = false
-    document.getElementById('appt_obs').value = ''
-    document.getElementById('appt_duracao').value = 60
-    const tipoEl2 = document.getElementById('appt_tipo'); if(tipoEl2) tipoEl2.value = ''
-    const origEl2 = document.getElementById('appt_origem'); if(origEl2) origEl2.value = ''
-    const valEl2  = document.getElementById('appt_valor'); if(valEl2)  valEl2.value  = ''
-    const pagEl2  = document.getElementById('appt_forma_pag'); if(pagEl2) pagEl2.value = ''
-    apptTipoChange()
-    if (profIdx !== undefined && profSel) profSel.value = profIdx
-    if (deleteBtn) deleteBtn.style.display = 'none'
-  }
-
-  document.getElementById('apptPatientDrop').style.display = 'none'
-  document.getElementById('appt_paciente_warn').style.display = 'none'
-  modal.style.display = 'block'
-  document.body.style.overflow = 'hidden'
-}
+// Nota: openApptModal canonical esta em js/agenda-modal.js (IIFE, expoe via
+// window.openApptModal). A versao legada desta posicao foi removida pra
+// eliminar conflito de hoisting que fazia onclicks inline resolverem na
+// versao obsoleta (sem sync, pre-selecao, skipFields do draft etc.).
 
 function closeApptModal() {
   const m = document.getElementById('apptModal')
@@ -2392,7 +2305,7 @@ window._apptTip             = _apptTip
 window._apptTipHide         = _apptTipHide
 window._mesHoverShow        = _mesHoverShow
 window._mesHoverHide        = _mesHoverHide
-window.openApptModal        = openApptModal
+// window.openApptModal exposto por js/agenda-modal.js (versao canonical)
 window.closeApptModal       = closeApptModal
 window.saveAppt             = saveAppt
 window.deleteAppt           = deleteAppt
