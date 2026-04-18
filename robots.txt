@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /index.html
+Disallow: /magazine-admin.html
+Disallow: /magazine-intake.html
+Disallow: /magazine-editions.html
+Disallow: /magazine-gallery.html
+Disallow: /plano-growth.html
+Disallow: /prontuario/
+Disallow: /anamnese.html
+Disallow: /auditoria-lara.html
+Disallow: /login.html
+Disallow: /join.html
+Disallow: /js/
+Disallow: /css/
+Disallow: /api/
+
+Sitemap: https://clinicmirian.com.br/sitemap.xml

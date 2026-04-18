@@ -7,12 +7,20 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>Beauty &amp; Health</title>
+<meta name="description" id="metaDesc" content="Sua revista digital editorial — beleza que é cuidado." />
+<link rel="canonical" id="canonicalLink" href="" />
+<meta name="robots" content="index, follow" />
 <meta property="og:type" content="article" />
 <meta property="og:site_name" content="Beauty &amp; Health" />
 <meta property="og:title" id="ogTitle" content="Beauty &amp; Health" />
 <meta property="og:description" id="ogDesc" content="Sua revista digital editorial — beleza que é cuidado." />
 <meta property="og:image" id="ogImg" content="" />
+<meta property="og:url" id="ogUrl" content="" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" id="twTitle" content="Beauty &amp; Health" />
+<meta name="twitter:description" id="twDesc" content="Sua revista digital editorial — beleza que é cuidado." />
+<meta name="twitter:image" id="twImg" content="" />
+<script type="application/ld+json" id="ldJsonArticle">{"@context":"https://schema.org","@type":"Article","headline":"Beauty & Health","description":"Sua revista digital editorial — beleza que é cuidado.","publisher":{"@type":"Organization","name":"Clínica Mirian de Paula"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet" />
@@ -436,14 +444,51 @@
         pages[0].slots.dedicatoria = `Para ${ed.lead_name}`
       }
 
-      // E3 · Open Graph dinamico
+      // E3 · Open Graph + SEO metadata dinamico (s3-1)
       const cover = pages[0] && pages[0].slots
+      const fullTitle = `Beauty & Health — ${ed.title || 'Edição'}`
+      const desc = (cover && cover.subtitulo) || ed.subtitle || 'Sua edição editorial · beleza que é cuidado.'
+      const heroImg = (cover && (cover.foto_hero || cover.foto_full)) || ''
+      const pageUrl = window.location.href
+
       if (cover) {
-        $('ogTitle').setAttribute('content', `Beauty & Health — ${ed.title}`)
-        $('ogDesc').setAttribute('content', cover.subtitulo || ed.subtitle || 'Sua edição editorial · beleza que é cuidado.')
-        if (cover.foto_hero || cover.foto_full) $('ogImg').setAttribute('content', cover.foto_hero || cover.foto_full)
+        $('ogTitle').setAttribute('content', fullTitle)
+        $('ogDesc').setAttribute('content', desc)
+        if (heroImg) $('ogImg').setAttribute('content', heroImg)
+        const ogUrlEl = $('ogUrl');      if (ogUrlEl) ogUrlEl.setAttribute('content', pageUrl)
+        const twTitleEl = $('twTitle');  if (twTitleEl) twTitleEl.setAttribute('content', fullTitle)
+        const twDescEl = $('twDesc');    if (twDescEl) twDescEl.setAttribute('content', desc)
+        if (heroImg) {
+          const twImgEl = $('twImg');    if (twImgEl) twImgEl.setAttribute('content', heroImg)
+        }
+        const metaDescEl = $('metaDesc'); if (metaDescEl) metaDescEl.setAttribute('content', desc)
+        const canonEl = $('canonicalLink'); if (canonEl) canonEl.setAttribute('href', pageUrl.split('#')[0])
+
+        // Schema.org Article (Google Rich Results)
+        const ldEl = $('ldJsonArticle')
+        if (ldEl) {
+          const ld = {
+            '@context': 'https://schema.org',
+            '@type': 'Article',
+            headline: fullTitle,
+            description: desc,
+            image: heroImg || undefined,
+            datePublished: ed.created_at || ed.published_at || undefined,
+            dateModified: ed.updated_at || ed.created_at || undefined,
+            inLanguage: 'pt-BR',
+            publisher: {
+              '@type': 'Organization',
+              name: 'Clínica Mirian de Paula',
+              url: window.location.origin
+            },
+            mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl.split('#')[0] }
+          }
+          // Remove chaves undefined pra JSON limpo
+          Object.keys(ld).forEach(k => { if (ld[k] === undefined) delete ld[k] })
+          try { ldEl.textContent = JSON.stringify(ld) } catch (_) {}
+        }
       }
-      document.title = `Beauty & Health — ${ed.title || 'Edição'}`
+      document.title = fullTitle
 
       render(ed)
 
