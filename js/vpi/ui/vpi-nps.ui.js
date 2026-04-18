@@ -136,7 +136,9 @@
     var items = list.slice(0, 6).map(function (t) {
       var name = _firstName(t.lead_name)
       var nota = t.score || 0
-      return '<div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:8px;padding:12px">' +
+      var hasText = !!t.testimonial_text
+      var alreadyInMag = !!t.magazine_page_id
+      return '<div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:8px;padding:12px" data-nps-id="' + _esc(t.id) + '">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
           '<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#5B21B6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">' + _esc(_initials(t.lead_name || name)) + '</div>' +
           '<div style="flex:1;min-width:0">' +
@@ -144,9 +146,22 @@
             '<div style="font-size:10px;color:#6B7280">Nota ' + nota + '/10 \u2022 autorizado ' + _relativeDate(t.testimonial_consent_at) + '</div>' +
           '</div>' +
         '</div>' +
-        (t.testimonial_text
-          ? '<div style="font-size:12px;color:#374151;line-height:1.5">' + _esc(t.testimonial_text) + '</div>'
-          : '<div style="font-size:11px;color:#9CA3AF;font-style:italic">Consent dado via WA \u2014 aguardando texto/foto da paciente</div>') +
+        (hasText
+          ? '<div style="font-size:12px;color:#374151;line-height:1.5;margin-bottom:10px">' + _esc(t.testimonial_text) + '</div>'
+          : '<div style="font-size:11px;color:#9CA3AF;font-style:italic;margin-bottom:10px">Consent dado via WA \u2014 aguardando texto/foto da paciente</div>') +
+        // Acao "adicionar a revista"
+        (hasText
+          ? (alreadyInMag
+            ? '<div style="display:flex;align-items:center;gap:6px;font-size:10px;color:#059669;font-weight:600;padding:6px 10px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:6px">' +
+                '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>' +
+                'Ja na revista' +
+              '</div>'
+            : '<button onclick="window._npsToMagazine(\'' + _esc(t.id) + '\', this)" ' +
+                'style="width:100%;padding:8px 12px;background:#fff;color:#7C3AED;border:1.5px solid #E9D5FF;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">' +
+                '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>' +
+                'Adicionar a revista' +
+              '</button>')
+          : '') +
       '</div>'
     }).join('')
 
@@ -224,7 +239,39 @@
     await _reload()
   }
 
+  async function _npsToMagazine(npsId, btn) {
+    var sb = _sb()
+    if (!sb) { _toast && _toast('Supabase indisponivel', 'error'); return }
+    if (btn) { btn.disabled = true; btn.style.opacity = '.6'; btn.innerHTML = 'Adicionando...' }
+    try {
+      var r = await sb.rpc('nps_testimonial_to_magazine', { p_nps_id: npsId })
+      if (r.error) throw r.error
+      var data = r.data || {}
+      if (!data.ok) {
+        var reason = data.reason === 'no_consent'        ? 'Depoimento sem consentimento'
+                   : data.reason === 'empty_testimonial' ? 'Depoimento sem texto'
+                   : data.reason === 'nps_not_found'     ? 'NPS nao encontrado'
+                   : 'Falha: ' + (data.reason || 'desconhecida')
+        _toast && _toast(reason, 'error')
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = 'Tentar novamente' }
+        return
+      }
+      _toast && _toast(data.already_existed ? 'Ja estava na revista' : 'Pagina adicionada a edicao draft', 'success')
+      _reload()
+    } catch (e) {
+      console.error('[NPS→Magazine]', e)
+      _toast && _toast('Erro: ' + (e.message || e), 'error')
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = 'Tentar novamente' }
+    }
+  }
+
+  function _toast(m, t) {
+    if (window.toast)     return window.toast(m, t || 'info')
+    if (window.showToast) return window.showToast(m, t || 'info')
+  }
+
   window._npsOnPeriodChange = _onPeriodChange
   window._npsReload         = _reload
+  window._npsToMagazine     = _npsToMagazine
   window.renderNPSDashboard = renderNPSDashboard
 })()
