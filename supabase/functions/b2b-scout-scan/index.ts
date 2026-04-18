@@ -161,9 +161,13 @@ Candidato:
     },
     body: JSON.stringify({
       model: _MODEL,
-      max_tokens: 600,
+      max_tokens: 800,
       system,
-      messages: [{ role: 'user', content: userMsg }],
+      messages: [
+        { role: 'user', content: userMsg },
+        { role: 'assistant', content: '{' },
+      ],
+      stop_sequences: ['\n\n'],
     }),
   })
   if (!resp.ok) {
@@ -171,26 +175,39 @@ Candidato:
     throw new Error(`Claude falhou ${resp.status}: ${t.slice(0, 200)}`)
   }
   const data = await resp.json()
-  const text = (data?.content?.[0]?.text || '').trim()
+  const rawText = (data?.content?.[0]?.text || '').trim()
+  const text = '{' + rawText
 
-  try {
-    const json = JSON.parse(text)
-    return {
-      dna_score: Number(json.dna_score) || null,
-      dna_justification: String(json.dna_justification || '').slice(0, 200),
-      fit_reasons: Array.isArray(json.fit_reasons) ? json.fit_reasons.slice(0, 3) : [],
-      risk_flags: Array.isArray(json.risk_flags) ? json.risk_flags.slice(0, 3) : [],
-      approach_message: String(json.approach_message || '').slice(0, 500),
-    }
-  } catch (_) {
+  const json = _extractJson(text)
+  if (!json) {
     return {
       dna_score: null,
-      dna_justification: 'Resposta da IA não foi parseável',
+      dna_justification: 'Resposta IA nao parseavel',
       fit_reasons: [],
-      risk_flags: ['Parse falhou — revisar manualmente'],
+      risk_flags: ['Parse falhou. Raw: ' + rawText.slice(0, 120)],
       approach_message: null,
     }
   }
+  return {
+    dna_score: Number(json.dna_score) || null,
+    dna_justification: String(json.dna_justification || '').slice(0, 200),
+    fit_reasons: Array.isArray(json.fit_reasons) ? json.fit_reasons.slice(0, 3) : [],
+    risk_flags: Array.isArray(json.risk_flags) ? json.risk_flags.slice(0, 3) : [],
+    approach_message: String(json.approach_message || '').slice(0, 500),
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+function _extractJson(text: string): any | null {
+  try { return JSON.parse(text) } catch (_) {}
+  const md = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (md) { try { return JSON.parse(md[1].trim()) } catch (_) {} }
+  const first = text.indexOf('{')
+  const last  = text.lastIndexOf('}')
+  if (first !== -1 && last !== -1 && last > first) {
+    try { return JSON.parse(text.slice(first, last + 1)) } catch (_) {}
+  }
+  return null
 }
 
 // ─── Handler principal ──────────────────────────────────────
