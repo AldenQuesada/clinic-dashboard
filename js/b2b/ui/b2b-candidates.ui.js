@@ -209,6 +209,7 @@
 
   async function _onScanClick() {
     var sel = document.getElementById('b2bScoutCatSel')
+    var btn = document.getElementById('b2bScoutScanBtn')
     var cat = sel && sel.value
     if (!cat) { alert('Escolha uma categoria'); return }
 
@@ -218,10 +219,52 @@
         alert('Varredura bloqueada: ' + (canRun && canRun.reason || 'desconhecido'))
         return
       }
-      document.dispatchEvent(new CustomEvent('b2b:scout-scan-request', { detail: { category: cat } }))
-      alert('Varredura enfileirada para categoria "' + cat + '". A edge function processará em breve. (Stub — a integração Apify+Claude virá na Fase 2b.)')
+    } catch (e) {
+      alert('Erro na validação: ' + (e.message || e))
+      return
+    }
+
+    if (!confirm('Disparar varredura da categoria "' + cat + '"?\n\nCusto estimado: R$ 0,40 (Google Maps) + ~R$ 1,20 (15 candidatos × R$ 0,08 Claude).\nTempo: 30-90 segundos.')) return
+
+    btn.disabled = true
+    btn.textContent = 'Varrendo…'
+
+    try {
+      var sb = window._sbShared
+      // Deno functions endpoint: <SUPABASE_URL>/functions/v1/<name>
+      var baseUrl = (window.ClinicEnv && window.ClinicEnv.SUPABASE_URL) || ''
+      var anonKey = (window.ClinicEnv && (window.ClinicEnv.SUPABASE_KEY || window.ClinicEnv.SUPABASE_ANON_KEY)) || ''
+
+      if (!baseUrl) throw new Error('SUPABASE_URL ausente em ClinicEnv')
+
+      var resp = await fetch(baseUrl.replace(/\/+$/, '') + '/functions/v1/b2b-scout-scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + anonKey,
+          'apikey': anonKey,
+        },
+        body: JSON.stringify({ category: cat, limit: 15 }),
+      })
+      var data = await resp.json()
+
+      if (!resp.ok || !data.ok) {
+        alert('Falha: ' + (data.error || resp.status + ' ' + resp.statusText))
+        return
+      }
+
+      document.dispatchEvent(new CustomEvent('b2b:scout-scan-done', { detail: data }))
+      alert('Varredura concluída!\n\n' +
+        'Resultados Apify: ' + data.results + '\n' +
+        'Candidatos criados: ' + data.created + '\n' +
+        'Falhas: ' + data.failed + '\n' +
+        'Custo: R$ ' + data.total_cost_brl)
+      await _load()
     } catch (e) {
       alert('Erro: ' + (e.message || e))
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Varrer'
     }
   }
 

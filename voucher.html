@@ -124,10 +124,12 @@
     catch (_) { return iso }
   }
   function _waUrl(partnershipName) {
-    // CTA genérico — usa o número de contato da clínica (env)
-    var phone = (window.ClinicEnv && window.ClinicEnv.CLINIC_WA) || ''
+    // CTA genérico — usa o número de contato da clínica (env) ou fallback
+    var phone = (window.ClinicEnv && (window.ClinicEnv.CLINIC_WA || window.ClinicEnv.CLINIC_PHONE)) || ''
     var msg = 'Olá! Vim pelo voucher da parceria ' + (partnershipName || 'Clínica Mirian') + '. Gostaria de agendar minha avaliação.'
-    return phone ? 'https://wa.me/' + phone.replace(/\D/g,'') + '?text=' + encodeURIComponent(msg) : '#'
+    return phone
+      ? 'https://wa.me/' + phone.replace(/\D/g,'') + '?text=' + encodeURIComponent(msg)
+      : 'https://wa.me/?text=' + encodeURIComponent(msg)
   }
 
   function _renderError(msg) {
