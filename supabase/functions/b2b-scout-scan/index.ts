@@ -167,7 +167,6 @@ Candidato:
         { role: 'user', content: userMsg },
         { role: 'assistant', content: '{' },
       ],
-      stop_sequences: ['\n\n'],
     }),
   })
   if (!resp.ok) {

@@ -106,7 +106,6 @@ ${candidate.google_rating ? `\nGoogle: ${candidate.google_rating} (${candidate.g
         // Prefill: força o modelo a continuar de '{' — garante JSON puro
         { role: 'assistant', content: '{' },
       ],
-      stop_sequences: ['\n\n'],
     }),
   })
   if (!resp.ok) {
