@@ -32,6 +32,9 @@
   }
   function setStatus(id, status, notes)      { return _rpc('b2b_candidate_set_status', { p_id: id, p_status: status, p_notes: notes || null }) }
   function promote(id)                       { return _rpc('b2b_candidate_promote',    { p_id: id }) }
+  function addManual(payload)                { return _rpc('b2b_candidate_add_manual', { p_payload: payload }) }
+  function evaluatePayload(id)               { return _rpc('b2b_candidate_evaluate_payload', { p_id: id }) }
+  function evaluateApply(id, result)         { return _rpc('b2b_candidate_evaluate_apply',  { p_id: id, p_result: result }) }
 
   // ─── Scout config (toggle/budget) ───────────────────────────
   function consumedCurrentMonth()            { return _rpc('b2b_scout_consumed_current_month') }
@@ -54,6 +57,9 @@
     list: list,
     setStatus: setStatus,
     promote: promote,
+    addManual: addManual,
+    evaluatePayload: evaluatePayload,
+    evaluateApply: evaluateApply,
     consumedCurrentMonth: consumedCurrentMonth,
     canScan: canScan,
     usageLog: usageLog,

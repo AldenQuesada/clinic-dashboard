@@ -118,17 +118,19 @@
 
     return '<div class="b2b-scout-banner" data-scout-banner>' +
       '<div class="b2b-scout-banner-txt">' + statusText + statsLine + '</div>' +
-      (enabled && !c.capped
-        ? '<div class="b2b-scout-scan">' +
-            '<select class="b2b-input" id="b2bScoutCatSel" style="max-width:260px">' +
+      '<div class="b2b-scout-scan">' +
+        // Adicionar manualmente — sempre disponível
+        '<button type="button" class="b2b-btn" id="b2bCandNewBtn" title="Adicionar candidato por indicação">+ Adicionar</button>' +
+        (enabled && !c.capped
+          ? '<select class="b2b-input" id="b2bScoutCatSel" style="max-width:240px">' +
               '<option value="">Escolher categoria…</option>' +
               CATEGORIES.map(function (cat) {
                 return '<option value="' + cat.value + '">T' + cat.tier + ' · ' + _esc(cat.label) + '</option>'
               }).join('') +
             '</select>' +
-            '<button type="button" class="b2b-btn b2b-btn-primary" id="b2bScoutScanBtn">Varrer</button>' +
-          '</div>'
-        : '') +
+            '<button type="button" class="b2b-btn b2b-btn-primary" id="b2bScoutScanBtn">Varrer</button>'
+          : '') +
+      '</div>' +
     '</div>'
   }
 
@@ -222,6 +224,10 @@
 
   function _actionsFor(c) {
     var btns = []
+    // Avaliar com IA (só se ainda sem score)
+    if (c.dna_score == null) {
+      btns.push('<button class="b2b-btn" data-cand-action="evaluate-ia" data-id="' + c.id + '" title="Avaliar DNA com IA (custo R$ 0,08)">Avaliar IA</button>')
+    }
     if (c.contact_status === 'new') btns.push('<button class="b2b-btn" data-cand-action="approved"  data-id="' + c.id + '">Aprovar</button>')
     if (c.contact_status === 'approved' || c.contact_status === 'new') btns.push('<button class="b2b-btn" data-cand-action="approached" data-id="' + c.id + '">Abordar</button>')
     if (c.contact_status === 'approached') btns.push('<button class="b2b-btn" data-cand-action="responded" data-id="' + c.id + '">Respondeu</button>')
@@ -253,6 +259,11 @@
   function _bind(root) {
     var scanBtn = root.querySelector('#b2bScoutScanBtn')
     if (scanBtn) scanBtn.addEventListener('click', _onScanClick)
+
+    var newBtn = root.querySelector('#b2bCandNewBtn')
+    if (newBtn) newBtn.addEventListener('click', function () {
+      document.dispatchEvent(new CustomEvent('b2b:open-candidate-form'))
+    })
 
     var statusFilter = root.querySelector('#b2bCandStatusFilter')
     if (statusFilter) {
@@ -335,7 +346,24 @@
     if (!id) return
 
     try {
-      if (action === 'promote') {
+      if (action === 'evaluate-ia') {
+        if (!confirm('Avaliar DNA deste candidato com IA?\n\nCusto: R$ 0,08 (só Claude, sem varredura).')) return
+        btn.disabled = true; btn.textContent = 'Avaliando…'
+        var baseUrl = (window.ClinicEnv && window.ClinicEnv.SUPABASE_URL) || ''
+        var anonKey = (window.ClinicEnv && (window.ClinicEnv.SUPABASE_KEY || window.ClinicEnv.SUPABASE_ANON_KEY)) || ''
+        var resp = await fetch(baseUrl.replace(/\/+$/, '') + '/functions/v1/b2b-candidate-evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + anonKey, 'apikey': anonKey },
+          body: JSON.stringify({ candidate_id: id }),
+        })
+        var data = await resp.json()
+        if (!resp.ok || !data.ok) {
+          alert('Falha: ' + (data.error || resp.status))
+          btn.disabled = false; btn.textContent = 'Avaliar IA'
+          return
+        }
+        await _load()
+      } else if (action === 'promote') {
         if (!confirm('Promover candidato a parceria (status=prospect)?')) return
         var sb = window._sbShared
         var r = await sb.rpc('b2b_candidate_promote', { p_id: id })
@@ -385,6 +413,11 @@
   })
 
   document.addEventListener('b2b:scout-config-updated', function () {
+    var cur = window.B2BShell && window.B2BShell.getActiveTab()
+    if (cur === 'candidates') _load()
+  })
+
+  document.addEventListener('b2b:candidate-added', function () {
     var cur = window.B2BShell && window.B2BShell.getActiveTab()
     if (cur === 'candidates') _load()
   })
