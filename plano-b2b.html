@@ -204,6 +204,10 @@
       <li><a href="#matriz">Matriz auto x humano</a></li>
       <li><a href="#voucher-digital">Voucher digital</a></li>
 
+      <li class="nav-section">Ritmo</li>
+      <li><a href="#meta-mensal">Meta mensal</a></li>
+      <li><a href="#scout">Scout de candidatos</a></li>
+
       <li class="nav-section">Execução</li>
       <li><a href="#fase-1">Fase 1 — Fundação</a></li>
       <li><a href="#fase-2">Fase 2 — Automação</a></li>
@@ -320,6 +324,56 @@
       </div>
       <div class="callout">
         <p><strong>3. Não implementar "1 loja de roupa por dia da semana" sem critério claro.</strong> 7 parcerias paralelas viram ingovernável. Começar com 2-3 bem geridas; expandir só quando a operação mensal estiver rodando sozinha.</p>
+      </div>
+    </section>
+
+    <!-- META MENSAL -->
+    <section id="meta-mensal">
+      <h2><span class="num">04a</span>Meta mensal de novas parcerias</h2>
+      <p class="lead">Ritmo proposto em 3 estágios, calibrado pela capacidade de gravação da Mirian (restrição real do programa).</p>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lbl">Mês 1-3 · Ramp-up</div><div class="val">2/mês</div><div class="desc">Foco absoluto no Tier 1 (8 candidatos priorizados). Cadência conservadora enquanto os processos assentam.</div></div>
+        <div class="kpi"><div class="lbl">Mês 4-6 · Aceleração</div><div class="val">3/mês</div><div class="desc">Sistema rodando. Mistura Tier 1 restante + Tier 2 (9 candidatos). Cada nova parceria vira caso de estudo do anterior.</div></div>
+        <div class="kpi"><div class="lbl">Mês 7+ · Sustentável</div><div class="val">2/mês</div><div class="desc">Tier 2 final + Tier 3 seletivo (7 candidatos). Ritmo que permite curadoria sem diluição do DNA.</div></div>
+      </div>
+      <div class="callout">
+        <p><strong>Total ao fim do 1º ano:</strong> 24 parcerias ativas (8 atuais → 32). Cron mensal alerta se ficou abaixo da meta do mês + sugere candidatos prontos da fila do scout.</p>
+      </div>
+    </section>
+
+    <!-- SCOUT -->
+    <section id="scout">
+      <h2><span class="num">04b</span>Scout de candidatos — varredura automatizada</h2>
+      <p class="lead">Ferramenta que faz a pesquisa por você. A cada nova categoria aberta no plano, o sistema busca, enriquece e pontua candidatos reais em Maringá — você só aprova.</p>
+
+      <h3>O que o sistema entrega por categoria</h3>
+      <table>
+        <thead>
+          <tr><th style="width: 22%">Dado</th><th>Origem</th><th>Uso</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Nome + endereço + telefone</strong></td><td>Google Maps (Apify)</td><td>Contato inicial</td></tr>
+          <tr><td><strong>Instagram + site</strong></td><td>Google + scraping</td><td>Avaliação DNA visual</td></tr>
+          <tr><td><strong>Reviews + pontuação</strong></td><td>Google Maps</td><td>Sinal de qualidade</td></tr>
+          <tr><td><strong>Score DNA (1-10)</strong></td><td>Claude API</td><td>Ordenação da fila</td></tr>
+          <tr><td><strong>Justificativa do score</strong></td><td>Claude API</td><td>Por que cruza com a Mirian</td></tr>
+          <tr><td><strong>3 razões de fit</strong></td><td>Claude API</td><td>Argumentário de abordagem</td></tr>
+          <tr><td><strong>3 riscos potenciais</strong></td><td>Claude API</td><td>Checkpoint antes de fechar</td></tr>
+          <tr><td><strong>Quem indica / referências</strong></td><td>Reviews + IG hashtags</td><td>Social proof inicial</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Fluxo operacional</h3>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lbl">Passo 1</div><div class="val">Buscar</div><div class="desc">Você escolhe categoria (ex: "Perfumaria de nicho"). Sistema varre Google em Maringá.</div></div>
+        <div class="kpi"><div class="lbl">Passo 2</div><div class="val">Enriquecer</div><div class="desc">IA avalia fit com o DNA (excelência/estética/propósito) e gera score + justificativa.</div></div>
+        <div class="kpi"><div class="lbl">Passo 3</div><div class="val">Triar</div><div class="desc">Lista ordenada por score. Você decide: abordar, descartar, arquivar.</div></div>
+        <div class="kpi"><div class="lbl">Passo 4</div><div class="val">Abordar</div><div class="desc">Sistema gera mensagem inicial personalizada por parceiro. Você revisa e envia.</div></div>
+        <div class="kpi"><div class="lbl">Passo 5</div><div class="val">Rastrear</div><div class="desc">Status da negociação (novo → abordado → respondido → negociando → fechado / recusado).</div></div>
+      </div>
+
+      <div class="callout">
+        <p><strong>Custo operacional estimado:</strong> R$30-80/mês (Apify scraping + Claude API). Cada varredura custa centavos. Autogestão real: você só aprova, sistema faz o resto.</p>
       </div>
     </section>
 
@@ -490,24 +544,34 @@
   // ── Dados: parceiros + entregáveis ──
   var ROWS = {
     'b2b-tier1': [
-      { id: 'b2b-tier1-salao',       title: 'Salão / cabeleireiro premium', meta: 'Frequência mensal · mesmo target · ROI rápido', tier: 1 },
-      { id: 'b2b-tier1-endocrino',   title: 'Endócrino de menopausa',        meta: 'Dor ativa 45+ · zero competição · LTV alto',    tier: 1 },
-      { id: 'b2b-tier1-grupos',      title: 'ACIM / Confraria / 40+',        meta: 'Alavancagem B2B2B2C · dezenas de empresárias',  tier: 1 },
-      { id: 'b2b-tier1-fotografo',   title: 'Fotógrafo de casamento',        meta: 'Fecha o triângulo Moinho + Osvaldo',           tier: 1 },
-      { id: 'b2b-tier1-joalheria',   title: 'Joalheria (1 só — escolher)',   meta: 'Ana Cojo ou Bergerson · copy já existe',       tier: 1 },
+      { id: 'b2b-tier1-salao',       title: 'Salão / cabeleireiro premium',  meta: 'Frequência mensal · mesmo target · ROI rápido',       tier: 1 },
+      { id: 'b2b-tier1-endocrino',   title: 'Endócrino de menopausa',         meta: 'Dor ativa 45+ · zero competição · LTV alto',          tier: 1 },
+      { id: 'b2b-tier1-grupos',      title: 'ACIM / Confraria / 40+ / Lide Feminino', meta: 'Alavancagem B2B2B2C · dezenas de empresárias', tier: 1 },
+      { id: 'b2b-tier1-fotografo',   title: 'Fotógrafo de casamento',         meta: 'Fecha o triângulo Moinho + Osvaldo',                   tier: 1 },
+      { id: 'b2b-tier1-joalheria',   title: 'Joalheria (1 só — escolher)',    meta: 'Ana Cojo ou Bergerson · copy já existe',               tier: 1 },
+      { id: 'b2b-tier1-perfumaria',  title: 'Perfumaria de nicho (importados)', meta: 'Extensão da assinatura pessoal · ticket alto · target idêntico', tier: 1 },
+      { id: 'b2b-tier1-psicologa',   title: 'Psicologia / coaching mulheres 40+', meta: 'Destrava camada emocional · cliente em transformação', tier: 1 },
+      { id: 'b2b-tier1-ortomolecular', title: 'Ortomolecular / medicina integrativa', meta: 'Completa o rejuvenescimento · marido vira cliente', tier: 1 },
     ],
     'b2b-tier2': [
-      { id: 'b2b-tier2-nutri',           title: 'Nutricionista funcional',      meta: 'Par com endócrino · dor 45+',         tier: 2 },
-      { id: 'b2b-tier2-otica',           title: 'Ótica (1 só)',                 meta: 'Target usa · Gouveia/Leonel',         tier: 2 },
-      { id: 'b2b-tier2-vet',             title: 'Veterinário boutique',         meta: 'Lifestyle marker forte do perfil',    tier: 2 },
-      { id: 'b2b-tier2-foto-familia',    title: 'Fotógrafo de família / retrato', meta: 'Pós-procedimento · registro',       tier: 2 },
-      { id: 'b2b-tier2-atelier',         title: 'Atelier de vestido de noiva',  meta: 'Par com Moinho + Osvaldo',            tier: 2 },
+      { id: 'b2b-tier2-nutri',           title: 'Nutricionista funcional',       meta: 'Par com endócrino · dor 45+',            tier: 2 },
+      { id: 'b2b-tier2-otica',           title: 'Ótica (1 só)',                  meta: 'Target usa · Gouveia/Leonel',            tier: 2 },
+      { id: 'b2b-tier2-vet',             title: 'Veterinário boutique',          meta: 'Lifestyle marker forte do perfil',       tier: 2 },
+      { id: 'b2b-tier2-foto-familia',    title: 'Fotógrafo de família / retrato',meta: 'Pós-procedimento · registro',            tier: 2 },
+      { id: 'b2b-tier2-atelier',         title: 'Atelier de vestido de noiva',   meta: 'Par com Moinho + Osvaldo',               tier: 2 },
+      { id: 'b2b-tier2-farmacia',        title: 'Farmácia de manipulação premium', meta: 'Fórmula dermatológica exclusiva Mirian · autoridade técnica', tier: 2 },
+      { id: 'b2b-tier2-floricultura',    title: 'Floricultura com assinatura mensal', meta: 'Presente recorrente · storytelling "casa que floresce"', tier: 2 },
+      { id: 'b2b-tier2-stylist',         title: 'Personal stylist / organizer de closet', meta: 'Aplica o posicionamento no dia a dia · par com Cazza Flor', tier: 2 },
+      { id: 'b2b-tier2-spa',             title: 'SPA day / wellness destination (Kurotel)', meta: 'Prepara e recupera procedimento · ocasião', tier: 2 },
     ],
     'b2b-tier3': [
       { id: 'b2b-tier3-concessionaria',  title: 'Concessionária (1 só, rotacionar semestral)', meta: 'Audi OU Mercedes OU BMW OU Range · nunca 4 juntas', tier: 3 },
-      { id: 'b2b-tier3-imoveis',         title: 'Imóveis alto padrão',          meta: 'Corretor exclusivo · LTV absurdo',    tier: 3 },
-      { id: 'b2b-tier3-viagem',          title: 'Agência de viagem boutique',   meta: 'Ocasião natural · foto antes/depois', tier: 3 },
-      { id: 'b2b-tier3-private',         title: 'Gestor patrimonial / private', meta: 'Canal raro · cliente ultra-qualificado', tier: 3 },
+      { id: 'b2b-tier3-imoveis',         title: 'Imóveis alto padrão',           meta: 'Corretor exclusivo · LTV absurdo',       tier: 3 },
+      { id: 'b2b-tier3-viagem',          title: 'Agência de viagem boutique',    meta: 'Ocasião natural · foto antes/depois',    tier: 3 },
+      { id: 'b2b-tier3-private',         title: 'Gestor patrimonial / private',  meta: 'Canal raro · cliente ultra-qualificado', tier: 3 },
+      { id: 'b2b-tier3-vinhos',          title: 'Clube de vinhos / sommelier',   meta: 'Momento social premium · casal',         tier: 3 },
+      { id: 'b2b-tier3-arte',            title: 'Galeria de arte / curadoria cultural', meta: 'Refinamento intelectual · alinha com Círculo', tier: 3 },
+      { id: 'b2b-tier3-presentes',       title: 'Doceria premium / casa de presentes', meta: 'Presente de ocasião · lifestyle objeto', tier: 3 },
     ],
     'b2b-fase1': [
       { id: 'b2b-fase1-schema',       title: 'Migration: partnerships + auxiliares',   meta: 'Tabelas partnerships, targets, events, playbook, vouchers' },
@@ -522,6 +586,10 @@
       { id: 'b2b-fase2-brief',        title: 'Brief WhatsApp automático',               meta: 'Envia pro parceiro no dia 01 de cada mês' },
       { id: 'b2b-fase2-voucher',      title: 'Sistema voucher digital (QR + landing)',  meta: 'Emissão pelo parceiro · tracking 4 estágios' },
       { id: 'b2b-fase2-dashboard',    title: 'Dashboard verde/amarelo/vermelho',        meta: 'Saúde por parceria · Mirian vê só exceções' },
+      { id: 'b2b-fase2-scout-schema', title: 'Scout: schema b2b_candidates + RPCs',      meta: 'Tabela candidatos + triagem + tracking' },
+      { id: 'b2b-fase2-scout-crawl',  title: 'Scout: edge function Apify + Claude',      meta: 'Varredura Google Maps + enriquecimento IA + score DNA' },
+      { id: 'b2b-fase2-scout-ui',     title: 'Scout: aba Candidatos na página B2B',      meta: 'Lista ordenada por score · triagem · status negociação' },
+      { id: 'b2b-fase2-meta-tracker', title: 'Meta mensal — tracker + alerta',           meta: 'Cron verifica se atingiu meta · sugere top 5 candidatos se abaixo' },
     ],
     'b2b-fase3': [
       { id: 'b2b-fase3-sugestao',     title: 'Ferramenta de sugestão de parceiros',     meta: 'Baseada em gaps do pilar · lista priorizada' },
