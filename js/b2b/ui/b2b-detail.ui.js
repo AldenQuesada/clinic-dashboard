@@ -86,6 +86,7 @@
           '</div>' +
         '</div>' +
         '<div class="b2b-detail-actions">' +
+          '<button type="button" class="b2b-btn" data-action="playbook" data-id="' + _esc(p.id) + '" title="Aplicar playbook de abertura (tasks + content + metas por tipo)">Aplicar Playbook</button>' +
           '<button type="button" class="b2b-btn" data-action="report" data-id="' + _esc(p.id) + '">Relatório PDF</button>' +
           '<button type="button" class="b2b-btn" data-action="vouchers" data-id="' + _esc(p.id) + '" data-name="' + _esc(p.name) + '">Vouchers</button>' +
           '<button type="button" class="b2b-btn" data-action="edit" data-id="' + _esc(p.id) + '">Editar</button>' +
@@ -268,6 +269,29 @@
         var id   = vouchBtn.getAttribute('data-id')
         var name = vouchBtn.getAttribute('data-name')
         document.dispatchEvent(new CustomEvent('b2b:open-vouchers', { detail: { partnershipId: id, partnershipName: name } }))
+      })
+    }
+
+    var playbookBtn = host.querySelector('[data-action="playbook"]')
+    if (playbookBtn) {
+      playbookBtn.addEventListener('click', async function () {
+        var id = playbookBtn.getAttribute('data-id')
+        if (!window.B2BPlaybookRepository) { alert('Playbook repo não carregado'); return }
+        if (!confirm('Aplicar playbook de abertura?\n\nVai criar: tasks iniciais, carrossel padrão + 3 ganchos, metas operacionais por tipo.\n\nJá é idempotente — não duplica se já rodou antes.')) return
+        playbookBtn.disabled = true; playbookBtn.textContent = 'Aplicando…'
+        try {
+          var r = await window.B2BPlaybookRepository.apply(id)
+          if (!r || !r.ok) throw new Error(r && r.error || 'falhou')
+          alert('Playbook ' + r.type + ' aplicado!\n\n' +
+                r.tasks + ' tasks · ' + r.contents + ' conteúdos · ' + r.targets + ' metas')
+          // Recarrega o detail pra mostrar os novos itens
+          document.dispatchEvent(new CustomEvent('b2b:partnership-saved', { detail: { id: id } }))
+          close()
+          document.dispatchEvent(new CustomEvent('b2b:open-detail', { detail: { id: id } }))
+        } catch (err) {
+          alert('Erro: ' + err.message)
+          playbookBtn.disabled = false; playbookBtn.textContent = 'Aplicar Playbook'
+        }
       })
     }
 
