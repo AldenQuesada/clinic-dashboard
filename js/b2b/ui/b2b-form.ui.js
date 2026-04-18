@@ -144,6 +144,18 @@
       _section('Profissionais envolvidos (lado clínica)') +
       _arrayInput('involved_professionals', 'Profissionais', p.involved_professionals || ['mirian'], 'mirian, quesada, ...') +
 
+      _section('Grupo / Confraria (B2B2B2C)') +
+      '<label class="b2b-field"><span class="b2b-field-lbl">Esta parceria é com um grupo coletivo?</span>' +
+        '<label style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;font-size:13px">' +
+          '<input type="checkbox" name="is_collective" value="true"' + (p.is_collective ? ' checked' : '') + '> ' +
+          '<span>Sim (ex.: ACIM, Confraria, Lide Feminino)</span>' +
+        '</label>' +
+      '</label>' +
+      '<div class="b2b-grid-2">' +
+        _numInput('member_count',            'Membras cadastradas',   p.member_count) +
+        _numInput('estimated_monthly_reach', 'Alcance mensal estimado', p.estimated_monthly_reach) +
+      '</div>' +
+
       _section('Status inicial') +
       _selectInput('status', 'Status', statuses, p.status || 'prospect') +
 
@@ -175,6 +187,8 @@
     var fd = new FormData(formEl)
     var out = {}
     fd.forEach(function (v, k) { out[k] = v })
+    // Checkbox is_collective — se não vier no FormData, é false
+    out.is_collective = fd.has('is_collective')
 
     // Arrays a partir de comma-separated
     ;['voucher_delivery','contrapartida','sazonais','involved_professionals'].forEach(function (k) {

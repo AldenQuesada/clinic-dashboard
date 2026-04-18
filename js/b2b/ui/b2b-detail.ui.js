@@ -86,6 +86,9 @@
           '</div>' +
         '</div>' +
         '<div class="b2b-detail-actions">' +
+          (p.is_collective
+            ? '<button type="button" class="b2b-btn" data-action="groups" data-id="' + _esc(p.id) + '" data-name="' + _esc(p.name) + '" title="Registrar palestras, eventos e exposições ao grupo">Alcance do grupo</button>'
+            : '') +
           '<button type="button" class="b2b-btn" data-action="playbook" data-id="' + _esc(p.id) + '" title="Aplicar playbook de abertura (tasks + content + metas por tipo)">Aplicar Playbook</button>' +
           '<button type="button" class="b2b-btn" data-action="report" data-id="' + _esc(p.id) + '">Relatório PDF</button>' +
           '<button type="button" class="b2b-btn" data-action="vouchers" data-id="' + _esc(p.id) + '" data-name="' + _esc(p.name) + '">Vouchers</button>' +
@@ -269,6 +272,15 @@
         var id   = vouchBtn.getAttribute('data-id')
         var name = vouchBtn.getAttribute('data-name')
         document.dispatchEvent(new CustomEvent('b2b:open-vouchers', { detail: { partnershipId: id, partnershipName: name } }))
+      })
+    }
+
+    var groupsBtn = host.querySelector('[data-action="groups"]')
+    if (groupsBtn) {
+      groupsBtn.addEventListener('click', function () {
+        var id   = groupsBtn.getAttribute('data-id')
+        var name = groupsBtn.getAttribute('data-name')
+        document.dispatchEvent(new CustomEvent('b2b:open-groups', { detail: { partnershipId: id, partnershipName: name } }))
       })
     }
 

@@ -562,7 +562,27 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
   padding: 6px 10px;
 }
 
+/* ── Groups overlay (exposures) ── */
+.b2b-groups-kpis {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+  background: var(--b2b-bg-2); border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 14px; margin-bottom: 16px;
+}
+.b2b-groups-kpis > div { text-align: center; padding: 4px 2px; }
+.b2b-groups-kpis .v {
+  font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400;
+  color: var(--b2b-champagne); line-height: 1;
+}
+.b2b-groups-kpis .l {
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--b2b-text-muted); font-weight: 600; margin-top: 4px;
+}
+.b2b-groups-table .num { text-align: right; }
+
 /* ── Responsive ── */
+@media (max-width: 640px) {
+  .b2b-groups-kpis { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 780px) {
   .b2b-page-container { padding: 20px 16px 60px; }
   .b2b-title { font-size: 28px; }
