@@ -1,0 +1,2312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano de Testes — Agendamento, Paciente e Orçamento · ClinicAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #0A0E1A;
+    --bg-1: #111827;
+    --bg-2: #1F2937;
+    --bg-3: #273141;
+    --border: #374151;
+    --border-strong: #4B5563;
+    --primary: #7C3AED;
+    --primary-light: #A78BFA;
+    --accent: #C9A96E;
+    --accent-light: #DFC5A0;
+    --text-primary: #F9FAFB;
+    --text-secondary: #D1D5DB;
+    --text-muted: #9CA3AF;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #DC2626;
+    --info: #3B82F6;
+    --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    background: var(--bg-0);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+    letter-spacing: 0.01em;
+  }
+  .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--bg-1);
+    border-right: 1px solid var(--border);
+    padding: 32px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar-brand {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-brand .eyebrow {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .sidebar-brand .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-top: 6px;
+    line-height: 1.2;
+  }
+  .sidebar-stats {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+  .sidebar-stats .num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .sidebar-stats .lbl {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .sidebar-progress-mini {
+    height: 4px;
+    background: var(--bg-3);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .sidebar-progress-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    transition: width 0.3s;
+  }
+  .nav { list-style: none; }
+  .nav li { margin-bottom: 2px; }
+  .nav a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .nav a:hover { background: var(--bg-2); color: var(--text-primary); }
+  .nav a.active { background: var(--bg-2); color: var(--primary-light); border-left: 2px solid var(--primary); }
+  .nav a .count {
+    font-size: 10px;
+    background: var(--bg-3);
+    color: var(--text-muted);
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+  .nav-section {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 18px 10px 6px;
+    font-weight: 600;
+  }
+
+  /* Main */
+  .main { padding: 40px 56px 80px; max-width: 1200px; }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 32px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero .eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 44px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+  }
+  .hero .subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .hero-meta-item { display: flex; flex-direction: column; }
+  .hero-meta-item .label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+  .hero-meta-item .value {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* Progress global */
+  .progress-global {
+    margin: 24px 0;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .progress-global-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .progress-global-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .progress-global-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .progress-track {
+    height: 8px;
+    background: var(--bg-3);
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+  }
+  .progress-seg {
+    height: 100%;
+    transition: width 0.3s;
+  }
+  .progress-seg.ok { background: var(--success); }
+  .progress-seg.falha { background: var(--danger); }
+  .progress-seg.bloqueado { background: var(--warning); }
+  .progress-counts {
+    display: flex;
+    gap: 20px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .progress-count-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .progress-count-item .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .progress-count-item.ok .dot { background: var(--success); }
+  .progress-count-item.falha .dot { background: var(--danger); }
+  .progress-count-item.bloqueado .dot { background: var(--warning); }
+  .progress-count-item.pendente .dot { background: var(--text-muted); }
+  .progress-count-item strong {
+    color: var(--text-primary);
+    font-weight: 700;
+    min-width: 22px;
+    text-align: right;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 14px 16px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px;
+    background: var(--bg-2);
+    border-radius: 8px;
+  }
+  .filter-btn {
+    padding: 6px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { color: var(--text-primary); }
+  .filter-btn.active {
+    background: var(--primary);
+    color: white;
+  }
+  .filter-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .spacer { flex: 1; }
+  .action-btn {
+    padding: 8px 14px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    border-radius: 7px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .action-btn:hover { border-color: var(--primary); color: var(--text-primary); }
+  .action-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Section */
+  section {
+    margin-bottom: 56px;
+    scroll-margin-top: 20px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-header-body { flex: 1; }
+  .section-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .section-header h2 .num {
+    color: var(--accent);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    margin-right: 10px;
+  }
+  .section-header .desc { font-size: 12px; color: var(--text-muted); }
+  .section-header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-progress {
+    min-width: 160px;
+    text-align: right;
+  }
+  .section-progress .pct {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .section-progress .track {
+    height: 4px;
+    background: var(--bg-3);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .section-progress .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-light), var(--primary));
+    transition: width 0.3s;
+  }
+  .section-toggle {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: transform 0.2s;
+  }
+  section.collapsed .section-toggle { transform: rotate(-90deg); }
+  section.collapsed .section-body { display: none; }
+  .section-body {
+    padding: 20px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+  }
+
+  /* Subsection */
+  .subsection { margin-bottom: 36px; }
+  .subsection-title {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--primary-light);
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .subsection-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    font-style: italic;
+  }
+  .subsection-count {
+    font-size: 10px;
+    background: var(--bg-2);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  /* Test card */
+  .test {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s;
+  }
+  .test:hover { border-color: var(--border-strong); }
+  .test.ok { border-left-color: var(--success); }
+  .test.falha { border-left-color: var(--danger); }
+  .test.bloqueado { border-left-color: var(--warning); }
+  .test.pendente { border-left-color: var(--text-muted); }
+  .test-head {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .test-status {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .status-btn {
+    width: 26px;
+    height: 26px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--bg-1);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .status-btn:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+  .status-btn.active.ok { background: var(--success); border-color: var(--success); color: white; }
+  .status-btn.active.falha { background: var(--danger); border-color: var(--danger); color: white; }
+  .status-btn.active.bloqueado { background: var(--warning); border-color: var(--warning); color: white; }
+  .test-body { flex: 1; min-width: 0; }
+  .test-title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .test-id {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .test-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.35;
+    flex: 1;
+    min-width: 200px;
+  }
+  .test-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .tag.prio-critico { background: #DC262615; color: #F87171; border: 1px solid #DC262640; }
+  .tag.prio-alto    { background: #F59E0B15; color: #FBBF24; border: 1px solid #F59E0B40; }
+  .tag.prio-medio   { background: #3B82F615; color: #60A5FA; border: 1px solid #3B82F640; }
+  .tag.prio-baixo   { background: #6B728015; color: #9CA3AF; border: 1px solid #6B728040; }
+  .tag.cat { background: var(--bg-3); color: var(--text-secondary); border: 1px solid var(--border); }
+
+  .test-meta {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .test-meta .lbl {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .test-steps {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px 10px 28px;
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+  .test-steps ol { padding: 0; margin: 0; }
+  .test-steps li {
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+  .test-expected {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #10B98108;
+    border-left: 2px solid var(--success);
+    border-radius: 4px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+  }
+  .test-expected .lbl { color: var(--success); }
+  .test-prereq {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .test-prereq .lbl {
+    font-style: normal;
+    color: var(--warning);
+  }
+  .test-notes {
+    margin-top: 10px;
+  }
+  .test-notes textarea {
+    width: 100%;
+    padding: 8px 10px;
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: inherit;
+    border-radius: 6px;
+    resize: vertical;
+    min-height: 36px;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+  }
+  .test-notes textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .test-notes textarea::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    background: var(--bg-1);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    margin-bottom: 18px;
+    font-size: 11.5px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+  }
+  .legend-item .sw {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 60px;
+    padding: 32px 0 16px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    font-style: italic;
+  }
+  .footer-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    margin-top: 4px;
+  }
+
+  /* Hidden helpers */
+  .hide { display: none !important; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    .main { padding: 24px 18px 60px; }
+    .hero h1 { font-size: 30px; }
+    .section-header-right .section-progress { min-width: 100px; }
+  }
+
+  /* Print */
+  @media print {
+    .sidebar, .toolbar { display: none; }
+    .layout { grid-template-columns: 1fr; }
+    .main { padding: 20px; max-width: 100%; }
+    body { background: white; color: black; }
+    .section-header, .section-body, .test, .hero, .legend, .progress-global { background: white !important; border: 1px solid #ccc; color: black !important; }
+    h1, h2, .test-title, .test-steps, .test-meta, .subsection-title { color: black !important; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="eyebrow">ClinicAI · QA</div>
+      <div class="title">Plano<br>de Testes</div>
+    </div>
+
+    <div class="sidebar-stats">
+      <div id="sidebarTotalNum" class="num">0<span style="font-size:14px;color:var(--text-muted)">/0</span></div>
+      <div class="lbl">testes validados</div>
+      <div class="sidebar-progress-mini"><div id="sidebarProgressFill" class="sidebar-progress-mini-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="nav-section">Seções</div>
+    <ul class="nav">
+      <li><a href="#s1"><span>1. Agendamento</span><span class="count" data-nav-count="1">0</span></a></li>
+      <li><a href="#s2"><span>2. Paciente</span><span class="count" data-nav-count="2">0</span></a></li>
+      <li><a href="#s3"><span>3. Orçamento</span><span class="count" data-nav-count="3">0</span></a></li>
+      <li><a href="#s4"><span>4. Integrações</span><span class="count" data-nav-count="4">0</span></a></li>
+    </ul>
+
+    <div class="nav-section">Ações</div>
+    <ul class="nav">
+      <li><a href="#" onclick="exportResults();return false;"><span>Exportar JSON</span></a></li>
+      <li><a href="#" onclick="expandAll();return false;"><span>Expandir tudo</span></a></li>
+      <li><a href="#" onclick="collapseAll();return false;"><span>Recolher tudo</span></a></li>
+      <li><a href="#" onclick="resetProgress();return false;" style="color:#F87171"><span>Zerar progresso</span></a></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="eyebrow">Quality Assurance · Fluxo Principal</div>
+      <h1>Plano de testes — <span style="font-style:italic">Agendamento, Paciente e Orçamento</span></h1>
+      <div class="subtitle">Cobertura manual do ciclo completo desde o primeiro clique no slot até a entrada no cashflow.</div>
+      <div class="hero-meta">
+        <div class="hero-meta-item"><span class="label">Data</span><span class="value">18 de abril de 2026</span></div>
+        <div class="hero-meta-item"><span class="label">Cobertura</span><span class="value" id="heroTotal">— casos</span></div>
+        <div class="hero-meta-item"><span class="label">Persistência</span><span class="value">localStorage (v1)</span></div>
+        <div class="hero-meta-item"><span class="label">Escopo</span><span class="value">Manual + dev tools</span></div>
+      </div>
+    </header>
+
+    <!-- PROGRESS -->
+    <div class="progress-global">
+      <div class="progress-global-top">
+        <div class="progress-global-title">Progresso geral</div>
+        <div class="progress-global-num" id="globalPct">0%</div>
+      </div>
+      <div class="progress-track">
+        <div id="segOk" class="progress-seg ok" style="width:0%"></div>
+        <div id="segBloqueado" class="progress-seg bloqueado" style="width:0%"></div>
+        <div id="segFalha" class="progress-seg falha" style="width:0%"></div>
+      </div>
+      <div class="progress-counts">
+        <div class="progress-count-item ok"><span class="dot"></span><strong id="countOk">0</strong> passou</div>
+        <div class="progress-count-item falha"><span class="dot"></span><strong id="countFalha">0</strong> falhou</div>
+        <div class="progress-count-item bloqueado"><span class="dot"></span><strong id="countBloqueado">0</strong> bloqueado</div>
+        <div class="progress-count-item pendente"><span class="dot"></span><strong id="countPendente">0</strong> pendente</div>
+        <div class="progress-count-item"><strong id="countTotal">0</strong>&nbsp;total</div>
+      </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <div class="legend-item"><span class="sw" style="border-color:var(--text-muted);background:var(--bg-1)"></span>Pendente</div>
+      <div class="legend-item"><span class="sw" style="border-color:var(--success);background:var(--success)"></span>Passou (ok)</div>
+      <div class="legend-item"><span class="sw" style="border-color:var(--danger);background:var(--danger)"></span>Falhou (bug)</div>
+      <div class="legend-item"><span class="sw" style="border-color:var(--warning);background:var(--warning)"></span>Bloqueado (dependência)</div>
+      <div class="legend-item" style="margin-left:auto;color:var(--text-muted);font-style:italic">Clique nos botões à esquerda de cada teste para marcar o status. Todas as alterações são salvas no localStorage.</div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <span class="filter-label">Status</span>
+      <div class="filter-group" id="filterStatusGroup">
+        <button class="filter-btn active" data-filter-status="all">Todos</button>
+        <button class="filter-btn" data-filter-status="pendente">Pendentes</button>
+        <button class="filter-btn" data-filter-status="ok">Passaram</button>
+        <button class="filter-btn" data-filter-status="falha">Falharam</button>
+        <button class="filter-btn" data-filter-status="bloqueado">Bloqueados</button>
+      </div>
+      <span class="filter-label">Prioridade</span>
+      <div class="filter-group" id="filterPrioGroup">
+        <button class="filter-btn active" data-filter-prio="all">Todas</button>
+        <button class="filter-btn" data-filter-prio="critico">Críticas</button>
+        <button class="filter-btn" data-filter-prio="alto">Altas</button>
+        <button class="filter-btn" data-filter-prio="medio">Médias</button>
+        <button class="filter-btn" data-filter-prio="baixo">Baixas</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="action-btn" onclick="expandAll()">Expandir tudo</button>
+      <button class="action-btn" onclick="exportResults()">Exportar JSON</button>
+    </div>
+
+    <!-- =================================================================
+         SECTIONS render alvo
+         ================================================================= -->
+    <div id="sectionsRoot"></div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-logo">ClinicAI Dashboard</div>
+      <div class="footer-sub">QUALITY ASSURANCE · FLUXO PRINCIPAL</div>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  ClinicAI — Test Tracker v1
+//  Cobertura manual do fluxo Agendamento → Paciente → Orçamento
+// ═══════════════════════════════════════════════════════════════════
+
+const STORAGE_KEY = 'clinicai_test_tracker_v1';
+const ICONS = {
+  check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',
+  x:     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  lock:  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  chev:  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>',
+};
+
+// ── DATA: Secoes e casos de teste ───────────────────────────────────
+// Cada teste referencia funcionalidade concreta mapeada em:
+//   js/agenda-modal.js, js/agenda-smart.js, js/agenda-validation.js,
+//   js/agenda-automations.engine.js, js/agenda-leads.js, js/agenda-mensagens.js,
+//   js/components/schedule-modal.js, js/services/*, js/repositories/*,
+//   js/ui/medical-record-editor.ui.js, js/ui/prontuario-wow.ui.js,
+//   js/components/lead-modal.js, js/fm/*, js/orcamentos.js,
+//   js/vpi/*, js/services/mira.service.js, js/services/legal-documents.service.js,
+//   js/services/cashflow.service.js, js/services/budgets.service.js
+// ────────────────────────────────────────────────────────────────────
+
+const SECTIONS = [
+  {
+    id: '1',
+    title: 'Agendamento',
+    description: 'Abertura do modal, criação, edição, validações, recorrência, finalização e sync.',
+    subsections: [
+      {
+        id: '1.1',
+        title: 'Abertura do modal',
+        description: 'openApptModal() · agenda-modal.js · entry points da agenda e de leads.',
+        tests: [
+          { id: 'AG-1.1.1', title: 'Abrir modal clicando em slot vazio na vista semana', prio: 'alto', tags: ['UX'],
+            prereq: 'Logado como secretária, agenda carregada na vista semana.',
+            steps: ['Clicar em um slot vazio de qualquer dia da vista semana.'],
+            expected: 'Modal "Nova Consulta" abre com data/hora do slot pré-preenchidas e profissional principal (Mirian) já selecionado.' },
+          { id: 'AG-1.1.2', title: 'Abrir modal clicando em coluna de profissional (vista dia)', prio: 'alto', tags: ['UX'],
+            prereq: 'Vista dia ativa com múltiplos profissionais.',
+            steps: ['Trocar para vista dia', 'Clicar em slot vazio dentro da coluna de um profissional específico.'],
+            expected: 'Modal abre com profIdx da coluna clicada já selecionado (não Mirian default).' },
+          { id: 'AG-1.1.3', title: 'Abrir modal via botão "+Novo Agendamento"', prio: 'alto', tags: ['UX'],
+            steps: ['Clicar no botão +Novo Agendamento no topo da agenda.'],
+            expected: 'Modal abre sem data pré-definida (default: hoje 08:00) e Mirian default se logado como secretária/owner.' },
+          { id: 'AG-1.1.4', title: 'Abrir modal a partir de aba Leads → "Agendar"', prio: 'critico', tags: ['cross-flow', 'integração'],
+            prereq: 'Lead existente com nome e telefone na tabela de leads.',
+            steps: ['Aba Leads', 'Clicar no botão Agendar (ícone telefone) na linha do lead.'],
+            expected: 'Modal leadsScheduleModal abre com nome e telefone pré-preenchidos, data=hoje, hora=próxima hora cheia.' },
+          { id: 'AG-1.1.5', title: 'Abrir modal pela página Pacientes → "Agendar consulta"', prio: 'alto', tags: ['cross-flow'],
+            prereq: 'Paciente já finalizado existente.',
+            steps: ['Página Pacientes', 'Selecionar paciente', 'Botão agendar.'],
+            expected: 'Modal abre com patient_id e nome pré-preenchidos. tipoPaciente detectado como "retorno".' },
+          { id: 'AG-1.1.6', title: 'Restauração automática de draft', prio: 'medio', tags: ['UX', 'draft'],
+            prereq: 'Fechou modal sem salvar com paciente/procedimentos preenchidos há menos de 5 minutos.',
+            steps: ['Abrir modal novamente sem passar pacienteId.'],
+            expected: 'Toast "Rascunho restaurado" aparece e todos os campos são repopulados (exceto se passou 5min, que limpa).' },
+          { id: 'AG-1.1.7', title: 'Draft não restaura se fora da janela de 5 minutos', prio: 'baixo', tags: ['draft', 'UX'],
+            prereq: 'Draft salvo há mais de 5 min.',
+            steps: ['Aguardar 6 minutos', 'Abrir modal novo.'],
+            expected: 'Modal abre limpo, sem toast de restauração.' },
+          { id: 'AG-1.1.8', title: 'Draft não se ativa ao editar appointment existente', prio: 'medio', tags: ['draft', 'UX'],
+            steps: ['Abrir appointment existente via openApptDetail → editar.'],
+            expected: 'Modal abre apenas com dados do appointment, sem restaurar draft.' },
+          { id: 'AG-1.1.9', title: 'Fechar modal com Esc ou overlay', prio: 'baixo', tags: ['UX'],
+            steps: ['Abrir modal', 'Pressionar Esc ou clicar no overlay escuro.'],
+            expected: 'Modal fecha, draft é salvo automaticamente se houver conteúdo.' },
+          { id: 'AG-1.1.10', title: 'Profissional default para owner logado', prio: 'medio', tags: ['permissões'],
+            prereq: 'Logado como owner (Mirian), dona vinculada a um professional por user_id.',
+            steps: ['Abrir modal novo.'],
+            expected: 'Select de profissional já vem com o próprio owner selecionado (priority 1 em _apptFindPrincipalIdx).' },
+        ],
+      },
+      {
+        id: '1.2',
+        title: 'Seleção e criação de paciente',
+        description: 'apptSearchPatient · selectApptPatient · _apptDetectTipoPaciente',
+        tests: [
+          { id: 'AG-1.2.1', title: 'Buscar paciente existente por nome (3+ chars)', prio: 'critico', tags: ['search'],
+            steps: ['Digitar 3+ caracteres no campo paciente', 'Clicar em um resultado.'],
+            expected: 'Dropdown aparece, ao clicar preenche pacienteId, pacienteNome e telefone.' },
+          { id: 'AG-1.2.2', title: 'Buscar paciente por telefone parcial', prio: 'alto', tags: ['search'],
+            steps: ['Digitar 4+ dígitos do telefone (sem formatação).'],
+            expected: 'Resultados aparecem filtrados por match em phone/whatsapp.' },
+          { id: 'AG-1.2.3', title: 'Detecção automática de tipo paciente (novo vs retorno)', prio: 'alto', tags: ['UX'],
+            steps: ['Selecionar paciente que já tem 1+ consulta finalizada.'],
+            expected: 'Hidden field appt_tipo_paciente muda para "retorno".' },
+          { id: 'AG-1.2.4', title: 'Paciente novo sem consultas finalizadas', prio: 'alto', tags: ['UX'],
+            steps: ['Selecionar paciente que nunca finalizou consulta.'],
+            expected: 'tipo_paciente = "novo" (default).' },
+          { id: 'AG-1.2.5', title: 'Criar lead inline quando busca não encontra', prio: 'critico', tags: ['cross-flow'],
+            steps: ['Digitar nome inexistente', 'Clicar em "Criar novo paciente" no dropdown.'],
+            expected: 'Lead é criado em clinicai_leads com phase=lead, é linkado ao appt, pacienteId preenchido.' },
+          { id: 'AG-1.2.6', title: 'Busca homônima retorna todos os matches', prio: 'medio', tags: ['search', 'edge'],
+            prereq: 'Dois leads com nome "Maria Silva" no banco.',
+            steps: ['Buscar "Maria Silva".'],
+            expected: 'Dropdown mostra ambos com telefones distintos para desambiguar.' },
+          { id: 'AG-1.2.7', title: 'Paciente inativo aparece mas com marcação visual', prio: 'baixo', tags: ['UX'],
+            steps: ['Buscar paciente com is_active=false.'],
+            expected: 'Aparece no dropdown ou é filtrado conforme regra do módulo.' },
+          { id: 'AG-1.2.8', title: 'Warning aparece quando salvar sem paciente cadastrado', prio: 'critico', tags: ['validação'],
+            steps: ['Preencher campos mas deixar pacienteId vazio', 'Salvar.'],
+            expected: 'Erro "Selecione um paciente cadastrado. Não é possível agendar sem patient_id." em AgendaValidator.validateRequiredFields.' },
+          { id: 'AG-1.2.9', title: 'Indicado por: buscar outro paciente como indicante', prio: 'medio', tags: ['VPI'],
+            steps: ['Campo Indicado por: digitar nome', 'Selecionar do dropdown.'],
+            expected: 'indicadoPor e indicadoPorId preenchidos, usados pelo VPI closeIndication no finalize.' },
+          { id: 'AG-1.2.10', title: 'Limpar seleção de paciente zera campos derivados', prio: 'baixo', tags: ['UX'],
+            steps: ['Selecionar paciente', 'Apagar texto do campo.'],
+            expected: 'pacienteId e pacienteTelefone voltam a vazio; card selecionado some.' },
+        ],
+      },
+      {
+        id: '1.3',
+        title: 'Tipo de consulta (avaliação vs procedimento)',
+        description: 'apptSetTipo · apptSetAval · toggle Consulta/Procedimento com confirm',
+        tests: [
+          { id: 'AG-1.3.1', title: 'Selecionar "Avaliação" mostra campos de aval', prio: 'alto', tags: ['UX'],
+            steps: ['Clicar botão Consulta.'],
+            expected: 'Rows apptTipoAvalRow (cortesia/paga) visíveis; apptProcRow oculto.' },
+          { id: 'AG-1.3.2', title: 'Selecionar "Procedimento" mostra lista de procs', prio: 'alto', tags: ['UX'],
+            steps: ['Clicar botão Procedimento.'],
+            expected: 'apptProcRow visível com select e botão + ; apptTipoAvalRow oculto.' },
+          { id: 'AG-1.3.3', title: 'Aval paga exige valor e pagamento', prio: 'critico', tags: ['validação'],
+            steps: ['Aval → Paga', 'Tentar salvar sem valor.'],
+            expected: 'Validação força valor > 0 e statusPagamento ≠ pendente no finalize.' },
+          { id: 'AG-1.3.4', title: 'Aval cortesia exige motivo', prio: 'alto', tags: ['validação'],
+            steps: ['Aval → Cortesia', 'Salvar sem motivo.'],
+            expected: 'Erro pede o motivoCortesia antes de salvar.' },
+          { id: 'AG-1.3.5', title: 'Alternar Consulta → Procedimento com dados preenchidos', prio: 'critico', tags: ['UX', 'dataloss'],
+            prereq: 'Consulta com aval paga + valor + pagamento lançado.',
+            steps: ['Clicar Procedimento.'],
+            expected: 'Confirm dialog pergunta se quer apagar dados de consulta; escolher Cancelar preserva dados.' },
+          { id: 'AG-1.3.6', title: 'Alternar Procedimento → Consulta com procs adicionados', prio: 'critico', tags: ['UX', 'dataloss'],
+            prereq: 'Procedimento com 3 procs adicionados.',
+            steps: ['Clicar Consulta.'],
+            expected: 'Confirm dialog pergunta se quer apagar procs; Ok limpa _apptProcs in-place preservando ref.' },
+          { id: 'AG-1.3.7', title: 'Campo origem obrigatório', prio: 'alto', tags: ['validação'],
+            steps: ['Salvar sem preencher origem.'],
+            expected: 'Erro "Origem do agendamento é obrigatória" em validateRequiredFields.' },
+        ],
+      },
+      {
+        id: '1.4',
+        title: 'Procedimentos múltiplos',
+        description: '_apptProcs · addFinProc · removeFinProc · cortesia e retorno por procedimento',
+        tests: [
+          { id: 'AG-1.4.1', title: 'Adicionar procedimento do catálogo', prio: 'critico', tags: ['catálogo'],
+            steps: ['Procedimento selecionado', 'Escolher nome do select', 'Clicar +.'],
+            expected: 'Item aparece na lista com valor auto-preenchido do catálogo (clinic_procedimentos).' },
+          { id: 'AG-1.4.2', title: 'Procedimento fora do catálogo (digitado)', prio: 'alto', tags: ['UX'],
+            steps: ['Digitar nome livre no datalist', 'Adicionar com + .'],
+            expected: 'Item adicionado sem preco_promo, valor precisa ser digitado manualmente.' },
+          { id: 'AG-1.4.3', title: 'Remover um procedimento da lista', prio: 'alto', tags: ['UX'],
+            steps: ['Adicionar 2 procs', 'Clicar X no primeiro.'],
+            expected: 'Item removido, total recalculado, restante intacto.' },
+          { id: 'AG-1.4.4', title: 'Marcar procedimento como cortesia', prio: 'alto', tags: ['cortesia', 'financeiro'],
+            steps: ['Adicionar proc', 'Clicar toggle Cortesia.'],
+            expected: 'Item marcado, valor zerado no total (valorCortesia aumenta), campo motivoCortesia aparece.' },
+          { id: 'AG-1.4.5', title: 'Cortesia com motivo salva em schema canônico', prio: 'alto', tags: ['schema'],
+            steps: ['Marcar cortesia', 'Preencher motivo "Familiar"', 'Salvar.'],
+            expected: 'ApptSchema.deriveValorCortesia retorna valor correto, qtdProcsCortesia e motivoCortesia persistidos.' },
+          { id: 'AG-1.4.6', title: 'Marcar procedimento como retorno (não conta valor)', prio: 'alto', tags: ['retorno', 'financeiro'],
+            steps: ['Adicionar proc', 'Clicar toggle Retorno.'],
+            expected: 'retornoTipo="retorno" persistido; preço usado no catálogo é preço de retorno se existir.' },
+          { id: 'AG-1.4.7', title: 'Retorno com intervalo em dias', prio: 'medio', tags: ['retorno'],
+            steps: ['Marcar retorno', 'Definir intervalo 90 dias.'],
+            expected: 'retornoIntervalo=90 persistido; pode ser lido por regras de retoque/VPI.' },
+          { id: 'AG-1.4.8', title: 'Total de procedimentos calculado corretamente', prio: 'critico', tags: ['financeiro'],
+            steps: ['Add 3 procs: R$100, R$200, R$50 cortesia.'],
+            expected: 'Total = R$ 300 (cortesia não soma).' },
+          { id: 'AG-1.4.9', title: 'Defaults de recorrência auto-preenchidos do catálogo', prio: 'medio', tags: ['recorrência'],
+            prereq: 'Procedimento cadastrado com data-sessoes=8, data-intervalo=7.',
+            steps: ['Adicionar esse procedimento.'],
+            expected: 'Checkbox de recorrência e campos intervalo/total preenchem com defaults.' },
+        ],
+      },
+      {
+        id: '1.5',
+        title: 'Pagamentos (consulta avulsa)',
+        description: 'apptLoadPagamentos · apptUpdatePagamento · splits',
+        tests: [
+          { id: 'AG-1.5.1', title: 'Forma única: PIX', prio: 'alto', tags: ['financeiro'],
+            steps: ['Aval paga R$ 200', 'Forma: PIX', 'Valor pago: 200.'],
+            expected: 'Pagamento salvo, statusPagamento=pago.' },
+          { id: 'AG-1.5.2', title: 'Forma única: cartão crédito à vista', prio: 'alto', tags: ['financeiro'],
+            steps: ['Crédito → avista', 'Valor total.'],
+            expected: 'pagDetalhes.tipo=avista; CashflowService registra payment_method=card_credit.' },
+          { id: 'AG-1.5.3', title: 'Cartão crédito parcelado (3x)', prio: 'critico', tags: ['financeiro'],
+            steps: ['Crédito → parcelado', 'Parcelas=3.'],
+            expected: 'valorParcela = total/3; CashflowService cria 3 entries (1 manual + 2 pending_bank).' },
+          { id: 'AG-1.5.4', title: 'Split de pagamento: PIX + dinheiro', prio: 'alto', tags: ['financeiro', 'split'],
+            steps: ['Adicionar pagamento PIX R$100 + pagamento dinheiro R$100.'],
+            expected: 'pagamentos[] com 2 entries, soma = valor total.' },
+          { id: 'AG-1.5.5', title: 'Entrada + saldo (boleto)', prio: 'critico', tags: ['financeiro', 'edge'],
+            steps: ['Forma: entrada_saldo', 'Entrada 100 PIX', 'Saldo 400 boleto 30 dias.'],
+            expected: 'CashflowService cria 2 entries: entrada (date hoje, pix) + saldo (vencimento futuro, boleto).' },
+          { id: 'AG-1.5.6', title: 'Dinheiro com cálculo de troco', prio: 'medio', tags: ['financeiro'],
+            steps: ['Forma: dinheiro', 'Valor 200', 'Recebido 250.'],
+            expected: 'pagDetalhes.troco = 50 auto-calculado.' },
+          { id: 'AG-1.5.7', title: 'Convênio exige nome', prio: 'alto', tags: ['validação'],
+            steps: ['Forma: convenio', 'Não preencher nome.'],
+            expected: 'Erro "Informe o nome do convenio" bloqueia save.' },
+          { id: 'AG-1.5.8', title: 'Boleto com 1 parcela não pede vencimento', prio: 'baixo', tags: ['financeiro'],
+            steps: ['Forma: boleto', 'Parcelas=1.'],
+            expected: 'Campo primeiroVencimento opcional, sem erro de validação.' },
+          { id: 'AG-1.5.9', title: 'Boleto multi-parcela exige data do 1º vencimento', prio: 'alto', tags: ['validação', 'financeiro'],
+            steps: ['Boleto 3x sem preencher vencimento.'],
+            expected: 'Erro "Informe o 1o vencimento do boleto".' },
+          { id: 'AG-1.5.10', title: 'Cortesia como forma de pagamento exige motivo', prio: 'alto', tags: ['validação'],
+            steps: ['Forma: cortesia', 'Sem motivo.'],
+            expected: 'Erro "Informe o motivo da cortesia".' },
+        ],
+      },
+      {
+        id: '1.6',
+        title: 'Validações de horário e data',
+        description: 'AgendaValidator.validateTime · _getClinicDay · almoço/feriado',
+        tests: [
+          { id: 'AG-1.6.1', title: 'Bloqueio de data passada', prio: 'critico', tags: ['validação'],
+            steps: ['Selecionar data de ontem', 'Salvar.'],
+            expected: 'Erro "Não é possível agendar em data passada" + borda danger inline no campo.' },
+          { id: 'AG-1.6.2', title: 'Bloqueio de horário passado no mesmo dia', prio: 'critico', tags: ['validação'],
+            steps: ['Data=hoje', 'Hora < agora.'],
+            expected: 'Erro "Não é possível agendar em horário passado"; _inlineValidate marca borda.' },
+          { id: 'AG-1.6.3', title: 'Hora fim ≤ hora início bloqueia', prio: 'critico', tags: ['validação'],
+            steps: ['Início 14:00, duração 0.'],
+            expected: 'Erro "Horario final deve ser posterior ao horario inicial" ou "Duracao nao pode ser zero".' },
+          { id: 'AG-1.6.4', title: 'Duração > 8 horas bloqueia', prio: 'alto', tags: ['validação', 'edge'],
+            steps: ['Duração 500 min.'],
+            expected: 'Erro "Duracao maxima e 8 horas (480 min)".' },
+          { id: 'AG-1.6.5', title: 'Horário fora do funcionamento (noite)', prio: 'critico', tags: ['validação', 'horários'],
+            prereq: 'clinicai_clinic_settings com fim 19:00.',
+            steps: ['Marcar 20:00.'],
+            expected: 'Erro "Horario X fora do funcionamento. Horarios validos neste dia: 08:00-19:00".' },
+          { id: 'AG-1.6.6', title: 'Horário durante almoço bloqueia (manhã + tarde)', prio: 'alto', tags: ['validação', 'horários'],
+            prereq: 'Config: manhã 08:00-12:00, tarde 14:00-19:00.',
+            steps: ['Marcar 13:00.'],
+            expected: 'Erro "Horario cai no intervalo de almoco (12:00-14:00)".' },
+          { id: 'AG-1.6.7', title: 'Tentativa de agendar em dia fechado (domingo)', prio: 'alto', tags: ['validação'],
+            prereq: 'Config: dom.aberto=false.',
+            steps: ['Selecionar domingo.'],
+            expected: 'Erro "Clinica fechada neste dia da semana".' },
+          { id: 'AG-1.6.8', title: 'Agendamento atravessando períodos (manhã+tarde)', prio: 'medio', tags: ['validação', 'edge'],
+            steps: ['Início 11:00 duração 4h → fim 15:00 (atravessa almoço 12-14).'],
+            expected: 'Erro detalhando que cai no almoço.' },
+          { id: 'AG-1.6.9', title: 'Campo data aceita formato ISO (yyyy-mm-dd)', prio: 'baixo', tags: ['UX'],
+            steps: ['Preencher via input type=date.'],
+            expected: 'Valor salvo em formato 2026-04-18.' },
+          { id: 'AG-1.6.10', title: 'Preview de hora fim atualiza em tempo real', prio: 'baixo', tags: ['UX'],
+            steps: ['Mudar início e duração.'],
+            expected: 'Label "Termina as HH:MM" atualiza imediatamente via apptUpdateEndTime.' },
+        ],
+      },
+      {
+        id: '1.7',
+        title: 'Conflitos (profissional, sala, paciente)',
+        description: 'checkProfConflict · checkRoomConflict · checkPatientConflict',
+        tests: [
+          { id: 'AG-1.7.1', title: 'Conflito: profissional ocupado no horário', prio: 'critico', tags: ['validação', 'conflito'],
+            prereq: 'Appt existente: Mirian 10:00-11:00.',
+            steps: ['Criar novo appt Mirian 10:30-11:30.'],
+            expected: 'Erro "Conflito: Mirian já está ocupada — [nome] (10:00–11:00)".' },
+          { id: 'AG-1.7.2', title: 'Conflito: sala ocupada', prio: 'alto', tags: ['validação', 'conflito'],
+            prereq: 'Appt Sala 1 10:00-11:00.',
+            steps: ['Criar appt Sala 1 10:30-11:30.'],
+            expected: 'Erro "Conflito de sala: Sala 1 já está ocupada — ...".' },
+          { id: 'AG-1.7.3', title: 'Conflito: paciente já tem appt no horário', prio: 'critico', tags: ['validação', 'conflito'],
+            prereq: 'Maria já tem consulta 10:00 com Dr. A.',
+            steps: ['Criar outra consulta Maria 10:00 com Dr. B.'],
+            expected: 'Erro "Paciente já possui agendamento neste horário: 10:00–11:00".' },
+          { id: 'AG-1.7.4', title: 'Status cancelado/no_show não bloqueia conflito', prio: 'alto', tags: ['conflito', 'edge'],
+            prereq: 'Appt cancelado Mirian 10:00-11:00.',
+            steps: ['Criar novo appt Mirian 10:00-11:00.'],
+            expected: 'Sem erro (FREE_STATUSES não bloqueiam calendar).' },
+          { id: 'AG-1.7.5', title: 'Editar appt e manter mesmo horário', prio: 'alto', tags: ['edge'],
+            steps: ['Abrir appt existente', 'Mudar só o procedimento.', 'Salvar.'],
+            expected: 'Sem erro de conflito (excludeId correto).' },
+          { id: 'AG-1.7.6', title: 'Profissional inativo bloqueia agendamento', prio: 'alto', tags: ['validação'],
+            prereq: 'Profissional X com ativo=false.',
+            steps: ['Selecionar X e salvar.'],
+            expected: 'Erro "X está inativo e não pode receber agendamentos".' },
+          { id: 'AG-1.7.7', title: 'Profissional em férias bloqueia', prio: 'medio', tags: ['validação'],
+            prereq: 'Prof com emFerias=true.',
+            steps: ['Tentar agendar.'],
+            expected: 'Erro "X está em férias/bloqueado".' },
+        ],
+      },
+      {
+        id: '1.8',
+        title: 'Recorrência de sessões (série)',
+        description: 'apptSaveWithSeries · _recGenerateDates · _apptCheckSeriesConflicts · on_recurrence_created',
+        tests: [
+          { id: 'AG-1.8.1', title: 'Criar série de 8 sessões semanais', prio: 'critico', tags: ['recorrência'],
+            steps: ['Procedimento com 2+ procs', 'Checkbox recorrente', 'Intervalo 7, Total 8.'],
+            expected: 'Preview mostra 5 primeiras datas + "(+3 mais)"; salvar cria 8 appts linkados por recurrenceGroupId (UUID).' },
+          { id: 'AG-1.8.2', title: 'Série com intervalo quinzenal (14 dias)', prio: 'alto', tags: ['recorrência'],
+            steps: ['Intervalo 14, Total 6.'],
+            expected: '6 appts criados com gap de 14 dias cada.' },
+          { id: 'AG-1.8.3', title: 'Total abaixo do mínimo (< 2) bloqueia', prio: 'medio', tags: ['validação'],
+            steps: ['Total=1.'],
+            expected: 'Warning "Total de sessoes deve estar entre 2 e 52".' },
+          { id: 'AG-1.8.4', title: 'Total acima do máximo (> 52) bloqueia', prio: 'medio', tags: ['validação'],
+            steps: ['Total=60.'],
+            expected: 'Mesmo warning de limite 2-52.' },
+          { id: 'AG-1.8.5', title: 'Conflito em 1 das sessões abre modal resolução', prio: 'critico', tags: ['recorrência', 'conflito'],
+            prereq: 'Sessão 3 da série cai em horário já ocupado.',
+            steps: ['Confirmar série.'],
+            expected: 'Modal apptConflictModal abre listando só o conflito com opções: Pular / Tentar +1 dia / Manter.' },
+          { id: 'AG-1.8.6', title: 'Resolução "Pular" cria série menos essa sessão', prio: 'alto', tags: ['recorrência'],
+            steps: ['No modal de conflito, escolher Pular.'],
+            expected: 'Série criada com N-1 appts; recurrenceTotal reflete novo total.' },
+          { id: 'AG-1.8.7', title: 'Cancelar no modal de conflito aborta série toda', prio: 'alto', tags: ['recorrência'],
+            steps: ['Modal aberto → botão "Cancelar tudo".'],
+            expected: 'Nenhum appt é criado; nada persistido.' },
+          { id: 'AG-1.8.8', title: 'Rollback se sync de série falha', prio: 'critico', tags: ['sync', 'recorrência'],
+            prereq: 'Forçar erro no Supabase no meio do batch.',
+            steps: ['Salvar série de 8.'],
+            expected: 'Toast "Falha ao sincronizar serie ... Servidor rejeitou uma das sessoes"; appts não persistidos.' },
+          { id: 'AG-1.8.9', title: 'WhatsApp consolidada enviada após série criada', prio: 'critico', tags: ['WA', 'recorrência'],
+            prereq: 'Regra on_recurrence_created ativa em wa_agenda_automations.',
+            steps: ['Criar série.'],
+            expected: 'UMA mensagem WA com todas as datas é enviada para o paciente (processRecurrenceCreated).' },
+          { id: 'AG-1.8.10', title: 'Série só aparece no modal de edição se for a primeira sessão', prio: 'medio', tags: ['UX'],
+            steps: ['Abrir sessão 3 de uma série.'],
+            expected: 'Bloco apptRecurrenceBlock oculto (só aparece para recurrenceIndex=1, appt novo).' },
+          { id: 'AG-1.8.11', title: 'Campos que não devem replicar em sessões futuras', prio: 'alto', tags: ['recorrência', 'edge'],
+            steps: ['Criar série; abrir sessão 2.'],
+            expected: 'Confirmação, consentimento, pagamentos zerados; historicoStatus vazio.' },
+          { id: 'AG-1.8.12', title: 'Cancelar uma sessão da série sem afetar outras', prio: 'alto', tags: ['recorrência'],
+            steps: ['Abrir sessão 5 de 8 → cancelar.'],
+            expected: 'Sessão 5 cancelada; sessões 1-4 e 6-8 inalteradas.' },
+          { id: 'AG-1.8.13', title: 'Cancelar série toda (PENDÊNCIA)', prio: 'medio', tags: ['recorrência', 'gap'],
+            steps: ['Tentar cancelar série inteira.'],
+            expected: 'Funcionalidade listada como pendência aberta — verificar se foi entregue ou segue no backlog.' },
+        ],
+      },
+      {
+        id: '1.9',
+        title: 'Edição e remarcação',
+        description: 'saveAppt com id existente · edição de profissional/sala/horário',
+        tests: [
+          { id: 'AG-1.9.1', title: 'Mudar horário de appt existente', prio: 'critico', tags: ['UX'],
+            steps: ['Abrir appt', 'Mudar hora de 10 → 14h.', 'Salvar.'],
+            expected: 'Appt atualizado; agenda re-renderizada; sync Supabase ok.' },
+          { id: 'AG-1.9.2', title: 'Trocar profissional em edição', prio: 'alto', tags: ['UX'],
+            steps: ['Mudar profIdx.'],
+            expected: 'Select atualiza; validação de conflito roda no novo prof.' },
+          { id: 'AG-1.9.3', title: 'Editar tipo consulta após criação', prio: 'medio', tags: ['UX'],
+            steps: ['Mudar de avaliação para procedimento.'],
+            expected: 'Confirm de data loss; após confirmar, salva novo tipo.' },
+          { id: 'AG-1.9.4', title: 'Data passada permitida na edição', prio: 'medio', tags: ['validação', 'edge'],
+            prereq: 'Appt com data hoje.',
+            steps: ['Abrir para editar', 'Mudar data para ontem.', 'Salvar.'],
+            expected: 'validateTime com isEdit=true não bloqueia data/hora passada.' },
+          { id: 'AG-1.9.5', title: 'Botão deletar visível só em edição', prio: 'baixo', tags: ['UX'],
+            steps: ['Comparar nova vs edição.'],
+            expected: 'apptDeleteBtn com display=inline-flex só quando id existe.' },
+          { id: 'AG-1.9.6', title: 'Delete dispara confirm antes de remover', prio: 'alto', tags: ['UX', 'data'],
+            steps: ['Editar → botão Excluir.'],
+            expected: 'Confirm dialog; Ok remove e sincroniza; Cancel preserva.' },
+          { id: 'AG-1.9.7', title: 'Campos reset ao abrir edição (draft não conflita)', prio: 'medio', tags: ['UX', 'draft'],
+            prereq: 'Existe draft salvo.',
+            steps: ['Abrir appt via openApptDetail para editar.'],
+            expected: 'Draft NÃO é restaurado (só para id vazio); dados do appt carregam corretos.' },
+        ],
+      },
+      {
+        id: '1.10',
+        title: 'Vistas da agenda (semana, dia, filtros)',
+        description: 'setAgendaFilter · renderAgendaFilterBar · filtros por status/prof/tipo',
+        tests: [
+          { id: 'AG-1.10.1', title: 'Vista semana: grid com 7 dias', prio: 'alto', tags: ['UX'],
+            steps: ['Abrir vista semana.'],
+            expected: 'Grid mostra seg-dom ou dom-sab conforme settings; appts renderizados nos slots certos.' },
+          { id: 'AG-1.10.2', title: 'Vista dia: coluna por profissional', prio: 'alto', tags: ['UX'],
+            steps: ['Abrir vista dia.'],
+            expected: 'N colunas = N profissionais ativos; nome no topo da coluna.' },
+          { id: 'AG-1.10.3', title: 'Botão Hoje centraliza data', prio: 'medio', tags: ['UX'],
+            steps: ['Navegar para outra semana', 'Clicar Hoje.'],
+            expected: 'Volta ao dia/semana atual.' },
+          { id: 'AG-1.10.4', title: 'Navegação anterior/próxima', prio: 'medio', tags: ['UX'],
+            steps: ['Setas de navegação.'],
+            expected: 'Muda semana/dia conforme vista; dados re-renderizam.' },
+          { id: 'AG-1.10.5', title: 'Filtro por status', prio: 'alto', tags: ['filtros'],
+            steps: ['Filtrar status=confirmado.'],
+            expected: 'getFilteredAppointments retorna apenas confirmados.' },
+          { id: 'AG-1.10.6', title: 'Filtro por profissional', prio: 'alto', tags: ['filtros'],
+            steps: ['Escolher um prof específico.'],
+            expected: 'Agenda mostra apenas appts desse prof.' },
+          { id: 'AG-1.10.7', title: 'Limpar todos filtros', prio: 'baixo', tags: ['filtros'],
+            steps: ['clearAgendaFilters.'],
+            expected: '_filters reset; _hasFilters false; render completo.' },
+          { id: 'AG-1.10.8', title: 'Filtro statusPagamento funciona', prio: 'medio', tags: ['filtros'],
+            steps: ['Filtro status pag=pendente.'],
+            expected: 'Apenas appts com statusPagamento=pendente aparecem.' },
+          { id: 'AG-1.10.9', title: 'Filtro combinado (status + prof + tipo)', prio: 'medio', tags: ['filtros'],
+            steps: ['Combinar 3 filtros.'],
+            expected: 'AND lógico; lista respeita todos critérios.' },
+        ],
+      },
+      {
+        id: '1.11',
+        title: 'Status e transições (state machine)',
+        description: 'STATE_MACHINE · apptTransition · validateTransition · historicoStatus',
+        tests: [
+          { id: 'AG-1.11.1', title: 'Transição válida: agendado → confirmado', prio: 'critico', tags: ['state-machine'],
+            steps: ['Appt status=agendado → clicar confirmar.'],
+            expected: 'Status muda; historicoStatus acrescenta {status:confirmado, at, by}.' },
+          { id: 'AG-1.11.2', title: 'Transição: agendado → aguardando_confirmacao', prio: 'alto', tags: ['state-machine'],
+            steps: ['Trigger confirmação via WA (D-1).'],
+            expected: 'Estado muda automático, ou ao clicar no detalhe, via apptTransition.' },
+          { id: 'AG-1.11.3', title: 'Transição: confirmado → na_clinica (check-in)', prio: 'critico', tags: ['state-machine', 'WA'],
+            steps: ['Paciente chega: mudar status para na_clinica.'],
+            expected: 'Dispara processStatusChange → regras on_status=na_clinica (consentimento procedimento via WA).' },
+          { id: 'AG-1.11.4', title: 'Transição: na_clinica → em_consulta', prio: 'alto', tags: ['state-machine'],
+            steps: ['Profissional inicia atendimento.'],
+            expected: 'Status em_consulta; finalizado é próxima transição única permitida.' },
+          { id: 'AG-1.11.5', title: 'Transição inválida bloqueada (agendado → finalizado)', prio: 'critico', tags: ['state-machine'],
+            steps: ['Tentar pular estados.'],
+            expected: 'Erro "Transição inválida: Agendado → Finalizado. Fluxo não permitido".' },
+          { id: 'AG-1.11.6', title: 'Cancelamento exige motivo', prio: 'critico', tags: ['validação'],
+            steps: ['Cancelar sem reason.'],
+            expected: 'Erro "Motivo é obrigatório para cancelamento ou no-show".' },
+          { id: 'AG-1.11.7', title: 'No-show com reason registrada', prio: 'alto', tags: ['state-machine'],
+            steps: ['Status → no_show com motivo "Sem resposta".'],
+            expected: 'motivoNoShow e noShowEm persistidos; tarefa de recuperação criada.' },
+          { id: 'AG-1.11.8', title: 'Finalizado não pode ser cancelado', prio: 'alto', tags: ['state-machine'],
+            steps: ['Appt finalizado → cancelar.'],
+            expected: 'Erro "Agendamento finalizado não pode ser cancelado".' },
+          { id: 'AG-1.11.9', title: 'Remarcado volta a agendado', prio: 'medio', tags: ['state-machine'],
+            steps: ['Status remarcado → volta a agendado.'],
+            expected: 'Transição permitida (STATE_MACHINE["remarcado"].includes("agendado")).' },
+          { id: 'AG-1.11.10', title: 'Bloqueio (block time) com motivo', prio: 'medio', tags: ['state-machine', 'bloqueio'],
+            steps: ['createBlockTime(data, hora, prof, "almoco").'],
+            expected: 'Block criado com status=bloqueado; só aceita transição a cancelado.' },
+        ],
+      },
+      {
+        id: '1.12',
+        title: 'WhatsApp triggers e automações',
+        description: 'processAppointment · processStatusChange · wa_agenda_automations · min_lead_days · tag_filter',
+        tests: [
+          { id: 'AG-1.12.1', title: 'D-1: lembrete 1 dia antes (d_before)', prio: 'critico', tags: ['WA', 'automação'],
+            prereq: 'Regra d_before=1 ativa.',
+            steps: ['Criar appt para amanhã.'],
+            expected: 'wa_outbox enfileirado com scheduledAt = 24h antes do appt.' },
+          { id: 'AG-1.12.2', title: 'D+0: lembrete mesmo dia (d_zero)', prio: 'alto', tags: ['WA'],
+            prereq: 'Regra d_zero ativa.',
+            steps: ['Criar appt para hoje.'],
+            expected: 'WA imediato ou ao horário configurado.' },
+          { id: 'AG-1.12.3', title: 'min_lead_days guard pula D-1 se appt < N dias', prio: 'critico', tags: ['WA', 'guard'],
+            prereq: 'Regra D-1 com min_lead_days=2.',
+            steps: ['Criar appt para amanhã (1 dia).'],
+            expected: 'Regra NÃO dispara (return na linha de _dayDiffToAppt).' },
+          { id: 'AG-1.12.4', title: 'patient_type guard: só dispara para "novo"', prio: 'alto', tags: ['WA', 'guard'],
+            prereq: 'Regra com patient_type=novo.',
+            steps: ['Criar appt com tipoPaciente=retorno.'],
+            expected: 'Regra NÃO dispara (_matchesPatientType retorna false).' },
+          { id: 'AG-1.12.5', title: 'tag_filter mode=any dispara se uma das tags bate', prio: 'alto', tags: ['WA', 'guard'],
+            prereq: 'Regra com tag_filter mode=any, tags=[vip, premium].',
+            steps: ['Appt para lead com tag "vip".'],
+            expected: 'Regra dispara (_matchesTagFilter true).' },
+          { id: 'AG-1.12.6', title: 'tag_filter mode=all exige TODAS tags', prio: 'alto', tags: ['WA', 'guard'],
+            prereq: 'Regra mode=all, tags=[vip, premium].',
+            steps: ['Lead só com tag "vip".'],
+            expected: 'Regra NÃO dispara.' },
+          { id: 'AG-1.12.7', title: 'tag_filter mode=none não dispara se tem tag', prio: 'medio', tags: ['WA', 'guard'],
+            prereq: 'mode=none, tags=[blacklist].',
+            steps: ['Lead com tag "blacklist".'],
+            expected: 'Regra suprimida.' },
+          { id: 'AG-1.12.8', title: 'on_status=confirmado dispara regra', prio: 'alto', tags: ['WA', 'status'],
+            steps: ['Transicionar para confirmado.'],
+            expected: 'processStatusChange enfileira WA configurado.' },
+          { id: 'AG-1.12.9', title: 'on_status=na_clinica envia consentimento proc', prio: 'critico', tags: ['WA', 'consentimento'],
+            prereq: 'Regra on_status=na_clinica com TCLE ativa.',
+            steps: ['Paciente chega → check-in.'],
+            expected: 'TCLE enviado via LegalDocumentsService.autoSendForStatus.' },
+          { id: 'AG-1.12.10', title: 'on_inbound_match: SIM confirma appt', prio: 'critico', tags: ['WA', 'inbound'],
+            prereq: 'Regra on_inbound_match match=confirm ativa.',
+            steps: ['Paciente responde "sim" ao D-1.'],
+            expected: 'Auto-transição para confirmado; resposta automática enviada.' },
+          { id: 'AG-1.12.11', title: 'on_inbound_match: NAO cancela appt', prio: 'alto', tags: ['WA', 'inbound'],
+            prereq: 'Regra match=cancel ativa.',
+            steps: ['Paciente responde "desmarcar".'],
+            expected: 'Status vai a cancelado; resposta automática.' },
+          { id: 'AG-1.12.12', title: 'Cancelar appts remove WAs pendentes', prio: 'critico', tags: ['WA', 'dedup'],
+            steps: ['Cancelar appt com WAs enfileirados.'],
+            expected: 'rpc wa_outbox_cancel_by_appt executada.' },
+          { id: 'AG-1.12.13', title: 'Dedup: reagendar não duplica WAs', prio: 'alto', tags: ['WA', 'dedup'],
+            steps: ['Editar appt (mudar data), salvar novamente.'],
+            expected: 'WAs antigos cancelados antes de enfileirar novos.' },
+          { id: 'AG-1.12.14', title: 'on_recurrence_created envia UMA msg consolidada', prio: 'critico', tags: ['WA', 'recorrência'],
+            steps: ['Criar série 8x.'],
+            expected: 'Apenas 1 wa_outbox (não 8) via processRecurrenceCreated.' },
+          { id: 'AG-1.12.15', title: 'wa_phone_blacklist bloqueia auto-criação de lead', prio: 'alto', tags: ['WA', 'blacklist'],
+            prereq: 'Telefone staff na blacklist.',
+            steps: ['Mensagem inbound desse número.'],
+            expected: 'wa_log_message NÃO cria novo lead; opção de teste registrada como "staff/teste".' },
+        ],
+      },
+      {
+        id: '1.13',
+        title: 'Sync e falhas',
+        description: 'AppointmentsService.syncOne · rollback · edição concorrente',
+        tests: [
+          { id: 'AG-1.13.1', title: 'Salvar com rede ok sync para Supabase', prio: 'critico', tags: ['sync'],
+            steps: ['Salvar appt com rede.'],
+            expected: 'syncOne() sucesso; appt tem _synced=true ou similar; appears no banco.' },
+          { id: 'AG-1.13.2', title: 'Salvar offline enfileira em queue', prio: 'alto', tags: ['sync', 'offline'],
+            steps: ['Desconectar rede (DevTools offline)', 'Salvar appt.'],
+            expected: 'Appt persistido em localStorage, syncOne falha silencioso, console warn.' },
+          { id: 'AG-1.13.3', title: 'Online novamente: _autoSyncAppointments envia pendentes', prio: 'alto', tags: ['sync'],
+            steps: ['Reconectar.'],
+            expected: 'APPT_SYNC_KEY processado; appts pendentes sincronizam.' },
+          { id: 'AG-1.13.4', title: 'Erro Supabase em save single: rollback localStorage', prio: 'critico', tags: ['sync', 'rollback'],
+            steps: ['Forçar erro (ex: RPC retorna error).'],
+            expected: 'saveAppt mostra erro inline e NÃO persiste no localStorage se é save crítico.' },
+          { id: 'AG-1.13.5', title: 'Edição concorrente em duas abas', prio: 'alto', tags: ['sync', 'concurrency'],
+            steps: ['Abrir mesmo appt em 2 abas', 'Editar em cada, salvar.'],
+            expected: 'Last-write-wins; toast ou aviso sobre conflito se implementado.' },
+          { id: 'AG-1.13.6', title: 'Double-click no botão Salvar não duplica appt', prio: 'alto', tags: ['UX', 'edge'],
+            steps: ['Clicar Salvar 2x rápido.'],
+            expected: '_apptDisableSave/_apptEnableSave previne segundo click; só um appt criado.' },
+          { id: 'AG-1.13.7', title: 'Finalizado: double-click não re-processa', prio: 'critico', tags: ['finalize', 'idempotência'],
+            steps: ['confirmFinalize clicar 2x.'],
+            expected: '_finalizingInProgress guard; aborta segunda chamada. Se appt já finalizado, mostra alert "Consulta ja finalizada".' },
+        ],
+      },
+      {
+        id: '1.14',
+        title: 'Drag-and-drop',
+        description: 'validateDragDrop · NO_DRAG_STATUSES',
+        tests: [
+          { id: 'AG-1.14.1', title: 'Arrastar appt agendado para outro slot', prio: 'alto', tags: ['drag'],
+            steps: ['Drag appt de 10:00 para 14:00 mesmo prof.'],
+            expected: 'Appt move; historicoAlteracoes registra; sync ok.' },
+          { id: 'AG-1.14.2', title: 'Arrastar para outro profissional', prio: 'alto', tags: ['drag'],
+            steps: ['Drag de coluna Mirian para coluna Dr. João.'],
+            expected: 'profissionalIdx atualiza; conflito revalidado.' },
+          { id: 'AG-1.14.3', title: 'Arrastar appt finalizado bloqueado', prio: 'critico', tags: ['drag', 'validação'],
+            steps: ['Tentar drag em appt finalizado.'],
+            expected: 'Erro "Atendimento finalizado não pode ser movido. Use Duplicar para novo agendamento".' },
+          { id: 'AG-1.14.4', title: 'Arrastar appt em_consulta bloqueado', prio: 'critico', tags: ['drag'],
+            steps: ['Drag em appt em_consulta.'],
+            expected: 'Erro "Paciente em consulta — não é possível mover".' },
+          { id: 'AG-1.14.5', title: 'Arrastar para data passada bloqueado', prio: 'alto', tags: ['drag'],
+            steps: ['Drag para ontem.'],
+            expected: 'Erro "Não é possível mover para data passada".' },
+          { id: 'AG-1.14.6', title: 'Drag com conflito no destino', prio: 'alto', tags: ['drag', 'conflito'],
+            steps: ['Destino já ocupado.'],
+            expected: 'Erro de conflito (prof/sala/paciente); drag reverte visualmente.' },
+          { id: 'AG-1.14.7', title: 'Drag na_clinica pede remarcação formal', prio: 'medio', tags: ['drag'],
+            steps: ['Drag de appt na_clinica.'],
+            expected: 'Erro "Paciente já está na clínica — use a ação de remarcação formal".' },
+        ],
+      },
+      {
+        id: '1.15',
+        title: 'Modal de finalização',
+        description: 'openFinalizeModal · confirmFinalize · Bloco 3 (fluxos) · Bloco 4 (routing)',
+        tests: [
+          { id: 'AG-1.15.1', title: 'Modal abre em 2 colunas (proc+financeiro / fluxos+routing)', prio: 'alto', tags: ['UX'],
+            steps: ['Clicar Finalizar em appt.'],
+            expected: 'Grid 2 colunas visível: esquerda (procs+financeiro), direita (fluxos+routing+consentimento+queixas).' },
+          { id: 'AG-1.15.2', title: 'Preço auto-preenchido do catálogo', prio: 'alto', tags: ['financeiro'],
+            steps: ['Select proc "Toxina 1 área" (R$ 900).'],
+            expected: 'finProcValor = 900 via finProcAutoPrice.' },
+          { id: 'AG-1.15.3', title: 'Desconto reduz total corretamente', prio: 'alto', tags: ['financeiro'],
+            steps: ['Proc R$900', 'Checkbox desconto → R$100.'],
+            expected: 'finProcTotal mostra R$ 800.' },
+          { id: 'AG-1.15.4', title: 'Forma pagamento dinâmica altera campos', prio: 'alto', tags: ['UX'],
+            steps: ['Mudar de PIX para crédito parcelado.'],
+            expected: 'finPayDetails re-renderiza com campo parcelas; cálculo atualiza.' },
+          { id: 'AG-1.15.5', title: 'Cortesia → selecionar rota Orçamento', prio: 'critico', tags: ['routing', 'cortesia'],
+            steps: ['Aval cortesia', 'Rota: Orçamento.'],
+            expected: 'TagEngine aplica orc_em_aberto; SdrService.changePhase(lead, "orcamento").' },
+          { id: 'AG-1.15.6', title: 'Rota "Apenas finalizar" não muda fase do lead', prio: 'alto', tags: ['routing'],
+            steps: ['Rota=nenhum.'],
+            expected: 'SdrService.changePhase NÃO é chamado; lead permanece na fase atual.' },
+          { id: 'AG-1.15.7', title: 'Rota obrigatória: "nenhum" considerado inválido', prio: 'critico', tags: ['validação'],
+            steps: ['Deixar rota="nenhum" e tentar confirmar (se UI força escolha).'],
+            expected: 'Erro "Selecione o proximo estado do paciente (Bloco 4)" em erros[] do confirmFinalize.' },
+          { id: 'AG-1.15.8', title: 'Checkbox WA pós-atendimento dispara template', prio: 'alto', tags: ['WA'],
+            steps: ['Marcar WA pós', 'Confirmar.'],
+            expected: 'sendWATemplate(id, "pos_atendimento") chamado.' },
+          { id: 'AG-1.15.9', title: 'Checkbox Avaliação Google agenda D+3', prio: 'medio', tags: ['WA'],
+            steps: ['Marcar avalGoogle.'],
+            expected: 'Queue recebe item tipo whatsapp_avaliacao scheduledAt D+3 14:00.' },
+          { id: 'AG-1.15.10', title: 'Queixas: marcar como tratada com procedimento', prio: 'alto', tags: ['queixas'],
+            prereq: 'Paciente com queixa pendente.',
+            steps: ['Marcar checkbox', 'Escolher proc + retoque 4 meses.'],
+            expected: 'ComplaintsPanel.saveComplaint → status=em_tratamento, treatment_date, retouch_interval_days=120.' },
+          { id: 'AG-1.15.11', title: 'Consentimento procedimento: botão fallback', prio: 'alto', tags: ['consentimento'],
+            steps: ['Paciente não passou por na_clinica', 'Botão "Enviar consentimento agora".'],
+            expected: '_finSendConsentProc dispara; TCLE enviado via LegalDocumentsService.' },
+          { id: 'AG-1.15.12', title: 'Confirmação final mostra resumo antes de salvar', prio: 'alto', tags: ['UX'],
+            steps: ['Clicar confirmar.'],
+            expected: 'confirm() popup mostra resumo: paciente, procs, valor, pagamento, rota.' },
+          { id: 'AG-1.15.13', title: 'VPI autoEnroll convida paciente (checkbox default true)', prio: 'alto', tags: ['VPI'],
+            steps: ['Finalizar com finVPIEnroll marcado.'],
+            expected: 'VPIEngine.autoEnroll chamado; convite D+1 scheduled.' },
+          { id: 'AG-1.15.14', title: 'VPI closeIndication executa sempre', prio: 'alto', tags: ['VPI'],
+            prereq: 'Paciente indicada por alguém (indicadoPorId).',
+            steps: ['Finalizar (independente de enroll).'],
+            expected: 'VPIEngine.closeIndication chamado; crédito fechado na indicação pendente.' },
+          { id: 'AG-1.15.15', title: 'Pagamento pendente cria task de follow-up', prio: 'alto', tags: ['tasks', 'financeiro'],
+            steps: ['Finalizar com boleto 3x pendente.'],
+            expected: 'clinic_op_tasks recebe task "Follow-up pagamento" com prazo = 1º venc ou 168h default.' },
+          { id: 'AG-1.15.16', title: 'Retoque suggestion modal abre após finalize', prio: 'medio', tags: ['retoques'],
+            steps: ['Finalizar procedimento.'],
+            expected: 'RetoquesEngine.openSuggestionModal abre sugerindo intervalo.' },
+        ],
+      },
+      {
+        id: '1.16',
+        title: 'Horários, bloqueios e configuração',
+        description: 'clinic_settings · clinicai_clinic_settings · BLOCK_REASONS',
+        tests: [
+          { id: 'AG-1.16.1', title: 'Configurar horário: manhã + tarde + fechado', prio: 'alto', tags: ['config'],
+            steps: ['Dados da Clínica → sábado: manhã 08-12, tarde fechada.'],
+            expected: 'clinicai_clinic_settings.horarios.sab.tarde.ativo=false; agenda bloqueia sab tarde.' },
+          { id: 'AG-1.16.2', title: 'Adicionar feriado bloqueia dia', prio: 'alto', tags: ['config'],
+            steps: ['Adicionar feriado em 25/12.'],
+            expected: 'Tentar agendar no dia retorna erro de clínica fechada.' },
+          { id: 'AG-1.16.3', title: 'Criar block time (almoço)', prio: 'medio', tags: ['block'],
+            steps: ['createBlockTime(data, 12:00, 13:00, profIdx, "almoco").'],
+            expected: 'Appt com status=bloqueado criado; aparece como barra cinza na agenda.' },
+          { id: 'AG-1.16.4', title: 'Block time reason: férias', prio: 'medio', tags: ['block'],
+            steps: ['Bloquear profissional 3 dias férias.'],
+            expected: 'Appts diários criados com motivo=ferias; conflitos alertam neste período.' },
+          { id: 'AG-1.16.5', title: 'Horário profissional diferente da clínica', prio: 'medio', tags: ['config'],
+            prereq: 'Prof com horário 09-17 e clínica 08-19.',
+            steps: ['Agendar prof às 8h.'],
+            expected: 'Validação secundária do prof (se existir) ou agenda aceita e fica o prof marcar ausência.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '2',
+    title: 'Paciente',
+    description: 'Criação pós-finalize, prontuário, anamnese, face mapping, docs legais, timeline.',
+    subsections: [
+      {
+        id: '2.1',
+        title: 'Criação e vínculo',
+        description: 'Paciente só é promovido após finalize (confirmado no feedback_paciente_definition).',
+        tests: [
+          { id: 'PT-2.1.1', title: 'Paciente criado APÓS finalize do primeiro appt', prio: 'critico', tags: ['vínculo'],
+            steps: ['Finalizar 1ª consulta com rota=paciente.'],
+            expected: 'SdrService.changePhase(leadId, "paciente", "finalizacao"); lead.phase="paciente".' },
+          { id: 'PT-2.1.2', title: 'Lead permanece como "lead" se não finalizado', prio: 'alto', tags: ['vínculo'],
+            steps: ['Apenas agendar sem finalizar.'],
+            expected: 'lead.phase=agendado, NÃO paciente.' },
+          { id: 'PT-2.1.3', title: 'Cortesia → rota orcamento: phase=orcamento', prio: 'alto', tags: ['vínculo'],
+            steps: ['Finalizar cortesia rota=orcamento.'],
+            expected: 'phase muda para orcamento; não cria paciente.' },
+          { id: 'PT-2.1.4', title: 'Pac+Orcamento: mantém paciente mas aplica tag orcamento_aberto', prio: 'alto', tags: ['vínculo', 'tags'],
+            steps: ['Rota pac_orcamento.'],
+            expected: 'phase=paciente; TagEngine.applyTag orcamento_aberto.' },
+          { id: 'PT-2.1.5', title: 'Appt.pacienteId linka patient_id no sistema', prio: 'critico', tags: ['dados'],
+            steps: ['Ver appt finalizado na view de pacientes.'],
+            expected: 'patient_id = lead.id = appt.pacienteId.' },
+        ],
+      },
+      {
+        id: '2.2',
+        title: 'Dados cadastrais',
+        description: 'Campos base do lead/paciente · phone normalization LIKE right(8)',
+        tests: [
+          { id: 'PT-2.2.1', title: 'Editar nome do paciente (modal lead)', prio: 'alto', tags: ['UX'],
+            steps: ['Abrir paciente no lead-modal → editar nome.'],
+            expected: 'nome salvo; sync Supabase; histórico de atualizações.' },
+          { id: 'PT-2.2.2', title: 'Telefone normalizado LIKE right(8) nas RPCs', prio: 'critico', tags: ['telefone'],
+            steps: ['Buscar paciente por telefone "11987654321" depois por "987654321".'],
+            expected: 'Ambas buscas retornam o mesmo paciente (phone_normalization.md).' },
+          { id: 'PT-2.2.3', title: 'CPF válido aceito', prio: 'medio', tags: ['validação'],
+            steps: ['Preencher CPF válido.'],
+            expected: 'Formato aceito e persistido.' },
+          { id: 'PT-2.2.4', title: 'Data de nascimento: campo de aniversário', prio: 'alto', tags: ['dados'],
+            steps: ['Preencher birth_date.'],
+            expected: 'Aparece no scanner mensal de aniversários; elegível para segmentação.' },
+          { id: 'PT-2.2.5', title: 'Endereço: campos opcionais', prio: 'baixo', tags: ['dados'],
+            steps: ['Deixar endereço vazio.'],
+            expected: 'Paciente salva sem erro.' },
+          { id: 'PT-2.2.6', title: 'indicadoPor: seleciona outro paciente', prio: 'alto', tags: ['VPI'],
+            steps: ['Campo indicado por → selecionar existente.'],
+            expected: 'indicadoPorId preenchido; VPI rastreia indicação.' },
+        ],
+      },
+      {
+        id: '2.3',
+        title: 'Prontuário Eletrônico (abertura e tabs)',
+        description: 'openProntuario · MedicalRecordEditorUI · 8 tabs confirmadas no código',
+        tests: [
+          { id: 'PT-2.3.1', title: 'Buscar paciente na página Prontuário', prio: 'alto', tags: ['search'],
+            steps: ['Página Prontuário → buscar por nome.'],
+            expected: 'Resultados aparecem, clicar abre editor.' },
+          { id: 'PT-2.3.2', title: 'Tab: Timeline (aba default confirmada)', prio: 'alto', tags: ['UX'],
+            steps: ['Abrir prontuário.'],
+            expected: 'Aba "Timeline" visível no MedicalRecordEditorUI.TABS (primeira tab).' },
+          { id: 'PT-2.3.3', title: 'Tab: Registros', prio: 'alto', tags: ['UX'],
+            steps: ['Clicar aba Registros.'],
+            expected: 'Lista de records médicos; filtros; adicionar novo.' },
+          { id: 'PT-2.3.4', title: 'Tab: Procedimentos', prio: 'medio', tags: ['UX'],
+            steps: ['Clicar Procedimentos.'],
+            expected: 'Histórico de procs realizados do paciente.' },
+          { id: 'PT-2.3.5', title: 'Tab: Documentos (legal docs)', prio: 'critico', tags: ['legal-docs'],
+            steps: ['Clicar Documentos.'],
+            expected: 'Lista legal_doc_requests + botão Solicitar Documento.' },
+          { id: 'PT-2.3.6', title: 'Tab: Fotos e Anexos', prio: 'alto', tags: ['anexos'],
+            steps: ['Upload foto/pdf.'],
+            expected: 'Arquivo sobe para storage; listado na tab; tipos aceitos image/*,.pdf,.doc,.docx.' },
+          { id: 'PT-2.3.7', title: 'Tab: WhatsApp', prio: 'medio', tags: ['WA'],
+            steps: ['Clicar WhatsApp.'],
+            expected: 'Histórico de mensagens com o paciente.' },
+          { id: 'PT-2.3.8', title: 'Tab: Financeiro', prio: 'alto', tags: ['financeiro'],
+            steps: ['Clicar Financeiro.'],
+            expected: 'Entradas do cashflow vinculadas ao paciente (appointments + pagamentos).' },
+          { id: 'PT-2.3.9', title: 'Tab: Avaliações (quiz)', prio: 'medio', tags: ['quiz'],
+            steps: ['Clicar Avaliações.'],
+            expected: 'Respostas de quizzes enviados ao paciente.' },
+          { id: 'PT-2.3.10', title: 'Adicionar novo registro', prio: 'alto', tags: ['CRUD'],
+            steps: ['Registros → formulário novo → salvar.'],
+            expected: 'Record persistido com professional_id; aparece no topo da lista.' },
+          { id: 'PT-2.3.11', title: 'Aplicar template de registro', prio: 'medio', tags: ['template'],
+            steps: ['Template "SOAP" → aplica.'],
+            expected: 'Campos type, title, content pré-preenchidos; pode editar antes de salvar.' },
+          { id: 'PT-2.3.12', title: 'Editar e salvar registro existente', prio: 'alto', tags: ['CRUD'],
+            steps: ['Clicar editar em registro.'],
+            expected: 'Campos tornam-se editáveis; saveEdit persiste.' },
+          { id: 'PT-2.3.13', title: 'Deletar registro com confirmação', prio: 'medio', tags: ['CRUD'],
+            steps: ['Botão trash em registro.'],
+            expected: '_confirmDelete pede confirmação; registro removido.' },
+          { id: 'PT-2.3.14', title: 'Busca full-text em registros', prio: 'medio', tags: ['search'],
+            steps: ['Digitar 2+ chars no search.'],
+            expected: '_onSearchRecords chama MedicalRecordsRepository.search (server-side) com debounce 400ms.' },
+        ],
+      },
+      {
+        id: '2.4',
+        title: 'Anamnese',
+        description: 'anamnese.js · anamnesis_templates · anamnesis_prontuario.service.js',
+        tests: [
+          { id: 'PT-2.4.1', title: 'Enviar anamnese digital via link', prio: 'critico', tags: ['anamnese'],
+            steps: ['Aba anamnese → template → solicitar.'],
+            expected: 'anamnesis_requests row criado; link público compartilhável.' },
+          { id: 'PT-2.4.2', title: 'Paciente responde anamnese no form público', prio: 'alto', tags: ['anamnese', 'público'],
+            steps: ['Abrir link ?q=slug em outro browser.'],
+            expected: 'Form renderiza; respostas persistidas.' },
+          { id: 'PT-2.4.3', title: 'Anamnese concluída cria registro no prontuário', prio: 'critico', tags: ['anamnese', 'trigger'],
+            steps: ['Paciente finaliza anamnese.'],
+            expected: 'anamnesis_prontuario service cria entrada automática em medical_records.' },
+          { id: 'PT-2.4.4', title: 'Flags destacadas em respostas de risco', prio: 'alto', tags: ['anamnese'],
+            steps: ['Paciente responde "sim" a alergias.'],
+            expected: 'Resposta mostra badge vermelho/warning na visualização admin.' },
+          { id: 'PT-2.4.5', title: 'Revogar link de anamnese', prio: 'medio', tags: ['anamnese'],
+            steps: ['anamneseRevokeRequest.'],
+            expected: 'Link expira; paciente vê msg "revogado".' },
+        ],
+      },
+      {
+        id: '2.5',
+        title: 'Face Mapping v2',
+        description: 'fm/* · per-angle state · AMF/RMZ/AIJ/Ricketts · fm-persistence',
+        tests: [
+          { id: 'PT-2.5.1', title: 'Abrir Face Mapping a partir do modal do paciente', prio: 'alto', tags: ['FM'],
+            steps: ['Lead modal → Face Mapping.'],
+            expected: 'FaceMapping.openFromModal carrega estado per-angle do paciente.' },
+          { id: 'PT-2.5.2', title: 'Upload de foto: 3 ângulos (front, 45, lateral)', prio: 'critico', tags: ['FM'],
+            steps: ['Upload 3 fotos nos selectors.'],
+            expected: 'photoUrls preenche 3 objectURLs; miniaturas aparecem.' },
+          { id: 'PT-2.5.3', title: 'Crop direct-flow ao upload', prio: 'alto', tags: ['FM', 'crop'],
+            steps: ['Upload foto.'],
+            expected: 'Arquivo original passa direto ao remove-bg (feedback_removebg_direct_flow).' },
+          { id: 'PT-2.5.4', title: 'Remove-bg com isnet-general-use', prio: 'alto', tags: ['FM'],
+            steps: ['Upload retrato.'],
+            expected: 'Background removido; dilatação de máscara 15px; sem alpha matting.' },
+          { id: 'PT-2.5.5', title: '4 tabs funcionais: Metrics, Analysis, Simulation, Guides', prio: 'alto', tags: ['FM'],
+            steps: ['Alternar tabs.'],
+            expected: '_switchTab atualiza canvas; cada aba com seus controles.' },
+          { id: 'PT-2.5.6', title: 'Per-angle state preservado ao trocar ângulo', prio: 'critico', tags: ['FM', 'persistência'],
+            steps: ['Editar métricas no front → mudar para 45 → voltar.'],
+            expected: 'Métricas do front intactas; _angleStore isola corretamente (fm-state.js).' },
+          { id: 'PT-2.5.7', title: 'Ângulos AMF/RMZ/AIJ calculados', prio: 'critico', tags: ['FM', 'métricas'],
+            steps: ['Tab Metrics → adicionar pontos para AMF.'],
+            expected: 'Ângulo calculado respeitando aspect ratio (feedback_canvas_aspect_ratio_angles).' },
+          { id: 'PT-2.5.8', title: 'Ricketts (projeção nasal/mento) toggle independente', prio: 'alto', tags: ['FM'],
+            steps: ['Toggle Ricketts.'],
+            expected: 'Tabela dedicada no report; cálculo não afeta AMF/RMZ/AIJ.' },
+          { id: 'PT-2.5.9', title: 'Vetores com setas bezier sobre 45°', prio: 'medio', tags: ['FM'],
+            steps: ['Tab analysis → desenhar vetor.'],
+            expected: 'Curva bezier renderizada; armazenada em _vectors.' },
+          { id: 'PT-2.5.10', title: 'Simetria bilateral (auto-mirror)', prio: 'alto', tags: ['FM'],
+            steps: ['Desenhar polígono lado direito → mirror.'],
+            expected: '_mirrorPolygon cria espelho lado esquerdo.' },
+          { id: 'PT-2.5.11', title: 'Regiões anatômicas engine', prio: 'medio', tags: ['FM'],
+            steps: ['Selecionar região zigomática.'],
+            expected: 'Preset aplicado; regiões exibidas.' },
+          { id: 'PT-2.5.12', title: 'Simulação híbrida (GPT-Vision + manual)', prio: 'medio', tags: ['FM', 'simulação'],
+            steps: ['Gerar simulação.'],
+            expected: '_generateHybrid cria _simPhotoUrl per-angle.' },
+          { id: 'PT-2.5.13', title: 'Before/After comparador', prio: 'alto', tags: ['FM'],
+            steps: ['Upload foto depois (_uploadAfterPhoto).'],
+            expected: 'Comparador slide mostra antes/depois.' },
+          { id: 'PT-2.5.14', title: 'Exportar report HTML', prio: 'alto', tags: ['FM', 'report'],
+            steps: ['_exportReportHTML.'],
+            expected: 'HTML gerado com todas métricas, ângulos, polígonos e fotos.' },
+          { id: 'PT-2.5.15', title: 'Compartilhar report via WhatsApp', prio: 'alto', tags: ['FM', 'WA'],
+            steps: ['_sendReportWhatsApp.'],
+            expected: 'Link curto gerado; WA open com mensagem pré-formatada.' },
+          { id: 'PT-2.5.16', title: 'Persistência completa no Supabase', prio: 'critico', tags: ['FM', 'persistência'],
+            steps: ['_saveToSupabase.'],
+            expected: 'viewMode, activeTab, metrics, angles, annotations, vectors salvos (fm-persistence.js).' },
+          { id: 'PT-2.5.17', title: 'Canvas viewport 85% height sem scroll', prio: 'baixo', tags: ['FM', 'UX'],
+            steps: ['Abrir FM em viewport médio.'],
+            expected: 'Canvas cabe em 85vh (feedback_canvas_viewport_size).' },
+        ],
+      },
+      {
+        id: '2.6',
+        title: 'Documentos legais',
+        description: 'legal-documents.service.js · 29 templates · config por template · TCLE vs Imagem',
+        tests: [
+          { id: 'PT-2.6.1', title: 'Listar templates TCLE e Imagem', prio: 'alto', tags: ['legal-docs'],
+            steps: ['Tab Documentos → Solicitar Documento.'],
+            expected: 'Modal lista templates com ícone colorido por doc_type (tcle=verde, uso_imagem=azul, custom=roxo).' },
+          { id: 'PT-2.6.2', title: 'Criar request de TCLE', prio: 'critico', tags: ['legal-docs'],
+            steps: ['Selecionar template TCLE específico.'],
+            expected: 'LegalDocumentsService.createRequest com patient_id; legal_doc_requests row com status=pending.' },
+          { id: 'PT-2.6.3', title: 'Request enviada via WhatsApp', prio: 'alto', tags: ['legal-docs', 'WA'],
+            steps: ['Após create, ver toast.'],
+            expected: 'Toast "nome do template enviado!"; WA link gerado.' },
+          { id: 'PT-2.6.4', title: 'Status do documento: pending → viewed', prio: 'alto', tags: ['legal-docs'],
+            steps: ['Paciente abre link.'],
+            expected: 'Status muda para viewed.' },
+          { id: 'PT-2.6.5', title: 'Assinatura digital (signed_at preenchido)', prio: 'critico', tags: ['legal-docs'],
+            steps: ['Paciente assina no form público.'],
+            expected: 'status=signed; signed_at preenchido.' },
+          { id: 'PT-2.6.6', title: 'TCLE composto para múltiplos procs', prio: 'alto', tags: ['legal-docs'],
+            steps: ['createCompositeTCLE com 3 procs.'],
+            expected: 'UM documento com todos os procs listados; assinatura única cobre todos.' },
+          { id: 'PT-2.6.7', title: 'Documento expirado', prio: 'medio', tags: ['legal-docs'],
+            steps: ['Aguardar TTL do template (ex: 30 dias).'],
+            expected: 'status=expired; request não pode mais ser assinada.' },
+          { id: 'PT-2.6.8', title: 'Revogar documento', prio: 'medio', tags: ['legal-docs'],
+            steps: ['Admin revoga.'],
+            expected: 'status=revoked; link público exibe mensagem de revogação.' },
+          { id: 'PT-2.6.9', title: 'Métricas TCLE vs Imagem separadas', prio: 'medio', tags: ['legal-docs', 'métricas'],
+            steps: ['Ver página dedicada legal-document.html.'],
+            expected: 'Contadores separados por doc_type; taxa de assinatura por template.' },
+          { id: 'PT-2.6.10', title: 'autoSendForStatus no check-in', prio: 'critico', tags: ['legal-docs', 'automação'],
+            steps: ['Transitar appt para na_clinica.'],
+            expected: 'autoSendForStatus("na_clinica") envia TCLE correspondente ao procedimento do appt.' },
+          { id: 'PT-2.6.11', title: 'Purged documents filtrados da view', prio: 'baixo', tags: ['legal-docs'],
+            steps: ['Admin purga um request.'],
+            expected: 'status=purged é filtrado no .neq("status","purged") do query.' },
+        ],
+      },
+      {
+        id: '2.7',
+        title: 'Linha do Tempo (timeline)',
+        description: 'lead-modal.js tab timeline · prontuario-wow renderUnifiedTimeline',
+        tests: [
+          { id: 'PT-2.7.1', title: 'Timeline unificada lista eventos cronológicos', prio: 'alto', tags: ['timeline'],
+            steps: ['Abrir lead-modal → tab timeline.'],
+            expected: 'ProntuarioWow.renderUnifiedTimeline mostra appts, anamneses, docs, face mapping em ordem.' },
+          { id: 'PT-2.7.2', title: 'Evento de agendamento criado com ícone', prio: 'alto', tags: ['timeline'],
+            steps: ['Criar appt; abrir timeline.'],
+            expected: 'Entrada "Agendamento: [proc]" na data correta.' },
+          { id: 'PT-2.7.3', title: 'Finalize gera evento com procedimento', prio: 'alto', tags: ['timeline'],
+            steps: ['Finalizar consulta.'],
+            expected: 'Entrada "Finalizado: [proc]" com valor.' },
+          { id: 'PT-2.7.4', title: 'Anamnese concluída aparece', prio: 'medio', tags: ['timeline'],
+            steps: ['Paciente concluir anamnese.'],
+            expected: 'Evento "Anamnese preenchida" com data.' },
+          { id: 'PT-2.7.5', title: 'Documento assinado aparece', prio: 'medio', tags: ['timeline'],
+            steps: ['Paciente assina TCLE.'],
+            expected: 'Evento "TCLE assinado: [template]" + link para view.' },
+          { id: 'PT-2.7.6', title: 'Face mapping report aparece', prio: 'medio', tags: ['timeline', 'FM'],
+            steps: ['Gerar report FM.'],
+            expected: 'Evento com miniatura e link.' },
+          { id: 'PT-2.7.7', title: 'Ordem cronológica inversa (mais recente topo)', prio: 'medio', tags: ['UX'],
+            steps: ['Timeline carregada.'],
+            expected: 'Entradas ordenadas desc por data.' },
+        ],
+      },
+      {
+        id: '2.8',
+        title: 'Retorno e histórico',
+        description: 'Histórico de consultas · filtros · retoques',
+        tests: [
+          { id: 'PT-2.8.1', title: 'Listar todas consultas do paciente', prio: 'alto', tags: ['histórico'],
+            steps: ['Tab histórico (lead-modal) ou tab procedimentos (prontuário).'],
+            expected: 'Todos appts do pacienteId listados.' },
+          { id: 'PT-2.8.2', title: 'Filtrar histórico por período', prio: 'medio', tags: ['filtros'],
+            steps: ['Filtro últimos 90 dias.'],
+            expected: 'Lista filtrada corretamente.' },
+          { id: 'PT-2.8.3', title: 'Retoque sugerido baseado em último proc', prio: 'alto', tags: ['retoques'],
+            prereq: 'Último proc com retoque 4 meses há 3 meses.',
+            steps: ['Abrir paciente.'],
+            expected: 'Sugestão "Próximo retoque em 30 dias" visível.' },
+          { id: 'PT-2.8.4', title: 'Ticket médio do paciente calculado', prio: 'medio', tags: ['métricas'],
+            steps: ['Tab financeiro.'],
+            expected: 'Gráfico + KPIs WOW com LTV, ticket médio.' },
+        ],
+      },
+      {
+        id: '2.9',
+        title: 'Cortesia e indicação (VPI)',
+        description: 'vpi.engine.js · autoEnroll · closeIndication · attribution',
+        tests: [
+          { id: 'PT-2.9.1', title: 'Paciente cortesia sai com orçamento pendente', prio: 'critico', tags: ['cortesia', 'orçamento'],
+            steps: ['Finalizar aval cortesia rota=orcamento.'],
+            expected: 'Orcamento em phase=orcamento; TagEngine orc_em_aberto.' },
+          { id: 'PT-2.9.2', title: 'VPI autoEnroll convida embaixadora', prio: 'alto', tags: ['VPI'],
+            prereq: 'Paciente finalizada full face.',
+            steps: ['Finalizar.'],
+            expected: 'VPIEngine detecta isFullFace → partner record criado; convite D+1 agendado.' },
+          { id: 'PT-2.9.3', title: 'VPI closeIndication concede crédito', prio: 'alto', tags: ['VPI'],
+            prereq: 'Paciente indicado por partner Maria.',
+            steps: ['Finalizar nova paciente.'],
+            expected: 'closeIndication registra crédito para Maria; indicações fechadas +1.' },
+          { id: 'PT-2.9.4', title: 'Attribution via session_id (short-link)', prio: 'alto', tags: ['VPI', 'attribution'],
+            prereq: 'Visitante chegou via ?sid=xxx.',
+            steps: ['Lead criado → linkToLead.'],
+            expected: 'vpi_link_attribution_to_lead RPC vincula partner ao lead.' },
+          { id: 'PT-2.9.5', title: 'Attribution TTL 30 dias', prio: 'medio', tags: ['VPI'],
+            steps: ['sid capturado há 31 dias.'],
+            expected: 'sessionStorage limpa automática; linkToLead retorna null.' },
+        ],
+      },
+      {
+        id: '2.10',
+        title: 'Aniversário e segmentos',
+        description: 'birthday.service · scanner mensal · 3 segmentos',
+        tests: [
+          { id: 'PT-2.10.1', title: 'Scanner mensal de aniversários', prio: 'alto', tags: ['birthday'],
+            steps: ['Rodar scanner (cron ou manual).'],
+            expected: 'Pacientes com birth_date no mês entram em queue; alerta de orçamento.' },
+          { id: 'PT-2.10.2', title: 'Segmento VIP identificado por RFM', prio: 'alto', tags: ['birthday', 'RFM'],
+            steps: ['Aniversariante com RFM vip.'],
+            expected: 'Template "vip" aplicado; valor mais alto.' },
+          { id: 'PT-2.10.3', title: 'Segmento regular', prio: 'medio', tags: ['birthday'],
+            steps: ['Aniv RFM=regular.'],
+            expected: 'Template regular.' },
+          { id: 'PT-2.10.4', title: 'Segmento inativo', prio: 'medio', tags: ['birthday'],
+            steps: ['Aniv inativo (>1 ano sem consulta).'],
+            expected: 'Template reativação.' },
+          { id: 'PT-2.10.5', title: 'Exclusão por toggle no lead', prio: 'medio', tags: ['birthday'],
+            steps: ['Marcar lead como "não enviar aniversário".'],
+            expected: 'Scanner pula esse paciente.' },
+          { id: 'PT-2.10.6', title: 'Landing page premium aniversário funciona', prio: 'alto', tags: ['birthday', 'LP'],
+            steps: ['Abrir aniversario.html com params.'],
+            expected: 'Hero + CTA WhatsApp + CONFIG reutilizável renderizam.' },
+        ],
+      },
+      {
+        id: '2.11',
+        title: 'RLS e permissões',
+        description: 'Dona vê tudo · secretária vê tudo · especialista vê só seus · wa_phone_blacklist',
+        tests: [
+          { id: 'PT-2.11.1', title: 'Owner (Mirian) vê todos pacientes', prio: 'critico', tags: ['RLS'],
+            prereq: 'Logado como Mirian.',
+            steps: ['Listar pacientes.'],
+            expected: 'Todos pacientes visíveis (scope=full por project_clinic_mirian_full_access).' },
+          { id: 'PT-2.11.2', title: 'Secretária vê todos pacientes', prio: 'critico', tags: ['RLS'],
+            prereq: 'Logado como secretária.',
+            steps: ['Listar pacientes.'],
+            expected: 'Todos visíveis.' },
+          { id: 'PT-2.11.3', title: 'Especialista vê só seus pacientes', prio: 'alto', tags: ['RLS'],
+            prereq: 'Logado como Dr. João (especialista).',
+            steps: ['Listar pacientes.'],
+            expected: 'Apenas pacientes com consultas de Dr. João aparecem.' },
+          { id: 'PT-2.11.4', title: 'Tentativa de acesso a paciente de outra clínica', prio: 'critico', tags: ['RLS', 'segurança'],
+            steps: ['Manipular URL para patient_id de outra clínica.'],
+            expected: 'RLS rejeita; nenhum dado retornado.' },
+          { id: 'PT-2.11.5', title: 'DELETE RLS policy presente', prio: 'alto', tags: ['RLS'],
+            steps: ['Tentar deletar registro.'],
+            expected: 'Delete funciona com policy (ver project_clinic_rls_delete_missing).' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '3',
+    title: 'Orçamento',
+    description: 'Geração, status, split financeiro, integração cashflow, reconciliação OFX.',
+    subsections: [
+      {
+        id: '3.1',
+        title: 'Geração do orçamento',
+        description: 'orcamentos.js · BudgetsService.upsert · sdr_upsert_budget',
+        tests: [
+          { id: 'OR-3.1.1', title: 'Criar orçamento a partir de consulta cortesia', prio: 'critico', tags: ['criação'],
+            steps: ['Finalizar aval cortesia rota=orcamento.'],
+            expected: 'Lead phase=orcamento; customFields.orcamentos[] array criado.' },
+          { id: 'OR-3.1.2', title: 'Orçamento manual via modal', prio: 'alto', tags: ['criação'],
+            steps: ['Página Orçamentos → Novo → preencher.'],
+            expected: 'norcSave cria orc em customFields e via BudgetsService.upsert (sdr_upsert_budget).' },
+          { id: 'OR-3.1.3', title: 'Preço auto do catálogo de procedimentos', prio: 'alto', tags: ['catálogo'],
+            steps: ['Procedimento do catálogo.'],
+            expected: 'Valor sugerido preenche automático.' },
+          { id: 'OR-3.1.4', title: 'Validação: nome do paciente obrigatório', prio: 'alto', tags: ['validação'],
+            steps: ['Salvar sem selecionar paciente.'],
+            expected: '_highlightField marca borda vermelha, placeholder "Selecione o paciente".' },
+          { id: 'OR-3.1.5', title: 'Validação: valor > 0', prio: 'alto', tags: ['validação'],
+            steps: ['Valor=0 → salvar.'],
+            expected: 'Erro "Informe o valor".' },
+          { id: 'OR-3.1.6', title: 'Quantidade default=1', prio: 'baixo', tags: ['UX'],
+            steps: ['Não preencher qtd.'],
+            expected: 'quantidade=1 persistido.' },
+        ],
+      },
+      {
+        id: '3.2',
+        title: 'Desconto, validade e forma pagamento',
+        description: 'norcSave · desconto · validade (valid_until)',
+        tests: [
+          { id: 'OR-3.2.1', title: 'Aplicar desconto em R$', prio: 'alto', tags: ['financeiro'],
+            steps: ['Desconto R$100.'],
+            expected: 'Valor total ajustado no orçamento.' },
+          { id: 'OR-3.2.2', title: 'Validade: preencher data', prio: 'medio', tags: ['financeiro'],
+            steps: ['validade=dd/mm/aaaa.'],
+            expected: 'valid_until persistido; usado para status expirado.' },
+          { id: 'OR-3.2.3', title: 'Forma pagamento escolhida', prio: 'medio', tags: ['financeiro'],
+            steps: ['Selecionar forma (pix/boleto/cartão).'],
+            expected: 'formaPagamento salvo no customField.' },
+          { id: 'OR-3.2.4', title: 'Observações livres', prio: 'baixo', tags: ['UX'],
+            steps: ['Preencher obs.'],
+            expected: 'observacoes persistido.' },
+          { id: 'OR-3.2.5', title: 'Comissão por especialista (se configurada)', prio: 'medio', tags: ['financeiro'],
+            prereq: 'professional_profiles com commission%.',
+            steps: ['Finalizar orçamento/consulta.'],
+            expected: 'DRE P2 deduz comissão real por procedimento (project_clinic_cashflow_p2_dre).' },
+        ],
+      },
+      {
+        id: '3.3',
+        title: 'Status do orçamento',
+        description: 'status: draft · pendente · aprovado · rejeitado · expirado · updateStatus RPC',
+        tests: [
+          { id: 'OR-3.3.1', title: 'Status inicial = pendente (via norcSave) ou draft (via BudgetsService)', prio: 'alto', tags: ['status'],
+            steps: ['Criar orçamento.'],
+            expected: 'customFields.orcamentos status=pendente; BudgetsRepository status=draft.' },
+          { id: 'OR-3.3.2', title: 'Marcar como aprovado', prio: 'critico', tags: ['status'],
+            steps: ['updateStatus → aprovado.'],
+            expected: 'sdr_update_budget_status muda; KPI aprovados incrementa; taxa conversão recalcula.' },
+          { id: 'OR-3.3.3', title: 'Marcar como rejeitado', prio: 'alto', tags: ['status'],
+            steps: ['Mudar para rejeitado com motivo.'],
+            expected: 'Orçamento sai do contador abertos, entra em rejeitados.' },
+          { id: 'OR-3.3.4', title: 'Orçamento expirado após validade', prio: 'medio', tags: ['status'],
+            steps: ['validade passada + cron.'],
+            expected: 'Status expirado automático se cron configurada.' },
+          { id: 'OR-3.3.5', title: 'KPIs da página: total, abertos, aprovados, taxa', prio: 'alto', tags: ['métricas'],
+            steps: ['Ver kpiOrcTotal, kpiOrcAbertos, kpiOrcAprovados, kpiOrcTaxa.'],
+            expected: 'Valores batem com contagem de customFields.orcamentos por status.' },
+          { id: 'OR-3.3.6', title: 'Disparo de regras budget_created', prio: 'alto', tags: ['automação'],
+            steps: ['Criar orçamento via BudgetsService.upsert sem id.'],
+            expected: 'RulesService.evaluateRules(leadId, "budget_created") chamado fire-and-forget.' },
+        ],
+      },
+      {
+        id: '3.4',
+        title: 'Integração com Cashflow',
+        description: 'cashflow.service.createFromAppointment · DRE · parcelado · entrada+saldo',
+        tests: [
+          { id: 'OR-3.4.1', title: 'Entrada única (PIX) cria 1 entry', prio: 'critico', tags: ['cashflow'],
+            steps: ['Finalizar appt PIX R$500.'],
+            expected: 'cashflow_entries 1 row: credit, 500, pix, category=consulta, source=finalize_modal.' },
+          { id: 'OR-3.4.2', title: 'Parcelado 3x cria 3 entries', prio: 'critico', tags: ['cashflow', 'parcelado'],
+            steps: ['Finalizar crédito 3x R$900.'],
+            expected: '3 entries (R$300 cada) em datas mensais; 1º match_confidence=manual, 2º e 3º pending_bank_confirmation.' },
+          { id: 'OR-3.4.3', title: 'Entrada + saldo cria 2 entries', prio: 'critico', tags: ['cashflow', 'edge'],
+            steps: ['Entrada 100 PIX + saldo 400 boleto.'],
+            expected: '2 entries distintas com external_id "appt__entrada" e "appt__saldo".' },
+          { id: 'OR-3.4.4', title: 'Cortesia cria entry com amount=0', prio: 'alto', tags: ['cashflow', 'cortesia'],
+            steps: ['Finalizar cortesia.'],
+            expected: 'Entry credit com amount=0 (rastreabilidade); NÃO afeta DRE líquido.' },
+          { id: 'OR-3.4.5', title: 'DRE: Bruto - Taxa - Custo - Comissão - Despesa = Líquido', prio: 'critico', tags: ['DRE'],
+            steps: ['Ver página cashflow P2.'],
+            expected: 'Cálculo correto; cashflow_config configurável (project_clinic_cashflow_p2_dre).' },
+          { id: 'OR-3.4.6', title: 'Forecast 6 meses com sazonalidade Jan-Carnaval', prio: 'medio', tags: ['forecast'],
+            steps: ['Ver forecast.'],
+            expected: 'Previsão aplica padrão sazonal (project_clinic_cashflow_forecast).' },
+          { id: 'OR-3.4.7', title: 'Cobertura de despesas calculada', prio: 'medio', tags: ['financeiro'],
+            steps: ['Ver painel cobertura.'],
+            expected: 'Despesas fixas / receita mensal → % cobertura.' },
+        ],
+      },
+      {
+        id: '3.5',
+        title: 'Compartilhamento com paciente',
+        description: 'WA link · PDF · validade',
+        tests: [
+          { id: 'OR-3.5.1', title: 'Enviar orçamento via WhatsApp', prio: 'alto', tags: ['WA', 'compartilhar'],
+            steps: ['Botão compartilhar WA no orçamento.'],
+            expected: 'Link gerado com resumo; open WA app.' },
+          { id: 'OR-3.5.2', title: 'Exportar PDF do orçamento', prio: 'medio', tags: ['PDF'],
+            steps: ['Botão exportar PDF.'],
+            expected: 'PDF com logo, dados paciente, procs, valores, validade.' },
+        ],
+      },
+      {
+        id: '3.6',
+        title: 'Reconciliação OFX',
+        description: 'ofx-import · 3 camadas dedupe · matching com cashflow',
+        tests: [
+          { id: 'OR-3.6.1', title: 'Importar OFX de fev/abr 2026', prio: 'alto', tags: ['OFX'],
+            steps: ['Upload OFX.'],
+            expected: 'Extrato parseado; fingerprint semântica (qtd+period+totals) verifica dup.' },
+          { id: 'OR-3.6.2', title: 'Match automático com cashflow entries', prio: 'critico', tags: ['OFX', 'reconciliação'],
+            steps: ['Após importar, reconciliação roda.'],
+            expected: 'Entry com external_id bate; match_confidence=bank_confirmed.' },
+          { id: 'OR-3.6.3', title: 'Órfãos (sem match) listados', prio: 'alto', tags: ['OFX'],
+            steps: ['Ver aba órfãos.'],
+            expected: 'Transações no extrato sem entry correspondente aparecem para triagem.' },
+          { id: 'OR-3.6.4', title: 'Dedup por FITID', prio: 'alto', tags: ['OFX', 'dedup'],
+            steps: ['Re-importar mesmo arquivo.'],
+            expected: 'Nenhuma duplicata; layer 2 (FITID) bloqueia.' },
+          { id: 'OR-3.6.5', title: 'Dedup por fingerprint semântica', prio: 'alto', tags: ['OFX', 'dedup'],
+            steps: ['Importar arquivo com mesmos dados mas FITID diferentes (banco reprocessou).'],
+            expected: 'Layer 1 (fingerprint) bloqueia; 27 matches históricos preservados.' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '4',
+    title: 'Integrações cross-fluxo',
+    description: 'Transições entre lead → agendamento → paciente → orçamento e Mira bot.',
+    subsections: [
+      {
+        id: '4.1',
+        title: 'Lead → Agendamento',
+        description: 'leadsActionSchedule · schedule-modal.js · appt_upsert RPC',
+        tests: [
+          { id: 'IN-4.1.1', title: 'Botão "Agendar" na tabela de leads', prio: 'critico', tags: ['cross-flow'],
+            steps: ['leadsActionSchedule → modal.'],
+            expected: 'Modal abre com nome/telefone do lead; data=hoje; hora=próxima cheia.' },
+          { id: 'IN-4.1.2', title: 'Queixa principal do lead pré-preenche observações', prio: 'medio', tags: ['cross-flow'],
+            prereq: 'Lead com queixa "olheiras".',
+            steps: ['Agendar a partir do lead.'],
+            expected: 'Observações ou procedimento sugerido refletem a queixa (heurística do playbook olheiras).' },
+          { id: 'IN-4.1.3', title: 'Salvar via appt_upsert RPC', prio: 'critico', tags: ['cross-flow', 'sync'],
+            steps: ['Confirmar agendamento.'],
+            expected: 'RPC appt_upsert retorna sucesso; pacienteId=leadId.' },
+          { id: 'IN-4.1.4', title: 'Erro de RPC mostra mensagem inline', prio: 'alto', tags: ['cross-flow', 'erro'],
+            steps: ['Forçar erro.'],
+            expected: 'errEl.textContent mostra msg; botão volta a "Agendar".' },
+          { id: 'IN-4.1.5', title: 'Lead sem phone agenda com "Sem telefone"', prio: 'baixo', tags: ['edge'],
+            steps: ['Lead sem phone.'],
+            expected: 'Campo mostra "Sem telefone"; salva mesmo assim.' },
+        ],
+      },
+      {
+        id: '4.2',
+        title: 'Agendamento → Paciente',
+        description: 'confirmFinalize · SdrService.changePhase',
+        tests: [
+          { id: 'IN-4.2.1', title: 'Finalize com rota=paciente promove lead', prio: 'critico', tags: ['cross-flow'],
+            steps: ['Finalizar com procedimento.'],
+            expected: 'changePhase(leadId, "paciente", "finalizacao"); tag consulta_realizada aplicada.' },
+          { id: 'IN-4.2.2', title: 'TagEngine procedimento_realizado se tem procs', prio: 'alto', tags: ['tags'],
+            steps: ['Finalize com procs.'],
+            expected: 'applyTag(paciente, procedimento_realizado).' },
+          { id: 'IN-4.2.3', title: 'RulesService phase_changed dispara', prio: 'alto', tags: ['automação'],
+            steps: ['Promoção para paciente.'],
+            expected: 'evaluateRules(leadId, "phase_changed", {to_phase: "paciente"}).' },
+        ],
+      },
+      {
+        id: '4.3',
+        title: 'Paciente → Orçamento',
+        description: 'Prontuário aba Orçamentos · customFields · BudgetsService',
+        tests: [
+          { id: 'IN-4.3.1', title: 'Gerar orçamento a partir do prontuário', prio: 'alto', tags: ['cross-flow'],
+            steps: ['Prontuário → aba Financeiro ou Orçamentos → Novo.'],
+            expected: 'Orçamento criado linkado ao patient_id.' },
+          { id: 'IN-4.3.2', title: 'Procedimentos sugeridos do histórico', prio: 'medio', tags: ['UX'],
+            steps: ['Ao criar orç, ver sugestões.'],
+            expected: 'Catálogo filtra procs não realizados recentemente.' },
+        ],
+      },
+      {
+        id: '4.4',
+        title: 'WhatsApp cross-flow',
+        description: 'wa_log_message · inbound auto-cria lead · phone_blacklist',
+        tests: [
+          { id: 'IN-4.4.1', title: 'Inbound cria lead se phone inexistente', prio: 'critico', tags: ['WA', 'cross-flow'],
+            prereq: 'Phone não na blacklist e não em leads.',
+            steps: ['Mensagem recebida.'],
+            expected: 'wa_log_message → novo lead phase=lead criado automático.' },
+          { id: 'IN-4.4.2', title: 'Inbound match responde SIM/NAO do D-1', prio: 'critico', tags: ['WA', 'inbound'],
+            prereq: 'Appt amanhã; regra on_inbound_match ativa.',
+            steps: ['Paciente responde "sim".'],
+            expected: 'Auto-resposta editável pelo Funil é enviada; status confirmado.' },
+          { id: 'IN-4.4.3', title: 'Inbound fora do contexto D-1 não dispara match', prio: 'alto', tags: ['WA', 'edge'],
+            steps: ['"sim" aleatório sem appt pendente.'],
+            expected: 'Mensagem só registra em wa_log_message; não auto-responde.' },
+          { id: 'IN-4.4.4', title: 'Phone em wa_phone_blacklist não cria lead', prio: 'alto', tags: ['WA', 'blacklist'],
+            steps: ['Staff manda msg.'],
+            expected: 'Lead NÃO é criado (project_clinic_phone_blacklist).' },
+        ],
+      },
+      {
+        id: '4.5',
+        title: 'Automations engine (guards e dedup)',
+        description: 'processAppointment · guards · dedup layers',
+        tests: [
+          { id: 'IN-4.5.1', title: 'Processar regra on_tag', prio: 'alto', tags: ['automação'],
+            steps: ['Aplicar tag "vip" a lead com appt.'],
+            expected: 'processTag dispara regras on_tag correspondentes.' },
+          { id: 'IN-4.5.2', title: 'Dedup: mesma regra não envia 2x para o mesmo appt', prio: 'critico', tags: ['WA', 'dedup'],
+            steps: ['Salvar appt duas vezes (editar e salvar).'],
+            expected: 'wa_outbox_cancel_by_appt antes do re-enfileirar evita duplicata.' },
+          { id: 'IN-4.5.3', title: 'Teste A/B chi-square para templates', prio: 'medio', tags: ['automação', 'A/B'],
+            steps: ['Regra com múltiplos templates A/B.'],
+            expected: '_renderWithAB escolhe variante; resultado registrado para análise chi-square.' },
+          { id: 'IN-4.5.4', title: 'Regra desativada não processa', prio: 'alto', tags: ['automação'],
+            steps: ['is_active=false.'],
+            expected: 'getActive() filtra; regra não dispara.' },
+          { id: 'IN-4.5.5', title: 'WA enfileira só se phone válido', prio: 'alto', tags: ['WA'],
+            steps: ['Lead sem phone.'],
+            expected: '_enqueueWA não chamado; canais alert/task podem disparar.' },
+        ],
+      },
+      {
+        id: '4.6',
+        title: 'Mira (bot WhatsApp interno)',
+        description: 'mira.service · 19 intents · voice Groq · autorização',
+        tests: [
+          { id: 'IN-4.6.1', title: 'Intent agenda_today retorna appts do dia', prio: 'alto', tags: ['mira'],
+            steps: ['Prof envia "tenho agenda hoje?"'],
+            expected: 'Mira responde com lista dos appts de hoje do prof.' },
+          { id: 'IN-4.6.2', title: 'Intent finance_revenue', prio: 'alto', tags: ['mira'],
+            steps: ['"faturei semana?"'],
+            expected: 'Valores semanais retornados.' },
+          { id: 'IN-4.6.3', title: 'Intent patient_balance', prio: 'medio', tags: ['mira'],
+            steps: ['"quanto deve Maria?"'],
+            expected: 'Saldo devedor da Maria listado.' },
+          { id: 'IN-4.6.4', title: 'Usuário não autorizado', prio: 'critico', tags: ['mira', 'segurança'],
+            steps: ['Número fora da lista de profissionais.'],
+            expected: 'Resposta "Numero nao autorizado. Peca ao admin".' },
+          { id: 'IN-4.6.5', title: 'Intent help lista comandos', prio: 'baixo', tags: ['mira'],
+            steps: ['"/ajuda"'],
+            expected: 'Lista de intents disponíveis.' },
+          { id: 'IN-4.6.6', title: 'Voice input via Groq funciona', prio: 'medio', tags: ['mira', 'voice'],
+            steps: ['Enviar áudio.'],
+            expected: 'Transcrição via Groq; intent extraído do texto.' },
+          { id: 'IN-4.6.7', title: 'Rate limiting previne abuso', prio: 'alto', tags: ['mira', 'segurança'],
+            steps: ['Spammar mensagens.'],
+            expected: 'Intent=rate_limited após limite.' },
+        ],
+      },
+    ],
+  },
+];
+
+// ── Render ─────────────────────────────────────────────────────────
+
+const STATES = ['pendente', 'ok', 'falha', 'bloqueado'];
+
+function getState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+
+function saveStateDebounced() {
+  if (window._saveTimer) clearTimeout(window._saveTimer);
+  window._saveTimer = setTimeout(saveState, 500);
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(_state));
+  } catch (e) { console.warn('Storage error:', e); }
+}
+
+let _state = getState();
+let _filterStatus = 'all';
+let _filterPrio = 'all';
+
+function iconFor(state) {
+  if (state === 'ok') return ICONS.check;
+  if (state === 'falha') return ICONS.x;
+  if (state === 'bloqueado') return ICONS.lock;
+  return '';
+}
+
+function renderTest(test) {
+  const st = (_state[test.id] && _state[test.id].status) || 'pendente';
+  const notes = (_state[test.id] && _state[test.id].notes) || '';
+  const stepsHtml = test.steps.map(s => '<li>' + escapeHtml(s) + '</li>').join('');
+  return `
+    <div class="test ${st}" data-test-id="${test.id}" data-prio="${test.prio}" data-status="${st}">
+      <div class="test-head">
+        <div class="test-status">
+          <button class="status-btn ${st === 'ok' ? 'active ok' : ''}" onclick="setStatus('${test.id}','ok')" title="Passou">${ICONS.check}</button>
+          <button class="status-btn ${st === 'falha' ? 'active falha' : ''}" onclick="setStatus('${test.id}','falha')" title="Falhou">${ICONS.x}</button>
+          <button class="status-btn ${st === 'bloqueado' ? 'active bloqueado' : ''}" onclick="setStatus('${test.id}','bloqueado')" title="Bloqueado">${ICONS.lock}</button>
+        </div>
+        <div class="test-body">
+          <div class="test-title-row">
+            <div>
+              <span class="test-id">${test.id}</span>
+              <span class="test-title">${escapeHtml(test.title)}</span>
+            </div>
+            <div class="test-tags">
+              <span class="tag prio-${test.prio}">${prioLabel(test.prio)}</span>
+              ${(test.tags || []).map(t => '<span class="tag cat">' + escapeHtml(t) + '</span>').join('')}
+            </div>
+          </div>
+          ${test.prereq ? '<div class="test-prereq"><span class="lbl">Pré-requisito:</span> ' + escapeHtml(test.prereq) + '</div>' : ''}
+          <div class="test-steps">
+            <ol>${stepsHtml}</ol>
+          </div>
+          <div class="test-expected"><span class="lbl">Esperado:</span> ${escapeHtml(test.expected)}</div>
+          <div class="test-notes">
+            <textarea placeholder="Observações, evidências, bugs encontrados..." data-test-notes="${test.id}" oninput="updateNote('${test.id}', this.value)">${escapeHtml(notes)}</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function prioLabel(p) {
+  return { critico: 'Crítico', alto: 'Alto', medio: 'Médio', baixo: 'Baixo' }[p] || p;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function renderSubsection(sub) {
+  const count = sub.tests.length;
+  const testsHtml = sub.tests.map(renderTest).join('');
+  return `
+    <div class="subsection" data-subsection="${sub.id}">
+      <div class="subsection-title">
+        <span>${sub.id} — ${escapeHtml(sub.title)}</span>
+        <span class="subsection-count">${count} ${count === 1 ? 'teste' : 'testes'}</span>
+      </div>
+      <div class="subsection-desc">${escapeHtml(sub.description)}</div>
+      ${testsHtml}
+    </div>
+  `;
+}
+
+function renderSection(section) {
+  const total = section.subsections.reduce((acc, s) => acc + s.tests.length, 0);
+  const subsHtml = section.subsections.map(renderSubsection).join('');
+  return `
+    <section id="s${section.id}" data-section="${section.id}">
+      <div class="section-header" onclick="toggleSection('${section.id}')">
+        <div class="section-header-body">
+          <h2><span class="num">0${section.id}</span>${escapeHtml(section.title)}</h2>
+          <div class="desc">${escapeHtml(section.description)}</div>
+        </div>
+        <div class="section-header-right">
+          <div class="section-progress">
+            <div class="pct" data-section-pct="${section.id}">0%</div>
+            <div class="track"><div class="fill" data-section-fill="${section.id}" style="width:0%"></div></div>
+          </div>
+          <div class="section-toggle">${ICONS.chev}</div>
+        </div>
+      </div>
+      <div class="section-body">
+        ${subsHtml}
+      </div>
+    </section>
+  `;
+}
+
+function renderAll() {
+  document.getElementById('sectionsRoot').innerHTML = SECTIONS.map(renderSection).join('');
+  const total = SECTIONS.reduce((acc, s) => acc + s.subsections.reduce((a, sub) => a + sub.tests.length, 0), 0);
+  document.getElementById('heroTotal').textContent = total + ' casos';
+  document.getElementById('countTotal').textContent = total;
+  SECTIONS.forEach(s => {
+    const cnt = s.subsections.reduce((a, sub) => a + sub.tests.length, 0);
+    const navEl = document.querySelector('[data-nav-count="' + s.id + '"]');
+    if (navEl) navEl.textContent = cnt;
+  });
+  recalcAll();
+  applyFilters();
+}
+
+function toggleSection(id) {
+  const sec = document.querySelector('[data-section="' + id + '"]');
+  if (sec) sec.classList.toggle('collapsed');
+}
+
+function expandAll() {
+  document.querySelectorAll('section[data-section]').forEach(s => s.classList.remove('collapsed'));
+}
+function collapseAll() {
+  document.querySelectorAll('section[data-section]').forEach(s => s.classList.add('collapsed'));
+}
+
+function setStatus(testId, newStatus) {
+  const current = (_state[testId] && _state[testId].status) || 'pendente';
+  const target = current === newStatus ? 'pendente' : newStatus;
+  if (!_state[testId]) _state[testId] = {};
+  _state[testId].status = target;
+  saveStateDebounced();
+  const el = document.querySelector('[data-test-id="' + testId + '"]');
+  if (el) {
+    el.classList.remove('pendente', 'ok', 'falha', 'bloqueado');
+    el.classList.add(target);
+    el.dataset.status = target;
+    el.querySelectorAll('.status-btn').forEach(b => {
+      b.classList.remove('active', 'ok', 'falha', 'bloqueado');
+    });
+    if (target !== 'pendente') {
+      const btn = el.querySelector('.status-btn[onclick*="\'' + target + '\'"]');
+      if (btn) btn.classList.add('active', target);
+    }
+  }
+  recalcAll();
+  applyFilters();
+}
+
+function updateNote(testId, value) {
+  if (!_state[testId]) _state[testId] = {};
+  _state[testId].notes = value;
+  saveStateDebounced();
+}
+
+function recalcAll() {
+  let total = 0, ok = 0, falha = 0, bloqueado = 0, pendente = 0;
+  SECTIONS.forEach(section => {
+    let sTotal = 0, sOk = 0;
+    section.subsections.forEach(sub => {
+      sub.tests.forEach(test => {
+        total++;
+        sTotal++;
+        const st = (_state[test.id] && _state[test.id].status) || 'pendente';
+        if (st === 'ok') { ok++; sOk++; }
+        else if (st === 'falha') falha++;
+        else if (st === 'bloqueado') bloqueado++;
+        else pendente++;
+      });
+    });
+    const pct = sTotal ? Math.round((sOk / sTotal) * 100) : 0;
+    const pctEl = document.querySelector('[data-section-pct="' + section.id + '"]');
+    const fillEl = document.querySelector('[data-section-fill="' + section.id + '"]');
+    if (pctEl) pctEl.textContent = pct + '%';
+    if (fillEl) fillEl.style.width = pct + '%';
+  });
+  document.getElementById('countOk').textContent = ok;
+  document.getElementById('countFalha').textContent = falha;
+  document.getElementById('countBloqueado').textContent = bloqueado;
+  document.getElementById('countPendente').textContent = pendente;
+  const pct = total ? Math.round((ok / total) * 100) : 0;
+  document.getElementById('globalPct').textContent = pct + '%';
+  document.getElementById('segOk').style.width = (total ? (ok / total * 100) : 0) + '%';
+  document.getElementById('segFalha').style.width = (total ? (falha / total * 100) : 0) + '%';
+  document.getElementById('segBloqueado').style.width = (total ? (bloqueado / total * 100) : 0) + '%';
+  document.getElementById('sidebarTotalNum').innerHTML = ok + '<span style="font-size:14px;color:var(--text-muted)">/' + total + '</span>';
+  document.getElementById('sidebarProgressFill').style.width = pct + '%';
+}
+
+function applyFilters() {
+  document.querySelectorAll('.test').forEach(el => {
+    const st = el.dataset.status;
+    const p = el.dataset.prio;
+    const matchStatus = _filterStatus === 'all' || _filterStatus === st;
+    const matchPrio = _filterPrio === 'all' || _filterPrio === p;
+    if (matchStatus && matchPrio) el.classList.remove('hide');
+    else el.classList.add('hide');
+  });
+}
+
+function bindFilters() {
+  document.getElementById('filterStatusGroup').addEventListener('click', e => {
+    const btn = e.target.closest('[data-filter-status]');
+    if (!btn) return;
+    document.querySelectorAll('[data-filter-status]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _filterStatus = btn.dataset.filterStatus;
+    applyFilters();
+  });
+  document.getElementById('filterPrioGroup').addEventListener('click', e => {
+    const btn = e.target.closest('[data-filter-prio]');
+    if (!btn) return;
+    document.querySelectorAll('[data-filter-prio]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _filterPrio = btn.dataset.filterPrio;
+    applyFilters();
+  });
+}
+
+function exportResults() {
+  const out = {
+    generatedAt: new Date().toISOString(),
+    summary: {
+      total: document.getElementById('countTotal').textContent,
+      ok: document.getElementById('countOk').textContent,
+      falha: document.getElementById('countFalha').textContent,
+      bloqueado: document.getElementById('countBloqueado').textContent,
+      pendente: document.getElementById('countPendente').textContent,
+      pct: document.getElementById('globalPct').textContent,
+    },
+    results: _state,
+  };
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'clinicai-tests-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+}
+
+function resetProgress() {
+  if (!confirm('Zerar todo o progresso? Essa ação apaga todos os status e observações. Não pode ser desfeita.')) return;
+  _state = {};
+  localStorage.removeItem(STORAGE_KEY);
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  renderAll();
+  bindFilters();
+});
+</script>
+</body>
+</html>
