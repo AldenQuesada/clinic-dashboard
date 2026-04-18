@@ -148,7 +148,23 @@
       (_arr(d.targets).length ? _renderTargets(d.targets)   : '') +
       (_arr(d.events).length  ? _renderEvents(d.events)     : '') +
       (_arr(d.content).length ? _renderContent(d.content)   : '') +
+      '<div id="b2bCommentsSection"></div>' +
+      '<div id="b2bTimelineSection"></div>' +
     '</div>'
+  }
+
+  // Monta timeline (async) depois do body renderizar
+  function _mountTimeline(id) {
+    if (window.B2BTimeline) {
+      setTimeout(function () { window.B2BTimeline.mount('b2bTimelineSection', id) }, 100)
+    }
+  }
+
+  // Monta comentários inline (Fraqueza #7)
+  function _mountComments(id) {
+    if (window.B2BComments) {
+      setTimeout(function () { window.B2BComments.mount('b2bCommentsSection', id) }, 80)
+    }
   }
 
   function _renderTargets(targets) {
@@ -237,6 +253,10 @@
     } finally {
       _state.loading = false
       _mount()
+      if (_state.data && _state.data.partnership) {
+        _mountTimeline(_state.data.partnership.id)
+        _mountComments(_state.data.partnership.id)
+      }
     }
   }
 
