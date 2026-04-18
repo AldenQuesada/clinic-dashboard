@@ -32,6 +32,7 @@
     activeTab: 'active',
     scoutConfig: null,
     consumption: null,
+    coverage: null,   // { covered, total, pct }
     mountedIn: null,
   }
 
@@ -61,6 +62,7 @@
         '<div>' +
           '<div class="b2b-eyebrow">Círculo Mirian de Paula</div>' +
           '<h1 class="b2b-title">Programa de <em>parcerias B2B</em></h1>' +
+          _renderCoverageBadge() +
         '</div>' +
         '<div class="b2b-header-ctrl">' +
           _renderScoutToggle(enabled) +
@@ -69,6 +71,41 @@
       '</div>' +
       _renderTabs() +
     '</header>'
+  }
+
+  function _renderCoverageBadge() {
+    var c = _state.coverage
+    if (!c) return ''
+    var covered = Number(c.covered || 0)
+    var total   = Number(c.total || 24)
+    var pct     = total > 0 ? Math.round((covered / total) * 100) : 0
+    return '<div class="b2b-coverage">' +
+      '<span class="b2b-coverage-num"><strong>' + covered + '</strong>/' + total + '</span>' +
+      '<span class="b2b-coverage-lbl">categorias cobertas</span>' +
+      '<span class="b2b-coverage-pct">' + pct + '%</span>' +
+      '<div class="b2b-coverage-bar"><div class="b2b-coverage-fill" style="width:' + pct + '%"></div></div>' +
+    '</div>'
+  }
+
+  async function _refreshCoverage() {
+    if (!window.B2BSuggestionsRepository) return
+    try {
+      var snap = await window.B2BSuggestionsRepository.snapshot()
+      var cats = (snap && snap.categories) || []
+      var covered = cats.filter(function (c) { return c.state === 'green' }).length
+      _state.coverage = { covered: covered, total: cats.length }
+      // Re-render do header sem destruir tab body
+      var badge = document.querySelector('.b2b-coverage')
+      if (badge) badge.outerHTML = _renderCoverageBadge()
+      else {
+        // Se ainda não tem, re-render completo só do título-area
+        var root = _state.mountedIn ? document.getElementById(_state.mountedIn) : null
+        if (root) {
+          var titleArea = root.querySelector('.b2b-title')
+          if (titleArea && titleArea.parentNode) titleArea.insertAdjacentHTML('afterend', _renderCoverageBadge())
+        }
+      }
+    } catch (_) { /* silencioso */ }
   }
 
   function _renderScoutToggle(enabled) {
@@ -213,6 +250,13 @@
     // Escuta mudanças externas que impactam o header
     document.addEventListener('b2b:voucher-issued', _refreshConsumption)
     document.addEventListener('b2b:candidate-status-changed', _refreshConsumption)
+    // Cobertura: atualiza quando parcerias mudam ou candidatos viram signed
+    document.addEventListener('b2b:partnership-saved',  _refreshCoverage)
+    document.addEventListener('b2b:partnership-closed', _refreshCoverage)
+    document.addEventListener('b2b:candidate-status-changed', _refreshCoverage)
+
+    // Primeira carga da cobertura
+    _refreshCoverage()
 
     // Emite tab-change inicial pra list renderizar
     _emit('b2b:tab-change', { tab: _state.activeTab })

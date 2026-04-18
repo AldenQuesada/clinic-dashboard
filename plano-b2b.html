@@ -293,10 +293,17 @@
     </ul>
 
     <div class="side-progress" data-overall>
-      <div class="label">Progresso total</div>
+      <div class="label">Sistema construído</div>
       <div class="value"><span data-overall-pct>0</span>%</div>
       <div class="bar"><div class="fill" data-overall-fill style="width:0%"></div></div>
-      <div class="label" style="margin-top:8px;font-size:10px"><span data-overall-done>0</span> de <span data-overall-total>0</span> passos</div>
+      <div class="label" style="margin-top:8px;font-size:10px"><span data-overall-done>0</span> de <span data-overall-total>0</span> entregas de código</div>
+    </div>
+
+    <div class="side-progress" data-coverage style="margin-top:12px">
+      <div class="label">Cobertura de parcerias</div>
+      <div class="value" style="font-size:24px;color:var(--sage)"><span data-coverage-pct>0</span>%</div>
+      <div class="bar"><div class="fill" data-coverage-fill style="width:0%;background:linear-gradient(90deg,#6b7d69,var(--sage))"></div></div>
+      <div class="label" style="margin-top:8px;font-size:10px"><span data-coverage-done>0</span> de <span data-coverage-total>0</span> categorias do plano</div>
     </div>
   </aside>
 
@@ -1114,24 +1121,46 @@
     if (totalEl) totalEl.textContent = items.length;
   }
 
+  // Progresso separado:
+  // - "Sistema construído" = APENAS entregas de código (fases)
+  // - "Cobertura de parcerias" = metas de abertura (tiers) — informativo
   function updateOverallProgress() {
     var state = readLocal();
-    var total = 0, done = 0;
+    var sysTotal = 0, sysDone = 0;
+    var covTotal = 0, covDone = 0;
     Object.keys(ROWS).forEach(function (s) {
+      var isSystem = s.indexOf('fase') !== -1;  // b2b-fase1/fase2/fase3
       ROWS[s].forEach(function (it) {
-        total++;
-        if ((state.items[it.id] || {}).checked) done++;
+        if (isSystem) {
+          sysTotal++;
+          if ((state.items[it.id] || {}).checked) sysDone++;
+        } else {
+          covTotal++;
+          if ((state.items[it.id] || {}).checked) covDone++;
+        }
       });
     });
-    var pct = total ? Math.round((done / total) * 100) : 0;
-    var pctEl = document.querySelector('[data-overall-pct]');
-    var fillEl = document.querySelector('[data-overall-fill]');
-    var doneEl = document.querySelector('[data-overall-done]');
+    var sysPct = sysTotal ? Math.round((sysDone / sysTotal) * 100) : 0;
+    var covPct = covTotal ? Math.round((covDone / covTotal) * 100) : 0;
+
+    var pctEl   = document.querySelector('[data-overall-pct]');
+    var fillEl  = document.querySelector('[data-overall-fill]');
+    var doneEl  = document.querySelector('[data-overall-done]');
     var totalEl = document.querySelector('[data-overall-total]');
-    if (pctEl) pctEl.textContent = pct;
-    if (fillEl) fillEl.style.width = pct + '%';
-    if (doneEl) doneEl.textContent = done;
-    if (totalEl) totalEl.textContent = total;
+    if (pctEl)   pctEl.textContent   = sysPct;
+    if (fillEl)  fillEl.style.width  = sysPct + '%';
+    if (doneEl)  doneEl.textContent  = sysDone;
+    if (totalEl) totalEl.textContent = sysTotal;
+
+    // Progresso secundário — cobertura
+    var covPctEl  = document.querySelector('[data-coverage-pct]');
+    var covFillEl = document.querySelector('[data-coverage-fill]');
+    var covDoneEl = document.querySelector('[data-coverage-done]');
+    var covTotEl  = document.querySelector('[data-coverage-total]');
+    if (covPctEl)  covPctEl.textContent  = covPct;
+    if (covFillEl) covFillEl.style.width = covPct + '%';
+    if (covDoneEl) covDoneEl.textContent = covDone;
+    if (covTotEl)  covTotEl.textContent  = covTotal;
   }
 
   function toggleItem(id) {
