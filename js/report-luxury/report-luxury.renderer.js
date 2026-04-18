@@ -19,10 +19,24 @@
   window._reportLuxuryRendererLoaded = true
 
   var FM = window._FM
-  var SLOGAN = 'Seu rosto deveria mostrar <em>quem você é</em><br>— não quanto o tempo passou.'
-  var SLOGAN_FLAT = 'Seu rosto deveria mostrar <em>quem você é</em> — não quanto o tempo passou.'
 
+  // T(key) = Template lookup com fallback aos defaults. Suporta HTML.
+  function T(key) {
+    if (window.ReportLuxuryTemplates && window.ReportLuxuryTemplates.get) {
+      var v = window.ReportLuxuryTemplates.get(key)
+      if (v != null) return v
+    }
+    if (window.ReportLuxuryTemplatesDefaults) {
+      return window.ReportLuxuryTemplatesDefaults.getDefault(key) || ''
+    }
+    return ''
+  }
+
+  // Escape SOMENTE para conteudo dinamico (nome de paciente, etc).
+  // Templates editaveis ja sao HTML — nao aplicar _esc neles.
   function _esc(s) { return String(s == null ? '' : s).replace(/[<>&"']/g, function (c) { return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'})[c] }) }
+  // Converte \n em <br> e mantem HTML do template
+  function _multiline(s) { return String(s == null ? '' : s).replace(/\n/g, '<br><br>') }
 
   function _clinicName() { return FM._clinicName ? FM._clinicName() : 'Clinica' }
   function _profName()   { return FM._profName ? FM._profName() : 'Especialista' }
@@ -133,9 +147,15 @@
       tagline:        _tagline(),
     }
 
-    window.ReportLuxuryPreExport.open(input, function (payload) {
-      if (!payload) return
-      _renderOverlay(payload)
+    // Garante que templates estao carregados antes de abrir o modal
+    var preload = (window.ReportLuxuryTemplates && window.ReportLuxuryTemplates.load)
+      ? window.ReportLuxuryTemplates.load()
+      : Promise.resolve()
+    preload.then(function () {
+      window.ReportLuxuryPreExport.open(input, function (payload) {
+        if (!payload) return
+        _renderOverlay(payload)
+      })
     })
   }
 
@@ -460,8 +480,8 @@
       '<div class="logo-mark">CLINICA</div>' +
       '<div class="logo-name">' + _esc(payload.input.clinicName) + '</div>' +
       '<div class="logo-rule"></div>' +
-      '<div class="tagline">' + _esc(payload.input.tagline) + '</div>' +
-      '<h1 class="slogan">' + SLOGAN + '</h1>' +
+      '<div class="tagline">' + T('tagline') + '</div>' +
+      '<h1 class="slogan">' + T('slogan.headline_main') + '</h1>' +
       '<div class="for">PREPARADO PARA</div>' +
       '<div class="patient-name">' + _esc(payload.input.leadName) + '</div>' +
       '<div class="date-line">' + _today() + '</div>' +
@@ -469,35 +489,37 @@
   }
 
   function _letterHtml(payload) {
+    // Carta tem tratamento especial: payload.letter sobrescreve template
+    var body = payload.letter && payload.letter.trim() ? payload.letter : T('letter.body')
     return '<section class="fold letter">' +
-      '<h3>Carta de abertura</h3>' +
-      '<h2>Sobre a leitura que fizemos do seu rosto</h2>' +
-      '<div class="body-text">' + _esc(payload.letter || '') + '</div>' +
+      '<h3>' + T('letter.kicker') + '</h3>' +
+      '<h2>' + T('letter.title') + '</h2>' +
+      '<div class="body-text">' + _multiline(body) + '</div>' +
       '<div class="signature">' + _esc(payload.input.profName) + '</div>' +
-      '<div class="role">Especialista em Harmonização Facial</div>' +
+      '<div class="role">' + T('letter.role') + '</div>' +
     '</section>'
   }
 
   function _pullquoteHtml() {
     return '<section class="pullquote">' +
-      '<blockquote>' + SLOGAN_FLAT + '</blockquote>' +
-      '<cite>Filosofia &middot; Clínica Mirian de Paula</cite>' +
+      '<blockquote>' + T('slogan.flat') + '</blockquote>' +
+      '<cite>' + T('pullquote.attribution') + '</cite>' +
     '</section>'
   }
 
   function _credentialsHtml() {
     return '<div class="credentials">' +
-      '<div class="item"><div class="num">1.200<span style="font-size:18px">+</span></div><div class="label">Protocolos realizados</div></div>' +
-      '<div class="item"><div class="num">Fotona</div><div class="label">Dynamis NX exclusiva</div></div>' +
-      '<div class="item"><div class="num">Desde 2018</div><div class="label">Atendimento personalizado</div></div>' +
+      '<div class="item"><div class="num">' + T('credentials.item1.num') + '</div><div class="label">' + T('credentials.item1.label') + '</div></div>' +
+      '<div class="item"><div class="num">' + T('credentials.item2.num') + '</div><div class="label">' + T('credentials.item2.label') + '</div></div>' +
+      '<div class="item"><div class="num">' + T('credentials.item3.num') + '</div><div class="label">' + T('credentials.item3.label') + '</div></div>' +
     '</div>'
   }
 
   function _diagnosisHtml(d) {
     var html = '<section class="fold diagnosis">' +
-      '<h3>Diagnóstico</h3>' +
-      '<h2>Os <em>mapas</em> do seu rosto</h2>' +
-      '<p class="lead">Análise 3D facial completa: ângulos cefalométricos, proporções, simetria e linha estética.</p>'
+      '<h3>' + T('diagnosis.kicker') + '</h3>' +
+      '<h2>' + T('diagnosis.title') + '</h2>' +
+      '<p class="lead">' + T('diagnosis.lead') + '</p>'
 
     if (d.mandibular) {
       html += _mapBlock('Mapa <em>mandibular</em>', d.mandibular.label || '',
@@ -577,10 +599,12 @@
   function _protocolHtml(annotations) {
     if (!annotations.length) return ''
     var roman = ['i','ii','iii','iv','v','vi','vii','viii','ix','x']
+    var titlePre = T('protocol.title_pre')
+    var titlePost = T('protocol.title_post')
     return '<section class="fold protocol">' +
-      '<h3>Protocolo proposto</h3>' +
-      '<h2>' + annotations.length + ' zonas, <em>uma sessão</em></h2>' +
-      '<p class="lead">Cada intervenção foi desenhada para potencializar as outras.</p>' +
+      '<h3>' + T('protocol.kicker') + '</h3>' +
+      '<h2>' + (titlePre ? titlePre + ' ' : '') + annotations.length + ' ' + titlePost + '</h2>' +
+      '<p class="lead">' + T('protocol.lead') + '</p>' +
       '<ul class="zones">' +
         annotations.map(function (a, i) {
           return '<li class="zone">' +
@@ -601,27 +625,27 @@
   // integrado da clínica. Independente do plano da paciente — mostra
   // a estrutura do método como um todo.
   function _timelineHtml() {
-    var stages = [
-      { when: 'MÊS 0',     title: 'Avaliação completa',       text: 'Scanner Anovator A5, leitura facial 3D, planejamento personalizado com a Dra. Mirian.' },
-      { when: 'MÊS 1',     title: 'Sessão integrada',         text: 'Aplicação dos injetáveis em todas as zonas planejadas + primeira sessão de Fotona 4D.' },
-      { when: 'MÊS 2',     title: 'Segunda sessão Fotona',    text: 'Estímulo profundo de colágeno e elastina nas 4 camadas da pele.' },
-      { when: 'MÊS 3',     title: 'Terceira Fotona + retoque', text: 'Conclusão do ciclo Fotona e ajuste fino dos injetáveis se necessário.' },
-      { when: 'MÊS 6',     title: 'Avaliação evolutiva',      text: 'Comparação com baseline, registro fotográfico, decisão sobre continuidade.' },
-      { when: 'MÊS 12',    title: 'Manutenção anual',         text: 'Programa contínuo com 40% de benefício exclusivo em Fotona e condições especiais para retoques.' },
-    ]
+    var stages = []
+    for (var i = 1; i <= 6; i++) {
+      stages.push({
+        when:  T('timeline.stage' + i + '.when'),
+        title: T('timeline.stage' + i + '.title'),
+        text:  T('timeline.stage' + i + '.text'),
+      })
+    }
     return '<section class="fold timeline">' +
-      '<h3>Método Lifting 5D</h3>' +
-      '<h2>A jornada da sua <em>harmonia</em></h2>' +
-      '<p class="lead">O protocolo integrado se desenvolve em fases — cada uma respeita o tempo biológico do colágeno e potencializa a anterior. Não é evento isolado, é <em>processo contínuo</em>.</p>' +
+      '<h3>' + T('timeline.kicker') + '</h3>' +
+      '<h2>' + T('timeline.title') + '</h2>' +
+      '<p class="lead">' + T('timeline.lead') + '</p>' +
       '<div class="timeline-track">' +
         stages.map(function (s, i) {
           return '<div class="timeline-stage">' +
             '<div class="timeline-dot"></div>' +
             (i < stages.length - 1 ? '<div class="timeline-line"></div>' : '') +
             '<div class="timeline-body">' +
-              '<div class="timeline-when">' + _esc(s.when) + '</div>' +
-              '<div class="timeline-title">' + _esc(s.title) + '</div>' +
-              '<div class="timeline-text">' + _esc(s.text) + '</div>' +
+              '<div class="timeline-when">' + s.when + '</div>' +
+              '<div class="timeline-title">' + s.title + '</div>' +
+              '<div class="timeline-text">' + s.text + '</div>' +
             '</div>' +
           '</div>'
         }).join('') +
@@ -678,20 +702,20 @@
     if (!pricing || pricing.savings <= 0) return ''
     return '<section class="anchor">' +
       '<h3>Lógica do investimento</h3>' +
-      '<h2>Por que <em>integrado</em> custa menos que separado</h2>' +
+      '<h2>' + T('anchor.title') + '</h2>' +
       '<div class="compare-rows">' +
         '<div class="row"><span class="label">Procedimentos isolados</span><span class="price">' + fmt(pricing.isolated) + '</span></div>' +
         '<div class="row highlight"><span class="label">Protocolo integrado Mirian de Paula</span><span class="price">' + fmt(pricing.integrated) + '</span></div>' +
       '</div>' +
-      '<p class="note">Os mesmos materiais, a mesma anatomia. A diferença está no <em>planejamento integrado</em> — uma sessão única, sem retrabalho, sem doses redundantes.</p>' +
+      '<p class="note">' + T('anchor.note') + '</p>' +
     '</section>'
   }
 
   function _investmentHtml(payload, fmt) {
     var inst = payload.installment
     return '<section class="fold investment">' +
-      '<h3>Investimento</h3>' +
-      '<div class="label-small">Protocolo completo</div>' +
+      '<h3>' + T('investment.kicker') + '</h3>' +
+      '<div class="label-small">' + T('investment.label') + '</div>' +
       '<div class="amount"><span class="currency">R$</span>' + (payload.pricing.integrated || 0).toLocaleString('pt-BR') + '</div>' +
       (inst ? '<div class="terms">ou ' + inst.n + 'x de ' + fmt(inst.value) + ' sem juros</div>' : '') +
     '</section>'
@@ -699,37 +723,33 @@
 
   function _cashbackHtml() {
     return '<section class="cashback">' +
-      '<div class="badge">Diferencial Mirian de Paula</div>' +
-      '<h2>Seu investimento volta integralmente como <em>cashback</em> para Fotona 4D</h2>' +
-      '<div class="body-text">' +
-        '<strong>O que isso significa:</strong> tudo que você investe nos injetáveis acima retorna como crédito para sessões da tecnologia <em>Fotona Dynamis NX</em> — o melhor laser do mundo para harmonização não-cirúrgica.' +
-        '<br><br>' +
-        'Em outras clínicas a Fotona é cobrada à parte. Aqui, ela faz parte do mesmo caminho — porque <em>cuidar do seu rosto não é evento isolado, é processo contínuo</em>.' +
-      '</div>' +
+      '<div class="badge">' + T('cashback.badge') + '</div>' +
+      '<h2>' + T('cashback.headline') + '</h2>' +
+      '<div class="body-text">' + _multiline(T('cashback.body')) + '</div>' +
       '<div class="pillars">' +
-        '<div class="pillar"><div class="icon">i</div><div class="text"><strong>Lifting natural</strong>Firmeza progressiva sem cirurgia</div></div>' +
-        '<div class="pillar"><div class="icon">ii</div><div class="text"><strong>Colágeno e elastina</strong>Produção intensa nas 4 camadas</div></div>' +
-        '<div class="pillar"><div class="icon">iii</div><div class="text"><strong>Acompanhamento</strong>Programa contínuo, não procedimento solto</div></div>' +
+        '<div class="pillar"><div class="icon">i</div><div class="text"><strong>' + T('cashback.pillar1.label') + '</strong>' + T('cashback.pillar1.text') + '</div></div>' +
+        '<div class="pillar"><div class="icon">ii</div><div class="text"><strong>' + T('cashback.pillar2.label') + '</strong>' + T('cashback.pillar2.text') + '</div></div>' +
+        '<div class="pillar"><div class="icon">iii</div><div class="text"><strong>' + T('cashback.pillar3.label') + '</strong>' + T('cashback.pillar3.text') + '</div></div>' +
       '</div>' +
     '</section>'
   }
 
   function _includesHtml(cashbackOn) {
     var items = [
-      ['Avaliação inicial Anovator A5', 'Scanner 3D facial mais avançado, com 50+ relatórios'],
-      ['Sessão única integrada', 'Todas as zonas em um único atendimento personalizado'],
-      ['Retoque em 30 dias', 'Ajuste fino de assimetrias, sem custo adicional'],
-      ['Acompanhamento por 6 meses', 'Visitas de revisão e mensagens diretas com a equipe'],
+      [T('includes.item1.name'), T('includes.item1.desc')],
+      [T('includes.item2.name'), T('includes.item2.desc')],
+      [T('includes.item3.name'), T('includes.item3.desc')],
+      [T('includes.item4.name'), T('includes.item4.desc')],
     ]
-    if (cashbackOn) items.push(['Cashback integral em Fotona 4D', 'Crédito total do investimento para sessões da tecnologia'])
-    items.push(['Prontuário digital completo', 'Histórico fotográfico e métricas evolutivas'])
+    if (cashbackOn) items.push([T('includes.item5.name'), T('includes.item5.desc')])
+    items.push([T('includes.item6.name'), T('includes.item6.desc')])
 
     return '<section class="includes">' +
-      '<h3>O que está incluso</h3>' +
-      '<h2>Cada item pensado para o resultado <em>integral</em></h2>' +
+      '<h3>' + T('includes.kicker') + '</h3>' +
+      '<h2>' + T('includes.title') + '</h2>' +
       '<ul>' +
         items.map(function (it) {
-          return '<li><span></span><div><div class="name">' + _esc(it[0]) + '</div><div class="desc">' + _esc(it[1]) + '</div></div></li>'
+          return '<li><span></span><div><div class="name">' + it[0] + '</div><div class="desc">' + it[1] + '</div></div></li>'
         }).join('') +
       '</ul>' +
     '</section>'
@@ -737,29 +757,30 @@
 
   function _faqsHtml() {
     var faqs = [
-      ['E se o resultado não for o que eu esperava?', 'Conversamos com calma sobre suas expectativas antes da sessão e fazemos um <em>retoque de ajuste em 30 dias</em> sem custo. O acompanhamento por seis meses garante que cada detalhe seja revisado em conjunto.'],
-      ['Quanto tempo dura o resultado?', 'Os efeitos do ácido hialurônico têm duração média de 12 a 18 meses, e a toxina de 4 a 6 meses. Mas o que dá <em>longevidade real ao seu rosto</em> é a regularidade da Fotona — por isso o cashback existe: para que o cuidado seja contínuo.'],
-      ['Por que sessão única, e não dividida em várias visitas?', 'Porque o resultado natural depende de <em>equilíbrio simultâneo</em>. Quando uma zona é tratada isoladamente, ela puxa a percepção sem que as outras acompanhem. A sessão integrada respeita a anatomia como ela é: um sistema, não partes.'],
+      [T('faq.q1'), T('faq.a1')],
+      [T('faq.q2'), T('faq.a2')],
+      [T('faq.q3'), T('faq.a3')],
     ]
     return '<section class="fold faqs">' +
-      '<h3>Antes de seguir</h3>' +
-      '<h2>Três perguntas que <em>costumam vir antes</em></h2>' +
+      '<h3>' + T('faq.kicker') + '</h3>' +
+      '<h2>' + T('faq.title') + '</h2>' +
       faqs.map(function (f) {
-        return '<div class="faq-item"><div class="q">' + _esc(f[0]) + '</div><div class="a">' + f[1] + '</div></div>'
+        return '<div class="faq-item"><div class="q">' + f[0] + '</div><div class="a">' + f[1] + '</div></div>'
       }).join('') +
     '</section>'
   }
 
   function _ctaHtml() {
     return '<section class="cta">' +
-      '<div class="slogan-echo">' + SLOGAN_FLAT + '</div>' +
-      '<a href="#" class="button">Agendar conversa</a>' +
+      '<div class="slogan-echo">' + T('slogan.flat') + '</div>' +
+      '<a href="#" class="button">' + T('cta.button_text') + '</a>' +
+      '<div class="reassurance" style="margin-top:18px;font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:14px;color:#4A4A4A">' + T('cta.reassurance') + '</div>' +
     '</section>'
   }
 
   function _footerHtml(payload) {
     return '<footer class="footer-rlx">' +
-      '<div class="seal">DOCUMENTO CLÍNICO CONFIDENCIAL</div>' +
+      '<div class="seal">' + T('footer.confidentiality') + '</div>' +
       '<div>uso pessoal &middot; ' + _esc(payload.input.leadName) + '</div>' +
     '</footer>'
   }
