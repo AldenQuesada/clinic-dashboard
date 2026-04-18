@@ -770,7 +770,12 @@ function buildHojeGrid() {
     cellMap[key].push(a)
   })
 
-  const cols = profs.length ? profs : [{ nome: 'Sem profissional' }]
+  // Filtrar profissionais sem espaco na agenda, preservando o indice original
+  // em _origIdx (appointments.profissionalIdx referencia getProfessionals() completo).
+  const visibleProfs = profs
+    .map((p, origIdx) => ({ ...p, _origIdx: origIdx }))
+    .filter(p => p.agenda_enabled !== false)
+  const cols = visibleProfs.length ? visibleProfs : [{ nome: 'Sem profissional', _origIdx: 0 }]
   const profColW = cols.length > 0 ? `calc((100% - 72px) / ${cols.length})` : '100%'
 
   // Horario da clinica no dia
@@ -802,7 +807,9 @@ function buildHojeGrid() {
           ? 'background-image:repeating-linear-gradient(45deg,#FEF3C7,#FEF3C7 5px,#FDE68A 5px,#FDE68A 10px);'
           : 'background-image:repeating-linear-gradient(45deg,#F3F4F6,#F3F4F6 5px,#E5E7EB 5px,#E5E7EB 10px);')
       : ''
-    const tds = cols.map((_,pi) => {
+    const tds = cols.map((c) => {
+      // pi usa o indice original do profissional, nao a posicao na tabela filtrada
+      const pi = c._origIdx
       const key = `${slot}_${pi}`
       const cards = (cellMap[key] || []).map(a => apptCard(a, pi)).join('')
       const isPastDay = iso < todayIso

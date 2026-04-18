@@ -246,6 +246,8 @@ function openProfModal(index) {
     const cpfEl = document.getElementById('sp_cpf'); if (cpfEl) cpfEl.value = ''
     const nascEl = document.getElementById('sp_nascimento'); if (nascEl) nascEl.value = ''
     if (salaSelect) salaSelect.value = ''
+    // Novos membros aparecem na agenda por default — quem nao atende desliga
+    const agendaEl = document.getElementById('sp_agenda_enabled'); if (agendaEl) agendaEl.checked = true
     profSetNivel('funcionario')
     _profSetAtivo(true)
     _profSkillsDraft = {}
@@ -269,6 +271,7 @@ function openProfModal(index) {
     const cpfEl = document.getElementById('sp_cpf'); if (cpfEl) cpfEl.value = p.cpf || ''
     const nascEl = document.getElementById('sp_nascimento'); if (nascEl) nascEl.value = p.nascimento || ''
     if (salaSelect) salaSelect.value = p.sala_nome || p.sala || ''
+    const agendaEl = document.getElementById('sp_agenda_enabled'); if (agendaEl) agendaEl.checked = p.agenda_enabled !== false
     profSetNivel(p.nivel || 'funcionario')
     _profSetAtivo(p.ativo !== false)
     savedAparelhos = Array.isArray(p.aparelhos) ? p.aparelhos : []
@@ -306,7 +309,7 @@ function openProfModal(index) {
     'sp_telefone','sp_whatsapp','sp_bio','sp_cep','sp_rua','sp_num_end',
     'sp_comp_end','sp_bairro_end','sp_cidade_end','sp_estado_end',
     'sp_contrato','sp_salario','sp_valor_consulta','sp_sala',
-    'sp_cpf','sp_nascimento']
+    'sp_cpf','sp_nascimento','sp_agenda_enabled']
   watchIds.forEach(id => {
     const el = document.getElementById(id)
     if (!el) return
@@ -515,6 +518,7 @@ async function saveProfessional() {
       contrato:       document.getElementById('sp_contrato')?.value              || null,
       salario:        salario || null,
       valor_consulta: valorConsulta || null,
+      agenda_enabled: document.getElementById('sp_agenda_enabled')?.checked !== false,
       nivel:       document.getElementById('sp_nivel')?.value                 || 'funcionario',
       cargo:       document.getElementById('sp_cargo')?.value?.trim()         || null,
       commissions: JSON.parse(JSON.stringify(_profCommDraft)),
@@ -546,6 +550,7 @@ async function saveProfessional() {
       cargo: document.getElementById('sp_cargo')?.value?.trim() || '',
       contrato: document.getElementById('sp_contrato')?.value || '', salario,
       valor_consulta: valorConsulta || 0,
+      agenda_enabled: document.getElementById('sp_agenda_enabled')?.checked !== false,
       cpf: document.getElementById('sp_cpf')?.value?.trim() || '',
       nascimento: document.getElementById('sp_nascimento')?.value || '',
       email: document.getElementById('sp_email')?.value?.trim() || '',

@@ -48,6 +48,7 @@
         p_user_id:      prof.user_id      ?? null,
         p_valor_consulta: prof.valor_consulta ?? null,
         p_email:        prof.email        ?? null,
+        p_agenda_enabled: prof.agenda_enabled ?? null,
       })
       if (error) return _err(error.message || String(error))
       return _ok(data)

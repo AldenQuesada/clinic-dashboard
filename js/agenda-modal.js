@@ -92,12 +92,17 @@
     _apptCleanupHandlers()
     _apptEnableSave()
 
-    // Preenche profissionais
+    // Preenche profissionais. Mantem o indice original do array de getProfessionals()
+    // como value (appointments.profissionalIdx referencia esse indice) e omite
+    // membros sem espaco na agenda (agenda_enabled=false) — social media, financeiro etc.
     const profSel = document.getElementById('appt_prof')
     if (profSel) {
       const profs = typeof getProfessionals === 'function' ? getProfessionals() : []
       profSel.innerHTML = '<option value="">Selecione...</option>' +
-        profs.map((p, i) => `<option value="${i}">${p.nome}${p.especialidade ? ' – ' + p.especialidade : ''}</option>`).join('')
+        profs.map((p, i) => p && p.agenda_enabled === false
+          ? ''
+          : `<option value="${i}">${p.nome}${p.especialidade ? ' – ' + p.especialidade : ''}</option>`
+        ).join('')
     }
 
     // Preenche salas
@@ -317,11 +322,11 @@
       if (!profs.length) return -1
       // Prioridade 1: profissional vinculado ao próprio owner logado.
       if (profile.role === 'owner' && profile.id) {
-        var byUser = profs.findIndex(function(p) { return p && p.user_id === profile.id && p.ativo !== false })
+        var byUser = profs.findIndex(function(p) { return p && p.user_id === profile.id && p.ativo !== false && p.agenda_enabled !== false })
         if (byUser >= 0) return byUser
       }
-      // Prioridade 2: primeiro sócio ativo (cobre secretária e fallback do owner).
-      var bySocio = profs.findIndex(function(p) { return p && (p.nivel || 'funcionario') === 'socio' && p.ativo !== false })
+      // Prioridade 2: primeiro sócio ativo com espaço na agenda (cobre secretária).
+      var bySocio = profs.findIndex(function(p) { return p && (p.nivel || 'funcionario') === 'socio' && p.ativo !== false && p.agenda_enabled !== false })
       return bySocio
     } catch (_) { return -1 }
   }
