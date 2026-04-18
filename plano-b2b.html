@@ -166,6 +166,79 @@
   .kpi .val { font-family: 'Cormorant Garamond', serif; font-size: 28px; color: var(--champagne); font-weight: 400; margin-bottom: 4px; }
   .kpi .desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
 
+  /* Roteiro de teste */
+  .test-level { margin-bottom: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-1); overflow: hidden; }
+  .test-level summary {
+    padding: 14px 18px; cursor: pointer; list-style: none;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--champagne-light);
+    user-select: none; transition: background .15s;
+  }
+  .test-level summary:hover { background: var(--bg-2); }
+  .test-level summary::-webkit-details-marker { display: none; }
+  .test-level[open] summary { border-bottom: 1px solid var(--border); background: var(--bg-2); }
+  .test-level .level-num {
+    font-family: 'Montserrat', sans-serif; font-size: 10px; color: var(--champagne);
+    font-weight: 600; letter-spacing: 3px; margin-right: 14px;
+  }
+  .test-level .level-time {
+    font-family: 'Montserrat', sans-serif; font-size: 10px; color: var(--text-muted);
+    letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .test-level .level-body { padding: 16px 22px 22px; }
+  .test-level h4 {
+    font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--champagne); font-weight: 600;
+    margin: 18px 0 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+  .test-level h4:first-child { margin-top: 0; }
+  .test-level ol {
+    list-style: none; counter-reset: step;
+    padding: 0; margin: 0;
+  }
+  .test-level ol li {
+    counter-increment: step;
+    padding: 6px 0 6px 34px;
+    position: relative;
+    font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+  }
+  .test-level ol li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 7px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--bg-3); color: var(--champagne);
+    font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+  }
+  .test-level ol li strong { color: var(--ivory); font-weight: 500; }
+  .test-level ol li code {
+    font-family: 'Consolas', monospace; font-size: 11px;
+    color: var(--champagne-light); background: var(--bg-3);
+    padding: 1px 6px; border-radius: 3px;
+  }
+  .test-warn {
+    background: rgba(217,122,122,0.08); border-left: 2px solid var(--red);
+    padding: 10px 14px; margin: 10px 0; border-radius: 0 4px 4px 0;
+    font-size: 12px; color: var(--rosa);
+  }
+  .test-final-check {
+    background: var(--bg-1); border: 1px solid var(--border-strong);
+    padding: 20px 24px; border-radius: 8px; margin: 28px 0;
+  }
+  .test-final-check h3 {
+    font-family: 'Cormorant Garamond', serif; font-size: 22px;
+    color: var(--champagne); margin-bottom: 14px;
+  }
+  .test-final-check ul { list-style: none; padding: 0; }
+  .test-final-check li {
+    padding: 5px 0 5px 24px; position: relative; font-size: 13px; color: var(--text-secondary);
+  }
+  .test-final-check li::before {
+    content: "✓"; position: absolute; left: 0; top: 5px;
+    color: var(--sage); font-weight: 600;
+  }
+
   /* Footer */
   .footer { margin-top: 80px; padding-top: 32px; border-top: 1px solid var(--border); text-align: center; }
   .footer .sig { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; color: var(--champagne); }
@@ -214,6 +287,9 @@
       <li><a href="#fase-2">Fase 2 — Automação</a></li>
       <li><a href="#fase-3">Fase 3 — Expansão</a></li>
       <li><a href="#metricas">Métricas de sucesso</a></li>
+
+      <li class="nav-section">Uso</li>
+      <li><a href="#roteiro-teste">Roteiro de teste</a></li>
     </ul>
 
     <div class="side-progress" data-overall>
@@ -594,6 +670,284 @@
         <div class="kpi"><div class="lbl">Tempo Mirian</div><div class="val">≤ 2h/sem</div><div class="desc">Dedicação semanal ao programa inteiro. Hoje estimado em 10-20h. Meta: 90% de redução.</div></div>
         <div class="kpi"><div class="lbl">Custo impressão</div><div class="val">R$ 0</div><div class="desc">Zerar vouchers impressos nos 80% de casos aplicáveis. Restantes mantidos por UX.</div></div>
         <div class="kpi"><div class="lbl">CAC parcerias</div><div class="val">&lt; R$ 150</div><div class="desc">Custo operacional por paciente novo vindo do ecossistema. Proxy de saúde financeira do programa.</div></div>
+      </div>
+    </section>
+
+    <!-- ROTEIRO DE TESTE -->
+    <section id="roteiro-teste">
+      <h2><span class="num">12</span>Roteiro de teste · do zero ao especialista</h2>
+      <p class="lead">Sequência progressiva de validação da ferramenta B2B. Cada nível acumula sobre o anterior. Estimativa total: ~2h — pode parar e retomar. Ao final você domina tudo que o sistema faz.</p>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 0</span>Smoke · o básico funciona</span><span class="level-time">3 min</span></summary>
+        <div class="level-body">
+          <ol>
+            <li>Abrir <code>/b2b-partners.html</code></li>
+            <li>Canto superior esquerdo mostra <strong>"← Voltar ao app"</strong> + título "Círculo Mirian"</li>
+            <li>Canto superior direito mostra <strong>toggle Scout</strong> + <strong>badge de consumo</strong> (R$ X / R$ 100)</li>
+            <li>Barra de <strong>7 tabs</strong>: Ativas · Prospects · Candidatos · Gaps · Saúde · Encerramentos · Config</li>
+            <li>Aperta <code>F12</code> → Console sem erros vermelhos</li>
+            <li>Em janela estreita (ou celular) as tabs rolam lateralmente sem quebrar</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 1</span>Navegação · ESC, tabs, contadores</span><span class="level-time">5 min</span></summary>
+        <div class="level-body">
+          <ol>
+            <li>Clica em cada uma das 7 tabs — conteúdo muda · tab ativa fica em champagne</li>
+            <li>Tab <strong>Ativas</strong> mostra os 6 parceiros seed (Moinho, Cazza Flor, Mentora, Academia, Mormaii, Osvaldo) com bolinha verde à esquerda</li>
+            <li>Clica em qualquer parceria → overlay de detalhe abre</li>
+            <li>Aperta <code>ESC</code> → overlay fecha na hora</li>
+            <li>Volta, clica de novo → <strong>X</strong> no canto fecha também</li>
+            <li>Após carregar <strong>Candidatos</strong>, tab mostra "Candidatos · N" com contador real</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 2</span>CRUD de parcerias · criar, editar, status</span><span class="level-time">15 min</span></summary>
+        <div class="level-body">
+          <h4>Criar parceria teste</h4>
+          <ol>
+            <li>Tab <strong>Ativas</strong> → botão <strong>"+ Nova parceria"</strong></li>
+            <li>Preenche: Nome = "Parceria Teste Nível 2", Pilar = outros, Tipo = transactional</li>
+            <li>DNA: Excelência 8 · Estética 9 · Propósito 7</li>
+            <li>Status inicial = prospect · clica <strong>"Criar parceria"</strong></li>
+          </ol>
+          <h4>Editar</h4>
+          <ol>
+            <li>Clica na parceria criada (em Prospects)</li>
+            <li>Clica <strong>"Editar"</strong> → modal abre preenchido</li>
+            <li>Muda Tier para 2 · salva · detalhe atualiza</li>
+          </ol>
+          <h4>Máquina de estados</h4>
+          <ol>
+            <li>Com parceria aberta, usa <strong>dropdown de status</strong> (canto direito)</li>
+            <li>Tenta pular <code>prospect → active</code>: <strong>bloqueado</strong> (DNA gate)</li>
+            <li>Faz válido: <code>prospect → dna_check → contract → active</code></li>
+            <li>Cada transição pede motivo via prompt toast</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 3</span>Candidatos manuais · indicação + triagem</span><span class="level-time">10 min</span></summary>
+        <div class="level-body">
+          <ol>
+            <li>Tab <strong>Candidatos</strong> → botão <strong>"+ Adicionar"</strong></li>
+            <li>Preenche: Nome "Salão Testes Premium" · categoria <code>salao_premium</code> · Instagram <code>@exemplo</code></li>
+            <li>Referido por "Amiga X" · Contexto "indica porque é minha cabeleireira há 5 anos"</li>
+            <li><strong>Não</strong> preenche DNA score</li>
+            <li>Clica <strong>"Adicionar candidato"</strong> · lista atualiza</li>
+            <li>Candidato aparece com score <strong>—</strong> e botão <strong>"Avaliar IA"</strong></li>
+            <li>Stats inline: "N candidatos · N novos"</li>
+          </ol>
+          <h4>Fluxo de triagem</h4>
+          <ol>
+            <li>Clica "Aprovar" → status "Aprovado"</li>
+            <li>Clica "Abordar" → status "Abordado"</li>
+            <li>Clica "Negociando"</li>
+            <li>Clica <strong>"Promover"</strong> → candidato some (signed) + aparece em Prospects como parceria nova</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 4</span>Scout automático · Apify + Claude</span><span class="level-time">10 min</span></summary>
+        <div class="level-body">
+          <div class="test-warn"><strong>Custa R$ 1,60</strong> — só testa se quiser gastar.</div>
+          <ol>
+            <li>Confirma que toggle Scout está <strong>ligado</strong> (verde)</li>
+            <li>Tab <strong>Candidatos</strong> → dropdown → escolhe <code>T1 · Salão premium</code></li>
+            <li>Clica <strong>"Varrer"</strong> → confirmação toast mostra custo → <strong>"Varrer agora"</strong></li>
+            <li>Aguarda 60-90s (pode ir pra outra tab)</li>
+            <li>Toast verde: "N candidatos criados · X falhas · R$ 1,XX"</li>
+            <li>Lista tem 10-15 candidatos novos com score DNA · endereço · IG · reviews</li>
+            <li>Badge de consumo no topo subiu</li>
+          </ol>
+          <h4>Avaliar IA manual</h4>
+          <ol>
+            <li>Pega o candidato do Nível 3 (Salão Testes Premium, sem score)</li>
+            <li>Clica <strong>"Avaliar IA"</strong> → confirma R$ 0,08 → aguarda ~5s</li>
+            <li>Score · justificativa · fit · riscos · mensagem de abordagem aparecem</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 5</span>Vouchers digitais · emissão + landing + tracking</span><span class="level-time">10 min</span></summary>
+        <div class="level-body">
+          <ol>
+            <li>Tab <strong>Ativas</strong> → abre Cazza Flor</li>
+            <li>Clica botão <strong>"Vouchers"</strong> → overlay abre com funil (0 emitidos)</li>
+            <li>Clica <strong>"+ Emitir voucher"</strong></li>
+            <li>Preenche: Nome "Teste Mariana" · WhatsApp seu número · emite</li>
+            <li>Toast: "Voucher emitido · #xxxxxxxx"</li>
+          </ol>
+          <h4>Landing pública</h4>
+          <ol>
+            <li>Clica "Copiar link" no voucher</li>
+            <li>Abre em aba anônima → <code>/voucher.html?t=xxxxxxxx</code></li>
+            <li>Vê: "Para Mariana" · slogan · combo · validade · botão WhatsApp</li>
+          </ol>
+          <h4>Tracking em 4 estágios</h4>
+          <ol>
+            <li>Volta no admin → voucher agora está em <strong>"Aberto"</strong> (auto)</li>
+            <li>Clica <strong>"Marcar entregue"</strong> → muda status</li>
+            <li>Clica <strong>"Cancelar"</strong> → prompt de motivo → cancela</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 6</span>Playbook + Tasks · mensal automatizado</span><span class="level-time">15 min</span></summary>
+        <div class="level-body">
+          <h4>Aplicar playbook</h4>
+          <ol>
+            <li>Abre a parceria promovida no Nível 3</li>
+            <li>Clica <strong>"Aplicar Playbook"</strong> → confirma</li>
+            <li>Toast: "N tasks · X conteúdos · Y metas"</li>
+            <li>Detail recarrega com seções novas: Metas · Playbook (carrossel + ganchos)</li>
+          </ol>
+          <h4>Banner de tasks</h4>
+          <ol>
+            <li>Tab <strong>Ativas</strong> · banner no topo "N tarefas abertas"</li>
+            <li>Clica → modal abre com lista (brief mensal, kickoff, carrossel…)</li>
+            <li>Cada task tem kind e data de prazo</li>
+          </ol>
+          <h4>Brief WhatsApp</h4>
+          <div class="test-warn">Funciona apenas se parceria tiver telefone válido.</div>
+          <ol>
+            <li>Nas tasks, procura <code>brief_monthly</code> com WA</li>
+            <li>Clica <strong>"Enviar WhatsApp"</strong></li>
+            <li>Telefone válido → toast "Brief enfileirado" + task auto-resolved</li>
+            <li>Botão "Enviar N brief(s) agora" no topo do modal dispara em massa</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 7</span>Grupos B2B2B2C · ACIM, Confrarias</span><span class="level-time">15 min</span></summary>
+        <div class="level-body">
+          <h4>Criar parceria collective</h4>
+          <ol>
+            <li>Tab Ativas → "+ Nova parceria"</li>
+            <li>Nome "ACIM Maringá (teste)" · Pilar <code>rede</code> · Categoria <code>acim_confraria</code> · Tier 1 · Tipo institutional</li>
+            <li>Marca <strong>checkbox "Esta parceria é com um grupo coletivo?"</strong></li>
+            <li>Membras = 300 · Alcance mensal = 100</li>
+            <li>DNA todas 9 · Status contract · salva</li>
+          </ol>
+          <h4>Playbook collective</h4>
+          <ol>
+            <li>Abre a parceria · Clica <strong>"Aplicar Playbook"</strong></li>
+            <li>Nota: tasks diferentes (plano de alcance · palestra 30d · voucher exclusivo)</li>
+            <li>Metas: exposições/mês · leads individuais · agendamentos · taxa alcance→lead</li>
+          </ol>
+          <h4>Alcance do grupo</h4>
+          <ol>
+            <li>Na ficha aparece botão <strong>"Alcance do grupo"</strong> (condicional)</li>
+            <li>Clica → overlay com 5 KPIs zerados</li>
+            <li>Clica <strong>"+ Registrar exposição"</strong></li>
+            <li>Tipo <code>palestra</code> · Título "Palestra de teste" · Alcance 80 · Leads 6</li>
+            <li>KPIs atualizam: Alcance 80 · Leads 6 · Taxa 7.5%</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 8</span>Saúde + Gaps · visão estratégica</span><span class="level-time">10 min</span></summary>
+        <div class="level-body">
+          <h4>Dashboard de saúde</h4>
+          <ol>
+            <li>Tab <strong>Saúde</strong></li>
+            <li>4 cards: Verde · Amarelo · Vermelho · Sem dado</li>
+            <li>Clica <strong>"Recalcular"</strong> · atualiza em ~3s</li>
+            <li>Parcerias amarelo/vermelho aparecem listadas com motivo</li>
+          </ol>
+          <h4>Gaps do plano</h4>
+          <ol>
+            <li>Tab <strong>Gaps do plano</strong></li>
+            <li>4 KPIs no topo: Coberto · Triagem · Vazio · Total (24)</li>
+            <li>3 seções: Tier 1 (8) · Tier 2 (9) · Tier 3 (7)</li>
+            <li>Cores: <strong>vermelho</strong> = vazio · <strong>amarelo</strong> = tem candidatos · <strong>verde</strong> = tem parceria</li>
+            <li>Clica <strong>"Varrer"</strong> numa Tier 1 vermelha → navega direto pra Candidatos + dispara scan</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 9</span>Encerramento automático · inativos</span><span class="level-time">10 min</span></summary>
+        <div class="level-body">
+          <h4>Detectar</h4>
+          <ol>
+            <li>Tab <strong>Encerramentos</strong></li>
+            <li>Clica <strong>"Detectar agora"</strong> → toast "Tudo no prazo" ou N flagadas</li>
+            <li>Cards flagados mostram: nome · motivo (90d / saúde vermelha / DNA&lt;5) · dias inativo</li>
+          </ol>
+          <h4>Encerrar</h4>
+          <div class="test-warn">Cuidado — parceria fecha definitivamente.</div>
+          <ol>
+            <li>Card flagado · botão <strong>"Encerrar"</strong> → confirma 2x (modal + motivo)</li>
+            <li>Toast sucesso + <strong>carta formal gerada em textarea</strong> pra copiar</li>
+            <li>Vouchers abertos dela: cancelados automaticamente</li>
+            <li>Tasks abertas: viram <code>auto_resolved</code></li>
+          </ol>
+          <h4>Manter ativa</h4>
+          <ol>
+            <li>Em flagada, clica <strong>"Manter ativa"</strong> → nota (opcional) → some da lista</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 10</span>Relatório PDF mensal</span><span class="level-time">5 min</span></summary>
+        <div class="level-body">
+          <ol>
+            <li>Abre qualquer parceria madura (com vouchers)</li>
+            <li>Clica <strong>"Relatório PDF"</strong></li>
+            <li>Nova aba com folha A4 (saúde · KPIs · funil · narrativa · citação)</li>
+            <li>Barra roxa no topo: <strong>"Imprimir / Salvar PDF"</strong></li>
+            <li>Clica → dialog do navegador → <strong>"Salvar como PDF"</strong></li>
+            <li>Layout premium pronto pra enviar ao parceiro</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="test-level">
+        <summary><span><span class="level-num">NÍVEL 11</span>Edge cases · controle de custo</span><span class="level-time">10 min · opcional</span></summary>
+        <div class="level-body">
+          <h4>Toggle desligado</h4>
+          <ol>
+            <li>Toggle Scout → OFF</li>
+            <li>Tab Candidatos: banner muda pra "Scout desligado · ative no toggle..."</li>
+            <li>Botão Varrer some</li>
+            <li>"+ Adicionar" continua funcionando (manual não depende de scout)</li>
+          </ol>
+          <h4>Budget cap</h4>
+          <ol>
+            <li>Com toggle on, ao atingir R$ 100 de consumo, tentativas de varrer retornam <code>budget_cap_reached</code></li>
+          </ol>
+          <h4>Rate limit</h4>
+          <ol>
+            <li>Tentar varrer a mesma categoria 2x no mesmo dia → 2ª tentativa bloqueia com <code>rate_limit_exceeded</code></li>
+          </ol>
+        </div>
+      </details>
+
+      <div class="test-final-check">
+        <h3>Você é especialista quando…</h3>
+        <ul>
+          <li>Consegue abrir uma parceria do zero até ativa em menos de 5 min</li>
+          <li>Sabe a diferença entre os 3 tipos e quando usar <code>is_collective</code></li>
+          <li>Usa <strong>Gaps</strong> como ponto de partida ("onde posso abrir uma nova?")</li>
+          <li>Aplica Playbook sem medo (é idempotente)</li>
+          <li>Responde tarefas semanalmente pelo banner</li>
+          <li>Registra exposições das confrarias em até 24h após o evento</li>
+          <li>Acompanha a Saúde semanal — amarelos viram ações concretas</li>
+          <li>Aprova encerramentos de forma consistente (mantém o ecossistema curado)</li>
+        </ul>
       </div>
     </section>
 
