@@ -450,6 +450,11 @@ const AgendaValidator = {
     var dur = durationMin || 30
     var day = _getClinicDay(dateStr)
     if (!day.aberto) return { blocked: true, kind: 'closed', reason: 'Clinica fechada' }
+    // Horario ja passou no dia atual — impede novos agendamentos no passado.
+    // (Slots com appt existente continuam clicaveis via canClick||hasAppts.)
+    if (dateStr === _todayIso() && _isPastTime(dateStr, timeStr)) {
+      return { blocked: true, kind: 'past', reason: 'Horario ja passou' }
+    }
     var s = _toMins(timeStr)
     var e = s + dur
     // Dentro de algum period?
