@@ -1191,6 +1191,12 @@ async function saveNewPatient() {
     // Persiste em localStorage + dispara sync Supabase (fire-and-forget)
     _syncLeadToCache(newLead)
 
+    // VPI Attribution: se veio via short-link de parceira, vincula
+    // session_id → lead_id pra ROI rastreavel. Fire-and-forget.
+    if (window.VPIAttribution) {
+      window.VPIAttribution.linkToLead(newLead.id)
+    }
+
     // Auto-atribui tag "Lead Novo" — aguarda antes de abrir o modal
     // (evita race condition: getTags no viewLead rodaria antes do assign gravar)
     if (window.SdrService) {
