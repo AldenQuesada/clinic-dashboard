@@ -253,6 +253,7 @@
       _credentialsHtml() +
       _diagnosisHtml(fmData) +
       _protocolHtml(annotations) +
+      _timelineHtml() +
       _visualHtml(fmData) +
       _casesHtml(payload.cases) +
       _anchorHtml(payload.pricing, fmt) +
@@ -353,6 +354,19 @@
       '#rlxDoc .zone .body .product { font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4A4A4A;opacity:0.7 }' +
       '#rlxDoc .zone .qty { font-family:"Cormorant Garamond",serif;font-weight:400;font-size:28px;color:#2C2C2C;line-height:1;text-align:right }' +
       '#rlxDoc .zone .qty .unit { font-size:13px;opacity:0.5;margin-left:4px;font-weight:300 }' +
+      // timeline 5D
+      '#rlxDoc .timeline { background:#FEFCF8 }' +
+      '#rlxDoc .timeline h2 { font-size:38px;max-width:520px;margin-bottom:16px }' +
+      '#rlxDoc .timeline .lead { font-family:"Cormorant Garamond",serif;font-style:italic;font-size:17px;color:#4A4A4A;max-width:540px;line-height:1.6;margin-bottom:64px }' +
+      '#rlxDoc .timeline-track { position:relative;padding-left:28px }' +
+      '#rlxDoc .timeline-stage { position:relative;padding-bottom:36px;padding-left:28px }' +
+      '#rlxDoc .timeline-stage:last-child { padding-bottom:0 }' +
+      '#rlxDoc .timeline-dot { position:absolute;top:6px;left:-6px;width:14px;height:14px;border-radius:50%;background:#C8A97E;box-shadow:0 0 0 4px #FEFCF8,0 0 0 5px #E8DDD0;z-index:2 }' +
+      '#rlxDoc .timeline-line { position:absolute;top:24px;left:0;bottom:-12px;width:1px;background:#E8DDD0 }' +
+      '#rlxDoc .timeline-body { padding-top:1px }' +
+      '#rlxDoc .timeline-when { font-size:9px;letter-spacing:0.3em;text-transform:uppercase;color:#A8895E;font-weight:600;margin-bottom:8px }' +
+      '#rlxDoc .timeline-title { font-family:"Cormorant Garamond",serif;font-weight:400;font-size:22px;color:#2C2C2C;margin-bottom:8px;line-height:1.2 }' +
+      '#rlxDoc .timeline-text { font-family:"Cormorant Garamond",serif;font-weight:300;font-style:italic;font-size:16px;color:#4A4A4A;line-height:1.6;max-width:520px }' +
       // visual
       '#rlxDoc .visual { background:#F5F0E8 }' +
       '#rlxDoc .visual h2 { text-align:center;font-size:36px;max-width:460px;margin:0 auto 40px }' +
@@ -579,6 +593,39 @@
           '</li>'
         }).join('') +
       '</ul>' +
+    '</section>'
+  }
+
+  // ── Linha do Tempo do Método Lifting 5D ──────────────────────
+  // Cronograma editorial (Mês 0 → 12) que materializa o protocolo
+  // integrado da clínica. Independente do plano da paciente — mostra
+  // a estrutura do método como um todo.
+  function _timelineHtml() {
+    var stages = [
+      { when: 'MÊS 0',     title: 'Avaliação completa',       text: 'Scanner Anovator A5, leitura facial 3D, planejamento personalizado com a Dra. Mirian.' },
+      { when: 'MÊS 1',     title: 'Sessão integrada',         text: 'Aplicação dos injetáveis em todas as zonas planejadas + primeira sessão de Fotona 4D.' },
+      { when: 'MÊS 2',     title: 'Segunda sessão Fotona',    text: 'Estímulo profundo de colágeno e elastina nas 4 camadas da pele.' },
+      { when: 'MÊS 3',     title: 'Terceira Fotona + retoque', text: 'Conclusão do ciclo Fotona e ajuste fino dos injetáveis se necessário.' },
+      { when: 'MÊS 6',     title: 'Avaliação evolutiva',      text: 'Comparação com baseline, registro fotográfico, decisão sobre continuidade.' },
+      { when: 'MÊS 12',    title: 'Manutenção anual',         text: 'Programa contínuo com 40% de benefício exclusivo em Fotona e condições especiais para retoques.' },
+    ]
+    return '<section class="fold timeline">' +
+      '<h3>Método Lifting 5D</h3>' +
+      '<h2>A jornada da sua <em>harmonia</em></h2>' +
+      '<p class="lead">O protocolo integrado se desenvolve em fases — cada uma respeita o tempo biológico do colágeno e potencializa a anterior. Não é evento isolado, é <em>processo contínuo</em>.</p>' +
+      '<div class="timeline-track">' +
+        stages.map(function (s, i) {
+          return '<div class="timeline-stage">' +
+            '<div class="timeline-dot"></div>' +
+            (i < stages.length - 1 ? '<div class="timeline-line"></div>' : '') +
+            '<div class="timeline-body">' +
+              '<div class="timeline-when">' + _esc(s.when) + '</div>' +
+              '<div class="timeline-title">' + _esc(s.title) + '</div>' +
+              '<div class="timeline-text">' + _esc(s.text) + '</div>' +
+            '</div>' +
+          '</div>'
+        }).join('') +
+      '</div>' +
     '</section>'
   }
 

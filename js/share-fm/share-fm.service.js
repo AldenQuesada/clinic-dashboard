@@ -142,7 +142,10 @@
         console.warn('[ShareFm] shorten error:', res.error)
         return { shortUrl: longUrl, code: null }
       }
-      var origin = window.location.origin
+      // Mesma logica do publicBaseUrl — short link tem que apontar para
+      // dominio publico mesmo em localhost (paciente abre no celular).
+      var cfg = window.ShareFmConfig
+      var origin = (cfg && cfg.publicBaseUrl) ? cfg.publicBaseUrl() : window.location.origin
       return { shortUrl: origin + '/r.html?c=' + code, code: code }
     }).catch(function (e) {
       console.warn('[ShareFm] shorten catch:', e)

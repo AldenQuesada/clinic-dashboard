@@ -110,7 +110,10 @@
       }).then(function (created) {
         if (!created || !created.token) throw new Error('Falha ao criar share')
 
-        var publicUrl = window.location.origin + cfg.PUBLIC_PAGE_PATH + '?t=' + created.token
+        // URL publica usa dominio de producao mesmo se Dra estiver testando
+        // em localhost — paciente precisa abrir no celular.
+        var baseUrl = (cfg.publicBaseUrl ? cfg.publicBaseUrl() : window.location.origin)
+        var publicUrl = baseUrl + cfg.PUBLIC_PAGE_PATH + '?t=' + created.token
         window.ShareFmModal.openProgress('Encurtando URL...')
 
         // 5. Encurta — codigo curto + tracking
