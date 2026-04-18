@@ -538,6 +538,7 @@
     .sprint-header { flex-direction: column; gap: 12px; }
   }
 </style>
+<link rel="stylesheet" href="css/growth-tracker.css">
 </head>
 <body>
 <div class="layout">
@@ -562,6 +563,9 @@
     </ul>
     <div class="nav-section">Execução</div>
     <ul class="nav">
+      <li><a href="#esta-semana">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Esta semana</a></li>
       <li><a href="#roadmap">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
         Roadmap 90 dias</a></li>
@@ -608,7 +612,17 @@
           <span class="value">VPI 9 fases + Cashflow P1-P7 + Lara + Quiz</span>
         </div>
       </div>
+      <div data-overall-progress style="margin-top: 32px;"></div>
     </header>
+
+    <!-- ESTA SEMANA -->
+    <section id="esta-semana">
+      <h2><span class="num">00</span>Esta semana</h2>
+      <p class="lead">Top 6 itens abertos, ordenados por dependências + RICE. Atualiza sozinho conforme você marca progresso.</p>
+
+      <div data-stalled></div>
+      <div data-this-week class="tracker-rows"></div>
+    </section>
 
     <!-- DIAGNÓSTICO -->
     <section id="diagnostico">
@@ -728,18 +742,8 @@ RFM classifica inativa / em_risco<br>
           <div class="sprint-title">Sprint 1 — Fechar torneiras abertas</div>
           <div class="sprint-range">Dias 1 – 15</div>
         </div>
-        <table>
-          <thead><tr><th>#</th><th>Ação</th><th>Onde</th><th>Esforço</th></tr></thead>
-          <tbody>
-            <tr><td>1</td><td>Plugar <code>vpi_link_attribution_to_lead</code></td><td><code>js/patients.js</code> createLead + modal agendamento</td><td>2h</td></tr>
-            <tr><td>2</td><td>Ativar 1 challenge sazonal (Maio — Mês da Mãe 1.5x)</td><td>Aba "Desafios" admin</td><td>10min</td></tr>
-            <tr><td>3</td><td>Configurar <code>vpi_staff_alert_phone</code></td><td>Aba Config VPI</td><td>5min</td></tr>
-            <tr><td>4</td><td>Revisar 5 templates WA (saudade, alerta tier, dormente, reativação, cortesia)</td><td>Funil de Automações</td><td>1h</td></tr>
-            <tr><td>5</td><td>Publicar edição 1 da revista</td><td>Editor admin (destravar pendência)</td><td>1 dia</td></tr>
-            <tr><td>6</td><td>Definir NSM + metas com Mirian</td><td>Reunião 1:1</td><td>30min</td></tr>
-            <tr><td>7</td><td>Expandir saudade para inativas não-parceiras</td><td>RPC + scan semelhante ao VPI</td><td>4h</td></tr>
-          </tbody>
-        </table>
+        <div data-sprint-progress="s1"></div>
+        <div class="tracker-rows" data-sprint-rows="s1"></div>
         <div class="sprint-output">
           <strong>Output:</strong> operação medindo ROI por canal, primeiro challenge rodando, NSM acordado com a clínica.
         </div>
@@ -751,17 +755,8 @@ RFM classifica inativa / em_risco<br>
           <div class="sprint-title">Sprint 2 — Integrar os três loops</div>
           <div class="sprint-range">Dias 16 – 45</div>
         </div>
-        <table>
-          <thead><tr><th>#</th><th>Ação</th><th>Implementação</th></tr></thead>
-          <tbody>
-            <tr><td>1</td><td>Quiz → VPI bridge</td><td>No close do quiz: se lead finalizar procedimento em ≤30d, disparar autoEnroll VPI</td></tr>
-            <tr><td>2</td><td>Aniversário → VPI bridge</td><td>Aniversariante ativa (2+ appts, sem VPI) recebe convite embaixadora no mesmo envio</td></tr>
-            <tr><td>3</td><td>NPS pós-procedimento D+7</td><td>WA automation: "De 0-10, indicaria?" → nota ≥9 dispara convite VPI + pedido de depoimento com consent</td></tr>
-            <tr><td>4</td><td>Depoimentos → Revista</td><td>Celebration feed consentido vira matéria automática na próxima edição</td></tr>
-            <tr><td>5</td><td>Instagram auto-post</td><td>Meta Graph API (backlog tech) ou staff manual com template pronto story/post</td></tr>
-            <tr><td>6</td><td>Dashboard LTV/CAC por canal</td><td>RPC agrupa <code>vpi_partner_attribution</code> + cashflow por canal, nova aba em Growth</td></tr>
-          </tbody>
-        </table>
+        <div data-sprint-progress="s2"></div>
+        <div class="tracker-rows" data-sprint-rows="s2"></div>
         <div class="sprint-output">
           <strong>Output:</strong> os 3 loops conversando entre si; time vendo CAC/LTV por canal; decisões de budget passam a ser data-driven.
         </div>
@@ -773,17 +768,8 @@ RFM classifica inativa / em_risco<br>
           <div class="sprint-title">Sprint 3 — Abrir novos canais</div>
           <div class="sprint-range">Dias 46 – 90</div>
         </div>
-        <table>
-          <thead><tr><th>#</th><th>Ação</th><th>Investimento</th></tr></thead>
-          <tbody>
-            <tr><td>1</td><td>SEO básico na revista</td><td>meta tags, sitemap, schema.org Article, links internos — 1 dia</td></tr>
-            <tr><td>2</td><td>Página Parceiros B2B2C ativada</td><td>dermato vizinha, spa, salão com deep-link + comissão VPI — 2 dias</td></tr>
-            <tr><td>3</td><td>Paid ads track</td><td>campanhas com UTM padronizado; attribution já rastreia 302 no r.html — 1 dia infra</td></tr>
-            <tr><td>4</td><td>Landing pages por queixa</td><td>Smooth Eyes, Full Face, Lifting 5D — cada uma com quiz específico + CTA VPI — 3 dias</td></tr>
-            <tr><td>5</td><td>Email/SMS como canal secundário</td><td>WA primário, email como backup para LGPD opt-out — 2 dias</td></tr>
-            <tr><td>6</td><td>Eventos presenciais Diamante</td><td>1 jantar trimestral com parceiras top — custo baixo, ROI emocional alto — operacional</td></tr>
-          </tbody>
-        </table>
+        <div data-sprint-progress="s3"></div>
+        <div class="tracker-rows" data-sprint-rows="s3"></div>
         <div class="sprint-output">
           <strong>Output:</strong> clínica com 5+ canais medidos, SEO ranqueando, parcerias gerando leads qualificados com atribuição clara.
         </div>
@@ -885,18 +871,9 @@ RFM classifica inativa / em_risco<br>
       <h2><span class="num">08</span>Riscos e Sinalizações</h2>
       <p class="lead">Growth bem executado escala também os riscos. Detectar cedo evita recolher depois.</p>
 
-      <table>
-        <thead>
-          <tr><th>Risco</th><th>Como detectar</th><th>Mitigação</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Saturação WA (opt-out ≥ 5%)</td><td><code>vpi_partners.opt_out_at</code></td><td>Reduzir frequência, A/B em tom</td></tr>
-          <tr><td>Canibalização preço parceira</td><td>Margem por procedimento cai</td><td>Cap de 1x/mês por parceira</td></tr>
-          <tr><td>Spam Instagram (algoritmo pune)</td><td>Alcance despenca</td><td>Variar formatos: story vs post vs reels</td></tr>
-          <tr><td>Tier high_perf inflacionado</td><td>Recompensa custa mais que LTV</td><td>Auditoria mensal por tier</td></tr>
-          <tr><td>Challenges viciantes</td><td>K-factor cai sem challenge ativo</td><td>Sempre ter 1 rodando, mas alternar temas</td></tr>
-        </tbody>
-      </table>
+      <h3>Monitores contínuos</h3>
+      <p>Esses itens ficam sempre "abertos". Marque quando revisar; o tracker registra a data pra lembrar da próxima rodada.</p>
+      <div class="tracker-rows" data-sprint-rows="rk"></div>
 
       <div class="callout risk">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -935,6 +912,18 @@ RFM classifica inativa / em_risco<br>
       <p style="text-align: center; color: var(--text-secondary); font-size: 14px;">A ordem ótima é A → B. Mas se a clínica quer ver movimento grande antes de medir, B primeiro também funciona.</p>
     </section>
 
+    <!-- TOOLBAR -->
+    <div class="tracker-actions">
+      <button type="button" class="tracker-btn" data-action="export-csv">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exportar CSV
+      </button>
+      <button type="button" class="tracker-btn tracker-btn--danger" data-action="reset-tracker">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Resetar progresso
+      </button>
+    </div>
+
     <!-- FOOTER -->
     <footer class="footer">
       <div class="footer-logo">Clínica Mirian de Paula</div>
@@ -958,6 +947,13 @@ RFM classifica inativa / em_risco<br>
   }, { rootMargin: '-20% 0px -60% 0px' });
   sections.forEach(s => observer.observe(s));
 </script>
+
+<!-- Growth Tracker Modules -->
+<script src="js/growth-tracker/tracker.data.js"></script>
+<script src="js/growth-tracker/tracker.repository.js"></script>
+<script src="js/growth-tracker/tracker.service.js"></script>
+<script src="js/growth-tracker/tracker.ui.js"></script>
+<script src="js/growth-tracker/tracker.bootstrap.js"></script>
 
 </body>
 </html>
