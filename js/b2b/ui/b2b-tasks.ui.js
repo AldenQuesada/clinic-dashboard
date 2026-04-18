@@ -209,31 +209,41 @@
                    : r && r.error === 'template_missing' ? 'Template WA não configurado'
                    : r && r.error === 'enqueue_failed'   ? 'Falha ao enfileirar: ' + (r.detail || '')
                    : 'Falha: ' + (r && r.error || 'desconhecida')
-        alert(reason)
+        window.B2BToast && window.B2BToast.error(reason)
         btn.disabled = false; btn.textContent = 'Enviar WhatsApp'
         return
       }
+      window.B2BToast && window.B2BToast.success('Brief enfileirado')
       await _load()
     } catch (err) {
-      alert('Erro: ' + err.message)
+      window.B2BToast && window.B2BToast.error('Erro: ' + err.message)
       btn.disabled = false; btn.textContent = 'Enviar WhatsApp'
     }
   }
 
   async function _onSendAllBriefs(e) {
     var btn = e.currentTarget
-    if (!confirm('Enviar brief WhatsApp pra todas as parcerias ativas? O sistema vai enfileirar as mensagens.')) return
+    var ok = window.B2BToast
+      ? await window.B2BToast.confirm(
+          'Vai enfileirar os briefs no WhatsApp pra cada parceria ativa.',
+          { title: 'Enviar todos os briefs?', okLabel: 'Enviar todos' })
+      : confirm('Enviar todos os briefs?')
+    if (!ok) return
+
     btn.disabled = true; btn.textContent = 'Enviando…'
     try {
       var r = await _repo().briefSendAllActive()
-      var msg = 'Enviados: ' + (r.sent || 0) + ' · Falhas: ' + (r.failed || 0)
+      var msg = (r.sent || 0) + ' enviados · ' + (r.failed || 0) + ' falhas'
       if (r.failures && r.failures.length) {
-        msg += '\n\nFalhas:\n' + r.failures.map(function (f) { return '· ' + f.name + ' — ' + f.error }).join('\n')
+        window.B2BToast && window.B2BToast.warn(msg +
+          ' — ' + r.failures.map(function (f) { return f.name }).join(', '),
+          { title: 'Briefs enviados com falhas', duration: 8000 })
+      } else {
+        window.B2BToast && window.B2BToast.success(msg)
       }
-      alert(msg)
       await _load()
     } catch (err) {
-      alert('Erro: ' + err.message)
+      window.B2BToast && window.B2BToast.error('Erro: ' + err.message)
       btn.disabled = false
     }
   }
@@ -247,7 +257,7 @@
       await _repo().resolve(id, status)
       await _load()
     } catch (err) {
-      alert('Falha: ' + err.message)
+      window.B2BToast && window.B2BToast.error('Falha: ' + err.message)
       btn.disabled = false
     }
   }

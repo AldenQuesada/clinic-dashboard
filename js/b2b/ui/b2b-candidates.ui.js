@@ -246,7 +246,7 @@
       _renderFilters() +
       _renderCandidateStats() +
       (_state.loading
-        ? '<div class="b2b-empty">Carregando candidatos…</div>'
+        ? ((window.B2BUXKit && window.B2BUXKit.skeleton({ rows: 4 })) || '<div class="b2b-empty">Carregando candidatos…</div>')
         : _state.error
           ? '<div class="b2b-empty b2b-empty-err">' + _esc(_state.error) + '</div>'
           : (_state.candidates.length
@@ -352,7 +352,11 @@
 
     try {
       if (action === 'evaluate-ia') {
-        if (!confirm('Avaliar DNA deste candidato com IA?\n\nCusto: R$ 0,08 (só Claude, sem varredura).')) return
+        var okEval = window.B2BToast
+          ? await window.B2BToast.confirm('Só Claude, sem varredura. Custo: R$ 0,08.',
+              { title: 'Avaliar DNA com IA?', okLabel: 'Avaliar' })
+          : confirm('Avaliar IA? R$ 0,08')
+        if (!okEval) return
         btn.disabled = true; btn.textContent = 'Avaliando…'
         var baseUrl = (window.ClinicEnv && window.ClinicEnv.SUPABASE_URL) || ''
         var anonKey = (window.ClinicEnv && (window.ClinicEnv.SUPABASE_KEY || window.ClinicEnv.SUPABASE_ANON_KEY)) || ''
@@ -363,31 +367,40 @@
         })
         var data = await resp.json()
         if (!resp.ok || !data.ok) {
-          alert('Falha: ' + (data.error || resp.status))
+          window.B2BToast && window.B2BToast.error('Falha: ' + (data.error || resp.status))
           btn.disabled = false; btn.textContent = 'Avaliar IA'
           return
         }
+        window.B2BToast && window.B2BToast.success('DNA avaliado')
         await _load()
       } else if (action === 'promote') {
-        if (!confirm('Promover candidato a parceria (status=prospect)?')) return
+        var okProm = window.B2BToast
+          ? await window.B2BToast.confirm('Cria parceria nova no status "prospect" (precisa validar DNA depois).',
+              { title: 'Promover a parceria?', okLabel: 'Promover' })
+          : confirm('Promover?')
+        if (!okProm) return
         var sb = window._sbShared
         var r = await sb.rpc('b2b_candidate_promote', { p_id: id })
         if (r.error) throw r.error
         var data = r.data || {}
         if (!data.ok) throw new Error(data.error || 'falha')
         document.dispatchEvent(new CustomEvent('b2b:partnership-saved', { detail: { id: data.partnership_id } }))
-        alert('Candidato promovido a parceria (em status prospect).')
+        window.B2BToast && window.B2BToast.success('Candidato promovido a parceria (prospect)')
         await _load()
       } else {
-        var notes = (action === 'declined' || action === 'archived')
-          ? (prompt('Motivo (opcional):') || null)
-          : null
-        await _repo().setStatus(id, action, notes)
+        var notes = null
+        if (action === 'declined' || action === 'archived') {
+          notes = window.B2BToast
+            ? await window.B2BToast.prompt('Motivo (opcional):', '', { title: action === 'declined' ? 'Recusou' : 'Arquivar' })
+            : (prompt('Motivo (opcional):') || null)
+          if (notes === null) return
+        }
+        await _repo().setStatus(id, action, notes || null)
         document.dispatchEvent(new CustomEvent('b2b:candidate-status-changed', { detail: { id: id, status: action } }))
         await _load()
       }
     } catch (err) {
-      alert('Erro: ' + (err.message || err))
+      window.B2BToast && window.B2BToast.error('Erro: ' + (err.message || err))
     }
   }
 

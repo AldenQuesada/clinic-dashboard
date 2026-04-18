@@ -178,6 +178,20 @@ body.b2b-page {
 .b2b-pill-tier { background: rgba(201, 169, 110, 0.2); color: var(--b2b-champagne); font-weight: 600; }
 .b2b-pill-type { background: rgba(138, 158, 136, 0.15); color: var(--b2b-sage); }
 
+/* ── Skeleton loading ── */
+.b2b-skel-wrap { display: flex; flex-direction: column; gap: 8px; }
+.b2b-skel {
+  background: linear-gradient(90deg, var(--b2b-bg-1) 0%, var(--b2b-bg-2) 50%, var(--b2b-bg-1) 100%);
+  background-size: 200% 100%;
+  animation: b2b-skel-shimmer 1.6s infinite linear;
+  border-radius: 6px;
+  border: 1px solid var(--b2b-border);
+}
+@keyframes b2b-skel-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ── Empty / error ── */
 .b2b-empty {
   padding: 40px; text-align: center; color: var(--b2b-text-muted); font-size: 13px;

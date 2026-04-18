@@ -119,7 +119,11 @@
     var body = window.B2BShell ? window.B2BShell.getTabBody() : document.getElementById('b2bTabBody')
     if (!body) return
 
-    if (_state.loading) { body.innerHTML = '<div class="b2b-empty">Carregando gaps…</div>'; return }
+    if (_state.loading) {
+      body.innerHTML = (window.B2BUXKit && window.B2BUXKit.skeleton({ rows: 6, compact: true })) ||
+                       '<div class="b2b-empty">Carregando gaps…</div>'
+      return
+    }
     if (_state.error)   { body.innerHTML = '<div class="b2b-empty b2b-empty-err">' + _esc(_state.error) + '</div>'; return }
 
     var d = _state.data

@@ -201,18 +201,24 @@
     var newStatus = sel.value
     if (newStatus === current) return
 
-    var reason = prompt('Motivo da transição ' + current + ' → ' + newStatus + ' (opcional):') || null
+    var reason = window.B2BToast
+      ? await window.B2BToast.prompt('Motivo da transição ' + current + ' → ' + newStatus + ' (opcional):', '',
+          { title: 'Mudar status', okLabel: 'Confirmar' })
+      : (prompt('Motivo da transição ' + current + ' → ' + newStatus + ' (opcional):') || null)
+    // prompt com cancel retorna null; aceitamos vazio como "sem motivo"
+    if (reason === null && window.B2BToast) { sel.value = current; return }
 
     var partnership = _state.data && _state.data.partnership
     if (!partnership) return
-    partnership.status = current  // passa o anterior pra service validar
+    partnership.status = current
 
     try {
-      await _svc().transitionStatus(partnership, newStatus, reason)
+      await _svc().transitionStatus(partnership, newStatus, reason || null)
       document.dispatchEvent(new CustomEvent('b2b:partnership-saved', { detail: { id: id } }))
+      window.B2BToast && window.B2BToast.success('Status atualizado para ' + newStatus)
       close()
     } catch (e) {
-      alert('Falha: ' + (e.message || e))
+      window.B2BToast ? window.B2BToast.error('Falha: ' + (e.message || e)) : alert('Falha: ' + (e.message || e))
       sel.value = current
     }
   }
@@ -288,20 +294,30 @@
     if (playbookBtn) {
       playbookBtn.addEventListener('click', async function () {
         var id = playbookBtn.getAttribute('data-id')
-        if (!window.B2BPlaybookRepository) { alert('Playbook repo não carregado'); return }
-        if (!confirm('Aplicar playbook de abertura?\n\nVai criar: tasks iniciais, carrossel padrão + 3 ganchos, metas operacionais por tipo.\n\nJá é idempotente — não duplica se já rodou antes.')) return
+        if (!window.B2BPlaybookRepository) {
+          window.B2BToast && window.B2BToast.error('Playbook não carregado')
+          return
+        }
+        var ok = window.B2BToast
+          ? await window.B2BToast.confirm(
+              'Vai criar tasks iniciais, carrossel padrão + 3 ganchos e metas operacionais por tipo. Idempotente — não duplica se já rodou antes.',
+              { title: 'Aplicar playbook de abertura?', okLabel: 'Aplicar' })
+          : confirm('Aplicar playbook?')
+        if (!ok) return
+
         playbookBtn.disabled = true; playbookBtn.textContent = 'Aplicando…'
         try {
           var r = await window.B2BPlaybookRepository.apply(id)
           if (!r || !r.ok) throw new Error(r && r.error || 'falhou')
-          alert('Playbook ' + r.type + ' aplicado!\n\n' +
-                r.tasks + ' tasks · ' + r.contents + ' conteúdos · ' + r.targets + ' metas')
-          // Recarrega o detail pra mostrar os novos itens
+          window.B2BToast && window.B2BToast.success(
+            r.tasks + ' tasks · ' + r.contents + ' conteúdos · ' + r.targets + ' metas',
+            { title: 'Playbook ' + r.type + ' aplicado', duration: 5000 }
+          )
           document.dispatchEvent(new CustomEvent('b2b:partnership-saved', { detail: { id: id } }))
           close()
           document.dispatchEvent(new CustomEvent('b2b:open-detail', { detail: { id: id } }))
         } catch (err) {
-          alert('Erro: ' + err.message)
+          window.B2BToast && window.B2BToast.error('Erro: ' + err.message)
           playbookBtn.disabled = false; playbookBtn.textContent = 'Aplicar Playbook'
         }
       })

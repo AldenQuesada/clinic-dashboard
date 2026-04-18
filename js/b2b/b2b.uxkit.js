@@ -77,8 +77,24 @@
   // Também tenta uma vez imediato (caso shell já esteja pronta)
   setTimeout(injectBackLink, 300)
 
+  // ─── Skeleton loading ───────────────────────────────────────
+  // rows: número de linhas · compact: bool (linhas finas)
+  function skeleton(opts) {
+    opts = opts || {}
+    var rows = opts.rows || 4
+    var compact = !!opts.compact
+    var height = compact ? 24 : 46
+    var out = '<div class="b2b-skel-wrap">'
+    for (var i = 0; i < rows; i++) {
+      out += '<div class="b2b-skel" style="height:' + height + 'px"></div>'
+    }
+    out += '</div>'
+    return out
+  }
+
   window.B2BUXKit = Object.freeze({
     setTabCount: setTabCount,
     getTabCount: getTabCount,
+    skeleton: skeleton,
   })
 })()

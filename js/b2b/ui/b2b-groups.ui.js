@@ -183,7 +183,7 @@
       _state.showForm = false
       await _load()
     } catch (err) {
-      alert('Falha: ' + err.message)
+      window.B2BToast ? window.B2BToast.error('Falha: ' + err.message) : alert('Falha: ' + err.message)
     } finally {
       _state.saving = false
     }

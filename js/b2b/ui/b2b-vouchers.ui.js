@@ -158,9 +158,14 @@
 
     if (act === 'copy') {
       var url = btn.getAttribute('data-url')
-      try { await navigator.clipboard.writeText(url); btn.textContent = 'Copiado!'
+      try {
+        await navigator.clipboard.writeText(url)
+        btn.textContent = 'Copiado!'
+        window.B2BToast && window.B2BToast.success('Link copiado')
         setTimeout(function () { btn.textContent = 'Copiar link' }, 1500)
-      } catch (_) { alert(url) }
+      } catch (_) {
+        window.B2BToast && window.B2BToast.info(url, { title: 'Copie manualmente', duration: 8000 })
+      }
       return
     }
 
@@ -168,18 +173,28 @@
       try {
         await _repo().markDelivered(btn.getAttribute('data-id'))
         document.dispatchEvent(new CustomEvent('b2b:voucher-updated', { detail: { id: btn.getAttribute('data-id') } }))
+        window.B2BToast && window.B2BToast.success('Marcado como entregue')
         await _load()
-      } catch (err) { alert('Falha: ' + err.message) }
+      } catch (err) {
+        window.B2BToast && window.B2BToast.error('Falha: ' + err.message)
+      }
       return
     }
 
     if (act === 'cancel') {
-      var reason = prompt('Motivo do cancelamento (opcional):') || null
+      var reason = window.B2BToast
+        ? await window.B2BToast.prompt('Motivo do cancelamento (opcional):', '',
+            { title: 'Cancelar voucher', okLabel: 'Cancelar voucher' })
+        : (prompt('Motivo do cancelamento (opcional):') || null)
+      if (reason === null) return
       try {
-        await _repo().cancel(btn.getAttribute('data-id'), reason)
+        await _repo().cancel(btn.getAttribute('data-id'), reason || null)
         document.dispatchEvent(new CustomEvent('b2b:voucher-updated', { detail: { id: btn.getAttribute('data-id') } }))
+        window.B2BToast && window.B2BToast.success('Voucher cancelado')
         await _load()
-      } catch (err) { alert('Falha: ' + err.message) }
+      } catch (err) {
+        window.B2BToast && window.B2BToast.error('Falha: ' + err.message)
+      }
     }
   }
 
@@ -194,9 +209,10 @@
       if (!r || !r.ok) throw new Error('falha')
       _state.showForm = false
       document.dispatchEvent(new CustomEvent('b2b:voucher-issued', { detail: r }))
+      window.B2BToast && window.B2BToast.success('Voucher emitido · #' + (r.token || r.id))
       await _load()
     } catch (err) {
-      alert('Falha ao emitir: ' + (err.message || err))
+      window.B2BToast && window.B2BToast.error('Falha ao emitir: ' + (err.message || err))
     }
   }
 

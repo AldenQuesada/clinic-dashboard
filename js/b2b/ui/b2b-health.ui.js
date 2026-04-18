@@ -132,7 +132,8 @@
     if (!body) return
 
     if (_state.loading) {
-      body.innerHTML = '<div class="b2b-empty">Carregando saúde…</div>'
+      body.innerHTML = (window.B2BUXKit && window.B2BUXKit.skeleton({ rows: 4, compact: true })) ||
+                       '<div class="b2b-empty">Carregando saúde…</div>'
       return
     }
     if (_state.error) {

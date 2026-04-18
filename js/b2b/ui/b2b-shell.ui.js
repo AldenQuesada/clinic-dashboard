@@ -141,8 +141,15 @@
   async function _onToggleScout() {
     var current = !!(_state.scoutConfig && _state.scoutConfig.scout_enabled)
     var next = !current
-    // Confirmação quando ativar
-    if (next && !confirm('Ativar o Scout vai permitir varreduras (custo R$ 0,40-0,80 cada). Continuar?')) return
+
+    if (next) {
+      var ok = window.B2BToast
+        ? await window.B2BToast.confirm(
+            'Permite varreduras automáticas Google Maps + Claude. Custo por varredura: R$ 1,60. Budget cap mensal: R$ 100.',
+            { title: 'Ativar Scout?', okLabel: 'Ativar' })
+        : confirm('Ativar Scout?')
+      if (!ok) return
+    }
 
     try {
       var updated = await _repo().scoutConfigUpdate({ scout_enabled: next }, null)
@@ -150,8 +157,9 @@
       _refreshHeaderControls()
       _emit('b2b:scout-toggled', { enabled: !!updated.scout_enabled })
       _emit('b2b:scout-config-updated', { config: updated })
+      window.B2BToast && window.B2BToast.success(updated.scout_enabled ? 'Scout ativado' : 'Scout desligado')
     } catch (e) {
-      alert('Falha ao alterar: ' + (e.message || e))
+      window.B2BToast ? window.B2BToast.error('Falha: ' + (e.message || e)) : alert('Falha: ' + (e.message || e))
     }
   }
 

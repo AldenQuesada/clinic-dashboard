@@ -95,7 +95,8 @@
 
   function _renderBody(container) {
     if (_state.loading) {
-      container.innerHTML = '<div class="b2b-empty">Carregando…</div>'
+      container.innerHTML = (window.B2BUXKit && window.B2BUXKit.skeleton({ rows: 5 })) ||
+                            '<div class="b2b-empty">Carregando…</div>'
       return
     }
     if (_state.error) {
