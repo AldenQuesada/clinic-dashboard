@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parcerias B2B — Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/b2b.css?v=20260418a">
+</head>
+<body class="b2b-page">
+
+<div class="b2b-page-container">
+  <div id="b2bShellHost"></div>
+</div>
+
+<!-- Supabase client + env -->
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<!-- Módulos B2B (ordem: repository → service → UIs) -->
+<script src="js/b2b/b2b.repository.js?v=20260418a"></script>
+<script src="js/b2b/b2b.service.js?v=20260418a"></script>
+<script src="js/b2b/ui/b2b-shell.ui.js?v=20260418a"></script>
+<script src="js/b2b/ui/b2b-list.ui.js?v=20260418a"></script>
+<script src="js/b2b/ui/b2b-form.ui.js?v=20260418a"></script>
+<script src="js/b2b/ui/b2b-detail.ui.js?v=20260418a"></script>
+
+<!-- Bootstrap da página (simples — só espera o _sbShared) -->
+<script>
+(function () {
+  'use strict'
+  function boot() {
+    if (!window._sbShared || !window.B2BShell) {
+      return setTimeout(boot, 200)
+    }
+    window.B2BShell.mount('b2bShellHost')
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else boot()
+})()
+</script>
+
+</body>
+</html>
