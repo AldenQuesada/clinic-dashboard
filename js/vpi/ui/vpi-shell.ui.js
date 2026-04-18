@@ -575,6 +575,36 @@
   }
 
   // ══════════════════════════════════════════════════
+  //  Saudade Pacientes Inativas (s1-7 plano growth)
+  //  Dispara patients_saudade_send_batch — reativa quem
+  //  finalizou ≥1 procedimento e sumiu, excluindo parceiras VPI.
+  //  pg_cron roda dia 20 14h BRT.
+  // ══════════════════════════════════════════════════
+  async function vpiRunPatientsSaudadeNow() {
+    var sb = window._sbShared
+    if (!sb) { _toast('Erro', 'Supabase indisponível', 'error'); return }
+    if (!confirm('Disparar varredura "saudade pacientes inativas" agora?\n\n' +
+      'Vai procurar pacientes (não-parceiras) sem procedimento há 5+ meses e enviar WA.\n\n' +
+      'pg_cron já roda isso dia 20 de cada mês às 14h BRT — use só pra teste ou urgência.')) return
+    _toast('Saudade pacientes', 'Varredura iniciada...', 'info')
+    try {
+      var res = await sb.rpc('patients_saudade_send_batch', { p_months: 5 })
+      if (res.error) throw new Error(res.error.message)
+      var r = res.data || {}
+      var msg = 'Scan: ' + (r.total_scanned || 0) + ' | Enviado: ' + (r.sent_count || 0) +
+                ' | Skip: ' + (r.skipped_count || 0) + ' | Falhou: ' + (r.failed_count || 0)
+      _toast('Saudade pacientes', msg, (r.sent_count || 0) > 0 ? 'success' : 'info')
+      if ((r.sent_count || 0) === 0 && (r.total_scanned || 0) === 0) {
+        alert('Nenhum paciente inativo elegível encontrado.\n\n' +
+              'Critérios: ≥1 procedimento finalizado, sem retornar há 5+ meses, não é parceira VPI, sem saudade recente (60d).')
+      }
+    } catch (e) {
+      console.error('[VPI] patients saudade batch:', e)
+      _toast('Erro', e.message || 'falhou', 'error')
+    }
+  }
+
+  // ══════════════════════════════════════════════════
   //  Staff Alert Config (Fase 7 - Entrega 3)
   // ══════════════════════════════════════════════════
   async function vpiLoadStaffAlertConfig() {
@@ -645,6 +675,7 @@
   window.vpiSaveStaffAlertConfig = vpiSaveStaffAlertConfig
   window.vpiLoadStaffAlertConfig = vpiLoadStaffAlertConfig
   window.vpiRunSaudadeNow        = vpiRunSaudadeNow
+  window.vpiRunPatientsSaudadeNow = vpiRunPatientsSaudadeNow
   window.vpiPSetMode       = vpiPSetMode
   window.vpiPPickCandidate = vpiPPickCandidate
   window.vpiPClearSelected = vpiPClearSelected
