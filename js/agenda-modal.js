@@ -194,7 +194,14 @@
       const valEl2  = document.getElementById('appt_valor'); if (valEl2)  valEl2.value  = ''
       apptResetPagamentos()
       apptTipoChange()
-      if (profIdx !== undefined && profSel) profSel.value = profIdx
+      if (profIdx !== undefined && profSel) {
+        profSel.value = profIdx
+      } else if (profSel) {
+        // Pré-seleção do profissional principal (Mirian) quando secretária ou
+        // dona está logada — poupa um clique no fluxo de agendamento.
+        var _principalIdx = _apptFindPrincipalIdx()
+        if (_principalIdx >= 0) profSel.value = _principalIdx
+      }
       if (deleteBtn) deleteBtn.style.display = 'none'
     }
 
@@ -291,6 +298,29 @@
     _apptState.procs.splice(0)
     _apptState.pagamentos.splice(0)
     _apptState.multiProcChoice = null
+  }
+
+  // ── Profissional principal default para secretária/dona ──────
+  // Mirian é sócia/dona; no fluxo de agendamento, quando a secretária
+  // (role=receptionist) ou a própria Mirian (role=owner) está logada,
+  // o select de Profissional abre já com ela selecionada.
+  // Retorna o índice no array de getProfessionals() ou -1 se não aplica.
+  function _apptFindPrincipalIdx() {
+    try {
+      var profile = typeof getCurrentProfile === 'function' ? getCurrentProfile() : null
+      if (!profile) return -1
+      if (profile.role !== 'owner' && profile.role !== 'receptionist') return -1
+      var profs = typeof getProfessionals === 'function' ? getProfessionals() : []
+      if (!profs.length) return -1
+      // Prioridade 1: profissional vinculado ao próprio owner logado.
+      if (profile.role === 'owner' && profile.id) {
+        var byUser = profs.findIndex(function(p) { return p && p.user_id === profile.id && p.ativo !== false })
+        if (byUser >= 0) return byUser
+      }
+      // Prioridade 2: primeiro sócio ativo (cobre secretária e fallback do owner).
+      var bySocio = profs.findIndex(function(p) { return p && (p.nivel || 'funcionario') === 'socio' && p.ativo !== false })
+      return bySocio
+    } catch (_) { return -1 }
   }
 
   // ── Listeners ativos do modal (cleanup preventivo de memory leak) ─
