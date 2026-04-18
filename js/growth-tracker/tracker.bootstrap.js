@@ -78,6 +78,28 @@
     UI.rerenderDerived();
     wireGlobalEvents();
     console.info('[growth-tracker] pronto · items:', Data.ITEMS.length);
+
+    // Re-render depois que o hydrate do Supabase concluir
+    document.addEventListener(Repo.EVT_HYDRATED, function (e) {
+      var detail = (e && e.detail) || {};
+      console.info('[growth-tracker] hydrated ·', detail.source, '· itens:', detail.itemCount || 0);
+      renderSprintRows();
+      UI.rerenderDerived();
+    });
+
+    // Hidrata do Supabase (async). Se _sbShared não carregou ainda,
+    // espera até 5s tentando a cada 250ms.
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries++;
+      if (global._sbShared && global._sbShared.rpc) {
+        clearInterval(timer);
+        Repo.hydrate();
+      } else if (tries > 20) {
+        clearInterval(timer);
+        console.info('[growth-tracker] _sbShared nao disponivel — cache-only');
+      }
+    }, 250);
   }
 
   if (document.readyState === 'loading') {

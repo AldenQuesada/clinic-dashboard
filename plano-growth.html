@@ -948,12 +948,17 @@ RFM classifica inativa / em_risco<br>
   sections.forEach(s => observer.observe(s));
 </script>
 
+<!-- Supabase client + env (pra sync cross-device do tracker) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config/env.js"></script>
+<script src="js/supabase.js"></script>
+
 <!-- Growth Tracker Modules -->
-<script src="js/growth-tracker/tracker.data.js"></script>
-<script src="js/growth-tracker/tracker.repository.js"></script>
-<script src="js/growth-tracker/tracker.service.js"></script>
-<script src="js/growth-tracker/tracker.ui.js"></script>
-<script src="js/growth-tracker/tracker.bootstrap.js"></script>
+<script src="js/growth-tracker/tracker.data.js?v=20260418"></script>
+<script src="js/growth-tracker/tracker.repository.js?v=20260418"></script>
+<script src="js/growth-tracker/tracker.service.js?v=20260418"></script>
+<script src="js/growth-tracker/tracker.ui.js?v=20260418"></script>
+<script src="js/growth-tracker/tracker.bootstrap.js?v=20260418"></script>
 
 </body>
 </html>
