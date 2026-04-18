@@ -20,8 +20,13 @@
 
   var FM = window._FM
 
+  // Overrides voláteis usados pelo preview ao vivo do editor admin.
+  // Quando setado, T(key) checa este mapa antes do cache do service.
+  var _previewOverrides = null
+
   // T(key) = Template lookup com fallback aos defaults. Suporta HTML.
   function T(key) {
+    if (_previewOverrides && _previewOverrides[key] != null) return _previewOverrides[key]
     if (window.ReportLuxuryTemplates && window.ReportLuxuryTemplates.get) {
       var v = window.ReportLuxuryTemplates.get(key)
       if (v != null) return v
@@ -791,5 +796,76 @@
   if (!FM._downloadReport) FM._downloadReport = function () {
     if (document.getElementById('fmReportOverlay')) _downloadPng()
     else FM._exportReport()
+  }
+
+  // ── API publica para preview no editor admin ─────────────────
+  // Gera HTML completo standalone (com <head>, fontes Google e CSS)
+  // usando dados ficticios. overrides = mapa { 'slogan.flat': '...' }
+  // que sobrescreve T() em memoria — assim o editor reflete edicoes
+  // nao salvas em tempo real.
+  function _mockPayload() {
+    return {
+      input: {
+        leadName:  'Fernanda Almeida',
+        clinicName: (FM._clinicName ? FM._clinicName() : 'Clinica Mirian de Paula'),
+        profName:   (FM._profName   ? FM._profName()   : 'Dra. Mirian de Paula'),
+        tagline:    (FM._tagline    ? FM._tagline()    : 'Harmonia que revela. Precisão que dura.'),
+      },
+      letter: '',  // usa template default
+      cashbackOn: true,
+      pricing: {
+        isolated: 7200, integrated: 4280, savings: 2920,
+        lines: [
+          { id: 'ah',       label: 'Ácido Hialurônico', units: 2.8, unitLabel: 'mL', subtotal: 2240 },
+          { id: 'botox',    label: 'Toxina Botulínica', units: 16,  unitLabel: 'U',  subtotal: 400  },
+          { id: 'bio',      label: 'Bioestimulador',    units: 1,   unitLabel: 'mL', subtotal: 1200 },
+        ],
+      },
+      installment: { n: 6, value: 760 },
+      cases: [],
+    }
+  }
+  function _mockFmData() {
+    return {
+      angle: 'front', beforeUrl: null, afterUrl: null,
+      mandibular: { amf: 128, aijLeft: 28, aijRight: 29, rmz: 0.92, label: 'Definida' },
+      nasal:      { nasolabial: 104, nasofrontal: 133, nasofacial: 32 },
+      thirds:     { upper: 33, middle: 35, lower: 32 },
+      symmetry:   94,
+      ricketts:   { lipUpper: -2.1, lipLower: -1.4 },
+    }
+  }
+  function _mockAnnotations() {
+    return [
+      { i: 1, zone: 'Refinamento da radix',           treatment: 'Ácido hialurônico · densidade média',     units: 0.3, unitLabel: 'mL' },
+      { i: 2, zone: 'Projeção lateral · zigoma esquerdo', treatment: 'Ácido hialurônico · alta sustentação', units: 1.0, unitLabel: 'mL' },
+      { i: 3, zone: 'Projeção lateral · zigoma direito',  treatment: 'Ácido hialurônico · alta sustentação', units: 1.0, unitLabel: 'mL' },
+      { i: 4, zone: 'Suavização do sulco nasolabial', treatment: 'Ácido hialurônico · densidade baixa',     units: 0.5, unitLabel: 'mL' },
+      { i: 5, zone: 'Relaxamento da expressão frontal', treatment: 'Toxina botulínica',                     units: 16,  unitLabel: 'U'  },
+    ]
+  }
+
+  window.ReportLuxuryRenderer = {
+    buildPreviewHtml: function (overrides) {
+      _previewOverrides = overrides || null
+      try {
+        var payload = _mockPayload()
+        var fmData = _mockFmData()
+        var annotations = _mockAnnotations()
+        var fmt = window.ReportLuxuryPricing.formatBRL
+        return (
+          '<!DOCTYPE html><html lang="pt-BR"><head>' +
+          '<meta charset="UTF-8">' +
+          '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+          '<link rel="preconnect" href="https://fonts.googleapis.com">' +
+          '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
+          '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">' +
+          '<style>html,body{margin:0;padding:0;background:#1a1817;-webkit-font-smoothing:antialiased}#rlxDoc{margin:0 auto}</style>' +
+          '</head><body>' +
+          _renderDoc(payload, fmData, annotations, fmt) +
+          '</body></html>'
+        )
+      } finally { _previewOverrides = null }
+    },
   }
 })()
