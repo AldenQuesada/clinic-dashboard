@@ -133,7 +133,7 @@
       '</div>'
     }
 
-    var items = list.slice(0, 6).map(function (t) {
+    var items = list.map(function (t) {
       var name = _firstName(t.lead_name)
       var nota = t.score || 0
       var hasText = !!t.testimonial_text
@@ -166,8 +166,8 @@
     }).join('')
 
     return '<div>' +
-      '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6B7280;font-weight:700;margin-bottom:10px">Depoimentos autorizados (\u00faltimos 6)</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">' + items + '</div>' +
+      '<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6B7280;font-weight:700;margin-bottom:10px">Depoimentos autorizados</div>' +
+      '<div style="display:flex;flex-direction:column;gap:10px;max-height:720px;overflow-y:auto;padding-right:6px">' + items + '</div>' +
     '</div>'
   }
 
@@ -204,7 +204,7 @@
     try {
       var results = await Promise.all([
         sb.rpc('nps_kpis',                   { p_period_days: _state.period }),
-        sb.rpc('nps_testimonials_consented', { p_limit: 6 }),
+        sb.rpc('nps_testimonials_consented', { p_limit: 30 }),
       ])
       return {
         kpis:         (results[0].error ? { ok: false, error: results[0].error.message } : results[0].data),

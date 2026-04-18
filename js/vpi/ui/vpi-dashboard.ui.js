@@ -343,8 +343,11 @@
       '<div id="vpiRisksSection"></div>' +
       '<div id="vpiStaffAlertSection"></div>' +
       '<div id="vpiChannelLTVCACSection"></div>' +
-      '<div id="vpiNPSSection"></div>' +
-      '<div id="vpiContentIGSection"></div>' +
+      // NPS + Oportunidades IG lado a lado (listas com scroll interno)
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" class="vpi-lists-grid">' +
+        '<div id="vpiNPSSection"></div>' +
+        '<div id="vpiContentIGSection"></div>' +
+      '</div>' +
       _renderPendencias(results[0]) +
       _renderTop10(results[1]) +
       _renderRisco() +

@@ -113,7 +113,7 @@
     }
 
     var cards = opps.map(_renderCard).join('')
-    return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">' + cards + '</div>'
+    return '<div style="display:flex;flex-direction:column;gap:12px;max-height:720px;overflow-y:auto;padding-right:6px">' + cards + '</div>'
   }
 
   function _renderCard(opp) {
