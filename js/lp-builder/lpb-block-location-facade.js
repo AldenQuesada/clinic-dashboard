@@ -29,8 +29,10 @@
     return isFinite(n) ? n : fb
   }
 
-  function _injectCSS() {
-    if (document.getElementById('lpb-block-location-facade-css')) return
+  // CSS inline · funciona em iframe E main page (em vez de inject em head do parent)
+  var _LPB_CSS_FACADE = null
+  function _buildCSS() {
+    if (_LPB_CSS_FACADE) return _LPB_CSS_FACADE
     var css = ''
       + '.blk-lf{'
         + 'box-sizing:border-box;'
@@ -206,10 +208,8 @@
         + '.blk-lf-chip:hover,.blk-lf-btn-primary:hover{transform:none}'
       + '}'
 
-    var s = document.createElement('style')
-    s.id = 'lpb-block-location-facade-css'
-    s.textContent = css
-    document.head.appendChild(s)
+    _LPB_CSS_FACADE = css
+    return css
   }
 
   // SVG Feather-style 14x14 stroke 1.5
@@ -239,7 +239,7 @@
   }
 
   function render(block) {
-    _injectCSS()
+    var _styleTag = '<style data-lpb-style="location-facade">' + _buildCSS() + '</style>'
 
     var p = (block && block.props) || {}
 
@@ -307,7 +307,7 @@
         + '</div>'
       + '</section>'
 
-    return html
+    return _styleTag + html
   }
 
   window.LPBBlockLocationFacade = Object.freeze({ render: render })

@@ -14,11 +14,11 @@
       .replace(/'/g,'&#39;');
   }
 
-  function _injectCSS(){
-    if (document.getElementById(CSS_ID)) return;
-    var style = document.createElement('style');
-    style.id = CSS_ID;
-    style.textContent = [
+  // CSS inline · iframe-safe
+  var _LPB_CSS_IPHONE = null
+  function _buildCSS(){
+    if (_LPB_CSS_IPHONE) return _LPB_CSS_IPHONE
+    _LPB_CSS_IPHONE = [
       '.lpb-loci-wrap{width:100%;padding:72px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;}',
       '.lpb-loci-wrap.bg-graphite{background:#1c1c1e;color:#f5f2ec;}',
       '.lpb-loci-wrap.bg-ivory{background:#f7f3ec;color:#1c1c1e;}',
@@ -63,8 +63,8 @@
       '.lpb-loci-cta:active{transform:translateY(0);}',
       '@media (max-width: 420px){.lpb-loci-title{font-size:28px;}.lpb-loci-phone{width:240px;}}',
       '@media (prefers-reduced-motion: reduce){.lpb-loci-phone{transition:none!important;transform:none!important;}.lpb-loci-ripple{animation:none!important;display:none!important;}.lpb-loci-cta{transition:none!important;}}'
-    ].join('');
-    document.head.appendChild(style);
+    ].join('')
+    return _LPB_CSS_IPHONE
   }
 
   function _statusBarSVG(){
@@ -161,11 +161,11 @@
   }
 
   function render(block){
-    _injectCSS();
     var p = _mergeProps(block);
     var bgClass = 'bg-' + (['graphite','ivory','white'].indexOf(p.bg) >= 0 ? p.bg : 'graphite');
 
     return [
+      '<style data-lpb-style="location-iphone">' + _buildCSS() + '</style>',
       '<section class="lpb-loci-wrap ', bgClass, '" data-lpb-block="location-iphone">',
         '<div class="lpb-loci-phone-stage">',
           '<div class="lpb-loci-phone" data-lpb-loci-phone>',

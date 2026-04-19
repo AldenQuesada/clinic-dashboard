@@ -52,8 +52,10 @@
     return out;
   }
 
-  function injectCSS(){
-    if (document.getElementById(CSS_ID)) return;
+  // CSS inline · iframe-safe (sai do parent doc)
+  var _LPB_CSS_STORY = null
+  function buildCSS(){
+    if (_LPB_CSS_STORY) return _LPB_CSS_STORY
     var css = ''+
       '.lpb-locstory{position:relative;width:100%;padding:2rem 1rem;font-family:Montserrat,system-ui,sans-serif;}'+
       '.lpb-locstory--graphite{background:#2C2C2C;color:#FEFCF8;}'+
@@ -91,11 +93,8 @@
         '.lpb-locstory__rule{transform:scaleX(1);transition:none;}'+
         '.lpb-locstory__chip--open{animation:none;}'+
       '}';
-    var style = document.createElement('style');
-    style.id = CSS_ID;
-    style.type = 'text/css';
-    style.appendChild(document.createTextNode(css));
-    (document.head || document.documentElement).appendChild(style);
+    _LPB_CSS_STORY = css
+    return css
   }
 
   var ICON_PIN = '<svg class="lpb-locstory__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
@@ -124,7 +123,7 @@
   }
 
   function render(block){
-    injectCSS();
+    var _styleTag = '<style data-lpb-style="location-story">' + buildCSS() + '</style>';
     var p = _props(block);
     var open = isOpenNow();
     var html = ''+
@@ -166,13 +165,11 @@
           '</div>'+
         '</div>'+
       '</section>';
-    return html;
+    return _styleTag + html;
   }
 
   function bind(rootEl){
     if (!rootEl) return;
-    injectCSS();
-
     var cards = rootEl.querySelectorAll('[data-lpb-loc-card]');
     if (!cards || !cards.length) return;
 
