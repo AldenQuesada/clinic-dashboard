@@ -20,10 +20,47 @@
     })
   }
 
+  var _state = { bucket: 'month', periods: 12, hostId: null }
+
+  var BUCKETS = [
+    { key: 'day',   label: 'Dia',    periods: 30 },
+    { key: 'week',  label: 'Semana', periods: 12 },
+    { key: 'month', label: 'Mês',    periods: 12 },
+  ]
+
+  function _bucketInfo(key) {
+    return BUCKETS.find(function (b) { return b.key === key }) || BUCKETS[2]
+  }
+
   function _header() {
+    var b = _bucketInfo(_state.bucket)
     return '' +
-      '<div class="gm-widget-title">Histórico mensal</div>' +
-      '<div class="gm-widget-sub">Últimos 12 meses</div>'
+      '<div class="gm-ts-head">' +
+        '<div>' +
+          '<div class="gm-widget-title">Histórico</div>' +
+          '<div class="gm-widget-sub">Últimos ' + _state.periods + ' ' + b.label.toLowerCase() + 's</div>' +
+        '</div>' +
+        '<div class="gm-ts-bucket-buttons">' +
+          BUCKETS.map(function (opt) {
+            return '<button type="button" class="gm-ts-bucket' +
+              (_state.bucket === opt.key ? ' active' : '') +
+              '" data-bucket="' + opt.key + '">' + opt.label + '</button>'
+          }).join('') +
+        '</div>' +
+      '</div>'
+  }
+
+  function _bindBucketSwitch(host) {
+    host.querySelectorAll('[data-bucket]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-bucket')
+        if (key === _state.bucket) return
+        var b = _bucketInfo(key)
+        _state.bucket = key
+        _state.periods = b.periods
+        _load(host)
+      })
+    })
   }
 
   function _renderLoading(host) {
@@ -35,14 +72,21 @@
       '<div class="gm-widget-err">Falha ao carregar série: ' + _esc(msg || 'erro desconhecido') + '</div>'
   }
 
-  // "2026-04-01" → "abr/26"
+  // "2026-04-01" → label conforme bucket
   function _label(bucket) {
     if (!bucket || typeof bucket !== 'string') return ''
     var parts = bucket.split('-')
-    if (parts.length < 2) return bucket
+    if (parts.length < 3) return bucket
     var year = parts[0]
     var mIdx = Number(parts[1]) - 1
+    var day = parts[2]
     if (isNaN(mIdx) || mIdx < 0 || mIdx > 11) return bucket
+    if (_state.bucket === 'day') {
+      return day + '/' + (mIdx + 1).toString().padStart(2, '0')
+    }
+    if (_state.bucket === 'week') {
+      return day + '/' + MONTHS_PT[mIdx]
+    }
     return MONTHS_PT[mIdx] + '/' + year.slice(-2)
   }
 
@@ -156,20 +200,27 @@
       '</div>'
 
     host.innerHTML = _header() + svg
+    _bindBucketSwitch(host)
   }
 
-  async function mount(hostId) {
-    var host = document.getElementById(hostId)
-    if (!host) return
+  async function _load(host) {
     _renderLoading(host)
+    _bindBucketSwitch(host)
     try {
       if (!window.GrowthMetricsRepository) throw new Error('GrowthMetricsRepository ausente')
-      var data = await window.GrowthMetricsRepository.timeseries('month', 12)
+      var data = await window.GrowthMetricsRepository.timeseries(_state.bucket, _state.periods)
       var series = (data && data.series) || []
       _renderData(host, series)
     } catch (err) {
       _renderError(host, err && err.message)
     }
+  }
+
+  async function mount(hostId) {
+    var host = document.getElementById(hostId)
+    if (!host) return
+    _state.hostId = hostId
+    await _load(host)
   }
 
   window.VpiTimeseriesWidget = Object.freeze({ mount: mount })

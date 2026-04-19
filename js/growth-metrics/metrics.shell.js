@@ -7,12 +7,30 @@
   'use strict'
   if (window.GrowthMetricsShell) return
 
-  var _state = { period: 30, mountedIn: null }
+  var _state = { period: 30, preset: null, mountedIn: null }
 
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
     })
+  }
+
+  function _daysThisMonth() {
+    var n = new Date()
+    return n.getDate() // dia corrente do mês = dias rolling
+  }
+  function _daysPrevMonthWindow() {
+    // últimos 30d aproximados — simplificação: back 30d da última data do mês passado
+    var n = new Date()
+    var firstThis = new Date(n.getFullYear(), n.getMonth(), 1)
+    var lastPrev = new Date(firstThis.getTime() - 86400000)
+    var firstPrev = new Date(lastPrev.getFullYear(), lastPrev.getMonth(), 1)
+    return Math.ceil((n - firstPrev) / 86400000)
+  }
+  function _daysYTD() {
+    var n = new Date()
+    var j1 = new Date(n.getFullYear(), 0, 1)
+    return Math.max(1, Math.ceil((n - j1) / 86400000))
   }
 
   function _renderShell() {
@@ -26,10 +44,25 @@
           '</div>' +
           '<div class="gm-header-ctrl">' +
             '<button type="button" class="gm-reload" id="gmReloadAll">↻ Recarregar</button>' +
-            '<div class="gm-period-buttons">' +
+            '<div class="gm-period-group">' +
+              '<span class="gm-period-group-label">Rolling</span>' +
               [7,30,90,180].map(function (d) {
-                return '<button type="button" class="gm-period' + (_state.period===d?' active':'') +
+                return '<button type="button" class="gm-period' +
+                  (_state.period===d && !_state.preset ?' active':'') +
                   '" data-period="' + d + '">' + d + 'd</button>'
+              }).join('') +
+            '</div>' +
+            '<div class="gm-period-group">' +
+              '<span class="gm-period-group-label">Preset</span>' +
+              [
+                { key:'month', label:'Mês atual', days:_daysThisMonth() },
+                { key:'prev',  label:'Mês passado', days:_daysPrevMonthWindow() },
+                { key:'ytd',   label:'YTD', days:_daysYTD() },
+              ].map(function (p) {
+                return '<button type="button" class="gm-period' +
+                  (_state.preset===p.key?' active':'') +
+                  '" data-preset="' + p.key + '" data-preset-days="' + p.days + '">' +
+                  p.label + '</button>'
               }).join('') +
             '</div>' +
           '</div>' +
@@ -80,6 +113,14 @@
     root.querySelectorAll('[data-period]').forEach(function (b) {
       b.addEventListener('click', function () {
         _state.period = Number(b.getAttribute('data-period')) || 30
+        _state.preset = null
+        _renderAll()
+      })
+    })
+    root.querySelectorAll('[data-preset]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        _state.preset = b.getAttribute('data-preset')
+        _state.period = Number(b.getAttribute('data-preset-days')) || 30
         _renderAll()
       })
     })
