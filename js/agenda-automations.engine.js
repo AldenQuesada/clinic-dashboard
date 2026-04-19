@@ -736,10 +736,15 @@
     vars.intervalo     = String(info.intervalDays || '')
     vars.lista_datas   = _recBuildDateList(info.dates || [], info.inicio || '')
 
+    // Delay defensivo de 5s: garante que a msg universal de Agendamento (enfileirada
+    // via processStatusChange no saveAppt da base) chegue ao wa_outbox ANTES da
+    // consolidada da serie. Mesmo que o caller ja tenha awaited, o outbox processor
+    // pode preferir a mais antiga — este offset tranca a ordem.
+    var whenConsolidada = new Date(Date.now() + 5000)
     active.forEach(function(rule) {
       if (!_channelIncludes(rule.channel, 'whatsapp') || !rule.content_template) return
       var rendered = svc.renderTemplate(rule.content_template, vars)
-      _enqueueWA(phone, rendered, appt, new Date(), rule.name, rule.id, null, vars)
+      _enqueueWA(phone, rendered, appt, whenConsolidada, rule.name, rule.id, null, vars)
     })
   }
 

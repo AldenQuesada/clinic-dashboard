@@ -1899,14 +1899,18 @@
       const linkPromise = (isNovo && typeof _gerarLinkAnamnese === 'function')
         ? _gerarLinkAnamnese(apptCompleto.id, apptCompleto.pacienteId).catch(function(e) { console.warn('[Agenda-modal] falha link:', e); return null })
         : Promise.resolve(null)
-      linkPromise.then(function(link) {
+      // Exporta a promise das automacoes pra que series de recorrencia possam
+      // aguardar a msg universal de Agendamento ser enfileirada antes de disparar
+      // a msg consolidada da serie (senao ha race e a consolidada pode ir primeiro).
+      var autoPromise = linkPromise.then(function(link) {
         if (link) apptCompleto.link_anamnese = link
         if (typeof scheduleAutomations === 'function') scheduleAutomations(apptCompleto)
         if (window.AutomationsEngine && window.AutomationsEngine.processStatusChange) {
-          AutomationsEngine.processStatusChange(apptCompleto, apptCompleto.status || 'agendado')
+          return AutomationsEngine.processStatusChange(apptCompleto, apptCompleto.status || 'agendado')
             .catch(function(e) { console.error('[Agenda-modal] processStatusChange inicial falhou:', e) })
         }
       })
+      window.__apptLastAutomationsPromise = autoPromise
       if (typeof _applyStatusTag === 'function' && apptCompleto.pacienteId) {
         _applyStatusTag(apptCompleto, 'agendado', 'criacao')
       }
@@ -3100,7 +3104,16 @@
       }
     }
 
-    // 4. So agora dispara msg WA consolidada — todas as sessoes confirmadas
+    // 4. Aguarda a msg universal de Agendamento da BASE ser enfileirada PRIMEIRO.
+    //    Sem isso, a consolidada da serie pode ir no wa_outbox antes da universal
+    //    (linkPromise e processStatusChange rodam em background apos saveAppt).
+    if (window.__apptLastAutomationsPromise) {
+      try { await window.__apptLastAutomationsPromise } catch (_) { /* best-effort */ }
+      window.__apptLastAutomationsPromise = null
+    }
+
+    // 5. So agora dispara msg WA consolidada — todas as sessoes confirmadas
+    //    E a universal ja foi enfileirada.
     if (window.AutomationsEngine && window.AutomationsEngine.processRecurrenceCreated) {
       try {
         window.AutomationsEngine.processRecurrenceCreated({
@@ -3177,6 +3190,12 @@
           if (window._showToast) _showToast('Falha ao sincronizar', (err && err.message) || 'Erro inesperado.', 'error')
           return
         }
+      }
+
+      // Aguarda universal de Agendamento da base ANTES da consolidada (anti-race)
+      if (window.__apptLastAutomationsPromise) {
+        try { await window.__apptLastAutomationsPromise } catch (_) { /* best-effort */ }
+        window.__apptLastAutomationsPromise = null
       }
 
       if (window.AutomationsEngine && window.AutomationsEngine.processRecurrenceCreated) {
