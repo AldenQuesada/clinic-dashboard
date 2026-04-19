@@ -9,8 +9,9 @@ const N8N_URL = 'flows.aldenquesada.site'
 const API_KEY = process.env.N8N_API_KEY
 const WORKFLOW_ID = 'j3i14cyQt3NPiGF2'
 
-if (!API_KEY) {
-  console.error('Defina N8N_API_KEY. Ver memory reference_clinicai_api_keys.md')
+const SB_KEY = process.env.SUPABASE_SECRET_KEY  // ver memory reference_clinicai_api_keys
+if (!API_KEY || !SB_KEY) {
+  console.error('Defina N8N_API_KEY e SUPABASE_SECRET_KEY. Ver memory reference_clinicai_api_keys.md')
   process.exit(1)
 }
 
@@ -37,7 +38,7 @@ function req(method, path, body) {
 
 const NEW_DETECT_CODE = `
 // Detecta se a mensagem deve ir pro fluxo B2B.
-// Sinais: keyword regex + whitelist de admins.
+// Sinais: (1) keyword regex | (2) state B2B ativo pro phone.
 const j = $input.first().json
 const phone = String(j.phone || '')
 const textRaw = String(j.text || '')
@@ -49,18 +50,47 @@ const text = textRaw.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g
 const kwRegex = /voucher|parceir|candidatura|parceria|aprova|rejeita|recusa|cazza|moinho|mormaii|osvaldo|mentor|nps|quero ser|lista pendent|lista de pendent|pendentes|stats|status|quantos vouchers|quantas parcerias/i
 const kwHit = kwRegex.test(text)
 
-// 2. Admin Mirian. Evolution entrega com 12 ou 13 digitos (nono digito BR opcional).
+// 2. Admin Mirian (só pra log, nao dispara B2B sozinho)
 const last8 = phone.slice(-8)
 const ADMIN_LAST8 = ['98782003', '88782003']
 const isAdmin = ADMIN_LAST8.includes(last8)
 
-// SO roteia pra B2B se tem keyword B2B (voucher, parceir, aprova, etc).
-// Admin sem keyword = Mira normal (agenda, relatorios, etc).
-// isAdmin fica salvo pra logs mas nao dispara roteamento sozinho.
-const isB2B = kwHit
+// 3. State ativo? Consulta RPC mira_state_get via fetch.
+// Se phone tem onboarding B2B em curso, mesmo mensagem sem keyword vai pra B2B.
+let hasActiveState = false
+let activeState = null
+try {
+  const res = await fetch('https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/mira_state_get', {
+    method: 'POST',
+    headers: {
+      'apikey': '__SUPABASE_SECRET_KEY__',
+      'Authorization': 'Bearer __SUPABASE_SECRET_KEY__',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_phone: phone }),
+  })
+  const body = await res.json()
+  if (body && body.context && String(body.context).startsWith('b2b')) {
+    hasActiveState = true
+    activeState = body.state || null
+  }
+} catch (e) {
+  // fail silently
+}
 
-return [{ json: { ...j, isB2B, kwHit, isAdmin, _text_norm: text, _last8: last8 } }]
+// B2B = keyword OU state ativo
+const isB2B = kwHit || hasActiveState
+
+return [{ json: {
+  ...j,
+  isB2B, kwHit, isAdmin, hasActiveState,
+  activeState,
+  _text_norm: text, _last8: last8,
+} }]
 `
+
+// Injeta a secret key do env no code antes de enviar ao n8n
+const DETECT_CODE_WITH_KEY = NEW_DETECT_CODE.replace(/__SUPABASE_SECRET_KEY__/g, SB_KEY)
 
 ;(async () => {
   const cur = await req('GET', '/api/v1/workflows/' + WORKFLOW_ID)
@@ -71,7 +101,7 @@ return [{ json: { ...j, isB2B, kwHit, isAdmin, _text_norm: text, _last8: last8 }
     console.error('Node "B2B Detect" não encontrado. Precisa rodar patch-mira-workflow-b2b.cjs antes.')
     process.exit(1)
   }
-  detect.parameters.jsCode = NEW_DETECT_CODE
+  detect.parameters.jsCode = DETECT_CODE_WITH_KEY
   const upd = await req('PUT', '/api/v1/workflows/' + WORKFLOW_ID, {
     name: wf.name,
     nodes: wf.nodes,
