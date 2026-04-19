@@ -1360,11 +1360,11 @@ input, textarea, select { font-family: inherit; }
   object-fit: cover;
   display: block;
   pointer-events: none;
-  mix-blend-mode: normal;
-  z-index: 1;
+  z-index: 5;                /* SEMPRE EM CIMA · opacity controla mistura */
   transform-origin: center;
 }
-.lpb-imgpos-img { position: relative; z-index: 2 }
+.lpb-imgpos-img { position: relative; z-index: 1 }
+.lpb-imgpos-ghost-opacity { flex: 1; accent-color: #C8A97E }
 .lpb-imgpos-ghost-toggle {
   display: flex; align-items: center; gap: 8px;
   margin-top: 10px;
