@@ -56,7 +56,7 @@
 
   // ─── Máquina de estados ─────────────────────────────────────
   function canTransition(fromStatus, toStatus) {
-    if (!STATUSES.indexOf(toStatus) === -1) return false
+    if (STATUSES.indexOf(toStatus) === -1) return false
     var allowed = ALLOWED_TRANSITIONS[fromStatus] || []
     return allowed.indexOf(toStatus) !== -1
   }

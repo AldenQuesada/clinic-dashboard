@@ -49,6 +49,67 @@
 
   function _pillarLabel(p) { return PILLAR_LABELS[p] || p }
 
+  // Top 3 categorias mais prioritárias em red (gaps urgentes)
+  function _renderTopGaps(cats) {
+    var reds = cats.filter(function (c) { return c.state === 'red' })
+      .sort(function (a, b) {
+        if (a.tier !== b.tier) return (a.tier || 99) - (b.tier || 99)
+        return (b.priority || 0) - (a.priority || 0)
+      })
+      .slice(0, 3)
+    if (!reds.length) return ''
+    return '<div class="b2b-sug-toplist">' +
+      '<div class="b2b-sug-toplist-hdr">Abordar primeiro · 3 categorias prioritárias</div>' +
+      '<div class="b2b-sug-toplist-grid">' +
+        reds.map(function (c) {
+          return '<div class="b2b-sug-top-card">' +
+            '<div class="b2b-sug-top-pill">T' + c.tier + ' · ' + _esc(_pillarLabel(c.pillar)) + '</div>' +
+            '<div class="b2b-sug-top-name">' + _esc(c.label) + '</div>' +
+            (c.notes ? '<div class="b2b-sug-top-notes">' + _esc(c.notes) + '</div>' : '') +
+            '<div class="b2b-sug-top-acts">' +
+              '<button class="b2b-btn" data-sug-action="manual" data-slug="' + _esc(c.slug) + '">+ Manual</button>' +
+              '<button class="b2b-btn b2b-btn-primary" data-sug-action="scout" data-slug="' + _esc(c.slug) + '">Varrer</button>' +
+            '</div>' +
+          '</div>'
+        }).join('') +
+      '</div></div>'
+  }
+
+  // Cobertura agrupada por pilar estratégico
+  function _renderByPillar(cats) {
+    var byPillar = {}
+    cats.forEach(function (c) {
+      var k = c.pillar || 'outros'
+      if (!byPillar[k]) byPillar[k] = { total:0, green:0, yellow:0, red:0 }
+      byPillar[k].total++
+      byPillar[k][c.state] = (byPillar[k][c.state] || 0) + 1
+    })
+    var keys = Object.keys(byPillar).sort(function (a, b) {
+      return byPillar[b].total - byPillar[a].total
+    })
+    return '<div class="b2b-sug-pillars">' +
+      '<div class="b2b-sug-pillars-hdr">Cobertura por pilar</div>' +
+      '<div class="b2b-sug-pillars-grid">' +
+        keys.map(function (k) {
+          var p = byPillar[k]
+          var coveredPct = p.total > 0 ? Math.round(((p.green || 0) / p.total) * 100) : 0
+          var color = coveredPct >= 66 ? '#10B981' : coveredPct >= 33 ? '#F59E0B' : '#EF4444'
+          return '<div class="b2b-sug-pillar-card">' +
+            '<div class="b2b-sug-pillar-top">' +
+              '<strong>' + _esc(_pillarLabel(k)) + '</strong>' +
+              '<span style="color:' + color + '">' + coveredPct + '%</span>' +
+            '</div>' +
+            '<div class="b2b-sug-pillar-bar">' +
+              '<div style="width:' + coveredPct + '%;background:' + color + '"></div>' +
+            '</div>' +
+            '<div class="b2b-sug-pillar-meta">' +
+              (p.green || 0) + ' cobertas · ' + ((p.yellow || 0) + (p.red || 0)) + ' em aberto · ' + p.total + ' total' +
+            '</div>' +
+          '</div>'
+        }).join('') +
+      '</div></div>'
+  }
+
   function _renderCounters(cats) {
     var by = { green: 0, yellow: 0, red: 0 }
     cats.forEach(function (c) { by[c.state] = (by[c.state] || 0) + 1 })
@@ -141,6 +202,8 @@
         '<button type="button" class="b2b-btn" id="b2bSugReload">Atualizar</button>' +
       '</div>' +
       _renderCounters(cats) +
+      _renderTopGaps(cats) +
+      _renderByPillar(cats) +
       _renderTier(1, cats) +
       _renderTier(2, cats) +
       _renderTier(3, cats)

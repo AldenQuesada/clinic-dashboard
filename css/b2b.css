@@ -1236,3 +1236,98 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
 }
 .b2b-theme-dark .b2b-theme-desc { color: #A89680; }
 .b2b-theme-light .b2b-theme-desc { color: #8A8178; }
+
+/* ═══════════════ Impact Panel (Top 2) ═══════════════ */
+.b2b-impact-panel {
+  background: var(--b2b-surface);
+  border: 1px solid var(--b2b-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 18px 0;
+}
+.b2b-impact-panel.b2b-impact-loading { color: var(--b2b-text-muted); font-size: 13px; font-style: italic; }
+.b2b-impact-hero {
+  display: flex; align-items: center; gap: 22px;
+  padding: 14px 4px 18px;
+}
+.b2b-impact-score { display: flex; align-items: baseline; gap: 3px; font-family: 'Cormorant Garamond', serif; }
+.b2b-impact-score strong { font-size: 56px; font-weight: 500; line-height: 1; }
+.b2b-impact-score span { font-size: 18px; opacity: 0.6; }
+.b2b-impact-verdict { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.b2b-impact-band {
+  display: inline-block; font-size: 10px; letter-spacing: 2px;
+  text-transform: uppercase; padding: 4px 10px; border-radius: 10px;
+  font-weight: 700; color: #0A0E14; width: fit-content;
+}
+.b2b-impact-hint { font-size: 13px; color: var(--b2b-text-muted); line-height: 1.5; }
+.b2b-impact-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+}
+@media (max-width: 900px) { .b2b-impact-grid { grid-template-columns: repeat(2, 1fr); } }
+.b2b-impact-cell {
+  background: rgba(10, 14, 20, 0.4);
+  border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.b2b-impact-cell span {
+  font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--b2b-text-muted);
+}
+.b2b-impact-cell strong { font-size: 17px; color: var(--b2b-text); font-weight: 600; }
+
+/* ═══════════════ Gaps: Top Gaps + Pillars (Top 3) ═══════════════ */
+.b2b-sug-toplist {
+  background: linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(239,68,68,0.02) 100%);
+  border: 1px solid rgba(239,68,68,0.3); border-radius: 10px;
+  padding: 16px 18px; margin: 16px 0;
+}
+.b2b-sug-toplist-hdr {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: #EF4444; font-weight: 700; margin-bottom: 12px;
+}
+.b2b-sug-toplist-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+@media (max-width: 900px) { .b2b-sug-toplist-grid { grid-template-columns: 1fr; } }
+.b2b-sug-top-card {
+  background: var(--b2b-surface);
+  border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.b2b-sug-top-pill {
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--b2b-champagne); font-weight: 600;
+}
+.b2b-sug-top-name { font-size: 15px; font-weight: 600; color: var(--b2b-text); line-height: 1.3; }
+.b2b-sug-top-notes { font-size: 11px; color: var(--b2b-text-muted); line-height: 1.4; font-style: italic; }
+.b2b-sug-top-acts { display: flex; gap: 6px; margin-top: 4px; }
+.b2b-sug-top-acts .b2b-btn { padding: 6px 12px; font-size: 11px; }
+
+.b2b-sug-pillars { margin: 20px 0; }
+.b2b-sug-pillars-hdr {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--b2b-text-muted); font-weight: 600; margin-bottom: 10px;
+}
+.b2b-sug-pillars-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;
+}
+.b2b-sug-pillar-card {
+  background: var(--b2b-surface);
+  border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.b2b-sug-pillar-top {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 14px; color: var(--b2b-text);
+}
+.b2b-sug-pillar-top span { font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 13px; }
+.b2b-sug-pillar-bar {
+  height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;
+}
+.b2b-sug-pillar-bar > div { height: 100%; transition: width 400ms ease; }
+.b2b-sug-pillar-meta {
+  font-size: 10px; letter-spacing: 0.5px; color: var(--b2b-text-muted);
+}

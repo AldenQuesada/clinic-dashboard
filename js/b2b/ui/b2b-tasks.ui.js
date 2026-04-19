@@ -100,6 +100,9 @@
         (t.kind === 'brief_monthly' && t.partnership_id
           ? '<button class="b2b-btn b2b-btn-primary" data-task-send-brief data-id="' + _esc(t.partnership_id) + '" data-task-id="' + _esc(t.id) + '">Enviar WhatsApp</button>'
           : '') +
+        (['brief_monthly','welcome_d0','welcome_d2','welcome_d7','anniversary','content_checkin','mid_month','monthly_report'].indexOf(t.kind) !== -1 && t.partnership_id
+          ? '<button class="b2b-btn" data-task-wa-dispatch data-task-id="' + _esc(t.id) + '" title="Enfileira no WhatsApp da clinica (wa_outbox)">Enfileirar WA</button>'
+          : '') +
         '<button class="b2b-btn" data-task-assign data-id="' + _esc(t.id) + '" data-owner="' + _esc(t.owner || '') + '">' +
           (t.owner ? 'Atribuído a ' + _esc(t.owner) : 'Atribuir') +
         '</button>' +
@@ -200,11 +203,38 @@
     host.querySelectorAll('[data-task-send-brief]').forEach(function (btn) {
       btn.addEventListener('click', _onSendBrief)
     })
+    host.querySelectorAll('[data-task-wa-dispatch]').forEach(function (btn) {
+      btn.addEventListener('click', _onWaDispatch)
+    })
     host.querySelectorAll('[data-task-assign]').forEach(function (btn) {
       btn.addEventListener('click', _onAssign)
     })
     var sendAllBtn = host.querySelector('#b2bBriefSendAll')
     if (sendAllBtn) sendAllBtn.addEventListener('click', _onSendAllBriefs)
+  }
+
+  async function _onWaDispatch(e) {
+    var btn = e.currentTarget
+    var taskId = btn.getAttribute('data-task-id')
+    btn.disabled = true
+    var orig = btn.textContent
+    btn.textContent = 'Enfileirando…'
+    try {
+      var r = await _repo().briefDispatchToWa(taskId)
+      if (!r || !r.ok) {
+        var msg = r && r.error === 'partnership_without_phone' ? 'Parceria sem telefone cadastrado'
+                : r && r.error === 'task_not_found_or_not_open' ? 'Task já foi resolvida'
+                : 'Falha: ' + (r && r.error || 'desconhecida')
+        window.B2BToast && window.B2BToast.error(msg)
+        btn.disabled = false; btn.textContent = orig
+        return
+      }
+      window.B2BToast && window.B2BToast.success('Mensagem enfileirada no WhatsApp')
+      await _load({ skipBanner: true })
+    } catch (err) {
+      window.B2BToast && window.B2BToast.error('Falha: ' + (err.message || err))
+      btn.disabled = false; btn.textContent = orig
+    }
   }
 
   async function _onSendBrief(e) {

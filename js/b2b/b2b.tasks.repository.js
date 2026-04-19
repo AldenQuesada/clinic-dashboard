@@ -42,11 +42,17 @@
     return _rpc('b2b_brief_send_all_active')
   }
 
+  // Bridge novo: enfileira brief direto no wa_outbox (Top 1-D)
+  function briefDispatchToWa(taskId) {
+    return _rpc('b2b_brief_dispatch_to_wa', { p_task_id: taskId })
+  }
+
   window.B2BTasksRepository = Object.freeze({
     list: list,
     resolve: resolve,
     assign: assign,
     briefSend: briefSend,
     briefSendAllActive: briefSendAllActive,
+    briefDispatchToWa: briefDispatchToWa,
   })
 })()

@@ -149,6 +149,7 @@
       (_arr(d.events).length  ? _renderEvents(d.events)     : '') +
       (_arr(d.content).length ? _renderContent(d.content)   : '') +
       '<div id="b2bWowActionsSection"></div>' +
+      '<div id="b2bImpactSection"></div>' +
       '<div id="b2bCostSection"></div>' +
       '<div id="b2bTrendSection"></div>' +
       '<div id="b2bCommentsSection"></div>' +
@@ -178,8 +179,11 @@
     }
   }
 
-  // Monta custo real (Fraqueza #8) + tendência (Fraqueza #9)
+  // Monta custo real (Fraqueza #8) + tendência (Fraqueza #9) + Impact (Top 2)
   function _mountCostAndTrend(id) {
+    if (window.B2BImpactPanel) {
+      setTimeout(function () { window.B2BImpactPanel.mount('b2bImpactSection', id) }, 50)
+    }
     if (window.B2BCostPanel) {
       setTimeout(function () { window.B2BCostPanel.mount('b2bCostSection', id) }, 60)
     }
