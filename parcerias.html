@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Círculo de Parcerias · Clínica Mirian de Paula</title>
+<meta name="description" content="Conheça as parcerias da Clínica Mirian de Paula — negócios que compartilham o nosso cuidado, em Maringá.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: #1A1A2E;
+    background: linear-gradient(180deg, #F8F5F0 0%, #EFE8DB 100%);
+    min-height: 100vh; line-height: 1.6;
+  }
+  .hall-wrap { max-width: 1080px; margin: 0 auto; padding: 80px 24px 100px; }
+  .hero { text-align: center; margin-bottom: 64px; }
+  .hero-eyebrow {
+    font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 4px; text-transform: uppercase; color: #B8956A;
+    margin-bottom: 14px;
+  }
+  .hero-title {
+    font-size: 56px; font-weight: 400; letter-spacing: 0.5px;
+    margin-bottom: 12px; color: #1A1A2E;
+  }
+  @media (max-width: 640px) { .hero-title { font-size: 40px; } }
+  .hero-subtitle {
+    font-size: 20px; font-style: italic; color: #6B6B7D;
+    max-width: 580px; margin: 0 auto;
+  }
+  .pillar-filter {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    margin: 40px 0 28px;
+  }
+  .pillar-btn {
+    padding: 8px 18px; background: transparent;
+    border: 1px solid #E5DDD1; border-radius: 20px;
+    font-family: 'Montserrat', sans-serif; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: #6B6B7D;
+    cursor: pointer; transition: all 180ms ease;
+  }
+  .pillar-btn:hover, .pillar-btn.active {
+    background: #1A1A2E; color: #FFFFFF; border-color: #1A1A2E;
+  }
+  .cards-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px; margin-top: 24px;
+  }
+  .card {
+    background: #FFFFFF; border-radius: 12px;
+    padding: 32px 28px;
+    box-shadow: 0 2px 24px rgba(0, 0, 0, 0.05);
+    transition: transform 240ms ease, box-shadow 240ms ease;
+    display: flex; flex-direction: column; gap: 14px;
+    position: relative; overflow: hidden;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #B8956A 0%, #D4B896 100%);
+  }
+  .card-eyebrow {
+    font-family: 'Montserrat', sans-serif; font-size: 10px; font-weight: 500;
+    letter-spacing: 2.5px; text-transform: uppercase; color: #B8956A;
+  }
+  .card-tier { margin-left: auto; }
+  .card-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .card-tier-badge {
+    font-family: 'Montserrat', sans-serif; font-size: 9px;
+    letter-spacing: 2px; text-transform: uppercase;
+    background: #FAF7F2; color: #B8956A; padding: 3px 10px;
+    border: 1px solid #E5DDD1; border-radius: 20px; font-weight: 600;
+  }
+  .card-name {
+    font-size: 28px; font-weight: 400; color: #1A1A2E;
+    letter-spacing: 0.3px; line-height: 1.1;
+  }
+  .card-category {
+    font-family: 'Montserrat', sans-serif; font-size: 11px;
+    color: #8B7355; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .card-slogan {
+    font-size: 16px; font-style: italic; color: #4A4A5C;
+    padding: 14px 16px; background: #FAF7F2;
+    border-left: 3px solid #B8956A; border-radius: 0 4px 4px 0;
+  }
+  .card-quote {
+    font-size: 15px; color: #4A4A5C; font-style: italic;
+    margin-top: auto;
+  }
+  .card-quote-author {
+    font-family: 'Montserrat', sans-serif; font-size: 10px;
+    font-style: normal; letter-spacing: 2px; text-transform: uppercase;
+    color: #B8956A; margin-top: 4px;
+  }
+  .card-since {
+    font-family: 'Montserrat', sans-serif; font-size: 10px;
+    letter-spacing: 2px; text-transform: uppercase; color: #8B7355;
+    padding-top: 14px; border-top: 1px solid #E5DDD1;
+  }
+  .empty {
+    text-align: center; padding: 80px 20px; color: #8B7355;
+    font-size: 16px; font-style: italic;
+  }
+  .loading { text-align: center; padding: 80px 20px; color: #8B7355; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+  .footer {
+    margin-top: 80px; padding-top: 24px; border-top: 1px solid #E5DDD1;
+    text-align: center; font-family: 'Montserrat', sans-serif; font-size: 10px;
+    letter-spacing: 3px; text-transform: uppercase; color: #8B7355;
+  }
+</style>
+</head>
+<body>
+
+<div class="hall-wrap">
+  <div class="hero">
+    <div class="hero-eyebrow">Clínica Mirian de Paula · Maringá</div>
+    <h1 class="hero-title">Círculo de Parcerias</h1>
+    <p class="hero-subtitle">Uma rede de marcas que compartilham nosso cuidado, nossa estética e nosso propósito — costurada com o tempo.</p>
+  </div>
+
+  <div id="pillarFilter" class="pillar-filter"></div>
+
+  <div id="hallRoot" class="loading">Carregando parcerias…</div>
+
+  <div class="footer">
+    Clínica Mirian de Paula · Maringá · PR
+  </div>
+</div>
+
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<script>
+;(function () {
+  'use strict'
+
+  var ALL_PILLARS = {
+    imagem:'Imagem', evento:'Evento', institucional:'Institucional',
+    fitness:'Fitness', alimentacao:'Alimentação', saude:'Saúde',
+    status:'Status', rede:'Rede', outros:'Outras',
+  }
+
+  var _state = { all: [], activePillar: 'all' }
+
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
+    })
+  }
+  function _yr(iso) {
+    if (!iso) return ''
+    try { return new Date(iso).getFullYear() } catch (_) { return '' }
+  }
+
+  function _renderPillars() {
+    var present = {}
+    _state.all.forEach(function (p) { if (p.pillar) present[p.pillar] = true })
+    var pillars = ['all'].concat(Object.keys(present))
+    var host = document.getElementById('pillarFilter')
+    host.innerHTML = pillars.map(function (p) {
+      var lbl = p === 'all' ? 'Todas' : (ALL_PILLARS[p] || p)
+      var active = _state.activePillar === p ? ' active' : ''
+      return '<button type="button" class="pillar-btn' + active + '" data-pillar="' + _esc(p) + '">' +
+        _esc(lbl) + '</button>'
+    }).join('')
+    host.querySelectorAll('[data-pillar]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        _state.activePillar = btn.getAttribute('data-pillar')
+        _renderCards(); _renderPillars()
+      })
+    })
+  }
+
+  function _renderCards() {
+    var list = _state.activePillar === 'all'
+      ? _state.all
+      : _state.all.filter(function (p) { return p.pillar === _state.activePillar })
+
+    var root = document.getElementById('hallRoot')
+    if (!list.length) {
+      root.className = 'empty'
+      root.innerHTML = 'Nenhuma parceria nesta categoria ainda.'
+      return
+    }
+
+    root.className = 'cards-grid'
+    root.innerHTML = list.map(function (p) {
+      var slogan = Array.isArray(p.slogans) && p.slogans.length ? p.slogans[0] : ''
+      var pillarLabel = ALL_PILLARS[p.pillar] || p.pillar || ''
+      return '<article class="card">' +
+        '<div class="card-head">' +
+          '<div class="card-eyebrow">' + _esc(pillarLabel) + '</div>' +
+          (p.tier ? '<div class="card-tier-badge">Tier ' + p.tier + '</div>' : '') +
+        '</div>' +
+        '<h2 class="card-name">' + _esc(p.name) + '</h2>' +
+        (p.category ? '<div class="card-category">' + _esc(p.category) + '</div>' : '') +
+        (slogan ? '<div class="card-slogan">' + _esc(slogan) + '</div>' : '') +
+        (p.narrative_quote
+          ? '<div class="card-quote">“' + _esc(p.narrative_quote) + '”' +
+              (p.narrative_author ? '<div class="card-quote-author">— ' + _esc(p.narrative_author) + '</div>' : '') +
+            '</div>'
+          : '') +
+        (p.since ? '<div class="card-since">Parceira desde ' + _yr(p.since) + '</div>' : '') +
+      '</article>'
+    }).join('')
+  }
+
+  async function boot() {
+    var tries = 0
+    while (!window._sbShared && tries < 40) {
+      await new Promise(function (r) { setTimeout(r, 100) })
+      tries++
+    }
+    if (!window._sbShared) {
+      document.getElementById('hallRoot').className = 'empty'
+      document.getElementById('hallRoot').innerHTML = 'Conexão indisponível no momento.'
+      return
+    }
+    try {
+      var r = await window._sbShared.rpc('b2b_partnerships_hall', {})
+      if (r.error) throw new Error(r.error.message)
+      _state.all = Array.isArray(r.data) ? r.data : []
+      _renderPillars()
+      _renderCards()
+    } catch (e) {
+      document.getElementById('hallRoot').className = 'empty'
+      document.getElementById('hallRoot').innerHTML = 'Erro: ' + _esc(e.message || e)
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else boot()
+})()
+</script>
+
+</body>
+</html>

@@ -29,6 +29,10 @@
     scout_scan:       'Varredura scout',
     meta_alert:       'Meta em risco',
     health_alert:     'Saúde crítica',
+    anniversary:      '🎉 Aniversário',
+    welcome_d0:       '✨ Boas-vindas',
+    welcome_d2:       '✨ Kit parceria',
+    welcome_d7:       '✨ Check-in 1ª semana',
   }
 
   var _state = {

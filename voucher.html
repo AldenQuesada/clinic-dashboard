@@ -78,6 +78,19 @@
     color:var(--champagne-light); font-size:14px;
   }
   .token { font-family:monospace; font-size:11px; color:var(--text-muted); margin-top:12px; }
+  .tts-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    margin-top:18px; padding:10px 22px;
+    background:transparent; color:var(--champagne-light);
+    border:1px solid var(--border); border-radius:20px;
+    font-family:'Montserrat',sans-serif; font-size:11px;
+    letter-spacing:1.5px; text-transform:uppercase; font-weight:500;
+    cursor:pointer; transition:all 180ms ease;
+  }
+  .tts-btn:hover { border-color:var(--champagne); color:var(--champagne); background:rgba(201,169,110,0.05); }
+  .tts-btn.playing { color:var(--champagne); border-color:var(--champagne); background:rgba(201,169,110,0.08); }
+  .tts-btn .tts-icon { font-size:14px; line-height:1; }
+  .tts-btn:disabled { opacity:0.4; cursor:not-allowed; }
   .status-pill {
     display:inline-block; padding:3px 12px; font-size:10px; letter-spacing:1px;
     text-transform:uppercase; border-radius:10px; margin-bottom:12px; font-weight:600;
@@ -132,6 +145,72 @@
       : 'https://wa.me/?text=' + encodeURIComponent(msg)
   }
 
+  // ═══════ Voucher falado (WOW #6) ═══════
+  function _ttsAvailable() {
+    return 'speechSynthesis' in window && typeof SpeechSynthesisUtterance === 'function'
+  }
+  function _pickPtVoice() {
+    if (!_ttsAvailable()) return null
+    var voices = window.speechSynthesis.getVoices() || []
+    if (!voices.length) return null
+    // Preferência: feminina pt-BR natural
+    var pt = voices.filter(function (v) { return /pt[-_]?BR/i.test(v.lang) })
+    if (!pt.length) pt = voices.filter(function (v) { return /^pt/i.test(v.lang) })
+    if (!pt.length) return voices[0]
+    var female = pt.find(function (v) {
+      return /fem|female|luciana|raquel|vitoria|camila|fernanda|maria/i.test(v.name)
+    })
+    return female || pt[0]
+  }
+  function _speakVoucher(v, btn) {
+    if (!_ttsAvailable()) return
+    // Se já está falando, interrompe
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel()
+      if (btn) { btn.classList.remove('playing'); btn.querySelector('.tts-icon').textContent = '▶' }
+      return
+    }
+
+    var nome = v.recipient_name ? _firstName(v.recipient_name) : 'você'
+    var p = v.partnership || {}
+    var parceira = p.name || 'nossa parceira'
+    var combo = v.combo || 'um cuidado especial'
+
+    var frase = 'Oi ' + nome + '. ' +
+      'Aqui é Mirian de Paula. Em parceria com ' + parceira + ', ' +
+      'reservei para você ' + combo.replace(/[_\+]/g, ' ') + '. ' +
+      'Vem viver esse cuidado comigo. Será uma alegria te receber.'
+
+    // Lazy load das vozes (Chrome precisa de um warm-up)
+    var go = function () {
+      var voice = _pickPtVoice()
+      var utt = new SpeechSynthesisUtterance(frase)
+      if (voice) utt.voice = voice
+      utt.lang = (voice && voice.lang) || 'pt-BR'
+      utt.rate = 0.92
+      utt.pitch = 1.05
+      utt.volume = 1
+
+      utt.onstart = function () {
+        if (btn) { btn.classList.add('playing'); btn.querySelector('.tts-icon').textContent = '■' }
+      }
+      utt.onend = utt.onerror = function () {
+        if (btn) { btn.classList.remove('playing'); btn.querySelector('.tts-icon').textContent = '▶' }
+      }
+
+      window.speechSynthesis.speak(utt)
+    }
+
+    // Warm-up vozes se ainda não populou
+    if (window.speechSynthesis.getVoices().length) {
+      go()
+    } else {
+      window.speechSynthesis.onvoiceschanged = go
+      // Fallback: dispara igual depois de 300ms (Safari)
+      setTimeout(go, 300)
+    }
+  }
+
   function _renderError(msg) {
     document.getElementById('voucherCard').innerHTML =
       '<div class="eyebrow">Voucher</div>' +
@@ -162,8 +241,20 @@
       (!ctaDisabled
         ? '<a href="' + _waUrl(p.name) + '" class="cta" target="_blank">Agendar minha avaliação</a>'
         : '') +
+      (_ttsAvailable() && !ctaDisabled
+        ? '<div><button type="button" class="tts-btn" id="ttsBtn">' +
+            '<span class="tts-icon">▶</span>' +
+            '<span>Ouvir mensagem da Mirian</span>' +
+          '</button></div>'
+        : '') +
       '<div class="signature">— Mirian de Paula & ' + _esc(p.name || '') + '</div>' +
       '<div class="token">#' + _esc(v.token) + '</div>'
+
+    // Voucher falado (WOW #6) — bind no botão
+    var ttsBtn = document.getElementById('ttsBtn')
+    if (ttsBtn) {
+      ttsBtn.addEventListener('click', function () { _speakVoucher(v, ttsBtn) })
+    }
   }
 
   async function boot() {
