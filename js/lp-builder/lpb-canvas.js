@@ -328,6 +328,10 @@
       // Onda 28: bloco do legado + dots em rombo
       if (window.LPBBlockBaCarousel) return LPBBlockBaCarousel.render(b)
       return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">before-after-carousel (renderer não carregado)</div>'
+    }
+    if (b.type === 'before-after-reveal') {
+      if (window.LPBBlockBaReveal) return LPBBlockBaReveal.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">before-after-reveal (renderer não carregado)</div>'
     },
 
     'before-after': function (b) {
@@ -1352,6 +1356,10 @@
       // Onda 28: BA-carousel autoplay + dots tap no preview do builder
       if (window.LPBBlockBaCarousel && window.LPBBlockBaCarousel.bind && _frame && _frame.contentDocument) {
         try { LPBBlockBaCarousel.bind(_frame.contentDocument.body) } catch (_) {}
+      }
+      // Onda 30: BA-reveal slider drag handle no preview
+      if (window.LPBBaRevealRuntime && window.LPBBaRevealRuntime.bind && _frame && _frame.contentDocument) {
+        try { LPBBaRevealRuntime.bind(_frame.contentDocument.body) } catch (_) {}
       }
     }, 30)
   }

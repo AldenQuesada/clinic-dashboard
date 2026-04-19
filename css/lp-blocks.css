@@ -3329,3 +3329,160 @@
   .blk-mtoc-title { font-size: 18px; }
   .blk-mtoc-title span { font-size: 9px; letter-spacing: 2px; }
 }
+
+/* ── BLOCK: before-after-reveal · slider lateral ─────────────── */
+.blk-bars {
+  padding: 2.5rem 0 2rem;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--graphite);
+}
+.blk-bars[data-bg="ivory"] { background: var(--ivory); }
+.blk-bars[data-bg="white"] { background: var(--white); }
+
+.blk-bars-eyebrow {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--champagne);
+  font-weight: 500;
+  text-align: center;
+  padding: 0 1.5rem;
+  margin-bottom: .5rem;
+}
+.blk-bars-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 300;
+  text-align: center;
+  color: var(--ivory);
+  padding: 0 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.blk-bars[data-bg="ivory"] .blk-bars-title,
+.blk-bars[data-bg="white"] .blk-bars-title { color: var(--graphite); }
+
+/* Stage · before/after sobrepostos · linha + handle */
+.blk-bars-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2/3;          /* mesma proporcao do BA-carousel · cresce com largura */
+  overflow: hidden;
+  cursor: ew-resize;
+  user-select: none;
+  background: rgba(200,169,126,.06);
+  touch-action: none;         /* evita scroll horizontal acidental no toque */
+}
+.blk-bars-img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+}
+.blk-bars-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: center;
+}
+.blk-bars-img-after {
+  /* clip-path inicial via inline style · runtime atualiza via drag */
+  will-change: clip-path;
+}
+.blk-bars-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(200,169,126,.4);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* Labels nos cantos */
+.blk-bars-label {
+  position: absolute;
+  top: 12px;
+  padding: 4px 10px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--champagne);
+  background: rgba(28,28,28,.7);
+  font-weight: 500;
+  pointer-events: none;
+  border-radius: 2px;
+}
+.blk-bars-label-before { left: 12px; }
+.blk-bars-label-after  { right: 12px; }
+
+/* Linha vertical central */
+.blk-bars-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: var(--champagne);
+  transform: translateX(-50%);
+  pointer-events: none;
+  box-shadow: 0 0 12px rgba(200,169,126,.55);
+  will-change: left;
+}
+
+/* Handle redondo · arrasta */
+.blk-bars-handle {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42px; height: 42px;
+  background: var(--champagne);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  gap: 2px;
+  color: var(--graphite);
+  pointer-events: auto;
+  cursor: ew-resize;
+  box-shadow: 0 4px 12px rgba(0,0,0,.35), 0 0 0 4px rgba(200,169,126,.18);
+  transition: transform .15s ease;
+}
+.blk-bars-handle:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+.blk-bars-handle:focus {
+  outline: 2px solid rgba(255,255,255,.4);
+  outline-offset: 2px;
+}
+
+/* Info embaixo */
+.blk-bars-info {
+  padding: 1rem 1.25rem;
+  background: rgba(245,240,232,.04);
+}
+.blk-bars[data-bg="ivory"] .blk-bars-info,
+.blk-bars[data-bg="white"] .blk-bars-info { background: rgba(44,44,44,.03); }
+.blk-bars-procedure {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: var(--ivory);
+  margin: 0 0 .25rem;
+  text-align: center;
+}
+.blk-bars-detail {
+  font-size: 11px;
+  color: rgba(245,240,232,.55);
+  line-height: 1.5;
+  margin: 0;
+  text-align: center;
+}
+.blk-bars[data-bg="ivory"] .blk-bars-procedure,
+.blk-bars[data-bg="white"] .blk-bars-procedure { color: var(--graphite); }
+.blk-bars[data-bg="ivory"] .blk-bars-detail,
+.blk-bars[data-bg="white"] .blk-bars-detail { color: rgba(44,44,44,.55); }
+
+@media (max-width: 600px) {
+  .blk-bars { padding: 2rem 0 1.5rem; }
+  .blk-bars-title { font-size: 20px; }
+  .blk-bars-procedure { font-size: 14px; }
+}

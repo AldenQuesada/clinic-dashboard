@@ -1582,6 +1582,115 @@
     },
 
     // ── BEFORE-AFTER-CAROUSEL · 2 fotos lado a lado + carrossel (Onda 28) ──
+    // ── before-after-reveal · slider lateral (handle + linha) ──
+    'before-after-reveal': {
+      name: 'Antes & Depois · Slider Revelar',
+      icon: 'sliders',
+      description: 'Linha vertical central · arraste pra revelar antes vs depois lado a lado',
+      group: 'prova',
+      fields: [
+        // ── Eyebrow + companions ─────────────────────────
+        { k: 'eyebrow',       label: 'Eyebrow', type: 'text', max: 40, optional: true,
+          default: 'Resultado real' },
+        { k: 'eyebrow_size',  label: 'Eyebrow · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (8px)' },
+            { value: 'md', label: 'Médio (9px · default)' },
+            { value: 'lg', label: 'Grande (11px)' },
+            { value: 'xl', label: 'Extra (13px)' },
+          ], default: 'md' },
+        { k: 'eyebrow_color', label: 'Eyebrow · cor (custom)', type: 'color', optional: true },
+        { k: 'eyebrow_padx',  label: 'Eyebrow · espaçamento lateral', type: 'select',
+          options: [
+            { value: '0',  label: 'Zero' }, { value: 'sm', label: 'Pequeno' },
+            { value: 'md', label: 'Médio (default)' }, { value: 'lg', label: 'Grande' },
+            { value: 'xl', label: 'Extra' },
+          ], default: 'md' },
+
+        // ── Título + companions ──────────────────────────
+        { k: 'titulo',        label: 'Título', type: 'text', max: 60, optional: true,
+          default: 'Arraste pra revelar' },
+        { k: 'titulo_size',   label: 'Título · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (18px)' },
+            { value: 'md', label: 'Médio (24px · default)' },
+            { value: 'lg', label: 'Grande (32px)' },
+            { value: 'xl', label: 'Extra (40px)' },
+          ], default: 'md' },
+        { k: 'titulo_color',  label: 'Título · cor (custom)', type: 'color', optional: true },
+        { k: 'titulo_padx',   label: 'Título · espaçamento lateral', type: 'select',
+          options: [
+            { value: '0',  label: 'Zero' }, { value: 'sm', label: 'Pequeno' },
+            { value: 'md', label: 'Médio (default)' }, { value: 'lg', label: 'Grande' },
+            { value: 'xl', label: 'Extra' },
+          ], default: 'md' },
+
+        // ── Foto ANTES + positioner ──────────────────────
+        { k: 'before_url',  label: 'Foto antes',  type: 'image', aspect: '2/3', positioner: true,
+          hint: 'Aspect 2/3 · mesma do BA-carrossel' },
+        { k: 'before_zoom', label: 'Antes · zoom', type: 'number', optional: true, hidden: true, default: 1 },
+        { k: 'before_x',    label: 'Antes · pan X (%)', type: 'number', optional: true, hidden: true, default: 0 },
+        { k: 'before_y',    label: 'Antes · pan Y (%)', type: 'number', optional: true, hidden: true, default: 0 },
+
+        // ── Foto DEPOIS + positioner ─────────────────────
+        { k: 'after_url',  label: 'Foto depois', type: 'image', aspect: '2/3', positioner: true },
+        { k: 'after_zoom', label: 'Depois · zoom', type: 'number', optional: true, hidden: true, default: 1 },
+        { k: 'after_x',    label: 'Depois · pan X (%)', type: 'number', optional: true, hidden: true, default: 0 },
+        { k: 'after_y',    label: 'Depois · pan Y (%)', type: 'number', optional: true, hidden: true, default: 0 },
+
+        // ── Posição inicial do handle ────────────────────
+        { k: 'initial_pos', label: 'Posição inicial do handle (%)', type: 'select',
+          options: [
+            { value: 25, label: '25% (mostra mais ANTES)' },
+            { value: 50, label: '50% (centro · default)' },
+            { value: 75, label: '75% (mostra mais DEPOIS)' },
+          ], default: 50 },
+
+        // ── Labels Antes/Depois ──────────────────────────
+        { k: 'label_before',       label: 'Texto label "antes"',  type: 'text', max: 16, default: 'Antes' },
+        { k: 'label_before_size',  label: 'Label "antes" · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (7px)' }, { value: 'md', label: 'Médio (8px · default)' },
+            { value: 'lg', label: 'Grande (10px)' }, { value: 'xl', label: 'Extra (12px)' },
+          ], default: 'md' },
+        { k: 'label_before_color', label: 'Label "antes" · cor (custom)', type: 'color', optional: true },
+
+        { k: 'label_after',        label: 'Texto label "depois"', type: 'text', max: 16, default: 'Depois' },
+        { k: 'label_after_size',   label: 'Label "depois" · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (7px)' }, { value: 'md', label: 'Médio (8px · default)' },
+            { value: 'lg', label: 'Grande (10px)' }, { value: 'xl', label: 'Extra (12px)' },
+          ], default: 'md' },
+        { k: 'label_after_color',  label: 'Label "depois" · cor (custom)', type: 'color', optional: true },
+
+        // ── Procedimento + detalhe ───────────────────────
+        { k: 'procedure',       label: 'Nome do protocolo', type: 'text', max: 80, optional: true,
+          hint: 'Ex: Lifting 5D · 30 dias' },
+        { k: 'procedure_size',  label: 'Procedimento · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (13px)' }, { value: 'md', label: 'Médio (15px · default)' },
+            { value: 'lg', label: 'Grande (18px)' }, { value: 'xl', label: 'Extra (22px)' },
+          ], default: 'md', optional: true },
+        { k: 'procedure_color', label: 'Procedimento · cor', type: 'color', optional: true },
+
+        { k: 'detail',          label: 'Detalhe / tempo', type: 'textarea', max: 180, rows: 2, optional: true },
+        { k: 'detail_size',     label: 'Detalhe · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (10px)' }, { value: 'md', label: 'Médio (11px · default)' },
+            { value: 'lg', label: 'Grande (13px)' }, { value: 'xl', label: 'Extra (15px)' },
+          ], default: 'md', optional: true },
+        { k: 'detail_color',    label: 'Detalhe · cor', type: 'color', optional: true },
+
+        // ── Fundo ────────────────────────────────────────
+        { k: 'bg', label: 'Fundo do bloco', type: 'select',
+          options: [
+            { value: 'graphite', label: 'Grafite (escuro · default)' },
+            { value: 'ivory',    label: 'Marfim' },
+            { value: 'white',    label: 'Branco' },
+          ], default: 'graphite' },
+      ],
+    },
+
     'before-after-carousel': {
       name: 'Antes & Depois · Carrossel',
       icon: 'columns',
