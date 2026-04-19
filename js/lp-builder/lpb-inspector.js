@@ -155,15 +155,70 @@
   // ────────────────────────────────────────────────────────────
   // Section accordion
   // ────────────────────────────────────────────────────────────
-  function _section(id, label, body) {
-    var collapsed = !_expandedSections[id]
+  function _section(id, label, body, opts) {
+    opts = opts || {}
+    var collapsed = (opts.defaultOpen === true) ? false : !_expandedSections[id]
+    if (opts.defaultOpen === true && _expandedSections[id] === undefined) collapsed = false
+    var icon = opts.icon || ''
+    var iconHtml = icon ? '<span class="lpb-insp-section-icon">' + _ico(icon, 12) + '</span>' : ''
     return '<div class="lpb-insp-section ' + (collapsed ? 'collapsed' : '') + '" data-section="' + id + '">' +
       '<div class="lpb-insp-section-h">' +
-        '<span>' + _esc(label) + '</span>' +
+        iconHtml + '<span>' + _esc(label) + '</span>' +
         '<span class="chev">' + _ico('chevron-down', 14) + '</span>' +
       '</div>' +
       '<div class="lpb-insp-section-body">' + body + '</div>' +
       '</div>'
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Categorização automática de fields → grupos colapsáveis
+  // (nenhum field do schema precisa mudar — heurística por nome)
+  // ────────────────────────────────────────────────────────────
+  var GROUP_DEFS = [
+    { id: 'media',    label: 'Mídia',                icon: 'image',
+      match: function (k, t) { return /^(image|imagem|foto|bg_image|bg|video|cover|hero_img)/i.test(k) && t === 'image' } },
+    { id: 'conteudo', label: 'Conteúdo · Texto',     icon: 'type',
+      match: function (k, t) {
+        return /^(eyebrow|h1|h2|h3|h4|headline|subheadline|titulo|title|lead|subtitle|body|text|content|descricao|kicker|tagline|brand_name|copyright|clinic_label|message)/i.test(k) ||
+               (t === 'text' || t === 'textarea' || t === 'richtext')
+      } },
+    { id: 'itens',    label: 'Itens / Lista',        icon: 'list',
+      match: function (k, t) { return t === 'list' || /^(items|slides|social|fields|links)$/i.test(k) } },
+    { id: 'cta',      label: 'CTA / Botão',          icon: 'mouse-pointer',
+      match: function (k, t) { return /^(cta|btn|button)(_|$)/i.test(k) || /url$/i.test(k) || t === 'cta' } },
+    { id: 'tamanhos', label: 'Tamanhos',             icon: 'maximize-2',
+      match: function (k) { return /_size$/i.test(k) || /^size$/i.test(k) } },
+    { id: 'cores',    label: 'Cores',                icon: 'droplet',
+      match: function (k, t) { return /_color$/i.test(k) || /^color$/i.test(k) || t === 'color' } },
+    { id: 'posicao',  label: 'Posição & Alinhamento', icon: 'move',
+      match: function (k) { return /_align|^align|_pos|^pos|_y_pct|_x_pct|^y_|^x_/i.test(k) } },
+    { id: 'layout',   label: 'Layout',               icon: 'layout',
+      match: function (k) { return /^(aspect|ratio|columns|columns_grid|layout|max_width|direction|spacing|bg|fundo)/i.test(k) } },
+    { id: 'overlay',  label: 'Overlay / Efeitos',    icon: 'cloud',
+      match: function (k) { return /^(overlay|gradient|blur|filter)/i.test(k) } },
+    { id: 'outros',   label: 'Outros',               icon: 'more-horizontal',
+      match: function () { return true } },  // catch-all
+  ]
+
+  function _groupFields(fields) {
+    var groups = {}
+    GROUP_DEFS.forEach(function (g) { groups[g.id] = [] })
+    fields.forEach(function (f) {
+      // Force grupo via schema explícito tem prioridade
+      if (f.group && groups[f.group]) {
+        groups[f.group].push(f)
+        return
+      }
+      for (var i = 0; i < GROUP_DEFS.length; i++) {
+        var g = GROUP_DEFS[i]
+        if (g.match(f.k, f.type, f)) {
+          groups[g.id].push(f)
+          return
+        }
+      }
+      groups.outros.push(f)
+    })
+    return groups
   }
 
   // ────────────────────────────────────────────────────────────
@@ -432,13 +487,29 @@
     var editingLang = (window.LPBI18n && LPBI18n.getEditingLang) ? LPBI18n.getEditingLang() : 'pt-BR'
     var isI18nMode = window.LPBI18n && editingLang !== LPBI18n.DEFAULT_LANG
 
-    var contentFieldsHtml = meta.fields.map(function (f) {
+    // Agrupa fields por categoria (heurística por nome)
+    var groups = _groupFields(meta.fields)
+    function _renderField(f) {
       var renderer = Fields[f.type] || Fields.text
       var v = isI18nMode
         ? LPBI18n.getValue(b, f.k, editingLang)
         : (b.props ? b.props[f.k] : undefined)
       return renderer(f, v, idx)
-    }).join('')
+    }
+    var groupSectionsHtml = ''
+    var firstNonEmpty = true
+    GROUP_DEFS.forEach(function (g) {
+      var fs = groups[g.id]
+      if (!fs || !fs.length) return
+      var bodyHtml = fs.map(_renderField).join('')
+      // primeira seção não vazia abre por default
+      var sectionId = b.type + '__' + g.id
+      groupSectionsHtml += _section(sectionId, g.label, bodyHtml, {
+        icon: g.icon,
+        defaultOpen: firstNonEmpty,
+      })
+      firstNonEmpty = false
+    })
 
     // Banner de modo i18n
     var i18nBanner = isI18nMode
@@ -461,8 +532,8 @@
       '</div>' +
       '<div class="lpb-insp-content">' +
         i18nBanner +
-        _section('conteudo', 'Conteúdo', contentFieldsHtml) +
-        _section('ajustes', 'Ajustes do bloco', _renderStyleControls(idx, b)) +
+        groupSectionsHtml +
+        _section(b.type + '__ajustes', 'Ajustes avançados (estilo)', _renderStyleControls(idx, b), { icon: 'sliders' }) +
       '</div>'
 
     _root.innerHTML = html
