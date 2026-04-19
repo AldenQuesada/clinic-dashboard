@@ -48,6 +48,28 @@
     --pill-error-ink: #7A1F2B;
   }
 
+  /* ════════ Tema AUTO (sazonal — injetado via JS) ════════ */
+  /* Defaults aqui são os mesmos do DARK — servem de fallback silencioso
+     caso a RPC b2b_seasonal_current() falhe. As cores reais são injetadas
+     inline no <body> via style a partir do calendário sazonal. */
+  body[data-theme="auto"] {
+    --bg-outer: #0F0D0A;
+    --bg-card: #141210;
+    --ink: #F5F0E8;
+    --ink-soft: #A89680;
+    --accent: #C9A96E;
+    --accent-soft: #DFC5A0;
+    --line: rgba(201,169,110,0.35);
+    --line-strong: rgba(201,169,110,0.6);
+    --btn-bg: #C9A96E;
+    --btn-ink: #0F0D0A;
+    --btn-bg-hover: #DFC5A0;
+    --pill-redeemed-bg: rgba(16,185,129,0.1);
+    --pill-redeemed-ink: #10B981;
+    --pill-error-bg: rgba(217,122,122,0.1);
+    --pill-error-ink: #D97A7A;
+  }
+
   body {
     font-family: 'Cormorant Garamond', Georgia, serif;
     background: var(--bg-outer); color: var(--ink);
@@ -284,7 +306,33 @@
   function _themeOverride() {
     var p = new URLSearchParams(location.search)
     var t = (p.get('theme') || '').toLowerCase()
-    return (t === 'dark' || t === 'light') ? t : null
+    return (t === 'dark' || t === 'light' || t === 'auto') ? t : null
+  }
+  function _monthOverride() {
+    var p = new URLSearchParams(location.search)
+    var m = parseInt(p.get('month'), 10)
+    return (m >= 1 && m <= 12) ? m : null
+  }
+  function _isHex(s) { return typeof s === 'string' && /^#[0-9a-f]{3,8}$/i.test(s) }
+  function _hexToRgba(hex, alpha) {
+    if (!_isHex(hex)) return null
+    var h = hex.replace('#', '')
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c }).join('')
+    var r = parseInt(h.substr(0, 2), 16)
+    var g = parseInt(h.substr(2, 2), 16)
+    var b = parseInt(h.substr(4, 2), 16)
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')'
+  }
+  function _relLuminance(hex) {
+    if (!_isHex(hex)) return 0
+    var h = hex.replace('#', '')
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c }).join('')
+    var rgb = [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)]
+      .map(function (v) {
+        v = v / 255
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)
+      })
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
   }
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -364,11 +412,70 @@
   }
 
   // ════════ Render ════════
-  function _applyTheme(theme) {
+  function _resolveTheme(voucherTheme) {
     var override = _themeOverride()
-    var t = override || theme || 'dark'
-    if (t !== 'dark' && t !== 'light') t = 'dark'
+    if (override) return override
+    var t = (voucherTheme || '').toLowerCase()
+    if (t === 'dark' || t === 'light') return t
+    // null, undefined, '' ou 'auto' no banco → sazonal
+    return 'auto'
+  }
+
+  async function _fetchSeasonal() {
+    if (!window._sbShared || typeof window._sbShared.rpc !== 'function') return null
+    try {
+      var month = _monthOverride()
+      var r = month
+        ? await window._sbShared.rpc('b2b_seasonal_get', { p_month: month })
+        : await window._sbShared.rpc('b2b_seasonal_current')
+      if (r && !r.error && r.data && typeof r.data === 'object' && r.data.bg_hex) {
+        return r.data
+      }
+    } catch (_) { /* fallback silencioso */ }
+    return null
+  }
+
+  function _applySeasonalPalette(row) {
+    if (!row || !_isHex(row.bg_hex) || !_isHex(row.accent_hex) || !_isHex(row.ink_hex)) return false
+    var bg = row.bg_hex
+    var accent = row.accent_hex
+    var ink = row.ink_hex
+    // Decide se fundo é claro ou escuro pra ajustar --ink-soft e botão
+    var isLightBg = _relLuminance(bg) > 0.5
+    var inkSoft = _hexToRgba(ink, 0.55) || (isLightBg ? '#8A8178' : '#A89680')
+    var line = _hexToRgba(accent, 0.35)
+    var lineStrong = _hexToRgba(accent, 0.6)
+    var btnBg = accent
+    var btnInk = isLightBg ? ink : bg
+    var btnHover = _hexToRgba(accent, 0.85) || accent
+    var pillErrBg = _hexToRgba(accent, 0.1)
+    var s = document.body.style
+    s.setProperty('--bg-outer', bg)
+    s.setProperty('--bg-card', bg)
+    s.setProperty('--ink', ink)
+    s.setProperty('--ink-soft', inkSoft)
+    s.setProperty('--accent', accent)
+    s.setProperty('--accent-soft', accent)
+    s.setProperty('--line', line)
+    s.setProperty('--line-strong', lineStrong)
+    s.setProperty('--btn-bg', btnBg)
+    s.setProperty('--btn-ink', btnInk)
+    s.setProperty('--btn-bg-hover', btnHover)
+    s.setProperty('--pill-error-bg', pillErrBg)
+    s.setProperty('--pill-error-ink', accent)
+    return true
+  }
+
+  async function _applyTheme(theme) {
+    var t = _resolveTheme(theme)
     document.body.setAttribute('data-theme', t)
+    if (t === 'auto') {
+      var row = await _fetchSeasonal()
+      if (!_applySeasonalPalette(row)) {
+        // fallback: sem paleta válida, volta pra dark
+        document.body.setAttribute('data-theme', 'dark')
+      }
+    }
   }
 
   function _renderError(msg) {
@@ -380,6 +487,8 @@
   }
 
   function _renderVoucher(v) {
+    // _applyTheme é async (pode consultar RPC sazonal); render segue em paralelo —
+    // CSS vars caem no default do tema atual até a paleta real chegar.
     _applyTheme(v.theme)
 
     var p = v.partnership || {}
@@ -439,7 +548,8 @@
     var token = _q()
     if (!token) return _renderError('Voucher sem identificação. Verifique o link recebido.')
 
-    // Aplica theme via query antes mesmo de carregar (evita flash)
+    // Aplica theme via query antes mesmo de carregar (evita flash).
+    // Para 'auto' também setamos o data-attr; a paleta sazonal entra depois da RPC.
     var override = _themeOverride()
     if (override) document.body.setAttribute('data-theme', override)
 
