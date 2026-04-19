@@ -223,6 +223,8 @@
       match: function (k) { return /_align$|^align$|_pos$|^pos$|_y_pct|_x_pct|^y_|^x_/i.test(k) || /text_align/i.test(k) } },
     { id: 'overlay',  label: 'Overlay / Efeitos',    icon: 'cloud',
       match: function (k) { return /^(overlay|gradient|blur|filter)/i.test(k) } },
+    { id: 'animacao', label: 'Animação / Autoplay',  icon: 'play-circle',
+      match: function (k) { return /^(autoplay|rock_|slides_interval|interval|loop|speed|duration|delay|fade|easing|carousel)/i.test(k) } },
     { id: 'layout',   label: 'Layout',               icon: 'layout',
       match: function (k) { return /^(aspect|ratio|columns|columns_grid|layout|max_width|direction|spacing|bg$|fundo$)/i.test(k) } },
     { id: 'cta',      label: 'CTA / Botão',          icon: 'mouse-pointer',
