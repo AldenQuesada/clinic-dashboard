@@ -32,8 +32,10 @@ const _MODEL = Deno.env.get('ANTHROPIC_MODEL') || 'claude-haiku-4-5-20251001'
 const _SB_URL = Deno.env.get('SUPABASE_URL') || ''
 const _SB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
-const ADMIN_PHONE_LAST8 = '98787673' // últimos 8 dígitos do 5544998787673
-const MIRIAN_PHONE      = '5544988782003'
+// Admins autorizados a aprovar/rejeitar/consultar (últimos 8 dígitos)
+const ADMIN_PHONES_LAST8 = ['98787673', '88782003'] // Alden + Mirian
+// Telefone que recebe notificações de aprovações/rejeições/vouchers
+const NOTIFY_PHONE = '5544998787673' // Alden (configurável)
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -203,7 +205,7 @@ function ruleBasedFallback(message: string, userRole: string): any {
 
 async function resolveRole(phone: string): Promise<{ role: string; partnership?: any }> {
   const last8 = lastDigits(phone)
-  if (last8 === ADMIN_PHONE_LAST8) return { role: 'admin' }
+  if (ADMIN_PHONES_LAST8.includes(last8)) return { role: 'admin' }
 
   try {
     const lookup = await rpc('b2b_wa_sender_lookup', { p_phone: phone })
@@ -517,10 +519,12 @@ Deno.serve(async (req) => {
         result = handleOther(role)
     }
 
-    // Enriquece notify_admin / notify_mirian com phone real
+    // Enriquece notify_admin / notify_mirian — ambos vão pro NOTIFY_PHONE (Alden)
+    // (Mirian hoje É a Mira; notificar ela seria loop. Alden recebe tudo.)
     const actions = (result.actions || []).map((a: any) => {
-      if (a.kind === 'notify_admin') return { kind: 'send_wa', to: '5544998787673', content: a.content }
-      if (a.kind === 'notify_mirian') return { kind: 'send_wa', to: MIRIAN_PHONE, content: a.content }
+      if (a.kind === 'notify_admin' || a.kind === 'notify_mirian') {
+        return { kind: 'send_wa', to: NOTIFY_PHONE, content: a.content }
+      }
       return a
     })
 
