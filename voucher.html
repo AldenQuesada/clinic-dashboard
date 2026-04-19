@@ -114,36 +114,31 @@
 
   /* ────── Título sobreposto: Voucher + PRESENTE ────── */
   .title-stack {
-    position: relative;
-    display: inline-block;
-    padding: 50px 40px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin-bottom: 48px;
     opacity: 0;
     animation: fade-up 900ms ease 550ms forwards;
+  }
+  .title-script {
+    font-family: 'Mea Culpa', cursive;
+    font-size: 98px; font-weight: 400;
+    color: var(--accent);
+    line-height: 0.8;
+    letter-spacing: -1px;
+    margin-bottom: -32px;
   }
   .title-serif {
     font-family: 'Cormorant Garamond', serif;
     font-size: 62px; font-weight: 300;
     letter-spacing: 8px; text-transform: uppercase;
-    color: var(--ink); line-height: 1;
-    position: relative; z-index: 1;
-  }
-  .title-script {
-    font-family: 'Mea Culpa', cursive;
-    font-size: 98px; font-weight: 400;
-    color: var(--accent); line-height: 1;
-    position: absolute;
-    top: 32px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
-    white-space: nowrap;
-    letter-spacing: -1px;
+    color: var(--ink);
+    line-height: 1;
   }
   @media (max-width: 520px) {
     .title-serif { font-size: 42px; letter-spacing: 6px; }
-    .title-script { font-size: 70px; top: 22px; }
-    .title-stack { padding: 14px 20px 6px; }
+    .title-script { font-size: 70px; margin-bottom: -22px; }
   }
 
   /* ────── Destinatária ────── */
