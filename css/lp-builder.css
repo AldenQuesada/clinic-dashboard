@@ -1376,3 +1376,41 @@ input, textarea, select { font-family: inherit; }
   min-width: 36px; text-align: right;
   color: #C8A97E; font-weight: 500;
 }
+
+/* Linhas-guia no positioner · ajuda a alinhar features */
+.lpb-imgpos-guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;             /* acima do ghost */
+}
+.lpb-imgpos-guide-vert {
+  position: absolute;
+  top: 0; left: 50%;
+  width: 1px; height: 100%;
+  background: rgba(200,169,126,.6);
+  transform: translateX(-50%);
+}
+.lpb-imgpos-guide-horiz {
+  position: absolute;
+  left: 0; top: 50%;
+  width: 100%; height: 1px;
+  background: rgba(200,169,126,.6);
+  transform: translateY(-50%);
+}
+.lpb-imgpos-guide-eyes {
+  /* linha sugerida da altura dos olhos · ~38% do topo (regra de retrato) */
+  position: absolute;
+  left: 0; top: 38%;
+  width: 100%; height: 1px;
+  background: rgba(200,169,126,.45);
+  border-top: 1px dashed rgba(200,169,126,.5);
+  background: transparent;
+}
+.lpb-imgpos-guide-toggle {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 6px;
+  font-size: 11px; color: rgba(245,240,232,.7);
+  cursor: pointer;
+}
+.lpb-imgpos-guide-toggle input[type=checkbox] { accent-color: #C8A97E }

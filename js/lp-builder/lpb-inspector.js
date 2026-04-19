@@ -837,6 +837,7 @@
             zoom:  source[siblingBase + '_zoom'] || 1,
             x:     source[siblingBase + '_x']    || 0,
             y:     source[siblingBase + '_y']    || 0,
+            rot:   source[siblingBase + '_rot']  || 0,
             label: siblingBase === 'before' ? 'antes' : 'depois',
           }
         }
@@ -853,12 +854,14 @@
             zoom:   slide[base + '_zoom'] || 1,
             x:      slide[base + '_x']    || 0,
             y:      slide[base + '_y']    || 0,
+            rot:    slide[base + '_rot']  || 0,
             aspect: '2/3',
             title:  'Posicionar foto · ' + (base === 'before' ? 'ANTES' : 'DEPOIS'),
             ghostUrl:   gSlide ? gSlide.url   : null,
             ghostZoom:  gSlide ? gSlide.zoom  : 1,
             ghostX:     gSlide ? gSlide.x     : 0,
             ghostY:     gSlide ? gSlide.y     : 0,
+            ghostRot:   gSlide ? gSlide.rot   : 0,
             ghostLabel: gSlide ? gSlide.label : '',
             onSave: function (pos) {
               var newArr = arr.slice()
@@ -866,6 +869,7 @@
               update[base + '_zoom'] = pos.zoom
               update[base + '_x']    = pos.x
               update[base + '_y']    = pos.y
+              update[base + '_rot']  = pos.rot
               newArr[listIdx] = Object.assign({}, slide, update)
               LPBuilder.setBlockProp(idx, listFkey, newArr)
               if (window.LPBToast) LPBToast('Posição da foto salva', 'success')
@@ -879,17 +883,20 @@
             zoom:   block.props[base + '_zoom'] || 1,
             x:      block.props[base + '_x']    || 0,
             y:      block.props[base + '_y']    || 0,
+            rot:    block.props[base + '_rot']  || 0,
             aspect: '2/3',
             title:  'Posicionar foto · ' + (base === 'before' ? 'ANTES' : 'DEPOIS'),
             ghostUrl:   gTop ? gTop.url   : null,
             ghostZoom:  gTop ? gTop.zoom  : 1,
             ghostX:     gTop ? gTop.x     : 0,
             ghostY:     gTop ? gTop.y     : 0,
+            ghostRot:   gTop ? gTop.rot   : 0,
             ghostLabel: gTop ? gTop.label : '',
             onSave: function (pos) {
               LPBuilder.setBlockProp(idx, base + '_zoom', pos.zoom)
               LPBuilder.setBlockProp(idx, base + '_x',    pos.x)
               LPBuilder.setBlockProp(idx, base + '_y',    pos.y)
+              LPBuilder.setBlockProp(idx, base + '_rot',  pos.rot)
               if (window.LPBToast) LPBToast('Posição da foto salva', 'success')
             },
           })

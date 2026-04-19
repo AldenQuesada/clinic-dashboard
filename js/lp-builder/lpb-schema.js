@@ -125,6 +125,8 @@
         hidden: true, default: 0 },
       { k: 'before_y',     label: 'Antes · pan Y (%)', type: 'number', optional: true,
         hidden: true, default: 0 },
+      { k: 'before_rot',   label: 'Antes · rotação (°)', type: 'number', optional: true,
+        hidden: true, default: 0 },
 
       { k: 'after_url',    label: 'Foto depois', type: 'image', aspect: '2/3',
         positioner: true },
@@ -133,6 +135,8 @@
       { k: 'after_x',      label: 'Depois · pan X (%)', type: 'number', optional: true,
         hidden: true, default: 0 },
       { k: 'after_y',      label: 'Depois · pan Y (%)', type: 'number', optional: true,
+        hidden: true, default: 0 },
+      { k: 'after_rot',    label: 'Depois · rotação (°)', type: 'number', optional: true,
         hidden: true, default: 0 },
 
       { k: 'procedure',       label: 'Nome do protocolo', type: 'text', max: 80,
@@ -1631,12 +1635,14 @@
         { k: 'before_zoom', label: 'Antes · zoom', type: 'number', optional: true, hidden: true, default: 1 },
         { k: 'before_x',    label: 'Antes · pan X (%)', type: 'number', optional: true, hidden: true, default: 0 },
         { k: 'before_y',    label: 'Antes · pan Y (%)', type: 'number', optional: true, hidden: true, default: 0 },
+        { k: 'before_rot',  label: 'Antes · rotação (°)', type: 'number', optional: true, hidden: true, default: 0 },
 
         // ── Foto DEPOIS + positioner ─────────────────────
         { k: 'after_url',  label: 'Foto depois', type: 'image', aspect: '2/3', positioner: true },
         { k: 'after_zoom', label: 'Depois · zoom', type: 'number', optional: true, hidden: true, default: 1 },
         { k: 'after_x',    label: 'Depois · pan X (%)', type: 'number', optional: true, hidden: true, default: 0 },
         { k: 'after_y',    label: 'Depois · pan Y (%)', type: 'number', optional: true, hidden: true, default: 0 },
+        { k: 'after_rot',  label: 'Depois · rotação (°)', type: 'number', optional: true, hidden: true, default: 0 },
 
         // ── Posição inicial do handle ────────────────────
         { k: 'initial_pos', label: 'Posição inicial do handle (%)', type: 'select',

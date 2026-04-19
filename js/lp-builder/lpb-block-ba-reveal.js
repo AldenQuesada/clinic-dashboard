@@ -34,12 +34,13 @@
   function _fontSize(map, v) { var px = map[v || 'md']; return px ? 'font-size:' + px : '' }
   function _color(v) { return v ? 'color:' + v : '' }
   function _padx(v)  { var px = PADX_MAP[v || 'md']; return px != null ? 'padding-left:' + px + ';padding-right:' + px : '' }
-  function _imgTransform(zoom, x, y) {
+  function _imgTransform(zoom, x, y, rot) {
     var z  = parseFloat(zoom) || 1
     var px = parseFloat(x) || 0
     var py = parseFloat(y) || 0
-    if (z === 1 && px === 0 && py === 0) return ''
-    return 'transform:scale(' + z + ') translate(' + px + '%, ' + py + '%);transform-origin:center'
+    var pr = parseFloat(rot) || 0
+    if (z === 1 && px === 0 && py === 0 && pr === 0) return ''
+    return 'transform:rotate(' + pr + 'deg) scale(' + z + ') translate(' + px + '%, ' + py + '%);transform-origin:center'
   }
 
   function _imgOrPlaceholder(url, alt, fallback, transformStyle) {
@@ -66,8 +67,8 @@
     var procStyle    = _styleStr([_fontSize(SIZE_PROC,   p.procedure_size), _color(p.procedure_color)])
     var detailStyle  = _styleStr([_fontSize(SIZE_DETAIL, p.detail_size),    _color(p.detail_color)])
 
-    var beforeT = _imgTransform(p.before_zoom, p.before_x, p.before_y)
-    var afterT  = _imgTransform(p.after_zoom,  p.after_x,  p.after_y)
+    var beforeT = _imgTransform(p.before_zoom, p.before_x, p.before_y, p.before_rot)
+    var afterT  = _imgTransform(p.after_zoom,  p.after_x,  p.after_y,  p.after_rot)
 
     var html = '<div class="blk-bars" data-bg="' + _esc(bg) + '" data-bars-root>'
 

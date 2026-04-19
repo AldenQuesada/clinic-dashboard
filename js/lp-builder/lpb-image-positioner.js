@@ -23,6 +23,7 @@
 
   function _clampZoom(z) { return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)) }
   function _clampPan(p)  { return Math.max(-50, Math.min(50, p)) }
+  function _clampRot(r)  { return Math.max(-15, Math.min(15, r)) }
 
   function open(opts) {
     opts = opts || {}
@@ -35,6 +36,7 @@
       zoom: _clampZoom(parseFloat(opts.zoom) || 1),
       x:    _clampPan(parseFloat(opts.x) || 0),
       y:    _clampPan(parseFloat(opts.y) || 0),
+      rot:  _clampRot(parseFloat(opts.rot) || 0),
     }
 
     // Ghost: foto de referência sobreposta translúcida (alinhamento antes/depois)
@@ -44,7 +46,8 @@
       var gz = parseFloat(opts.ghostZoom) || 1
       var gx = parseFloat(opts.ghostX) || 0
       var gy = parseFloat(opts.ghostY) || 0
-      ghostTransform = 'transform:scale(' + gz + ') translate(' + gx + '%, ' + gy + '%);transform-origin:center'
+      var gr = parseFloat(opts.ghostRot) || 0
+      ghostTransform = 'transform:rotate(' + gr + 'deg) scale(' + gz + ') translate(' + gx + '%, ' + gy + '%);transform-origin:center'
     }
     var ghostHtml = hasGhost
       ? '<img class="lpb-imgpos-ghost" src="' + opts.ghostUrl.replace(/"/g, '&quot;') + '" draggable="false" alt="" style="' + ghostTransform + '">'
@@ -73,6 +76,11 @@
           '<div class="lpb-imgpos-stage" style="aspect-ratio:' + aspect + '">' +
             ghostHtml +
             '<img class="lpb-imgpos-img" src="' + opts.url.replace(/"/g, '&quot;') + '" draggable="false" alt="">' +
+            '<div class="lpb-imgpos-guides" hidden>' +
+              '<div class="lpb-imgpos-guide-vert"></div>' +
+              '<div class="lpb-imgpos-guide-horiz"></div>' +
+              '<div class="lpb-imgpos-guide-eyes"></div>' +
+            '</div>' +
           '</div>' +
           '<div class="lpb-imgpos-help">Roda do mouse = zoom · arraste = mover · clique 2x = reset</div>' +
         '</div>' +
@@ -92,6 +100,14 @@
             '<input type="range" class="lpb-imgpos-slider" data-axis="y" min="-50" max="50" step="0.5" value="' + state.y + '">' +
             '<span class="lpb-imgpos-zoomval" data-axis-val="y">' + Math.round(state.y) + '%</span>' +
           '</label>' +
+          '<label class="lpb-imgpos-slider-row">' +
+            '<span>⟲ Rotação</span>' +
+            '<input type="range" class="lpb-imgpos-slider" data-axis="rot" min="-15" max="15" step="0.1" value="' + state.rot + '">' +
+            '<span class="lpb-imgpos-zoomval" data-axis-val="rot">' + state.rot.toFixed(1) + '°</span>' +
+          '</label>' +
+          '<label class="lpb-imgpos-guide-toggle">' +
+            '<input type="checkbox" id="lpbImgposGuides"> Mostrar linhas-guia (cruz + linha dos olhos)' +
+          '</label>' +
           ghostToggleHtml +
         '</div>' +
         '<div class="lpb-imgpos-footer">' +
@@ -109,21 +125,25 @@
       zoom: modal.querySelector('[data-axis="zoom"]'),
       x:    modal.querySelector('[data-axis="x"]'),
       y:    modal.querySelector('[data-axis="y"]'),
+      rot:  modal.querySelector('[data-axis="rot"]'),
     }
     var sliderVals = {
       zoom: modal.querySelector('[data-axis-val="zoom"]'),
       x:    modal.querySelector('[data-axis-val="x"]'),
       y:    modal.querySelector('[data-axis-val="y"]'),
+      rot:  modal.querySelector('[data-axis-val="rot"]'),
     }
 
     function _apply() {
-      img.style.transform = 'scale(' + state.zoom + ') translate(' + state.x + '%, ' + state.y + '%)'
+      img.style.transform = 'rotate(' + state.rot + 'deg) scale(' + state.zoom + ') translate(' + state.x + '%, ' + state.y + '%)'
       sliders.zoom.value = state.zoom
       sliders.x.value    = state.x
       sliders.y.value    = state.y
+      sliders.rot.value  = state.rot
       sliderVals.zoom.textContent = Math.round(state.zoom * 100) + '%'
       sliderVals.x.textContent    = Math.round(state.x) + '%'
       sliderVals.y.textContent    = Math.round(state.y) + '%'
+      sliderVals.rot.textContent  = state.rot.toFixed(1) + '°'
     }
     _apply()
 
@@ -193,6 +213,19 @@
       state.y = _clampPan(parseFloat(sliders.y.value))
       _apply()
     })
+    sliders.rot.addEventListener('input', function () {
+      state.rot = _clampRot(parseFloat(sliders.rot.value))
+      _apply()
+    })
+
+    // Toggle linhas-guia (cruz central + linha dos olhos)
+    var guidesEl = modal.querySelector('.lpb-imgpos-guides')
+    var guidesChk = modal.querySelector('#lpbImgposGuides')
+    if (guidesChk && guidesEl) {
+      guidesChk.addEventListener('change', function () {
+        guidesEl.hidden = !guidesChk.checked
+      })
+    }
 
     // Ghost (foto referência) · toggle on/off + opacity slider
     if (hasGhost) {
@@ -215,7 +248,7 @@
     // Double-click reset
     stage.addEventListener('dblclick', function (e) {
       e.preventDefault()
-      state.zoom = 1; state.x = 0; state.y = 0
+      state.zoom = 1; state.x = 0; state.y = 0; state.rot = 0
       _apply()
     })
 
@@ -223,11 +256,11 @@
     modal.querySelectorAll('[data-act]').forEach(function (btn) {
       btn.onclick = function () {
         var act = btn.dataset.act
-        if (act === 'reset')  { state.zoom = 1; state.x = 0; state.y = 0; _apply(); return }
+        if (act === 'reset')  { state.zoom = 1; state.x = 0; state.y = 0; state.rot = 0; _apply(); return }
         if (act === 'cancel') { _close(); if (opts.onCancel) opts.onCancel(); return }
         if (act === 'save')   {
           _close()
-          if (opts.onSave) opts.onSave({ zoom: state.zoom, x: state.x, y: state.y })
+          if (opts.onSave) opts.onSave({ zoom: state.zoom, x: state.x, y: state.y, rot: state.rot })
         }
       }
     })
@@ -245,12 +278,13 @@
   }
 
   // Helper · gera string de transform pronta pro renderer
-  function transformStr(zoom, x, y) {
-    var z = parseFloat(zoom) || 1
+  function transformStr(zoom, x, y, rot) {
+    var z  = parseFloat(zoom) || 1
     var px = parseFloat(x) || 0
     var py = parseFloat(y) || 0
-    if (z === 1 && px === 0 && py === 0) return ''
-    return 'transform:scale(' + z + ') translate(' + px + '%, ' + py + '%);transform-origin:center'
+    var pr = parseFloat(rot) || 0
+    if (z === 1 && px === 0 && py === 0 && pr === 0) return ''
+    return 'transform:rotate(' + pr + 'deg) scale(' + z + ') translate(' + px + '%, ' + py + '%);transform-origin:center'
   }
 
   window.LPBImagePositioner = Object.freeze({

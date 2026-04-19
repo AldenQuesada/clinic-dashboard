@@ -34,12 +34,13 @@
     return '<div class="blk-bac-img-placeholder">' + _esc(fallbackText) + '</div>'
   }
 
-  function _imgTransform(zoom, x, y) {
+  function _imgTransform(zoom, x, y, rot) {
     var z  = parseFloat(zoom) || 1
     var px = parseFloat(x) || 0
     var py = parseFloat(y) || 0
-    if (z === 1 && px === 0 && py === 0) return ''
-    return 'transform:scale(' + z + ') translate(' + px + '%, ' + py + '%);transform-origin:center'
+    var pr = parseFloat(rot) || 0
+    if (z === 1 && px === 0 && py === 0 && pr === 0) return ''
+    return 'transform:rotate(' + pr + 'deg) scale(' + z + ') translate(' + px + '%, ' + py + '%);transform-origin:center'
   }
 
   // Maps de tamanho · espelha as opções do schema
@@ -98,8 +99,8 @@
     html += '<div class="blk-bac-track" data-bac-track="' + carouselId + '">'
     slides.forEach(function (s, i) {
       var slideStyle = i === 0 ? '' : 'display:none;opacity:0'
-      var beforeT = _imgTransform(s.before_zoom, s.before_x, s.before_y)
-      var afterT  = _imgTransform(s.after_zoom,  s.after_x,  s.after_y)
+      var beforeT = _imgTransform(s.before_zoom, s.before_x, s.before_y, s.before_rot)
+      var afterT  = _imgTransform(s.after_zoom,  s.after_x,  s.after_y,  s.after_rot)
       // Por-slide · cada texto procedure/detail tem seu próprio size/color
       var procStyle    = _styleStr([_fontSize(SIZE_PROC,   s.procedure_size), _color(s.procedure_color)])
       var detailStyle  = _styleStr([_fontSize(SIZE_DETAIL, s.detail_size),    _color(s.detail_color)])
