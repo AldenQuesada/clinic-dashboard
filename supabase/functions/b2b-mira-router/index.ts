@@ -114,11 +114,16 @@ ${message}
 
 Classifique em uma das intents:
 - b2b.apply          → usuário unknown falando de querer ser parceiro/ter negócio
-- b2b.emit_voucher   → role=partner pedindo voucher pra alguém (nome + telefone)
+- b2b.emit_voucher   → role=partner pedindo voucher pra alguém (menciona "voucher" ou "presente")
+- b2b.refer_lead     → role=partner INDICANDO uma pessoa (menciona "indico/indicar/indicação/conheço")
 - b2b.admin_approve  → role=admin pedindo aprovar candidatura
 - b2b.admin_reject   → role=admin pedindo rejeitar candidatura (geralmente com motivo)
 - b2b.admin_query    → role=admin pedindo lista/stats/info
 - b2b.other          → qualquer outra coisa
+
+DIFERENÇA CRÍTICA: voucher vs refer_lead
+- voucher = parceiro quer EMITIR um voucher digital com combo específico
+- refer_lead = parceiro está INDICANDO alguém pra conhecer a clínica (sem voucher, entrega brinde padrão de avaliação)
 
 Retorne JSON:
 {
@@ -183,6 +188,15 @@ function ruleBasedFallback(message: string, userRole: string): any {
     }
   }
   if (userRole === 'partner') {
+    // Refer: indicação sem voucher
+    if (/indico|indicar|indicac|conheço alguém|tenho uma amiga|queria indicar/.test(msg)) {
+      const phoneMatch = message.match(/\b\d{2}[\s-]?\d{4,5}[\s-]?\d{4}\b|\b\d{10,11}\b/)
+      if (phoneMatch) entities.recipient_phone = phoneMatch[0].replace(/\D/g, '')
+      const namePart = message.replace(/indico|indicar|indicac[aã]o|conheço alguém|tenho uma amiga|queria indicar|pra|para|do|da/gi, '')
+                              .replace(/\d[\d\s-]*\d/g, '').trim()
+      if (namePart) entities.recipient_name = namePart.replace(/,|\./g, '').trim().split(',')[0]
+      return { intent: 'b2b.refer_lead', confidence: 0.75, entities }
+    }
     if (/voucher|presente|cupom/.test(msg)) {
       // Tenta extrair nome + telefone
       const phoneMatch = message.match(/\b\d{2}[\s-]?\d{4,5}[\s-]?\d{4}\b|\b\d{10,11}\b/)
@@ -344,6 +358,68 @@ async function handleEmitVoucher(
   }
 }
 
+async function handleReferLead(
+  phone: string, entities: any, partnership: any,
+): Promise<any> {
+  const name = entities?.recipient_name
+  const rawPhone = entities?.recipient_phone
+
+  if (!name || String(name).length < 2) {
+    return { reply: 'Qual o nome da pessoa que você quer indicar?',
+             next_state: { pending: 'refer_name' } }
+  }
+  if (!rawPhone || rawPhone.length < 10) {
+    return { reply: `Beleza, ${name}. Qual o WhatsApp dela? (44 9XXXX-XXXX)`,
+             next_state: { pending: 'refer_phone', data: { recipient_name: name } } }
+  }
+
+  const recipientPhone = normalize55(rawPhone)
+  try {
+    const r = await rpc('b2b_referral_create', {
+      p_partnership_id: partnership.partnership_id,
+      p_lead_name: name,
+      p_lead_phone: recipientPhone,
+      p_referred_by_phone: phone,
+    })
+    if (!r?.ok) throw new Error(r?.error || 'referral_failed')
+
+    // Dedup recente
+    if (r.duplicate) {
+      return {
+        reply: `Obrigada por lembrar! A ${firstName(name)} já foi indicada recentemente ` +
+               `e já estamos cuidando dela. Se quiser indicar outra amiga, é só mandar.`,
+        next_state: null,
+      }
+    }
+
+    // Lead já existe na base — sutileza
+    if (r.lead_status === 'existing') {
+      return {
+        reply: `Obrigada por pensar na gente! Dei uma olhada aqui e vi que a ` +
+               `${firstName(name)} já conhece a Clínica Mirian de Paula — ela já está ` +
+               `com a gente. Registrei seu carinho de qualquer forma. ` +
+               `Se quiser indicar outra amiga que ainda não nos conhece, só falar!`,
+        next_state: null,
+      }
+    }
+
+    // Lead novo: Lara vai abordar em ~2min via trigger
+    return {
+      reply: `Obrigada! Peguei ${firstName(name)}. ` +
+             `Já estamos em contato com ela oferecendo o Véu de Noiva + Avaliação Corporal. ` +
+             `Te aviso quando ela agendar.`,
+      actions: [
+        { kind: 'notify_admin', content:
+          `Nova indicação B2B: ${name} (${recipientPhone}) via ${partnership.partnership_name}.` },
+      ],
+      next_state: null,
+    }
+  } catch (e) {
+    return { reply: `Deu erro ao registrar: ${(e as Error).message}. Tenta de novo?`,
+             next_state: null }
+  }
+}
+
 async function handleAdminApprove(entities: any): Promise<any> {
   const target = (entities?.target_name || '').trim().toLowerCase()
   if (!target) {
@@ -477,6 +553,30 @@ Deno.serve(async (req) => {
         const result = await handleEmitVoucher(phone, entities, partnership)
         return ok({ ok: true, reply_to: phone, ...result })
       }
+      if (state.pending === 'refer_phone') {
+        let p = partnership
+        if (!p) {
+          try { const lk = await rpc('b2b_wa_sender_lookup', { p_phone: phone }); if (lk?.ok) p = lk } catch {}
+        }
+        if (p) {
+          const entities = {
+            recipient_name: state.data?.recipient_name,
+            recipient_phone: message.replace(/\D/g, ''),
+          }
+          const result = await handleReferLead(phone, entities, p)
+          return ok({ ok: true, reply_to: phone, ...result })
+        }
+      }
+      if (state.pending === 'refer_name') {
+        let p = partnership
+        if (!p) {
+          try { const lk = await rpc('b2b_wa_sender_lookup', { p_phone: phone }); if (lk?.ok) p = lk } catch {}
+        }
+        if (p) {
+          const result = await handleReferLead(phone, { recipient_name: message.trim() }, p)
+          return ok({ ok: true, reply_to: phone, ...result })
+        }
+      }
       if (state.pending === 'reject_reason' && role === 'admin') {
         const result = await handleAdminReject({
           target_name: state.data?.target,
@@ -514,6 +614,25 @@ Deno.serve(async (req) => {
           }
         } else {
           result = await handleEmitVoucher(phone, intent.entities, p)
+        }
+        break
+      }
+      case 'b2b.refer_lead': {
+        let p = partnership
+        if (!p) {
+          try {
+            const lookup = await rpc('b2b_wa_sender_lookup', { p_phone: phone })
+            if (lookup?.ok) p = lookup
+          } catch { /* ignora */ }
+        }
+        if (!p) {
+          result = {
+            reply: 'Pra indicar alguém pela parceria, você precisa estar na whitelist. ' +
+                   'Me diz qual parceria (ex: Cazza Flor) que autorizo agora.',
+            next_state: null,
+          }
+        } else {
+          result = await handleReferLead(phone, intent.entities, p)
         }
         break
       }
