@@ -1685,7 +1685,7 @@
         { k: 'clinic_name',  label: 'Nome da clínica',  type: 'text', max: 40, default: 'Clínica Mirian de Paula' },
         { k: 'address',      label: 'Endereço',         type: 'text', max: 100, default: 'Av. Carneiro Leão, 296 · Sala 806 · Maringá/PR' },
         { k: 'rating',       label: 'Nota (rating · você atualiza manual)',    type: 'text', max: 5, default: '5,0' },
-        { k: 'reviews_count',label: 'Nº avaliações (você atualiza manual)',    type: 'text', max: 6, default: '0' },
+        { k: 'reviews_count',label: 'Nº avaliações (você atualiza manual)',    type: 'text', max: 6, default: '52' },
         { k: 'open_status',  label: 'Status horário',   type: 'text', max: 40, default: 'Aberto · Fecha às 20h' },
         { k: 'maps_url',         label: 'URL desktop Maps', type: 'text', default: 'https://maps.app.goo.gl/VCxLkAL6m15JLnaV7' },
         { k: 'ios_maps_url',     label: 'URL iOS Maps',     type: 'text', default: 'maps://?q=Av+Carneiro+Leao+296+Maringa' },
