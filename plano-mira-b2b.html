@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roadmap Mira B2B · Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0:#0A0E14; --bg-1:#141B26; --bg-2:#1A2332;
+    --ink:#F5F0E8; --ink-soft:#A89680; --ink-muted:#6B6B7D;
+    --champagne:#C9A96E; --champagne-light:#DFC5A0;
+    --line:rgba(201,169,110,0.18); --line-strong:rgba(201,169,110,0.45);
+    --green:#10B981; --blue:#60A5FA; --amber:#F59E0B;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'Montserrat',sans-serif; font-weight:300;
+    background:var(--bg-0); color:var(--ink);
+    min-height:100vh; line-height:1.6;
+  }
+  .wrap { max-width:1080px; margin:0 auto; padding:60px 32px 120px; }
+  @media (max-width:720px) { .wrap { padding:40px 20px 80px; } }
+
+  .hero-eyebrow {
+    font-size:11px; letter-spacing:4px; text-transform:uppercase;
+    color:var(--champagne); margin-bottom:10px;
+  }
+  h1 {
+    font-family:'Cormorant Garamond',serif; font-weight:300;
+    font-size:56px; line-height:1.05; letter-spacing:0.5px;
+    margin-bottom:12px;
+  }
+  h1 em { color:var(--champagne); font-style:italic; }
+  .subtitle {
+    font-size:17px; color:var(--ink-soft); font-style:italic;
+    max-width:640px;
+  }
+
+  .progress-card {
+    background:var(--bg-1); border:1px solid var(--line);
+    border-radius:14px; padding:24px 28px; margin:32px 0 48px;
+    display:flex; align-items:center; gap:28px; flex-wrap:wrap;
+  }
+  .progress-ring {
+    position:relative; width:96px; height:96px; flex-shrink:0;
+  }
+  .progress-ring svg { transform:rotate(-90deg); }
+  .progress-ring circle {
+    fill:none; stroke-width:6;
+  }
+  .progress-ring .bg { stroke:var(--line); }
+  .progress-ring .fg {
+    stroke:var(--champagne); stroke-linecap:round;
+    transition:stroke-dasharray 400ms ease;
+  }
+  .progress-pct {
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Cormorant Garamond',serif; font-size:32px; color:var(--champagne-light);
+  }
+  .progress-info { flex:1; min-width:260px; }
+  .progress-info h3 {
+    font-family:'Cormorant Garamond',serif; font-weight:400; font-size:22px;
+    margin-bottom:4px;
+  }
+  .progress-info p { color:var(--ink-soft); font-size:13px; }
+  .progress-bar {
+    height:4px; background:var(--line); border-radius:2px; overflow:hidden;
+    margin-top:10px;
+  }
+  .progress-bar-fill { height:100%; background:var(--champagne); transition:width 400ms ease; }
+
+  .reset-btn {
+    padding:8px 16px; background:transparent; border:1px solid var(--line);
+    color:var(--ink-muted); font-size:10px; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; border-radius:6px; transition:all 160ms ease;
+    font-family:inherit;
+  }
+  .reset-btn:hover { border-color:var(--champagne); color:var(--champagne); }
+
+  .phase {
+    background:var(--bg-1); border:1px solid var(--line);
+    border-radius:12px; padding:22px 26px; margin-bottom:14px;
+    transition:border-color 200ms ease;
+  }
+  .phase.done { border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.02); }
+  .phase.doing { border-color:var(--champagne); }
+
+  .phase-head {
+    display:flex; align-items:flex-start; gap:16px; cursor:pointer;
+  }
+  .phase-num {
+    flex-shrink:0; width:36px; height:36px;
+    background:var(--bg-2); border:1px solid var(--line);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Cormorant Garamond',serif; font-size:16px;
+    color:var(--champagne);
+  }
+  .phase.done .phase-num { background:var(--green); color:var(--bg-0); border-color:var(--green); }
+  .phase.doing .phase-num { background:var(--champagne); color:var(--bg-0); border-color:var(--champagne); }
+
+  .phase-info { flex:1; }
+  .phase-title {
+    display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  }
+  .phase-title h2 {
+    font-family:'Cormorant Garamond',serif; font-weight:400;
+    font-size:22px; color:var(--ink);
+  }
+  .phase-meta {
+    font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--ink-muted);
+  }
+  .phase-meta .sep { margin:0 8px; opacity:0.4; }
+  .phase-meta .badge {
+    background:var(--bg-2); color:var(--champagne);
+    padding:2px 8px; border-radius:10px; margin-left:6px;
+  }
+  .phase-title .status-pill {
+    display:inline-block; padding:2px 10px;
+    font-size:9px; letter-spacing:2px; text-transform:uppercase;
+    border-radius:10px; font-weight:600;
+  }
+  .status-todo { background:rgba(107,107,125,0.15); color:var(--ink-muted); }
+  .status-doing { background:var(--champagne); color:var(--bg-0); }
+  .status-done { background:var(--green); color:var(--bg-0); }
+
+  .phase-desc {
+    margin-top:8px; color:var(--ink-soft); font-size:13px;
+  }
+
+  .phase-chevron {
+    align-self:center; color:var(--ink-muted);
+    transition:transform 200ms ease;
+  }
+  .phase.open .phase-chevron { transform:rotate(90deg); }
+
+  .phase-body {
+    margin-top:18px; padding-top:16px; border-top:1px solid var(--line);
+    display:none;
+  }
+  .phase.open .phase-body { display:block; }
+
+  .tasks { list-style:none; padding:0; margin:0; }
+  .tasks li {
+    padding:8px 4px; display:flex; align-items:flex-start; gap:12px;
+    font-size:14px; color:var(--ink); cursor:pointer;
+    border-radius:6px; transition:background 140ms ease;
+  }
+  .tasks li:hover { background:rgba(255,255,255,0.02); }
+  .tasks .check {
+    flex-shrink:0; width:18px; height:18px; border:1.5px solid var(--line-strong);
+    border-radius:4px; margin-top:2px;
+    display:flex; align-items:center; justify-content:center;
+    transition:all 160ms ease;
+  }
+  .tasks li.done .check {
+    background:var(--champagne); border-color:var(--champagne);
+  }
+  .tasks li.done .check::after {
+    content:''; width:10px; height:5px;
+    border-left:2px solid var(--bg-0); border-bottom:2px solid var(--bg-0);
+    transform:rotate(-45deg) translate(0, -1px);
+  }
+  .tasks li.done .task-label {
+    color:var(--ink-muted); text-decoration:line-through; text-decoration-thickness:0.5px;
+  }
+  .task-label { flex:1; line-height:1.5; }
+  .task-tag {
+    font-size:10px; letter-spacing:1px; text-transform:uppercase;
+    padding:2px 8px; border-radius:10px; margin-left:6px;
+    background:rgba(201,169,110,0.1); color:var(--champagne);
+  }
+  .task-tag.db { background:rgba(96,165,250,0.12); color:var(--blue); }
+  .task-tag.ui { background:rgba(245,158,11,0.12); color:var(--amber); }
+  .task-tag.mira { background:rgba(16,185,129,0.12); color:var(--green); }
+
+  .phase-notes {
+    margin-top:16px; padding:14px 16px;
+    background:var(--bg-2); border-radius:8px;
+    font-size:12px; color:var(--ink-soft); line-height:1.7;
+  }
+  .phase-notes strong { color:var(--champagne); }
+
+  .footer {
+    margin-top:64px; padding-top:24px; border-top:1px solid var(--line);
+    text-align:center; font-size:10px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--ink-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hero-eyebrow">Círculo Mirian · Clínica Mirian de Paula</div>
+  <h1>Roadmap <em>Mira B2B</em></h1>
+  <p class="subtitle">Fluxo completo de cadastro, emissão de voucher direto ao lead e aprovação via WhatsApp — 8 fases testáveis independentes.</p>
+
+  <div class="progress-card">
+    <div class="progress-ring">
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle class="bg" cx="48" cy="48" r="42"></circle>
+        <circle class="fg" id="progressFg" cx="48" cy="48" r="42" stroke-dasharray="0 264" pathLength="264"></circle>
+      </svg>
+      <div class="progress-pct"><span id="progressPct">0%</span></div>
+    </div>
+    <div class="progress-info">
+      <h3 id="progressLbl">Progresso total</h3>
+      <p id="progressSub">0 de 0 tarefas concluídas</p>
+      <div class="progress-bar"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+    </div>
+    <button type="button" class="reset-btn" onclick="if(confirm('Zerar todos os checks?')){localStorage.removeItem('miraRoadmap');location.reload()}">Resetar</button>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="footer">
+    Clínica Mirian de Paula · Roadmap Mira B2B · abril 2026
+  </div>
+</div>
+
+<script>
+;(function () {
+  'use strict'
+
+  const PHASES = [
+    {
+      id: 1, title: 'Schema base — applications, whitelist, sazonalidade',
+      est: '1h', scope: 'Backend', tag: 'db',
+      desc: 'Migrations 370-372 criam as tabelas novas e seed inicial do calendário sazonal (12 meses).',
+      tasks: [
+        { id: 'p1-mig370', label: 'Migration 370: b2b_partnership_applications + wa_senders', tag: 'db' },
+        { id: 'p1-mig371', label: 'Migration 371: b2b_voucher_wa_templates + coluna em b2b_vouchers', tag: 'db' },
+        { id: 'p1-mig372', label: 'Migration 372: b2b_seasonal_calendar + seed 12 meses', tag: 'db' },
+        { id: 'p1-apply',  label: 'Aplicar todas via script pg pooler e validar sanity' },
+      ],
+      notes: 'Idempotente. Zero breaking change. Depois dessa, todas as outras fases podem rodar em paralelo.',
+    },
+    {
+      id: 2, title: 'Sazonalidade visual no voucher.html',
+      est: '45min', scope: 'Frontend', tag: 'ui',
+      desc: 'Voucher consulta o mês corrente e aplica fundo + accent do calendário automaticamente.',
+      tasks: [
+        { id: 'p2-read',     label: 'Leitura do calendário sazonal via RPC pública', tag: 'db' },
+        { id: 'p2-vars',     label: 'Injetar cores dinâmicas em --bg-card, --accent, --line', tag: 'ui' },
+        { id: 'p2-ornament', label: 'Variação de ornamento por tema (opcional simples)', tag: 'ui' },
+        { id: 'p2-test',     label: 'Testar os 12 meses via override ?month=10', tag: 'ui' },
+      ],
+      notes: 'Backward-compatible: se voucher tem `theme` definido explicitamente, respeita. Sazonalidade só entra quando theme="auto" ou null.',
+    },
+    {
+      id: 3, title: 'Edge function b2b-voucher-og (preview PNG)',
+      est: '1h30', scope: 'Backend / Deno', tag: 'db',
+      desc: 'Endpoint que gera imagem PNG dinâmica pro Open Graph preview do WhatsApp.',
+      tasks: [
+        { id: 'p3-satori', label: 'Setup Satori + resvg no Deno', tag: 'db' },
+        { id: 'p3-render', label: 'Função render: puxa voucher por token, monta SVG com paleta sazonal' },
+        { id: 'p3-cache',  label: 'Cache headers (CDN 1h)' },
+        { id: 'p3-deploy', label: 'Deploy via supabase functions deploy' },
+        { id: 'p3-test',   label: 'GET /functions/v1/b2b-voucher-og?t=xxxx retorna PNG' },
+      ],
+      notes: 'Imagem mostra: Voucher Presente · Nome · Parceiro · Clínica Mirian. Paleta vem do mês. Sem avatars pessoais.',
+    },
+    {
+      id: 4, title: 'Meta tags OG no voucher.html',
+      est: '30min', scope: 'Frontend', tag: 'ui',
+      desc: 'Quando o link for colado no WA, renderiza card grande automaticamente.',
+      tasks: [
+        { id: 'p4-og',   label: 'Meta og:image apontando pra edge function', tag: 'ui' },
+        { id: 'p4-tags', label: 'og:title + og:description + og:type = website', tag: 'ui' },
+        { id: 'p4-test', label: 'Teste no WhatsApp Web e celular', tag: 'ui' },
+      ],
+      notes: 'Truque: WhatsApp cacheia preview agressivo. Pra invalidar, append ?v= na URL.',
+    },
+    {
+      id: 5, title: 'UI Admin — Candidaturas + Editor de Template',
+      est: '1h30', scope: 'Frontend', tag: 'ui',
+      desc: 'Tab nova Candidaturas + Editor de template de mensagem na aba Config.',
+      tasks: [
+        { id: 'p5-repo-app',  label: 'b2b.application.repository.js', tag: 'ui' },
+        { id: 'p5-repo-tpl',  label: 'b2b.template.repository.js', tag: 'ui' },
+        { id: 'p5-ui-app',    label: 'b2b-applications.ui.js com aprovações pendentes', tag: 'ui' },
+        { id: 'p5-ui-tpl',    label: 'b2b-templates.ui.js editor com preview ao vivo', tag: 'ui' },
+        { id: 'p5-shell',     label: 'Tab "Candidaturas" no shell com badge de pendentes', tag: 'ui' },
+      ],
+      notes: 'Mesmo padrão IIFE. Preview do template com variáveis substituídas em tempo real.',
+    },
+    {
+      id: 6, title: 'RPCs de governança (approve/reject/list)',
+      est: '45min', scope: 'Backend', tag: 'db',
+      desc: 'Endpoints que a Mira chama quando Alden aprova/rejeita via WA.',
+      tasks: [
+        { id: 'p6-rpc-approve', label: 'b2b_application_approve(app_id, note)', tag: 'db' },
+        { id: 'p6-rpc-reject',  label: 'b2b_application_reject(app_id, reason)', tag: 'db' },
+        { id: 'p6-rpc-list',    label: 'b2b_applications_list(status)', tag: 'db' },
+        { id: 'p6-rpc-compose', label: 'b2b_voucher_compose_message(voucher_id)', tag: 'db' },
+        { id: 'p6-test',        label: 'Smoke test via script Node' },
+      ],
+      notes: 'Toda approve cria a parceria em status=prospect e adiciona o contato à whitelist automaticamente.',
+    },
+    {
+      id: 7, title: 'Mira — Intents e handlers (Fluxos A + B)',
+      est: '3h', scope: 'clinicai-lara', tag: 'mira',
+      desc: 'No repo separado. Onboarding de parceiro e emissão de voucher via comandos naturais.',
+      tasks: [
+        { id: 'p7-intent-apply',    label: 'Intent b2b.apply com extração de 5 campos', tag: 'mira' },
+        { id: 'p7-state-machine',   label: 'State machine pro onboarding (salva entre mensagens)', tag: 'mira' },
+        { id: 'p7-intent-voucher',  label: 'Intent b2b.emit_voucher (extrai nome + telefone + combo opcional)', tag: 'mira' },
+        { id: 'p7-send-direct',     label: 'Envio direto pro lead com preview rico', tag: 'mira' },
+        { id: 'p7-notif',           label: 'Notificações pra Mirian + Alden', tag: 'mira' },
+      ],
+      notes: 'Usa Haiku pra extração. Respeita whitelist. Grava source=wa_mira no voucher.',
+    },
+    {
+      id: 8, title: 'Mira — Fluxo C (admin WA) + Fluxo D (follow-up 24h)',
+      est: '1h30', scope: 'clinicai-lara', tag: 'mira',
+      desc: 'Alden comanda tudo pelo WA. Mira faz 1 toque educado após 24h sem resposta.',
+      tasks: [
+        { id: 'p8-admin-intents', label: 'Intents aprova/rejeita/lista/pausa/stats (só whitelist Alden)', tag: 'mira' },
+        { id: 'p8-follow',        label: 'Scheduled job: applications pending > 24h = 1 follow-up', tag: 'mira' },
+        { id: 'p8-archive',       label: 'Archive silent após 48h sem resposta', tag: 'mira' },
+      ],
+      notes: 'Follow-up sempre 1 vez só. Tom gentil: "Oi, deixo por aqui se quiser continuar o cadastro — qualquer hora volta, tudo bem."',
+    },
+    {
+      id: 9, title: 'Áudio da Mirian (ElevenLabs PVC)',
+      est: '2h', scope: 'Futuro', tag: 'mira',
+      desc: 'Fase opcional, quando autorizado. Áudio personalizado antes do preview.',
+      tasks: [
+        { id: 'p9-plan',   label: 'Assinar Creator plan ElevenLabs ($22/mês)', tag: 'mira' },
+        { id: 'p9-record', label: 'Mirian grava 30-60min de referência (uma vez)', tag: 'mira' },
+        { id: 'p9-train',  label: 'Treinar PVC no ElevenLabs', tag: 'mira' },
+        { id: 'p9-api',    label: 'Integrar API na Mira: gerar .ogg e enviar antes do preview', tag: 'mira' },
+      ],
+      notes: 'Bloqueado até decisão de cliente/custo. Fluxo funciona 100% sem áudio.',
+    },
+  ]
+
+  const STORAGE_KEY = 'miraRoadmap'
+
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') } catch (_) { return {} }
+  }
+  function saveState(state) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch (_) {}
+  }
+
+  let _state = loadState()
+
+  function phaseStatus(phase) {
+    const total = phase.tasks.length
+    const done = phase.tasks.filter(t => _state[t.id]).length
+    if (done === 0) return { label: 'A fazer', cls: 'status-todo', done, total, kind: 'todo' }
+    if (done === total) return { label: 'Pronto', cls: 'status-done', done, total, kind: 'done' }
+    return { label: 'Em andamento', cls: 'status-doing', done, total, kind: 'doing' }
+  }
+
+  function render() {
+    const host = document.getElementById('phases')
+    host.innerHTML = PHASES.map(p => {
+      const st = phaseStatus(p)
+      const open = !!_state['_open_' + p.id]
+      const cls = ['phase', st.kind === 'done' ? 'done' : '', st.kind === 'doing' ? 'doing' : '', open ? 'open' : ''].filter(Boolean).join(' ')
+      return `<div class="${cls}" data-phase-id="${p.id}">
+        <div class="phase-head" data-toggle="${p.id}">
+          <div class="phase-num">${p.id}</div>
+          <div class="phase-info">
+            <div class="phase-title">
+              <h2>${p.title}</h2>
+              <span class="status-pill ${st.cls}">${st.label} · ${st.done}/${st.total}</span>
+            </div>
+            <div class="phase-meta">
+              ${p.est}<span class="sep">·</span>${p.scope}
+            </div>
+            <div class="phase-desc">${p.desc}</div>
+          </div>
+          <div class="phase-chevron">▸</div>
+        </div>
+        <div class="phase-body">
+          <ul class="tasks">
+            ${p.tasks.map(t => `
+              <li class="${_state[t.id] ? 'done' : ''}" data-task="${t.id}">
+                <div class="check"></div>
+                <div class="task-label">${t.label}${t.tag ? `<span class="task-tag ${t.tag}">${t.tag}</span>` : ''}</div>
+              </li>
+            `).join('')}
+          </ul>
+          ${p.notes ? `<div class="phase-notes">${p.notes}</div>` : ''}
+        </div>
+      </div>`
+    }).join('')
+
+    // Bind
+    host.querySelectorAll('[data-toggle]').forEach(el => {
+      el.addEventListener('click', e => {
+        if (e.target.closest('[data-task]')) return
+        const id = el.getAttribute('data-toggle')
+        _state['_open_' + id] = !_state['_open_' + id]
+        saveState(_state); render()
+      })
+    })
+    host.querySelectorAll('[data-task]').forEach(el => {
+      el.addEventListener('click', e => {
+        e.stopPropagation()
+        const id = el.getAttribute('data-task')
+        _state[id] = !_state[id]
+        saveState(_state); render()
+      })
+    })
+
+    updateProgress()
+  }
+
+  function updateProgress() {
+    const allTasks = PHASES.flatMap(p => p.tasks)
+    const total = allTasks.length
+    const done = allTasks.filter(t => _state[t.id]).length
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0
+    document.getElementById('progressPct').textContent = pct + '%'
+    document.getElementById('progressSub').textContent = done + ' de ' + total + ' tarefas concluídas'
+    document.getElementById('progressBar').style.width = pct + '%'
+    const fg = document.getElementById('progressFg')
+    const dash = (pct / 100) * 264
+    fg.setAttribute('stroke-dasharray', dash + ' 264')
+  }
+
+  render()
+})()
+</script>
+
+</body>
+</html>
