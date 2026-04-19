@@ -150,6 +150,7 @@
       (_arr(d.content).length ? _renderContent(d.content)   : '') +
       '<div id="b2bWowActionsSection"></div>' +
       '<div id="b2bImpactSection"></div>' +
+      '<div id="b2bRoiSection"></div>' +
       '<div id="b2bCostSection"></div>' +
       '<div id="b2bTrendSection"></div>' +
       '<div id="b2bCommentsSection"></div>' +
@@ -179,10 +180,13 @@
     }
   }
 
-  // Monta custo real (Fraqueza #8) + tendência (Fraqueza #9) + Impact (Top 2)
+  // Monta custo real (Fraqueza #8) + tendência (Fraqueza #9) + Impact + ROI
   function _mountCostAndTrend(id) {
     if (window.B2BImpactPanel) {
       setTimeout(function () { window.B2BImpactPanel.mount('b2bImpactSection', id) }, 50)
+    }
+    if (window.B2BRoiPanel) {
+      setTimeout(function () { window.B2BRoiPanel.mount('b2bRoiSection', id) }, 55)
     }
     if (window.B2BCostPanel) {
       setTimeout(function () { window.B2BCostPanel.mount('b2bCostSection', id) }, 60)
