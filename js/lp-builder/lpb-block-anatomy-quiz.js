@@ -1,0 +1,204 @@
+/**
+ * LP Builder · Block Render: anatomy-quiz (Onda 29 · carro-chefe de conversão)
+ *
+ * Quiz facial interativo onde o paciente clica em áreas do rosto SVG
+ * que quer melhorar. No final coleta WhatsApp com contexto rico das
+ * áreas selecionadas (anatomy.areas + anatomy.priority).
+ *
+ * Renderer puro (zero side-effects · zero binding):
+ *   · SVG editorial monoline (rosto neutro frontal · viewBox 400×500)
+ *   · 8 áreas anatômicas com hotspots (circle data-area="...")
+ *   · Painel lateral com pills das áreas selecionadas
+ *   · Botão sticky "Ver meu protocolo" (abre modal com form WA)
+ *
+ * Binding de cliques + form + cooldown + RPC fica em
+ * lpb-anatomy-quiz-runtime.js (Runtime separado · separação de concerns).
+ *
+ *   LPBBlockAnatomyQuiz.render(block) → string HTML
+ *   LPBBlockAnatomyQuiz.AREAS         → metadados das 8 áreas (label + protocolo)
+ */
+;(function () {
+  'use strict'
+  if (window.LPBBlockAnatomyQuiz) return
+
+  // ──────────────────────────────────────────────────────────
+  // Helpers
+  // ──────────────────────────────────────────────────────────
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+  }
+  function _multiline(s) {
+    return _esc(s).replace(/\n/g, '<br>')
+  }
+  function _uid() {
+    return 'aq_' + Math.random().toString(36).slice(2, 10)
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Áreas anatômicas (metadados imutáveis)
+  // Cada área lista: label premium + protocolo Mirian + hotspots [x,y]
+  // viewBox 0 0 400 500 (proporção 4/5 retrato editorial)
+  // ──────────────────────────────────────────────────────────
+  var AREAS = Object.freeze({
+    testa:         { label: 'Testa',          protocol: 'Toxina botulínica + lifting fototermal',  hotspots: [[200, 110]] },
+    tempora:       { label: 'Têmporas',       protocol: 'Volumização com AH',                       hotspots: [[105, 165], [295, 165]] },
+    olheiras:      { label: 'Olheiras',       protocol: 'Smooth Eyes (laser fracionado + AH)',     hotspots: [[160, 215], [240, 215]] },
+    bigode_chines: { label: 'Bigode chinês',  protocol: 'Preenchimento sulco nasogeniano com AH',  hotspots: [[160, 295], [240, 295]] },
+    labios:        { label: 'Lábios',         protocol: 'Preenchimento com AH',                     hotspots: [[200, 335]] },
+    mandibular:    { label: 'Mandíbula',      protocol: 'Contorno com AH',                          hotspots: [[120, 380], [280, 380]] },
+    papada:        { label: 'Papada',         protocol: 'Lipo enzimática + Fotona 4D',             hotspots: [[200, 415]] },
+    pescoco:       { label: 'Pescoço',        protocol: 'Fotona 4D + bioestimulador',              hotspots: [[200, 470]] },
+  })
+
+  // Ícone Feather "user-check" inline · pra header empty-state
+  var ICON_USER = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>' +
+    '<circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/>' +
+    '</svg>'
+
+  // ──────────────────────────────────────────────────────────
+  // SVG do rosto neutro · monoline editorial (sem detalhes étnicos)
+  // ──────────────────────────────────────────────────────────
+  function _faceSvg(uid) {
+    var paths =
+      // Contorno do rosto (oval suave, mais alongado embaixo)
+      '<path class="aq-face-contour" d="M 200 80 ' +
+        'C 130 80, 90 130, 90 200 ' +     // testa esquerda → têmpora
+        'C 90 250, 95 290, 110 330 ' +    // descida lateral esquerda
+        'C 125 380, 150 420, 200 435 ' +  // mandíbula esquerda → queixo
+        'C 250 420, 275 380, 290 330 ' +  // mandíbula direita
+        'C 305 290, 310 250, 310 200 ' +  // descida lateral direita
+        'C 310 130, 270 80, 200 80 Z" />' +
+      // Pescoço (linhas laterais leves)
+      '<path class="aq-face-neck" d="M 165 430 L 158 488" />' +
+      '<path class="aq-face-neck" d="M 235 430 L 242 488" />' +
+      // Sobrancelhas (arcos suaves)
+      '<path class="aq-face-brow" d="M 130 175 Q 160 165, 188 175" />' +
+      '<path class="aq-face-brow" d="M 212 175 Q 240 165, 270 175" />' +
+      // Olhos (elipses neutras)
+      '<ellipse class="aq-face-eye" cx="160" cy="200" rx="14" ry="6" />' +
+      '<ellipse class="aq-face-eye" cx="240" cy="200" rx="14" ry="6" />' +
+      // Nariz (linha em V suave)
+      '<path class="aq-face-nose" d="M 200 215 L 190 280 Q 200 290, 210 280 L 200 215" />' +
+      // Lábios (curva discreta)
+      '<path class="aq-face-lips" d="M 175 335 Q 200 325, 225 335 Q 200 345, 175 335 Z" />' +
+      // Linha do queixo (sutil interno)
+      '<path class="aq-face-chin" d="M 175 405 Q 200 415, 225 405" />'
+    return paths
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Hotspots SVG · gera <g class="aq-hotspot" data-area="...">
+  // ──────────────────────────────────────────────────────────
+  function _hotspotsSvg() {
+    var html = ''
+    Object.keys(AREAS).forEach(function (key) {
+      var a = AREAS[key]
+      var tip = _esc(a.label + ' · ' + a.protocol)
+      a.hotspots.forEach(function (pt, idx) {
+        html += '<g class="aq-hotspot" data-area="' + _esc(key) + '"' +
+                ' role="button" tabindex="0"' +
+                ' aria-label="' + tip + '">' +
+          // hit area maior (32px) · invisível
+          '<circle class="aq-hit"  cx="' + pt[0] + '" cy="' + pt[1] + '" r="22" />' +
+          // marcador visual (16px)
+          '<circle class="aq-dot"  cx="' + pt[0] + '" cy="' + pt[1] + '" r="16" />' +
+          // checkmark interno (visível só quando .is-selected)
+          '<path class="aq-check" d="M ' + (pt[0] - 6) + ' ' + pt[1] +
+                ' L ' + (pt[0] - 1) + ' ' + (pt[1] + 5) +
+                ' L ' + (pt[0] + 7) + ' ' + (pt[1] - 4) + '"' +
+                ' fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
+          // tooltip nativo via <title>
+          '<title>' + tip + '</title>' +
+        '</g>'
+      })
+    })
+    return html
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Render principal
+  // ──────────────────────────────────────────────────────────
+  function render(block) {
+    var p           = (block && block.props) || {}
+    var bg          = p.bg || 'ivory'
+    var eyebrow     = p.eyebrow     || 'Quiz personalizado · 60 segundos'
+    var headline    = p.headline    || 'Onde você quer mais cuidado?'
+    var subtitle    = p.subtitle    || 'Toque nas áreas do rosto · receba um protocolo personalizado da Dra. Mirian'
+    var ctaLabel    = p.cta_label   || 'Ver meu protocolo'
+    var successText = p.success_text || 'Recebemos. A Dra. Mirian vai entrar em contato no WhatsApp em breve.'
+    var uid         = _uid()
+
+    // Areas JSON pra runtime ler (label + protocolo) sem precisar
+    // re-importar este módulo. Atributo data-areas no root.
+    var areasMap = {}
+    Object.keys(AREAS).forEach(function (k) {
+      areasMap[k] = { label: AREAS[k].label, protocol: AREAS[k].protocol }
+    })
+    var areasAttr = _esc(JSON.stringify(areasMap))
+    var successAttr = _esc(successText)
+
+    // Botão · usa LPBButtonLegacy se disponível (estilo champagne)
+    var btnHtml
+    if (window.LPBButtonLegacy) {
+      btnHtml = LPBButtonLegacy.render({
+        label: ctaLabel,
+        url: '#',
+        style: 'champagne',
+      })
+      // Substitui href="#" por data-action pra runtime interceptar
+      btnHtml = btnHtml.replace('<a ', '<a data-aq-cta="1" ')
+    } else {
+      btnHtml = '<a class="blk-aq-cta" href="#" data-aq-cta="1"><span>' + _esc(ctaLabel) + '</span></a>'
+    }
+
+    var html = '<section class="blk-aq" data-bg="' + _esc(bg) + '"' +
+               ' id="' + uid + '"' +
+               ' data-aq-root="1"' +
+               ' data-areas="' + areasAttr + '"' +
+               ' data-success="' + successAttr + '">'
+
+    // Header textual
+    html += '<header class="blk-aq-head">'
+    if (eyebrow)  html += '<div class="blk-aq-eyebrow">' + _esc(eyebrow) + '</div>'
+    if (headline) html += '<h2 class="blk-aq-headline">' + _multiline(headline) + '</h2>'
+    if (subtitle) html += '<p class="blk-aq-subtitle">' + _esc(subtitle) + '</p>'
+    html += '</header>'
+
+    // Grid: SVG esquerda · painel direita
+    html += '<div class="blk-aq-grid">'
+
+    // Coluna SVG
+    html += '<div class="blk-aq-svg-wrap">' +
+      '<svg class="blk-aq-svg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid meet"' +
+      ' role="img" aria-label="Mapa facial interativo">' +
+      _faceSvg(uid) +
+      _hotspotsSvg() +
+      '</svg>' +
+    '</div>'
+
+    // Coluna painel
+    html += '<aside class="blk-aq-panel" aria-live="polite">' +
+      '<div class="blk-aq-panel-title">Áreas selecionadas</div>' +
+      '<ul class="blk-aq-pills" data-aq-pills="1">' +
+        '<li class="blk-aq-empty">' + ICON_USER + '<span>Comece marcando uma área no rosto…</span></li>' +
+      '</ul>' +
+      '<div class="blk-aq-counter" data-aq-counter="1" hidden>0 áreas marcadas</div>' +
+    '</aside>'
+
+    html += '</div>'  // grid
+
+    // CTA sticky bottom
+    html += '<div class="blk-aq-cta-wrap">' + btnHtml + '</div>'
+
+    html += '</section>'
+    return html
+  }
+
+  window.LPBBlockAnatomyQuiz = Object.freeze({
+    render: render,
+    AREAS:  AREAS,
+  })
+})()

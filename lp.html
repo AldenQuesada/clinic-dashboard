@@ -13,6 +13,9 @@
 <link rel="preload" as="style" href="css/lp-shared.css">
 <link rel="stylesheet" href="css/lp-shared.css">
 <link rel="stylesheet" href="css/lp-blocks.css?v=hero">
+<link rel="stylesheet" href="css/lp-blocks-aq.css">
+<link rel="stylesheet" href="css/lp-blocks-collagen.css">
+<link rel="stylesheet" href="css/lp-blocks-counter.css">
 <style>
   /* Loader inicial — antes do schema chegar */
   .lp-loader {
@@ -98,6 +101,8 @@
 <script src="js/lp-builder/lpb-block-ba-carousel.js"></script>
 <script src="js/lp-builder/lpb-block-footer.js"></script>
 <script src="js/lp-builder/lpb-block-hero-cover.js"></script>
+<script src="js/lp-builder/lpb-block-anatomy-quiz.js"></script>
+<script src="js/lp-builder/lpb-anatomy-quiz-runtime.js"></script>
 <script src="js/lp-builder/lpb-block-cta-legacy.js"></script>
 <script src="js/lp-builder/lpb-block-badges-legacy.js"></script>
 <script src="js/lp-builder/lpb-block-price-legacy.js"></script>
@@ -106,6 +111,20 @@
 <script src="js/lp-builder/lpb-block-check-legacy.js"></script>
 <script src="js/lp-builder/lpb-block-buttons-row.js"></script>
 <script src="js/lp-builder/lpb-block-magazine-toc.js"></script>
+<!-- Onda 29: blocos de engajamento (collagen + live-counter) -->
+<script src="js/lp-builder/lpb-block-collagen-animation.js"></script>
+<script src="js/lp-builder/lpb-collagen-runtime.js"></script>
+<script src="js/lp-builder/lpb-block-live-counter.js"></script>
+<script src="js/lp-builder/lpb-live-counter-runtime.js"></script>
+<!-- Onda 29 · final: smart-popup, transformation-reel, smart-cta -->
+<link rel="stylesheet" href="css/lp-blocks-engagement.css">
+<script src="js/lp-builder/lpb-engagement-engine.js"></script>
+<script src="js/lp-builder/lpb-block-smart-popup.js"></script>
+<script src="js/lp-builder/lpb-smart-popup-runtime.js"></script>
+<script src="js/lp-builder/lpb-block-transformation-reel.js"></script>
+<script src="js/lp-builder/lpb-reel-runtime.js"></script>
+<script src="js/lp-builder/lpb-block-smart-cta.js"></script>
+<script src="js/lp-builder/lpb-smart-cta-runtime.js"></script>
 
 <!-- LP Renderer -->
 <script>
@@ -541,6 +560,34 @@
     'links-tree': function (b) {
       // Onda 28: renderer puro compartilhado
       if (window.LPBBlockLinksTree) return LPBBlockLinksTree.render(b);
+      return '';
+    },
+
+    'collagen-animation': function (b) {
+      if (window.LPBBlockCollagenAnimation) return LPBBlockCollagenAnimation.render(b);
+      return '';
+    },
+    'live-counter': function (b) {
+      if (window.LPBBlockLiveCounter) return LPBBlockLiveCounter.render(b);
+      return '';
+    },
+
+    'anatomy-quiz': function (b) {
+      // Onda 29: quiz facial interativo (carro-chefe conversão)
+      if (window.LPBBlockAnatomyQuiz) return LPBBlockAnatomyQuiz.render(b);
+      return '';
+    },
+
+    'smart-popup': function (b) {
+      if (window.LPBBlockSmartPopup) return LPBBlockSmartPopup.render(b);
+      return '';
+    },
+    'transformation-reel': function (b) {
+      if (window.LPBBlockTransformationReel) return LPBBlockTransformationReel.render(b);
+      return '';
+    },
+    'smart-cta': function (b) {
+      if (window.LPBBlockSmartCTA) return LPBBlockSmartCTA.render(b);
       return '';
     },
 
@@ -1452,6 +1499,19 @@
     // Init de blocos interativos (before-after slider, etc.)
     if (window.LPBlocks) window.LPBlocks.init(document);
 
+    // Onda 29: bind do anatomy-quiz runtime (interatividade dos hotspots + form)
+    if (window.LPBAnatomyQuizRuntime) {
+      try { LPBAnatomyQuizRuntime.bind(document.getElementById('lpRoot')); } catch(e) {}
+    }
+    // Onda 29 · final: smart-popup, transformation-reel, smart-cta runtimes
+    if (window.LPBSmartPopupRuntime) try { LPBSmartPopupRuntime.bind(document.getElementById('lpRoot')); } catch(e) {}
+    if (window.LPBReelRuntime)        try { LPBReelRuntime.bind(document.getElementById('lpRoot'));        } catch(e) {}
+    if (window.LPBSmartCTARuntime)    try { LPBSmartCTARuntime.bind(document.getElementById('lpRoot'));    } catch(e) {}
+
+    // Onda 29: runtimes de blocos engajamento (collagen + live-counter)
+    if (window.LPBCollagenRuntime) try { LPBCollagenRuntime.bind(document.getElementById('lpRoot')); } catch(e) {}
+    if (window.LPBLiveCounterRuntime) try { LPBLiveCounterRuntime.bind(document.getElementById('lpRoot')); } catch(e) {}
+
     // Re-wire WhatsApp links + reveal (lp-shared.js boot ja rodou antes do conteudo dinamico)
     if (window.LPShared) {
       window.LPShared.wireWhatsAppLinks();
@@ -1552,6 +1612,11 @@
         if (window.LPBHeatmapTracker) {
           try { LPBHeatmapTracker.boot(slug, rpc, lgpdEnabled); }
           catch (e) { console.warn('[lp] heatmap falhou:', e); }
+        }
+        // Onda 29: engagement engine (smart-popup, reel, smart-cta, etc.)
+        if (window.LPBEngagement && LPBEngagement.boot) {
+          try { LPBEngagement.boot({ slug: slug, rpc: rpc, lgpdEnabled: lgpdEnabled }); }
+          catch (e) { console.warn('[lp] engagement boot falhou:', e); }
         }
         // Track view com tag AB se aplicável
         var abTag = (new URLSearchParams(window.location.search)).get('ab') || '';

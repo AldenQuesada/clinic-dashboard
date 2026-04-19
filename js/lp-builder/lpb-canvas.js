@@ -250,6 +250,34 @@
       return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">links-tree (renderer não carregado)</div>'
     },
 
+    'collagen-animation': function (b) {
+      if (window.LPBBlockCollagenAnimation) return LPBBlockCollagenAnimation.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888">collagen-animation</div>'
+    },
+    'live-counter': function (b) {
+      if (window.LPBBlockLiveCounter) return LPBBlockLiveCounter.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888">live-counter</div>'
+    },
+
+    'anatomy-quiz': function (b) {
+      // Onda 29: quiz facial interativo (carro-chefe conversão)
+      if (window.LPBBlockAnatomyQuiz) return LPBBlockAnatomyQuiz.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">anatomy-quiz (renderer não carregado)</div>'
+    },
+
+    'smart-popup': function (b) {
+      if (window.LPBBlockSmartPopup) return LPBBlockSmartPopup.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888">smart-popup</div>'
+    },
+    'transformation-reel': function (b) {
+      if (window.LPBBlockTransformationReel) return LPBBlockTransformationReel.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888">transformation-reel</div>'
+    },
+    'smart-cta': function (b) {
+      if (window.LPBBlockSmartCTA) return LPBBlockSmartCTA.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888">smart-cta</div>'
+    },
+
     'hero-cover': function (b) {
       // Onda 28: capa de revista full-bleed
       if (window.LPBBlockHeroCover) return LPBBlockHeroCover.render(b)
@@ -1152,6 +1180,10 @@
       '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">' +
       '<link rel="stylesheet" href="css/lp-shared.css">' +
       '<link rel="stylesheet" href="css/lp-blocks.css">' +
+      '<link rel="stylesheet" href="css/lp-blocks-aq.css">' +
+      '<link rel="stylesheet" href="css/lp-blocks-collagen.css">' +
+      '<link rel="stylesheet" href="css/lp-blocks-counter.css">' +
+      '<link rel="stylesheet" href="css/lp-blocks-engagement.css">' +
       '<style id="lpb-overrides"></style>' +
       '<style id="lpb-block-styles"></style>' +
       '<style id="lpb-edit-mode">' +
@@ -1296,6 +1328,23 @@
             function () { return LPBuilder.getViewport && LPBuilder.getViewport() }
           )
         } catch (_) {}
+      }
+      // Onda 29: runtimes de blocos engajamento (collagen + live-counter)
+      if (window.LPBCollagenRuntime && _frame && _frame.contentDocument) {
+        try { LPBCollagenRuntime.bind(_frame.contentDocument.body) } catch (_) {}
+      }
+      if (window.LPBLiveCounterRuntime && _frame && _frame.contentDocument) {
+        try { LPBLiveCounterRuntime.bind(_frame.contentDocument.body) } catch (_) {}
+      }
+      if (window.LPBAnatomyQuizRuntime && _frame && _frame.contentDocument) {
+        try { LPBAnatomyQuizRuntime.bind(_frame.contentDocument.body) } catch (_) {}
+      }
+      // Onda 29 final · reel + smart-cta no preview (popup desligado pra não disparar auto enquanto edita)
+      if (window.LPBReelRuntime && _frame && _frame.contentDocument) {
+        try { LPBReelRuntime.bind(_frame.contentDocument.body) } catch (_) {}
+      }
+      if (window.LPBSmartCTARuntime && _frame && _frame.contentDocument) {
+        try { LPBSmartCTARuntime.bind(_frame.contentDocument.body) } catch (_) {}
       }
     }, 30)
   }

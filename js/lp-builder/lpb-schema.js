@@ -1192,6 +1192,219 @@
       ],
     },
 
+    // ── COLLAGEN-ANIMATION · animação SVG da pele em camadas (Onda 29) ──
+    'collagen-animation': {
+      name: 'Animação · Linha do Colágeno',
+      icon: 'activity',
+      description: 'Animação SVG das camadas da pele mostrando estimulação de colágeno em 3 estágios (Hoje · 30 dias · 60 dias)',
+      group: 'prova',
+      fields: [
+        { k: 'eyebrow', label: 'Eyebrow', type: 'text', max: 40, optional: true,
+          default: 'A ciência por trás' },
+        { k: 'headline', label: 'Título', type: 'text', max: 80, optional: true,
+          default: 'O que acontece com sua pele' },
+        { k: 'lead', label: 'Lead', type: 'textarea', max: 200, rows: 2, optional: true,
+          default: 'Cada protocolo da Mirian estimula a produção natural de colágeno · veja a evolução em 60 dias.' },
+        { k: 'cta_label', label: 'CTA (opcional)', type: 'text', max: 40, optional: true },
+        { k: 'cta_url', label: 'URL do CTA', type: 'text', max: 300, optional: true,
+          default: 'https://wa.me/55' },
+        { k: 'bg', label: 'Fundo', type: 'select',
+          options: [
+            { value: 'ivory',    label: 'Marfim (default)' },
+            { value: 'cream',    label: 'Creme' },
+            { value: 'graphite', label: 'Grafite (escuro)' },
+          ], default: 'ivory' },
+      ],
+    },
+
+    // ── LIVE-COUNTER · prova social ao vivo (Onda 29) ──
+    'live-counter': {
+      name: 'Live Counter · Prova Social ao Vivo',
+      icon: 'users',
+      description: 'Mostra count real de leads recentes (últimos 7 dias) · prova social discreta sem urgência manipuladora',
+      group: 'prova',
+      fields: [
+        { k: 'text_template', label: 'Template (use {n} pra número)', type: 'text', max: 120,
+          default: '{n} mulheres marcaram avaliação esta semana',
+          hint: '{n} é substituído pelo count real do banco' },
+        { k: 'days', label: 'Janela (dias)', type: 'select',
+          options: [
+            { value: '7',  label: '7 dias (default)' },
+            { value: '14', label: '14 dias' },
+            { value: '30', label: '30 dias' },
+          ], default: '7' },
+        { k: 'variant', label: 'Variante visual', type: 'select',
+          options: [
+            { value: 'card',   label: 'Card (centro)' },
+            { value: 'pill',   label: 'Pill discreto (inline)' },
+            { value: 'fixed',  label: 'Pill fixo no canto (sticky)' },
+          ], default: 'card' },
+        { k: 'min_count', label: 'Mínimo pra mostrar', type: 'select',
+          options: [
+            { value: '1', label: '1+ (mostra se houver pelo menos 1)' },
+            { value: '3', label: '3+ (mais robusto)' },
+            { value: '5', label: '5+ (só com volume)' },
+          ], default: '3',
+          hint: 'Esconde o bloco se count abaixo deste valor' },
+        { k: 'bg', label: 'Fundo', type: 'select',
+          options: [
+            { value: 'ivory',    label: 'Marfim' },
+            { value: 'transparent', label: 'Transparente' },
+            { value: 'graphite', label: 'Grafite' },
+          ], default: 'ivory' },
+      ],
+    },
+
+    // ── ANATOMY-QUIZ · quiz facial interativo (Onda 29 · carro-chefe conversão) ──
+    'anatomy-quiz': {
+      name: 'Quiz Anatômico · Mapa Facial',
+      icon: 'user-check',
+      description: 'Quiz interativo · paciente clica em áreas do rosto que quer melhorar · no final coleta WhatsApp com contexto rico',
+      group: 'cta',
+      fields: [
+        { k: 'eyebrow', label: 'Eyebrow', type: 'text', max: 40, optional: true,
+          default: 'Quiz personalizado · 60 segundos' },
+        { k: 'headline', label: 'Headline', type: 'textarea', max: 120, rows: 2,
+          default: 'Onde você quer mais cuidado?' },
+        { k: 'subtitle', label: 'Subtítulo', type: 'text', max: 160, optional: true,
+          default: 'Toque nas áreas do rosto · receba um protocolo personalizado da Dra. Mirian' },
+        { k: 'cta_label', label: 'Botão final', type: 'text', max: 40, default: 'Ver meu protocolo' },
+        { k: 'success_text', label: 'Texto após enviar', type: 'textarea', max: 200, optional: true,
+          default: 'Recebemos. A Dra. Mirian vai entrar em contato no WhatsApp em breve.' },
+        { k: 'bg', label: 'Fundo', type: 'select',
+          options: [
+            { value: 'ivory',    label: 'Marfim (default)' },
+            { value: 'cream',    label: 'Creme' },
+            { value: 'graphite', label: 'Grafite (escuro)' },
+          ], default: 'ivory' },
+      ],
+    },
+
+    // ── SMART-POPUP · modal temporizado (Onda 29) ──
+    'smart-popup': {
+      name: 'Pop-up Inteligente',
+      icon: 'message-square',
+      description: 'Modal temporizado · trigger configurável (tempo/scroll/exit-intent) · cooldown 24h por visitor',
+      group: 'cta',
+      fields: [
+        { k: 'eyebrow', label: 'Eyebrow', type: 'text', max: 40, optional: true,
+          default: 'Espera!' },
+        { k: 'headline', label: 'Headline', type: 'textarea', max: 100, rows: 2,
+          default: 'Quer um protocolo personalizado?' },
+        { k: 'subtitle', label: 'Subtítulo', type: 'text', max: 160, optional: true,
+          default: 'Quiz de 60s · receba uma sugestão da Dra. Mirian' },
+        { k: 'image_url', label: 'Imagem/vídeo (URL)', type: 'image', optional: true,
+          hint: '.mp4 vira vídeo autoplay muted · imagem fica como hero do popup' },
+        { k: 'cta_label', label: 'Texto do botão', type: 'text', max: 40,
+          default: 'Fazer quiz' },
+        { k: 'cta_url', label: 'URL do botão', type: 'text', max: 300,
+          default: 'https://wa.me/55' },
+        { k: 'cta_style', label: 'Estilo do botão', type: 'select',
+          options: [
+            { value: 'whatsapp',  label: 'WhatsApp · verde icônico' },
+            { value: 'champagne', label: 'Champagne' },
+            { value: 'outline',   label: 'Outline' },
+          ], default: 'champagne' },
+        { k: 'trigger', label: 'Quando disparar', type: 'select',
+          options: [
+            { value: 'time',         label: 'Após X segundos' },
+            { value: 'scroll',       label: 'Quando scrolla X% da página' },
+            { value: 'exit-intent',  label: 'Quando vai sair (mouse pra cima)' },
+          ], default: 'time' },
+        { k: 'after_seconds', label: 'Disparar após (segundos)', type: 'select',
+          options: [
+            { value: '15', label: '15s' },
+            { value: '30', label: '30s (default)' },
+            { value: '45', label: '45s' },
+            { value: '60', label: '60s' },
+          ], default: '30',
+          hint: 'Só usado se trigger = tempo' },
+        { k: 'scroll_percent', label: 'Disparar em X% scroll', type: 'select',
+          options: [
+            { value: '30', label: '30%' },
+            { value: '50', label: '50% (default)' },
+            { value: '70', label: '70%' },
+          ], default: '50',
+          hint: 'Só usado se trigger = scroll' },
+        { k: 'cooldown_hours', label: 'Cooldown (horas)', type: 'select',
+          options: [
+            { value: '6',  label: '6h' },
+            { value: '24', label: '24h (default)' },
+            { value: '72', label: '3 dias' },
+          ], default: '24',
+          hint: 'Não mostra de novo pro mesmo visitor neste período' },
+        { k: 'variant', label: 'Posição', type: 'select',
+          options: [
+            { value: 'side',   label: 'Lateral direita (default · não-bloqueante)' },
+            { value: 'center', label: 'Centro (modal bloqueante)' },
+            { value: 'bottom', label: 'Bottom sticky' },
+          ], default: 'side' },
+      ],
+    },
+
+    // ── TRANSFORMATION-REEL · vídeo curto autoplay (Onda 29) ──
+    'transformation-reel': {
+      name: 'Reel · Vídeo de Transformação',
+      icon: 'video',
+      description: 'Vídeo curto autoplay sem som · pause quando scrolla pra fora · CTA flutuante',
+      group: 'prova',
+      fields: [
+        { k: 'video_url', label: 'URL do vídeo (.mp4)', type: 'image',
+          hint: 'Use vídeo otimizado · 10-20s · sem som ou com legenda' },
+        { k: 'eyebrow', label: 'Eyebrow', type: 'text', max: 40, optional: true,
+          default: 'Resultado real' },
+        { k: 'headline', label: 'Headline', type: 'text', max: 80, optional: true,
+          default: '30 dias depois' },
+        { k: 'cta_label', label: 'CTA flutuante', type: 'text', max: 30, optional: true,
+          default: 'Quero o meu' },
+        { k: 'cta_url', label: 'URL do CTA', type: 'text', max: 300, optional: true,
+          default: 'https://wa.me/55' },
+        { k: 'aspect', label: 'Proporção', type: 'select',
+          options: [
+            { value: '9/16', label: '9:16 · vertical (story)' },
+            { value: '1/1',  label: '1:1 · quadrado' },
+            { value: '16/9', label: '16:9 · landscape' },
+          ], default: '9/16' },
+        { k: 'autoplay', label: 'Autoplay', type: 'select',
+          options: [
+            { value: 'yes', label: 'Sim (default · sem som)' },
+            { value: 'no',  label: 'Não · espera click' },
+          ], default: 'yes' },
+      ],
+    },
+
+    // ── SMART-CTA · CTA contextual (Onda 29) ──
+    'smart-cta': {
+      name: 'CTA Inteligente · Contextual',
+      icon: 'target',
+      description: 'Botão muda texto baseado no comportamento do visitor (novo/retorno/após prova social)',
+      group: 'cta',
+      fields: [
+        { k: 'cta_default_label', label: 'Texto padrão (visitor novo)', type: 'text', max: 40,
+          default: 'Conhecer protocolos' },
+        { k: 'cta_returning_label', label: 'Texto se já visitou', type: 'text', max: 40, optional: true,
+          default: 'Continuar minha avaliação' },
+        { k: 'cta_after_social_proof_label', label: 'Texto após ver depoimentos', type: 'text', max: 40, optional: true,
+          default: 'Falar com a Dra. Mirian' },
+        { k: 'cta_url', label: 'URL', type: 'text', max: 300,
+          default: 'https://wa.me/55' },
+        { k: 'cta_style', label: 'Estilo', type: 'select',
+          options: [
+            { value: 'whatsapp',  label: 'WhatsApp verde' },
+            { value: 'champagne', label: 'Champagne' },
+            { value: 'outline',   label: 'Outline' },
+          ], default: 'champagne' },
+        { k: 'eyebrow', label: 'Eyebrow', type: 'text', max: 40, optional: true },
+        { k: 'headline', label: 'Headline', type: 'text', max: 80, optional: true },
+        { k: 'bg', label: 'Fundo', type: 'select',
+          options: [
+            { value: 'transparent', label: 'Transparente (default)' },
+            { value: 'ivory',       label: 'Marfim' },
+            { value: 'graphite',    label: 'Grafite' },
+          ], default: 'transparent' },
+      ],
+    },
+
     // ── HERO-COVER · capa de revista full-bleed (Onda 28) ──
     'hero-cover': {
       name: 'Hero · Capa (full-bleed)',
