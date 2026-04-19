@@ -157,8 +157,14 @@
   // ────────────────────────────────────────────────────────────
   function _section(id, label, body, opts) {
     opts = opts || {}
-    var collapsed = (opts.defaultOpen === true) ? false : !_expandedSections[id]
-    if (opts.defaultOpen === true && _expandedSections[id] === undefined) collapsed = false
+    // Estado: user já tocou? respeita preferência. Se não, usa defaultOpen
+    var userPref = _expandedSections[id]
+    var collapsed
+    if (userPref === undefined) {
+      collapsed = !(opts.defaultOpen === true)
+    } else {
+      collapsed = !userPref
+    }
     var icon = opts.icon || ''
     var iconHtml = icon ? '<span class="lpb-insp-section-icon">' + _ico(icon, 12) + '</span>' : ''
     return '<div class="lpb-insp-section ' + (collapsed ? 'collapsed' : '') + '" data-section="' + id + '">' +
@@ -497,18 +503,16 @@
       return renderer(f, v, idx)
     }
     var groupSectionsHtml = ''
-    var firstNonEmpty = true
     GROUP_DEFS.forEach(function (g) {
       var fs = groups[g.id]
       if (!fs || !fs.length) return
       var bodyHtml = fs.map(_renderField).join('')
-      // primeira seção não vazia abre por default
       var sectionId = b.type + '__' + g.id
+      // TODAS as seções abrem por default (user colapsa o que quiser)
       groupSectionsHtml += _section(sectionId, g.label, bodyHtml, {
         icon: g.icon,
-        defaultOpen: firstNonEmpty,
+        defaultOpen: true,
       })
-      firstNonEmpty = false
     })
 
     // Banner de modo i18n
@@ -537,7 +541,11 @@
       '</div>'
 
     _root.innerHTML = html
-    _attach(idx)
+    try { _attach(idx) }
+    catch (err) {
+      console.error('[lpb-inspector] _attach falhou (handlers não bindados):', err)
+      if (window.LPBToast) LPBToast('Erro no inspector: ' + err.message, 'error')
+    }
   }
 
   // ────────────────────────────────────────────────────────────
