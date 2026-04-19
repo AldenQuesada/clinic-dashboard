@@ -398,6 +398,7 @@
           '</button>' +
           (v ? '<button class="lpb-btn ghost sm" data-crop-field="' + _esc(f.k) + '" style="display:flex;align-items:center;justify-content:center;gap:6px" title="Recortar imagem atual">' + _ico('crop', 12) + '</button>' : '') +
           (v && f.positioner ? '<button class="lpb-btn ghost sm" data-position-field="' + _esc(f.k) + '" style="display:flex;align-items:center;justify-content:center;gap:6px" title="Ajustar zoom e posição da foto">' + _ico('move', 12) + '</button>' : '') +
+          (v ? '<button class="lpb-btn ghost sm danger" data-remove-field="' + _esc(f.k) + '" style="display:flex;align-items:center;justify-content:center;gap:6px;color:var(--lpb-danger);border-color:rgba(248,113,113,.3)" title="Remover foto">' + _ico('trash-2', 12) + '</button>' : '') +
         '</div>' +
         '<input class="lpb-input" type="text" data-fkey="' + _escA(f.k) + '" value="' + _escA(v || '') + '" placeholder="ou cole uma URL https://...">' +
         preview +
@@ -812,6 +813,22 @@
       b.onclick = function (e) {
         e.preventDefault(); e.stopPropagation()
         if (window.LPBImageCrop) window.LPBImageCrop.openForField(idx, b.dataset.cropField, _detectListCtx(b))
+      }
+    })
+    // ── Remover foto · zera URL + transforms ──────────────
+    _root.querySelectorAll('[data-remove-field]').forEach(function (btn) {
+      btn.onclick = function (e) {
+        e.preventDefault(); e.stopPropagation()
+        if (!confirm('Remover esta foto?')) return
+        var fk = btn.dataset.removeField
+        var base = fk.replace(/_url$/, '')
+        // Zera URL no contexto certo (top-level OU dentro de slide)
+        _writeFieldValue(idx, fk, '', btn)
+        // Zera transforms (zoom/x/y/rot) se forem campos do schema
+        ;['_zoom', '_x', '_y', '_rot'].forEach(function (suffix) {
+          _writeFieldValue(idx, base + suffix, undefined, btn)
+        })
+        if (window.LPBToast) LPBToast('Foto removida', 'success')
       }
     })
     // ── Posicionar foto · zoom + pan modal ─────────────────
