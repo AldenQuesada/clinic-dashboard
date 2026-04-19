@@ -55,6 +55,21 @@
     setTimeout(_rebind, 60)
   }
 
+  // Helper · acha o hotspot DOM "irmão" de um par mirror (mesmo data-area)
+  function _findMirrorPartner(allSpots, currentSpot) {
+    var area = currentSpot.getAttribute('data-area')
+    for (var i = 0; i < allSpots.length; i++) {
+      if (allSpots[i] !== currentSpot && allSpots[i].getAttribute('data-area') === area) {
+        return allSpots[i]
+      }
+    }
+    return null
+  }
+
+  function _isMirrorFlag(v) {
+    return v === '1' || v === 1 || v === true
+  }
+
   // ──────────────────────────────────────────────────────────
   // Bind drag + click vazio + delete
   // ──────────────────────────────────────────────────────────
@@ -63,23 +78,45 @@
     _state.pane = _getPane()
     if (!_state.pane) return
 
-    // Adiciona overlay ovelay visual (border tracejada champagne)
+    // Overlay visual (border tracejada champagne)
     if (!_state.rootEl.classList.contains('aq-calibrate-mode')) {
       _state.rootEl.classList.add('aq-calibrate-mode')
     }
 
-    // Bind cada hotspot
+    // CRÍTICO · garante que existe lista persistida ANTES de bindar handlers
+    // Sem isso, drag não consegue salvar (areas[idx] = undefined porque defaults
+    // vivem no código, não nos props). Seed primeiro → re-render → rebind chamado de novo.
+    var existing = _readAreas()
+    if (!existing.length) {
+      var seeded = _seedFromDefaults(_state.view)
+      if (seeded.length) {
+        _writeAreas(seeded)  // dispara re-render → state-changed → _rebind() de novo
+        return
+      }
+    }
+
+    // Mapping DOM hotspot → data item (handles mirror items spanning 2 hotspots)
     var spots = _state.pane.querySelectorAll('.aq-hotspot')
-    spots.forEach(function (sp, idx) {
+    var domToData = []
+    existing.forEach(function (item, dataIdx) {
+      domToData.push({ dataIdx: dataIdx, isMirrorRight: false })
+      if (_isMirrorFlag(item.mirror)) {
+        domToData.push({ dataIdx: dataIdx, isMirrorRight: true })
+      }
+    })
+
+    // Bind cada hotspot DOM
+    spots.forEach(function (sp, domIdx) {
       if (sp.__calBound) return
       sp.__calBound = true
-      // pointer down → começa drag
+
+      var mapping = domToData[domIdx] || { dataIdx: domIdx, isMirrorRight: false }
+
       sp.addEventListener('pointerdown', function (e) {
         if (!_state.active) return
-        e.preventDefault()
-        e.stopPropagation()
+        e.preventDefault(); e.stopPropagation()
         sp.setPointerCapture(e.pointerId)
-        _state.dragging = { hotspotEl: sp, idx: idx, pointerId: e.pointerId }
+        _state.dragging = { hotspotEl: sp, mapping: mapping, pointerId: e.pointerId }
         sp.classList.add('is-dragging')
       })
       sp.addEventListener('pointermove', function (e) {
@@ -91,32 +128,45 @@
         y = Math.max(0, Math.min(100, y))
         sp.style.left = x + '%'
         sp.style.top  = y + '%'
+        // Live mirror · se item é bilateral, espelha o irmão visualmente em tempo real
+        var areasNow = _readAreas()
+        var item = areasNow[mapping.dataIdx]
+        if (item && _isMirrorFlag(item.mirror)) {
+          var partner = _findMirrorPartner(spots, sp)
+          if (partner) {
+            partner.style.left = (100 - x) + '%'
+            partner.style.top  = y + '%'
+          }
+        }
       })
       sp.addEventListener('pointerup', function (e) {
         if (!_state.dragging || _state.dragging.hotspotEl !== sp) return
         sp.releasePointerCapture(e.pointerId)
         sp.classList.remove('is-dragging')
-        // Lê coord final + commita no state
         var x = parseFloat(sp.style.left)
         var y = parseFloat(sp.style.top)
         var areas = _readAreas()
-        if (areas[idx]) {
-          areas[idx] = Object.assign({}, areas[idx], {
-            x: x.toFixed(1),
+        var item = areas[mapping.dataIdx]
+        if (item) {
+          // Se arrastou o lado DIREITO de um par mirror, normaliza salvando como
+          // anchor esquerdo (x = 100 - x); renderer recria o espelho automaticamente
+          var saveX = mapping.isMirrorRight ? (100 - x) : x
+          areas[mapping.dataIdx] = Object.assign({}, item, {
+            x: saveX.toFixed(1),
             y: y.toFixed(1),
           })
           _writeAreas(areas)
+        } else {
+          console.warn('[aq-calibrate] item não encontrado · dataIdx=', mapping.dataIdx, 'areas=', areas)
         }
         _state.dragging = null
       })
-      // Right-click ou shift+click → remove
       sp.addEventListener('contextmenu', function (e) {
         if (!_state.active) return
-        e.preventDefault()
-        e.stopPropagation()
+        e.preventDefault(); e.stopPropagation()
         if (!confirm('Remover este ponto?')) return
         var areas = _readAreas()
-        areas.splice(idx, 1)
+        areas.splice(mapping.dataIdx, 1)
         _writeAreas(areas)
       })
     })
@@ -126,19 +176,11 @@
       _state.pane.__calClickBound = true
       _state.pane.addEventListener('click', function (e) {
         if (!_state.active) return
-        // ignora clicks em hotspots existentes (eles têm seus próprios handlers)
         if (e.target.closest('.aq-hotspot')) return
         var rect = _state.pane.getBoundingClientRect()
         var x = ((e.clientX - rect.left) / rect.width) * 100
         var y = ((e.clientY - rect.top)  / rect.height) * 100
         var areas = _readAreas()
-        // Se vazio · semeia com defaults primeiro pra preservar o que existe
-        if (!areas.length) {
-          var defaults = (_state.view === 'side')
-            ? _seedFromDefaults('side')
-            : _seedFromDefaults('front')
-          areas = defaults
-        }
         areas.push({
           label:    'Nova área ' + (areas.length + 1),
           protocol: 'Configurar protocolo',
@@ -152,24 +194,36 @@
   }
 
   // Semeia a lista de áreas do user com os defaults da vista
-  // (chamado quando user adiciona ponto numa lista vazia)
+  // Pares bilaterais → 1 item com mirror=1 (renderer cria os 2 hotspots)
   function _seedFromDefaults(view) {
     if (!window.LPBBlockAnatomyQuiz) return []
-    // Acessamos AREAS_FRONT/SIDE só se exposto; senão retornamos vazio
     var src = (view === 'side') ? LPBBlockAnatomyQuiz.AREAS_SIDE : LPBBlockAnatomyQuiz.AREAS_FRONT
     if (!src) return []
     var out = []
     Object.keys(src).forEach(function (key) {
       var a = src[key]
-      ;(a.hotspots || []).forEach(function (pt, i) {
+      var pts = a.hotspots || []
+      if (pts.length === 2) {
+        // Bilateral · pega o ponto da esquerda (menor x) como anchor + mirror=1
+        var sorted = pts.slice().sort(function (p, q) { return p[0] - q[0] })
         out.push({
-          label:    a.label + (a.hotspots.length > 1 ? ' (' + (i === 0 ? 'esq' : 'dir') + ')' : ''),
+          label:    a.label,
           protocol: a.protocol,
-          x:        pt[0].toString(),
-          y:        pt[1].toString(),
-          mirror:   '',
+          x:        sorted[0][0].toString(),
+          y:        sorted[0][1].toString(),
+          mirror:   '1',
         })
-      })
+      } else {
+        pts.forEach(function (pt) {
+          out.push({
+            label:    a.label,
+            protocol: a.protocol,
+            x:        pt[0].toString(),
+            y:        pt[1].toString(),
+            mirror:   '',
+          })
+        })
+      }
     })
     return out
   }
