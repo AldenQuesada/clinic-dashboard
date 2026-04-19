@@ -92,7 +92,7 @@
     var headline    = p.headline    || 'Onde você quer mais cuidado?'
     var subtitle    = p.subtitle    || 'Toque nas áreas do rosto · receba um protocolo personalizado da Dra. Mirian'
     var ctaLabel    = p.cta_label   || 'Ver meu protocolo'
-    var successText = p.success_text || 'Recebemos. A Dra. Mirian vai entrar em contato no WhatsApp em breve.'
+    var successText = p.success_text || 'Obrigada [nome] · já recebi suas respostas aqui e alguém da minha equipe vai te chamar na sequência. Beijos, Mirian.'
     var uid         = _uid()
 
     // areasAttr montado DEPOIS do _resolveAreas (mais abaixo · usa areasMerged)

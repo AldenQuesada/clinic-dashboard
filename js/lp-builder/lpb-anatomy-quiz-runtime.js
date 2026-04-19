@@ -429,7 +429,11 @@
           count: state.selected.length,
           has_name: !!name,
         })
-        _showSuccess(overlay)
+        // Substitui [nome] no success_text com o nome real (ou vazio)
+        var rawSuccess = rootEl.getAttribute('data-success') || ''
+        var firstName = (name || '').split(' ')[0]
+        var personalized = rawSuccess.replace(/\[nome\]/gi, firstName ? ' ' + firstName : '')
+        _showSuccess(overlay, personalized || null)
       }).catch(function (err) {
         if (submitBtn) {
           submitBtn.disabled = false
