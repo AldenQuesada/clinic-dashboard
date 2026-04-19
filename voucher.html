@@ -6,109 +6,254 @@
 <title>Voucher — Clínica Mirian de Paula</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&family=Pinyon+Script&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg-0:#0F0D0A; --bg-1:#1A1713; --bg-2:#211D17;
-    --champagne:#C9A96E; --champagne-light:#DFC5A0;
-    --ivory:#F5F0E8; --text-muted:#7A7165;
-    --border:rgba(201,169,110,0.2);
-    --red:#D97A7A;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ════════ Tema DARK (padrão) ════════ */
+  body[data-theme="dark"] {
+    --bg-outer: #0F0D0A;
+    --bg-card: #141210;
+    --ink: #F5F0E8;
+    --ink-soft: #A89680;
+    --accent: #C9A96E;
+    --accent-soft: #DFC5A0;
+    --line: rgba(201,169,110,0.35);
+    --line-strong: rgba(201,169,110,0.6);
+    --btn-bg: #C9A96E;
+    --btn-ink: #0F0D0A;
+    --btn-bg-hover: #DFC5A0;
+    --pill-redeemed-bg: rgba(16,185,129,0.1);
+    --pill-redeemed-ink: #10B981;
+    --pill-error-bg: rgba(217,122,122,0.1);
+    --pill-error-ink: #D97A7A;
   }
-  * { box-sizing:border-box; margin:0; padding:0; }
+
+  /* ════════ Tema LIGHT (paleta revista digital) ════════ */
+  body[data-theme="light"] {
+    --bg-outer: #F4F1EC;
+    --bg-card: #FFFFFF;
+    --ink: #1A1A1A;
+    --ink-soft: #8A8178;
+    --accent: #7A1F2B;
+    --accent-soft: #A8445C;
+    --line: rgba(122,31,43,0.35);
+    --line-strong: rgba(122,31,43,0.55);
+    --btn-bg: #1A1A1A;
+    --btn-ink: #F4F1EC;
+    --btn-bg-hover: #7A1F2B;
+    --pill-redeemed-bg: rgba(16,185,129,0.12);
+    --pill-redeemed-ink: #0A6E4A;
+    --pill-error-bg: rgba(151,27,47,0.1);
+    --pill-error-ink: #7A1F2B;
+  }
+
   body {
-    font-family:'Montserrat',sans-serif; font-weight:300;
-    background:linear-gradient(135deg, var(--bg-0) 0%, var(--bg-1) 100%);
-    color:var(--ivory); min-height:100vh;
-    display:flex; align-items:center; justify-content:center; padding:24px;
-    line-height:1.6;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    background: var(--bg-outer); color: var(--ink);
+    min-height: 100vh; padding: 40px 20px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 400ms ease, color 400ms ease;
   }
+
   .voucher-card {
-    background:var(--bg-1); border:1px solid var(--border); border-radius:12px;
-    max-width:520px; width:100%; padding:48px 40px; text-align:center;
-    box-shadow:0 24px 72px rgba(0,0,0,0.4);
-    position:relative; overflow:hidden;
+    background: var(--bg-card);
+    max-width: 560px; width: 100%;
+    padding: 56px 48px 48px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    position: relative;
+    text-align: center;
+    transition: background 400ms ease, border-color 400ms ease;
   }
-  .voucher-card::before {
-    content:""; position:absolute; top:0; left:0; right:0; height:4px;
-    background:linear-gradient(90deg, var(--champagne-light), var(--champagne), var(--champagne-light));
+  @media (max-width: 520px) {
+    .voucher-card { padding: 40px 28px 32px; }
   }
-  .eyebrow {
-    font-size:10px; letter-spacing:4px; text-transform:uppercase;
-    color:var(--champagne); font-weight:500;
+
+  /* ────── Ornamento floral (topo/baixo) ────── */
+  .ornament {
+    display: block;
+    width: 180px; height: 28px;
+    margin: 0 auto 40px;
+    color: var(--accent);
+    opacity: 0;
+    animation: ornament-draw 1200ms ease-out 100ms forwards;
   }
-  .recipient {
-    font-family:'Cormorant Garamond', serif; font-size:42px; font-weight:300;
-    margin:24px 0 12px; color:var(--ivory); line-height:1.1;
+  .ornament.ornament-bottom {
+    margin: 36px auto 0;
+    animation-delay: 900ms;
   }
-  .recipient em { font-style:italic; color:var(--champagne); }
-  .slogan {
-    font-family:'Cormorant Garamond', serif; font-style:italic;
-    font-size:18px; color:var(--champagne-light);
-    margin:16px 0 28px; padding:16px 20px;
-    border-left:2px solid var(--champagne); background:var(--bg-2);
-    text-align:left;
+  .ornament path, .ornament line {
+    stroke: currentColor; stroke-width: 0.6; fill: none;
+    stroke-dasharray: 300; stroke-dashoffset: 300;
+    animation: line-draw 1400ms ease-out 200ms forwards;
   }
-  .combo-box {
-    background:var(--bg-2); border:1px solid var(--border); border-radius:8px;
-    padding:20px; margin:24px 0; text-align:center;
+  .ornament.ornament-bottom path, .ornament.ornament-bottom line {
+    animation-delay: 1000ms;
+  }
+  .ornament circle, .ornament .dot { fill: currentColor; opacity: 0;
+    animation: dot-fade 600ms ease 1100ms forwards; }
+  .ornament.ornament-bottom circle, .ornament.ornament-bottom .dot {
+    animation-delay: 1800ms;
+  }
+
+  @keyframes ornament-draw { to { opacity: 1; } }
+  @keyframes line-draw { to { stroke-dashoffset: 0; } }
+  @keyframes dot-fade { to { opacity: 1; } }
+
+  /* ────── Cabeçalho dinâmico ────── */
+  .header-partners {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic; font-size: 18px; font-weight: 400;
+    color: var(--accent); letter-spacing: 1.2px;
+    margin-bottom: 56px;
+    opacity: 0; transform: translateY(8px);
+    animation: fade-up 900ms ease 300ms forwards;
+  }
+  .header-partners .amp { font-style: normal; margin: 0 4px; opacity: 0.75; }
+
+  /* ────── Título sobreposto: Voucher + PRESENTE ────── */
+  .title-stack {
+    position: relative;
+    display: inline-block;
+    padding: 18px 40px 6px;
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fade-up 900ms ease 550ms forwards;
+  }
+  .title-serif {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 62px; font-weight: 300;
+    letter-spacing: 8px; text-transform: uppercase;
+    color: var(--ink); line-height: 1;
+    position: relative; z-index: 1;
+  }
+  .title-script {
+    font-family: 'Pinyon Script', cursive;
+    font-size: 78px; font-weight: 400;
+    color: var(--accent); line-height: 1;
+    position: absolute;
+    top: 0;
+    left: 18%;
+    transform: translate(-50%, -30%) rotate(-6deg);
+    z-index: 2;
+    white-space: nowrap;
+    text-shadow: 0 1px 0 var(--bg-card);
+  }
+  @media (max-width: 520px) {
+    .title-serif { font-size: 42px; letter-spacing: 6px; }
+    .title-script { font-size: 56px; left: 22%; }
+    .title-stack { padding: 14px 20px 6px; }
+  }
+
+  /* ────── Destinatária ────── */
+  .recipient-label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; letter-spacing: 3.5px;
+    text-transform: uppercase; color: var(--ink-soft);
+    font-weight: 400; margin-bottom: 6px;
+    opacity: 0; animation: fade-up 800ms ease 750ms forwards;
+  }
+  .recipient-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 17px; letter-spacing: 5px;
+    text-transform: uppercase; color: var(--ink);
+    font-weight: 500; margin-bottom: 36px;
+    opacity: 0; animation: fade-up 800ms ease 900ms forwards;
+  }
+
+  /* ────── Combo ────── */
+  .combo-wrap {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 20px 10px;
+    margin: 0 auto 32px;
+    max-width: 380px;
+    opacity: 0; animation: fade-up 800ms ease 1050ms forwards;
   }
   .combo-label {
-    font-size:9px; letter-spacing:2px; text-transform:uppercase;
-    color:var(--text-muted); font-weight:600; margin-bottom:8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 10px;
   }
   .combo-value {
-    font-family:'Cormorant Garamond', serif; font-size:24px; color:var(--champagne);
-    font-weight:400;
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic; font-size: 22px; font-weight: 400;
+    color: var(--accent);
   }
   .validity {
-    font-size:11px; color:var(--text-muted); margin-top:16px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--ink-soft);
+    margin-top: 10px;
   }
+
+  /* ────── CTA ────── */
   .cta {
-    display:inline-block; margin-top:24px;
-    background:var(--champagne); color:var(--bg-0);
-    padding:14px 36px; border-radius:6px; text-decoration:none;
-    font-weight:600; font-size:13px; letter-spacing:1px; text-transform:uppercase;
-    transition:background 0.2s;
+    display: inline-block;
+    padding: 16px 44px;
+    background: var(--btn-bg); color: var(--btn-ink);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase;
+    text-decoration: none; border-radius: 3px;
+    transition: background 240ms ease, transform 240ms ease;
+    opacity: 0; animation: fade-up 800ms ease 1200ms forwards;
   }
-  .cta:hover { background:var(--champagne-light); }
-  .signature {
-    margin-top:36px; padding-top:24px; border-top:1px solid var(--border);
-    font-family:'Cormorant Garamond', serif; font-style:italic;
-    color:var(--champagne-light); font-size:14px;
-  }
-  .token { font-family:monospace; font-size:11px; color:var(--text-muted); margin-top:12px; }
-  .tts-btn {
-    display:inline-flex; align-items:center; gap:8px;
-    margin-top:18px; padding:10px 22px;
-    background:transparent; color:var(--champagne-light);
-    border:1px solid var(--border); border-radius:20px;
-    font-family:'Montserrat',sans-serif; font-size:11px;
-    letter-spacing:1.5px; text-transform:uppercase; font-weight:500;
-    cursor:pointer; transition:all 180ms ease;
-  }
-  .tts-btn:hover { border-color:var(--champagne); color:var(--champagne); background:rgba(201,169,110,0.05); }
-  .tts-btn.playing { color:var(--champagne); border-color:var(--champagne); background:rgba(201,169,110,0.08); }
-  .tts-btn .tts-icon { font-size:14px; line-height:1; }
-  .tts-btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .cta:hover { background: var(--btn-bg-hover); transform: translateY(-1px); }
+
+  /* ────── Pílula de status + TTS + token ────── */
   .status-pill {
-    display:inline-block; padding:3px 12px; font-size:10px; letter-spacing:1px;
-    text-transform:uppercase; border-radius:10px; margin-bottom:12px; font-weight:600;
+    display: inline-block; padding: 5px 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    border-radius: 16px; margin-bottom: 22px; font-weight: 600;
   }
-  .status-redeemed { color:#10B981; border:1px solid rgba(16,185,129,0.4); background:rgba(16,185,129,0.08); }
-  .status-expired,.status-cancelled { color:var(--red); border:1px solid rgba(217,122,122,0.4); background:rgba(217,122,122,0.08); }
+  .status-redeemed { background: var(--pill-redeemed-bg); color: var(--pill-redeemed-ink); }
+  .status-expired, .status-cancelled { background: var(--pill-error-bg); color: var(--pill-error-ink); }
+
+  .tts-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 18px; padding: 10px 20px;
+    background: transparent; color: var(--accent);
+    border: 1px solid var(--line); border-radius: 20px;
+    font-family: 'Montserrat', sans-serif; font-size: 10px;
+    letter-spacing: 2.5px; text-transform: uppercase; font-weight: 500;
+    cursor: pointer; transition: all 200ms ease;
+    opacity: 0; animation: fade-up 800ms ease 1350ms forwards;
+  }
+  .tts-btn:hover { border-color: var(--accent); color: var(--accent-soft); }
+  .tts-btn.playing { color: var(--accent); border-color: var(--line-strong); }
+  .tts-btn .tts-icon { font-size: 13px; line-height: 1; }
+
+  .token {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; letter-spacing: 2.5px;
+    color: var(--ink-soft); margin-top: 28px;
+    opacity: 0; animation: fade-up 800ms ease 1450ms forwards;
+  }
+
+  /* ────── Estados vazios ────── */
   .error-msg {
-    font-size:14px; color:var(--red); padding:20px; text-align:center;
+    font-size: 15px; color: var(--pill-error-ink);
+    padding: 24px; text-align: center;
   }
   .loading {
-    font-size:12px; color:var(--text-muted); text-align:center; padding:40px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--ink-soft); text-align: center; padding: 60px 20px;
+  }
+
+  /* ────── Utilities ────── */
+  @keyframes fade-up {
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 </head>
-<body>
+<body data-theme="dark">
 
 <div id="voucherCard" class="voucher-card">
-  <div class="loading">Carregando…</div>
+  <div class="loading">Carregando voucher…</div>
 </div>
 
 <script src="js/config/env.js"></script>
@@ -118,18 +263,47 @@
 <script>
 ;(function () {
   'use strict'
+
+  // SVG ornamento decorativo — flourish simétrico
+  var ORNAMENT_SVG =
+    '<svg class="ornament" viewBox="0 0 180 28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      // Linha principal com curvas
+      '<path d="M8 14 C 26 14, 28 4, 48 14 S 72 14, 82 14"/>' +
+      '<path d="M172 14 C 154 14, 152 4, 132 14 S 108 14, 98 14"/>' +
+      // Laço/coração central (duas curvas entrelaçadas)
+      '<path d="M82 14 C 82 9, 86 6, 90 10 C 94 6, 98 9, 98 14 C 98 19, 92 22, 90 22 C 88 22, 82 19, 82 14 Z"/>' +
+      // Pequenos pontos decorativos
+      '<circle class="dot" cx="4" cy="14" r="1.2"/>' +
+      '<circle class="dot" cx="176" cy="14" r="1.2"/>' +
+      '<circle class="dot" cx="90" cy="14" r="1"/>' +
+    '</svg>'
+
+  var ORNAMENT_BOTTOM = ORNAMENT_SVG.replace('class="ornament"', 'class="ornament ornament-bottom"')
+
   function _q() {
     var p = new URLSearchParams(location.search)
     return p.get('t') || p.get('token')
+  }
+  function _themeOverride() {
+    var p = new URLSearchParams(location.search)
+    var t = (p.get('theme') || '').toLowerCase()
+    return (t === 'dark' || t === 'light') ? t : null
   }
   function _esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
     })
   }
-  function _firstName(full) {
-    if (!full) return ''
-    return String(full).trim().split(/\s+/)[0] || ''
+  function _upper(s) { return String(s == null ? '' : s).toUpperCase() }
+  function _firstNameFull(s) {
+    if (!s) return ''
+    return String(s).trim().replace(/\s*\(teste\)\s*$/i, '').trim()
+  }
+  function _fmtCombo(c) {
+    if (!c) return '—'
+    return String(c).replace(/[_]+/g, ' ').replace(/\s*\+\s*/g, ' · ')
+      .replace(/\s+/g, ' ').trim()
+      .replace(/\b\w/g, function (ch) { return ch.toUpperCase() })
   }
   function _fmtDate(iso) {
     if (!iso) return '—'
@@ -137,7 +311,6 @@
     catch (_) { return iso }
   }
   function _waUrl(partnershipName) {
-    // CTA genérico — usa o número de contato da clínica (env) ou fallback
     var phone = (window.ClinicEnv && (window.ClinicEnv.CLINIC_WA || window.ClinicEnv.CLINIC_PHONE)) || ''
     var msg = 'Olá! Vim pelo voucher da parceria ' + (partnershipName || 'Clínica Mirian') + '. Gostaria de agendar minha avaliação.'
     return phone
@@ -145,7 +318,7 @@
       : 'https://wa.me/?text=' + encodeURIComponent(msg)
   }
 
-  // ═══════ Voucher falado (WOW #6) ═══════
+  // ════════ TTS (WOW #6) ════════
   function _ttsAvailable() {
     return 'speechSynthesis' in window && typeof SpeechSynthesisUtterance === 'function'
   }
@@ -153,7 +326,6 @@
     if (!_ttsAvailable()) return null
     var voices = window.speechSynthesis.getVoices() || []
     if (!voices.length) return null
-    // Preferência: feminina pt-BR natural
     var pt = voices.filter(function (v) { return /pt[-_]?BR/i.test(v.lang) })
     if (!pt.length) pt = voices.filter(function (v) { return /^pt/i.test(v.lang) })
     if (!pt.length) return voices[0]
@@ -164,104 +336,116 @@
   }
   function _speakVoucher(v, btn) {
     if (!_ttsAvailable()) return
-    // Se já está falando, interrompe
     if (window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel()
       if (btn) { btn.classList.remove('playing'); btn.querySelector('.tts-icon').textContent = '▶' }
       return
     }
-
-    var nome = v.recipient_name ? _firstName(v.recipient_name) : 'você'
+    var nome = v.recipient_name ? _firstNameFull(v.recipient_name).split(/\s+/)[0] : 'você'
     var p = v.partnership || {}
     var parceira = p.name || 'nossa parceira'
-    var combo = v.combo || 'um cuidado especial'
-
-    var frase = 'Oi ' + nome + '. ' +
-      'Aqui é Mirian de Paula. Em parceria com ' + parceira + ', ' +
-      'reservei para você ' + combo.replace(/[_\+]/g, ' ') + '. ' +
+    var combo = _fmtCombo(v.combo)
+    var frase = 'Oi ' + nome + '. Aqui é Mirian de Paula. ' +
+      'Em parceria com ' + parceira + ', reservei para você ' + combo + '. ' +
       'Vem viver esse cuidado comigo. Será uma alegria te receber.'
 
-    // Lazy load das vozes (Chrome precisa de um warm-up)
     var go = function () {
       var voice = _pickPtVoice()
       var utt = new SpeechSynthesisUtterance(frase)
       if (voice) utt.voice = voice
       utt.lang = (voice && voice.lang) || 'pt-BR'
-      utt.rate = 0.92
-      utt.pitch = 1.05
-      utt.volume = 1
-
-      utt.onstart = function () {
-        if (btn) { btn.classList.add('playing'); btn.querySelector('.tts-icon').textContent = '■' }
-      }
-      utt.onend = utt.onerror = function () {
-        if (btn) { btn.classList.remove('playing'); btn.querySelector('.tts-icon').textContent = '▶' }
-      }
-
+      utt.rate = 0.92; utt.pitch = 1.05; utt.volume = 1
+      utt.onstart = function () { if (btn) { btn.classList.add('playing'); btn.querySelector('.tts-icon').textContent = '■' } }
+      utt.onend = utt.onerror = function () { if (btn) { btn.classList.remove('playing'); btn.querySelector('.tts-icon').textContent = '▶' } }
       window.speechSynthesis.speak(utt)
     }
-
-    // Warm-up vozes se ainda não populou
-    if (window.speechSynthesis.getVoices().length) {
-      go()
-    } else {
+    if (window.speechSynthesis.getVoices().length) go()
+    else {
       window.speechSynthesis.onvoiceschanged = go
-      // Fallback: dispara igual depois de 300ms (Safari)
       setTimeout(go, 300)
     }
   }
 
+  // ════════ Render ════════
+  function _applyTheme(theme) {
+    var override = _themeOverride()
+    var t = override || theme || 'dark'
+    if (t !== 'dark' && t !== 'light') t = 'dark'
+    document.body.setAttribute('data-theme', t)
+  }
+
   function _renderError(msg) {
     document.getElementById('voucherCard').innerHTML =
-      '<div class="eyebrow">Voucher</div>' +
-      '<div class="recipient"><em>não disponível</em></div>' +
-      '<div class="error-msg">' + _esc(msg) + '</div>'
+      ORNAMENT_SVG +
+      '<div class="header-partners"><em>Clínica Mirian de Paula</em></div>' +
+      '<div class="error-msg">' + _esc(msg) + '</div>' +
+      ORNAMENT_BOTTOM
   }
 
   function _renderVoucher(v) {
+    _applyTheme(v.theme)
+
     var p = v.partnership || {}
-    var slogan = (Array.isArray(p.slogans) && p.slogans.length) ? p.slogans[0] : ''
     var statusPill = ''
     var ctaDisabled = false
-
-    if (v.status === 'redeemed')  { statusPill = '<span class="status-pill status-redeemed">Voucher já utilizado</span>'; ctaDisabled = true }
+    if (v.status === 'redeemed')  { statusPill = '<span class="status-pill status-redeemed">Voucher já utilizado</span>';  ctaDisabled = true }
     if (v.status === 'expired')   { statusPill = '<span class="status-pill status-expired">Voucher expirado</span>';   ctaDisabled = true }
     if (v.status === 'cancelled') { statusPill = '<span class="status-pill status-cancelled">Voucher cancelado</span>'; ctaDisabled = true }
 
+    var recipient = v.recipient_name ? _upper(_firstNameFull(v.recipient_name)) : 'VOCÊ'
+
     document.getElementById('voucherCard').innerHTML =
-      '<div class="eyebrow">Clínica Mirian de Paula</div>' +
-      '<div class="recipient">Para ' + (v.recipient_name ? _esc(_firstName(v.recipient_name)) : '<em>você</em>') + '</div>' +
-      (statusPill || '') +
-      (slogan ? '<div class="slogan">' + _esc(slogan) + '</div>' : '') +
-      '<div class="combo-box">' +
-        '<div class="combo-label">Você recebeu</div>' +
-        '<div class="combo-value">' + _esc(v.combo) + '</div>' +
-        '<div class="validity">Válido até ' + _fmtDate(v.valid_until) + '</div>' +
+      ORNAMENT_SVG +
+
+      '<div class="header-partners">' +
+        _esc(p.name || 'Parceira') +
+        '<span class="amp">&amp;</span>' +
+        '<em>Mirian de Paula</em>' +
       '</div>' +
+
+      (statusPill || '') +
+
+      '<div class="title-stack">' +
+        '<span class="title-script">Voucher</span>' +
+        '<div class="title-serif">Presente</div>' +
+      '</div>' +
+
+      '<div class="recipient-label">Exclusivo para</div>' +
+      '<div class="recipient-name">' + _esc(recipient) + '</div>' +
+
+      '<div class="combo-wrap">' +
+        '<div class="combo-label">Você recebeu</div>' +
+        '<div class="combo-value">' + _esc(_fmtCombo(v.combo)) + '</div>' +
+        '<div class="validity">Válido até ' + _esc(_fmtDate(v.valid_until)) + '</div>' +
+      '</div>' +
+
       (!ctaDisabled
-        ? '<a href="' + _waUrl(p.name) + '" class="cta" target="_blank">Agendar minha avaliação</a>'
+        ? '<a href="' + _waUrl(p.name) + '" class="cta" target="_blank" rel="noopener">Agendar minha avaliação</a>'
         : '') +
+
       (_ttsAvailable() && !ctaDisabled
         ? '<div><button type="button" class="tts-btn" id="ttsBtn">' +
             '<span class="tts-icon">▶</span>' +
             '<span>Ouvir mensagem da Mirian</span>' +
           '</button></div>'
         : '') +
-      '<div class="signature">— Mirian de Paula & ' + _esc(p.name || '') + '</div>' +
-      '<div class="token">#' + _esc(v.token) + '</div>'
 
-    // Voucher falado (WOW #6) — bind no botão
+      '<div class="token">#' + _esc(v.token) + '</div>' +
+
+      ORNAMENT_BOTTOM
+
     var ttsBtn = document.getElementById('ttsBtn')
-    if (ttsBtn) {
-      ttsBtn.addEventListener('click', function () { _speakVoucher(v, ttsBtn) })
-    }
+    if (ttsBtn) ttsBtn.addEventListener('click', function () { _speakVoucher(v, ttsBtn) })
   }
 
   async function boot() {
     var token = _q()
     if (!token) return _renderError('Voucher sem identificação. Verifique o link recebido.')
 
-    // Espera _sbShared
+    // Aplica theme via query antes mesmo de carregar (evita flash)
+    var override = _themeOverride()
+    if (override) document.body.setAttribute('data-theme', override)
+
     if (!window._sbShared) { setTimeout(boot, 200); return }
 
     try {
