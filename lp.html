@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carregando...</title>
+<meta name="theme-color" content="#FEFCF8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="dns-prefetch" href="https://oqboitkpcvuaudouwvkl.supabase.co">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="css/lp-shared.css">
+<link rel="stylesheet" href="css/lp-shared.css">
+<link rel="stylesheet" href="css/lp-blocks.css">
+<style>
+  /* Loader inicial — antes do schema chegar */
+  .lp-loader {
+    min-height: 60vh;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    gap: 16px;
+  }
+  .lp-loader-spinner {
+    width: 28px; height: 28px;
+    border: 2px solid var(--bege);
+    border-top-color: var(--champagne);
+    border-radius: 50%;
+    animation: lp-spin .7s linear infinite;
+  }
+  .lp-loader-text {
+    font-family: 'Montserrat', sans-serif; font-size: 11px;
+    letter-spacing: 4px; text-transform: uppercase; color: var(--champagne-dk);
+  }
+  @keyframes lp-spin { to { transform: rotate(360deg); } }
+
+  .lp-error {
+    min-height: 70vh;
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    gap: 14px; text-align: center; padding: 40px 24px;
+  }
+  .lp-error h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px; font-weight: 300; font-style: italic; color: var(--graphite);
+  }
+  .lp-error p { font-size: 13px; color: var(--graphite-mute); max-width: 380px; }
+
+  /* A11y · skip link (WCAG 2.4.1) */
+  .lp-skip {
+    position: absolute; left: -9999px; top: 0;
+    background: #2C2C2C; color: #fff; padding: 10px 16px;
+    font-family: 'Montserrat', sans-serif; font-size: 12px; letter-spacing: 1px;
+    text-transform: uppercase; text-decoration: none; z-index: 10000;
+  }
+  .lp-skip:focus {
+    left: 12px; top: 12px;
+    outline: 2px solid var(--champagne); outline-offset: 2px;
+  }
+  /* Focus visible global (WCAG 2.4.7) */
+  *:focus-visible {
+    outline: 2px solid var(--champagne, #C8A97E);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<a href="#lpRoot" class="lp-skip">Pular para o conteúdo</a>
+
+<div id="lpRoot" tabindex="-1">
+  <!-- Conteúdo entra após renderPage · splash editorial cobre o lpRoot até lá -->
+</div>
+
+<!-- Block-level scoped styles (ajustes por bloco feitos no editor) -->
+<style id="lp-block-styles"></style>
+
+<!-- lp-shared: attribution, WA, reveal -->
+<script src="js/lp-shared.js"></script>
+<!-- LPBlocks: interações dos blocos avançados (slider antes/depois etc.) -->
+<script src="js/lp-blocks.js"></script>
+<!-- BlockStyle generator + i18n (reusa o mesmo do editor) -->
+<script src="js/lp-builder/lpb-schema.js"></script>
+<script src="js/lp-builder/lpb-block-style.js"></script>
+<script src="js/lp-builder/lpb-i18n.js"></script>
+<script src="js/lp-builder/lpb-seo-schema.js"></script>
+<script src="js/lp-builder/lpb-lgpd-engine.js"></script>
+<script src="js/lp-builder/lpb-lgpd-banner.js"></script>
+<!-- Onda 24/25: trackers cross-LP + heatmap -->
+<script src="js/lp-builder/lpb-journey-engine.js"></script>
+<script src="js/lp-builder/lpb-journey-tracker.js"></script>
+<script src="js/lp-builder/lpb-heatmap-engine.js"></script>
+<script src="js/lp-builder/lpb-heatmap-tracker.js"></script>
+<!-- Onda 28: page transition (splash editorial · estilo revista) -->
+<script src="js/lp-builder/lpb-page-transition.js"></script>
+<!-- Onda 28: blocos do legado completos -->
+<script src="js/lp-builder/lpb-social-icons.js"></script>
+<script src="js/lp-builder/lpb-button-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-links-tree.js"></script>
+<script src="js/lp-builder/lpb-block-ba-carousel.js"></script>
+<script src="js/lp-builder/lpb-block-footer.js"></script>
+<script src="js/lp-builder/lpb-block-hero-cover.js"></script>
+<script src="js/lp-builder/lpb-block-cta-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-badges-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-price-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-divider-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-title-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-check-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-buttons-row.js"></script>
+<script src="js/lp-builder/lpb-block-magazine-toc.js"></script>
+
+<!-- LP Renderer -->
+<script>
+(function () {
+  'use strict';
+
+  var SB_URL = 'https://oqboitkpcvuaudouwvkl.supabase.co';
+  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xYm9pdGtwY3Z1YXVkb3V3dmtsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NTgyMzQsImV4cCI6MjA5MDAzNDIzNH0.8d1HT8GTxIVsaTtl9eOiijDkWUVDLaTv2W4qahmI8w0';
+
+  // ────────────────────────────────────────────────────────────
+  // Helpers
+  // ────────────────────────────────────────────────────────────
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
+  }
+  // Markdown leve: *bold*, _italic_, quebras de linha
+  function richtext(s) {
+    if (s == null) return '';
+    return esc(s)
+      .replace(/\*([^*]+)\*/g, '<em style="color:var(--champagne-dk)">$1</em>')
+      .replace(/_([^_]+)_/g,   '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function rpc(name, params) {
+    return fetch(SB_URL + '/rest/v1/rpc/' + name, {
+      method: 'POST',
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params || {})
+    }).then(function (r) { return r.json(); });
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // A/B split: se page tem ab_variant_slug e URL não força, faz 50/50
+  // Persiste decisão por sessão (mesmo user vê sempre mesma variant).
+  // Retorna true se redirecionou (page render abortado).
+  // ────────────────────────────────────────────────────────────
+  function maybeRedirectAbVariant(data) {
+    if (!data.ab_variant_slug) return false;
+    var qs = new URLSearchParams(window.location.search);
+    if (qs.get('ab') === '0' || qs.get('ab') === 'a') return false; // forçou A
+    if (qs.get('ab') === 'b') {
+      _swapSlug(data.ab_variant_slug);
+      return true;
+    }
+    var key = 'lp_ab_' + (data.slug || '');
+    var stored = null;
+    try { stored = sessionStorage.getItem(key); } catch (_) {}
+    if (stored === 'b') { _swapSlug(data.ab_variant_slug); return true; }
+    if (stored === 'a') return false;
+    // primeira visita: 50/50
+    var roll = Math.random() < 0.5 ? 'a' : 'b';
+    try { sessionStorage.setItem(key, roll); } catch (_) {}
+    if (roll === 'b') { _swapSlug(data.ab_variant_slug); return true; }
+    return false;
+  }
+  function _swapSlug(newSlug) {
+    var u = new URL(window.location.href);
+    u.searchParams.set('s', newSlug);
+    u.searchParams.set('ab', 'b'); // marca pra evitar loop infinito
+    window.location.replace(u.toString());
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Inject tracking pixels (GA4, FB Pixel, GTM, custom HTML)
+  // ────────────────────────────────────────────────────────────
+  function injectTracking(tracking) {
+    if (!tracking || typeof tracking !== 'object') return;
+    var head = document.head;
+
+    // Google Analytics 4
+    if (tracking.ga4_id && /^G-[A-Z0-9]+$/i.test(tracking.ga4_id)) {
+      var s1 = document.createElement('script');
+      s1.async = true;
+      s1.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(tracking.ga4_id);
+      head.appendChild(s1);
+      var s2 = document.createElement('script');
+      s2.text = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','" + tracking.ga4_id + "');";
+      head.appendChild(s2);
+    }
+
+    // Facebook Pixel
+    if (tracking.fb_pixel_id && /^\d+$/.test(tracking.fb_pixel_id)) {
+      var s3 = document.createElement('script');
+      s3.text = "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','" + tracking.fb_pixel_id + "');fbq('track','PageView');";
+      head.appendChild(s3);
+    }
+
+    // Google Tag Manager
+    if (tracking.gtm_id && /^GTM-[A-Z0-9]+$/i.test(tracking.gtm_id)) {
+      var s4 = document.createElement('script');
+      s4.text = "(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','" + tracking.gtm_id + "');";
+      head.appendChild(s4);
+    }
+
+    // Custom HTML no head (avançado · usuário responsável pelo conteúdo)
+    if (tracking.custom_head_html && typeof tracking.custom_head_html === 'string') {
+      var div = document.createElement('div');
+      div.innerHTML = tracking.custom_head_html;
+      while (div.firstChild) head.appendChild(div.firstChild);
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Tokens override → CSS variables
+  // ────────────────────────────────────────────────────────────
+  function applyTokensOverride(overrides) {
+    if (!overrides || typeof overrides !== 'object') return;
+    var root = document.documentElement;
+    Object.keys(overrides).forEach(function (k) {
+      // ex: "colors.champagne" → "--color-champagne"
+      var parts = k.split('.');
+      var varName = '--' + parts.map(function (p) {
+        return p.replace(/([A-Z])/g, '-$1').toLowerCase();
+      }).join('-');
+      root.style.setProperty(varName, overrides[k]);
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Block renderers — um por tipo (mapeado a lp-shared.css)
+  // ────────────────────────────────────────────────────────────
+  var Blocks = {
+
+    'nav': function (b) {
+      var p = b.props || {};
+      var ctaHtml = '';
+      if (p.cta_enabled !== false && p.cta && p.cta.label) {
+        ctaHtml = '<a href="#" class="btn btn-outline btn-sm hide-mobile" '
+                + 'data-wa-message="' + esc(p.cta.message_wa || '') + '">'
+                + esc(p.cta.label) + '</a>';
+      }
+      return ''
+        + '<nav class="lp-nav">'
+        +   '<div class="lp-nav-inner">'
+        +     '<div class="brand">'
+        +       '<span class="brand-small">' + esc(p.brand_small || 'Clinica') + '</span>'
+        +       '<span class="brand-name">' + esc(p.brand_name || '') + '</span>'
+        +     '</div>'
+        +     ctaHtml
+        +   '</div>'
+        + '</nav>';
+    },
+
+    'hero-split': function (b) {
+      var p = b.props || {};
+      var ctas = '';
+      if (p.cta_primary && p.cta_primary.label) {
+        ctas += '<a href="#" class="btn btn-primary btn-large" '
+              + 'data-wa-message="' + esc(p.cta_primary.message_wa || '') + '">'
+              + esc(p.cta_primary.label) + '</a>';
+      }
+      if (p.cta_secondary && p.cta_secondary.label) {
+        var url = p.cta_secondary.url || '#como-funciona';
+        ctas += '<a href="' + esc(url) + '" class="btn btn-outline btn-large">'
+              + esc(p.cta_secondary.label) + '</a>';
+      }
+      var visual = p.visual_image
+        ? '<img src="' + esc(p.visual_image) + '" alt="" '
+          + 'style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
+        : '<div class="hero-visual-placeholder">' + esc(p.visual_placeholder || '') + '</div>';
+
+      return ''
+        + '<header class="hero">'
+        +   '<div class="container">'
+        +     '<div class="hero-grid">'
+        +       '<div class="hero-text">'
+        +         (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +         '<h1>' + richtext(p.h1 || '') + '</h1>'
+        +         (p.lead ? '<p class="lead">' + esc(p.lead) + '</p>' : '')
+        +         '<div class="hero-ctas">' + ctas + '</div>'
+        +       '</div>'
+        +       '<div class="hero-visual">' + visual + '</div>'
+        +     '</div>'
+        +   '</div>'
+        + '</header>';
+    },
+
+    'problema-center': function (b) {
+      var p = b.props || {};
+      var sectionClass = p.bg === 'bege' ? 'section-alt' : '';
+      return ''
+        + '<section class="' + sectionClass + '">'
+        +   '<div class="container-narrow text-center">'
+        +     (p.eyebrow ? '<div class="eyebrow reveal">' + esc(p.eyebrow) + '</div>' : '')
+        +     '<h2 class="reveal">' + esc(p.h2 || '') + '</h2>'
+        +     (p.lead ? '<p class="lead reveal" style="margin-top:28px">' + esc(p.lead) + '</p>' : '')
+        +   '</div>'
+        + '</section>';
+    },
+
+    'cards-2col': function (b) {
+      var p = b.props || {};
+      var sectionClass = p.bg === 'bege' ? 'section-alt' : '';
+      var introHtml = ''
+        + '<div class="block-intro reveal">'
+        +   (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +   '<h2>' + esc(p.h2 || '') + '</h2>'
+        +   (p.intro
+            ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">'
+              + esc(p.intro) + '</p>'
+            : '')
+        + '</div>';
+
+      var cards = (p.cards || []).map(function (c) {
+        var paragraphs = (c.paragrafos || []).map(function (par, i) {
+          return '<p' + (i === 0 ? ' style="margin-top:16px"' : '') + '>'
+               + richtext(par) + '</p>';
+        }).join('');
+        return ''
+          + '<div class="card reveal">'
+          +   (c.numero ? '<span class="card-num">' + esc(c.numero) + '</span>' : '')
+          +   (c.kicker ? '<h4>' + esc(c.kicker) + '</h4>' : '')
+          +   '<h3>' + esc(c.titulo || '') + '</h3>'
+          +   paragraphs
+          + '</div>';
+      }).join('');
+
+      return ''
+        + '<section class="' + sectionClass + '" id="como-funciona">'
+        +   '<div class="container">'
+        +     introHtml
+        +     '<div class="grid-2">' + cards + '</div>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'quote-narrative': function (b) {
+      var p = b.props || {};
+      var bgClass = p.bg === 'bege'  ? 'section-alt'
+                  : p.bg === 'ivory' ? ''
+                  : 'section-accent';
+      return ''
+        + '<section class="' + bgClass + '">'
+        +   '<div class="container-narrow">'
+        +     '<div class="quote-block reveal">'
+        +       '<blockquote>' + esc(p.quote || '') + '</blockquote>'
+        +     '</div>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'benefits-grid': function (b) {
+      var p = b.props || {};
+      var items = (p.items || []).map(function (it) {
+        return ''
+          + '<div class="benefit-item">'
+          +   (it.icon_svg || '<svg width="22" height="22"></svg>')
+          +   '<div>'
+          +     '<h4>' + esc(it.titulo || '') + '</h4>'
+          +     '<p>' + esc(it.desc || '') + '</p>'
+          +   '</div>'
+          + '</div>';
+      }).join('');
+      return ''
+        + '<section>'
+        +   '<div class="container">'
+        +     '<div class="block-intro reveal">'
+        +       (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +       '<h2>' + esc(p.h2 || '') + '</h2>'
+        +     '</div>'
+        +     '<div class="benefits reveal">' + items + '</div>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'investimento': function (b) {
+      var p = b.props || {};
+      var sectionClass = p.bg_section === 'ivory' ? '' : 'section-alt';
+      var ctaHtml = '';
+      if (p.cta && p.cta.label) {
+        ctaHtml = '<div style="margin-top:36px">'
+                + '<a href="#" class="btn btn-gold btn-large" '
+                + 'data-wa-message="' + esc(p.cta.message_wa || '') + '">'
+                + esc(p.cta.label) + '</a></div>';
+      }
+      return ''
+        + '<section class="' + sectionClass + '">'
+        +   '<div class="container-narrow">'
+        +     '<div class="investimento reveal">'
+        +       (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +       '<h2>' + esc(p.h2 || '') + '</h2>'
+        +       (p.valor ? '<div class="investimento-valor">' + esc(p.valor) + '</div>' : '')
+        +       (p.sub   ? '<div class="investimento-sub">' + esc(p.sub) + '</div>' : '')
+        +       (p.badge_text ? '<div class="cashback-badge">' + esc(p.badge_text) + '</div>' : '')
+        +       (p.descricao  ? '<p>' + esc(p.descricao) + '</p>' : '')
+        +       ctaHtml
+        +     '</div>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'list-rich': function (b) {
+      var p = b.props || {};
+      var items = (p.items || []).map(function (it, i, arr) {
+        var border = i === arr.length - 1 ? '' : 'border-bottom:1px solid var(--border-soft);';
+        return ''
+          + '<li class="reveal" style="padding:22px 0;' + border
+          + 'display:flex;gap:20px">'
+          +   '<span style="flex-shrink:0;width:8px;height:8px;background:var(--champagne);'
+          +     'transform:rotate(45deg);margin-top:10px"></span>'
+          +   '<div>'
+          +     '<h3 style="margin-bottom:6px">' + esc(it.titulo || '') + '</h3>'
+          +     '<p style="font-size:15px">' + esc(it.desc || '') + '</p>'
+          +   '</div>'
+          + '</li>';
+      }).join('');
+      return ''
+        + '<section>'
+        +   '<div class="container-narrow">'
+        +     '<div class="block-intro reveal">'
+        +       (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +       '<h2>' + esc(p.h2 || '') + '</h2>'
+        +     '</div>'
+        +     (p.intro ? '<p class="reveal">' + esc(p.intro) + '</p>' : '')
+        +     '<ul style="list-style:none;padding:0;margin:40px 0">' + items + '</ul>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'list-simple': function (b) {
+      var p = b.props || {};
+      var items = (p.items || []).map(function (it, i, arr) {
+        var border = i === arr.length - 1 ? '' : 'border-bottom:1px solid var(--border-soft);';
+        return ''
+          + '<li class="reveal" style="padding:18px 0;' + border
+          + 'display:flex;gap:16px;align-items:center">'
+          +   '<span style="flex-shrink:0;width:6px;height:6px;background:var(--champagne);'
+          +     'transform:rotate(45deg)"></span>'
+          +   '<span style="font-family:\'Cormorant Garamond\',serif;font-size:22px;'
+          +     'color:var(--graphite)">' + esc(it.texto || '') + '</span>'
+          + '</li>';
+      }).join('');
+      return ''
+        + '<section>'
+        +   '<div class="container-narrow">'
+        +     '<div class="block-intro reveal">'
+        +       (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +       '<h2>' + esc(p.h2 || '') + '</h2>'
+        +     '</div>'
+        +     '<ul style="list-style:none;padding:0">' + items + '</ul>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'doctor-block': function (b) {
+      var p = b.props || {};
+      var sectionClass = p.bg === 'ivory' ? '' : 'section-alt';
+      var photoHtml = p.foto
+        ? '<img src="' + esc(p.foto) + '" alt="" '
+          + 'style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">'
+        : '<div class="doctor-photo-initials">' + esc(p.foto_initial || 'M') + '</div>';
+      var paragraphs = (p.paragrafos || []).map(function (par, i) {
+        return '<p' + (i === 0 ? ' style="margin-top:20px"' : '') + '>' + esc(par) + '</p>';
+      }).join('');
+      return ''
+        + '<section class="' + sectionClass + '">'
+        +   '<div class="container">'
+        +     '<div class="doctor-block">'
+        +       '<div class="doctor-photo reveal">' + photoHtml + '</div>'
+        +       '<div class="reveal">'
+        +         (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +         '<h2>' + esc(p.h2 || '') + '</h2>'
+        +         paragraphs
+        +       '</div>'
+        +     '</div>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'faq': function (b) {
+      var p = b.props || {};
+      var sectionClass = p.bg === 'bege' ? 'section-alt' : '';
+      var items = (p.items || []).map(function (it) {
+        return ''
+          + '<details class="faq-item reveal">'
+          +   '<summary>' + esc(it.pergunta || '') + '</summary>'
+          +   '<p>' + esc(it.resposta || '') + '</p>'
+          + '</details>';
+      }).join('');
+      return ''
+        + '<section class="' + sectionClass + '">'
+        +   '<div class="container-narrow">'
+        +     '<div class="block-intro reveal">'
+        +       (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +       '<h2>' + esc(p.h2 || '') + '</h2>'
+        +     '</div>'
+        +     '<div class="faq">' + items + '</div>'
+        +   '</div>'
+        + '</section>';
+    },
+
+    'cta-final': function (b) {
+      var p = b.props || {};
+      var ctaHtml = '';
+      if (p.cta && p.cta.label) {
+        ctaHtml = '<a href="#" class="btn btn-primary btn-large" '
+                + 'data-wa-message="' + esc(p.cta.message_wa || '') + '">'
+                + esc(p.cta.label) + '</a>';
+      }
+      return ''
+        + '<section class="final-cta">'
+        +   '<div class="container-narrow">'
+        +     (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +     '<h2>' + esc(p.h2 || '') + '</h2>'
+        +     (p.lead ? '<p>' + esc(p.lead) + '</p>' : '')
+        +     ctaHtml
+        +   '</div>'
+        + '</section>';
+    },
+
+    'footer': function (b) {
+      // Onda 28: usa renderer fiel ao legado se disponível
+      if (window.LPBBlockFooter) return LPBBlockFooter.render(b);
+      var p = b.props || {};
+      return ''
+        + '<footer class="lp-footer">'
+        +   '<div class="container-narrow">'
+        +     '<div class="lp-footer-brand">' + esc(p.brand_name || '') + '</div>'
+        +     (p.tagline ? '<div class="lp-footer-tagline">' + esc(p.tagline) + '</div>' : '')
+        +     '<div class="lp-footer-small">' + esc(p.copyright || '') + '</div>'
+        +   '</div>'
+        + '</footer>';
+    },
+
+    'links-tree': function (b) {
+      // Onda 28: renderer puro compartilhado
+      if (window.LPBBlockLinksTree) return LPBBlockLinksTree.render(b);
+      return '';
+    },
+
+    'hero-cover': function (b) {
+      // Onda 28: capa de revista full-bleed
+      if (window.LPBBlockHeroCover) return LPBBlockHeroCover.render(b);
+      return '';
+    },
+
+    'cta-legacy': function (b) {
+      if (window.LPBBlockCtaLegacy) return LPBBlockCtaLegacy.render(b);
+      return '';
+    },
+
+    'badges-legacy': function (b) {
+      if (window.LPBBlockBadgesLegacy) return LPBBlockBadgesLegacy.render(b);
+      return '';
+    },
+
+    'price-legacy': function (b) {
+      if (window.LPBBlockPriceLegacy) return LPBBlockPriceLegacy.render(b);
+      return '';
+    },
+
+    'divider-legacy': function (b) {
+      if (window.LPBBlockDividerLegacy) return LPBBlockDividerLegacy.render(b);
+      return '<hr style="border:0;border-top:1px solid #ddd;margin:2rem 0">';
+    },
+
+    'title-legacy': function (b) {
+      if (window.LPBBlockTitleLegacy) return LPBBlockTitleLegacy.render(b);
+      return '';
+    },
+
+    'check-legacy': function (b) {
+      if (window.LPBBlockCheckLegacy) return LPBBlockCheckLegacy.render(b);
+      return '';
+    },
+
+    'buttons-row': function (b) {
+      if (window.LPBBlockButtonsRow) return LPBBlockButtonsRow.render(b);
+      return '';
+    },
+
+    'magazine-toc': function (b) {
+      if (window.LPBBlockMagazineToc) return LPBBlockMagazineToc.render(b);
+      return '';
+    },
+
+    'before-after-carousel': function (b) {
+      // Onda 28: bloco do legado + dots em rombo
+      if (window.LPBBlockBaCarousel) return LPBBlockBaCarousel.render(b);
+      return '';
+    },
+
+    'before-after': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt'
+              : p.bg === 'dark' ? 'section-dark' : '';
+      var dir = p.direction || 'horizontal-lr';
+      var isVert = dir.indexOf('vertical') === 0;
+      var knobIcon = isVert ? '&#x21D5;' : '&#x21D4;';
+      var items = (p.items || []).filter(function (it) { return it && (it.before_url || it.after_url); });
+      var hasMulti = items.length > 1;
+      var darkCls = p.bg === 'dark' ? ' blk-ba-dark' : '';
+      var itemsHtml = items.map(function (it) {
+        return '<div class="blk-ba-item">'
+          + '<div class="blk-ba-wrap" data-slider data-dir="' + esc(dir) + '">'
+          +   '<img class="blk-ba-img before" src="' + esc(it.before_url || '') + '" alt="Antes">'
+          +   '<img class="blk-ba-img after"  src="' + esc(it.after_url  || '') + '" alt="Depois">'
+          +   '<div class="blk-ba-label before">Antes</div>'
+          +   '<div class="blk-ba-label after">Depois</div>'
+          +   '<div class="blk-ba-handle"><div class="blk-ba-knob">' + knobIcon + '</div></div>'
+          + '</div>'
+          + (it.caption ? '<div class="blk-ba-caption">' + esc(it.caption) + '</div>' : '')
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-ba ' + (hasMulti ? 'has-multi' : '') + darkCls + ' reveal">' + itemsHtml + '</div>'
+        + '</div></section>';
+    },
+
+    'stats-inline': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? '' : 'section-alt';
+      var colsCls = 'cols-' + (p.columns && p.columns !== 'auto' ? p.columns : 'auto');
+      var stats = (p.items || []).map(function (it) {
+        return '<div class="blk-stat">'
+          + '<div class="blk-stat-valor">' + esc(it.valor || '') + '</div>'
+          + '<div class="blk-stat-label">' + esc(it.label || '') + '</div>'
+          + (it.desc ? '<div class="blk-stat-desc">' + esc(it.desc) + '</div>' : '')
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-stats ' + colsCls + ' reveal">' + stats + '</div>'
+        + '</div></section>';
+    },
+
+    'gallery-mosaic': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var items = (p.items || []).filter(function (it) { return it && it.url; });
+      var photos = items.map(function (it) {
+        return '<div class="blk-mosaic-photo">'
+          + '<img src="' + esc(it.url) + '" alt="' + esc(it.caption || '') + '" loading="lazy">'
+          + (it.caption ? '<div class="blk-mosaic-caption">' + esc(it.caption) + '</div>' : '')
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-mosaic reveal">' + photos + '</div>'
+        + '</div></section>';
+    },
+
+    'pull-quote': function (b) {
+      var p = b.props || {};
+      var bgCls = p.bg === 'bege'  ? 'section-alt'
+                : p.bg === 'ivory' ? ''
+                : p.bg === 'dark'  ? 'section-dark'
+                : 'section-accent';
+      return '<section class="' + bgCls + '"><div class="container-narrow">'
+        + '<div class="blk-pull-quote reveal">'
+        +   '<p class="blk-pull-quote-text">' + esc(p.quote || '') + '</p>'
+        +   (p.author ? '<div class="blk-pull-quote-author">' + esc(p.author) + '</div>' : '')
+        +   (p.meta   ? '<div class="blk-pull-quote-meta">'   + esc(p.meta)   + '</div>' : '')
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'process-timeline': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var layout = p.layout === 'horizontal' ? 'layout-horizontal' : 'layout-vertical';
+      var steps = (p.items || []).map(function (it, i) {
+        var num = (it.numero && String(it.numero).trim()) || String(i + 1).padStart(2, '0');
+        return '<div class="blk-process-step">'
+          + '<div class="blk-process-num">' + esc(num) + '</div>'
+          + '<div class="blk-process-titulo">' + esc(it.titulo || '') + '</div>'
+          + '<div class="blk-process-desc">' + esc(it.descricao || '') + '</div>'
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-process ' + layout + ' reveal">' + steps + '</div>'
+        + '</div></section>';
+    },
+
+    'evolution-timeline': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? '' : 'section-alt';
+      var items = (p.items || []).map(function (it) {
+        return '<div class="blk-evolution-item">'
+          + '<div class="blk-evolution-photo">'
+          +   (it.foto ? '<img src="' + esc(it.foto) + '" alt="' + esc(it.data || '') + '" loading="lazy">' : '')
+          +   (it.data ? '<div class="blk-evolution-marca">' + esc(it.data) + '</div>' : '')
+          + '</div>'
+          + (it.legenda ? '<div class="blk-evolution-legenda">' + esc(it.legenda) + '</div>' : '')
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-evolution reveal">' + items + '</div>'
+        + '</div></section>';
+    },
+
+    'qa-depoimento': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var initial = (p.nome || '').trim().charAt(0).toUpperCase() || 'P';
+      var foto = p.foto
+        ? '<img src="' + esc(p.foto) + '" alt="' + esc(p.nome || '') + '">'
+        : '<div class="blk-qa-pessoa-foto-initials">' + esc(initial) + '</div>';
+      var msgs = (p.items || []).map(function (it) {
+        return '<div class="blk-qa-msg">'
+          + '<div class="blk-qa-pergunta">' + esc(it.pergunta || '') + '</div>'
+          + '<div class="blk-qa-resposta">' + esc(it.resposta || '') + '</div>'
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-qa reveal">'
+        +   '<div class="blk-qa-pessoa">'
+        +     '<div class="blk-qa-pessoa-foto">' + foto + '</div>'
+        +     (p.nome ? '<div class="blk-qa-nome">' + esc(p.nome) + '</div>' : '')
+        +     (p.meta ? '<div class="blk-qa-meta">' + esc(p.meta) + '</div>' : '')
+        +   '</div>'
+        +   '<div class="blk-qa-conversa">' + msgs + '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'reading-time': function (b) {
+      var p = b.props || {};
+      var alignCls = 'align-' + (p.align || 'center');
+      var clockSvg = '<svg class="blk-reading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+      return '<div class="blk-reading ' + alignCls + '" data-reading-time>'
+        + '<div class="blk-reading-pill">'
+        +   clockSvg
+        +   (p.prefix ? '<span class="blk-reading-prefix">' + esc(p.prefix) + '</span>' : '')
+        +   '<span class="blk-reading-time rt-min">— minutos</span>'
+        +   (p.show_sections !== false ? '<span class="blk-reading-sections rt-sections">— seções</span>' : '')
+        + '</div>'
+        + '</div>';
+    },
+
+    'hotspots-anatomicos': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? ''
+              : p.bg === 'dark'  ? 'section-dark'
+              : 'section-alt';
+      var items = (p.items || []).filter(function (it) { return it && (it.x !== undefined && it.y !== undefined); });
+      function _clampPct(v) { var n = parseFloat(v); if (isNaN(n)) return 50; return Math.max(0, Math.min(100, n)); }
+      var points = items.map(function (it) {
+        var x = _clampPct(it.x), y = _clampPct(it.y);
+        return '<button class="blk-hotspot-point" type="button" '
+          + 'style="left:' + x + '%;top:' + y + '%" '
+          + 'data-label="' + esc(it.label || '') + '" '
+          + 'data-desc="'  + esc(it.descricao || '') + '"></button>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-hotspots ' + (items.length ? 'has-info' : '') + ' reveal">'
+        +   '<div class="blk-hotspot-canvas">'
+        +     (p.foto ? '<img src="' + esc(p.foto) + '" alt="">' : '')
+        +     points
+        +     '<div class="blk-hotspot-tip"></div>'
+        +   '</div>'
+        +   '<div class="blk-hotspot-info">'
+        +     '<div class="blk-hotspot-info-empty">Clique em um ponto para ver detalhes.</div>'
+        +   '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'language-switcher': function (b) {
+      var p = b.props || {};
+      var langs = String(p.languages || 'pt-BR,en').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+      var styleCls = 'style-' + (p.style || 'pills');
+      var alignCls = 'align-' + (p.align || 'right');
+      var meta = (window.LPBI18n && LPBI18n.SUPPORTED) || [];
+      function labelOf(code) {
+        var m = meta.find(function (x) { return x.code === code; });
+        return m ? m.short : code.toUpperCase();
+      }
+      var btns;
+      if (p.style === 'inline') {
+        btns = langs.map(function (l, i) {
+          return (i > 0 ? '<span class="blk-lang-sep">|</span>' : '')
+            + '<a class="blk-lang-btn" href="javascript:void(0)" data-lang="' + esc(l) + '">' + esc(labelOf(l)) + '</a>';
+        }).join('');
+      } else {
+        btns = langs.map(function (l) {
+          return '<a class="blk-lang-btn" href="javascript:void(0)" data-lang="' + esc(l) + '">' + esc(labelOf(l)) + '</a>';
+        }).join('');
+      }
+      return '<div class="blk-lang-switcher ' + styleCls + ' ' + alignCls + '">' + btns + '</div>';
+    },
+
+    'scroll-progress': function (b) {
+      var p = b.props || {};
+      var altura = parseInt(p.altura, 10) || 2;
+      var cor = p.cor || 'champagne';
+      return '<div class="blk-scroll-progress" data-cor="' + esc(cor) + '" style="height:' + altura + 'px">'
+        + '<div class="blk-scroll-progress-bar"></div>'
+        + '</div>';
+    },
+
+    'parallax-banner': function (b) {
+      var p = b.props || {};
+      var bg = p.foto ? 'background-image:url(' + esc(p.foto) + ');' : '';
+      var overlayAlpha = (parseInt(p.overlay, 10) || 55) / 100;
+      var hCls = 'h-' + (p.altura || 'md');
+      var alignCls = 'align-' + (p.align || 'center');
+      var ctaHtml = (p.cta && p.cta.label)
+        ? '<a class="btn btn-primary btn-large" href="javascript:void(0)" data-wa-message="' + esc(p.cta.message_wa || '') + '">'
+          + esc(p.cta.label) + '</a>'
+        : '';
+      return '<div class="blk-parallax ' + hCls + ' ' + alignCls + '" data-parallax style="' + bg + '">'
+        + '<div class="blk-parallax-overlay" style="background:rgba(44,44,44,' + overlayAlpha + ')"></div>'
+        + '<div class="blk-parallax-content reveal">'
+        +   (p.eyebrow ? '<div class="blk-parallax-eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +   '<h2 class="blk-parallax-h2">' + esc(p.h2 || '') + '</h2>'
+        +   (p.lead ? '<p class="blk-parallax-lead">' + esc(p.lead) + '</p>' : '')
+        +   ctaHtml
+        + '</div>'
+        + '</div>';
+    },
+
+    'form-inline': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt'
+              : p.bg === 'dark' ? 'section-dark' : '';
+      // slug vem da URL atual
+      var slug = (new URLSearchParams(window.location.search).get('s')) || '';
+      var fields = (p.fields || []).map(function (f) {
+        var req = f.required ? ' required' : '';
+        var requiredMark = f.required ? '<span class="blk-form-required">*</span>' : '';
+        var ph = esc(f.placeholder || '');
+        var key = esc(f.key || '');
+        var label = esc(f.label || '');
+        var common = 'data-fkey="' + key + '" name="' + key + '"' + req + ' placeholder="' + ph + '"';
+        var input;
+        if (f.type === 'textarea') {
+          input = '<textarea class="blk-form-textarea" ' + common + '></textarea>';
+        } else if (f.type === 'select') {
+          var opts = String(f.options || '').split('\n').map(function (o) {
+            o = o.trim(); if (!o) return '';
+            return '<option value="' + esc(o) + '">' + esc(o) + '</option>';
+          }).join('');
+          input = '<select class="blk-form-select" ' + common + '>'
+            + '<option value="">— escolha —</option>' + opts + '</select>';
+        } else {
+          var t = f.type === 'phone' ? 'tel' : (f.type === 'email' ? 'email' : 'text');
+          input = '<input class="blk-form-input" type="' + t + '" ' + common + '>';
+        }
+        return '<div class="blk-form-field">'
+          + '<label class="blk-form-label">' + label + requiredMark + '</label>'
+          + input
+          + '</div>';
+      }).join('');
+      var checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+      var waCta = '';
+      if (p.wa_after_submit && p.wa_after_submit.label) {
+        waCta = '<a class="btn btn-primary btn-large" href="#" data-wa-message="' + esc(p.wa_after_submit.message_wa || '') + '">'
+          + esc(p.wa_after_submit.label) + '</a>';
+      }
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-form reveal" data-form data-slug="' + esc(slug) + '">'
+        +   '<form>'
+        +     fields
+        +     '<div class="blk-form-global-msg blk-form-msg"></div>'
+        +     '<button class="btn btn-primary btn-large blk-form-submit" type="submit" data-label="' + esc(p.submit_label || 'Enviar') + '">'
+        +       esc(p.submit_label || 'Enviar')
+        +     '</button>'
+        +   '</form>'
+        +   '<div class="blk-form-success" style="display:none">'
+        +     '<div class="blk-form-success-icon">' + checkSvg + '</div>'
+        +     '<div class="blk-form-success-title">' + esc(p.success_title || 'Recebido!') + '</div>'
+        +     '<div class="blk-form-success-msg">' + esc(p.success_message || '') + '</div>'
+        +     waCta
+        +   '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'agenda-widget': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? '' : 'section-alt';
+      var tpl = p.wa_message_template || 'Olá! Gostaria de agendar para {{data}} às {{horario}}.';
+      var slots = (p.slots || []).map(function (s) {
+        var data = (s.data || '').trim();
+        var horarios = String(s.horarios || '').split(',').map(function (h) { return h.trim(); }).filter(Boolean);
+        var slotsBtns = horarios.map(function (h) {
+          var msg = tpl.replace(/\{\{data\}\}/g, data).replace(/\{\{horario\}\}/g, h);
+          return '<a class="blk-agenda-slot" href="javascript:void(0)" data-wa-message="' + esc(msg) + '">' + esc(h) + '</a>';
+        }).join('');
+        return '<div class="blk-agenda-day">'
+          + '<div class="blk-agenda-data">' + esc(data) + '</div>'
+          + '<div class="blk-agenda-horarios">' + slotsBtns + '</div>'
+          + '</div>';
+      }).join('');
+      var colsCls = (p.slots && p.slots.length > 1) ? 'cols-auto' : 'cols-1';
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-agenda ' + colsCls + ' reveal">' + slots + '</div>'
+        + '</div></section>';
+    },
+
+    'mapa-local': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var layoutCls = 'layout-' + (p.layout || 'split');
+      var query = encodeURIComponent(p.google_maps_query || p.endereco || 'Brasil');
+      var mapSrc = 'https://www.google.com/maps?q=' + query + '&output=embed';
+      var ctaHtml = (p.cta && p.cta.label)
+        ? '<a class="btn btn-outline btn-sm" href="#" data-wa-message="' + esc(p.cta.message_wa || '') + '">' + esc(p.cta.label) + '</a>'
+        : '';
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-map ' + layoutCls + ' reveal">'
+        +   '<div class="blk-map-frame"><iframe src="' + esc(mapSrc) + '" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div>'
+        +   '<div class="blk-map-info">'
+        +     (p.endereco ? '<div class="blk-map-info-section"><div class="blk-map-info-label">Endereço</div><div class="blk-map-info-text">' + esc(p.endereco) + '</div></div>' : '')
+        +     (p.horario_funcionamento ? '<div class="blk-map-info-section"><div class="blk-map-info-label">Horário</div><div class="blk-map-info-text">' + esc(p.horario_funcionamento) + '</div></div>' : '')
+        +     (p.telefone ? '<div class="blk-map-info-section"><div class="blk-map-info-label">Telefone</div><div class="blk-map-info-text">' + esc(p.telefone) + '</div></div>' : '')
+        +     (ctaHtml ? '<div class="blk-map-info-section">' + ctaHtml + '</div>' : '')
+        +   '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'sticky-cta-mobile': function (b) {
+      var p = b.props || {};
+      var visibilityCls = p.desktop_visible ? 'is-everywhere' : 'is-mobile-only';
+      var threshold = p.show_after_scroll || '30';
+      var ctaLabel = (p.cta && p.cta.label) || 'Agendar';
+      var msg = (p.cta && p.cta.message_wa) || '';
+      return '<div class="blk-sticky ' + visibilityCls + '" data-threshold="' + esc(threshold) + '">'
+        + '<div class="blk-sticky-text">' + esc(p.text || '') + '</div>'
+        + '<a class="blk-sticky-cta" href="#" data-wa-message="' + esc(msg) + '">' + esc(ctaLabel) + '</a>'
+        + '</div>';
+    },
+
+    'selos-confianca': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var defaultIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="6"/><polyline points="9 13.5 11.5 16 15.5 10"/><path d="M8 14l-2 7 6-3 6 3-2-7"/></svg>';
+      var items = (p.items || []).map(function (it) {
+        var visual = it.logo_url
+          ? '<img src="' + esc(it.logo_url) + '" alt="">'
+          : (it.icon_svg || defaultIcon);
+        return '<div class="blk-selo">'
+          + '<div class="blk-selo-visual">' + visual + '</div>'
+          + '<div class="blk-selo-titulo">' + esc(it.titulo || '') + '</div>'
+          + (it.descricao ? '<div class="blk-selo-desc">' + esc(it.descricao) + '</div>' : '')
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-selos cols-' + esc(p.columns || '3') + ' reveal">' + items + '</div>'
+        + '</div></section>';
+    },
+
+    'logos-imprensa': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var scrollCls = p.autoplay ? ' is-scrolling' : '';
+      var logos = (p.items || []).map(function (it) {
+        var img = '<img src="' + esc(it.url || '') + '" alt="' + esc(it.alt || '') + '" loading="lazy">';
+        return it.link
+          ? '<a class="blk-logo" href="' + esc(it.link) + '" target="_blank" rel="noopener">' + img + '</a>'
+          : '<div class="blk-logo">' + img + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + '<div class="blk-logos-wrap reveal">'
+        +   (p.eyebrow ? '<div class="blk-logos-eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+        +   '<div class="blk-logos' + scrollCls + '">' + logos + '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'galeria-filtrada': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? '' : 'section-alt';
+      var items = (p.items || []).filter(function (it) { return it && (it.before_url || it.after_url); });
+      var cats = []; var seen = {};
+      items.forEach(function (it) {
+        var c = (it.categoria || 'Outros').trim();
+        if (!seen[c]) { seen[c] = true; cats.push(c); }
+      });
+      var filtersHtml = '';
+      if (p.show_filters !== false && cats.length > 1) {
+        filtersHtml = '<div class="blk-gallery-filters">'
+          + '<button class="blk-gallery-filter is-active" type="button" data-cat="all">Todos</button>'
+          + cats.map(function (c) {
+              return '<button class="blk-gallery-filter" type="button" data-cat="' + esc(c) + '">' + esc(c) + '</button>';
+            }).join('')
+          + '</div>';
+      }
+      var cards = items.map(function (it) {
+        var cat = (it.categoria || 'Outros').trim();
+        return '<button class="blk-gallery-card" type="button" '
+          +   'data-cat="' + esc(cat) + '" '
+          +   'data-before="' + esc(it.before_url || '') + '" '
+          +   'data-after="'  + esc(it.after_url  || '') + '" '
+          +   'data-caption="' + esc(it.caption || '') + '">'
+          + '<div class="blk-gallery-tag">' + esc(cat) + '</div>'
+          + '<div class="blk-gallery-card-imgs">'
+          +   '<img src="' + esc(it.before_url || '') + '" alt="Antes" loading="lazy">'
+          +   '<img src="' + esc(it.after_url  || '') + '" alt="Depois" loading="lazy">'
+          + '</div>'
+          + '<div class="blk-gallery-card-labels"><span>Antes</span><span>Depois</span></div>'
+          + (it.caption ? '<div class="blk-gallery-caption">' + esc(it.caption) + '</div>' : '')
+          + '</button>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div data-gallery class="reveal">'
+        +   filtersHtml
+        +   '<div class="blk-gallery cols-' + esc(p.columns || '3') + '">' + cards + '</div>'
+        +   '<div class="blk-gallery-empty" style="display:none">Nenhum caso nesta categoria.</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'pricing-table': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? '' : 'section-alt';
+      var items = (p.items || []);
+      var cols = 'cols-' + items.length;
+      var checkSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+      var xSvg     = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      function parseFeatures(text) {
+        if (!text) return [];
+        return String(text).split('\n').map(function (l) {
+          var s = l.trim();
+          if (!s) return null;
+          if (s.indexOf('- ') === 0) return { excluded: true, text: s.slice(2).trim() };
+          if (s.indexOf('+ ') === 0) return { excluded: false, text: s.slice(2).trim() };
+          return { excluded: false, text: s };
+        }).filter(Boolean);
+      }
+      var plans = items.map(function (pl) {
+        var features = parseFeatures(pl.features).map(function (f) {
+          var cls = f.excluded ? ' is-excluded' : '';
+          var icon = f.excluded ? xSvg : checkSvg;
+          return '<li class="blk-plan-feature' + cls + '">'
+            + '<span class="blk-plan-feature-icon">' + icon + '</span>'
+            + '<span>' + esc(f.text) + '</span>'
+            + '</li>';
+        }).join('');
+        var ctaHtml = (pl.cta && pl.cta.label)
+          ? '<a class="btn btn-primary btn-large blk-plan-cta" href="javascript:void(0)" data-wa-message="' + esc(pl.cta.message_wa || '') + '">' + esc(pl.cta.label) + '</a>'
+          : '';
+        return '<div class="blk-plan' + (pl.highlight ? ' is-highlight' : '') + '">'
+          + (pl.kicker ? '<div class="blk-plan-kicker">' + esc(pl.kicker) + '</div>' : '')
+          + '<div class="blk-plan-titulo">' + esc(pl.titulo || '') + '</div>'
+          + (pl.preco ? '<div class="blk-plan-preco">' + esc(pl.preco) + '</div>' : '')
+          + (pl.preco_detalhe ? '<div class="blk-plan-preco-detalhe">' + esc(pl.preco_detalhe) + '</div>' : '')
+          + (pl.descricao ? '<div class="blk-plan-descricao">' + esc(pl.descricao) + '</div>' : '')
+          + (features ? '<ul class="blk-plan-features">' + features + '</ul>' : '')
+          + ctaHtml
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-pricing ' + cols + ' reveal">' + plans + '</div>'
+        + '</div></section>';
+    },
+
+    'cards-compare': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var items = (p.items || []);
+      var cols = 'cols-' + items.length;
+      function parseValores(text) {
+        if (!text) return [];
+        return String(text).split('\n').map(function (l) {
+          var s = l.trim();
+          if (!s) return null;
+          var parts = s.split('|');
+          var label = (parts[0] || '').trim();
+          var valor = (parts[1] || '').trim();
+          var mod = '';
+          if (valor.indexOf('+ ') === 0) { mod = 'positive'; valor = valor.slice(2).trim(); }
+          else if (valor.indexOf('- ') === 0) { mod = 'negative'; valor = valor.slice(2).trim(); }
+          return { label: label, valor: valor, mod: mod };
+        }).filter(Boolean);
+      }
+      var cards = items.map(function (c) {
+        var valoresHtml = parseValores(c.valores).map(function (v) {
+          var cls = v.mod ? ' is-' + v.mod : '';
+          return '<li class="blk-compare-attr">'
+            + '<span class="blk-compare-attr-label">' + esc(v.label) + '</span>'
+            + '<span class="blk-compare-attr-valor' + cls + '">' + esc(v.valor) + '</span>'
+            + '</li>';
+        }).join('');
+        var ctaHtml = (c.cta && c.cta.label)
+          ? '<a class="btn btn-outline btn-sm blk-compare-cta" href="javascript:void(0)" data-wa-message="' + esc(c.cta.message_wa || '') + '">' + esc(c.cta.label) + '</a>'
+          : '';
+        return '<div class="blk-compare-col' + (c.highlight ? ' is-highlight' : '') + '">'
+          + (c.foto ? '<div class="blk-compare-foto"><img src="' + esc(c.foto) + '" alt=""></div>' : '')
+          + '<div class="blk-compare-titulo">' + esc(c.titulo || '') + '</div>'
+          + (c.descricao ? '<div class="blk-compare-desc">' + esc(c.descricao) + '</div>' : '')
+          + (valoresHtml ? '<ul class="blk-compare-list">' + valoresHtml + '</ul>' : '')
+          + ctaHtml
+          + '</div>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-compare ' + cols + ' reveal">' + cards + '</div>'
+        + '</div></section>';
+    },
+
+    'checklist': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt' : '';
+      var checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+      var items = (p.items || []).map(function (it) {
+        return '<li class="blk-check-item">'
+          + '<span class="blk-check-mark">' + checkSvg + '</span>'
+          + '<div class="blk-check-body">' + esc(it.texto || '')
+          +   (it.desc ? '<span class="blk-check-desc">' + esc(it.desc) + '</span>' : '')
+          + '</div>'
+          + '</li>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<ul class="blk-checklist cols-' + esc(p.columns || '1') + ' reveal">' + items + '</ul>'
+        + '</div></section>';
+    },
+
+    'carousel-slides': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? ''
+              : p.bg === 'dark'  ? 'section-dark'
+              : 'section-alt';
+      var slides = (p.slides || []).map(function (sl) {
+        var photoCls = sl.foto ? ' has-photo' : '';
+        return '<div class="blk-slide' + photoCls + '">'
+          + (sl.foto ? '<div class="blk-slide-photo"><img src="' + esc(sl.foto) + '" alt="" loading="lazy"></div>' : '')
+          + '<div class="blk-slide-text">'
+          +   (sl.eyebrow ? '<div class="blk-slide-eyebrow">' + esc(sl.eyebrow) + '</div>' : '')
+          +   (sl.titulo  ? '<div class="blk-slide-titulo">'  + esc(sl.titulo)  + '</div>' : '')
+          +   (sl.texto   ? '<div class="blk-slide-texto">'   + esc(sl.texto)   + '</div>' : '')
+          + '</div>'
+          + '</div>';
+      }).join('');
+      var dots = (p.slides || []).map(function (_, i) {
+        return '<button class="blk-slides-dot' + (i === 0 ? ' is-active' : '') + '" type="button" data-idx="' + i + '"></button>';
+      }).join('');
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-slides reveal" data-slides '
+        +   'data-autoplay="' + (p.autoplay ? '1' : '0') + '" '
+        +   'data-interval="' + esc(p.autoplay_interval || 6) + '">'
+        +   '<div class="blk-slides-track">' + slides + '</div>'
+        +   '<div class="blk-slides-dots">' + dots + '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'testimonials': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'ivory' ? '' : 'section-alt';
+      var layoutCls = (p.layout === 'carousel')
+        ? 'layout-carousel'
+        : 'layout-grid cols-' + esc(p.columns_grid || '3');
+      var showStars = p.show_stars !== false;
+      function stars(n) {
+        var num = parseInt(n, 10) || 0;
+        if (!num) return '';
+        var s = ''; for (var i = 0; i < num; i++) s += '★';
+        return '<div class="blk-test-stars">' + s + '</div>';
+      }
+      function avatar(it) {
+        if (it.foto) return '<img src="' + esc(it.foto) + '" alt="">';
+        var ini = (it.nome || 'P').trim().charAt(0).toUpperCase();
+        return '<div class="blk-test-avatar-initial">' + esc(ini) + '</div>';
+      }
+      var cards = (p.items || []).map(function (it) {
+        return '<div class="blk-test-card">'
+          + (showStars ? stars(it.stars != null ? it.stars : 5) : '')
+          + '<div class="blk-test-body">' + esc(it.body || '') + '</div>'
+          + '<div class="blk-test-author">'
+          +   '<div class="blk-test-avatar">' + avatar(it) + '</div>'
+          +   '<div>'
+          +     '<div class="blk-test-name">' + esc(it.nome || '') + '</div>'
+          +     (it.meta ? '<div class="blk-test-meta">' + esc(it.meta) + '</div>' : '')
+          +   '</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+      var trackHtml = (p.layout === 'carousel')
+        ? '<div class="blk-testimonials-track">' + cards + '</div>'
+          + '<div class="blk-slides-dots">'
+          +   (p.items || []).map(function (_, i) {
+                return '<button class="blk-slides-dot' + (i === 0 ? ' is-active' : '') + '" type="button" data-idx="' + i + '"></button>';
+              }).join('')
+          + '</div>'
+          + '<p class="blk-testimonials-hint">Deslize para ver mais</p>'
+        : cards;
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-testimonials ' + layoutCls + ' reveal">' + trackHtml + '</div>'
+        + '</div></section>';
+    },
+
+    'countdown': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt'
+              : p.bg === 'dark' ? 'section-dark' : '';
+      var variant = (p.variant === 'card') ? 'variant-card' : 'variant-minimal';
+      var showDays = p.show_days !== false;
+      var timeHtml = (p.variant === 'card')
+        ? '<span class="blk-countdown-time"></span>'
+        : '<div class="blk-countdown-time">' + (showDays ? '00 ' : '') + '00<span class="blk-countdown-sep">:</span>00<span class="blk-countdown-sep">:</span>00</div>';
+      return '<section class="' + sec + '"><div class="container-narrow">'
+        + '<div class="blk-countdown ' + variant + '" '
+        +   'data-target="' + esc(p.target_at || '') + '" '
+        +   'data-show-days="' + (showDays ? '1' : '0') + '" '
+        +   'data-variant="' + (p.variant || 'minimal') + '">'
+        +   (p.label ? '<div class="blk-countdown-label">' + esc(p.label) + '</div>' : '')
+        +   timeHtml
+        +   '<div class="blk-countdown-expired" style="display:none">' + esc(p.show_after_zero || 'Encerrado') + '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+
+    'timeline-scrub': function (b) {
+      var p = b.props || {};
+      var sec = p.bg === 'bege' ? 'section-alt'
+              : p.bg === 'dark' ? 'section-dark' : '';
+      var items = (p.items || []).filter(function (it) { return it && it.foto_url; });
+      var imgs = items.map(function (it, i) {
+        return '<img class="blk-tscrub-img' + (i === 0 ? ' is-active' : '') + '" '
+          + 'src="' + esc(it.foto_url) + '" alt="' + esc(it.label || '') + '" '
+          + 'data-label="'   + esc(it.label || '') + '" '
+          + 'data-legenda="' + esc(it.legenda || '') + '" loading="lazy">';
+      }).join('');
+      var dots = items.map(function (it, i) {
+        return '<button class="blk-tscrub-dot' + (i === 0 ? ' is-active' : '') + '" type="button" data-idx="' + i + '">'
+          + '<span class="blk-tscrub-dot-label">' + esc(it.label || '') + '</span>'
+          + '</button>';
+      }).join('');
+      var firstLabel   = (items[0] && items[0].label)   || '';
+      var firstLegenda = (items[0] && items[0].legenda) || '';
+      return '<section class="' + sec + '"><div class="container">'
+        + ((p.eyebrow || p.h2 || p.intro)
+            ? '<div class="block-intro reveal">'
+              + (p.eyebrow ? '<div class="eyebrow">' + esc(p.eyebrow) + '</div>' : '')
+              + (p.h2      ? '<h2>' + esc(p.h2) + '</h2>' : '')
+              + (p.intro   ? '<p style="margin-top:18px;max-width:640px;margin-left:auto;margin-right:auto">' + esc(p.intro) + '</p>' : '')
+              + '</div>'
+            : '')
+        + '<div class="blk-tscrub reveal" data-autoplay="' + (p.autoplay ? '1' : '0') + '">'
+        +   '<div class="blk-tscrub-stage">'
+        +     '<div class="blk-tscrub-overlay">' + esc(firstLabel) + '</div>'
+        +     imgs
+        +   '</div>'
+        +   '<div class="blk-tscrub-track">' + dots + '</div>'
+        +   '<div class="blk-tscrub-caption">' + esc(firstLegenda) + '</div>'
+        + '</div>'
+        + '</div></section>';
+    },
+  };
+
+  // ────────────────────────────────────────────────────────────
+  // Render flow
+  // ────────────────────────────────────────────────────────────
+  function renderError(msg) {
+    if (window.LPBPageTransition) { try { LPBPageTransition.hideSplash(); } catch (e) {} }
+    document.getElementById('lpRoot').innerHTML = ''
+      + '<div class="lp-error">'
+      +   '<h2>Pagina nao encontrada</h2>'
+      +   '<p>' + esc(msg || 'O link pode ter expirado ou estar incorreto.') + '</p>'
+      + '</div>';
+  }
+
+  function renderPage(data) {
+    document.title = data.title || 'Clinica Mirian de Paula';
+    if (data.meta_description) {
+      var m = document.querySelector('meta[name="description"]');
+      if (!m) {
+        m = document.createElement('meta');
+        m.name = 'description';
+        document.head.appendChild(m);
+      }
+      m.content = data.meta_description;
+    }
+    if (data.og_image_url) {
+      var og = document.createElement('meta');
+      og.setAttribute('property', 'og:image');
+      og.content = data.og_image_url;
+      document.head.appendChild(og);
+    }
+
+    applyTokensOverride(data.tokens_override || {});
+    injectTracking(data.tracking || {});
+    if (window.LPBSeoSchema) {
+      try { LPBSeoSchema.applyToPage(data, document); }
+      catch (e) { console.warn('[lp] schema.org inject falhou:', e); }
+    }
+
+    var blocks = Array.isArray(data.blocks) ? data.blocks : [];
+    // Aplica i18n se LPBI18n disponível
+    var lang = (window.LPBI18n && LPBI18n.detectLang && LPBI18n.detectLang()) || 'pt-BR';
+    var resolvedBlocks = (window.LPBI18n && LPBI18n.applyI18nAll)
+      ? LPBI18n.applyI18nAll(blocks, lang)
+      : blocks;
+    document.documentElement.lang = lang;
+
+    var html = resolvedBlocks.map(function (b, idx) {
+      var fn = Blocks[b && b.type];
+      var inner = fn ? fn(b) : '';
+      if (!inner) return '';
+      var animType = (b._style && b._style.animation && b._style.animation.type) || '';
+      var animAttr = (animType && animType !== 'none')
+        ? ' class="lpb-anim-' + esc(animType) + '" data-reveal-anim'
+        : '';
+      return '<div data-block-idx="' + idx + '" data-block-type="' + esc(b.type) + '"' + animAttr + '>' + inner + '</div>';
+    }).join('');
+
+    var root = document.getElementById('lpRoot');
+    root.innerHTML = html;
+    document.body.dataset.landing = data.slug || 'lp';
+
+    // ── Performance: lazy + decoding async em todas <img>, exceto a 1ª (LCP)
+    var allImgs = root.querySelectorAll('img');
+    allImgs.forEach(function (img, i) {
+      if (i === 0) {
+        img.setAttribute('fetchpriority', 'high');
+        img.setAttribute('decoding', 'async');
+      } else {
+        if (!img.hasAttribute('loading'))  img.setAttribute('loading', 'lazy');
+        if (!img.hasAttribute('decoding')) img.setAttribute('decoding', 'async');
+      }
+    });
+    // ── Iframes (vídeo etc.) também lazy
+    root.querySelectorAll('iframe').forEach(function (f) {
+      if (!f.hasAttribute('loading')) f.setAttribute('loading', 'lazy');
+    });
+
+    // Injeta CSS dos ajustes por bloco
+    if (window.LPBBlockStyle) {
+      var styleEl = document.getElementById('lp-block-styles');
+      if (styleEl) styleEl.textContent = window.LPBBlockStyle.generateAllCss(blocks);
+    }
+
+    // Init de blocos interativos (before-after slider, etc.)
+    if (window.LPBlocks) window.LPBlocks.init(document);
+
+    // Re-wire WhatsApp links + reveal (lp-shared.js boot ja rodou antes do conteudo dinamico)
+    if (window.LPShared) {
+      window.LPShared.wireWhatsAppLinks();
+      // reveal: roda novamente pra elementos novos
+      if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) {
+              e.target.classList.add('is-visible');
+              observer.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal:not(.is-visible)').forEach(function (el) {
+          observer.observe(el);
+        });
+      }
+    }
+  }
+
+  function trackConversionOnCTAClick(slug) {
+    document.body.addEventListener('click', function (ev) {
+      var a = ev.target.closest && ev.target.closest('[data-wa-message]');
+      if (!a) return;
+      // fire-and-forget
+      rpc('lp_page_track_conversion', { p_slug: slug }).catch(function () {});
+    }, true);
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Boot
+  // ────────────────────────────────────────────────────────────
+  function boot() {
+    var slug = new URLSearchParams(window.location.search).get('s');
+    if (!slug) { renderError('Parametro "s" ausente na URL.'); return; }
+
+    // Onda 28: splash editorial (estilo revista) — aparece imediatamente
+    if (window.LPBPageTransition) {
+      try { LPBPageTransition.showSplash(); } catch (e) {}
+    }
+
+    var bootStart = performance.now();
+    var MIN_SPLASH_MS = 900;  // garante que splash aparece pelo menos esse tempo (caso resolve seja muito rápido)
+
+    rpc('lp_page_resolve', { p_slug: slug })
+      .then(function (data) {
+        if (!data || data.ok === false) {
+          if (window.LPBPageTransition) LPBPageTransition.hideSplash();
+          renderError(data && data.reason === 'not_found'
+            ? 'Esta pagina ainda nao foi publicada.'
+            : 'Erro ao carregar a pagina.');
+          return;
+        }
+        // A/B split: pode redirecionar antes de renderizar
+        if (maybeRedirectAbVariant(data)) return;
+        renderPage(data);
+
+        // Onda 28: aplica entrada animada nos blocos + esconde splash (com min duration)
+        var lpRoot = document.getElementById('lpRoot');
+        if (window.LPBPageTransition && lpRoot) {
+          var elapsed = performance.now() - bootStart;
+          var wait = Math.max(0, MIN_SPLASH_MS - elapsed);
+          setTimeout(function () {
+            try {
+              LPBPageTransition.enterContent(lpRoot);
+              LPBPageTransition.hideSplash();
+            } catch (e) {}
+          }, wait);
+        }
+        // Banner LGPD (se config.enabled)
+        if (window.LPBLgpdBanner) {
+          try { LPBLgpdBanner.maybeShow(data, rpc); }
+          catch (e) { console.warn('[lp] lgpd banner falhou:', e); }
+        }
+        // Onda 24: jornada cross-LP
+        var lgpdEnabled = !!(data.lgpd_config && data.lgpd_config.enabled);
+        if (window.LPBJourneyTracker) {
+          try { LPBJourneyTracker.boot(slug, rpc, lgpdEnabled); }
+          catch (e) { console.warn('[lp] journey falhou:', e); }
+        }
+        // Onda 25: heatmap (sampling 1/3)
+        if (window.LPBHeatmapTracker) {
+          try { LPBHeatmapTracker.boot(slug, rpc, lgpdEnabled); }
+          catch (e) { console.warn('[lp] heatmap falhou:', e); }
+        }
+        // Track view com tag AB se aplicável
+        var abTag = (new URLSearchParams(window.location.search)).get('ab') || '';
+        rpc('lp_page_track_view', { p_slug: slug }).catch(function () {});
+        trackConversionOnCTAClick(slug);
+      })
+      .catch(function (err) {
+        console.error('[LP] resolve error:', err);
+        renderError('Falha de conexao. Tente novamente.');
+      });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
+</body>
+</html>

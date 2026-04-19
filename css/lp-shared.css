@@ -617,3 +617,80 @@ section {
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ─── Mobile typography optimizations ─────────────────────
+   Letter-spacing menor pra caber mais texto em 1 linha,
+   sem precisar mexer em cada bloco manualmente */
+@media (max-width: 767px) {
+  .eyebrow {
+    letter-spacing: 2.8px;  /* era 5px */
+    font-size: 10px;
+  }
+  h4 {
+    letter-spacing: 1.8px;  /* era 3px */
+  }
+  .brand-small {
+    letter-spacing: 2.5px;  /* era 5px */
+  }
+  .lp-footer-tagline {
+    letter-spacing: 1.2px;  /* era 2px */
+  }
+  .cashback-badge {
+    letter-spacing: 1.8px;  /* era 3px */
+    padding: 8px 16px;
+  }
+}
+@media (max-width: 380px) {
+  .eyebrow { letter-spacing: 2px; font-size: 9.5px; }
+  h4 { letter-spacing: 1.5px; }
+}
+
+/* ─── Mobile button optimizations ─────────────────────────
+   Inspirado nos specs do quiz (letter-spacing menor +
+   width 100% = mais caracteres cabem em 1 linha) */
+@media (max-width: 767px) {
+  .btn {
+    letter-spacing: 1.5px;       /* era 2.5px — economiza espaço */
+    padding: 13px 20px;          /* era 14px 28px */
+    font-size: 11.5px;
+  }
+  .btn-large {
+    width: 100%;                  /* usa toda a largura disponivel */
+    padding: 16px 22px;
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
+    line-height: 1.2;             /* permite wrap suave se necessario */
+    /* sem white-space:nowrap — se nao couber, quebra elegante */
+  }
+  .btn-sm { padding: 9px 16px; font-size: 10px; letter-spacing: 1.2px; }
+
+  /* Hero CTAs empilhados full-width pra caber texto longo */
+  .hero-ctas {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .hero-ctas .btn {
+    width: 100%;
+  }
+
+  /* Nav CTA mais compacto */
+  .lp-nav .btn-sm {
+    padding: 8px 14px;
+    letter-spacing: 1.2px;
+  }
+}
+
+/* ─── Smaller mobile (iPhone SE etc) ─── */
+@media (max-width: 380px) {
+  .btn {
+    letter-spacing: 1.2px;
+    padding: 12px 16px;
+    font-size: 11px;
+  }
+  .btn-large {
+    padding: 15px 18px;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+  }
+}

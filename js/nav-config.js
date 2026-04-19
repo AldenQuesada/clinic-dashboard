@@ -185,6 +185,7 @@
         { page: 'growth-wa-links',     label: 'Links WhatsApp',        breadcrumb: 'WhatsApp > Links WhatsApp' },
         { page: 'short-links',         label: 'Encurtador de Links',   breadcrumb: 'WhatsApp > Encurtador de Links' },
         { page: 'page-builder',        label: 'Construtor de P\u00e1ginas', breadcrumb: 'WhatsApp > Construtor de P\u00e1ginas', highlight: true },
+        { page: 'lp-builder-v2',       label: 'Construtor de LPs · v2', breadcrumb: 'WhatsApp > Construtor de LPs v2', highlight: true, externalUrl: 'lp-builder.html' },
       ],
     },
 

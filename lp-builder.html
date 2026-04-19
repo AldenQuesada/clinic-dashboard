@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LP Builder · Clínica Mirian de Paula</title>
+<meta name="theme-color" content="#1A1A1C">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/lp-builder.css">
+
+<!-- Feather icons -->
+<script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.2/dist/feather.min.js"></script>
+</head>
+<body>
+
+<div class="lpb-app" id="lpbApp">
+  <!-- TOPBAR principal -->
+  <header class="lpb-topbar" id="lpbTopbar">
+    <!-- preenchido por lpb-toolbar.js -->
+  </header>
+
+  <!-- SUBTOOLBAR (so no modo editor) -->
+  <div class="lpb-subtoolbar" id="lpbSubtoolbar" style="display:none">
+    <!-- preenchido por lpb-toolbar.js -->
+  </div>
+
+  <!-- ROOT (lista OU shell de edicao) -->
+  <main id="lpbRoot">
+    <div class="lpb-pages">
+      <div class="lpb-pages-empty">Carregando paginas...</div>
+    </div>
+  </main>
+</div>
+
+<!-- Modal mount -->
+<div id="lpbModalRoot"></div>
+<!-- Toast mount -->
+<div id="lpbToastRoot"></div>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<!-- ORDEM IMPORTANTE: tokens → schema → core → modulos UI       -->
+<!-- ────────────────────────────────────────────────────────── -->
+<script src="js/lp-builder/lpb-tokens.js"></script>
+<script src="js/lp-builder/lpb-schema.js"></script>
+<script src="js/lp-builder/lpb-block-style.js"></script>
+<script src="js/lp-builder/lpb-i18n.js"></script>
+<script src="js/lp-builder/lpb-core.js"></script>
+<script src="js/lp-builder/lpb-toolbar.js"></script>
+<script src="js/lp-builder/lpb-pages-list.js"></script>
+<script src="js/lp-builder/lpb-palette.js"></script>
+<script src="js/lp-builder/lpb-outline.js"></script>
+<script src="js/lp-builder/lpb-canvas.js"></script>
+<script src="js/lp-builder/lpb-inspector.js"></script>
+<!-- Sprint 3: tools -->
+<script src="js/lp-builder/lpb-validator.js"></script>
+<script src="js/lp-builder/lpb-styles-panel.js"></script>
+<script src="js/lp-builder/lpb-validator-panel.js"></script>
+<!-- Sprint 4: revista toolkit -->
+<script src="js/lp-builder/lpb-ai-generator.js"></script>
+<script src="js/lp-builder/lpb-photo-library.js"></script>
+<script src="js/lp-builder/lpb-image-crop.js"></script>
+<script src="js/lp-builder/lpb-preview-fullscreen.js"></script>
+<script src="js/lp-builder/lpb-ab-compare.js"></script>
+<!-- Sprint 5: polish -->
+<script src="js/lp-builder/lpb-shortcuts.js"></script>
+<script src="js/lp-builder/lpb-inline-edit.js"></script>
+<script src="js/lp-builder/lpb-autosave.js"></script>
+<!-- Sprint 6: text tools -->
+<script src="js/lp-builder/lpb-find-replace.js"></script>
+<script src="js/lp-builder/lpb-bulk-text.js"></script>
+<script src="js/lp-builder/lpb-word-count.js"></script>
+<script src="js/lp-builder/lpb-diff.js"></script>
+<script src="js/lp-builder/lpb-ai-polish.js"></script>
+<!-- Onda 3: editor power tools (IIFE, isolados) -->
+<script src="js/lp-builder/lpb-dynamic-palette.js"></script>
+<script src="js/lp-builder/lpb-dispatch-preview.js"></script>
+<script src="js/lp-builder/lpb-autofix.js"></script>
+<!-- Onda 9: leads admin -->
+<script src="js/lp-builder/lpb-leads-admin.js"></script>
+<!-- Onda 11: export HTML -->
+<script src="js/lp-builder/lpb-export-html.js"></script>
+<!-- Onda 13: analytics dashboard -->
+<script src="js/lp-builder/lpb-analytics.js"></script>
+<!-- Onda 17: SEO checker -->
+<script src="js/lp-builder/lpb-seo-checker.js"></script>
+<!-- Onda 18: Schema.org JSON-LD -->
+<script src="js/lp-builder/lpb-seo-schema.js"></script>
+<!-- Onda 19: History / Versions -->
+<script src="js/lp-builder/lpb-history.js"></script>
+<!-- Onda 20: Performance & Core Web Vitals -->
+<script src="js/lp-builder/lpb-perf-checker.js"></script>
+<script src="js/lp-builder/lpb-perf-panel.js"></script>
+<!-- Onda 21: LGPD / Cookie consent -->
+<script src="js/lp-builder/lpb-lgpd-engine.js"></script>
+<script src="js/lp-builder/lpb-lgpd-config.js"></script>
+<script src="js/lp-builder/lpb-lgpd-log.js"></script>
+<!-- Onda 22: Accessibility (WCAG 2.1) -->
+<script src="js/lp-builder/lpb-a11y-contrast.js"></script>
+<script src="js/lp-builder/lpb-a11y-checker.js"></script>
+<script src="js/lp-builder/lpb-a11y-panel.js"></script>
+<!-- Onda 23: Scheduling -->
+<script src="js/lp-builder/lpb-schedule-engine.js"></script>
+<script src="js/lp-builder/lpb-schedule-modal.js"></script>
+<script src="js/lp-builder/lpb-schedule-badge.js"></script>
+<!-- Onda 24: Multi-page funnels -->
+<script src="js/lp-builder/lpb-journey-engine.js"></script>
+<script src="js/lp-builder/lpb-journey-viewer.js"></script>
+<!-- Onda 25: Heatmap -->
+<script src="js/lp-builder/lpb-heatmap-engine.js"></script>
+<script src="js/lp-builder/lpb-heatmap-viewer.js"></script>
+<!-- Onda 26: Image optim -->
+<script src="js/lp-builder/lpb-img-optim-engine.js"></script>
+<script src="js/lp-builder/lpb-img-optim-panel.js"></script>
+<!-- Onda 27: Webhooks -->
+<script src="js/lp-builder/lpb-webhook-engine.js"></script>
+<script src="js/lp-builder/lpb-webhook-config.js"></script>
+<!-- Onda 28: Blocos do legado (LinkTree + Before-After Carousel + Footer V2 + Hero-Cover + CTA + Badges + Price + Social Icons + Button helper) -->
+<script src="js/lp-builder/lpb-social-icons.js"></script>
+<script src="js/lp-builder/lpb-button-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-links-tree.js"></script>
+<script src="js/lp-builder/lpb-block-ba-carousel.js"></script>
+<script src="js/lp-builder/lpb-block-footer.js"></script>
+<script src="js/lp-builder/lpb-block-hero-cover.js"></script>
+<script src="js/lp-builder/lpb-hero-cover-drag.js"></script>
+<script src="js/lp-builder/lpb-block-cta-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-badges-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-price-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-divider-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-title-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-check-legacy.js"></script>
+<script src="js/lp-builder/lpb-block-buttons-row.js"></script>
+<script src="js/lp-builder/lpb-block-magazine-toc.js"></script>
+
+<script>
+(function () {
+  'use strict';
+
+  // Helpers compartilhados
+  window.LPBToast = function (msg, kind) {
+    var root = document.getElementById('lpbToastRoot');
+    if (!root) return;
+    root.innerHTML = '';
+    var t = document.createElement('div');
+    t.className = 'lpb-toast' + (kind ? ' ' + kind : '');
+    t.textContent = msg;
+    root.appendChild(t);
+    setTimeout(function () {
+      if (t.parentNode) t.parentNode.removeChild(t);
+    }, 2400);
+  };
+
+  window.LPBIcon = function (name, sz) {
+    if (typeof feather === 'undefined' || !feather.icons || !feather.icons[name]) return '';
+    return feather.icons[name].toSvg({
+      width:  sz || 16,
+      height: sz || 16,
+      'stroke-width': 1.8,
+    });
+  };
+
+  // ROOT renderer — decide entre lista e editor
+  function renderRoot() {
+    var view = LPBuilder.getView();
+    var root = document.getElementById('lpbRoot');
+    if (view === 'editor') {
+      // shell 3 colunas — checa por #lpbPalette (id específico do shell)
+      if (!root.querySelector('#lpbPalette')) {
+        root.innerHTML =
+          '<div class="lpb-shell">' +
+            '<aside class="lpb-palette" id="lpbPalette"></aside>' +
+            '<section class="lpb-canvas-wrap" id="lpbCanvas"></section>' +
+            '<aside class="lpb-inspector" id="lpbInspector"></aside>' +
+          '</div>';
+        if (window.LPBPalette)   window.LPBPalette.mount('lpbPalette');
+        if (window.LPBCanvas)    window.LPBCanvas.mount('lpbCanvas');
+        if (window.LPBInspector) window.LPBInspector.mount('lpbInspector');
+      }
+    } else {
+      // lista — checa por #lpbPagesList (não pela class .lpb-pages que o
+      // HTML inicial de loading também usa)
+      if (!root.querySelector('#lpbPagesList')) {
+        root.innerHTML = '<div class="lpb-pages" id="lpbPagesList"></div>';
+        if (window.LPBPagesList) window.LPBPagesList.mount('lpbPagesList');
+      }
+    }
+    if (window.LPBToolbar) window.LPBToolbar.render();
+  }
+
+  // Confirmacao antes de fechar com mudancas nao salvas
+  window.addEventListener('beforeunload', function (e) {
+    if (LPBuilder.isDirty()) {
+      e.preventDefault();
+      e.returnValue = 'Você tem mudanças não salvas.';
+      return e.returnValue;
+    }
+  });
+
+  document.body.addEventListener('lpb:state-changed', renderRoot);
+
+  // Boot
+  document.addEventListener('DOMContentLoaded', function () {
+    renderRoot();
+    LPBuilder.loadPages().then(function () {
+      // Se URL tem #edit=ID, abre direto no editor (sobrevive F5)
+      var hashId = LPBuilder.getPageIdFromHash && LPBuilder.getPageIdFromHash();
+      if (hashId) {
+        LPBuilder.loadPage(hashId).catch(function (err) {
+          console.warn('[lpb] hash page not found:', err);
+          // limpa hash invalido
+          try { window.history.replaceState(null, '', window.location.pathname); } catch (_) {}
+        });
+      }
+    }).catch(function (err) {
+      console.error('[lpb] loadPages error:', err);
+      LPBToast('Erro ao carregar páginas', 'error');
+    });
+  });
+
+  // Reage ao back/forward do browser
+  window.addEventListener('hashchange', function () {
+    var hashId = LPBuilder.getPageIdFromHash && LPBuilder.getPageIdFromHash();
+    var current = LPBuilder.getCurrentPage();
+    if (hashId && (!current || current.id !== hashId)) {
+      LPBuilder.loadPage(hashId).catch(function () {});
+    } else if (!hashId && current) {
+      LPBuilder.exitEditor();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
