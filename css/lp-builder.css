@@ -1236,8 +1236,9 @@ input, textarea, select { font-family: inherit; }
   backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex; align-items: center; justify-content: center;
-  padding: 20px;
+  padding: 8px;
   animation: lpb-imgpos-fade .2s ease-out;
+  overflow: auto;                /* fallback se modal ainda muito alto */
 }
 @keyframes lpb-imgpos-fade {
   from { opacity: 0 } to { opacity: 1 }
@@ -1247,8 +1248,10 @@ input, textarea, select { font-family: inherit; }
   border: 1px solid rgba(200,169,126,.25);
   border-radius: 10px;
   width: 100%; max-width: 480px;
+  max-height: calc(100vh - 16px);   /* nunca passa da viewport */
   display: flex; flex-direction: column;
   box-shadow: 0 24px 60px rgba(0,0,0,.5);
+  overflow: hidden;                  /* body interno faz scroll */
 }
 .lpb-imgpos-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -1266,15 +1269,29 @@ input, textarea, select { font-family: inherit; }
   width: 28px; height: 28px;
 }
 .lpb-imgpos-close:hover { color: #C8A97E }
-.lpb-imgpos-body { padding: 16px 18px 8px }
+.lpb-imgpos-body {
+  padding: 12px 14px 6px;
+  flex: 1 1 auto;
+  min-height: 0;                /* permite stage shrinker se preciso */
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
 .lpb-imgpos-stage {
   width: 100%;
+  max-height: 60vh;             /* deixa espaço pros controles e footer · mobile-safe */
   background: #000;
   border: 1px dashed rgba(200,169,126,.25);
   overflow: hidden;
   cursor: grab;
   position: relative;
   user-select: none;
+  margin: 0 auto;
+}
+.lpb-imgpos-controls {
+  flex-shrink: 0;
+}
+.lpb-imgpos-footer {
+  flex-shrink: 0;
 }
 .lpb-imgpos-stage.is-dragging { cursor: grabbing }
 .lpb-imgpos-img {
