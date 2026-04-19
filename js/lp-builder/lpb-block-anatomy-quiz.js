@@ -39,10 +39,11 @@
   // ──────────────────────────────────────────────────────────
   // Fotos reais (Supabase Storage · uploaded 2026-04-19)
   // ──────────────────────────────────────────────────────────
-  var PHOTO_FRONT_BASE   = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/02.jpg'  // 40+ jovial (default frontal)
-  var PHOTO_FRONT_BEFORE = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/03.jpg'  // 55+ com sinais
-  var PHOTO_SIDE_BASE    = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-02.jpg'  // perfil 40+ (placeholder · upload pendente)
-  var PHOTO_SIDE_BEFORE  = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-03.jpg'  // perfil 55+
+  // BASE = ANTES (carrega primeiro · com sinais) · BEFORE_PROP = DEPOIS (toggle revela)
+  var PHOTO_FRONT_BASE   = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/03.jpg'  // 55+ com sinais (DEFAULT)
+  var PHOTO_FRONT_BEFORE = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/02.jpg'  // 40+ jovial (toggle "Ver depois")
+  var PHOTO_SIDE_BASE    = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-03.jpg'  // perfil 55+ (default)
+  var PHOTO_SIDE_BEFORE  = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-02.jpg'  // perfil 40+ (toggle)
 
   // ──────────────────────────────────────────────────────────
   // Áreas anatômicas separadas por VISTA (frontal · perfil)
@@ -243,9 +244,9 @@
         '<button class="aq-view-tab is-active" type="button" data-aq-view-btn="front" role="tab">Frontal</button>' +
         '<button class="aq-view-tab"           type="button" data-aq-view-btn="side"  role="tab">Perfil</button>' +
       '</div>' +
-      // ── Toggle antes/depois · canto top-right
+      // ── Toggle antes/depois · canto top-right (BASE = antes · toggle revela depois)
       '<button class="blk-aq-toggle" type="button" data-aq-toggle="1" aria-label="Alternar antes/depois">' +
-        '<span class="aq-tog-label" data-aq-tog-label>Ver antes</span>' +
+        '<span class="aq-tog-label" data-aq-tog-label>Ver depois</span>' +
       '</button>' +
     '</div>'
 

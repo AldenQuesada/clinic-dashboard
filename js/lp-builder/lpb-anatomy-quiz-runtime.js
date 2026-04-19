@@ -484,13 +484,14 @@
         var before = pane.querySelector('.blk-aq-photo-before')
         var label  = tog.querySelector('[data-aq-tog-label]')
         if (!before) return
+        // BASE = antes (default visível) · BEFORE_PROP = depois (revelado pelo toggle)
         var showing = before.style.opacity === '1'
         if (showing) {
           before.style.opacity = '0'
-          if (label) label.textContent = 'Ver antes'
+          if (label) label.textContent = 'Ver depois'  // está mostrando depois → próximo click volta pra antes
         } else {
           before.style.opacity = '1'
-          if (label) label.textContent = 'Ver depois'
+          if (label) label.textContent = 'Ver antes'   // mostrou depois agora → próximo click volta pra antes
         }
         return
       }
@@ -510,9 +511,9 @@
         wrap2.querySelectorAll('[data-aq-view-btn]').forEach(function (b) {
           b.classList.toggle('is-active', b.getAttribute('data-aq-view-btn') === nextView)
         })
-        // reseta toggle antes/depois pra "Ver antes" ao trocar vista
+        // reseta toggle antes/depois pra "Ver depois" (estado inicial = antes visível)
         var lbl = rootEl.querySelector('[data-aq-tog-label]')
-        if (lbl) lbl.textContent = 'Ver antes'
+        if (lbl) lbl.textContent = 'Ver depois'
         return
       }
     })
