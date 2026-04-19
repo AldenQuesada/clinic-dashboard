@@ -497,13 +497,26 @@ Deno.serve(async (req) => {
         // pode recomeçar se quiser.
         result = await handleApply(phone, message, { step: 0, data: {} })
         break
-      case 'b2b.emit_voucher':
-        if (role !== 'partner') {
-          result = { reply: 'Você não está na whitelist de parceiras. Quer ser candidata?', next_state: { step: 0, data: {} } }
+      case 'b2b.emit_voucher': {
+        // Admin pode emitir se estiver na whitelist de alguma parceria
+        let p = partnership
+        if (!p) {
+          try {
+            const lookup = await rpc('b2b_wa_sender_lookup', { p_phone: phone })
+            if (lookup?.ok) p = lookup
+          } catch { /* ignora */ }
+        }
+        if (!p) {
+          result = {
+            reply: 'Pra emitir voucher, você precisa estar na whitelist de alguma parceria. ' +
+                   'Posso autorizar agora? Me diz qual parceria.',
+            next_state: null,
+          }
         } else {
-          result = await handleEmitVoucher(phone, intent.entities, partnership)
+          result = await handleEmitVoucher(phone, intent.entities, p)
         }
         break
+      }
       case 'b2b.admin_approve':
         if (role !== 'admin') { result = handleOther(role); break }
         result = await handleAdminApprove(intent.entities)
