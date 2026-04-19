@@ -79,8 +79,18 @@
         '<div class="lpb-imgpos-controls">' +
           '<label class="lpb-imgpos-slider-row">' +
             '<span>Zoom</span>' +
-            '<input type="range" class="lpb-imgpos-slider" min="1" max="5" step="0.05" value="' + state.zoom + '">' +
-            '<span class="lpb-imgpos-zoomval">' + Math.round(state.zoom * 100) + '%</span>' +
+            '<input type="range" class="lpb-imgpos-slider" data-axis="zoom" min="1" max="5" step="0.05" value="' + state.zoom + '">' +
+            '<span class="lpb-imgpos-zoomval" data-axis-val="zoom">' + Math.round(state.zoom * 100) + '%</span>' +
+          '</label>' +
+          '<label class="lpb-imgpos-slider-row">' +
+            '<span>↔ Posição</span>' +
+            '<input type="range" class="lpb-imgpos-slider" data-axis="x" min="-50" max="50" step="0.5" value="' + state.x + '">' +
+            '<span class="lpb-imgpos-zoomval" data-axis-val="x">' + Math.round(state.x) + '%</span>' +
+          '</label>' +
+          '<label class="lpb-imgpos-slider-row">' +
+            '<span>↕ Posição</span>' +
+            '<input type="range" class="lpb-imgpos-slider" data-axis="y" min="-50" max="50" step="0.5" value="' + state.y + '">' +
+            '<span class="lpb-imgpos-zoomval" data-axis-val="y">' + Math.round(state.y) + '%</span>' +
           '</label>' +
           ghostToggleHtml +
         '</div>' +
@@ -93,15 +103,27 @@
 
     document.body.appendChild(modal)
 
-    var stage   = modal.querySelector('.lpb-imgpos-stage')
-    var img     = modal.querySelector('.lpb-imgpos-img')
-    var slider  = modal.querySelector('.lpb-imgpos-slider')
-    var zoomVal = modal.querySelector('.lpb-imgpos-zoomval')
+    var stage = modal.querySelector('.lpb-imgpos-stage')
+    var img   = modal.querySelector('.lpb-imgpos-img')
+    var sliders = {
+      zoom: modal.querySelector('[data-axis="zoom"]'),
+      x:    modal.querySelector('[data-axis="x"]'),
+      y:    modal.querySelector('[data-axis="y"]'),
+    }
+    var sliderVals = {
+      zoom: modal.querySelector('[data-axis-val="zoom"]'),
+      x:    modal.querySelector('[data-axis-val="x"]'),
+      y:    modal.querySelector('[data-axis-val="y"]'),
+    }
 
     function _apply() {
       img.style.transform = 'scale(' + state.zoom + ') translate(' + state.x + '%, ' + state.y + '%)'
-      slider.value = state.zoom
-      zoomVal.textContent = Math.round(state.zoom * 100) + '%'
+      sliders.zoom.value = state.zoom
+      sliders.x.value    = state.x
+      sliders.y.value    = state.y
+      sliderVals.zoom.textContent = Math.round(state.zoom * 100) + '%'
+      sliderVals.x.textContent    = Math.round(state.x) + '%'
+      sliderVals.y.textContent    = Math.round(state.y) + '%'
     }
     _apply()
 
@@ -158,9 +180,17 @@
     }, { passive: true })
     stage.addEventListener('touchend', function () { dragging = false })
 
-    // Slider zoom
-    slider.addEventListener('input', function () {
-      state.zoom = _clampZoom(parseFloat(slider.value))
+    // Sliders zoom + x + y
+    sliders.zoom.addEventListener('input', function () {
+      state.zoom = _clampZoom(parseFloat(sliders.zoom.value))
+      _apply()
+    })
+    sliders.x.addEventListener('input', function () {
+      state.x = _clampPan(parseFloat(sliders.x.value))
+      _apply()
+    })
+    sliders.y.addEventListener('input', function () {
+      state.y = _clampPan(parseFloat(sliders.y.value))
       _apply()
     })
 
