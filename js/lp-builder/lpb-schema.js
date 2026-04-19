@@ -116,7 +116,7 @@
         hint: 'Cole SVG inline (Feather/Lucide). Vazio = sem ícone.' },
     ],
     ba_carousel_slide: [
-      { k: 'before_url',   label: 'Foto antes',  type: 'image', aspect: '7/10',
+      { k: 'before_url',   label: 'Foto antes',  type: 'image', aspect: '2/3',
         positioner: true,
         hint: 'Aspect 7/10 · queixo cabe sem ser cortado pelo label' },
       { k: 'before_zoom',  label: 'Antes · zoom', type: 'number', optional: true,
@@ -126,7 +126,7 @@
       { k: 'before_y',     label: 'Antes · pan Y (%)', type: 'number', optional: true,
         hidden: true, default: 0 },
 
-      { k: 'after_url',    label: 'Foto depois', type: 'image', aspect: '7/10',
+      { k: 'after_url',    label: 'Foto depois', type: 'image', aspect: '2/3',
         positioner: true },
       { k: 'after_zoom',   label: 'Depois · zoom', type: 'number', optional: true,
         hidden: true, default: 1 },

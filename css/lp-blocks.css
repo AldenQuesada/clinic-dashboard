@@ -2368,7 +2368,7 @@
 .blk-bac-track {
   position: relative;
   width: 100%;
-  padding: 0 1.5rem 1rem;
+  padding: 0 0 1rem;            /* zero padding lateral · foto encosta nas bordas */
   box-sizing: border-box;
 }
 
@@ -2376,6 +2376,7 @@
   width: 100%;
   display: flex;
   transition: opacity 800ms cubic-bezier(.4,0,.2,1);
+  /* sem padding lateral · slide ocupa 100% da largura */
 }
 .blk-bac-card {
   flex: 1;
@@ -2392,7 +2393,7 @@
   border-color: rgba(200,169,126,.25);
 }
 .blk-bac-img {
-  aspect-ratio: 7/10;          /* +7% mais alto que 3/4 · queixo nao mais por baixo do label */
+  aspect-ratio: 2/3;           /* mais alto · proporcao retrato classica · cresce com largura */
   position: relative;
   overflow: hidden;
   background: rgba(200,169,126,.06);
