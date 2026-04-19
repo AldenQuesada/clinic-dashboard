@@ -279,6 +279,51 @@
     return html
   }
 
+  // ── Galeria rotativa de imagens ──────────────────────────────
+  // Permite >=1 imagem por regra. No envio, o engine pega uma aleatoriamente
+  // (rotacao evita bombardeio repetitivo no WA).
+  // attachment_urls: jsonb array em wa_agenda_automations (coluna nova).
+  function renderAttachGallery(urls, above) {
+    var arr = Array.isArray(urls) ? urls.filter(Boolean) : []
+    var pos = above === false ? 'below' : 'above'
+    var html = '<div class="fa-attach fa-attach-gallery">'
+      +   '<div class="fa-attach-row">'
+      +     '<button type="button" class="fa-btn-attach" data-action="pick-image-multi">'+_feather('image',14)+'  '
+      +       (arr.length ? 'Adicionar mais' : 'Adicionar imagem(s)')+'</button>'
+      +     '<span class="fa-attach-count">'+(arr.length
+              ? arr.length + (arr.length > 1 ? ' imagens (rotacao aleatoria)' : ' imagem')
+              : 'nenhuma')+'</span>'
+      +   '</div>'
+
+    if (arr.length) {
+      html += '<div class="fa-attach-gallery-grid">'
+      arr.forEach(function(u, i) {
+        html += '<div class="fa-attach-thumb" data-url="'+_esc(u)+'">'
+          +   '<img src="'+_esc(u)+'" alt="img '+(i+1)+'">'
+          +   '<button type="button" class="fa-attach-thumb-x" data-action="remove-gallery-image" data-idx="'+i+'" title="Remover">'+_feather('x',12)+'</button>'
+          + '</div>'
+      })
+      html += '</div>'
+      html += '<div class="fa-attach-pos">'
+        +   '<label><input type="radio" name="faAttachPos" value="above"' + (pos==='above'?' checked':'') + '> Acima do texto</label>'
+        +   '<label style="margin-left:16px"><input type="radio" name="faAttachPos" value="below"' + (pos==='below'?' checked':'') + '> Abaixo do texto</label>'
+        + '</div>'
+    } else {
+      html += '<div class="fa-attach-hint">JPG, PNG, WEBP ou GIF — max 10 MB cada. Suba varias pra rodar aleatorio a cada envio.</div>'
+    }
+
+    html += '<input type="file" id="faAttachInputMulti" multiple accept="image/jpeg,image/png,image/webp,image/gif" style="display:none"></div>'
+    return html
+  }
+
+  // Upload de N arquivos em paralelo, retorna array de URLs publicas.
+  async function uploadAttachmentMulti(files) {
+    if (!files || !files.length) return []
+    var list = Array.from(files)
+    var results = await Promise.all(list.map(function(f) { return uploadAttachment(f) }))
+    return results.filter(Boolean)
+  }
+
   // ── Dispatch simulator ──────────────────────────────────────
   // Simula quando a regra vai disparar proximos N vezes.
   // Para d_before/d_zero/min_before: busca appointments futuros reais.
@@ -752,6 +797,8 @@
     renderChipsBar:     renderChipsBar,
     renderFormatToolbar: renderFormatToolbar,
     renderAttachArea:   renderAttachArea,
+    renderAttachGallery: renderAttachGallery,
+    uploadAttachmentMulti: uploadAttachmentMulti,
     renderTemplateLibraryButton: renderTemplateLibraryButton,
     showTemplateLibrary: showTemplateLibrary,
     renderTagFilter:    renderTagFilter,

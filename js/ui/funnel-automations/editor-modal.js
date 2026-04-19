@@ -46,7 +46,7 @@
       name: '', description: '',
       channel: 'whatsapp',
       content_template: '', ab_variant_template: '',
-      attachment_url: '', attachment_above_text: true,
+      attachment_url: '', attachment_urls: [], attachment_above_text: true,
       alert_title: '', alert_type: 'info',
       task_title: '', task_assignee: 'sdr', task_priority: 'normal', task_deadline_hours: 24,
       alexa_message: '', alexa_target: 'sala',
@@ -75,6 +75,7 @@
     out.content_template = r.content_template || ''
     out.ab_variant_template = r.ab_variant_template || ''
     out.attachment_url = r.attachment_url || ''
+    out.attachment_urls = Array.isArray(r.attachment_urls) ? r.attachment_urls.filter(Boolean) : []
     out.attachment_above_text = r.attachment_above_text !== false
     out.alert_title = r.alert_title || ''
     out.alert_type = r.alert_type || 'info'
@@ -212,7 +213,13 @@
       +   S().renderFormatToolbar()
       +   '<textarea id="faContent" class="fa-wa-textarea" rows="10" placeholder="Digite a mensagem do WhatsApp...">' + _esc(f.content_template) + '</textarea>'
       +   abBlock
-      +   S().renderAttachArea(f.attachment_url, f.attachment_above_text !== false)
+      +   (S().renderAttachGallery
+            ? S().renderAttachGallery(
+                (Array.isArray(f.attachment_urls) && f.attachment_urls.length)
+                  ? f.attachment_urls
+                  : (f.attachment_url ? [f.attachment_url] : []),
+                f.attachment_above_text !== false)
+            : S().renderAttachArea(f.attachment_url, f.attachment_above_text !== false))
       + '</div>'
   }
 
@@ -361,6 +368,7 @@
       content_template: _form.content_template || _form.alexa_message || '-',
       ab_variant_template: (_form.ab_variant_template && _form.ab_variant_template.trim()) ? _form.ab_variant_template : null,
       attachment_url: _form.attachment_url || null,
+      attachment_urls: Array.isArray(_form.attachment_urls) && _form.attachment_urls.length ? _form.attachment_urls : [],
       attachment_above_text: _form.attachment_above_text !== false,
       alert_title: _form.alert_title,
       alert_type: _form.alert_type,
@@ -490,7 +498,20 @@
       if (shellAct) {
         var sa = shellAct.dataset.action
         if (sa === 'pick-image')     { var ai = _overlay.querySelector('#faAttachInput'); if (ai) ai.click(); return }
-        if (sa === 'remove-image')   { _readForm(); _form.attachment_url = ''; _render(); return }
+        if (sa === 'pick-image-multi') { var aim = _overlay.querySelector('#faAttachInputMulti'); if (aim) aim.click(); return }
+        if (sa === 'remove-image')   { _readForm(); _form.attachment_url = ''; _form.attachment_urls = []; _render(); return }
+        if (sa === 'remove-gallery-image') {
+          _readForm()
+          var idx = parseInt(shellAct.dataset.idx, 10)
+          if (!Array.isArray(_form.attachment_urls)) _form.attachment_urls = []
+          if (!isNaN(idx) && idx >= 0 && idx < _form.attachment_urls.length) {
+            _form.attachment_urls.splice(idx, 1)
+            // Sincroniza o legado attachment_url pro primeiro (retrocompat com wa_outbox sender velho)
+            _form.attachment_url = _form.attachment_urls[0] || ''
+            _render()
+          }
+          return
+        }
         if (sa === 'speak-alexa')    { _readForm(); S().speakAlexa(S().renderTemplate(_form.alexa_message || 'Mensagem vazia', S().SAMPLE_VARS)); return }
         if (sa === 'simulate-alert') { _readForm(); S().showToast('Automacao', S().renderTemplate(_form.alert_title || 'Alerta', S().SAMPLE_VARS), _form.alert_type || 'info'); return }
         if (sa === 'emoji-toggle') {
@@ -620,7 +641,27 @@
         S().showToast('Upload', 'Enviando imagem...', 'info')
         S().uploadAttachment(file).then(function (url) {
           _form.attachment_url = url
+          if (!Array.isArray(_form.attachment_urls)) _form.attachment_urls = []
+          if (_form.attachment_urls.indexOf(url) < 0) _form.attachment_urls.unshift(url)
           S().showToast('Upload', 'Imagem anexada', 'success')
+          _render()
+        }).catch(function (err) { S().showToast('Erro', err.message || 'Upload falhou', 'error') })
+      }
+      if (e.target.id === 'faAttachInputMulti') {
+        var files = e.target.files && Array.from(e.target.files)
+        if (!files || !files.length) return
+        _readForm()
+        S().showToast('Upload', 'Enviando ' + files.length + ' imagem(s)...', 'info')
+        var upFn = S().uploadAttachmentMulti || (function(fs) {
+          return Promise.all(fs.map(function(f) { return S().uploadAttachment(f) }))
+        })
+        upFn(files).then(function (urls) {
+          if (!Array.isArray(_form.attachment_urls)) _form.attachment_urls = []
+          urls.forEach(function(u) {
+            if (u && _form.attachment_urls.indexOf(u) < 0) _form.attachment_urls.push(u)
+          })
+          _form.attachment_url = _form.attachment_urls[0] || ''
+          S().showToast('Upload', urls.length + ' imagem(s) anexada(s)', 'success')
           _render()
         }).catch(function (err) { S().showToast('Erro', err.message || 'Upload falhou', 'error') })
       }
