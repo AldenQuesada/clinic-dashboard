@@ -6,7 +6,7 @@
 <title>Voucher — Clínica Mirian de Paula</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Italianno&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Mea+Culpa&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -116,7 +116,7 @@
   .title-stack {
     position: relative;
     display: inline-block;
-    padding: 18px 40px 6px;
+    padding: 40px 40px 6px;
     margin-bottom: 48px;
     opacity: 0;
     animation: fade-up 900ms ease 550ms forwards;
@@ -129,20 +129,19 @@
     position: relative; z-index: 1;
   }
   .title-script {
-    font-family: 'Italianno', cursive;
-    font-size: 108px; font-weight: 400;
+    font-family: 'Mea Culpa', cursive;
+    font-size: 72px; font-weight: 400;
     color: var(--accent); line-height: 1;
     position: absolute;
-    top: 0;
-    left: 18%;
-    transform: translate(-50%, -30%) rotate(-6deg);
+    top: -36px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 2;
     white-space: nowrap;
-    text-shadow: 0 1px 0 var(--bg-card);
   }
   @media (max-width: 520px) {
     .title-serif { font-size: 42px; letter-spacing: 6px; }
-    .title-script { font-size: 78px; left: 22%; }
+    .title-script { font-size: 54px; top: -28px; }
     .title-stack { padding: 14px 20px 6px; }
   }
 
