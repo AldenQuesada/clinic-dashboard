@@ -353,6 +353,11 @@
       if (window.LPBBlockLocationIphone) return LPBBlockLocationIphone.render(b)
       return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">location-iphone (renderer não carregado)</div>'
     },
+    // Onda 32: photo-gallery (carrossel de fotos com label inferior)
+    'photo-gallery': function (b) {
+      if (window.LPBBlockPhotoGallery) return LPBBlockPhotoGallery.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">photo-gallery (renderer não carregado)</div>'
+    },
 
     'before-after': function (b) {
       var p = b.props || {}
@@ -1387,6 +1392,8 @@
         if (window.LPBBlockLocationMap    && window.LPBBlockLocationMap.bind)    { try { LPBBlockLocationMap.bind(b)    } catch (_) {} }
         if (window.LPBBlockLocationStory  && window.LPBBlockLocationStory.bind)  { try { LPBBlockLocationStory.bind(b)  } catch (_) {} }
         if (window.LPBBlockLocationIphone && window.LPBBlockLocationIphone.bind) { try { LPBBlockLocationIphone.bind(b) } catch (_) {} }
+        // Onda 32: photo-gallery autoplay + dots
+        if (window.LPBBlockPhotoGallery   && window.LPBBlockPhotoGallery.bind)   { try { LPBBlockPhotoGallery.bind(b)   } catch (_) {} }
       }
     }, 30)
   }

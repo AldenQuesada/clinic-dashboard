@@ -69,6 +69,18 @@
       { k: 'url',     label: 'Foto',    type: 'image' },
       { k: 'caption', label: 'Legenda', type: 'text', max: 80, optional: true },
     ],
+    photo_gallery_item: [
+      { k: 'url',     label: 'Foto',    type: 'image', aspect: '4/5', positioner: true },
+      { k: 'zoom',    label: 'Zoom',    type: 'number', optional: true, hidden: true, default: 1 },
+      { k: 'x',       label: 'Pan X',   type: 'number', optional: true, hidden: true, default: 0 },
+      { k: 'y',       label: 'Pan Y',   type: 'number', optional: true, hidden: true, default: 0 },
+      { k: 'rot',     label: 'Rotação', type: 'number', optional: true, hidden: true, default: 0 },
+      { k: 'caption', label: 'Texto inferior (label)', type: 'text', max: 80, optional: true,
+        hint: 'Aparece sobreposto na parte de baixo da foto · estilo legenda editorial' },
+      { k: 'caption_size',  label: 'Texto · tamanho', type: 'select',
+        options: [{value:'sm',label:'Pequeno (10px)'},{value:'md',label:'Médio (12px · default)'},{value:'lg',label:'Grande (14px)'},{value:'xl',label:'Extra (17px)'}], default: 'md', optional: true },
+      { k: 'caption_color', label: 'Texto · cor', type: 'color', optional: true },
+    ],
     process_step: [
       { k: 'numero',    label: 'Número',     type: 'text',     max: 4,
         hint: '01, 02, 03... ou ⓘ deixe vazio pra autonumerar' },
@@ -1586,6 +1598,61 @@
     },
 
     // ── BEFORE-AFTER-CAROUSEL · 2 fotos lado a lado + carrossel (Onda 28) ──
+    // ── photo-gallery · carrossel de fotos com label inferior (Onda 32) ──
+    'photo-gallery': {
+      name: 'Galeria · Carrossel de Fotos',
+      icon: 'image',
+      description: '1 foto = estática · 2+ fotos = carrossel fade. Cada foto com positioner + label inferior. Aspect padrão 4/5 (ajustável).',
+      group: 'midia',
+      fields: [
+        { k: 'eyebrow', label: 'Eyebrow', type: 'text', max: 40, optional: true, default: 'Galeria' },
+        { k: 'eyebrow_size',  label: 'Eyebrow · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (8px)'},{value:'md',label:'Médio (9px · default)'},{value:'lg',label:'Grande (11px)'},{value:'xl',label:'Extra (13px)'}], default: 'md' },
+        { k: 'eyebrow_color', label: 'Eyebrow · cor (custom)', type: 'color', optional: true },
+        { k: 'eyebrow_padx',  label: 'Eyebrow · espaçamento lateral', type: 'select',
+          options: [{value:'0',label:'Zero'},{value:'sm',label:'Pequeno'},{value:'md',label:'Médio (default)'},{value:'lg',label:'Grande'},{value:'xl',label:'Extra'}], default: 'md' },
+
+        { k: 'titulo',  label: 'Título',  type: 'text', max: 60, optional: true, default: 'Por dentro da clínica' },
+        { k: 'titulo_size',   label: 'Título · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (18px)'},{value:'md',label:'Médio (24px · default)'},{value:'lg',label:'Grande (32px)'},{value:'xl',label:'Extra (40px)'}], default: 'md' },
+        { k: 'titulo_color',  label: 'Título · cor (custom)', type: 'color', optional: true },
+        { k: 'titulo_padx',   label: 'Título · espaçamento lateral', type: 'select',
+          options: [{value:'0',label:'Zero'},{value:'sm',label:'Pequeno'},{value:'md',label:'Médio (default)'},{value:'lg',label:'Grande'},{value:'xl',label:'Extra'}], default: 'md' },
+
+        { k: 'photos', label: 'Fotos (cada uma com label próprio)', type: 'list',
+          itemSchema: 'photo_gallery_item', minItems: 1, maxItems: 12,
+          hint: '1 foto = estática · 2+ fotos = carrossel automático com fade' },
+
+        { k: 'aspect', label: 'Proporção da foto', type: 'select',
+          options: [
+            { value: '4/5',  label: '4/5 portrait suave (default · padrão LP)' },
+            { value: '5/4',  label: '5/4 landscape suave' },
+            { value: '1/1',  label: '1/1 quadrado (Instagram)' },
+            { value: '2/3',  label: '2/3 portrait alto' },
+            { value: '3/2',  label: '3/2 landscape clássico' },
+            { value: '3/4',  label: '3/4 portrait clássico' },
+            { value: '9/16', label: '9/16 vertical (story)' },
+            { value: '16/9', label: '16/9 widescreen (vídeo)' },
+          ], default: '4/5' },
+
+        { k: 'autoplay_slides', label: 'Auto-trocar fotos (se 2+)', type: 'bool', default: true },
+        { k: 'slides_interval', label: 'Intervalo (segundos)', type: 'select',
+          options: [
+            { value: 3,  label: '3s (rápido)' },
+            { value: 4,  label: '4s (default)' },
+            { value: 6,  label: '6s' },
+            { value: 8,  label: '8s' },
+          ], default: 4 },
+
+        { k: 'bg', label: 'Fundo do bloco', type: 'select',
+          options: [
+            { value: 'graphite', label: 'Grafite (escuro · default)' },
+            { value: 'ivory',    label: 'Marfim' },
+            { value: 'white',    label: 'Branco' },
+          ], default: 'graphite' },
+      ],
+    },
+
     // ── 4 blocos de LOCALIZAÇÃO (Onda 31) · WOW disruptivo ──
     'location-map': {
       name: 'Localização · Mapa Imersivo',
