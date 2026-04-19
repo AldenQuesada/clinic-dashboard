@@ -180,28 +180,32 @@
   // Categorização automática de fields → grupos colapsáveis
   // (nenhum field do schema precisa mudar — heurística por nome)
   // ────────────────────────────────────────────────────────────
+  // ORDEM IMPORTA · primeiro grupo que match ganha o field
+  // Específicos (size/color/posicao/layout/overlay) ANTES de conteúdo pra evitar
+  // que `eyebrow_size` caia em "Conteúdo" porque começa com "eyebrow".
   var GROUP_DEFS = [
     { id: 'media',    label: 'Mídia',                icon: 'image',
-      match: function (k, t) { return /^(image|imagem|foto|bg_image|bg|video|cover|hero_img)/i.test(k) && t === 'image' } },
-    { id: 'conteudo', label: 'Conteúdo · Texto',     icon: 'type',
-      match: function (k, t) {
-        return /^(eyebrow|h1|h2|h3|h4|headline|subheadline|titulo|title|lead|subtitle|body|text|content|descricao|kicker|tagline|brand_name|copyright|clinic_label|message)/i.test(k) ||
-               (t === 'text' || t === 'textarea' || t === 'richtext')
-      } },
+      match: function (k, t) { return t === 'image' || /^(image|imagem|foto|bg_image|cover)/i.test(k) } },
     { id: 'itens',    label: 'Itens / Lista',        icon: 'list',
       match: function (k, t) { return t === 'list' || /^(items|slides|social|fields|links)$/i.test(k) } },
-    { id: 'cta',      label: 'CTA / Botão',          icon: 'mouse-pointer',
-      match: function (k, t) { return /^(cta|btn|button)(_|$)/i.test(k) || /url$/i.test(k) || t === 'cta' } },
     { id: 'tamanhos', label: 'Tamanhos',             icon: 'maximize-2',
       match: function (k) { return /_size$/i.test(k) || /^size$/i.test(k) } },
     { id: 'cores',    label: 'Cores',                icon: 'droplet',
       match: function (k, t) { return /_color$/i.test(k) || /^color$/i.test(k) || t === 'color' } },
     { id: 'posicao',  label: 'Posição & Alinhamento', icon: 'move',
-      match: function (k) { return /_align|^align|_pos|^pos|_y_pct|_x_pct|^y_|^x_/i.test(k) } },
-    { id: 'layout',   label: 'Layout',               icon: 'layout',
-      match: function (k) { return /^(aspect|ratio|columns|columns_grid|layout|max_width|direction|spacing|bg|fundo)/i.test(k) } },
+      match: function (k) { return /_align$|^align$|_pos$|^pos$|_y_pct|_x_pct|^y_|^x_/i.test(k) || /text_align/i.test(k) } },
     { id: 'overlay',  label: 'Overlay / Efeitos',    icon: 'cloud',
       match: function (k) { return /^(overlay|gradient|blur|filter)/i.test(k) } },
+    { id: 'layout',   label: 'Layout',               icon: 'layout',
+      match: function (k) { return /^(aspect|ratio|columns|columns_grid|layout|max_width|direction|spacing|bg$|fundo$)/i.test(k) } },
+    { id: 'cta',      label: 'CTA / Botão',          icon: 'mouse-pointer',
+      match: function (k, t) { return /^(cta|btn|button)(_|$)/i.test(k) || /_url$|^url$/i.test(k) || t === 'cta' } },
+    { id: 'conteudo', label: 'Conteúdo · Texto',     icon: 'type',
+      match: function (k, t) {
+        // EXACT match com nomes principais (sem prefix-loose) + tipos puramente textuais
+        if (/^(eyebrow|h1|h2|h3|h4|headline|subheadline|titulo|title|lead|subtitle|body|text|content|descricao|kicker|tagline|brand_name|copyright|clinic_label|message|intro|paragrafos|quote)$/i.test(k)) return true
+        return (t === 'text' || t === 'textarea' || t === 'richtext' || t === 'svg')
+      } },
     { id: 'outros',   label: 'Outros',               icon: 'more-horizontal',
       match: function () { return true } },  // catch-all
   ]
@@ -763,36 +767,45 @@
     _root.querySelectorAll('input.lpb-input[data-fkey]:not([data-cta-key]), textarea.lpb-textarea[data-fkey]:not([data-cta-key])').forEach(function (el) {
       // ignora inputs DENTRO de items de lista — eles têm handler dedicado abaixo
       if (el.closest('.lpb-list-item')) return
-      el.oninput = function () {
+      var flushFor = function (e) {
         var key = el.dataset.fkey
         if (!key || key === '__scalar') return
-        var val = el.value
-        var flush = function () {
-          var currentVal = el.value  // re-lê valor atual (pode ter mudado durante debounce)
-          if (isI18nMode) {
-            var b2 = LPBuilder.getBlock(idx)
-            LPBI18n.setValue(b2, key, currentVal, editingLang)
-            LPBuilder.setPageMeta('updated_at', LPBuilder.getCurrentPage().updated_at)
-            if (window.LPBCanvas && window.LPBCanvas.render) window.LPBCanvas.render()
-          } else {
-            LPBuilder.setBlockProp(idx, key, currentVal)
-          }
-          var counter = el.closest('.lpb-field').querySelector('.lpb-field-counter')
-          if (counter && counter.textContent.indexOf('/') >= 0) {
-            var max = parseInt(counter.textContent.split('/')[1], 10)
-            counter.textContent = currentVal.length + '/' + max
-            counter.classList.toggle('over', currentVal.length > max)
-          }
-        }
-        // FLUSH IMEDIATO se campo ficou vazio · feedback instantâneo (sem 120ms)
-        // Evita sensação de "não consigo deletar"
-        if (val.length === 0) {
-          clearTimeout(_saveDebounce)
-          _saveDebounce = null
-          flush()
+        var currentVal = el.value
+        if (isI18nMode) {
+          var b2 = LPBuilder.getBlock(idx)
+          LPBI18n.setValue(b2, key, currentVal, editingLang)
+          LPBuilder.setPageMeta('updated_at', LPBuilder.getCurrentPage().updated_at)
+          if (window.LPBCanvas && window.LPBCanvas.render) window.LPBCanvas.render()
         } else {
-          _debounceUpdate(flush)
+          LPBuilder.setBlockProp(idx, key, currentVal)
         }
+        var fieldEl = el.closest('.lpb-field')
+        var counter = fieldEl && fieldEl.querySelector('.lpb-field-counter')
+        if (counter && counter.textContent.indexOf('/') >= 0) {
+          var max = parseInt(counter.textContent.split('/')[1], 10)
+          counter.textContent = currentVal.length + '/' + max
+          counter.classList.toggle('over', currentVal.length > max)
+        }
+      }
+      el.oninput = function (e) {
+        var val = el.value
+        // FLUSH IMEDIATO se vazio · feedback instantâneo
+        if (val.length === 0) {
+          clearTimeout(_saveDebounce); _saveDebounce = null
+          flushFor()
+        } else {
+          _debounceUpdate(flushFor)
+        }
+      }
+      // Defesa: change/blur SEMPRE faz flush imediato
+      // (cobre caso onde input event não disparou por algum motivo)
+      el.onchange = function () {
+        clearTimeout(_saveDebounce); _saveDebounce = null
+        flushFor()
+      }
+      el.onblur = function () {
+        clearTimeout(_saveDebounce); _saveDebounce = null
+        flushFor()
       }
     })
 
