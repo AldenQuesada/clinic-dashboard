@@ -66,16 +66,35 @@
   // ────────────────────────────────────────────────────────────
   // Open
   // ────────────────────────────────────────────────────────────
-  function openForField(blockIdx, fieldKey) {
+  function openForField(blockIdx, fieldKey, listCtx) {
+    // listCtx opcional: { fkey, idx } pra escrever dentro de um list item
     var modalRoot = document.getElementById('lpbModalRoot')
     if (!modalRoot) return
 
     var schema = window.LPBSchema
     var b = LPBuilder.getBlock(blockIdx)
     if (!b || !schema) return
-    var fmeta = schema.getFieldMeta(b.type, fieldKey)
+    // Pra list context, lê o aspect do itemSchema (não do field top-level)
+    var fmeta = (listCtx && listCtx.fkey)
+      ? (function () {
+          var listFmeta = schema.getFieldMeta(b.type, listCtx.fkey)
+          if (!listFmeta || !listFmeta.itemSchema) return null
+          var itemDef = schema.getItemSchema(listFmeta.itemSchema) || []
+          var found = null
+          itemDef.forEach(function (sub) { if (sub.k === fieldKey) found = sub })
+          return found
+        })()
+      : schema.getFieldMeta(b.type, fieldKey)
     var aspect = fmeta ? _parseAspect(fmeta.aspect) : NaN
-    var srcUrl = b.props ? b.props[fieldKey] : ''
+    // Lê URL atual · do slide se em list context, senão do top-level
+    var srcUrl
+    if (listCtx && listCtx.fkey && typeof listCtx.idx === 'number') {
+      var arr0 = (b.props && Array.isArray(b.props[listCtx.fkey])) ? b.props[listCtx.fkey] : []
+      var item0 = arr0[listCtx.idx] || {}
+      srcUrl = item0[fieldKey] || ''
+    } else {
+      srcUrl = b.props ? b.props[fieldKey] : ''
+    }
 
     modalRoot.innerHTML = '' +
       '<div class="lpb-modal-bg" id="lpbCrBg">' +
@@ -181,7 +200,19 @@
           var url = await _uploadBlob(blob)
           dismiss()
           try { document.activeElement && document.activeElement.blur && document.activeElement.blur() } catch (_) {}
-          LPBuilder.setBlockProp(blockIdx, fieldKey, url)
+          // Suporta list context (slide do carrossel etc)
+          if (listCtx && listCtx.fkey && typeof listCtx.idx === 'number') {
+            var blockX = LPBuilder.getBlock(blockIdx)
+            var arr = (blockX && Array.isArray(blockX.props[listCtx.fkey]))
+              ? blockX.props[listCtx.fkey].slice() : []
+            var item = arr[listCtx.idx] || {}
+            var update = {}
+            update[fieldKey] = url
+            arr[listCtx.idx] = Object.assign({}, item, update)
+            LPBuilder.setBlockProp(blockIdx, listCtx.fkey, arr)
+          } else {
+            LPBuilder.setBlockProp(blockIdx, fieldKey, url)
+          }
           if (window.LPBInspector && window.LPBInspector.render) window.LPBInspector.render()
           if (window.LPBCanvas    && window.LPBCanvas.render)    window.LPBCanvas.render()
           // salva imediatamente

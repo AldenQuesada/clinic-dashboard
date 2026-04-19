@@ -101,7 +101,8 @@
   // ────────────────────────────────────────────────────────────
   // Modal
   // ────────────────────────────────────────────────────────────
-  function openForField(blockIdx, fieldKey) {
+  function openForField(blockIdx, fieldKey, listCtx) {
+    // listCtx opcional: { fkey, idx } pra escrever dentro de um list item
     var modalRoot = document.getElementById('lpbModalRoot')
     if (!modalRoot) return
     modalRoot.innerHTML = '' +
@@ -134,7 +135,7 @@
     document.getElementById('lpbPhUseUrl').onclick = function () {
       var url = (document.getElementById('lpbPhUrl').value || '').trim()
       if (!url) { LPBToast && LPBToast('Cole uma URL primeiro', 'error'); return }
-      _apply(blockIdx, fieldKey, url)
+      _apply(blockIdx, fieldKey, url, listCtx)
       dismiss()
     }
 
@@ -144,7 +145,7 @@
       LPBToast && LPBToast('Enviando...', 'success')
       try {
         var url = await _uploadFile(file)
-        _apply(blockIdx, fieldKey, url)
+        _apply(blockIdx, fieldKey, url, listCtx)
         LPBToast && LPBToast('Foto enviada', 'success')
         dismiss()
       } catch (err) {
@@ -174,7 +175,7 @@
         el.onmouseenter = function () { el.style.borderColor = 'var(--lpb-accent)' }
         el.onmouseleave = function () { el.style.borderColor = 'var(--lpb-border)' }
         el.onclick = function () {
-          _apply(blockIdx, fieldKey, el.dataset.url)
+          _apply(blockIdx, fieldKey, el.dataset.url, listCtx)
           dismiss()
         }
       })
@@ -184,8 +185,20 @@
     })
   }
 
-  function _apply(blockIdx, fieldKey, url) {
-    LPBuilder.setBlockProp(blockIdx, fieldKey, url)
+  function _apply(blockIdx, fieldKey, url, listCtx) {
+    if (listCtx && listCtx.fkey && typeof listCtx.idx === 'number') {
+      var block = LPBuilder.getBlock(blockIdx)
+      if (!block) return
+      var arr = Array.isArray(block.props && block.props[listCtx.fkey])
+        ? block.props[listCtx.fkey].slice() : []
+      var item = arr[listCtx.idx] || {}
+      var update = {}
+      update[fieldKey] = url
+      arr[listCtx.idx] = Object.assign({}, item, update)
+      LPBuilder.setBlockProp(blockIdx, listCtx.fkey, arr)
+    } else {
+      LPBuilder.setBlockProp(blockIdx, fieldKey, url)
+    }
   }
 
   // Upload direto (usado pelo inspector — sem abrir modal)
@@ -209,6 +222,7 @@
 
   window.LPBPhotoLibrary = {
     openForField: openForField,
-    uploadFor: uploadFor,
+    uploadFor:    uploadFor,
+    uploadFile:   _uploadFile,   // expose pra inspector controlar onde grava (list context)
   }
 })()

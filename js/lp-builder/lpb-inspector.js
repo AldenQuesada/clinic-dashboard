@@ -135,6 +135,33 @@
     _saveDebounce = setTimeout(fn, 120)
   }
 
+  // Helper · escreve valor no lugar certo (top-level OU dentro de list item)
+  // Detecta contexto via DOM: closest [data-list-idx] indica list item
+  function _writeFieldValue(blockIdx, fieldKey, value, originElement) {
+    var block = LPBuilder.getBlock(blockIdx)
+    if (!block) return
+    var listItem = originElement && originElement.closest && originElement.closest('[data-list-idx]')
+    if (listItem) {
+      var listFkey = listItem.dataset.fkey
+      var listIdx  = parseInt(listItem.dataset.listIdx, 10)
+      if (!listFkey || isNaN(listIdx)) {
+        LPBuilder.setBlockProp(blockIdx, fieldKey, value)
+        return
+      }
+      var arr = Array.isArray(block.props && block.props[listFkey])
+        ? block.props[listFkey].slice() : []
+      var item = arr[listIdx] || {}
+      var update = {}
+      update[fieldKey] = value
+      arr[listIdx] = Object.assign({}, item, update)
+      LPBuilder.setBlockProp(blockIdx, listFkey, arr)
+    } else {
+      LPBuilder.setBlockProp(blockIdx, fieldKey, value)
+    }
+  }
+  // Expose pra outros módulos (gallery, crop) usarem
+  window._lpbInspectorWriteField = _writeFieldValue
+
   // ────────────────────────────────────────────────────────────
   // Empty state
   // ────────────────────────────────────────────────────────────
@@ -765,16 +792,24 @@
         if (window.LPBAIPolish) window.LPBAIPolish.openForField(idx, b.dataset.polishField)
       }
     })
+    function _detectListCtx(originEl) {
+      var li = originEl && originEl.closest && originEl.closest('[data-list-idx]')
+      if (!li) return null
+      var n = parseInt(li.dataset.listIdx, 10)
+      if (isNaN(n)) return null
+      return { fkey: li.dataset.fkey, idx: n }
+    }
+
     _root.querySelectorAll('[data-lib-field]').forEach(function (b) {
       b.onclick = function (e) {
         e.preventDefault(); e.stopPropagation()
-        if (window.LPBPhotoLibrary) window.LPBPhotoLibrary.openForField(idx, b.dataset.libField)
+        if (window.LPBPhotoLibrary) window.LPBPhotoLibrary.openForField(idx, b.dataset.libField, _detectListCtx(b))
       }
     })
     _root.querySelectorAll('[data-crop-field]').forEach(function (b) {
       b.onclick = function (e) {
         e.preventDefault(); e.stopPropagation()
-        if (window.LPBImageCrop) window.LPBImageCrop.openForField(idx, b.dataset.cropField)
+        if (window.LPBImageCrop) window.LPBImageCrop.openForField(idx, b.dataset.cropField, _detectListCtx(b))
       }
     })
     // ── Posicionar foto · zoom + pan modal ─────────────────
@@ -935,16 +970,26 @@
 
     // Upload via <input type=file> — onchange dispara
     _root.querySelectorAll('[data-file-field]').forEach(function (inp) {
-      inp.onchange = function (e) {
+      inp.onchange = async function (e) {
         var f = e.target.files && e.target.files[0]
         if (!f) return
         var fieldKey = inp.dataset.fileField
-        if (window.LPBPhotoLibrary && window.LPBPhotoLibrary.uploadFor) {
-          window.LPBPhotoLibrary.uploadFor(idx, fieldKey, f)
-        } else {
+        if (!window.LPBPhotoLibrary || !window.LPBPhotoLibrary.uploadFile) {
           LPBToast && LPBToast('Erro: módulo de upload não carregado', 'error')
+          return
         }
-        // limpa pra permitir re-upload do mesmo arquivo
+        LPBToast && LPBToast('Enviando foto...', 'success')
+        try {
+          var url = await window.LPBPhotoLibrary.uploadFile(f)
+          // Detecta list context · grava no slide certo se aplicável
+          _writeFieldValue(idx, fieldKey, url, inp)
+          if (window.LPBInspector && window.LPBInspector.render) window.LPBInspector.render()
+          if (window.LPBCanvas    && window.LPBCanvas.render)    window.LPBCanvas.render()
+          try { await LPBuilder.savePage() } catch (_) {}
+          LPBToast && LPBToast('Foto aplicada e salva', 'success')
+        } catch (err) {
+          LPBToast && LPBToast('Erro no envio: ' + (err && err.message || err), 'error')
+        }
         inp.value = ''
       }
     })
