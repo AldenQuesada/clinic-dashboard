@@ -368,6 +368,7 @@
             _ico('image', 12) + ' Galeria' +
           '</button>' +
           (v ? '<button class="lpb-btn ghost sm" data-crop-field="' + _esc(f.k) + '" style="display:flex;align-items:center;justify-content:center;gap:6px" title="Recortar imagem atual">' + _ico('crop', 12) + '</button>' : '') +
+          (v && f.positioner ? '<button class="lpb-btn ghost sm" data-position-field="' + _esc(f.k) + '" style="display:flex;align-items:center;justify-content:center;gap:6px" title="Ajustar zoom e posição da foto">' + _ico('move', 12) + '</button>' : '') +
         '</div>' +
         '<input class="lpb-input" type="text" data-fkey="' + _escA(f.k) + '" value="' + _escA(v || '') + '" placeholder="ou cole uma URL https://...">' +
         preview +
@@ -439,8 +440,8 @@
             max: meta.max, rows: meta.rows, hint: meta.hint,
           }, item || '', i)
         } else if (itemDef) {
-          // item objeto
-          inner = itemDef.map(function (sub) {
+          // item objeto · filtra hidden (campos de posição etc · gerenciados via botões)
+          inner = itemDef.filter(function (sub) { return !sub.hidden }).map(function (sub) {
             var renderer = Fields[sub.type] || Fields.text
             return renderer(sub, item ? item[sub.k] : '', i)
           }).join('')
@@ -774,6 +775,61 @@
       b.onclick = function (e) {
         e.preventDefault(); e.stopPropagation()
         if (window.LPBImageCrop) window.LPBImageCrop.openForField(idx, b.dataset.cropField)
+      }
+    })
+    // ── Posicionar foto · zoom + pan modal ─────────────────
+    _root.querySelectorAll('[data-position-field]').forEach(function (btn) {
+      btn.onclick = function (e) {
+        e.preventDefault(); e.stopPropagation()
+        if (!window.LPBImagePositioner) {
+          if (window.LPBToast) LPBToast('Módulo posicionar não carregado · recarregue', 'error')
+          return
+        }
+        var fk = btn.dataset.positionField           // ex: 'before_url'
+        var base = fk.replace(/_url$/, '')           // 'before' ou 'after'
+        var listItem = btn.closest('[data-list-idx]')
+        var block = LPBuilder.getBlock(idx)
+        if (!block || !block.props) return
+
+        if (listItem) {
+          // Contexto LISTA · slide do carrossel
+          var listFkey = listItem.dataset.fkey
+          var listIdx  = parseInt(listItem.dataset.listIdx, 10)
+          var arr = Array.isArray(block.props[listFkey]) ? block.props[listFkey] : []
+          var slide = arr[listIdx] || {}
+          window.LPBImagePositioner.open({
+            url:    slide[fk],
+            zoom:   slide[base + '_zoom'] || 1,
+            x:      slide[base + '_x']    || 0,
+            y:      slide[base + '_y']    || 0,
+            aspect: '3/4',
+            onSave: function (pos) {
+              var newArr = arr.slice()
+              var update = {}
+              update[base + '_zoom'] = pos.zoom
+              update[base + '_x']    = pos.x
+              update[base + '_y']    = pos.y
+              newArr[listIdx] = Object.assign({}, slide, update)
+              LPBuilder.setBlockProp(idx, listFkey, newArr)
+              if (window.LPBToast) LPBToast('Posição da foto salva', 'success')
+            },
+          })
+        } else {
+          // Contexto TOP-LEVEL · prop direta do bloco
+          window.LPBImagePositioner.open({
+            url:    block.props[fk],
+            zoom:   block.props[base + '_zoom'] || 1,
+            x:      block.props[base + '_x']    || 0,
+            y:      block.props[base + '_y']    || 0,
+            aspect: '3/4',
+            onSave: function (pos) {
+              LPBuilder.setBlockProp(idx, base + '_zoom', pos.zoom)
+              LPBuilder.setBlockProp(idx, base + '_x',    pos.x)
+              LPBuilder.setBlockProp(idx, base + '_y',    pos.y)
+              if (window.LPBToast) LPBToast('Posição da foto salva', 'success')
+            },
+          })
+        }
       }
     })
     // ── Style controls (section "Ajustes") ────────────────

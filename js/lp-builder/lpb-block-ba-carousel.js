@@ -26,9 +26,20 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
   }
 
-  function _imgOrPlaceholder(url, alt, fallbackText) {
-    if (url) return '<img src="' + _esc(url) + '" alt="' + _esc(alt) + '" loading="lazy" decoding="async">'
+  function _imgOrPlaceholder(url, alt, fallbackText, transformStyle) {
+    if (url) {
+      var styleAttr = transformStyle ? ' style="' + transformStyle + '"' : ''
+      return '<img src="' + _esc(url) + '" alt="' + _esc(alt) + '" loading="lazy" decoding="async"' + styleAttr + '>'
+    }
     return '<div class="blk-bac-img-placeholder">' + _esc(fallbackText) + '</div>'
+  }
+
+  function _imgTransform(zoom, x, y) {
+    var z  = parseFloat(zoom) || 1
+    var px = parseFloat(x) || 0
+    var py = parseFloat(y) || 0
+    if (z === 1 && px === 0 && py === 0) return ''
+    return 'transform:scale(' + z + ') translate(' + px + '%, ' + py + '%);transform-origin:center'
   }
 
   // Maps de tamanho · espelha as opções do schema
@@ -93,14 +104,16 @@
     html += '<div class="blk-bac-track" data-bac-track="' + carouselId + '">'
     slides.forEach(function (s, i) {
       var slideStyle = i === 0 ? '' : 'display:none;opacity:0'
+      var beforeT = _imgTransform(s.before_zoom, s.before_x, s.before_y)
+      var afterT  = _imgTransform(s.after_zoom,  s.after_x,  s.after_y)
       html += '<div class="blk-bac-slide" data-bac-slide="' + i + '" style="' + slideStyle + '">' +
                 '<div class="blk-bac-card">' +
                   '<div class="blk-bac-img">' +
-                    _imgOrPlaceholder(s.before_url, labelBefore, 'Foto antes') +
+                    _imgOrPlaceholder(s.before_url, labelBefore, 'Foto antes', beforeT) +
                     '<div class="blk-bac-label"' + labelBeforeAttr + '>' + _esc(labelBefore) + '</div>' +
                   '</div>' +
                   '<div class="blk-bac-img">' +
-                    _imgOrPlaceholder(s.after_url, labelAfter, 'Foto depois') +
+                    _imgOrPlaceholder(s.after_url, labelAfter, 'Foto depois', afterT) +
                     '<div class="blk-bac-label"' + labelAfterAttr + '>' + _esc(labelAfter) + '</div>' +
                   '</div>' +
                   ((s.procedure || s.detail)
