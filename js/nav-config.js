@@ -202,6 +202,7 @@
         { page: 'growth-metrics',        label: 'Growth Metrics · Analytics', breadcrumb: 'Growth > Métricas',              externalUrl: 'growth-metrics.html', highlight: true },
         { page: 'growth-referral',       label: 'Programa de Indicação',      breadcrumb: 'Growth > Programa de Indicação', highlight: true },
         { page: 'b2b-circulo',           label: 'Círculo B2B (parcerias)',    breadcrumb: 'Growth > Círculo B2B',           externalUrl: 'b2b-partners.html', highlight: true },
+        { page: 'b2b-metrics',           label: 'B2B Metrics · Analytics',    breadcrumb: 'Growth > B2B Metrics',           externalUrl: 'b2b-metrics.html', highlight: true },
         { page: 'b2b-plano',             label: 'Plano B2B (roadmap)',        breadcrumb: 'Growth > Plano B2B',             externalUrl: 'plano-b2b.html' },
         { page: 'plano-growth',          label: 'Plano Growth (roadmap)',     breadcrumb: 'Growth > Plano Growth',          externalUrl: 'plano-growth.html' },
       ],
