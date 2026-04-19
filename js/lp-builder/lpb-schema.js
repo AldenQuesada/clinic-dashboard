@@ -1658,7 +1658,7 @@
           ], default: 50 },
 
         // ── Autoplay ROCK (handle balança sozinho) ───────
-        { k: 'autoplay_rock', label: 'Auto-rock (handle balança sozinho)', type: 'bool', default: false,
+        { k: 'autoplay_rock', label: 'Auto-rock (handle balança sozinho)', type: 'bool', default: true,
           hint: 'Liga · animacao automatica do handle revelando antes ↔ depois em loop' },
         { k: 'rock_speed', label: 'Velocidade do rock', type: 'select',
           options: [
