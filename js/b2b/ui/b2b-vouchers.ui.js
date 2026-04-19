@@ -91,6 +91,25 @@
         '</div>' +
         '<label class="b2b-field"><span class="b2b-field-lbl">Observações</span>' +
           '<textarea name="notes" rows="2" class="b2b-input"></textarea></label>' +
+        '<div class="b2b-field">' +
+          '<span class="b2b-field-lbl">Paleta do voucher</span>' +
+          '<div class="b2b-theme-toggle">' +
+            '<label class="b2b-theme-opt">' +
+              '<input type="radio" name="theme" value="dark" checked>' +
+              '<span class="b2b-theme-swatch b2b-theme-dark">' +
+                '<span class="b2b-theme-name">Dark</span>' +
+                '<span class="b2b-theme-desc">preto · champagne</span>' +
+              '</span>' +
+            '</label>' +
+            '<label class="b2b-theme-opt">' +
+              '<input type="radio" name="theme" value="light">' +
+              '<span class="b2b-theme-swatch b2b-theme-light">' +
+                '<span class="b2b-theme-name">Light</span>' +
+                '<span class="b2b-theme-desc">creme · bordô</span>' +
+              '</span>' +
+            '</label>' +
+          '</div>' +
+        '</div>' +
         '<div class="b2b-form-actions">' +
           '<button type="button" class="b2b-btn" data-voucher-cancel>Cancelar</button>' +
           '<button type="submit" class="b2b-btn b2b-btn-primary">Emitir</button>' +
