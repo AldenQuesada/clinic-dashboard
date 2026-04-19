@@ -12,8 +12,8 @@
   'use strict'
   if (window.LPBAutosave) return
 
-  var INTERVAL_MS    = 30 * 1000  // checa a cada 30s
-  var DEBOUNCE_MS    = 5  * 1000  // espera 5s sem typing antes de salvar
+  var INTERVAL_MS    = 8  * 1000  // checa a cada 8s (era 30s · feedback rápido)
+  var DEBOUNCE_MS    = 1500       // espera 1.5s sem typing antes de salvar (era 5s)
   var STORAGE_KEY    = 'lpb_autosave_enabled'
 
   var _enabled = _readEnabled()
@@ -107,8 +107,22 @@
 
   // pausa em background tab pra nao bater no banco
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) _stop()
-    else _start()
+    if (document.hidden) {
+      // Antes de pausar, força um save se dirty (cobre caso user troca aba)
+      if (_enabled && LPBuilder.isDirty && LPBuilder.isDirty() && !LPBuilder.isSaving()) {
+        try { LPBuilder.savePage() } catch (_) {}
+      }
+      _stop()
+    } else {
+      _start()
+    }
+  })
+
+  // Defesa final: ao sair da página, salva se houver mudanças
+  window.addEventListener('beforeunload', function () {
+    if (_enabled && LPBuilder.isDirty && LPBuilder.isDirty() && !LPBuilder.isSaving()) {
+      try { LPBuilder.savePage() } catch (_) {}
+    }
   })
 
   window.LPBAutosave = {
