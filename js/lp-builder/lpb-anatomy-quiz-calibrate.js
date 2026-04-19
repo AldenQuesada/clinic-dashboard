@@ -235,19 +235,35 @@
     if (_state.active) setTimeout(_rebind, 50)
   })
 
-  // Atalho global Ctrl+Shift+K · ativa modo calibrar pro bloco anatomy-quiz selecionado
-  document.addEventListener('keydown', function (e) {
+  // Atalhos globais · ativa modo calibrar pro bloco anatomy-quiz selecionado
+  // Ctrl+Alt+C (primario · safe · sem conflito de browser)
+  // Ctrl+Shift+K (legado · alguns browsers como Firefox capturam pro DevTools)
+  function _matchShortcut(e) {
     var ctrl = e.ctrlKey || e.metaKey
-    if (!(ctrl && e.shiftKey && (e.key === 'K' || e.key === 'k'))) return
-    if (LPBuilder.getView && LPBuilder.getView() !== 'editor') return
+    if (!ctrl) return false
+    var k = (e.key || '').toLowerCase()
+    if (e.altKey && k === 'c') return true     // Ctrl+Alt+C (recomendado)
+    if (e.shiftKey && k === 'k') return true   // Ctrl+Shift+K (legado)
+    return false
+  }
+  document.addEventListener('keydown', function (e) {
+    if (!_matchShortcut(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    _activateForSelected()
+  })
+
+  function _activateForSelected() {
+    if (LPBuilder.getView && LPBuilder.getView() !== 'editor') {
+      LPBToast && LPBToast('Abra o editor primeiro', 'error')
+      return
+    }
     var idx = LPBuilder.getSelectedIdx()
     var b = LPBuilder.getBlock(idx)
     if (!b || b.type !== 'anatomy-quiz') {
-      LPBToast && LPBToast('Selecione um Quiz Anatômico primeiro', 'error')
+      LPBToast && LPBToast('Selecione um Quiz Anatômico primeiro · clique no bloco', 'error')
       return
     }
-    e.preventDefault()
-    // Detecta vista atual no canvas
     var iframe = document.getElementById('lpbIframe')
     var view = 'front'
     if (iframe && iframe.contentDocument) {
@@ -255,7 +271,10 @@
       if (wrap) view = wrap.getAttribute('data-aq-view') || 'front'
     }
     toggle(idx, view)
-  })
+  }
+
+  // Helper global pra debug · chame `calibrateAnatomy()` no console
+  window.calibrateAnatomy = _activateForSelected
 
   window.LPBAnatomyQuizCalibrate = Object.freeze({
     toggle:   toggle,
