@@ -23,6 +23,7 @@
     { id: 'prospects',  label: 'Prospects' },
     { id: 'candidates', label: 'Candidatos (Scout)' },
     { id: 'gaps',       label: 'Gaps do plano' },
+    { id: 'map',        label: 'Mapa' },
     { id: 'health',     label: 'Saúde' },
     { id: 'closure',    label: 'Encerramentos' },
     { id: 'config',     label: 'Configurações' },

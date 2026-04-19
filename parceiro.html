@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do Parceiro · Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    background: linear-gradient(135deg, #F8F5F0 0%, #EFE8DB 100%);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: #1A1A2E;
+    min-height: 100vh;
+  }
+  .panel-wrap { max-width: 780px; margin: 0 auto; padding: 48px 24px 80px; }
+  .panel-card {
+    background: #FFFFFF;
+    border-radius: 14px;
+    padding: 48px 56px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+  }
+  @media (max-width: 640px) { .panel-card { padding: 32px 24px; } }
+
+  .panel-eyebrow {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: #B8956A; font-weight: 500; margin-bottom: 6px;
+  }
+  .panel-title { font-size: 44px; font-weight: 400; margin: 0 0 6px; letter-spacing: 0.5px; }
+  .panel-subtitle { font-size: 18px; color: #6B6B7D; font-style: italic; margin: 0 0 28px; }
+
+  .panel-meta {
+    display: flex; gap: 20px; flex-wrap: wrap; margin: 0 0 32px;
+    padding: 14px 20px; background: #FAF7F2; border-radius: 8px;
+    font-family: 'Montserrat', sans-serif; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: #6B6B7D;
+  }
+  .panel-meta strong { color: #1A1A2E; font-weight: 600; }
+
+  .panel-quote {
+    font-size: 22px; font-style: italic;
+    padding: 24px 32px;
+    border-left: 3px solid #B8956A;
+    background: #FAF7F2;
+    color: #3A3A4C;
+    margin: 28px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .panel-quote-author {
+    font-size: 12px; font-style: normal; color: #8B7355; margin-top: 8px;
+    letter-spacing: 2px; text-transform: uppercase; font-family: 'Montserrat', sans-serif;
+  }
+
+  .panel-sec {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px; font-weight: 500; letter-spacing: 3px;
+    text-transform: uppercase; color: #B8956A;
+    margin: 36px 0 14px; padding-bottom: 8px;
+    border-bottom: 1px solid #E5DDD1;
+  }
+
+  .panel-kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    margin: 12px 0;
+  }
+  @media (max-width: 640px) { .panel-kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: #FAF7F2; border: 1px solid #E5DDD1; border-radius: 10px;
+    padding: 18px 16px; text-align: center;
+  }
+  .kpi strong {
+    display: block; font-size: 34px; line-height: 1; font-weight: 500;
+    color: #1A1A2E; margin-bottom: 4px;
+  }
+  .kpi span {
+    font-family: 'Montserrat', sans-serif; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 2px; color: #8B7355;
+  }
+
+  .panel-list { margin: 10px 0; padding: 0; list-style: none; }
+  .panel-list li {
+    padding: 12px 18px; background: #FAF7F2; border-left: 3px solid #B8956A;
+    margin-bottom: 8px; border-radius: 0 6px 6px 0;
+    font-size: 15px; color: #3A3A4C;
+  }
+  .panel-list li strong { color: #1A1A2E; }
+  .panel-list .muted { font-family: 'Montserrat', sans-serif; font-size: 11px; color: #8B7355; }
+
+  .panel-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+  .panel-table th {
+    text-align: left; padding: 10px 12px;
+    background: #1A1A2E; color: #FFFFFF;
+    font-family: 'Montserrat', sans-serif; font-size: 10px;
+    letter-spacing: 2px; text-transform: uppercase; font-weight: 500;
+  }
+  .panel-table td { padding: 10px 12px; border-bottom: 1px solid #E5DDD1; }
+  .panel-table tr:last-child td { border-bottom: none; }
+
+  .panel-footer {
+    margin-top: 48px; padding-top: 20px; border-top: 1px solid #E5DDD1;
+    font-family: 'Montserrat', sans-serif; font-size: 10px;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: #8B7355; text-align: center;
+  }
+  .panel-error {
+    background: #FFFFFF; border-radius: 14px; padding: 48px 32px;
+    text-align: center;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+  }
+  .panel-error h1 { font-weight: 400; margin: 0 0 12px; }
+  .panel-error p { color: #6B6B7D; font-size: 16px; margin: 0; }
+  .panel-loading { text-align: center; padding: 80px 20px; color: #8B7355; font-size: 14px; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+
+<div class="panel-wrap">
+  <div id="panelRoot" class="panel-loading">Carregando painel…</div>
+</div>
+
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<script>
+;(function () {
+  'use strict'
+
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
+    })
+  }
+  function _fmtDate(iso) {
+    if (!iso) return '—'
+    try { return new Date(iso).toLocaleDateString('pt-BR') } catch (_) { return '—' }
+  }
+  function _statusLabel(s) {
+    return ({ issued:'Emitido', delivered:'Entregue', opened:'Aberto',
+              redeemed:'Resgatado', expired:'Expirado', cancelled:'Cancelado' })[s] || s
+  }
+  function _pillarLabel(p) {
+    return ({ imagem:'Imagem', evento:'Evento', institucional:'Institucional',
+              fitness:'Fitness', alimentacao:'Alimentação', saude:'Saúde',
+              status:'Status', rede:'Rede' })[p] || p || '—'
+  }
+
+  function renderError(msg) {
+    document.getElementById('panelRoot').outerHTML =
+      '<div class="panel-error">' +
+        '<h1>Link inválido ou expirado</h1>' +
+        '<p>' + _esc(msg || 'Peça à clínica um novo link do painel.') + '</p>' +
+      '</div>'
+  }
+
+  function renderPanel(data) {
+    var p = data.partnership || {}
+    var funnel = data.funnel || {}
+    var vouchers = data.vouchers || []
+    var events = data.events || []
+    var targets = data.targets || []
+
+    var redeemRate = funnel.issued
+      ? Math.round((Number(funnel.redeemed || 0) / Number(funnel.issued)) * 100) + '%'
+      : '—'
+
+    var events_html = events.length
+      ? events.map(function (e) {
+          return '<li><strong>' + _esc(e.title) + '</strong>' +
+            (e.next_occurrence ? ' <span class="muted">· ' + _fmtDate(e.next_occurrence) + '</span>' : '') +
+            '</li>'
+        }).join('')
+      : '<li class="muted" style="font-style:italic">Sem eventos agendados.</li>'
+
+    var vouchers_html = vouchers.length
+      ? '<table class="panel-table"><thead><tr><th>Combo</th><th>Status</th><th>Emitido</th><th>Resgatado</th></tr></thead>' +
+        '<tbody>' + vouchers.map(function (v) {
+          return '<tr><td>' + _esc(v.combo || '') + '</td>' +
+            '<td>' + _statusLabel(v.status) + '</td>' +
+            '<td>' + _fmtDate(v.issued_at) + '</td>' +
+            '<td>' + _fmtDate(v.redeemed_at) + '</td></tr>'
+        }).join('') + '</tbody></table>'
+      : '<p class="muted" style="font-style:italic;margin:10px 0">Nenhum voucher emitido ainda.</p>'
+
+    var targets_html = targets.length
+      ? '<table class="panel-table"><thead><tr><th>Indicador</th><th>Meta</th><th>Cadência</th><th>Benefício</th></tr></thead>' +
+        '<tbody>' + targets.map(function (t) {
+          return '<tr><td>' + _esc(t.indicator) + '</td>' +
+            '<td>' + _esc(t.target_value) + '</td>' +
+            '<td>' + _esc(t.cadence) + '</td>' +
+            '<td>' + _esc(t.benefit_label || '') + '</td></tr>'
+        }).join('') + '</tbody></table>'
+      : '<p class="muted" style="font-style:italic;margin:10px 0">Metas sendo definidas.</p>'
+
+    var root = document.getElementById('panelRoot')
+    root.className = ''
+    root.innerHTML =
+      '<div class="panel-card">' +
+        '<div class="panel-eyebrow">Círculo Mirian de Paula · Painel do Parceiro</div>' +
+        '<h1 class="panel-title">' + _esc(p.name || 'Parceria') + '</h1>' +
+        '<p class="panel-subtitle">' + _pillarLabel(p.pillar) + (p.tier ? ' · Tier ' + p.tier : '') + '</p>' +
+
+        '<div class="panel-meta">' +
+          '<span>Desde · <strong>' + _fmtDate(p.since) + '</strong></span>' +
+          (p.status ? '<span>Status · <strong>' + _esc(p.status) + '</strong></span>' : '') +
+        '</div>' +
+
+        (p.narrative_quote
+          ? '<div class="panel-quote">“' + _esc(p.narrative_quote) + '”' +
+              (p.narrative_author
+                ? '<div class="panel-quote-author">— ' + _esc(p.narrative_author) + '</div>'
+                : '') +
+            '</div>'
+          : '') +
+
+        '<div class="panel-sec">Vouchers</div>' +
+        '<div class="panel-kpis">' +
+          '<div class="kpi"><strong>' + (funnel.issued || 0) + '</strong><span>Emitidos</span></div>' +
+          '<div class="kpi"><strong>' + (funnel.delivered || 0) + '</strong><span>Entregues</span></div>' +
+          '<div class="kpi"><strong>' + (funnel.redeemed || 0) + '</strong><span>Resgatados</span></div>' +
+          '<div class="kpi"><strong>' + redeemRate + '</strong><span>Taxa resgate</span></div>' +
+        '</div>' +
+        vouchers_html +
+
+        '<div class="panel-sec">Metas pactuadas</div>' + targets_html +
+
+        '<div class="panel-sec">Próximos eventos</div>' +
+        '<ul class="panel-list">' + events_html + '</ul>' +
+
+        '<div class="panel-footer">' +
+          'Clínica Mirian de Paula · Maringá · ' + _fmtDate(new Date().toISOString()) +
+        '</div>' +
+      '</div>'
+    document.title = 'Painel · ' + (p.name || 'Parceiro')
+  }
+
+  function getToken() {
+    var u = new URL(window.location.href)
+    return u.searchParams.get('t') || u.searchParams.get('token') || ''
+  }
+
+  async function boot() {
+    var token = getToken()
+    if (!token) { renderError('Token ausente na URL.'); return }
+
+    var tries = 0
+    while (!window._sbShared && tries < 40) {
+      await new Promise(function (r) { setTimeout(r, 100) })
+      tries++
+    }
+    if (!window._sbShared) { renderError('Conexão indisponível.'); return }
+
+    try {
+      var r = await window._sbShared.rpc('b2b_partner_panel_get', { p_token: token })
+      if (r.error) throw new Error(r.error.message)
+      var d = r.data
+      if (!d || !d.ok) throw new Error((d && d.error) || 'desconhecido')
+      renderPanel(d)
+    } catch (e) {
+      renderError(e.message || String(e))
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else boot()
+})()
+</script>
+
+</body>
+</html>

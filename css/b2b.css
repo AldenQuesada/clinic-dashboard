@@ -980,3 +980,70 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
   cursor: help;
 }
 .b2b-trend-empty { font-size: 11px; color: var(--b2b-text-muted); font-style: italic; }
+
+/* ═══════════════ WOW actions bar (WOW #1/#2/#4) ═══════════════ */
+.b2b-wow-bar {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  margin: 18px 0;
+}
+@media (max-width: 900px) { .b2b-wow-bar { grid-template-columns: 1fr; } }
+.b2b-wow-btn {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 4px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(184, 149, 106, 0.12) 0%, rgba(184, 149, 106, 0.04) 100%);
+  border: 1px solid rgba(184, 149, 106, 0.3);
+  border-radius: 10px;
+  color: var(--b2b-text);
+  cursor: pointer;
+  text-align: left;
+  transition: all 160ms ease;
+  font-family: inherit;
+}
+.b2b-wow-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(184, 149, 106, 0.25) 0%, rgba(184, 149, 106, 0.1) 100%);
+  border-color: var(--b2b-champagne);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(184, 149, 106, 0.2);
+}
+.b2b-wow-btn:disabled { opacity: 0.5; cursor: wait; }
+.b2b-wow-ico { font-size: 22px; line-height: 1; margin-bottom: 2px; }
+.b2b-wow-lbl { font-size: 14px; font-weight: 600; color: var(--b2b-text); }
+.b2b-wow-sub {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--b2b-text-muted);
+}
+
+/* ═══════════════ Map (WOW #3) ═══════════════ */
+.b2b-map-wrap {
+  background: var(--b2b-surface);
+  border: 1px solid var(--b2b-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.b2b-map-hdr {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+}
+.b2b-map-legend {
+  display: flex; gap: 14px; margin-top: 6px;
+  font-size: 11px; color: var(--b2b-text-muted);
+}
+.b2b-map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.b2b-map-legend i {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+.b2b-map-hint {
+  font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--b2b-text-muted);
+}
+.b2b-map-leaflet {
+  width: 100%; height: 540px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--b2b-border);
+}
+.b2b-map-empty {
+  padding: 80px 24px; text-align: center;
+  color: var(--b2b-text-muted); font-size: 14px; line-height: 1.8;
+  background: rgba(10, 14, 20, 0.3); border-radius: 8px;
+}

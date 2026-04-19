@@ -114,6 +114,12 @@
       '</div>' +
       _textInput('contact_website', 'Site', p.contact_website) +
 
+      _section('Localização (mapa vivo)') +
+      '<div class="b2b-grid-2">' +
+        _numInput('lat', 'Latitude (decimal)', p.lat) +
+        _numInput('lng', 'Longitude (decimal)', p.lng) +
+      '</div>' +
+
       _section('Voucher') +
       _textInput('voucher_combo', 'Combo do voucher', p.voucher_combo, 'Ex.: veu_noiva+anovator') +
       '<div class="b2b-grid-3">' +

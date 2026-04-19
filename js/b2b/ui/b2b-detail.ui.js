@@ -148,11 +148,20 @@
       (_arr(d.targets).length ? _renderTargets(d.targets)   : '') +
       (_arr(d.events).length  ? _renderEvents(d.events)     : '') +
       (_arr(d.content).length ? _renderContent(d.content)   : '') +
+      '<div id="b2bWowActionsSection"></div>' +
       '<div id="b2bCostSection"></div>' +
       '<div id="b2bTrendSection"></div>' +
       '<div id="b2bCommentsSection"></div>' +
       '<div id="b2bTimelineSection"></div>' +
     '</div>'
+  }
+
+  function _mountWowActions(partnership) {
+    if (window.B2BWowActions) {
+      setTimeout(function () {
+        window.B2BWowActions.mount('b2bWowActionsSection', partnership)
+      }, 40)
+    }
   }
 
   // Monta timeline (async) depois do body renderizar
@@ -266,6 +275,7 @@
       _state.loading = false
       _mount()
       if (_state.data && _state.data.partnership) {
+        _mountWowActions(_state.data.partnership)
         _mountTimeline(_state.data.partnership.id)
         _mountComments(_state.data.partnership.id)
         _mountCostAndTrend(_state.data.partnership.id)
