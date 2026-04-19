@@ -1178,12 +1178,13 @@
       '<meta charset="UTF-8">' +
       '<meta name="viewport" content="width=device-width,initial-scale=1">' +
       '<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">' +
-      '<link rel="stylesheet" href="css/lp-shared.css">' +
-      '<link rel="stylesheet" href="css/lp-blocks.css">' +
-      '<link rel="stylesheet" href="css/lp-blocks-aq.css">' +
-      '<link rel="stylesheet" href="css/lp-blocks-collagen.css">' +
-      '<link rel="stylesheet" href="css/lp-blocks-counter.css">' +
-      '<link rel="stylesheet" href="css/lp-blocks-engagement.css">' +
+      // Cache buster ?v=Date.now() em cada load garante CSS fresh no iframe
+      '<link rel="stylesheet" href="css/lp-shared.css?v=' + Date.now() + '">' +
+      '<link rel="stylesheet" href="css/lp-blocks.css?v=' + Date.now() + '">' +
+      '<link rel="stylesheet" href="css/lp-blocks-aq.css?v=' + Date.now() + '">' +
+      '<link rel="stylesheet" href="css/lp-blocks-collagen.css?v=' + Date.now() + '">' +
+      '<link rel="stylesheet" href="css/lp-blocks-counter.css?v=' + Date.now() + '">' +
+      '<link rel="stylesheet" href="css/lp-blocks-engagement.css?v=' + Date.now() + '">' +
       '<style id="lpb-overrides"></style>' +
       '<style id="lpb-block-styles"></style>' +
       '<style id="lpb-edit-mode">' +
@@ -1355,7 +1356,7 @@
     if (doc.getElementById('lpb-blocks-script')) return
     var s = doc.createElement('script')
     s.id  = 'lpb-blocks-script'
-    s.src = 'js/lp-blocks.js'
+    s.src = 'js/lp-blocks.js?v=' + Date.now()
     doc.body.appendChild(s)
   }
 
