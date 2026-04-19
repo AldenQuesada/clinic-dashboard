@@ -150,8 +150,8 @@
     var dow = now.getDay()       // 0=Sun, 1=Mon ... 6=Sat
     var hour = now.getHours() + now.getMinutes() / 60
     if (dow === 0) return false                                 // domingo fechado
-    if (dow === 6) return hour >= 9 && hour < 13                // sabado 9-13
-    return hour >= 9 && hour < 19                               // seg-sex 9-19
+    if (dow === 6) return hour >= 8 && hour < 14                // sabado 8h-14h
+    return hour >= 8 && hour < 20                               // seg-sex 8h-20h
   }
 
   // ──────────────────────────────────────────────────────────

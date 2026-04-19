@@ -106,11 +106,12 @@
     var date = d || new Date();
     var day = date.getDay(); // 0=Sun, 6=Sat
     var minutes = date.getHours() * 60 + date.getMinutes();
+    // Clinica Mirian de Paula · Seg-Sex 8h-20h · Sab 8h-14h · Dom fechado
     if (day >= 1 && day <= 5){
-      return minutes >= 9*60 && minutes < 19*60;
+      return minutes >= 8*60 && minutes < 20*60;
     }
     if (day === 6){
-      return minutes >= 9*60 && minutes < 13*60;
+      return minutes >= 8*60 && minutes < 14*60;
     }
     return false;
   }
