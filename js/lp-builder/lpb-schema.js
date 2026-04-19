@@ -135,10 +135,29 @@
       { k: 'after_y',      label: 'Depois · pan Y (%)', type: 'number', optional: true,
         hidden: true, default: 0 },
 
-      { k: 'procedure',    label: 'Nome do protocolo', type: 'text', max: 80,
+      { k: 'procedure',       label: 'Nome do protocolo', type: 'text', max: 80,
         hint: 'Ex: Lifting 5D + Smooth Eyes' },
-      { k: 'detail',       label: 'Detalhe / tempo', type: 'textarea', max: 180, rows: 2, optional: true,
+      { k: 'procedure_size',  label: 'Procedimento · tamanho', type: 'select',
+        options: [
+          { value: 'sm', label: 'Pequeno (13px)' },
+          { value: 'md', label: 'Médio (15px · default)' },
+          { value: 'lg', label: 'Grande (18px)' },
+          { value: 'xl', label: 'Extra (22px)' },
+        ], default: 'md', optional: true },
+      { k: 'procedure_color', label: 'Procedimento · cor (custom)', type: 'color', optional: true,
+        hint: 'Vazio = padrão' },
+
+      { k: 'detail',          label: 'Detalhe / tempo', type: 'textarea', max: 180, rows: 2, optional: true,
         hint: 'Ex: Resultado após 30 dias.' },
+      { k: 'detail_size',     label: 'Detalhe · tamanho', type: 'select',
+        options: [
+          { value: 'sm', label: 'Pequeno (10px)' },
+          { value: 'md', label: 'Médio (11px · default)' },
+          { value: 'lg', label: 'Grande (13px)' },
+          { value: 'xl', label: 'Extra (15px)' },
+        ], default: 'md', optional: true },
+      { k: 'detail_color',    label: 'Detalhe · cor (custom)', type: 'color', optional: true,
+        hint: 'Vazio = padrão' },
     ],
     badge_legacy_item: [
       { k: 'icon', label: 'Ícone (emoji ou caractere)', type: 'text', max: 4, optional: true,
@@ -1639,28 +1658,8 @@
         { k: 'label_after_color',  label: 'Label "depois" · cor (custom)', type: 'color', optional: true,
           hint: 'Vazio = champagne padrão' },
 
-        // ── Procedure (texto principal de cada slide) ──────────
-        // Aplica a TODOS os slides · controle global
-        { k: 'procedure_size',     label: 'Procedimento · tamanho (todos slides)', type: 'select',
-          options: [
-            { value: 'sm', label: 'Pequeno (13px)' },
-            { value: 'md', label: 'Médio (15px · default)' },
-            { value: 'lg', label: 'Grande (18px)' },
-            { value: 'xl', label: 'Extra (22px)' },
-          ], default: 'md' },
-        { k: 'procedure_color',    label: 'Procedimento · cor (custom)', type: 'color', optional: true },
-
-        // ── Detail (subtexto) ──────────────────────────────────
-        { k: 'detail_size',        label: 'Detalhe · tamanho (todos slides)', type: 'select',
-          options: [
-            { value: 'sm', label: 'Pequeno (10px)' },
-            { value: 'md', label: 'Médio (11px · default)' },
-            { value: 'lg', label: 'Grande (13px)' },
-            { value: 'xl', label: 'Extra (15px)' },
-          ], default: 'md' },
-        { k: 'detail_color',       label: 'Detalhe · cor (custom)', type: 'color', optional: true },
-
         // ── Fundo ──────────────────────────────────────────────
+        // Procedure/detail: controles por slide (ver schema ba_carousel_slide)
         { k: 'bg', label: 'Fundo do bloco', type: 'select',
           options: [
             { value: 'graphite', label: 'Grafite (escuro · default do legado)' },

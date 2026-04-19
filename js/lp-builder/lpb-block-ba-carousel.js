@@ -95,17 +95,16 @@
     var labelBeforeAttr  = labelBeforeStyle ? ' style="' + labelBeforeStyle + '"' : ''
     var labelAfterAttr   = labelAfterStyle  ? ' style="' + labelAfterStyle  + '"' : ''
 
-    // Styles inline pra procedure/detail (aplicados a TODOS slides · controle global)
-    var procStyle   = _styleStr([_fontSize(SIZE_PROC, p.procedure_size), _color(p.procedure_color)])
-    var detailStyle = _styleStr([_fontSize(SIZE_DETAIL, p.detail_size),  _color(p.detail_color)])
-    var procAttr    = procStyle   ? ' style="' + procStyle   + '"' : ''
-    var detailAttr  = detailStyle ? ' style="' + detailStyle + '"' : ''
-
     html += '<div class="blk-bac-track" data-bac-track="' + carouselId + '">'
     slides.forEach(function (s, i) {
       var slideStyle = i === 0 ? '' : 'display:none;opacity:0'
       var beforeT = _imgTransform(s.before_zoom, s.before_x, s.before_y)
       var afterT  = _imgTransform(s.after_zoom,  s.after_x,  s.after_y)
+      // Por-slide · cada texto procedure/detail tem seu próprio size/color
+      var procStyle    = _styleStr([_fontSize(SIZE_PROC,   s.procedure_size), _color(s.procedure_color)])
+      var detailStyle  = _styleStr([_fontSize(SIZE_DETAIL, s.detail_size),    _color(s.detail_color)])
+      var procAttr     = procStyle   ? ' style="' + procStyle   + '"' : ''
+      var detailAttr   = detailStyle ? ' style="' + detailStyle + '"' : ''
       html += '<div class="blk-bac-slide" data-bac-slide="' + i + '" style="' + slideStyle + '">' +
                 '<div class="blk-bac-card">' +
                   '<div class="blk-bac-img">' +
