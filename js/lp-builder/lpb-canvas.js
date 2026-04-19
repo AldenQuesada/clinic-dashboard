@@ -336,6 +336,24 @@
       return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">before-after-reveal (renderer não carregado)</div>'
     },
 
+    // Onda 31 · 4 blocos de Localização (WOW disruptivo)
+    'location-map': function (b) {
+      if (window.LPBBlockLocationMap) return LPBBlockLocationMap.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">location-map (renderer não carregado)</div>'
+    },
+    'location-facade': function (b) {
+      if (window.LPBBlockLocationFacade) return LPBBlockLocationFacade.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">location-facade (renderer não carregado)</div>'
+    },
+    'location-story': function (b) {
+      if (window.LPBBlockLocationStory) return LPBBlockLocationStory.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">location-story (renderer não carregado)</div>'
+    },
+    'location-iphone': function (b) {
+      if (window.LPBBlockLocationIphone) return LPBBlockLocationIphone.render(b)
+      return '<div style="padding:20px;text-align:center;color:#888;font-style:italic">location-iphone (renderer não carregado)</div>'
+    },
+
     'before-after': function (b) {
       var p = b.props || {}
       var sec = p.bg === 'bege'  ? 'section-alt'
@@ -1362,6 +1380,13 @@
       // Onda 30: BA-reveal slider drag handle no preview
       if (window.LPBBaRevealRuntime && window.LPBBaRevealRuntime.bind && _frame && _frame.contentDocument) {
         try { LPBBaRevealRuntime.bind(_frame.contentDocument.body) } catch (_) {}
+      }
+      // Onda 31: location blocks · status dinamico + animacoes + tilt
+      if (_frame && _frame.contentDocument) {
+        var b = _frame.contentDocument.body
+        if (window.LPBBlockLocationMap    && window.LPBBlockLocationMap.bind)    { try { LPBBlockLocationMap.bind(b)    } catch (_) {} }
+        if (window.LPBBlockLocationStory  && window.LPBBlockLocationStory.bind)  { try { LPBBlockLocationStory.bind(b)  } catch (_) {} }
+        if (window.LPBBlockLocationIphone && window.LPBBlockLocationIphone.bind) { try { LPBBlockLocationIphone.bind(b) } catch (_) {} }
       }
     }, 30)
   }
