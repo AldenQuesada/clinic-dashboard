@@ -100,14 +100,14 @@
     host.innerHTML = _header(days) + grid + sub
   }
 
-  async function mount(hostId, days) {
+  async function mount(hostId, days, partnerId) {
     var host = document.getElementById(hostId)
     if (!host) return
     var period = Number(days) || 90
     _renderLoading(host, period)
     try {
       if (!window.GrowthMetricsRepository) throw new Error('GrowthMetricsRepository ausente')
-      var data = await window.GrowthMetricsRepository.payback(period)
+      var data = await window.GrowthMetricsRepository.payback(period, partnerId || null)
       _renderData(host, period, data)
     } catch (err) {
       _renderError(host, period, err && err.message)

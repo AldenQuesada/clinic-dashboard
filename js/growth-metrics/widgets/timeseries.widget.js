@@ -20,7 +20,7 @@
     })
   }
 
-  var _state = { bucket: 'month', periods: 12, hostId: null }
+  var _state = { bucket: 'month', periods: 12, hostId: null, partnerId: null }
 
   var BUCKETS = [
     { key: 'day',   label: 'Dia',    periods: 30 },
@@ -208,7 +208,7 @@
     _bindBucketSwitch(host)
     try {
       if (!window.GrowthMetricsRepository) throw new Error('GrowthMetricsRepository ausente')
-      var data = await window.GrowthMetricsRepository.timeseries(_state.bucket, _state.periods)
+      var data = await window.GrowthMetricsRepository.timeseries(_state.bucket, _state.periods, _state.partnerId || null)
       var series = (data && data.series) || []
       _renderData(host, series)
     } catch (err) {
@@ -216,10 +216,11 @@
     }
   }
 
-  async function mount(hostId) {
+  async function mount(hostId, partnerId) {
     var host = document.getElementById(hostId)
     if (!host) return
     _state.hostId = hostId
+    _state.partnerId = partnerId || null
     await _load(host)
   }
 

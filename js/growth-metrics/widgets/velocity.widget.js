@@ -71,14 +71,14 @@
     host.innerHTML = html
   }
 
-  async function mount(hostId, days) {
+  async function mount(hostId, days, partnerId) {
     var host = document.getElementById(hostId)
     if (!host) return
     var d = Number(days) || 30
     _renderLoading(host)
     try {
       if (!window.GrowthMetricsRepository) throw new Error('Repository indisponível')
-      var data = await window.GrowthMetricsRepository.velocity(d)
+      var data = await window.GrowthMetricsRepository.velocity(d, partnerId || null)
       _renderData(host, data || {})
     } catch (err) {
       _renderError(host, err)
