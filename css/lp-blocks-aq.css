@@ -664,3 +664,49 @@
   .aq-view-tab { padding: 6px 10px; font-size: 8.5px; }
   .blk-aq-toggle { top: 10px; right: 10px; padding: 6px 10px; font-size: 8.5px; }
 }
+
+/* ──────────────────────────────────────────────────────────
+ * Onda 30 · Modo calibrar visual (drag direto na foto)
+ * ────────────────────────────────────────────────────────── */
+.aq-calibrate-mode {
+  outline: 3px dashed var(--champagne, #C8A97E);
+  outline-offset: 4px;
+  cursor: crosshair;
+}
+.aq-calibrate-mode::before {
+  content: 'CALIBRAR · arraste pontos · click no rosto pra adicionar · right-click pra remover · ESC pra sair';
+  position: absolute;
+  top: -36px;
+  left: 0; right: 0;
+  background: var(--graphite, #2C2C2C);
+  color: var(--champagne, #C8A97E);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  border-radius: 2px;
+  z-index: 100;
+  text-align: center;
+}
+.aq-calibrate-mode .aq-hotspot { cursor: grab; z-index: 50; }
+.aq-calibrate-mode .aq-hotspot.is-dragging {
+  cursor: grabbing;
+  z-index: 60;
+}
+.aq-calibrate-mode .aq-hotspot.is-dragging .aq-dot {
+  background: var(--champagne, #C8A97E);
+  border-color: var(--graphite, #2C2C2C);
+  border-width: 2.5px;
+  box-shadow:
+    0 0 0 8px rgba(200, 169, 126, 0.30),
+    0 4px 16px rgba(44, 44, 44, 0.40);
+  transform: scale(1.25);
+}
+/* Bloqueia toggle de antes/depois e tabs durante calibração */
+.aq-calibrate-mode .blk-aq-toggle,
+.aq-calibrate-mode .blk-aq-view-tabs {
+  pointer-events: none;
+  opacity: 0.4;
+}

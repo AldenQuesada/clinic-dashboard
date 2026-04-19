@@ -157,6 +157,22 @@
           { value: 'graphite',  label: 'Grafite' },
         ], default: 'whatsapp' },
     ],
+    aq_area_item: [
+      { k: 'label',    label: 'Nome da área',  type: 'text', max: 50,
+        hint: 'Ex: Olheiras · Bigode chinês · Mandíbula' },
+      { k: 'protocol', label: 'Protocolo Mirian', type: 'text', max: 120,
+        hint: 'Ex: Smooth Eyes (laser fracionado + AH)' },
+      { k: 'x',        label: 'Posição X · % esq→dir', type: 'text', max: 5,
+        hint: '0 = esquerda · 50 = centro · 100 = direita' },
+      { k: 'y',        label: 'Posição Y · % topo→base', type: 'text', max: 5,
+        hint: '0 = topo · 50 = meio · 100 = base' },
+      { k: 'mirror',   label: 'Espelhar (cria ponto oposto)', type: 'select',
+        options: [
+          { value: '',  label: 'Não · só este ponto' },
+          { value: '1', label: 'Sim · cria ponto automático em (100-X, Y)' },
+        ], default: '',
+        hint: 'Útil pra áreas pareadas (olheiras, bochechas, mandíbula)' },
+    ],
     social_link: [
       { k: 'network', label: 'Rede', type: 'select',
         options: [
@@ -1271,6 +1287,21 @@
         { k: 'cta_label', label: 'Botão final', type: 'text', max: 40, default: 'Ver meu protocolo' },
         { k: 'success_text', label: 'Texto após enviar', type: 'textarea', max: 200, optional: true,
           default: 'Recebemos. A Dra. Mirian vai entrar em contato no WhatsApp em breve.' },
+        // Camada 3 · fotos editáveis sem código
+        { k: 'photo_url',             label: 'Foto FRONTAL · base (depois)',  type: 'image', optional: true,
+          hint: 'Vazio = usa foto default · pode trocar por foto sua a qualquer momento' },
+        { k: 'photo_url_before',      label: 'Foto FRONTAL · antes',          type: 'image', optional: true,
+          hint: 'Foto da MESMA pessoa com sinais (toggle "Ver antes")' },
+        { k: 'photo_url_side',        label: 'Foto PERFIL · base (depois)',   type: 'image', optional: true,
+          hint: 'Vista lateral · vazio = usa default' },
+        { k: 'photo_url_side_before', label: 'Foto PERFIL · antes',           type: 'image', optional: true },
+        // Camada 1 · áreas editáveis (override do hardcoded)
+        { k: 'areas_front', label: 'Áreas · vista FRONTAL', type: 'list',
+          itemSchema: 'aq_area_item', minItems: 0, maxItems: 24,
+          hint: 'Vazio = usa as 7 áreas default. Adicione pra sobrescrever (cada item vira um ponto clicável na foto frontal).' },
+        { k: 'areas_side',  label: 'Áreas · vista PERFIL',  type: 'list',
+          itemSchema: 'aq_area_item', minItems: 0, maxItems: 24,
+          hint: 'Vazio = usa as 4 áreas default (dorso/ponta/mento/papada).' },
         { k: 'bg', label: 'Fundo', type: 'select',
           options: [
             { value: 'ivory',    label: 'Marfim (default)' },
