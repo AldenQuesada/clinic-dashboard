@@ -863,13 +863,15 @@ input, textarea, select { font-family: inherit; }
   bottom: 12px; right: 12px;
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: 4px;
   justify-content: flex-end;
   max-width: calc(100% - 24px);
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(6px);
-  border-radius: 4px;
+  padding: 0 !important;
+  background: transparent !important;   /* sem fundo · força contra qualquer override */
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
   opacity: 0;
   transform: translateY(2px);
   transition: opacity 0.18s ease, transform 0.18s ease;
@@ -878,14 +880,33 @@ input, textarea, select { font-family: inherit; }
   opacity: 1;
   transform: translateY(0);
 }
-/* Cada ícone do action: compacto pra caberem 9 sem estourar */
+/* Cada ícone: contraste alto · ZERO bg em qualquer estado (defesa total) */
+.lpb-page-card-actions .lpb-btn-icon,
+.lpb-page-card-actions .lpb-btn-icon:hover,
+.lpb-page-card-actions .lpb-btn-icon:focus,
+.lpb-page-card-actions .lpb-btn-icon:focus-visible,
+.lpb-page-card-actions .lpb-btn-icon:active {
+  background: transparent !important;
+  background-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  -webkit-tap-highlight-color: transparent;
+}
 .lpb-page-card-actions .lpb-btn-icon {
   padding: 5px;
-  border-radius: 3px;
-  transition: background 0.12s ease, color 0.12s ease;
+  color: var(--lpb-text);             /* cinza mais escuro · alto contraste */
+  transition: color 0.12s ease, transform 0.12s ease;
 }
 .lpb-page-card-actions .lpb-btn-icon:hover {
-  background: rgba(200, 169, 126, 0.15);
+  color: var(--lpb-accent);
+  transform: scale(1.15);
+}
+.lpb-page-card-actions .lpb-btn-icon svg {
+  display: block;
+  /* garante stroke visível mesmo se algum CSS global tentar sobrescrever */
+  stroke: currentColor;
+  fill: none;
 }
 
 .lpb-pages-empty {
