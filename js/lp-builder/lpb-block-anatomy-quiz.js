@@ -66,10 +66,11 @@
 
   // Calibrado pro novo perfil (rosto olhando pra ESQUERDA · enquadramento amplo)
   var AREAS_SIDE = Object.freeze({
-    dorso_nariz:     { label: 'Dorso nasal',          protocol: 'Rinomodelação · AH no dorso',              hotspots: [[40, 38]] },
-    ponta_nariz:     { label: 'Ponta do nariz',       protocol: 'Rinomodelação · projeção da ponta com AH', hotspots: [[28, 48]] },
-    mento:           { label: 'Mento (queixo)',       protocol: 'Mentoplastia injetável · AH no mento',     hotspots: [[34, 78]] },
-    papada:          { label: 'Papada',               protocol: 'Lipo enzimática + Fotona 4D',              hotspots: [[52, 88]] },
+    dorso_nariz:     { label: 'Dorso nasal',          protocol: 'Rinomodelação · AH no dorso',                            hotspots: [[40, 38]] },
+    ponta_nariz:     { label: 'Ponta do nariz',       protocol: 'Rinomodelação · projeção da ponta com AH',               hotspots: [[28, 48]] },
+    mento:           { label: 'Mento (queixo)',       protocol: 'Mentoplastia injetável · AH no mento',                   hotspots: [[34, 78]] },
+    bulldog:         { label: 'Buldogue (jowls)',     protocol: 'Bioestimulador de colágeno + Fotona 4D (papada lateral)', hotspots: [[62, 82]] },
+    papada:          { label: 'Papada',               protocol: 'Lipo enzimática + Fotona 4D',                            hotspots: [[52, 88]] },
   })
 
   // Mapa unificado pra runtime · merge dos 2 (compatibilidade)
