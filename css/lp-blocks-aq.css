@@ -28,13 +28,7 @@
 .blk-aq[data-bg="graphite"] .blk-aq-panel-title { color: var(--ivory, #FEFCF8); }
 .blk-aq[data-bg="graphite"] .blk-aq-subtitle    { color: rgba(254, 252, 248, 0.72); }
 .blk-aq[data-bg="graphite"] .blk-aq-panel       { background: rgba(254, 252, 248, 0.04); border-color: rgba(200, 169, 126, 0.30); }
-.blk-aq[data-bg="graphite"] .aq-face-contour,
-.blk-aq[data-bg="graphite"] .aq-face-brow,
-.blk-aq[data-bg="graphite"] .aq-face-nose,
-.blk-aq[data-bg="graphite"] .aq-face-chin,
-.blk-aq[data-bg="graphite"] .aq-face-neck      { stroke: var(--ivory, #FEFCF8); }
-.blk-aq[data-bg="graphite"] .aq-face-eye       { fill: var(--ivory, #FEFCF8); }
-.blk-aq[data-bg="graphite"] .aq-face-lips      { fill: rgba(254, 252, 248, 0.85); }
+/* CSS do boneco SVG removido (deprecated · agora usa foto real) */
 
 /* ──────────────────────────────────────────────────────────
  * Header

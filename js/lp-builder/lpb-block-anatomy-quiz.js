@@ -78,66 +78,6 @@
     '</svg>'
 
   // ──────────────────────────────────────────────────────────
-  // SVG do rosto neutro · monoline editorial (sem detalhes étnicos)
-  // ──────────────────────────────────────────────────────────
-  function _faceSvg(uid) {
-    var paths =
-      // Contorno do rosto (oval suave, mais alongado embaixo)
-      '<path class="aq-face-contour" d="M 200 80 ' +
-        'C 130 80, 90 130, 90 200 ' +     // testa esquerda → têmpora
-        'C 90 250, 95 290, 110 330 ' +    // descida lateral esquerda
-        'C 125 380, 150 420, 200 435 ' +  // mandíbula esquerda → queixo
-        'C 250 420, 275 380, 290 330 ' +  // mandíbula direita
-        'C 305 290, 310 250, 310 200 ' +  // descida lateral direita
-        'C 310 130, 270 80, 200 80 Z" />' +
-      // Pescoço (linhas laterais leves)
-      '<path class="aq-face-neck" d="M 165 430 L 158 488" />' +
-      '<path class="aq-face-neck" d="M 235 430 L 242 488" />' +
-      // Sobrancelhas (arcos suaves)
-      '<path class="aq-face-brow" d="M 130 175 Q 160 165, 188 175" />' +
-      '<path class="aq-face-brow" d="M 212 175 Q 240 165, 270 175" />' +
-      // Olhos (elipses neutras)
-      '<ellipse class="aq-face-eye" cx="160" cy="200" rx="14" ry="6" />' +
-      '<ellipse class="aq-face-eye" cx="240" cy="200" rx="14" ry="6" />' +
-      // Nariz (linha em V suave)
-      '<path class="aq-face-nose" d="M 200 215 L 190 280 Q 200 290, 210 280 L 200 215" />' +
-      // Lábios (curva discreta)
-      '<path class="aq-face-lips" d="M 175 335 Q 200 325, 225 335 Q 200 345, 175 335 Z" />' +
-      // Linha do queixo (sutil interno)
-      '<path class="aq-face-chin" d="M 175 405 Q 200 415, 225 405" />'
-    return paths
-  }
-
-  // ──────────────────────────────────────────────────────────
-  // Hotspots SVG · gera <g class="aq-hotspot" data-area="...">
-  // ──────────────────────────────────────────────────────────
-  function _hotspotsSvg() {
-    var html = ''
-    Object.keys(AREAS).forEach(function (key) {
-      var a = AREAS[key]
-      var tip = _esc(a.label + ' · ' + a.protocol)
-      a.hotspots.forEach(function (pt, idx) {
-        html += '<g class="aq-hotspot" data-area="' + _esc(key) + '"' +
-                ' role="button" tabindex="0"' +
-                ' aria-label="' + tip + '">' +
-          // hit area maior (32px) · invisível
-          '<circle class="aq-hit"  cx="' + pt[0] + '" cy="' + pt[1] + '" r="22" />' +
-          // marcador visual (16px)
-          '<circle class="aq-dot"  cx="' + pt[0] + '" cy="' + pt[1] + '" r="16" />' +
-          // checkmark interno (visível só quando .is-selected)
-          '<path class="aq-check" d="M ' + (pt[0] - 6) + ' ' + pt[1] +
-                ' L ' + (pt[0] - 1) + ' ' + (pt[1] + 5) +
-                ' L ' + (pt[0] + 7) + ' ' + (pt[1] - 4) + '"' +
-                ' fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />' +
-          // tooltip nativo via <title>
-          '<title>' + tip + '</title>' +
-        '</g>'
-      })
-    })
-    return html
-  }
-
-  // ──────────────────────────────────────────────────────────
   // Render principal
   // ──────────────────────────────────────────────────────────
   function render(block) {
@@ -292,8 +232,6 @@
     })
     return html
   }
-  // alias legado (caso outro código chame)
-  function _hotspotsHtml() { return _hotspotsHtmlFor(AREAS_FRONT) }
 
   window.LPBBlockAnatomyQuiz = Object.freeze({
     render:      render,
