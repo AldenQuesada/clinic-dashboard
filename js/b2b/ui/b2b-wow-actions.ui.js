@@ -131,6 +131,11 @@
         '<span class="b2b-wow-lbl">IA conteúdo</span>' +
         '<span class="b2b-wow-sub">Carrossel + ganchos</span>' +
       '</button>' +
+      '<button type="button" class="b2b-wow-btn b2b-wow-senders" data-wow="senders">' +
+        '<span class="b2b-wow-ico">📱</span>' +
+        '<span class="b2b-wow-lbl">WhatsApp autorizados</span>' +
+        '<span class="b2b-wow-sub">Quem emite voucher pela Mira</span>' +
+      '</button>' +
       (showNps
         ? '<button type="button" class="b2b-wow-btn b2b-wow-nps" data-wow="nps">' +
             '<span class="b2b-wow-ico">📊</span>' +
@@ -199,6 +204,13 @@
         if (kind === 'ia')      return _onIa(partnership).finally(done)
         if (kind === 'nps')     return _onNps(partnership).finally(done)
         if (kind === 'cert')    return _onCert(partnership).finally(done)
+        if (kind === 'senders') {
+          document.dispatchEvent(new CustomEvent('b2b:open-senders', {
+            detail: { partnership_id: partnership.id, partnership_name: partnership.name },
+          }))
+          done()
+          return
+        }
         done()
       })
     })

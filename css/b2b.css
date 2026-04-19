@@ -1586,3 +1586,67 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
   .b2b-tpl-scope-row { grid-template-columns: 1fr; }
   .b2b-app-acts { justify-content: flex-start; }
 }
+
+/* ═══════════════ Senders (whitelist) ═══════════════ */
+.b2b-sender-hint {
+  font-size: 12px; color: var(--b2b-text-muted);
+  padding: 10px 14px; background: rgba(96,165,250,0.06);
+  border-left: 2px solid #60A5FA; border-radius: 3px;
+  margin-bottom: 18px; line-height: 1.5;
+}
+.b2b-sender-add {
+  background: rgba(10,14,20,0.3); border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;
+}
+.b2b-sender-add-hdr {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--b2b-champagne); font-weight: 600; margin-bottom: 10px;
+}
+.b2b-sender-add-form .b2b-btn-primary { margin-top: 10px; }
+
+.b2b-sender-list-hdr {
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--b2b-text-muted); font-weight: 600;
+  margin-bottom: 10px; padding-top: 8px;
+}
+.b2b-sender-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; margin-bottom: 6px;
+  background: var(--b2b-surface); border: 1px solid var(--b2b-border);
+  border-radius: 6px;
+}
+.b2b-sender-row.b2b-sender-inactive { opacity: 0.55; }
+.b2b-sender-info {
+  flex: 1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.b2b-sender-info strong {
+  font-family: monospace; font-size: 13px; color: var(--b2b-text);
+}
+.b2b-sender-role {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--b2b-champagne); padding: 2px 8px;
+  background: rgba(201,169,110,0.1); border-radius: 10px;
+}
+.b2b-sender-badge {
+  font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 10px; font-weight: 600;
+}
+.b2b-sender-off {
+  background: rgba(107,107,125,0.15); color: var(--b2b-text-muted);
+}
+.b2b-sender-date {
+  font-size: 10px; color: var(--b2b-text-muted); margin-left: auto;
+}
+.b2b-sender-acts { display: flex; gap: 6px; }
+.b2b-sender-acts .b2b-btn { padding: 5px 12px; font-size: 11px; }
+.b2b-btn-danger {
+  background: rgba(217,122,122,0.15) !important;
+  color: #D97A7A !important;
+  border-color: rgba(217,122,122,0.35) !important;
+}
+.b2b-btn-danger:hover {
+  background: rgba(217,122,122,0.25) !important;
+}
+
+/* WOW button senders */
+.b2b-wow-senders .b2b-wow-ico { font-size: 18px; }
