@@ -826,18 +826,40 @@
         var block = LPBuilder.getBlock(idx)
         if (!block || !block.props) return
 
+        // Detecta o IRMÃO antes/depois pra ghost overlay (BA-reveal e BA-carousel)
+        // Quando ajusta after_url · ghost = before_url (e vice-versa)
+        function _siblingGhost(source) {
+          var siblingBase = (base === 'before') ? 'after' : 'before'
+          var url = source[siblingBase + '_url']
+          if (!url) return null
+          return {
+            url:   url,
+            zoom:  source[siblingBase + '_zoom'] || 1,
+            x:     source[siblingBase + '_x']    || 0,
+            y:     source[siblingBase + '_y']    || 0,
+            label: siblingBase === 'before' ? 'antes' : 'depois',
+          }
+        }
+
         if (listItem) {
           // Contexto LISTA · slide do carrossel
           var listFkey = listItem.dataset.fkey
           var listIdx  = parseInt(listItem.dataset.listIdx, 10)
           var arr = Array.isArray(block.props[listFkey]) ? block.props[listFkey] : []
           var slide = arr[listIdx] || {}
+          var gSlide = _siblingGhost(slide)
           window.LPBImagePositioner.open({
             url:    slide[fk],
             zoom:   slide[base + '_zoom'] || 1,
             x:      slide[base + '_x']    || 0,
             y:      slide[base + '_y']    || 0,
             aspect: '2/3',
+            title:  'Posicionar foto · ' + (base === 'before' ? 'ANTES' : 'DEPOIS'),
+            ghostUrl:   gSlide ? gSlide.url   : null,
+            ghostZoom:  gSlide ? gSlide.zoom  : 1,
+            ghostX:     gSlide ? gSlide.x     : 0,
+            ghostY:     gSlide ? gSlide.y     : 0,
+            ghostLabel: gSlide ? gSlide.label : '',
             onSave: function (pos) {
               var newArr = arr.slice()
               var update = {}
@@ -850,13 +872,20 @@
             },
           })
         } else {
-          // Contexto TOP-LEVEL · prop direta do bloco
+          // Contexto TOP-LEVEL · prop direta do bloco (ex: BA-reveal)
+          var gTop = _siblingGhost(block.props)
           window.LPBImagePositioner.open({
             url:    block.props[fk],
             zoom:   block.props[base + '_zoom'] || 1,
             x:      block.props[base + '_x']    || 0,
             y:      block.props[base + '_y']    || 0,
             aspect: '2/3',
+            title:  'Posicionar foto · ' + (base === 'before' ? 'ANTES' : 'DEPOIS'),
+            ghostUrl:   gTop ? gTop.url   : null,
+            ghostZoom:  gTop ? gTop.zoom  : 1,
+            ghostX:     gTop ? gTop.x     : 0,
+            ghostY:     gTop ? gTop.y     : 0,
+            ghostLabel: gTop ? gTop.label : '',
             onSave: function (pos) {
               LPBuilder.setBlockProp(idx, base + '_zoom', pos.zoom)
               LPBuilder.setBlockProp(idx, base + '_x',    pos.x)

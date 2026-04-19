@@ -37,17 +37,41 @@
       y:    _clampPan(parseFloat(opts.y) || 0),
     }
 
+    // Ghost: foto de referência sobreposta translúcida (alinhamento antes/depois)
+    var hasGhost = !!opts.ghostUrl
+    var ghostTransform = ''
+    if (hasGhost) {
+      var gz = parseFloat(opts.ghostZoom) || 1
+      var gx = parseFloat(opts.ghostX) || 0
+      var gy = parseFloat(opts.ghostY) || 0
+      ghostTransform = 'transform:scale(' + gz + ') translate(' + gx + '%, ' + gy + '%);transform-origin:center'
+    }
+    var ghostHtml = hasGhost
+      ? '<img class="lpb-imgpos-ghost" src="' + opts.ghostUrl.replace(/"/g, '&quot;') + '" draggable="false" alt="" style="' + ghostTransform + '">'
+      : ''
+    var ghostToggleHtml = hasGhost
+      ? '<label class="lpb-imgpos-ghost-toggle">' +
+          '<input type="checkbox" id="lpbImgposGhostOn" checked> Sobrepor ' + (opts.ghostLabel || 'referência') + ' (alinhamento)' +
+        '</label>' +
+        '<label class="lpb-imgpos-slider-row" style="margin-top:6px">' +
+          '<span>Opacidade</span>' +
+          '<input type="range" class="lpb-imgpos-ghost-opacity" min="10" max="80" step="5" value="40">' +
+          '<span class="lpb-imgpos-ghost-opval">40%</span>' +
+        '</label>'
+      : ''
+
     // Backdrop + modal markup
     var modal = document.createElement('div')
     modal.className = 'lpb-imgpos-backdrop'
     modal.innerHTML = '' +
       '<div class="lpb-imgpos-modal" role="dialog" aria-modal="true">' +
         '<div class="lpb-imgpos-header">' +
-          '<div class="lpb-imgpos-title">Posicionar foto</div>' +
+          '<div class="lpb-imgpos-title">' + (opts.title || 'Posicionar foto') + '</div>' +
           '<button class="lpb-imgpos-close" type="button" aria-label="Fechar">×</button>' +
         '</div>' +
         '<div class="lpb-imgpos-body">' +
           '<div class="lpb-imgpos-stage" style="aspect-ratio:' + aspect + '">' +
+            ghostHtml +
             '<img class="lpb-imgpos-img" src="' + opts.url.replace(/"/g, '&quot;') + '" draggable="false" alt="">' +
           '</div>' +
           '<div class="lpb-imgpos-help">Roda do mouse = zoom · arraste = mover · clique 2x = reset</div>' +
@@ -58,6 +82,7 @@
             '<input type="range" class="lpb-imgpos-slider" min="1" max="5" step="0.05" value="' + state.zoom + '">' +
             '<span class="lpb-imgpos-zoomval">' + Math.round(state.zoom * 100) + '%</span>' +
           '</label>' +
+          ghostToggleHtml +
         '</div>' +
         '<div class="lpb-imgpos-footer">' +
           '<button class="lpb-imgpos-btn ghost" type="button" data-act="reset">Resetar</button>' +
@@ -138,6 +163,24 @@
       state.zoom = _clampZoom(parseFloat(slider.value))
       _apply()
     })
+
+    // Ghost (foto referência) · toggle on/off + opacity slider
+    if (hasGhost) {
+      var ghost = modal.querySelector('.lpb-imgpos-ghost')
+      var ghostOn = modal.querySelector('#lpbImgposGhostOn')
+      var opSl   = modal.querySelector('.lpb-imgpos-ghost-opacity')
+      var opVal  = modal.querySelector('.lpb-imgpos-ghost-opval')
+      function _applyGhost() {
+        var visible = ghostOn.checked
+        var op = parseInt(opSl.value, 10) / 100
+        ghost.style.display = visible ? 'block' : 'none'
+        ghost.style.opacity = op
+        opVal.textContent = opSl.value + '%'
+      }
+      _applyGhost()
+      ghostOn.addEventListener('change', _applyGhost)
+      opSl.addEventListener('input', _applyGhost)
+    }
 
     // Double-click reset
     stage.addEventListener('dblclick', function (e) {

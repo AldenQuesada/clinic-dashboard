@@ -1334,3 +1334,28 @@ input, textarea, select { font-family: inherit; }
 .lpb-imgpos-btn.primary:hover {
   background: #B89B70;
 }
+
+/* Ghost overlay no positioner · alinhamento antes/depois */
+.lpb-imgpos-ghost {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+  mix-blend-mode: normal;
+  z-index: 1;
+  transform-origin: center;
+}
+.lpb-imgpos-img { position: relative; z-index: 2 }
+.lpb-imgpos-ghost-toggle {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px;
+  font-size: 11px; color: rgba(245,240,232,.7);
+  cursor: pointer;
+}
+.lpb-imgpos-ghost-toggle input[type=checkbox] { accent-color: #C8A97E }
+.lpb-imgpos-ghost-opval {
+  min-width: 36px; text-align: right;
+  color: #C8A97E; font-weight: 500;
+}
