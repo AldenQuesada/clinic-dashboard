@@ -314,6 +314,44 @@ const AgendaValidator = {
   },
 
   // ─────────────────────────────────────────────────────────────────
+  // 6b. Mesmo paciente com gap <1h (back-to-back)
+  //     Regra: se precisa de mais tempo, aumente a duracao da consulta.
+  //     Exceção: gap >= 60min libera (paciente pode sair e voltar).
+  // ─────────────────────────────────────────────────────────────────
+  checkPatientBackToBack(data, excludeId = null) {
+    const errs = []
+    const { pacienteId, data: dateStr, horaInicio, horaFim } = data
+    if (!pacienteId || !dateStr || !horaInicio || !horaFim) return errs
+
+    const MIN_GAP = 60 // minutos
+    const s = _toMins(horaInicio), e = _toMins(horaFim)
+
+    const nearby = _getAppts().filter(a => {
+      if (excludeId && a.id === excludeId) return false
+      if (a.pacienteId !== pacienteId) return false
+      if (a.data !== dateStr) return false
+      if (!BLOCKS_CALENDAR.has(a.status)) return false
+      if (!a.horaInicio || !a.horaFim) return false
+      const aS = _toMins(a.horaInicio), aE = _toMins(a.horaFim)
+      // Ignora overlap (ja coberto por checkPatientConflict)
+      if (_overlap(s, e, aS, aE)) return false
+      // Gap = distancia entre blocos
+      const gap = s >= aE ? s - aE : aS - e
+      return gap >= 0 && gap < MIN_GAP
+    })
+
+    if (nearby.length) {
+      const detalhes = nearby.map(c => `${c.horaInicio}–${c.horaFim}`).join(', ')
+      errs.push(
+        `Paciente ja tem agendamento proximo (${detalhes}) com menos de 1h de intervalo. ` +
+        `Se precisa de mais tempo, aumente a duracao da consulta. ` +
+        `Caso o paciente saia e volte, agende com pelo menos 1h de gap.`
+      )
+    }
+    return errs
+  },
+
+  // ─────────────────────────────────────────────────────────────────
   // 7. Validação de transição de status
   // ─────────────────────────────────────────────────────────────────
   validateTransition(appt, newStatus) {
@@ -395,6 +433,7 @@ const AgendaValidator = {
     errs.push(...this.checkProfConflict(newData, appt.id))
     errs.push(...this.checkRoomConflict(newData, appt.id))
     errs.push(...this.checkPatientConflict(newData, appt.id))
+    errs.push(...this.checkPatientBackToBack(newData, appt.id))
 
     return errs
   },
@@ -414,6 +453,7 @@ const AgendaValidator = {
     errs.push(...this.checkProfConflict(data, excludeId))
     errs.push(...this.checkRoomConflict(data, excludeId))
     errs.push(...this.checkPatientConflict(data, excludeId))
+    errs.push(...this.checkPatientBackToBack(data, excludeId))
 
     return { ok: errs.length === 0, errors: errs }
   },
