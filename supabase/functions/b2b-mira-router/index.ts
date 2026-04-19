@@ -492,11 +492,10 @@ Deno.serve(async (req) => {
 
     switch (intent?.intent) {
       case 'b2b.apply':
-        if (role !== 'unknown') {
-          result = handleOther(role)
-        } else {
-          result = await handleApply(phone, message, { step: 0, data: {} })
-        }
+        // Destravado: deixa qualquer role iniciar onboarding.
+        // Admin pode usar pra testar sem outro número; parceira ja registrada
+        // pode recomeçar se quiser.
+        result = await handleApply(phone, message, { step: 0, data: {} })
         break
       case 'b2b.emit_voucher':
         if (role !== 'partner') {
