@@ -50,8 +50,9 @@
     }
 
     html += '<div class="blk-bac-track" data-bac-track="' + carouselId + '">'
-    slides.forEach(function (s) {
-      html += '<div class="blk-bac-slide">' +
+    slides.forEach(function (s, i) {
+      var slideStyle = i === 0 ? '' : 'display:none;opacity:0'
+      html += '<div class="blk-bac-slide" data-bac-slide="' + i + '" style="' + slideStyle + '">' +
                 '<div class="blk-bac-card">' +
                   '<div class="blk-bac-img">' +
                     _imgOrPlaceholder(s.before_url, labelBefore, 'Foto antes') +
@@ -85,40 +86,71 @@
     return html
   }
 
-  // Liga o comportamento de scroll-snap + dots clicáveis
+  // Liga fade transition (800ms) + autoplay (3s) · mesmo padrão do quiz BA carousel
+  // Cleanup global · permite re-bind sem leak de timers
+  var _bacTimers = []
+  function _clearAllTimers() {
+    _bacTimers.forEach(function (t) { clearInterval(t) })
+    _bacTimers = []
+  }
+
   function bind(rootEl) {
     if (!rootEl) return
+    _clearAllTimers()
     var roots = rootEl.querySelectorAll
       ? rootEl.querySelectorAll('[data-bac-root]')
       : []
     roots.forEach(function (root) {
-      var track = root.querySelector('[data-bac-track]')
-      var dots  = root.querySelectorAll('[data-bac-dot], .blk-bac-dot')
-      if (!track || !dots.length) return
+      var track  = root.querySelector('[data-bac-track]')
+      var slides = root.querySelectorAll('[data-bac-slide]')
+      var dots   = root.querySelectorAll('.blk-bac-dot')
+      var total  = slides.length
+      if (!track || total < 2) return
 
-      // Click nos dots → scroll · slide é 100% width sem gap
-      dots.forEach(function (d) {
+      var cur = 0
+
+      function goTo(idx) {
+        if (idx === cur) return
+        var prev = slides[cur]
+        var next = slides[idx]
+        prev.style.opacity = '0'
+        setTimeout(function () {
+          prev.style.display = 'none'
+          next.style.display = 'flex'
+          // force reflow pra animar opacity do 0 ao 1
+          void next.offsetWidth
+          next.style.opacity = '1'
+          cur = idx
+        }, 800)
+        // Atualiza dots imediatamente
+        dots.forEach(function (d, di) {
+          d.classList.toggle('active', di === idx)
+        })
+      }
+
+      // Autoplay 3s
+      var timer = setInterval(function () { goTo((cur + 1) % total) }, 3000)
+      _bacTimers.push(timer)
+
+      // Click manual nos dots → reseta autoplay
+      dots.forEach(function (d, di) {
         d.addEventListener('click', function () {
-          var idx = parseInt(d.dataset.bacIdx, 10) || 0
-          var sw = track.children[0] ? track.children[0].offsetWidth : 1
-          track.scrollTo({ left: idx * sw, behavior: 'smooth' })
+          if (di === cur) return
+          clearInterval(timer)
+          _bacTimers = _bacTimers.filter(function (t) { return t !== timer })
+          goTo(di)
+          timer = setInterval(function () { goTo((cur + 1) % total) }, 3000)
+          _bacTimers.push(timer)
         })
       })
 
-      // Scroll natural → atualiza dot ativo
-      var scrollPending = false
-      track.addEventListener('scroll', function () {
-        if (scrollPending) return
-        scrollPending = true
-        requestAnimationFrame(function () {
-          scrollPending = false
-          var sw = track.children[0] ? track.children[0].offsetWidth : 1
-          var idx = Math.round(track.scrollLeft / sw)
-          dots.forEach(function (d, i) {
-            d.classList.toggle('active', i === idx)
-          })
-        })
-      }, { passive: true })
+      // Pausa em hover (desktop) · retoma quando sai
+      root.addEventListener('mouseenter', function () { clearInterval(timer); timer = null })
+      root.addEventListener('mouseleave', function () {
+        if (timer) return
+        timer = setInterval(function () { goTo((cur + 1) % total) }, 3000)
+        _bacTimers.push(timer)
+      })
     })
   }
 

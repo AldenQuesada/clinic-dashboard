@@ -2364,25 +2364,18 @@
 .blk-bac[data-bg="ivory"] .blk-bac-title,
 .blk-bac[data-bg="white"] .blk-bac-title { color: var(--graphite); }
 
+/* Track sem scroll · slides empilhados com fade transition */
 .blk-bac-track {
-  display: flex;
-  align-items: stretch;     /* todos slides com altura igual */
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding: 0 0 1rem;        /* sem padding lateral · slide ocupa 100% */
+  position: relative;
+  width: 100%;
+  padding: 0 1.5rem 1rem;
+  box-sizing: border-box;
 }
-.blk-bac-track::-webkit-scrollbar { display: none; }
 
 .blk-bac-slide {
-  min-width: 100%;          /* full viewport width · sem peek */
   width: 100%;
-  scroll-snap-align: start;
-  flex-shrink: 0;
   display: flex;
-  padding: 0 1.5rem;        /* padding interno (era do track antes) */
-  box-sizing: border-box;
+  transition: opacity 800ms cubic-bezier(.4,0,.2,1);
 }
 .blk-bac-card {
   flex: 1;
