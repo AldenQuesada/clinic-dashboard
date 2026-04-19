@@ -78,13 +78,48 @@
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "https://oqboitkpcvuaudouwvkl.supabase.co/rest/v1/rpc/b2b_daily_digest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "Content-Type", "value": "application/json" }]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {}
+      },
+      "id": "b2b-digest-rpc",
+      "name": "B2B Digest RPC",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 460],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpCustomAuth": { "id": "X79lxjrmGuRpBo7r", "name": "Mira — Supabase Service" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Anexa secao B2B ao texto do digest original, se aplicavel.\n// - So para a Mirian (phone configuravel via MIRIAN_PHONE no patch)\n// - So se a RPC B2B retornou has_content=true\n// - Fallback gracioso: qualquer erro -> passa digest original sem alteracao\nconst MIRIAN = '5544988782003';\nconst digest = $('Build Digest').item.json || {};\nconst recipient = $('Split Recipients').item.json || {};\nconst recipientPhone = String(recipient.phone || '').replace(/\\D/g, '');\nlet b2b = null;\ntry { b2b = $input.first().json || null; } catch (e) { b2b = null; }\nlet message = digest.message || '';\ntry {\n  if (recipientPhone === MIRIAN && b2b && b2b.ok === true && b2b.has_content === true && b2b.text) {\n    message = (message ? message + '\\n\\n' : '') + b2b.text;\n  }\n} catch (e) {\n  // Mantem digest original em caso de erro\n}\nreturn [{ json: { ...digest, message } }];"
+      },
+      "id": "b2b-digest-append",
+      "name": "B2B Append",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1160, 460]
+    },
+    {
+      "parameters": {
         "jsCode": "// Combina phone/instance do Split + message do Digest\nconst recipient = $('Split Recipients').item.json;\nconst digest = $input.first().json;\nreturn [{ json: {\n  phone: recipient.phone,\n  instance: recipient.instance_id,\n  message: digest.message || ''\n} }];"
       },
       "id": "daily-merge",
       "name": "Merge",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 300]
+      "position": [1320, 300]
     },
     {
       "parameters": {
@@ -105,7 +140,7 @@
       "name": "Send WhatsApp",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 300],
+      "position": [1540, 300],
       "credentials": {
         "httpHeaderAuth": { "id": "ezmaPVK9AyfxTg4c", "name": "Mira — Evolution API" }
       }
@@ -115,7 +150,9 @@
     "Cron 7am Mon-Sat": { "main": [[{ "node": "List Recipients", "type": "main", "index": 0 }]] },
     "List Recipients": { "main": [[{ "node": "Split Recipients", "type": "main", "index": 0 }]] },
     "Split Recipients": { "main": [[{ "node": "Build Digest", "type": "main", "index": 0 }]] },
-    "Build Digest": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Build Digest": { "main": [[{ "node": "B2B Digest RPC", "type": "main", "index": 0 }]] },
+    "B2B Digest RPC": { "main": [[{ "node": "B2B Append", "type": "main", "index": 0 }]] },
+    "B2B Append": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
     "Merge": { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" }
