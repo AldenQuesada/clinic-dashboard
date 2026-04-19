@@ -658,6 +658,7 @@
             duracao: parseInt(p.duracao_min) || 60,
             sessoes: parseInt(p.sessoes) || 0,
             intervalo_sessoes_dias: parseInt(p.intervalo_sessoes_dias) || 0,
+            fases: Array.isArray(p.fases) ? p.fases : [],
           })
         })
       }
@@ -733,11 +734,17 @@
       cats[cat].forEach(function(p) {
         var sessoes = p.sessoes || 0
         var intervalo = p.intervalo_sessoes_dias || 0
+        var fasesArr = Array.isArray(p.fases) ? p.fases : []
+        var fasesAttr = fasesArr.length
+          ? JSON.stringify(fasesArr).replace(/"/g, '&quot;')
+          : ''
         html += '<option value="' + (p.nome || '').replace(/"/g, '&quot;')
           + '" data-valor="' + (p.valor || 0)
           + '" data-dur="' + (p.duracao || 60)
           + '" data-sessoes="' + sessoes
-          + '" data-intervalo="' + intervalo + '">'
+          + '" data-intervalo="' + intervalo + '"'
+          + (fasesAttr ? ' data-fases="' + fasesAttr + '"' : '')
+          + '>'
           + (p.nome || '').replace(/</g, '&lt;')
           + (p.valor > 0 ? ' — R$ ' + p.valor.toLocaleString('pt-BR') : '')
           + '</option>'
@@ -800,11 +807,15 @@
     var name = (selEl && selEl.value) || (nameEl && nameEl.value.trim())
     var valor = valorEl ? parseFloat(valorEl.value || '0') : 0
     if (!name) return
-    // Captura defaults de recorrencia do catalogo (data-sessoes/data-intervalo na option)
-    var defaultSessoes = 0, defaultIntervalo = 0
+    // Captura defaults de recorrencia do catalogo (data-sessoes/data-intervalo/data-fases)
+    var defaultSessoes = 0, defaultIntervalo = 0, defaultFases = null
     if (selEl && selEl.selectedOptions && selEl.selectedOptions[0]) {
-      defaultSessoes = parseInt(selEl.selectedOptions[0].dataset.sessoes) || 0
-      defaultIntervalo = parseInt(selEl.selectedOptions[0].dataset.intervalo) || 0
+      var opt = selEl.selectedOptions[0]
+      defaultSessoes = parseInt(opt.dataset.sessoes) || 0
+      defaultIntervalo = parseInt(opt.dataset.intervalo) || 0
+      if (opt.dataset.fases) {
+        try { defaultFases = JSON.parse(opt.dataset.fases) } catch(e) { defaultFases = null }
+      }
     }
     _apptProcs.push({
       nome: name,
@@ -813,6 +824,7 @@
       cortesiaMotivo: '',
       retornoTipo: 'avulso',
       retornoIntervalo: 0,
+      fases: defaultFases || null,
     })
     if (selEl) selEl.value = ''
     if (nameEl) nameEl.value = ''
@@ -824,7 +836,12 @@
     // Auto-preenche recorrencia se procedimento tem defaults no catalogo
     // (so em novo agendamento, nao em edit)
     var isEdit = (document.getElementById('appt_id') || {}).value
-    if (!isEdit && defaultSessoes > 1 && defaultIntervalo > 0) {
+    // Multi-fase tem prioridade — total vem do somatorio, intervalo da 1a fase
+    var hasFases = Array.isArray(defaultFases) && defaultFases.length > 0
+    var totalDerivado = hasFases ? _recTotalFromFases(defaultFases) : defaultSessoes
+    var intervaloInicial = hasFases ? (parseInt(defaultFases[0].intervalo_dias) || defaultIntervalo) : defaultIntervalo
+
+    if (!isEdit && totalDerivado > 1 && intervaloInicial > 0) {
       var recCheck = document.getElementById('appt_rec_check')
       var recInterval = document.getElementById('appt_rec_interval')
       var recTotal = document.getElementById('appt_rec_total')
@@ -833,19 +850,32 @@
         recCheck.checked = true
         apptToggleRecurrence(recCheck)
       }
-      if (recInterval) recInterval.value = defaultIntervalo
-      if (recTotal) recTotal.value = defaultSessoes
+      if (recInterval) {
+        recInterval.value = intervaloInicial
+        // Multi-fase: o intervalo unico nao representa a serie (desabilita edicao
+        // e deixa claro que a cadencia vem das fases).
+        recInterval.disabled = !!hasFases
+        recInterval.title = hasFases
+          ? 'Cadencia controlada pelas fases do procedimento'
+          : ''
+      }
+      if (recTotal) {
+        recTotal.value = totalDerivado
+        recTotal.disabled = !!hasFases
+        recTotal.title = hasFases
+          ? 'Total derivado das fases do procedimento'
+          : ''
+      }
       // Aponta o select do procedimento recorrente pro que acabou de ser adicionado
       if (recProcSel) {
         var newIdx = _apptProcs.length - 1
         recProcSel.value = String(newIdx)
       }
       _apptRecurrenceUpdatePreview()
-      if (window._showToast) window._showToast(
-        'Recorrencia sugerida',
-        name + ': ' + defaultSessoes + ' sessoes a cada ' + defaultIntervalo + ' dias',
-        'info'
-      )
+      var msg = hasFases
+        ? name + ': ' + _recFasesLabel(defaultFases) + ' (' + totalDerivado + ' sessoes)'
+        : name + ': ' + defaultSessoes + ' sessoes a cada ' + defaultIntervalo + ' dias'
+      if (window._showToast) window._showToast('Recorrencia sugerida', msg, 'info')
     }
 
     // Alerta se mais de 1 procedimento em 1h
@@ -2738,15 +2768,49 @@
     } catch(e) { return iso }
   }
 
-  function _recGenerateDates(baseDateStr, intervalDays, total) {
+  // Gera cronograma da serie.
+  // - Se fases esta preenchido (array com sessoes+intervalo_dias por fase),
+  //   respeita a cadencia mista (ex: 8 semanais + 2 quinzenais).
+  //   O total e ignorado — vem do somatorio das fases.
+  // - Senao, usa intervalDays fixo por total sessoes.
+  function _recGenerateDates(baseDateStr, intervalDays, total, fases) {
     var dates = []
-    var base = new Date(baseDateStr + 'T12:00:00')
-    for (var i = 0; i < total; i++) {
-      var d = new Date(base)
-      d.setDate(d.getDate() + i * intervalDays)
-      dates.push(d.toISOString().slice(0, 10))
+    var cursor = new Date(baseDateStr + 'T12:00:00')
+    dates.push(cursor.toISOString().slice(0, 10))
+
+    if (fases && fases.length) {
+      fases.forEach(function(fase, fIdx) {
+        var n = parseInt(fase.sessoes) || 0
+        var gap = parseInt(fase.intervalo_dias) || 7
+        // Primeira fase: (n-1) gaps (a primeira sessao e a base).
+        // Demais fases: n gaps (gap da transicao + gaps internos).
+        var count = (fIdx === 0) ? Math.max(0, n - 1) : n
+        for (var i = 0; i < count; i++) {
+          cursor.setDate(cursor.getDate() + gap)
+          dates.push(cursor.toISOString().slice(0, 10))
+        }
+      })
+      return dates
+    }
+
+    for (var i = 1; i < total; i++) {
+      cursor.setDate(cursor.getDate() + intervalDays)
+      dates.push(cursor.toISOString().slice(0, 10))
     }
     return dates
+  }
+
+  function _recTotalFromFases(fases) {
+    if (!fases || !fases.length) return 0
+    return fases.reduce(function(sum, f) { return sum + (parseInt(f.sessoes) || 0) }, 0)
+  }
+
+  function _recFasesLabel(fases) {
+    if (!fases || !fases.length) return ''
+    return fases.map(function(f) {
+      var lbl = f.nome || 'Fase'
+      return lbl + ' ' + (f.sessoes || 0) + 'x/' + (f.intervalo_dias || 0) + 'd'
+    }).join(' → ')
   }
 
   function _apptUpdateRecurrenceVisibility() {
@@ -2785,18 +2849,30 @@
     var total = parseInt((document.getElementById('appt_rec_total') || {}).value) || 8
     if (total < 2) total = 2
     if (total > 52) total = 52
-    var dates = _recGenerateDates(baseDate, interval, total)
+
+    // Se o procedimento selecionado tem fases, usa multi-fase
+    var procIdx = parseInt((document.getElementById('appt_rec_proc') || {}).value || '0') || 0
+    var selectedProc = _apptProcs[procIdx]
+    var fases = (selectedProc && Array.isArray(selectedProc.fases) && selectedProc.fases.length)
+      ? selectedProc.fases : null
+
+    var dates = _recGenerateDates(baseDate, interval, total, fases)
     var shown = dates.slice(0, 5).map(function(d, i) {
       return '<b>' + (i+1) + '.</b> ' + _recFmtShort(d)
     }).join(' &nbsp;&middot;&nbsp; ')
     if (dates.length > 5) shown += ' &nbsp;&middot;&nbsp; <i>(+' + (dates.length - 5) + ' mais)</i>'
-    previewEl.innerHTML = 'Serie: ' + shown
+    var prefixo = fases
+      ? '<span style="background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-right:6px">MULTI-FASE</span>' +
+        '<span style="color:#6B7280;font-size:11px">' + _recFasesLabel(fases) + '</span><br/>'
+      : ''
+    previewEl.innerHTML = prefixo + 'Serie: ' + shown
   }
 
   // Bind change events pra recalcular preview
   document.addEventListener('DOMContentLoaded', function() {
-    ['appt_data', 'appt_rec_interval', 'appt_rec_total'].forEach(function(id) {
+    ['appt_data', 'appt_rec_interval', 'appt_rec_total', 'appt_rec_proc'].forEach(function(id) {
       var el = document.getElementById(id)
+      if (el) el.addEventListener('change', _apptRecurrenceUpdatePreview)
       if (el) el.addEventListener('input', _apptRecurrenceUpdatePreview)
     })
   })
@@ -2917,14 +2993,18 @@
     if (total < 2 || total > 52) { _warn('Total de sessoes deve estar entre 2 e 52'); return }
     if (interval < 1 || interval > 365) { _warn('Intervalo deve estar entre 1 e 365 dias'); return }
     var procIdx = parseInt((document.getElementById('appt_rec_proc') || {}).value || '0') || 0
-    var procName = (_apptProcs[procIdx] || {}).nome || ''
+    var procRef = _apptProcs[procIdx] || {}
+    var procName = procRef.nome || ''
     if (!procName) { _warn('Selecione o procedimento recorrente'); return }
     var inicio = (document.getElementById('appt_inicio') || {}).value
     var duracao = parseInt((document.getElementById('appt_duracao') || {}).value) || 60
     var profIdx = parseInt((document.getElementById('appt_prof') || {}).value || '0') || 0
     var salaIdx = parseInt((document.getElementById('appt_sala') || {}).value)
 
-    var dates = _recGenerateDates(baseDateStr, interval, total)
+    var fasesProc = Array.isArray(procRef.fases) && procRef.fases.length ? procRef.fases : null
+    var dates = _recGenerateDates(baseDateStr, interval, total, fasesProc)
+    // Multi-fase: total real vem da serie gerada
+    if (fasesProc) total = dates.length
     var childrenDates = dates.slice(1)
     var conflicts = _apptCheckSeriesConflicts(childrenDates, inicio, duracao, profIdx, isNaN(salaIdx) ? null : salaIdx, null)
 

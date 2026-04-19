@@ -506,6 +506,8 @@ async function _saveProc(proc) {
       contraindicacoes:     proc.contraindicacoes     || [],
       observacoes:          proc.observacoes          || null,
       insumos:              insumosNorm,
+      intervalo_sessoes_dias: proc.intervalo_sessoes_dias || null,
+      fases:                Array.isArray(proc.fases) && proc.fases.length ? proc.fases : null,
     })
     if (!r.ok) throw new Error(r.error || 'Erro ao salvar procedimento')
     _procsCache = null
@@ -1099,6 +1101,7 @@ function _pfRender() {
   const stepContent = document.getElementById('pf-step-content')
   if (stepContent) stepContent.innerHTML = _pfStepHtml()
   featherIn(mc)
+  if (_pfStep === 4 && typeof pfRenderFases === 'function') pfRenderFases()
 }
 
 function _pfStepHtml() {
@@ -1333,13 +1336,14 @@ function _pfStep4() {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div>
           <label class="proc-form-label">N.º de Sessões (avulso)</label>
-          <input id="pf_ses" type="number" class="proc-form-input" min="1" value="${d.sessoes || 1}">
+          <input id="pf_ses" type="number" class="proc-form-input" min="1" value="${d.sessoes || 1}" ${Array.isArray(d.fases) && d.fases.length ? 'disabled title="Derivado das fases"' : ''}>
         </div>
         <div>
           <label class="proc-form-label">Intervalo entre sessões (dias)</label>
           <input id="pf_intervalo" type="number" class="proc-form-input" min="1" max="365"
             placeholder="Ex: 7 (semanal), 30 (mensal)"
-            value="${d.intervalo_sessoes_dias > 0 ? d.intervalo_sessoes_dias : ''}">
+            value="${d.intervalo_sessoes_dias > 0 ? d.intervalo_sessoes_dias : ''}"
+            ${Array.isArray(d.fases) && d.fases.length ? 'disabled title="Cadência controlada pelas fases"' : ''}>
           <div style="font-size:10px;color:#9CA3AF;margin-top:3px">Auto-preenche recorrência no agendamento</div>
         </div>
         <div>
@@ -1348,6 +1352,22 @@ function _pfStep4() {
             placeholder="${custo > 0 ? _fmtMoney(custo) + ' (auto)' : '0,00'}"
             value="${d.custo_estimado > 0 ? d.custo_estimado : custo > 0 ? custo : ''}"
             oninput="pfUpdateFinPreview()">
+        </div>
+      </div>
+
+      <!-- Cadência multi-fase -->
+      <div style="border:1px dashed #E5E7EB;border-radius:10px;padding:12px 14px;background:#FAFAFA">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+          <input id="pf_fases_toggle" type="checkbox" ${Array.isArray(d.fases) && d.fases.length ? 'checked' : ''} onchange="pfToggleFases(this)">
+          <span style="font-size:13px;font-weight:700;color:#374151">Cadência multi-fase</span>
+          <span style="font-size:11px;color:#9CA3AF">(ex: Tirzepatida 8x semanal + 2x quinzenal)</span>
+        </label>
+        <div id="pf_fases_wrap" style="margin-top:10px;${Array.isArray(d.fases) && d.fases.length ? '' : 'display:none'}">
+          <div id="pf_fases_list"></div>
+          <button type="button" onclick="pfAddFase()" style="margin-top:6px;padding:7px 12px;background:#fff;border:1px dashed #7C3AED;color:#7C3AED;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700">
+            + Adicionar fase
+          </button>
+          <div id="pf_fases_resumo" style="margin-top:10px;font-size:11px;color:#6B7280"></div>
         </div>
       </div>
 
@@ -1636,7 +1656,116 @@ function pfToggleTipo(tipo) {
   _pfData.tipo = tipo
   // Re-render step 4 content only
   const stepEl = document.getElementById('pf-step-content')
-  if (stepEl) { stepEl.innerHTML = _pfStep4(); featherIn(stepEl) }
+  if (stepEl) { stepEl.innerHTML = _pfStep4(); featherIn(stepEl); pfRenderFases() }
+}
+
+// ── Fases (cadencia multi-etapa) ─────────────────────────────
+function pfToggleFases(cb) {
+  const wrap = document.getElementById('pf_fases_wrap')
+  if (!wrap) return
+  if (cb.checked) {
+    if (!Array.isArray(_pfData.fases) || !_pfData.fases.length) {
+      _pfData.fases = [{ nome: 'Inducao', sessoes: 8, intervalo_dias: 7 }]
+    }
+    wrap.style.display = ''
+    pfRenderFases()
+  } else {
+    _pfData.fases = []
+    wrap.style.display = 'none'
+    pfRenderFases()
+  }
+  pfSyncFasesInputs()
+}
+
+function pfSyncFasesInputs() {
+  const has = Array.isArray(_pfData.fases) && _pfData.fases.length > 0
+  const ses = document.getElementById('pf_ses')
+  const intv = document.getElementById('pf_intervalo')
+  if (ses) {
+    ses.disabled = has
+    ses.title = has ? 'Derivado das fases' : ''
+    if (has) ses.value = _pfData.fases.reduce((s, f) => s + (parseInt(f.sessoes) || 0), 0)
+  }
+  if (intv) {
+    intv.disabled = has
+    intv.title = has ? 'Cadencia controlada pelas fases' : ''
+  }
+}
+
+function pfAddFase() {
+  if (!Array.isArray(_pfData.fases)) _pfData.fases = []
+  _pfData.fases.push({ nome: 'Fase ' + (_pfData.fases.length + 1), sessoes: 2, intervalo_dias: 15 })
+  pfRenderFases()
+  pfSyncFasesInputs()
+}
+
+function pfRemoveFase(idx) {
+  if (!Array.isArray(_pfData.fases)) return
+  _pfData.fases.splice(idx, 1)
+  if (_pfData.fases.length === 0) {
+    const tog = document.getElementById('pf_fases_toggle')
+    if (tog) tog.checked = false
+    pfToggleFases(tog)
+    return
+  }
+  pfRenderFases()
+  pfSyncFasesInputs()
+}
+
+function pfUpdateFase(idx, field, value) {
+  if (!_pfData.fases || !_pfData.fases[idx]) return
+  if (field === 'sessoes' || field === 'intervalo_dias') {
+    _pfData.fases[idx][field] = parseInt(value) || 0
+  } else {
+    _pfData.fases[idx][field] = String(value || '').trim()
+  }
+  pfRenderFasesResumo()
+  pfSyncFasesInputs()
+}
+
+function pfRenderFasesResumo() {
+  const el = document.getElementById('pf_fases_resumo')
+  if (!el) return
+  const fases = _pfData.fases || []
+  if (!fases.length) { el.innerHTML = ''; return }
+  const total = fases.reduce((s, f) => s + (parseInt(f.sessoes) || 0), 0)
+  const resumo = fases.map(f =>
+    `<b>${(f.nome || 'Fase').replace(/[<>]/g, '')}</b> ${f.sessoes || 0}x / ${f.intervalo_dias || 0}d`
+  ).join(' → ')
+  el.innerHTML = `Total: <b>${total}</b> sessoes · ${resumo}`
+}
+
+function pfRenderFases() {
+  const list = document.getElementById('pf_fases_list')
+  if (!list) return
+  const fases = _pfData.fases || []
+  if (!fases.length) { list.innerHTML = ''; pfRenderFasesResumo(); return }
+  list.innerHTML = fases.map((f, i) => `
+    <div style="display:grid;grid-template-columns:1fr 90px 110px 36px;gap:8px;align-items:end;margin-bottom:8px;padding:8px;background:#fff;border:1px solid #E5E7EB;border-radius:8px">
+      <div>
+        <label style="font-size:10px;color:#6B7280;font-weight:600">Nome da fase</label>
+        <input type="text" value="${(f.nome || '').replace(/"/g, '&quot;')}"
+          oninput="pfUpdateFase(${i},'nome',this.value)"
+          style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px">
+      </div>
+      <div>
+        <label style="font-size:10px;color:#6B7280;font-weight:600">Sessões</label>
+        <input type="number" min="1" value="${f.sessoes || 0}"
+          oninput="pfUpdateFase(${i},'sessoes',this.value)"
+          style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px">
+      </div>
+      <div>
+        <label style="font-size:10px;color:#6B7280;font-weight:600">Intervalo (dias)</label>
+        <input type="number" min="1" max="365" value="${f.intervalo_dias || 0}"
+          oninput="pfUpdateFase(${i},'intervalo_dias',this.value)"
+          style="width:100%;padding:6px 8px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px">
+      </div>
+      <button type="button" onclick="pfRemoveFase(${i})"
+        style="padding:8px;background:#FEE2E2;color:#991B1B;border:none;border-radius:6px;cursor:pointer;font-size:14px"
+        title="Remover fase">×</button>
+    </div>
+  `).join('')
+  pfRenderFasesResumo()
 }
 
 function pfUpdateFinPreview() {
@@ -1806,6 +1935,10 @@ window.pfUpdateFinPreview   = pfUpdateFinPreview
 window.pfUpdateCombo        = pfUpdateCombo
 window.pfAddListItem        = pfAddListItem
 window.pfRemoveListItem     = pfRemoveListItem
+window.pfToggleFases        = pfToggleFases
+window.pfAddFase            = pfAddFase
+window.pfRemoveFase         = pfRemoveFase
+window.pfUpdateFase         = pfUpdateFase
 
 // Auto-init
 initProcedimentos()

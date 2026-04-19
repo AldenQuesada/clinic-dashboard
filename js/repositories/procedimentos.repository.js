@@ -52,6 +52,7 @@
         p_observacoes:          proc.observacoes          ?? null,
         p_insumos:              proc.insumos              ?? null,
         p_intervalo_sessoes_dias: proc.intervalo_sessoes_dias ?? null,
+        p_fases:                proc.fases                ?? null,
       })
       if (error) return _err(error.message || String(error))
       return _ok(data)
