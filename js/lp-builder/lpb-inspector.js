@@ -497,15 +497,62 @@
     var editingLang = (window.LPBI18n && LPBI18n.getEditingLang) ? LPBI18n.getEditingLang() : 'pt-BR'
     var isI18nMode = window.LPBI18n && editingLang !== LPBI18n.DEFAULT_LANG
 
-    // Agrupa fields por categoria (heurística por nome)
-    var groups = _groupFields(meta.fields)
+    // ────────────────────────────────────────────────────────
+    // ONDA 29/30 · Companion fields (cor + tamanho aparecem JUNTO do texto)
+    // Para cada field text/textarea principal (eyebrow, headline, etc.),
+    // procura {nome}_size e {nome}_color e renderiza embaixo dele.
+    // ────────────────────────────────────────────────────────
+    var allFieldKeys = meta.fields.map(function (f) { return f.k })
+    var fieldByKey = {}
+    meta.fields.forEach(function (f) { fieldByKey[f.k] = f })
+
+    function _hasCompanion(parentKey, suffix) {
+      return fieldByKey[parentKey + suffix] != null
+    }
+
+    function _isCompanion(fkey) {
+      // É companion se algum outro field do schema é o "pai" (ex: headline_size cujo pai é headline)
+      var m = fkey.match(/^(.+)_(size|color)$/)
+      if (!m) return false
+      return fieldByKey[m[1]] != null
+    }
+
+    // Filtra fields companions do meta.fields → não vão pro agrupamento principal
+    // (eles são renderizados inline embaixo do field pai)
+    var primaryFields = meta.fields.filter(function (f) { return !_isCompanion(f.k) })
+
+    // Agrupa fields PRIMÁRIOS por categoria (heurística por nome)
+    var groups = _groupFields(primaryFields)
+
     function _renderField(f) {
       var renderer = Fields[f.type] || Fields.text
       var v = isI18nMode
         ? LPBI18n.getValue(b, f.k, editingLang)
         : (b.props ? b.props[f.k] : undefined)
-      return renderer(f, v, idx)
+      var html = renderer(f, v, idx)
+
+      // Renderiza companions inline (size/color do mesmo nome do field)
+      var companionsHtml = ''
+      ;['_size', '_color'].forEach(function (suffix) {
+        var ck = f.k + suffix
+        var cf = fieldByKey[ck]
+        if (cf) {
+          var cv = isI18nMode
+            ? LPBI18n.getValue(b, ck, editingLang)
+            : (b.props ? b.props[ck] : undefined)
+          var cr = Fields[cf.type] || Fields.text
+          companionsHtml += cr(cf, cv, idx)
+        }
+      })
+      if (companionsHtml) {
+        html += '<div class="lpb-companion-block">' +
+          '<div class="lpb-companion-label">Aparência deste texto</div>' +
+          companionsHtml +
+        '</div>'
+      }
+      return html
     }
+
     var groupSectionsHtml = ''
     GROUP_DEFS.forEach(function (g) {
       var fs = groups[g.id]
@@ -768,23 +815,33 @@
       // ignora inputs DENTRO de items de lista — eles têm handler dedicado abaixo
       if (el.closest('.lpb-list-item')) return
       var flushFor = function (e) {
-        var key = el.dataset.fkey
-        if (!key || key === '__scalar') return
-        var currentVal = el.value
-        if (isI18nMode) {
-          var b2 = LPBuilder.getBlock(idx)
-          LPBI18n.setValue(b2, key, currentVal, editingLang)
-          LPBuilder.setPageMeta('updated_at', LPBuilder.getCurrentPage().updated_at)
-          if (window.LPBCanvas && window.LPBCanvas.render) window.LPBCanvas.render()
-        } else {
-          LPBuilder.setBlockProp(idx, key, currentVal)
-        }
-        var fieldEl = el.closest('.lpb-field')
-        var counter = fieldEl && fieldEl.querySelector('.lpb-field-counter')
-        if (counter && counter.textContent.indexOf('/') >= 0) {
-          var max = parseInt(counter.textContent.split('/')[1], 10)
-          counter.textContent = currentVal.length + '/' + max
-          counter.classList.toggle('over', currentVal.length > max)
+        try {
+          var key = el.dataset.fkey
+          if (!key || key === '__scalar') return
+          var currentVal = el.value
+          if (isI18nMode) {
+            var b2 = LPBuilder.getBlock(idx)
+            LPBI18n.setValue(b2, key, currentVal, editingLang)
+            LPBuilder.setPageMeta('updated_at', LPBuilder.getCurrentPage().updated_at)
+            if (window.LPBCanvas && window.LPBCanvas.render) window.LPBCanvas.render()
+          } else {
+            LPBuilder.setBlockProp(idx, key, currentVal)
+          }
+          var fieldEl = el.closest('.lpb-field')
+          var counter = fieldEl && fieldEl.querySelector('.lpb-field-counter')
+          if (counter && counter.textContent.indexOf('/') >= 0) {
+            var max = parseInt(counter.textContent.split('/')[1], 10)
+            counter.textContent = currentVal.length + '/' + max
+            counter.classList.toggle('over', currentVal.length > max)
+          }
+          // Indicador visual de save (bolinha verde piscante por 1.5s)
+          if (fieldEl) {
+            fieldEl.classList.remove('lpb-field-saved')
+            void fieldEl.offsetWidth  // force reflow pra reanimar
+            fieldEl.classList.add('lpb-field-saved')
+          }
+        } catch (err) {
+          console.error('[inspector flushFor] erro key=' + (el.dataset.fkey) + ':', err)
         }
       }
       el.oninput = function (e) {

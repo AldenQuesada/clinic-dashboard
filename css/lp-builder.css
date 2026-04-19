@@ -1187,3 +1187,44 @@ input, textarea, select { font-family: inherit; }
   color: var(--lpb-danger);
   border-color: var(--lpb-danger);
 }
+
+/* ─── Onda 30 · Companion fields (cor+tamanho junto do texto) ─── */
+.lpb-companion-block {
+  margin: -8px 0 18px;
+  padding: 12px 14px 4px;
+  background: rgba(200, 169, 126, 0.06);
+  border-left: 2px solid var(--lpb-accent);
+  border-radius: 0 4px 4px 0;
+}
+.lpb-companion-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lpb-accent);
+  margin-bottom: 8px;
+}
+.lpb-companion-block .lpb-field { margin-bottom: 10px; }
+.lpb-companion-block .lpb-field:last-child { margin-bottom: 0; }
+.lpb-companion-block .lpb-field-label > span:first-child { font-size: 10.5px; }
+
+/* ─── Indicador visual de save no field (bolinha verde piscante) ─── */
+.lpb-field { position: relative; }
+.lpb-field.lpb-field-saved::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: -4px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--lpb-success, #22c55e);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+  animation: lpbSavedPulse 1.5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes lpbSavedPulse {
+  0%   { opacity: 1; transform: scale(0.6); }
+  20%  { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1); }
+}
