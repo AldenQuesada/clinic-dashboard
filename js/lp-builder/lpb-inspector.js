@@ -828,6 +828,11 @@
         ;['_zoom', '_x', '_y', '_rot'].forEach(function (suffix) {
           _writeFieldValue(idx, base + suffix, undefined, btn)
         })
+        // Tira foco do botao + força re-render do inspector e canvas
+        // (state-changed normalmente nao re-renderiza se foco estiver dentro do inspector)
+        try { btn.blur() } catch (_) {}
+        if (window.LPBCanvas    && window.LPBCanvas.render)    window.LPBCanvas.render()
+        if (window.LPBInspector && window.LPBInspector.render) window.LPBInspector.render()
         if (window.LPBToast) LPBToast('Foto removida', 'success')
       }
     })
