@@ -54,8 +54,10 @@ const last8 = phone.slice(-8)
 const ADMIN_LAST8 = ['98782003', '88782003']
 const isAdmin = ADMIN_LAST8.includes(last8)
 
-// Sempre roteia se: admin OR keyword hit
-const isB2B = isAdmin || kwHit
+// SO roteia pra B2B se tem keyword B2B (voucher, parceir, aprova, etc).
+// Admin sem keyword = Mira normal (agenda, relatorios, etc).
+// isAdmin fica salvo pra logs mas nao dispara roteamento sozinho.
+const isB2B = kwHit
 
 return [{ json: { ...j, isB2B, kwHit, isAdmin, _text_norm: text, _last8: last8 } }]
 `
