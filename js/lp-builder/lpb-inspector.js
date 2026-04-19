@@ -645,6 +645,10 @@
   }
 
   function _attach(idx) {
+    // Recalcula i18n mode aqui (escopo separado de render() · evita ReferenceError)
+    var editingLang = (window.LPBI18n && LPBI18n.getEditingLang) ? LPBI18n.getEditingLang() : 'pt-BR'
+    var isI18nMode  = window.LPBI18n && editingLang !== (LPBI18n.DEFAULT_LANG || 'pt-BR')
+
     // Section accordion toggle
     _root.querySelectorAll('.lpb-insp-section-h').forEach(function (h) {
       h.onclick = function () {
