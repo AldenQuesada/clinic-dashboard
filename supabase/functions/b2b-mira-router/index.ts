@@ -33,10 +33,11 @@ const _SB_URL = Deno.env.get('SUPABASE_URL') || ''
 const _SB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 // Admins autorizados a aprovar/rejeitar/consultar (últimos 8 dígitos)
-// Mirian é quem opera a Mira no dia a dia. 5544998787673 É o chip da Mira (self).
-const ADMIN_PHONES_LAST8 = ['88782003'] // Mirian
-// Telefone que recebe notificações (mesma Mirian — ela é a ponte com Alden)
-const NOTIFY_PHONE = '5544988782003' // Mirian
+// Evolution pode entregar com 12 ou 13 dígitos (nono dígito opcional BR),
+// então aceita ambas as versões do final da Mirian.
+const ADMIN_PHONES_LAST8 = ['98782003', '88782003'] // Mirian (ambos formatos)
+// Telefone que recebe notificações
+const NOTIFY_PHONE = '554498782003' // Mirian (como chega da Evolution)
 
 const cors = {
   'Access-Control-Allow-Origin': '*',

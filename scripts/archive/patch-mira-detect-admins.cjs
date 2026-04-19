@@ -37,24 +37,27 @@ function req(method, path, body) {
 
 const NEW_DETECT_CODE = `
 // Detecta se a mensagem deve ir pro fluxo B2B.
-// Sinais: keyword regex + whitelist de admins + (futuro: state ativo).
+// Sinais: keyword regex + whitelist de admins.
 const j = $input.first().json
 const phone = String(j.phone || '')
-const text = String(j.text || '').toLowerCase()
+const textRaw = String(j.text || '')
+
+// Normaliza: remove acentos/diacriticos pra regex bater com "Lista"/"Lísta"
+const text = textRaw.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
 
 // 1. Keywords B2B
-const kwRegex = /voucher|parceir|candidatura|parceria|aprova(?:r)?|rejeita(?:r)?|cazza|moinho|mormaii|osvaldo|mentor|nps|quero ser|lista pendent|stats|quantos vouchers/i
+const kwRegex = /voucher|parceir|candidatura|parceria|aprova|rejeita|recusa|cazza|moinho|mormaii|osvaldo|mentor|nps|quero ser|lista pendent|lista de pendent|pendentes|stats|status|quantos vouchers|quantas parcerias/i
 const kwHit = kwRegex.test(text)
 
-// 2. Admin = Mirian (5544988782003). O chip da Mira e o 5544998787673 (self, nao pode mandar pra si).
+// 2. Admin Mirian. Evolution entrega com 12 ou 13 digitos (nono digito BR opcional).
 const last8 = phone.slice(-8)
-const ADMIN_LAST8 = ['88782003']
+const ADMIN_LAST8 = ['98782003', '88782003']
 const isAdmin = ADMIN_LAST8.includes(last8)
 
 // Sempre roteia se: admin OR keyword hit
 const isB2B = isAdmin || kwHit
 
-return [{ json: { ...j, isB2B, kwHit, isAdmin } }]
+return [{ json: { ...j, isB2B, kwHit, isAdmin, _text_norm: text, _last8: last8 } }]
 `
 
 ;(async () => {
