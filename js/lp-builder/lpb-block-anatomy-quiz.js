@@ -60,7 +60,7 @@
     codigo_barras:      { label: 'Código de barras',     protocol: 'Toxina botulínica + AH (linhas verticais do lábio superior)', hotspots: [[50, 70]] },
     labios:             { label: 'Lábios',               protocol: 'Preenchimento com AH',                        hotspots: [[50, 73]] },
     linha_marionete:    { label: 'Linha de marionete',   protocol: 'Preenchimento com AH (sulcos das comissuras labiais)', hotspots: [[40, 79], [60, 79]] },
-    bulldog:            { label: 'Buldogue (jowls)',     protocol: 'Bioestimulador de colágeno + Fotona 4D (papada lateral)', hotspots: [[22, 82], [78, 82]] },
+    bulldog:            { label: 'Buldogue (jowls)',     protocol: 'AH + Bioestimulador + Bioremodelador + Fotona 4D',          hotspots: [[22, 82], [78, 82]] },
     mandibular:         { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',                  hotspots: [[26, 87], [74, 87]] },
   })
 
@@ -68,9 +68,9 @@
   var AREAS_SIDE = Object.freeze({
     dorso_nariz:     { label: 'Dorso nasal',          protocol: 'Rinomodelação · AH no dorso',                            hotspots: [[40, 38]] },
     ponta_nariz:     { label: 'Ponta do nariz',       protocol: 'Rinomodelação · projeção da ponta com AH',               hotspots: [[28, 48]] },
-    mento:           { label: 'Mento (queixo)',       protocol: 'Mentoplastia injetável · AH no mento',                   hotspots: [[34, 78]] },
-    bulldog:         { label: 'Buldogue (jowls)',     protocol: 'Bioestimulador de colágeno + Fotona 4D (papada lateral)', hotspots: [[62, 82]] },
-    papada:          { label: 'Papada',               protocol: 'Lipo enzimática + Fotona 4D',                            hotspots: [[52, 88]] },
+    mento:           { label: 'Mento (queixo)',       protocol: 'Preenchimento com AH (mentoplastia injetável)',          hotspots: [[34, 78]] },
+    bulldog:         { label: 'Buldogue (jowls)',     protocol: 'AH + Bioestimulador + Bioremodelador + Fotona 4D',       hotspots: [[62, 82]] },
+    papada:          { label: 'Papada',               protocol: 'Fotona 4D',                                              hotspots: [[52, 88]] },
   })
 
   // Mapa unificado pra runtime · merge dos 2 (compatibilidade)
