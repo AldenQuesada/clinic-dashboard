@@ -1,14 +1,18 @@
 /* ============================================================
  * LP Blocks — estilos dos blocos avançados (Onda 1)
  *
- *  · Antes & Depois slider     (.blk-ba)
- *  · Stats inline              (.blk-stats)
- *  · Gallery mosaic            (.blk-mosaic)
- *  · Pull quote editorial      (.blk-pull-quote)
- *  · Drop-cap microinteração   (.drop-cap::first-letter)
- *
  * Paleta usa as variáveis do lp-shared.css.
  * ============================================================ */
+
+/* ============================================================
+ * VARIAVEIS PADRAO · dimensoes compartilhadas entre blocos
+ * Usar var(--lp-photo-card-max-width) etc. em qualquer bloco novo
+ * que precise se alinhar visualmente com anatomy-quiz e BA-reveal.
+ * ============================================================ */
+:root {
+  --lp-photo-card-max-width: 380px;   /* mesma largura do anatomy-quiz wrap */
+  --lp-photo-card-aspect:    4/5;     /* portrait suave (304x380 a 380x475) */
+}
 
 /* ─── Antes & Depois · multidirecional ───────────────────── */
 
@@ -3333,7 +3337,7 @@
 /* ── BLOCK: before-after-reveal · slider lateral ─────────────── */
 .blk-bars {
   padding: 2.5rem 0 2rem;
-  max-width: 480px;
+  max-width: 480px;             /* container · texto cabe a 480 */
   margin: 0 auto;
   background: var(--graphite);
 }
@@ -3367,7 +3371,9 @@
 .blk-bars-stage {
   position: relative;
   width: 100%;
-  aspect-ratio: 2/3;          /* mesma proporcao do BA-carousel · cresce com largura */
+  max-width: var(--lp-photo-card-max-width);  /* 380px · padrao da LP */
+  aspect-ratio: var(--lp-photo-card-aspect);  /* 4/5 portrait · padrao */
+  margin: 0 auto;             /* centraliza dentro do bloco 480px */
   overflow: hidden;
   cursor: ew-resize;
   user-select: none;
