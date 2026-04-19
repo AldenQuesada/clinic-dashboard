@@ -1593,11 +1593,39 @@
       description: 'Mapa SVG faux estilizado em champagne · pin pulsante + card frosted glass + status aberto/fechado dinâmico',
       group: 'localizacao',
       fields: [
+        // Eyebrow + companions
         { k: 'eyebrow', label: 'Eyebrow', type: 'text', max: 40, optional: true, default: 'Localização' },
+        { k: 'eyebrow_size',  label: 'Eyebrow · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (8px)'},{value:'md',label:'Médio (9px · default)'},{value:'lg',label:'Grande (11px)'},{value:'xl',label:'Extra (13px)'}], default: 'md' },
+        { k: 'eyebrow_color', label: 'Eyebrow · cor (custom)', type: 'color', optional: true },
+        { k: 'eyebrow_padx',  label: 'Eyebrow · espaçamento lateral', type: 'select',
+          options: [{value:'0',label:'Zero'},{value:'sm',label:'Pequeno'},{value:'md',label:'Médio (default)'},{value:'lg',label:'Grande'},{value:'xl',label:'Extra'}], default: 'md' },
+
+        // Título + companions
         { k: 'titulo',  label: 'Título',  type: 'text', max: 60, optional: true, default: 'Onde nos encontrar' },
+        { k: 'titulo_size',   label: 'Título · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (18px)'},{value:'md',label:'Médio (24px · default)'},{value:'lg',label:'Grande (32px)'},{value:'xl',label:'Extra (40px)'}], default: 'md' },
+        { k: 'titulo_color',  label: 'Título · cor (custom)', type: 'color', optional: true },
+        { k: 'titulo_padx',   label: 'Título · espaçamento lateral', type: 'select',
+          options: [{value:'0',label:'Zero'},{value:'sm',label:'Pequeno'},{value:'md',label:'Médio (default)'},{value:'lg',label:'Grande'},{value:'xl',label:'Extra'}], default: 'md' },
+
+        // Endereço + companions (sem padx · está dentro do card)
         { k: 'address', label: 'Endereço (linha 1)', type: 'text', max: 80, default: 'Av. Carneiro Leão, 296 · Sala 806' },
+        { k: 'address_size',  label: 'Endereço · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (14px)'},{value:'md',label:'Médio (18px · default)'},{value:'lg',label:'Grande (22px)'},{value:'xl',label:'Extra (26px)'}], default: 'md' },
+        { k: 'address_color', label: 'Endereço · cor (custom)', type: 'color', optional: true },
+
+        // Cidade + companions
         { k: 'city',    label: 'Cidade / Estado',     type: 'text', max: 60, default: 'Maringá / PR · CEP 87014-010' },
+        { k: 'city_size',     label: 'Cidade · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (9px)'},{value:'md',label:'Médio (11px · default)'},{value:'lg',label:'Grande (13px)'},{value:'xl',label:'Extra (15px)'}], default: 'md' },
+        { k: 'city_color',    label: 'Cidade · cor (custom)', type: 'color', optional: true },
+
+        // Horários + companions
         { k: 'hours_summary', label: 'Resumo de horários', type: 'text', max: 80, default: 'Seg a Sex 8h-20h · Sáb 8h-14h' },
+        { k: 'hours_summary_size',  label: 'Horários · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (9px)'},{value:'md',label:'Médio (11px · default)'},{value:'lg',label:'Grande (13px)'},{value:'xl',label:'Extra (15px)'}], default: 'md' },
+        { k: 'hours_summary_color', label: 'Horários · cor (custom)', type: 'color', optional: true },
         { k: 'show_open_status', label: 'Mostrar chip ABERTO/FECHADO', type: 'bool', default: true },
         { k: 'gallery_photos', label: 'Fotos do prédio (carrossel top-right)', type: 'list',
           itemSchema: 'gallery_photo', minItems: 0, maxItems: 8,
@@ -1613,11 +1641,22 @@
           hint: 'Texto pequeno embaixo das fotos · ex: Conheça · Por dentro · Veja' },
         { k: 'whatsapp_url',   label: 'URL WhatsApp',   type: 'text', default: 'https://wa.me/5544991622986' },
         { k: 'whatsapp_label', label: 'Label WhatsApp', type: 'text', max: 16, default: 'WhatsApp' },
+        { k: 'whatsapp_label_size',  label: 'Label WhatsApp · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (9px)'},{value:'md',label:'Médio (10px · default)'},{value:'lg',label:'Grande (12px)'},{value:'xl',label:'Extra (14px)'}], default: 'md' },
+        { k: 'whatsapp_label_color', label: 'Label WhatsApp · cor (custom)', type: 'color', optional: true },
+
         { k: 'maps_url',       label: 'URL Google Maps', type: 'text', default: 'https://maps.google.com/?q=Clinica+Mirian+Paula+Maringa' },
         { k: 'maps_label',     label: 'Label Maps', type: 'text', max: 16, default: 'Maps' },
+        { k: 'maps_label_size',  label: 'Label Maps · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (9px)'},{value:'md',label:'Médio (10px · default)'},{value:'lg',label:'Grande (12px)'},{value:'xl',label:'Extra (14px)'}], default: 'md' },
+        { k: 'maps_label_color', label: 'Label Maps · cor (custom)', type: 'color', optional: true },
+
         { k: 'show_waze',      label: 'Mostrar botão Waze', type: 'bool', default: true },
         { k: 'waze_url',       label: 'URL Waze', type: 'text', default: 'https://waze.com/ul?q=Av+Carneiro+Leao+296+Maringa' },
         { k: 'waze_label',     label: 'Label Waze', type: 'text', max: 16, default: 'Waze' },
+        { k: 'waze_label_size',  label: 'Label Waze · tamanho', type: 'select',
+          options: [{value:'sm',label:'Pequeno (9px)'},{value:'md',label:'Médio (10px · default)'},{value:'lg',label:'Grande (12px)'},{value:'xl',label:'Extra (14px)'}], default: 'md' },
+        { k: 'waze_label_color', label: 'Label Waze · cor (custom)', type: 'color', optional: true },
         { k: 'bg', label: 'Fundo do bloco', type: 'select',
           options: [
             { value: 'graphite', label: 'Grafite (escuro · default)' },

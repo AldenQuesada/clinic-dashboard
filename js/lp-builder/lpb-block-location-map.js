@@ -20,6 +20,19 @@
     return d.innerHTML
   }
 
+  // Maps de tamanho · espelho do BA-carousel pra consistencia
+  var SIZE_EYEBROW = { sm: '8px',  md: '9px',  lg: '11px', xl: '13px' }
+  var SIZE_TITULO  = { sm: '18px', md: '24px', lg: '32px', xl: '40px' }
+  var SIZE_ADDR    = { sm: '14px', md: '18px', lg: '22px', xl: '26px' }
+  var SIZE_SMALL   = { sm: '9px',  md: '11px', lg: '13px', xl: '15px' }
+  var SIZE_BTN     = { sm: '9px',  md: '10px', lg: '12px', xl: '14px' }
+  var PADX_MAP     = { '0': '0', sm: '0.5rem', md: '1.5rem', lg: '2.5rem', xl: '4rem' }
+  function _styleStr(parts) { return parts.filter(Boolean).join(';') }
+  function _fontSize(map, v) { var px = map[v || 'md']; return px ? 'font-size:' + px : '' }
+  function _colorRule(v) { return v ? 'color:' + v : '' }
+  function _padxRule(v)  { var px = PADX_MAP[v || 'md']; return px != null ? 'padding-left:' + px + ';padding-right:' + px : '' }
+  function _attrIfStyle(s) { return s ? ' style="' + s + '"' : '' }
+
   // ──────────────────────────────────────────────────────────
   // CSS · INLINE com HTML (funciona em qualquer document/iframe)
   // ──────────────────────────────────────────────────────────
@@ -179,11 +192,21 @@
         '</span>'
       : ''
 
+    // Inline styles por texto (size + color + padx onde aplicavel)
+    var sEyebrow  = _styleStr([_fontSize(SIZE_EYEBROW, p.eyebrow_size), _colorRule(p.eyebrow_color), _padxRule(p.eyebrow_padx)])
+    var sTitulo   = _styleStr([_fontSize(SIZE_TITULO,  p.titulo_size),  _colorRule(p.titulo_color),  _padxRule(p.titulo_padx)])
+    var sAddress  = _styleStr([_fontSize(SIZE_ADDR,    p.address_size), _colorRule(p.address_color)])
+    var sCity     = _styleStr([_fontSize(SIZE_SMALL,   p.city_size),    _colorRule(p.city_color)])
+    var sHours    = _styleStr([_fontSize(SIZE_SMALL,   p.hours_summary_size), _colorRule(p.hours_summary_color)])
+    var sBtnWA    = _styleStr([_fontSize(SIZE_BTN,     p.whatsapp_label_size), _colorRule(p.whatsapp_label_color)])
+    var sBtnMaps  = _styleStr([_fontSize(SIZE_BTN,     p.maps_label_size),     _colorRule(p.maps_label_color)])
+    var sBtnWaze  = _styleStr([_fontSize(SIZE_BTN,     p.waze_label_size),     _colorRule(p.waze_label_color)])
+
     var html = '<style data-lpb-style="location-map">' + CSS + '</style>'
     html += '<section class="blk-locmap" data-bg="' + _esc(bg) + '" data-locmap-root>'
 
-    if (eyebrow) html += '<div class="blk-locmap-eyebrow">' + _esc(eyebrow) + '</div>'
-    if (titulo)  html += '<h2 class="blk-locmap-title">' + _esc(titulo) + '</h2>'
+    if (eyebrow) html += '<div class="blk-locmap-eyebrow"' + _attrIfStyle(sEyebrow) + '>' + _esc(eyebrow) + '</div>'
+    if (titulo)  html += '<h2 class="blk-locmap-title"'    + _attrIfStyle(sTitulo)  + '>' + _esc(titulo) + '</h2>'
 
     html += '<div class="blk-locmap-stage">' +
       _fauxMapSvg() +
@@ -195,20 +218,20 @@
       _renderGallery(galleryPhotos, galleryPos, galleryTag) +
       '<div class="blk-locmap-card">' +
         statusHtml +
-        '<p class="blk-locmap-address">' + _esc(address) + '</p>' +
-        '<p class="blk-locmap-city">' + _esc(city) + '</p>' +
-        (hoursSummary ? '<p class="blk-locmap-hours">' + _esc(hoursSummary) + '</p>' : '') +
+        '<p class="blk-locmap-address"' + _attrIfStyle(sAddress) + '>' + _esc(address) + '</p>' +
+        '<p class="blk-locmap-city"'    + _attrIfStyle(sCity)    + '>' + _esc(city) + '</p>' +
+        (hoursSummary ? '<p class="blk-locmap-hours"' + _attrIfStyle(sHours) + '>' + _esc(hoursSummary) + '</p>' : '') +
       '</div>' +
     '</div>'
 
     html += '<div class="blk-locmap-actions">' +
       '<a class="blk-locmap-btn blk-locmap-btn-primary" href="' + _esc(whatsappUrl) + '" target="_blank" rel="noopener">' +
-        ICON_WA + '<span>' + _esc(whatsappLabel) + '</span></a>' +
+        ICON_WA + '<span' + _attrIfStyle(sBtnWA) + '>' + _esc(whatsappLabel) + '</span></a>' +
       '<a class="blk-locmap-btn blk-locmap-btn-ghost" href="' + _esc(mapsUrl) + '" target="_blank" rel="noopener">' +
-        ICON_MAP + '<span>' + _esc(mapsLabel) + '</span></a>' +
+        ICON_MAP + '<span' + _attrIfStyle(sBtnMaps) + '>' + _esc(mapsLabel) + '</span></a>' +
       (showWaze
         ? '<a class="blk-locmap-btn blk-locmap-btn-ghost" href="' + _esc(wazeUrl) + '" target="_blank" rel="noopener">' +
-            ICON_NAV + '<span>' + _esc(wazeLabel) + '</span></a>'
+            ICON_NAV + '<span' + _attrIfStyle(sBtnWaze) + '>' + _esc(wazeLabel) + '</span></a>'
         : '') +
     '</div>'
 
