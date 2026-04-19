@@ -33,9 +33,10 @@ const _SB_URL = Deno.env.get('SUPABASE_URL') || ''
 const _SB_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 // Admins autorizados a aprovar/rejeitar/consultar (últimos 8 dígitos)
-const ADMIN_PHONES_LAST8 = ['98787673', '88782003'] // Alden + Mirian
-// Telefone que recebe notificações de aprovações/rejeições/vouchers
-const NOTIFY_PHONE = '5544998787673' // Alden (configurável)
+// Mirian é quem opera a Mira no dia a dia. 5544998787673 É o chip da Mira (self).
+const ADMIN_PHONES_LAST8 = ['88782003'] // Mirian
+// Telefone que recebe notificações (mesma Mirian — ela é a ponte com Alden)
+const NOTIFY_PHONE = '5544988782003' // Mirian
 
 const cors = {
   'Access-Control-Allow-Origin': '*',

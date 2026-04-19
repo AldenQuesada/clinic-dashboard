@@ -46,9 +46,9 @@ const text = String(j.text || '').toLowerCase()
 const kwRegex = /voucher|parceir|candidatura|parceria|aprova(?:r)?|rejeita(?:r)?|cazza|moinho|mormaii|osvaldo|mentor|nps|quero ser|lista pendent|stats|quantos vouchers/i
 const kwHit = kwRegex.test(text)
 
-// 2. Admins: Alden (5544998787673) e Mirian (5544988782003)
+// 2. Admin = Mirian (5544988782003). O chip da Mira e o 5544998787673 (self, nao pode mandar pra si).
 const last8 = phone.slice(-8)
-const ADMIN_LAST8 = ['98787673', '88782003']
+const ADMIN_LAST8 = ['88782003']
 const isAdmin = ADMIN_LAST8.includes(last8)
 
 // Sempre roteia se: admin OR keyword hit
