@@ -574,6 +574,23 @@
         '</div>'
       : ''
 
+    // Banner especial pro anatomy-quiz · botão calibrar visualmente
+    var aqBanner = ''
+    if (b.type === 'anatomy-quiz') {
+      aqBanner = '<div style="margin:0 16px 10px;padding:12px 14px;background:linear-gradient(135deg,rgba(200,169,126,0.18),rgba(200,169,126,0.08));border:1px solid rgba(200,169,126,0.4);border-radius:8px">' +
+        '<div style="font-size:11px;font-weight:600;color:var(--lpb-accent);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px">Calibrar pontos</div>' +
+        '<div style="font-size:11px;color:var(--lpb-text-2);line-height:1.5;margin-bottom:10px">Arraste os pontos direto na foto · clique em área vazia adiciona ponto · botão direito remove.</div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<button class="lpb-btn sm" data-aq-calibrate="front" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px">' +
+            _ico('move', 12) + ' Calibrar Frontal' +
+          '</button>' +
+          '<button class="lpb-btn sm" data-aq-calibrate="side" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px">' +
+            _ico('move', 12) + ' Calibrar Perfil' +
+          '</button>' +
+        '</div>' +
+      '</div>'
+    }
+
     var html = '' +
       '<div class="lpb-insp-header">' +
         '<div class="icon">' + _ico(meta.icon || 'square', 14) + '</div>' +
@@ -586,6 +603,7 @@
         '</div>' +
       '</div>' +
       '<div class="lpb-insp-content">' +
+        aqBanner +
         i18nBanner +
         groupSectionsHtml +
         _section(b.type + '__ajustes', 'Ajustes avançados (estilo)', _renderStyleControls(idx, b), { icon: 'sliders' }) +
@@ -669,6 +687,33 @@
         if (act === 'del') {
           if (confirm('Remover este bloco?')) LPBuilder.removeBlock(idx)
         }
+      }
+    })
+
+    // Botões "Calibrar Frontal/Perfil" do banner anatomy-quiz
+    _root.querySelectorAll('[data-aq-calibrate]').forEach(function (btn) {
+      btn.onclick = function (e) {
+        e.preventDefault(); e.stopPropagation()
+        var view = btn.dataset.aqCalibrate || 'front'
+        if (!window.LPBAnatomyQuizCalibrate) {
+          if (window.LPBToast) LPBToast('Módulo calibrar não carregado · recarregue a página', 'error')
+          return
+        }
+        // Garante que o canvas esteja exibindo a vista correta antes de ativar
+        var iframe = document.getElementById('lpbIframe')
+        if (iframe && iframe.contentDocument) {
+          var wrap = iframe.contentDocument.querySelector('.lpb-edit-block[data-block-idx="' + idx + '"] [data-aq-photo-wrap]')
+          if (wrap && wrap.getAttribute('data-aq-view') !== view) {
+            wrap.setAttribute('data-aq-view', view)
+            wrap.querySelectorAll('[data-aq-view-pane]').forEach(function (pn) {
+              pn.hidden = pn.getAttribute('data-aq-view-pane') !== view
+            })
+            wrap.querySelectorAll('[data-aq-view-btn]').forEach(function (b2) {
+              b2.classList.toggle('is-active', b2.getAttribute('data-aq-view-btn') === view)
+            })
+          }
+        }
+        LPBAnatomyQuizCalibrate.toggle(idx, view)
       }
     })
 
