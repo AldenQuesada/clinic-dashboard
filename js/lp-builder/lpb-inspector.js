@@ -837,7 +837,7 @@
             zoom:   slide[base + '_zoom'] || 1,
             x:      slide[base + '_x']    || 0,
             y:      slide[base + '_y']    || 0,
-            aspect: '3/4',
+            aspect: '7/10',
             onSave: function (pos) {
               var newArr = arr.slice()
               var update = {}
@@ -856,7 +856,7 @@
             zoom:   block.props[base + '_zoom'] || 1,
             x:      block.props[base + '_x']    || 0,
             y:      block.props[base + '_y']    || 0,
-            aspect: '3/4',
+            aspect: '7/10',
             onSave: function (pos) {
               LPBuilder.setBlockProp(idx, base + '_zoom', pos.zoom)
               LPBuilder.setBlockProp(idx, base + '_x',    pos.x)

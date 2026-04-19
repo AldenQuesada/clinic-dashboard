@@ -2392,7 +2392,7 @@
   border-color: rgba(200,169,126,.25);
 }
 .blk-bac-img {
-  aspect-ratio: 3/4;
+  aspect-ratio: 7/10;          /* +7% mais alto que 3/4 · queixo nao mais por baixo do label */
   position: relative;
   overflow: hidden;
   background: rgba(200,169,126,.06);
