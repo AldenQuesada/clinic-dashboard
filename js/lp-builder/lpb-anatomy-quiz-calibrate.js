@@ -75,6 +75,29 @@
   // ──────────────────────────────────────────────────────────
   function _rebind() {
     if (!_state.active) return
+
+    // CRÍTICO · re-query rootEl do iframe a cada rebind.
+    // Após re-render do canvas, o rootEl cacheado vira um nó DOM detached →
+    // os novos hotspots ficam órfãos sem handlers. Re-buscamos o ATUAL.
+    var iframe = document.getElementById('lpbIframe')
+    if (!iframe || !iframe.contentDocument) return
+    _state.iframeDoc = iframe.contentDocument
+    var blockHost = _state.iframeDoc.querySelector('.lpb-edit-block[data-block-idx="' + _state.blockIdx + '"]')
+    if (!blockHost) return
+    _state.rootEl = blockHost.querySelector('[data-aq-photo-wrap]')
+    if (!_state.rootEl) return
+
+    // Re-render pode ter resetado vista pra "front" · força a vista do calibrador
+    if (_state.rootEl.getAttribute('data-aq-view') !== _state.view) {
+      _state.rootEl.setAttribute('data-aq-view', _state.view)
+      _state.rootEl.querySelectorAll('[data-aq-view-pane]').forEach(function (pn) {
+        pn.hidden = pn.getAttribute('data-aq-view-pane') !== _state.view
+      })
+      _state.rootEl.querySelectorAll('[data-aq-view-btn]').forEach(function (b2) {
+        b2.classList.toggle('is-active', b2.getAttribute('data-aq-view-btn') === _state.view)
+      })
+    }
+
     _state.pane = _getPane()
     if (!_state.pane) return
 
