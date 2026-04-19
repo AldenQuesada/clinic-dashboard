@@ -1287,14 +1287,14 @@
         { k: 'cta_label', label: 'Botão final', type: 'text', max: 40, default: 'Ver meu protocolo' },
         { k: 'success_text', label: 'Texto após enviar', type: 'textarea', max: 200, optional: true,
           default: 'Recebemos. A Dra. Mirian vai entrar em contato no WhatsApp em breve.' },
-        // Camada 3 · fotos editáveis sem código
-        { k: 'photo_url',             label: 'Foto FRONTAL · base (depois)',  type: 'image', optional: true,
-          hint: 'Vazio = usa foto default · pode trocar por foto sua a qualquer momento' },
-        { k: 'photo_url_before',      label: 'Foto FRONTAL · antes',          type: 'image', optional: true,
-          hint: 'Foto da MESMA pessoa com sinais (toggle "Ver antes")' },
-        { k: 'photo_url_side',        label: 'Foto PERFIL · base (depois)',   type: 'image', optional: true,
+        // Camada 3 · fotos editáveis sem código (ordem ANTES → DEPOIS · sequência didática)
+        { k: 'photo_url',             label: '1 · Foto FRONTAL · ANTES (carrega primeiro)', type: 'image', optional: true,
+          hint: 'Foto base · com sinais que o tratamento vai cuidar · vazio = usa default' },
+        { k: 'photo_url_before',      label: '2 · Foto FRONTAL · DEPOIS (revelada no toggle)', type: 'image', optional: true,
+          hint: 'Foto da MESMA pessoa após cuidados (toggle "Ver depois")' },
+        { k: 'photo_url_side',        label: '3 · Foto PERFIL · ANTES (carrega primeiro)',  type: 'image', optional: true,
           hint: 'Vista lateral · vazio = usa default' },
-        { k: 'photo_url_side_before', label: 'Foto PERFIL · antes',           type: 'image', optional: true },
+        { k: 'photo_url_side_before', label: '4 · Foto PERFIL · DEPOIS (revelada no toggle)', type: 'image', optional: true },
         // Camada 1 · áreas editáveis (override do hardcoded)
         { k: 'areas_front', label: 'Áreas · vista FRONTAL', type: 'list',
           itemSchema: 'aq_area_item', minItems: 0, maxItems: 24,
