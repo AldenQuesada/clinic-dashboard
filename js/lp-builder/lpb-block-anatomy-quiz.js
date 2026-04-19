@@ -38,19 +38,17 @@
 
   // ──────────────────────────────────────────────────────────
   // Fotos reais (Supabase Storage · uploaded 2026-04-19)
-  // Progressão de envelhecimento da MESMA pessoa
   // ──────────────────────────────────────────────────────────
-  var PHOTO_BASE   = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/02.jpg'  // 40+ jovial (default)
-  var PHOTO_BEFORE = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/03.jpg'  // 55+ com sinais
-  var PHOTO_YOUNG  = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/01.jpg'  // 30+
+  var PHOTO_FRONT_BASE   = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/02.jpg'  // 40+ jovial (default frontal)
+  var PHOTO_FRONT_BEFORE = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/03.jpg'  // 55+ com sinais
+  var PHOTO_SIDE_BASE    = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-02.jpg'  // perfil 40+ (placeholder · upload pendente)
+  var PHOTO_SIDE_BEFORE  = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-03.jpg'  // perfil 55+
 
   // ──────────────────────────────────────────────────────────
-  // Áreas anatômicas (coordenadas percentuais sobre a foto · responsivo)
-  // x: 0-100 (esquerda→direita) · y: 0-100 (topo→base)
-  // Foto crop fechado · só rosto frontal (sem pescoço completo)
+  // Áreas anatômicas separadas por VISTA (frontal · perfil)
+  // Coordenadas percentuais (x: 0-100 esq→dir · y: 0-100 topo→base)
   // ──────────────────────────────────────────────────────────
-  // Coordenadas calibradas pra foto 02.jpg (frontal · crop fechado a partir das sobrancelhas)
-  var AREAS = Object.freeze({
+  var AREAS_FRONT = Object.freeze({
     entre_sobrancelhas: { label: 'Entre sobrancelhas', protocol: 'Toxina botulínica (linha do leão)',     hotspots: [[50, 14]] },
     pe_de_galinha:   { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',    hotspots: [[15, 23], [85, 23]] },
     olheiras:        { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',    hotspots: [[35, 29], [65, 29]] },
@@ -59,6 +57,18 @@
     labios:          { label: 'Lábios',               protocol: 'Preenchimento com AH',                   hotspots: [[50, 77]] },
     mandibular:      { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',             hotspots: [[24, 92], [76, 92]] },
   })
+
+  // Coordenadas placeholder pra perfil (rosto olhando pra DIREITA)
+  // Vou recalibrar quando user enviar foto lateral real
+  var AREAS_SIDE = Object.freeze({
+    dorso_nariz:     { label: 'Dorso nasal',          protocol: 'Rinomodelação · AH no dorso',            hotspots: [[55, 30]] },
+    ponta_nariz:     { label: 'Ponta do nariz',       protocol: 'Rinomodelação · projeção da ponta com AH', hotspots: [[70, 42]] },
+    mento:           { label: 'Mento (queixo)',       protocol: 'Mentoplastia injetável · AH no mento',   hotspots: [[58, 82]] },
+    papada:          { label: 'Papada',               protocol: 'Lipo enzimática + Fotona 4D',            hotspots: [[42, 90]] },
+  })
+
+  // Mapa unificado pra runtime · merge dos 2 (compatibilidade)
+  var AREAS = Object.freeze(Object.assign({}, AREAS_FRONT, AREAS_SIDE))
 
   // Ícone Feather "user-check" inline · pra header empty-state
   var ICON_USER = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -163,8 +173,10 @@
     }
 
     // URLs configuráveis via props (defaults = fotos do Supabase)
-    var photoBase   = p.photo_url        || PHOTO_BASE
-    var photoBefore = p.photo_url_before || PHOTO_BEFORE
+    var photoFrontBase   = p.photo_url             || PHOTO_FRONT_BASE
+    var photoFrontBefore = p.photo_url_before      || PHOTO_FRONT_BEFORE
+    var photoSideBase    = p.photo_url_side        || PHOTO_SIDE_BASE
+    var photoSideBefore  = p.photo_url_side_before || PHOTO_SIDE_BEFORE
 
     var html = '<section class="blk-aq" data-bg="' + _esc(bg) + '"' +
                ' id="' + uid + '"' +
@@ -183,16 +195,29 @@
     html += '<div class="blk-aq-grid">'
 
     // Coluna foto (relative · hotspots absolute %)
-    html += '<div class="blk-aq-photo-wrap" data-aq-photo-wrap="1">' +
-      // 2 fotos sobrepostas: BASE (jovial) + BEFORE (com sinais) com opacidade
-      '<img class="blk-aq-photo blk-aq-photo-base"   src="' + _esc(photoBase)   + '" alt="Rosto · após cuidados" loading="lazy" decoding="async">' +
-      '<img class="blk-aq-photo blk-aq-photo-before" src="' + _esc(photoBefore) + '" alt="Rosto · antes" loading="lazy" decoding="async" style="opacity:0">' +
-      // Toggle sutil "antes ↔ depois"
+    // Estado inicial: vista frontal (data-aq-view="front")
+    html += '<div class="blk-aq-photo-wrap" data-aq-photo-wrap="1" data-aq-view="front">' +
+      // ── VISTA FRONTAL (default visível) ────────────────
+      '<div class="aq-view aq-view-front" data-aq-view-pane="front">' +
+        '<img class="blk-aq-photo blk-aq-photo-base"   src="' + _esc(photoFrontBase)   + '" alt="Rosto frontal · após cuidados" loading="lazy" decoding="async">' +
+        '<img class="blk-aq-photo blk-aq-photo-before" src="' + _esc(photoFrontBefore) + '" alt="Rosto frontal · antes" loading="lazy" decoding="async" style="opacity:0">' +
+        _hotspotsHtmlFor(AREAS_FRONT) +
+      '</div>' +
+      // ── VISTA PERFIL (oculta inicialmente) ─────────────
+      '<div class="aq-view aq-view-side" data-aq-view-pane="side" hidden>' +
+        '<img class="blk-aq-photo blk-aq-photo-base"   src="' + _esc(photoSideBase)   + '" alt="Perfil · após cuidados" loading="lazy" decoding="async">' +
+        '<img class="blk-aq-photo blk-aq-photo-before" src="' + _esc(photoSideBefore) + '" alt="Perfil · antes" loading="lazy" decoding="async" style="opacity:0">' +
+        _hotspotsHtmlFor(AREAS_SIDE) +
+      '</div>' +
+      // ── Toggle de VISTA (Frontal/Perfil) · canto top-left
+      '<div class="blk-aq-view-tabs" role="tablist" aria-label="Vista do rosto">' +
+        '<button class="aq-view-tab is-active" type="button" data-aq-view-btn="front" role="tab">Frontal</button>' +
+        '<button class="aq-view-tab"           type="button" data-aq-view-btn="side"  role="tab">Perfil</button>' +
+      '</div>' +
+      // ── Toggle antes/depois · canto top-right
       '<button class="blk-aq-toggle" type="button" data-aq-toggle="1" aria-label="Alternar antes/depois">' +
         '<span class="aq-tog-label" data-aq-tog-label>Ver antes</span>' +
       '</button>' +
-      // Hotspots (gerados via _hotspotsHtml com posições %)
-      _hotspotsHtml() +
     '</div>'
 
     // Coluna painel
@@ -215,11 +240,12 @@
 
   // ──────────────────────────────────────────────────────────
   // Hotspots HTML · botões absolutos com top/left percentuais
+  // Aceita AREAS específico (FRONT ou SIDE) pra renderizar separado
   // ──────────────────────────────────────────────────────────
-  function _hotspotsHtml() {
+  function _hotspotsHtmlFor(areas) {
     var html = ''
-    Object.keys(AREAS).forEach(function (key) {
-      var a = AREAS[key]
+    Object.keys(areas).forEach(function (key) {
+      var a = areas[key]
       var tip = _esc(a.label + ' · ' + a.protocol)
       a.hotspots.forEach(function (pt, idx) {
         html += '<button type="button" class="aq-hotspot" data-area="' + _esc(key) + '"' +
@@ -236,6 +262,8 @@
     })
     return html
   }
+  // alias legado (caso outro código chame)
+  function _hotspotsHtml() { return _hotspotsHtmlFor(AREAS_FRONT) }
 
   window.LPBBlockAnatomyQuiz = Object.freeze({
     render: render,

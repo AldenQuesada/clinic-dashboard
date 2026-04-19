@@ -472,13 +472,16 @@
         _toggleArea(rootEl, rm.getAttribute('data-aq-remove'))
         return
       }
-      // Onda 30: toggle antes/depois das fotos
+      // Onda 30: toggle antes/depois das fotos (afeta SO a vista ATIVA)
       var tog = e.target.closest && e.target.closest('[data-aq-toggle]')
       if (tog && rootEl.contains(tog)) {
         e.preventDefault()
         var wrap = rootEl.querySelector('[data-aq-photo-wrap]')
         if (!wrap) return
-        var before = wrap.querySelector('.blk-aq-photo-before')
+        var view = wrap.getAttribute('data-aq-view') || 'front'
+        var pane = wrap.querySelector('[data-aq-view-pane="' + view + '"]')
+        if (!pane) return
+        var before = pane.querySelector('.blk-aq-photo-before')
         var label  = tog.querySelector('[data-aq-tog-label]')
         if (!before) return
         var showing = before.style.opacity === '1'
@@ -489,6 +492,27 @@
           before.style.opacity = '1'
           if (label) label.textContent = 'Ver depois'
         }
+        return
+      }
+      // Onda 30 · toggle de VISTA (frontal ↔ perfil)
+      var vtab = e.target.closest && e.target.closest('[data-aq-view-btn]')
+      if (vtab && rootEl.contains(vtab)) {
+        e.preventDefault()
+        var nextView = vtab.getAttribute('data-aq-view-btn')
+        var wrap2 = rootEl.querySelector('[data-aq-photo-wrap]')
+        if (!wrap2) return
+        wrap2.setAttribute('data-aq-view', nextView)
+        // toggle visibilidade dos panes
+        wrap2.querySelectorAll('[data-aq-view-pane]').forEach(function (pn) {
+          pn.hidden = pn.getAttribute('data-aq-view-pane') !== nextView
+        })
+        // toggle classe ativa nos botões da tab
+        wrap2.querySelectorAll('[data-aq-view-btn]').forEach(function (b) {
+          b.classList.toggle('is-active', b.getAttribute('data-aq-view-btn') === nextView)
+        })
+        // reseta toggle antes/depois pra "Ver antes" ao trocar vista
+        var lbl = rootEl.querySelector('[data-aq-tog-label]')
+        if (lbl) lbl.textContent = 'Ver antes'
         return
       }
     })
