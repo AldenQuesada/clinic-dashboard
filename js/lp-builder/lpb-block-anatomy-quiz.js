@@ -51,14 +51,17 @@
   // Calibrado pro novo enquadramento: testa visível no topo + pescoço base
   // ──────────────────────────────────────────────────────────
   var AREAS_FRONT = Object.freeze({
-    testa:              { label: 'Testa',                protocol: 'Toxina botulínica (linhas frontais)',    hotspots: [[50, 16]] },
-    entre_sobrancelhas: { label: 'Entre sobrancelhas',   protocol: 'Toxina botulínica (linha do leão)',      hotspots: [[50, 26]] },
-    pe_de_galinha:      { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',    hotspots: [[20, 33], [80, 33]] },
-    olheiras:           { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',    hotspots: [[37, 38], [63, 38]] },
-    bochechas:          { label: 'Volume de bochecha',   protocol: 'Volumização com AH (área zigomática)',   hotspots: [[22, 52], [78, 52]] },
-    bigode_chines:      { label: 'Bigode chinês',        protocol: 'Preenchimento sulco nasogeniano com AH', hotspots: [[36, 63], [64, 63]] },
-    labios:             { label: 'Lábios',               protocol: 'Preenchimento com AH',                   hotspots: [[50, 73]] },
-    mandibular:         { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',             hotspots: [[26, 84], [74, 84]] },
+    testa:              { label: 'Testa',                protocol: 'Toxina botulínica (linhas frontais)',         hotspots: [[50, 16]] },
+    entre_sobrancelhas: { label: 'Entre sobrancelhas',   protocol: 'Toxina botulínica (linha do leão)',           hotspots: [[50, 26]] },
+    pe_de_galinha:      { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',         hotspots: [[20, 33], [80, 33]] },
+    olheiras:           { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',         hotspots: [[37, 38], [63, 38]] },
+    bochechas:          { label: 'Volume de bochecha',   protocol: 'Volumização com AH (área zigomática)',        hotspots: [[22, 52], [78, 52]] },
+    bigode_chines:      { label: 'Bigode chinês',        protocol: 'Preenchimento sulco nasogeniano com AH',      hotspots: [[36, 63], [64, 63]] },
+    codigo_barras:      { label: 'Código de barras',     protocol: 'Toxina botulínica + AH (linhas verticais do lábio superior)', hotspots: [[50, 70]] },
+    labios:             { label: 'Lábios',               protocol: 'Preenchimento com AH',                        hotspots: [[50, 73]] },
+    linha_marionete:    { label: 'Linha de marionete',   protocol: 'Preenchimento com AH (sulcos das comissuras labiais)', hotspots: [[40, 79], [60, 79]] },
+    bulldog:            { label: 'Buldogue (jowls)',     protocol: 'Bioestimulador de colágeno + Fotona 4D (papada lateral)', hotspots: [[22, 82], [78, 82]] },
+    mandibular:         { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',                  hotspots: [[26, 87], [74, 87]] },
   })
 
   // Calibrado pro novo perfil (rosto olhando pra ESQUERDA · enquadramento amplo)
