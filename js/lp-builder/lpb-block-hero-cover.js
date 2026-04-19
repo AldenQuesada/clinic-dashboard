@@ -42,23 +42,40 @@
 
     // CSS variável p/ posição Y (cobertor pra desktop/mobile via media query)
     var styleVars = '--hc-y-desk:' + yDesk + '%; --hc-y-mob:' + yMob + '%;'
-    var oAlpha    = (oStrength / 100).toFixed(2)
+
+    // Curva do overlay: até 100 = curva normal · acima de 100 = curva agressiva
+    // que escurece mais cedo na foto (overflow vira intensidade adicional)
+    var oRaw   = oStrength            // 30-150
+    var oAlpha = Math.min(1, oRaw / 100).toFixed(2)  // alpha base capado em 1.0
+    var aggro  = Math.max(0, (oRaw - 100) / 50)      // 0 quando ≤100, 1 quando =150
+    function _mix(a, b, t) { return (a + (b - a) * t).toFixed(2) }
 
     // Gradiente bottom (default — escurece base pra texto sentar)
     var overlayStyle = ''
     if (overlay === 'gradient-bottom') {
+      // Pontos de parada · com aggro sobe os stops pra cima e aumenta os alphas intermediários
+      var s1 = _mix(25, 5, aggro)       // 25% → 5% (gradient começa mais alto)
+      var s2 = _mix(45, 25, aggro)
+      var s3 = _mix(65, 50, aggro)
+      var a1 = _mix(0,  oAlpha * 0.5, aggro)
+      var a2 = _mix(oAlpha * 0.25, oAlpha * 0.75, aggro)
+      var a3 = _mix(oAlpha * 0.6,  oAlpha * 0.92, aggro)
       overlayStyle = 'background:linear-gradient(to bottom,' +
         'rgba(44,44,44,0) 0%,' +
-        'rgba(44,44,44,0) 25%,' +
-        'rgba(44,44,44,' + (oAlpha * 0.25).toFixed(2) + ') 45%,' +
-        'rgba(44,44,44,' + (oAlpha * 0.6).toFixed(2)  + ') 65%,' +
+        'rgba(44,44,44,' + a1 + ') ' + s1 + '%,' +
+        'rgba(44,44,44,' + a2 + ') ' + s2 + '%,' +
+        'rgba(44,44,44,' + a3 + ') ' + s3 + '%,' +
         'rgba(44,44,44,' + oAlpha + ') 100%' +
       ');'
     } else if (overlay === 'gradient-top') {
+      var ts1 = _mix(30, 10, aggro)
+      var ts2 = _mix(70, 50, aggro)
+      var ta1 = _mix(0, oAlpha * 0.4, aggro)
+      var ta2 = _mix(oAlpha * 0.5, oAlpha * 0.85, aggro)
       overlayStyle = 'background:linear-gradient(to top,' +
         'rgba(44,44,44,0) 0%,' +
-        'rgba(44,44,44,0) 30%,' +
-        'rgba(44,44,44,' + (oAlpha * 0.5).toFixed(2) + ') 70%,' +
+        'rgba(44,44,44,' + ta1 + ') ' + ts1 + '%,' +
+        'rgba(44,44,44,' + ta2 + ') ' + ts2 + '%,' +
         'rgba(44,44,44,' + oAlpha + ') 100%' +
       ');'
     } else if (overlay === 'full-dim') {
