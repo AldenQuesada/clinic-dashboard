@@ -358,9 +358,9 @@ async function handleEmitVoucher(
   }
 }
 
-async function handleReferLead(
-  phone: string, entities: any, partnership: any,
-): Promise<any> {
+// INDICAÇÃO VPI (B2C): usa o sistema existente de embaixadoras.
+// Verifica se o remetente está em vpi_partners. Se sim, cria vpi_indication.
+async function handleReferLead(phone: string, entities: any): Promise<any> {
   const name = entities?.recipient_name
   const rawPhone = entities?.recipient_phone
 
@@ -372,45 +372,69 @@ async function handleReferLead(
     return { reply: `Beleza, ${name}. Qual o WhatsApp dela? (44 9XXXX-XXXX)`,
              next_state: { pending: 'refer_phone', data: { recipient_name: name } } }
   }
-
   const recipientPhone = normalize55(rawPhone)
+
   try {
-    const r = await rpc('b2b_referral_create', {
-      p_partnership_id: partnership.partnership_id,
-      p_lead_name: name,
-      p_lead_phone: recipientPhone,
-      p_referred_by_phone: phone,
+    // 1. Resolve partner VPI
+    const partnerLookup = await rpc('vpi_partner_by_phone', { p_phone: phone })
+    if (!partnerLookup?.ok) {
+      return {
+        reply:
+          'Legal você querer indicar alguém! Mas antes preciso te cadastrar como ' +
+          'embaixadora do nosso programa de indicação. Vou avisar a Mirian — ela ' +
+          'entra em contato pra te explicar as vantagens.',
+        actions: [
+          { kind: 'notify_admin', content:
+            `Indicação recebida de quem ainda não é embaixadora VPI. ` +
+            `Phone: ${phone}. Quer indicar: ${name} (${recipientPhone}).` },
+        ],
+        next_state: null,
+      }
+    }
+
+    // 2. Cria/acha lead indicado
+    const leadRes = await rpc('vpi_lead_upsert_for_referral', {
+      p_name: name,
+      p_phone: recipientPhone,
+      p_partner_name: partnerLookup.nome,
     })
-    if (!r?.ok) throw new Error(r?.error || 'referral_failed')
+    if (!leadRes?.ok) throw new Error(leadRes?.error || 'lead_upsert_failed')
 
-    // Dedup recente
-    if (r.duplicate) {
+    // 3. Lead já é nosso — sutileza, sem reabordagem
+    if (leadRes.lead_status === 'existing') {
       return {
-        reply: `Obrigada por lembrar! A ${firstName(name)} já foi indicada recentemente ` +
-               `e já estamos cuidando dela. Se quiser indicar outra amiga, é só mandar.`,
+        reply:
+          `${partnerLookup.nome || 'Oi'}, obrigada por pensar! ` +
+          `Dei uma olhada e vi que a ${firstName(name)} já conhece a Clínica Mirian de Paula — ` +
+          `ela já está com a gente. Registrei seu carinho. ` +
+          `Se quiser indicar outra amiga que ainda não conhece, bora!`,
         next_state: null,
       }
     }
 
-    // Lead já existe na base — sutileza
-    if (r.lead_status === 'existing') {
-      return {
-        reply: `Obrigada por pensar na gente! Dei uma olhada aqui e vi que a ` +
-               `${firstName(name)} já conhece a Clínica Mirian de Paula — ela já está ` +
-               `com a gente. Registrei seu carinho de qualquer forma. ` +
-               `Se quiser indicar outra amiga que ainda não nos conhece, só falar!`,
-        next_state: null,
-      }
-    }
+    // 4. Cria a vpi_indication (sistema VPI cuida de scoring, audit, tudo)
+    const indRes = await rpc('vpi_indication_create', {
+      p_partner_id: partnerLookup.partner_id,
+      p_lead_id: leadRes.lead_id,
+    }).catch((e: any) => ({ error: String(e.message) }))
 
-    // Lead novo: Lara vai abordar em ~2min via trigger
+    // 5. Enfileira Lara pro lead com brinde padrão
+    const laraMessage =
+      `Oi, ${firstName(name)}! Tudo bem?\n\n` +
+      `A ${partnerLookup.nome} indicou você pra conhecer a Clínica Mirian de Paula. ` +
+      `Queria te dar um presente: *Véu de Noiva* (nosso tratamento com Fotona Dynamis Nx) + ` +
+      `uma *Avaliação Corporal com Anovator A5*.\n\n` +
+      `Mas antes me tira uma dúvida rápida: você já faz cuidados estéticos de algum tipo?`
+
     return {
-      reply: `Obrigada! Peguei ${firstName(name)}. ` +
-             `Já estamos em contato com ela oferecendo o Véu de Noiva + Avaliação Corporal. ` +
-             `Te aviso quando ela agendar.`,
+      reply:
+        `Obrigada, ${firstName(partnerLookup.nome)}! Peguei a ${firstName(name)}. ` +
+        `Já estamos em contato com ela oferecendo o Véu de Noiva + Avaliação Corporal. ` +
+        `Te aviso quando ela agendar.`,
       actions: [
+        { kind: 'send_wa', to: recipientPhone, content: laraMessage },
         { kind: 'notify_admin', content:
-          `Nova indicação B2B: ${name} (${recipientPhone}) via ${partnership.partnership_name}.` },
+          `Nova indicação VPI: ${partnerLookup.nome} indicou ${name} (${recipientPhone}).` },
       ],
       next_state: null,
     }
@@ -554,28 +578,16 @@ Deno.serve(async (req) => {
         return ok({ ok: true, reply_to: phone, ...result })
       }
       if (state.pending === 'refer_phone') {
-        let p = partnership
-        if (!p) {
-          try { const lk = await rpc('b2b_wa_sender_lookup', { p_phone: phone }); if (lk?.ok) p = lk } catch {}
+        const entities = {
+          recipient_name: state.data?.recipient_name,
+          recipient_phone: message.replace(/\D/g, ''),
         }
-        if (p) {
-          const entities = {
-            recipient_name: state.data?.recipient_name,
-            recipient_phone: message.replace(/\D/g, ''),
-          }
-          const result = await handleReferLead(phone, entities, p)
-          return ok({ ok: true, reply_to: phone, ...result })
-        }
+        const result = await handleReferLead(phone, entities)
+        return ok({ ok: true, reply_to: phone, ...result })
       }
       if (state.pending === 'refer_name') {
-        let p = partnership
-        if (!p) {
-          try { const lk = await rpc('b2b_wa_sender_lookup', { p_phone: phone }); if (lk?.ok) p = lk } catch {}
-        }
-        if (p) {
-          const result = await handleReferLead(phone, { recipient_name: message.trim() }, p)
-          return ok({ ok: true, reply_to: phone, ...result })
-        }
+        const result = await handleReferLead(phone, { recipient_name: message.trim() })
+        return ok({ ok: true, reply_to: phone, ...result })
       }
       if (state.pending === 'reject_reason' && role === 'admin') {
         const result = await handleAdminReject({
@@ -618,22 +630,8 @@ Deno.serve(async (req) => {
         break
       }
       case 'b2b.refer_lead': {
-        let p = partnership
-        if (!p) {
-          try {
-            const lookup = await rpc('b2b_wa_sender_lookup', { p_phone: phone })
-            if (lookup?.ok) p = lookup
-          } catch { /* ignora */ }
-        }
-        if (!p) {
-          result = {
-            reply: 'Pra indicar alguém pela parceria, você precisa estar na whitelist. ' +
-                   'Me diz qual parceria (ex: Cazza Flor) que autorizo agora.',
-            next_state: null,
-          }
-        } else {
-          result = await handleReferLead(phone, intent.entities, p)
-        }
+        // Indicação VPI (B2C): resolve o partner direto pelo phone na edge
+        result = await handleReferLead(phone, intent.entities)
         break
       }
       case 'b2b.admin_approve':
