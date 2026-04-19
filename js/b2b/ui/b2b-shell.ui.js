@@ -26,6 +26,7 @@
     { id: 'gaps',         label: 'Gaps do plano' },
     { id: 'map',          label: 'Mapa' },
     { id: 'health',       label: 'Saúde' },
+    { id: 'analytics',    label: 'Analytics' },
     { id: 'closure',      label: 'Encerramentos' },
     { id: 'config',       label: 'Configurações' },
   ]

@@ -1650,3 +1650,63 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
 
 /* WOW button senders */
 .b2b-wow-senders .b2b-wow-ico { font-size: 18px; }
+
+/* ═══════════════ Analytics ═══════════════ */
+.b2b-analytics-hdr {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+}
+.b2b-analytics-period { display: flex; gap: 6px; }
+.b2b-analytics-period .b2b-tab {
+  padding: 4px 12px; font-size: 11px;
+}
+.b2b-kpis-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px; margin: 10px 0 18px;
+}
+.b2b-kpi {
+  background: var(--b2b-surface);
+  border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.b2b-kpi-val {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 32px; font-weight: 500;
+  color: var(--b2b-text); line-height: 1;
+}
+.b2b-kpi-lbl {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--b2b-text-muted); font-weight: 600;
+}
+.b2b-kpi-sub {
+  font-size: 11px; color: var(--b2b-text-muted); line-height: 1.4;
+  margin-top: 2px;
+}
+.b2b-kpi-green .b2b-kpi-val { color: #10B981; }
+.b2b-kpi-amber .b2b-kpi-val { color: #F59E0B; }
+.b2b-kpi-red   .b2b-kpi-val { color: #EF4444; }
+
+.b2b-analytics-split {
+  background: var(--b2b-surface);
+  border: 1px solid var(--b2b-border);
+  border-radius: 8px; padding: 14px 16px;
+  margin: 10px 0 18px;
+}
+.b2b-split-hdr {
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--b2b-text-muted); margin-bottom: 10px;
+}
+.b2b-split-bar, .b2b-health-bar {
+  display: flex; height: 10px; border-radius: 5px; overflow: hidden;
+  background: rgba(255,255,255,0.05);
+}
+.b2b-split-bar > div, .b2b-health-bar > div { height: 100%; transition: width 400ms ease; }
+.b2b-split-legend, .b2b-health-legend {
+  display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap;
+  font-size: 11px; color: var(--b2b-text-muted);
+}
+.b2b-split-legend i, .b2b-health-legend i {
+  display: inline-block; width: 8px; height: 8px; border-radius: 2px;
+  margin-right: 5px;
+}
