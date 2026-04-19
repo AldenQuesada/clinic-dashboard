@@ -104,7 +104,18 @@
 
     var isCreatingNew = _state.editing && !_state.editing.key_readonly_orig
 
-    var html =
+    var htmlWa =
+      '<div class="b2b-config-sec">' +
+        '<div class="b2b-list-head">' +
+          '<div>' +
+            '<div class="b2b-list-count">Templates de mensagens WhatsApp (vouchers)</div>' +
+            '<div style="font-size:11px;color:var(--b2b-text-muted);margin-top:2px">Editor com preview ao vivo · globais ou por parceria · placeholders: {nome} {parceiro} {combo} {validade_dias} {link} {mirian}</div>' +
+          '</div>' +
+          '<button type="button" class="b2b-btn b2b-btn-primary" data-config-open-wa-templates>Abrir editor de templates WA</button>' +
+        '</div>' +
+      '</div>'
+
+    var html = htmlWa +
       '<div class="b2b-config-sec">' +
         '<div class="b2b-list-head">' +
           '<div>' +
@@ -125,6 +136,15 @@
     root.querySelectorAll('[data-tpl-action]').forEach(function (btn) {
       btn.addEventListener('click', _onAction)
     })
+
+    // Abre modal de templates WA
+    var waBtn = root.querySelector('[data-config-open-wa-templates]')
+    if (waBtn) {
+      waBtn.addEventListener('click', function () {
+        if (window.B2BTemplates) window.B2BTemplates.open()
+        else _toast() && _toast().error('Editor de templates não carregado')
+      })
+    }
 
     // Preview ao vivo quando digitar body
     var bodyInput = root.querySelector('#b2bTplBody')
