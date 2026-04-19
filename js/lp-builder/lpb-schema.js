@@ -1586,11 +1586,11 @@
     },
 
     // ── BEFORE-AFTER-CAROUSEL · 2 fotos lado a lado + carrossel (Onda 28) ──
-    // ── before-after-reveal · slider lateral (handle + linha) ──
+    // ── before-after-reveal · slider lateral (handle + linha · com carrossel + autoplay) ──
     'before-after-reveal': {
       name: 'Antes & Depois · Slider Revelar',
       icon: 'sliders',
-      description: 'Linha vertical central · arraste pra revelar antes vs depois lado a lado',
+      description: 'Linha vertical central · arraste pra revelar antes vs depois · carrossel multi-slide + autoplay rock opcionais',
       group: 'prova',
       fields: [
         // ── Eyebrow + companions ─────────────────────────
@@ -1644,6 +1644,11 @@
         { k: 'after_y',    label: 'Depois · pan Y (%)', type: 'number', optional: true, hidden: true, default: 0 },
         { k: 'after_rot',  label: 'Depois · rotação (°)', type: 'number', optional: true, hidden: true, default: 0 },
 
+        // ── Slides extra (opcional · usa este E os top-level acima como slide 0) ──
+        { k: 'slides', label: 'Slides ADICIONAIS (carrossel)', type: 'list',
+          itemSchema: 'ba_carousel_slide', minItems: 0, maxItems: 8,
+          hint: 'Vazio = só usa antes/depois do topo. Adicionar 1+ vira CARROSSEL · slide 0 = topo · 1 = primeiro item etc.' },
+
         // ── Posição inicial do handle ────────────────────
         { k: 'initial_pos', label: 'Posição inicial do handle (%)', type: 'select',
           options: [
@@ -1651,6 +1656,31 @@
             { value: 50, label: '50% (centro · default)' },
             { value: 75, label: '75% (mostra mais DEPOIS)' },
           ], default: 50 },
+
+        // ── Autoplay ROCK (handle balança sozinho) ───────
+        { k: 'autoplay_rock', label: 'Auto-rock (handle balança sozinho)', type: 'bool', default: false,
+          hint: 'Liga · animacao automatica do handle revelando antes ↔ depois em loop' },
+        { k: 'rock_speed', label: 'Velocidade do rock', type: 'select',
+          options: [
+            { value: 'slow',   label: 'Lenta (6s ciclo)' },
+            { value: 'medium', label: 'Média (4s · default)' },
+            { value: 'fast',   label: 'Rápida (2s)' },
+          ], default: 'medium' },
+        { k: 'rock_range', label: 'Amplitude do rock', type: 'select',
+          options: [
+            { value: 'narrow', label: 'Estreita (35-65%)' },
+            { value: 'medium', label: 'Média (25-75% · default)' },
+            { value: 'full',   label: 'Total (10-90%)' },
+          ], default: 'medium' },
+
+        // ── Autoplay CARROSSEL (troca slides) ────────────
+        { k: 'autoplay_slides', label: 'Auto-trocar slides (se tiver mais de 1)', type: 'bool', default: true },
+        { k: 'slides_interval', label: 'Intervalo entre slides', type: 'select',
+          options: [
+            { value: 4,  label: '4s' },
+            { value: 6,  label: '6s (default)' },
+            { value: 10, label: '10s' },
+          ], default: 6 },
 
         // ── Labels Antes/Depois ──────────────────────────
         { k: 'label_before',       label: 'Texto label "antes"',  type: 'text', max: 16, default: 'Antes' },

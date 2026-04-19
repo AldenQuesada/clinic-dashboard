@@ -3486,3 +3486,45 @@
   .blk-bars-title { font-size: 20px; }
   .blk-bars-procedure { font-size: 14px; }
 }
+
+/* ── BA-reveal · slides empilhados + dots em rombo ─────────── */
+.blk-bars-track {
+  position: relative;
+  width: 100%;
+}
+.blk-bars-slide {
+  width: 100%;
+  transition: opacity 800ms cubic-bezier(.4,0,.2,1);
+}
+
+.blk-bars-dots {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: .85rem;
+  padding: 0 1.5rem;
+}
+.blk-bars-dot {
+  width: 8px; height: 8px;
+  background: transparent;
+  border: 1px solid rgba(200,169,126,.45);
+  cursor: pointer;
+  transition: all .35s cubic-bezier(.4,0,.2,1);
+  padding: 0;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+.blk-bars-dot:hover {
+  border-color: var(--champagne);
+  transform: rotate(45deg) scale(1.15);
+}
+.blk-bars-dot.active {
+  width: 12px; height: 12px;
+  background: var(--champagne);
+  border-color: var(--champagne);
+  box-shadow: 0 0 0 4px rgba(200,169,126,.12);
+}
+.blk-bars[data-bg="ivory"] .blk-bars-dot,
+.blk-bars[data-bg="white"] .blk-bars-dot {
+  border-color: rgba(200,169,126,.6);
+}
