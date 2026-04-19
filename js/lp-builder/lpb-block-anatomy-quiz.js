@@ -37,35 +37,36 @@
   }
 
   // ──────────────────────────────────────────────────────────
-  // Fotos reais (Supabase Storage · uploaded 2026-04-19)
+  // Fotos reais (Supabase Storage · uploaded 2026-04-19 · enquadramento amplo)
   // ──────────────────────────────────────────────────────────
   // BASE = ANTES (carrega primeiro · com sinais) · BEFORE_PROP = DEPOIS (toggle revela)
-  var PHOTO_FRONT_BASE   = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/03.jpg'  // 55+ com sinais (DEFAULT)
-  var PHOTO_FRONT_BEFORE = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/02.jpg'  // 40+ jovial (toggle "Ver depois")
-  var PHOTO_SIDE_BASE    = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-03.jpg'  // perfil 55+ (default)
-  var PHOTO_SIDE_BEFORE  = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-02.jpg'  // perfil 40+ (toggle)
+  var PHOTO_FRONT_BASE   = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/front-old.png'    // 55+ com sinais (DEFAULT)
+  var PHOTO_FRONT_BEFORE = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/front-young.png'  // 40+ jovial (toggle "Ver depois")
+  var PHOTO_SIDE_BASE    = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-old.png'     // perfil 55+ (default)
+  var PHOTO_SIDE_BEFORE  = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/side-young.png'   // perfil 40+ (toggle)
 
   // ──────────────────────────────────────────────────────────
   // Áreas anatômicas separadas por VISTA (frontal · perfil)
   // Coordenadas percentuais (x: 0-100 esq→dir · y: 0-100 topo→base)
+  // Calibrado pro novo enquadramento: testa visível no topo + pescoço base
   // ──────────────────────────────────────────────────────────
   var AREAS_FRONT = Object.freeze({
-    entre_sobrancelhas: { label: 'Entre sobrancelhas', protocol: 'Toxina botulínica (linha do leão)',     hotspots: [[50, 14]] },
-    pe_de_galinha:   { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',    hotspots: [[15, 23], [85, 23]] },
-    olheiras:        { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',    hotspots: [[35, 29], [65, 29]] },
-    bochechas:       { label: 'Volume de bochecha',   protocol: 'Volumização com AH (área zigomática)',   hotspots: [[18, 46], [82, 46]] },
-    bigode_chines:   { label: 'Bigode chinês',        protocol: 'Preenchimento sulco nasogeniano com AH', hotspots: [[33, 62], [67, 62]] },
-    labios:          { label: 'Lábios',               protocol: 'Preenchimento com AH',                   hotspots: [[50, 77]] },
-    mandibular:      { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',             hotspots: [[24, 92], [76, 92]] },
+    testa:              { label: 'Testa',                protocol: 'Toxina botulínica (linhas frontais)',    hotspots: [[50, 16]] },
+    entre_sobrancelhas: { label: 'Entre sobrancelhas',   protocol: 'Toxina botulínica (linha do leão)',      hotspots: [[50, 26]] },
+    pe_de_galinha:      { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',    hotspots: [[20, 33], [80, 33]] },
+    olheiras:           { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',    hotspots: [[37, 38], [63, 38]] },
+    bochechas:          { label: 'Volume de bochecha',   protocol: 'Volumização com AH (área zigomática)',   hotspots: [[22, 52], [78, 52]] },
+    bigode_chines:      { label: 'Bigode chinês',        protocol: 'Preenchimento sulco nasogeniano com AH', hotspots: [[36, 63], [64, 63]] },
+    labios:             { label: 'Lábios',               protocol: 'Preenchimento com AH',                   hotspots: [[50, 73]] },
+    mandibular:         { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',             hotspots: [[26, 84], [74, 84]] },
   })
 
-  // Coordenadas placeholder pra perfil (rosto olhando pra DIREITA)
-  // Vou recalibrar quando user enviar foto lateral real
+  // Calibrado pro novo perfil (rosto olhando pra ESQUERDA · enquadramento amplo)
   var AREAS_SIDE = Object.freeze({
-    dorso_nariz:     { label: 'Dorso nasal',          protocol: 'Rinomodelação · AH no dorso',            hotspots: [[55, 30]] },
-    ponta_nariz:     { label: 'Ponta do nariz',       protocol: 'Rinomodelação · projeção da ponta com AH', hotspots: [[70, 42]] },
-    mento:           { label: 'Mento (queixo)',       protocol: 'Mentoplastia injetável · AH no mento',   hotspots: [[58, 82]] },
-    papada:          { label: 'Papada',               protocol: 'Lipo enzimática + Fotona 4D',            hotspots: [[42, 90]] },
+    dorso_nariz:     { label: 'Dorso nasal',          protocol: 'Rinomodelação · AH no dorso',              hotspots: [[40, 38]] },
+    ponta_nariz:     { label: 'Ponta do nariz',       protocol: 'Rinomodelação · projeção da ponta com AH', hotspots: [[28, 48]] },
+    mento:           { label: 'Mento (queixo)',       protocol: 'Mentoplastia injetável · AH no mento',     hotspots: [[34, 78]] },
+    papada:          { label: 'Papada',               protocol: 'Lipo enzimática + Fotona 4D',              hotspots: [[52, 88]] },
   })
 
   // Mapa unificado pra runtime · merge dos 2 (compatibilidade)
