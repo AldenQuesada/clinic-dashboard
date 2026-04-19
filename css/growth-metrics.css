@@ -371,3 +371,93 @@ body.metrics-page {
   font-size: 16px; cursor: pointer; line-height: 1; padding: 0 4px;
 }
 .gm-partner-clear:hover { color: var(--red); }
+
+/* ======================================================================
+   Export buttons (CSV / Print PDF)
+   Mesma linguagem visual do .gm-reload — champagne on hover.
+   ====================================================================== */
+.gm-export-btn {
+  padding: 8px 14px; background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; cursor: pointer; border-radius: 6px;
+  font-family: inherit; transition: all 160ms ease;
+  white-space: nowrap;
+}
+.gm-export-btn:hover {
+  color: var(--champagne);
+  border-color: var(--champagne);
+  background: rgba(201, 169, 110, 0.06);
+}
+.gm-export-btn:active { transform: translateY(1px); }
+.gm-export-btn:focus-visible {
+  outline: 2px solid var(--champagne);
+  outline-offset: 2px;
+}
+
+/* ======================================================================
+   Print — Growth Metrics
+   A4 landscape, esconde filtros/botões, grid em 1 coluna, cores claras.
+   ====================================================================== */
+@media print {
+  @page { size: A4 landscape; margin: 12mm 10mm; }
+
+  html, body, body.metrics-page {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  #metricsRoot {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* esconde controles interativos */
+  .gm-header-ctrl,
+  .gm-filters,
+  .gm-partner-chip,
+  .gm-partner-results,
+  .gm-reload,
+  .gm-export-btn {
+    display: none !important;
+  }
+
+  .gm-header {
+    margin-bottom: 10mm !important;
+    border-bottom: 1px solid #C9A96E;
+    padding-bottom: 4mm;
+  }
+  .gm-eyebrow { color: #8a7239 !important; }
+  .gm-title   { color: #111 !important; font-size: 26px !important; }
+  .gm-title em { color: #8a7239 !important; }
+  .gm-sub     { color: #555 !important; }
+
+  /* widgets em 1 coluna, full width, sem sombras */
+  .gm-grid {
+    display: block !important;
+  }
+  .gm-card, .gm-col-2 {
+    grid-column: auto !important;
+    width: 100% !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 6px !important;
+    margin-bottom: 5mm !important;
+    padding: 10px 12px !important;
+    min-height: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    color: #111 !important;
+  }
+
+  /* tipografia em print */
+  .gm-widget-title { color: #111 !important; font-size: 14px !important; }
+  .gm-widget-sub   { color: #666 !important; }
+  .gm-empty, .gm-widget-loading { color: #999 !important; }
+  .gm-widget-err { color: #a00 !important; }
+
+  /* remove backgrounds escuros em linhas de tabela */
+  .gm-quality-row { border-bottom: 1px solid #eee !important; }
+}
+

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Executivo — Growth (B2C + B2B) · Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/growth-executive.css?v=20260419j">
+</head>
+<body class="metrics-page">
+<div id="execRoot"></div>
+
+<!-- Supabase -->
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<!-- Toast reaproveitado -->
+<script src="js/b2b/b2b.toast.js?v=20260419j"></script>
+
+<!-- Repositories (reaproveitados) -->
+<script src="js/growth-metrics/metrics.repository.js?v=20260419j"></script>
+<script src="js/b2b-metrics/metrics.repository.js?v=20260419j"></script>
+<script src="js/b2b/b2b.insight.repository.js?v=20260419j"></script>
+
+<!-- Shell executivo -->
+<script src="js/growth-executive/exec.shell.js?v=20260419j"></script>
+
+<script>
+;(function () {
+  'use strict'
+  function boot() {
+    if (!window._sbShared || !window.GrowthExecShell) return setTimeout(boot, 200)
+    window.GrowthExecShell.mount('execRoot')
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else boot()
+})()
+</script>
+</body>
+</html>

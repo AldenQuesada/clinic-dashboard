@@ -72,6 +72,8 @@
             _renderPartnerChip() +
           '</div>' +
           '<div class="b2bm-header-ctrl">' +
+            '<button type="button" class="b2bm-export-btn" id="b2bmExportCsv" title="Exporta ranking de qualidade em CSV">Exportar CSV</button>' +
+            '<button type="button" class="b2bm-export-btn" id="b2bmExportPdf" title="Abre versão imprimível em nova aba">Imprimir / PDF</button>' +
             '<button type="button" class="b2bm-reload" id="b2bmReloadAll">↻ Recarregar</button>' +
           '</div>' +
         '</div>' +
@@ -213,6 +215,128 @@
 
     var r = root.querySelector('#b2bmReloadAll')
     if (r) r.addEventListener('click', _renderAll)
+
+    var btnCsv = root.querySelector('#b2bmExportCsv')
+    if (btnCsv) btnCsv.addEventListener('click', _exportCsv)
+    var btnPdf = root.querySelector('#b2bmExportPdf')
+    if (btnPdf) btnPdf.addEventListener('click', _exportPdf)
+  }
+
+  function _toast(msg, kind) {
+    try {
+      if (window.B2BToast) {
+        var fn = window.B2BToast[kind] || window.B2BToast.info
+        if (fn) fn(msg)
+      }
+    } catch (_) { /* silencioso */ }
+  }
+
+  function _stamp() {
+    var d = new Date()
+    var p = function (n) { return n < 10 ? '0' + n : String(n) }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+  }
+
+  async function _exportCsv() {
+    if (!window.MetricsExporter || !window.B2BMetricsRepository) {
+      _toast('Exporter indisponível', 'error'); return
+    }
+    try {
+      var d = Math.max(_effectiveDays(), 90)
+      var res = await window.B2BMetricsRepository.quality(d)
+      var partners = (res && res.partners) || []
+      if (!partners.length) { _toast('Sem dados de qualidade para exportar', 'warn'); return }
+      var rows = partners.map(function (p, i) {
+        return {
+          posicao: i + 1,
+          nome: p.nome || '',
+          pilar: p.pillar || '',
+          tier: p.tier || '',
+          quality_class: p.quality_class || '',
+          total: Number(p.total || 0),
+          resgatados: Number(p.closed || 0),
+          conversao_pct: Number(p.conversion_pct || 0),
+        }
+      })
+      var columns = [
+        { key: 'posicao',        label: 'Posição' },
+        { key: 'nome',           label: 'Parceria' },
+        { key: 'pilar',          label: 'Pilar' },
+        { key: 'tier',           label: 'Tier' },
+        { key: 'quality_class',  label: 'Classe Qualidade' },
+        { key: 'total',          label: 'Total Vouchers' },
+        { key: 'resgatados',     label: 'Resgatados' },
+        { key: 'conversao_pct',  label: 'Conversão (%)' },
+      ]
+      var filename = 'b2b-metrics-' + _stamp() + '.csv'
+      window.MetricsExporter.toCSV(filename, rows, { columns: columns })
+      _toast('CSV exportado', 'success')
+    } catch (err) {
+      _toast('Falha ao exportar: ' + (err && err.message || err), 'error')
+    }
+  }
+
+  async function _exportPdf() {
+    if (!window.MetricsExporter) { _toast('Exporter indisponível', 'error'); return }
+    try {
+      var mesesBR = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
+      var n = new Date()
+      var periodo = mesesBR[n.getMonth()] + '/' + n.getFullYear()
+      var title = 'Clínica Mirian de Paula · B2B Metrics · ' + periodo
+
+      var d = _effectiveDays()
+      var report = { summary: {} }
+      try {
+        var [funnel, forecast, velocity, payback, quality] = await Promise.all([
+          window.B2BMetricsRepository.funnel(d, _state.partnershipId).catch(function () { return null }),
+          (window.B2BMetricsRepository.forecast ? window.B2BMetricsRepository.forecast(20) : Promise.resolve(null)).catch(function () { return null }),
+          window.B2BMetricsRepository.velocity(d, _state.partnershipId).catch(function () { return null }),
+          window.B2BMetricsRepository.payback(Math.max(d, 90), _state.partnershipId).catch(function () { return null }),
+          window.B2BMetricsRepository.quality(Math.max(d, 90)).catch(function () { return null }),
+        ])
+        report.summary['Período'] = d + ' dias'
+        if (_state.partnershipName) report.summary['Parceria'] = _state.partnershipName
+        if (funnel)   report.funnel   = Object.assign({ days: d }, funnel)
+        if (forecast) report.forecast = forecast
+        if (velocity) report.velocity = Object.assign({ days: d }, velocity)
+        if (payback)  report.payback  = Object.assign({ days: Math.max(d, 90) }, payback)
+        if (quality)  report.quality  = Object.assign({ days: Math.max(d, 90) }, quality)
+      } catch (_) { /* usa só snapshot */ }
+
+      var builtHtml = window.MetricsExporter.buildReport(report)
+      var snapshotHtml = ''
+      var host = document.getElementById(_state.mountedIn)
+      if (host) {
+        snapshotHtml = '<div class="mex-snapshot"><h2 style="font-family:\'Cormorant Garamond\',serif;font-size:15px;margin:0 0 8px;">Snapshot dos widgets</h2><div class="mex-snapshot-grid">' +
+          _extractWidgetsSnapshot(host) + '</div></div>'
+      }
+
+      window.MetricsExporter.toPrintPDF(title, { html: builtHtml + snapshotHtml })
+    } catch (err) {
+      _toast('Falha ao gerar PDF: ' + (err && err.message || err), 'error')
+    }
+  }
+
+  function _extractWidgetsSnapshot(container) {
+    var cards = container.querySelectorAll('.b2bm-card')
+    var out = []
+    cards.forEach(function (card) {
+      var t = card.querySelector('.b2bm-widget-title')
+      var s = card.querySelector('.b2bm-widget-sub')
+      var title = (t && t.textContent) || 'Widget'
+      var sub = (s && s.textContent) || ''
+      var txt = (card.innerText || '').trim()
+      if (title) txt = txt.replace(title, '').trim()
+      if (sub) txt = txt.replace(sub, '').trim()
+      var escHtml = function (x) {
+        return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) {
+          return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
+        })
+      }
+      out.push('<div class="mex-snapshot-card"><h3>' + escHtml(title) + '</h3>' +
+        '<div class="mex-raw">' + escHtml(txt).replace(/\n/g, '<br>') + '</div></div>')
+    })
+    return out.join('')
   }
 
   async function _searchPartner(q, resultsEl) {

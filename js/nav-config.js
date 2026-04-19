@@ -199,6 +199,7 @@
       pages: [
         { page: 'growth-wa-links',       label: 'Gerador de Links WA',        breadcrumb: 'Growth > Gerador de Links WhatsApp' },
         { page: 'growth-partners',       label: 'Parceiros (VPI · B2C)',      breadcrumb: 'Growth > Parceiros VPI' },
+        { page: 'growth-exec',           label: 'Dashboard Executivo',        breadcrumb: 'Growth > Executivo',             externalUrl: 'growth-executive.html', highlight: true },
         { page: 'growth-metrics',        label: 'Growth Metrics · Analytics', breadcrumb: 'Growth > Métricas',              externalUrl: 'growth-metrics.html', highlight: true },
         { page: 'growth-referral',       label: 'Programa de Indicação',      breadcrumb: 'Growth > Programa de Indicação', highlight: true },
         { page: 'b2b-circulo',           label: 'Círculo B2B (parcerias)',    breadcrumb: 'Growth > Círculo B2B',           externalUrl: 'b2b-partners.html', highlight: true },

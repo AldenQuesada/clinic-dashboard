@@ -72,6 +72,8 @@
             _renderPartnerChip() +
           '</div>' +
           '<div class="gm-header-ctrl">' +
+            '<button type="button" class="gm-export-btn" id="gmExportCsv" title="Exporta ranking de qualidade em CSV">Exportar CSV</button>' +
+            '<button type="button" class="gm-export-btn" id="gmExportPdf" title="Abre versão imprimível em nova aba">Imprimir / PDF</button>' +
             '<button type="button" class="gm-reload" id="gmReloadAll">↻ Recarregar</button>' +
           '</div>' +
         '</div>' +
@@ -215,6 +217,132 @@
 
     var r = root.querySelector('#gmReloadAll')
     if (r) r.addEventListener('click', _renderAll)
+
+    var btnCsv = root.querySelector('#gmExportCsv')
+    if (btnCsv) btnCsv.addEventListener('click', _exportCsv)
+    var btnPdf = root.querySelector('#gmExportPdf')
+    if (btnPdf) btnPdf.addEventListener('click', _exportPdf)
+  }
+
+  function _toast(msg, kind) {
+    try {
+      if (window.B2BToast) {
+        var fn = window.B2BToast[kind] || window.B2BToast.info
+        if (fn) fn(msg)
+      }
+    } catch (_) { /* silencioso */ }
+  }
+
+  function _stamp() {
+    var d = new Date()
+    var p = function (n) { return n < 10 ? '0' + n : String(n) }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+  }
+
+  async function _exportCsv() {
+    if (!window.MetricsExporter || !window.GrowthMetricsRepository) {
+      _toast('Exporter indisponível', 'error'); return
+    }
+    try {
+      var d = Math.max(_effectiveDays(), 90)
+      var res = await window.GrowthMetricsRepository.quality(d)
+      var partners = (res && res.partners) || []
+      if (!partners.length) { _toast('Sem dados de qualidade para exportar', 'warn'); return }
+      var rows = partners.map(function (p, i) {
+        return {
+          posicao: i + 1,
+          nome: p.nome || '',
+          tier: p.tier || '',
+          quality_class: p.quality_class || '',
+          total: Number(p.total || 0),
+          fechadas: Number(p.closed || 0),
+          conversao_pct: Number(p.conversion_pct || 0),
+        }
+      })
+      var columns = [
+        { key: 'posicao',        label: 'Posição' },
+        { key: 'nome',           label: 'Embaixadora' },
+        { key: 'tier',           label: 'Tier' },
+        { key: 'quality_class',  label: 'Classe Qualidade' },
+        { key: 'total',          label: 'Total Indicações' },
+        { key: 'fechadas',       label: 'Fechadas' },
+        { key: 'conversao_pct',  label: 'Conversão (%)' },
+      ]
+      var filename = 'growth-metrics-' + _stamp() + '.csv'
+      window.MetricsExporter.toCSV(filename, rows, { columns: columns })
+      _toast('CSV exportado', 'success')
+    } catch (err) {
+      _toast('Falha ao exportar: ' + (err && err.message || err), 'error')
+    }
+  }
+
+  async function _exportPdf() {
+    if (!window.MetricsExporter) { _toast('Exporter indisponível', 'error'); return }
+    try {
+      var mesesBR = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro']
+      var n = new Date()
+      var periodo = mesesBR[n.getMonth()] + '/' + n.getFullYear()
+      var title = 'Clínica Mirian de Paula · Growth Metrics · ' + periodo
+      var host = document.getElementById(_state.mountedIn)
+      var selector = host ? ('#' + _state.mountedIn) : null
+
+      // Consolida dados pro relatório formatado (em paralelo com snapshot dos widgets)
+      var d = _effectiveDays()
+      var report = { summary: {} }
+      try {
+        var [funnel, forecast, velocity, payback, quality] = await Promise.all([
+          window.GrowthMetricsRepository.funnel(d, _state.partnerId).catch(function () { return null }),
+          window.GrowthMetricsRepository.forecast(20).catch(function () { return null }),
+          window.GrowthMetricsRepository.velocity(d, _state.partnerId).catch(function () { return null }),
+          window.GrowthMetricsRepository.payback(Math.max(d, 90), _state.partnerId).catch(function () { return null }),
+          window.GrowthMetricsRepository.quality(Math.max(d, 90)).catch(function () { return null }),
+        ])
+        report.summary['Período'] = d + ' dias'
+        if (_state.partnerName) report.summary['Embaixadora'] = _state.partnerName
+        if (funnel)   report.funnel   = Object.assign({ days: d }, funnel)
+        if (forecast) report.forecast = forecast
+        if (velocity) report.velocity = Object.assign({ days: d }, velocity)
+        if (payback)  report.payback  = Object.assign({ days: Math.max(d, 90) }, payback)
+        if (quality)  report.quality  = Object.assign({ days: Math.max(d, 90) }, quality)
+      } catch (_) { /* usa só snapshot */ }
+
+      var builtHtml = window.MetricsExporter.buildReport(report)
+      var snapshotHtml = ''
+      if (selector) {
+        var c = document.querySelector(selector)
+        if (c) {
+          snapshotHtml = '<div class="mex-snapshot"><h2 style="font-family:\'Cormorant Garamond\',serif;font-size:15px;margin:0 0 8px;">Snapshot dos widgets</h2><div class="mex-snapshot-grid">' +
+            _extractWidgetsSnapshot(c) + '</div></div>'
+        }
+      }
+
+      window.MetricsExporter.toPrintPDF(title, { html: builtHtml + snapshotHtml })
+    } catch (err) {
+      _toast('Falha ao gerar PDF: ' + (err && err.message || err), 'error')
+    }
+  }
+
+  // extrai snapshot textual dos widgets (usado só pra print)
+  function _extractWidgetsSnapshot(container) {
+    var cards = container.querySelectorAll('.gm-card')
+    var out = []
+    cards.forEach(function (card) {
+      var t = card.querySelector('.gm-widget-title')
+      var s = card.querySelector('.gm-widget-sub')
+      var title = (t && t.textContent) || 'Widget'
+      var sub = (s && s.textContent) || ''
+      var txt = (card.innerText || '').trim()
+      if (title) txt = txt.replace(title, '').trim()
+      if (sub) txt = txt.replace(sub, '').trim()
+      var escHtml = function (x) {
+        return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) {
+          return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
+        })
+      }
+      out.push('<div class="mex-snapshot-card"><h3>' + escHtml(title) + '</h3>' +
+        '<div class="mex-raw">' + escHtml(txt).replace(/\n/g, '<br>') + '</div></div>')
+    })
+    return out.join('')
   }
 
   async function _searchPartner(q, resultsEl) {

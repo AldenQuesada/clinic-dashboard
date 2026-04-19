@@ -371,3 +371,85 @@ body.metrics-page {
   font-size: 16px; cursor: pointer; line-height: 1; padding: 0 4px;
 }
 .b2bm-partner-clear:hover { color: var(--red); }
+
+/* ======================================================================
+   Export buttons (CSV / Print PDF)
+   ====================================================================== */
+.b2bm-export-btn {
+  padding: 8px 14px; background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; cursor: pointer; border-radius: 6px;
+  font-family: inherit; transition: all 160ms ease;
+  white-space: nowrap;
+}
+.b2bm-export-btn:hover {
+  color: var(--champagne);
+  border-color: var(--champagne);
+  background: rgba(201, 169, 110, 0.06);
+}
+.b2bm-export-btn:active { transform: translateY(1px); }
+.b2bm-export-btn:focus-visible {
+  outline: 2px solid var(--champagne);
+  outline-offset: 2px;
+}
+
+/* ======================================================================
+   Print — B2B Metrics
+   ====================================================================== */
+@media print {
+  @page { size: A4 landscape; margin: 12mm 10mm; }
+
+  html, body, body.metrics-page {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  #metricsRoot {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .b2bm-header-ctrl,
+  .b2bm-filters,
+  .b2bm-partner-chip,
+  .b2bm-partner-results,
+  .b2bm-reload,
+  .b2bm-export-btn {
+    display: none !important;
+  }
+
+  .b2bm-header {
+    margin-bottom: 10mm !important;
+    border-bottom: 1px solid #C9A96E;
+    padding-bottom: 4mm;
+  }
+  .b2bm-eyebrow { color: #8a7239 !important; }
+  .b2bm-title   { color: #111 !important; font-size: 26px !important; }
+  .b2bm-title em { color: #8a7239 !important; }
+  .b2bm-sub     { color: #555 !important; }
+
+  .b2bm-grid { display: block !important; }
+  .b2bm-card, .b2bm-col-2 {
+    grid-column: auto !important;
+    width: 100% !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    border-radius: 6px !important;
+    margin-bottom: 5mm !important;
+    padding: 10px 12px !important;
+    min-height: 0 !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    color: #111 !important;
+  }
+
+  .b2bm-widget-title { color: #111 !important; font-size: 14px !important; }
+  .b2bm-widget-sub   { color: #666 !important; }
+  .b2bm-empty, .b2bm-widget-loading { color: #999 !important; }
+  .b2bm-widget-err { color: #a00 !important; }
+
+  .b2bm-quality-row { border-bottom: 1px solid #eee !important; }
+}
+
