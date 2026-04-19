@@ -1349,6 +1349,10 @@
       if (window.LPBSmartCTARuntime && _frame && _frame.contentDocument) {
         try { LPBSmartCTARuntime.bind(_frame.contentDocument.body) } catch (_) {}
       }
+      // Onda 28: BA-carousel autoplay + dots tap no preview do builder
+      if (window.LPBBlockBaCarousel && window.LPBBlockBaCarousel.bind && _frame && _frame.contentDocument) {
+        try { LPBBlockBaCarousel.bind(_frame.contentDocument.body) } catch (_) {}
+      }
     }, 30)
   }
 
