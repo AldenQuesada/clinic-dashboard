@@ -49,15 +49,15 @@
   // x: 0-100 (esquerda→direita) · y: 0-100 (topo→base)
   // Foto crop fechado · só rosto frontal (sem pescoço completo)
   // ──────────────────────────────────────────────────────────
+  // Coordenadas calibradas pra foto 02.jpg (frontal · crop fechado a partir das sobrancelhas)
   var AREAS = Object.freeze({
-    testa:           { label: 'Testa',                protocol: 'Toxina botulínica + lifting fototermal', hotspots: [[50, 12]] },
-    entre_sobrancelhas: { label: 'Entre sobrancelhas', protocol: 'Toxina botulínica (linha do leão)',     hotspots: [[50, 22]] },
-    pe_de_galinha:   { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',    hotspots: [[18, 30], [82, 30]] },
-    olheiras:        { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',    hotspots: [[36, 38], [64, 38]] },
-    bochechas:       { label: 'Volume de bochecha',   protocol: 'Volumização com AH (área zigomática)',   hotspots: [[18, 50], [82, 50]] },
-    bigode_chines:   { label: 'Bigode chinês',        protocol: 'Preenchimento sulco nasogeniano com AH', hotspots: [[36, 58], [64, 58]] },
-    labios:          { label: 'Lábios',               protocol: 'Preenchimento com AH',                   hotspots: [[50, 73]] },
-    mandibular:      { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',             hotspots: [[16, 86], [84, 86]] },
+    entre_sobrancelhas: { label: 'Entre sobrancelhas', protocol: 'Toxina botulínica (linha do leão)',     hotspots: [[50, 14]] },
+    pe_de_galinha:   { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',    hotspots: [[15, 23], [85, 23]] },
+    olheiras:        { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',    hotspots: [[35, 29], [65, 29]] },
+    bochechas:       { label: 'Volume de bochecha',   protocol: 'Volumização com AH (área zigomática)',   hotspots: [[18, 46], [82, 46]] },
+    bigode_chines:   { label: 'Bigode chinês',        protocol: 'Preenchimento sulco nasogeniano com AH', hotspots: [[33, 62], [67, 62]] },
+    labios:          { label: 'Lábios',               protocol: 'Preenchimento com AH',                   hotspots: [[50, 77]] },
+    mandibular:      { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',             hotspots: [[24, 92], [76, 92]] },
   })
 
   // Ícone Feather "user-check" inline · pra header empty-state

@@ -93,7 +93,7 @@
   width: 100%;
   max-width: 380px;
   margin: 0 auto;
-  aspect-ratio: 280 / 320;
+  aspect-ratio: 280 / 320;  /* exata da foto · foto preenche 100% sem cortar */
   border-radius: 8px;
   overflow: hidden;
   background: var(--ivory, #FEFCF8);
@@ -108,7 +108,7 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;        /* mostra a foto INTEIRA · sem cortar testa/queixo */
   object-position: center;
   display: block;
   transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
