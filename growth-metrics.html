@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Metrics — VPI · Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/growth-metrics.css?v=20260419f">
+</head>
+<body class="metrics-page">
+<div id="metricsRoot"></div>
+
+<!-- Supabase -->
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<!-- Toast reaproveitado do B2B (padrão do projeto) -->
+<script src="js/b2b/b2b.toast.js?v=20260419f"></script>
+
+<!-- Métricas -->
+<script src="js/growth-metrics/metrics.repository.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/funnel.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/timeseries.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/cohort.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/quality.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/velocity.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/forecast.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/dropoff.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/heatmap.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/nps.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/payback.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/widgets/alerts.widget.js?v=20260419f"></script>
+<script src="js/growth-metrics/metrics.shell.js?v=20260419f"></script>
+
+<script>
+;(function () {
+  'use strict'
+  function boot() {
+    if (!window._sbShared || !window.GrowthMetricsShell) return setTimeout(boot, 200)
+    window.GrowthMetricsShell.mount('metricsRoot')
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else boot()
+})()
+</script>
+</body>
+</html>
