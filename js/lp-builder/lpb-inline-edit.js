@@ -73,6 +73,77 @@
       '.lp-footer-brand':   'brand_name',
       '.lp-footer-tagline': 'tagline',
       '.lp-footer-small':   'copyright',
+      // Footer V2 (Onda 28)
+      '.blk-footer-logo':       'brand_name',
+      '.blk-footer-tagline-v2': 'tagline',
+      '.blk-footer-copy-v2':    'copyright',
+    },
+
+    // ── Onda 28 · blocos do legado fielmente reproduzidos ──
+    'hero-cover': {
+      '.blk-hc-eyebrow':     'eyebrow',
+      '.blk-hc-headline':    'headline',
+      '.blk-hc-subheadline': 'subheadline',
+    },
+    'cta-legacy': {
+      '.blk-cta-legacy-eyebrow':  'eyebrow',
+      '.blk-cta-legacy-headline': 'headline',
+      '.blk-cta-legacy-sub':      'subtitle',
+    },
+    'title-legacy': {
+      '.blk-title-legacy-eyebrow': 'eyebrow',
+      '.blk-title-legacy-h2':      'h2',
+      '.blk-title-legacy-lead':    'lead',
+    },
+    'check-legacy': {
+      '.blk-check-legacy-eyebrow': 'eyebrow',
+      '.blk-check-legacy-h2':      'h2',
+    },
+    'buttons-row': {
+      '.blk-buttons-row-eyebrow': 'eyebrow',
+      '.blk-buttons-row-title':   'titulo',
+    },
+    'badges-legacy': {
+      '.blk-badges-legacy-eyebrow': 'eyebrow',
+      '.blk-badges-legacy-title':   'titulo',
+    },
+    'links-tree': {
+      '.blk-links-tree-eyebrow': 'eyebrow',
+      '.blk-links-tree-title':   'titulo',
+    },
+    'before-after-carousel': {
+      '.blk-bac-eyebrow': 'eyebrow',
+      '.blk-bac-title':   'titulo',
+    },
+    'magazine-toc': {
+      '.blk-mtoc-kicker': 'eyebrow',
+      '.blk-mtoc-h1':     'h1',
+      '.blk-mtoc-lead':   'lead',
+    },
+
+    // ── Onda 29 · blocos de conversão ──
+    'anatomy-quiz': {
+      '.blk-aq-eyebrow':  'eyebrow',
+      '.blk-aq-headline': 'headline',
+      '.blk-aq-sub':      'subtitle',
+    },
+    'collagen-animation': {
+      '.blk-collagen-eyebrow': 'eyebrow',
+      '.blk-collagen-head':    'headline',
+      '.blk-collagen-lead':    'lead',
+    },
+    'smart-popup': {
+      '.blk-spop-eyebrow': 'eyebrow',
+      '.blk-spop-head':    'headline',
+      '.blk-spop-sub':     'subtitle',
+    },
+    'transformation-reel': {
+      '.blk-reel-eyebrow': 'eyebrow',
+      '.blk-reel-head':    'headline',
+    },
+    'smart-cta': {
+      '.blk-scta-eyebrow': 'eyebrow',
+      '.blk-scta-head':    'headline',
     },
   }
 
