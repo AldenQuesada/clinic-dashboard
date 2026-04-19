@@ -244,6 +244,40 @@
         '</div>'
     },
 
+    'select-anchor': function (f, v) {
+      // Lista TODOS os blocos da página atual como opções de âncora
+      // Reusa o helper de preview text do outline pra ficar consistente
+      var blocks = (LPBuilder.getBlocks && LPBuilder.getBlocks()) || []
+      function _previewText(b) {
+        if (!b || !b.props) return ''
+        var p = b.props
+        var fields = ['headline','h1','h2','titulo','title','eyebrow','h3','lead','subtitle','subheadline']
+        for (var i = 0; i < fields.length; i++) {
+          var val = p[fields[i]]
+          if (val && typeof val === 'string') {
+            var t = val.replace(/\n/g, ' ').trim()
+            if (t) return t.length > 40 ? t.slice(0, 40) + '…' : t
+          }
+        }
+        return ''
+      }
+      var optionsHtml = '<option value="">— item decorativo (sem click) —</option>'
+      blocks.forEach(function (b, i) {
+        var anchor = 'bloco-' + i
+        var prev   = _previewText(b)
+        var label  = (i + 1) + '. ' + (b.type || '?') + (prev ? ' · ' + prev : '')
+        var sel    = (v === anchor) ? ' selected' : ''
+        optionsHtml += '<option value="' + _esc(anchor) + '"' + sel + '>' + _esc(label) + '</option>'
+      })
+      return '<div class="lpb-field" data-fkey="' + _esc(f.k) + '">' +
+        '<div class="lpb-field-label"><span>' + _esc(f.label) + '</span></div>' +
+        '<select class="lpb-select" data-fkey="' + _esc(f.k) + '" data-anchor-select="1">' +
+          optionsHtml +
+        '</select>' +
+        (f.hint ? '<div class="lpb-field-hint">' + _esc(f.hint) + '</div>' : '') +
+        '</div>'
+    },
+
     image: function (f, v, idx) {
       // id estavel por bloco+campo — evita race quando re-renderiza durante upload
       var fileId = 'lpbf-' + (typeof idx === 'number' ? idx : 0) + '-' + f.k
@@ -289,9 +323,15 @@
     },
 
     color: function (f, v) {
+      var safeVal = (v && /^#[0-9a-f]{3,8}$/i.test(v)) ? v : ''
       return '<div class="lpb-field" data-fkey="' + _esc(f.k) + '">' +
         '<div class="lpb-field-label"><span>' + _esc(f.label) + '</span></div>' +
-        '<input class="lpb-input" type="text" data-fkey="' + _escA(f.k) + '" value="' + _escA(v || '') + '" placeholder="#C8A97E">' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+          '<input type="color" data-color-picker-for="' + _escA(f.k) + '" value="' + _escA(safeVal || '#C8A97E') + '" style="width:36px;height:32px;border:1px solid var(--lpb-border);background:transparent;cursor:pointer;padding:0;border-radius:2px">' +
+          '<input class="lpb-input" type="text" data-fkey="' + _escA(f.k) + '" value="' + _escA(v || '') + '" placeholder="vazio = padrão" style="flex:1">' +
+          (v ? '<button type="button" class="lpb-btn-icon" data-color-clear="' + _escA(f.k) + '" title="Limpar (usa cor padrão)" style="color:var(--lpb-text-2)">' + _ico('x', 12) + '</button>' : '') +
+        '</div>' +
+        (f.hint ? '<div class="lpb-field-hint">' + _esc(f.hint) + '</div>' : '') +
         '</div>'
     },
 
@@ -648,24 +688,32 @@
         var key = el.dataset.fkey
         if (!key || key === '__scalar') return
         var val = el.value
-        _debounceUpdate(function () {
+        var flush = function () {
+          var currentVal = el.value  // re-lê valor atual (pode ter mudado durante debounce)
           if (isI18nMode) {
-            // grava em props._i18n[lang][key]
             var b2 = LPBuilder.getBlock(idx)
-            LPBI18n.setValue(b2, key, val, editingLang)
+            LPBI18n.setValue(b2, key, currentVal, editingLang)
             LPBuilder.setPageMeta('updated_at', LPBuilder.getCurrentPage().updated_at)
             if (window.LPBCanvas && window.LPBCanvas.render) window.LPBCanvas.render()
           } else {
-            LPBuilder.setBlockProp(idx, key, val)
+            LPBuilder.setBlockProp(idx, key, currentVal)
           }
-          // re-render APENAS o counter (evitar flicker geral)
           var counter = el.closest('.lpb-field').querySelector('.lpb-field-counter')
           if (counter && counter.textContent.indexOf('/') >= 0) {
             var max = parseInt(counter.textContent.split('/')[1], 10)
-            counter.textContent = val.length + '/' + max
-            counter.classList.toggle('over', val.length > max)
+            counter.textContent = currentVal.length + '/' + max
+            counter.classList.toggle('over', currentVal.length > max)
           }
-        })
+        }
+        // FLUSH IMEDIATO se campo ficou vazio · feedback instantâneo (sem 120ms)
+        // Evita sensação de "não consigo deletar"
+        if (val.length === 0) {
+          clearTimeout(_saveDebounce)
+          _saveDebounce = null
+          flush()
+        } else {
+          _debounceUpdate(flush)
+        }
       }
     })
 
@@ -673,6 +721,25 @@
     _root.querySelectorAll('input[type=checkbox][data-fkey]').forEach(function (el) {
       el.onchange = function () {
         LPBuilder.setBlockProp(idx, el.dataset.fkey, el.checked)
+      }
+    })
+
+    // Color picker (sync com input texto · força re-render canvas)
+    _root.querySelectorAll('input[type="color"][data-color-picker-for]').forEach(function (cp) {
+      cp.oninput = function () {
+        var key = cp.dataset.colorPickerFor
+        var val = cp.value
+        var partner = _root.querySelector('input[data-fkey="' + key + '"]')
+        if (partner) partner.value = val
+        LPBuilder.setBlockProp(idx, key, val)
+      }
+    })
+    _root.querySelectorAll('button[data-color-clear]').forEach(function (b) {
+      b.onclick = function (e) {
+        e.preventDefault(); e.stopPropagation()
+        var key = b.dataset.colorClear
+        LPBuilder.setBlockProp(idx, key, '')
+        render()
       }
     })
 
@@ -765,6 +832,20 @@
             }
             LPBuilder.setBlockProp(idx, listKey, freshArr)
           })
+        }
+      })
+      // Selects dentro de items (ex: select-anchor do toc_item)
+      itemEl.querySelectorAll('select.lpb-select[data-fkey]').forEach(function (sel) {
+        sel.onchange = function () {
+          var subKey = sel.dataset.fkey
+          var freshBlock = LPBuilder.getBlock(idx)
+          if (!freshBlock) return
+          var freshArr = Array.isArray(freshBlock.props && freshBlock.props[listKey])
+            ? freshBlock.props[listKey].slice()
+            : []
+          freshArr[itemIdx] = Object.assign({}, freshArr[itemIdx] || {})
+          freshArr[itemIdx][subKey] = sel.value
+          LPBuilder.setBlockProp(idx, listKey, freshArr)
         }
       })
     })

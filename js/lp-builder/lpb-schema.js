@@ -139,6 +139,8 @@
         hint: 'Ex: Smooth Eyes · Lifting 5D · Carta da Mirian' },
       { k: 'kicker',  label: 'Eyebrow (opcional)', type: 'text', max: 50, optional: true,
         hint: 'Categoria pequena. Ex: TÉCNICA · OPINIÃO · ENTREVISTA' },
+      { k: 'anchor',  label: 'Linka para seção', type: 'select-anchor', optional: true,
+        hint: 'Escolha um bloco da própria página · vazio = item decorativo (sem click)' },
       { k: 'num',     label: 'Numeração (opcional)', type: 'text', max: 4, optional: true,
         hint: 'Vazio = numera automaticamente 01, 02, 03…' },
       { k: 'page_no', label: 'Página (opcional)', type: 'text', max: 6, optional: true,
@@ -1243,11 +1245,42 @@
             { value: 'center', label: 'Centro (default)' },
             { value: 'right',  label: 'Direita' },
           ], default: 'center' },
-        { k: 'text_color', label: 'Cor do texto', type: 'select',
+        { k: 'text_color', label: 'Cor BASE do texto', type: 'select',
           options: [
             { value: 'light',  label: 'Branco (foto escura)' },
             { value: 'dark',   label: 'Grafite (foto clara)' },
-          ], default: 'light' },
+          ], default: 'light',
+          hint: 'Cor padrão · sobrescrita pelos color pickers abaixo se preenchidos' },
+
+        { k: 'eyebrow_size', label: 'Eyebrow · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (9px)' },
+            { value: 'md', label: 'Médio (10px · default)' },
+            { value: 'lg', label: 'Grande (12px)' },
+            { value: 'xl', label: 'Extra (14px)' },
+          ], default: 'md' },
+        { k: 'eyebrow_color', label: 'Eyebrow · cor (custom)', type: 'color', optional: true,
+          hint: 'Vazio = champagne padrão' },
+
+        { k: 'headline_size', label: 'Headline · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (clamp 24-40px)' },
+            { value: 'md', label: 'Médio (clamp 32-56px · default)' },
+            { value: 'lg', label: 'Grande (clamp 40-72px)' },
+            { value: 'xl', label: 'Extra (clamp 48-96px)' },
+          ], default: 'md' },
+        { k: 'headline_color', label: 'Headline · cor (custom)', type: 'color', optional: true,
+          hint: 'Vazio = usa cor base (branco/grafite)' },
+
+        { k: 'subheadline_size', label: 'Subheadline · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (clamp 11-13px)' },
+            { value: 'md', label: 'Médio (clamp 13-16px · default)' },
+            { value: 'lg', label: 'Grande (clamp 15-19px)' },
+            { value: 'xl', label: 'Extra (clamp 17-22px)' },
+          ], default: 'md' },
+        { k: 'subheadline_color', label: 'Subheadline · cor (custom)', type: 'color', optional: true,
+          hint: 'Vazio = usa cor base com 92% opacity' },
         { k: 'overlay', label: 'Overlay sobre a foto', type: 'select',
           options: [
             { value: 'gradient-bottom', label: 'Gradiente embaixo (default · escurece base)' },

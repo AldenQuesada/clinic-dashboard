@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="preload" as="style" href="css/lp-shared.css">
 <link rel="stylesheet" href="css/lp-shared.css">
-<link rel="stylesheet" href="css/lp-blocks.css">
+<link rel="stylesheet" href="css/lp-blocks.css?v=hero">
 <style>
   /* Loader inicial — antes do schema chegar */
   .lp-loader {
@@ -1419,7 +1419,8 @@
       var animAttr = (animType && animType !== 'none')
         ? ' class="lpb-anim-' + esc(animType) + '" data-reveal-anim'
         : '';
-      return '<div data-block-idx="' + idx + '" data-block-type="' + esc(b.type) + '"' + animAttr + '>' + inner + '</div>';
+      // id="bloco-N" pra anchor links (magazine-toc + futuro)
+      return '<div id="bloco-' + idx + '" data-block-idx="' + idx + '" data-block-type="' + esc(b.type) + '"' + animAttr + '>' + inner + '</div>';
     }).join('');
 
     var root = document.getElementById('lpRoot');
@@ -1479,6 +1480,22 @@
       rpc('lp_page_track_conversion', { p_slug: slug }).catch(function () {});
     }, true);
   }
+
+  // Smooth scroll pra anchor links internos (magazine-toc + futuros)
+  document.body.addEventListener('click', function (ev) {
+    var a = ev.target.closest && ev.target.closest('[data-toc-target]');
+    if (!a) return;
+    var target = a.getAttribute('data-toc-target');
+    if (!target) return;
+    var el = document.getElementById(target);
+    if (!el) return;
+    ev.preventDefault();
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Atualiza URL com hash sem causar re-scroll brusco
+    if (history && history.replaceState) {
+      history.replaceState(null, '', '#' + target);
+    }
+  });
 
   // ────────────────────────────────────────────────────────────
   // Boot

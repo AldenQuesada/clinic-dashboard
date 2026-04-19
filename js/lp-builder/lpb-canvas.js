@@ -1214,6 +1214,7 @@
       ? ' lpb-anim-' + _esc(b._style.animation.type) : ''
     var animDA  = animCls ? ' data-reveal-anim' : ''
     return '<div class="lpb-edit-block' + selectedCls + animCls + '" ' +
+      'id="bloco-' + idx + '" ' +
       'data-block-idx="' + idx + '" data-block-type="' + _esc(b.type) + '"' + animDA + '>' +
       _renderBlockInner(b, idx) +
       '</div>'

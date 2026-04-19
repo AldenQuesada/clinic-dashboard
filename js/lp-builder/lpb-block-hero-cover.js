@@ -65,20 +65,36 @@
       overlayStyle = 'background:rgba(44,44,44,' + oAlpha + ');'
     }
 
+    // Sizes por elemento (data-attr · CSS pega)
+    var ebSize  = p.eyebrow_size     || 'md'
+    var hlSize  = p.headline_size    || 'md'
+    var shSize  = p.subheadline_size || 'md'
+
+    // Cores custom (style inline · só se preenchido)
+    function colorStyle(hex) {
+      return (hex && /^#[0-9a-f]{3,8}$/i.test(hex)) ? ' style="color:' + _esc(hex) + '"' : ''
+    }
+
+    // Verifica conteúdo NÃO-VAZIO de forma estrita (trim · evita whitespace fantasma)
+    function _has(v) { return v != null && String(v).trim().length > 0 }
+
     var html = '<section class="blk-hc ' + aspectClass + '" data-color="' + _esc(color) + '" data-align="' + _esc(align) + '"' +
                ' style="' + styleVars + aspectStyle + '">' +
-      // Imagem fundo
       (p.image_url
         ? '<img class="blk-hc-img" src="' + _esc(p.image_url) + '" alt="" fetchpriority="high" decoding="async">'
         : '<div class="blk-hc-img-placeholder">Foto de fundo · adicione no inspector</div>') +
-      // Overlay
       (overlayStyle ? '<div class="blk-hc-overlay" style="' + overlayStyle + '"></div>' : '') +
-      // Texto
       '<div class="blk-hc-text" data-hc-text>' +
-        (p.eyebrow    ? '<div class="blk-hc-eyebrow">'    + _esc(p.eyebrow) + '</div>' : '') +
-        (p.headline   ? '<h1 class="blk-hc-headline">'    + _multiline(p.headline) + '</h1>' : '') +
-        (p.subheadline? '<p class="blk-hc-subheadline">'  + _multiline(p.subheadline) + '</p>' : '') +
-        (p.cta_label
+        (_has(p.eyebrow)
+          ? '<div class="blk-hc-eyebrow" data-size="' + _esc(ebSize) + '"' + colorStyle(p.eyebrow_color) + '>' + _esc(p.eyebrow) + '</div>'
+          : '') +
+        (_has(p.headline)
+          ? '<h1 class="blk-hc-headline" data-size="' + _esc(hlSize) + '"' + colorStyle(p.headline_color) + '>' + _multiline(p.headline) + '</h1>'
+          : '') +
+        (_has(p.subheadline)
+          ? '<p class="blk-hc-subheadline" data-size="' + _esc(shSize) + '"' + colorStyle(p.subheadline_color) + '>' + _multiline(p.subheadline) + '</p>'
+          : '') +
+        (_has(p.cta_label)
           ? '<a class="blk-hc-cta" href="' + _esc(p.cta_url || '#') + '"' +
               (/^https?:\/\//.test(p.cta_url || '') ? ' target="_blank" rel="noopener"' : '') + '>' +
               _esc(p.cta_label) +

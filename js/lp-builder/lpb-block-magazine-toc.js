@@ -36,16 +36,22 @@
     var items = Array.isArray(p.items) ? p.items.filter(function (i) { return i && i.titulo }) : []
 
     var itemsHtml = items.map(function (it, i) {
-      var num    = (it.num && String(it.num).trim()) || _padNum(i + 1)
-      var hasPg  = it.page_no && String(it.page_no).trim()
-      return '<div class="blk-mtoc-item' + (hasPg ? '' : ' no-pg') + '">' +
+      var num     = (it.num && String(it.num).trim()) || _padNum(i + 1)
+      var hasPg   = it.page_no && String(it.page_no).trim()
+      var anchor  = it.anchor && String(it.anchor).trim()
+      var tag     = anchor ? 'a'   : 'div'
+      var attrs   = anchor
+        ? ' href="#' + _esc(anchor) + '" data-toc-target="' + _esc(anchor) + '"'
+        : ''
+      var classes = 'blk-mtoc-item' + (hasPg ? '' : ' no-pg') + (anchor ? ' is-link' : '')
+      return '<' + tag + ' class="' + classes + '"' + attrs + '>' +
         '<div class="blk-mtoc-num">' + _esc(num) + '</div>' +
         '<div class="blk-mtoc-title">' +
           _esc(it.titulo) +
           (it.kicker ? '<span>' + _esc(it.kicker) + '</span>' : '') +
         '</div>' +
         (hasPg ? '<div class="blk-mtoc-pg">' + _esc(it.page_no) + '</div>' : '') +
-      '</div>'
+      '</' + tag + '>'
     }).join('')
 
     if (!items.length) {
