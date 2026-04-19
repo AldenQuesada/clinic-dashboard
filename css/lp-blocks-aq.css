@@ -86,108 +86,130 @@
 }
 
 /* ──────────────────────────────────────────────────────────
- * SVG do rosto
+ * Foto interativa (Onda 30 · upgrade do SVG boneco)
  * ────────────────────────────────────────────────────────── */
-.blk-aq-svg-wrap {
+.blk-aq-photo-wrap {
   position: relative;
   width: 100%;
-  max-width: 480px;
+  max-width: 380px;
   margin: 0 auto;
-  aspect-ratio: 4 / 5;
-}
-.blk-aq-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+  aspect-ratio: 280 / 320;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ivory, #FEFCF8);
+  box-shadow:
+    0 8px 32px rgba(44, 44, 44, 0.10),
+    0 2px 6px rgba(44, 44, 44, 0.05);
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-
-/* Linhas do rosto (monoline editorial) */
-.aq-face-contour,
-.aq-face-brow,
-.aq-face-nose,
-.aq-face-chin,
-.aq-face-neck {
-  fill: none;
-  stroke: var(--graphite, #2C2C2C);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.blk-aq-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
-.aq-face-contour { stroke-width: 1.8; }
-.aq-face-brow    { stroke-width: 2; }
-.aq-face-eye {
-  fill: var(--graphite, #2C2C2C);
-  fill-opacity: 0.85;
-}
-.aq-face-lips {
-  fill: var(--graphite, #2C2C2C);
-  fill-opacity: 0.75;
-  stroke: none;
-}
-
-/* ──────────────────────────────────────────────────────────
- * Hotspots (clicáveis · Feather-style + estado)
- * ────────────────────────────────────────────────────────── */
-.aq-hotspot {
+/* Toggle antes/depois */
+.blk-aq-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(254, 252, 248, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(200, 169, 126, 0.35);
+  color: var(--graphite, #2C2C2C);
+  padding: 8px 14px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.18s ease;
-  transform-origin: center;
-  transform-box: fill-box;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(44, 44, 44, 0.08);
+}
+.blk-aq-toggle:hover {
+  background: var(--champagne, #C8A97E);
+  color: var(--ivory, #FEFCF8);
+  border-color: var(--champagne, #C8A97E);
+}
+/* Hotspots (botões absolutos · top/left percentuais) */
+.aq-hotspot {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;  /* centra no ponto x,y */
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  z-index: 5;
   outline: none;
-}
-.aq-hotspot:focus-visible .aq-dot {
-  stroke-width: 2.5;
-  filter: drop-shadow(0 0 6px rgba(200, 169, 126, 0.9));
-}
-.aq-hit {
-  fill: transparent;
-  pointer-events: all;
+  -webkit-appearance: none;
+  appearance: none;
 }
 .aq-dot {
-  fill: rgba(254, 252, 248, 0.55);
-  stroke: var(--champagne, #C8A97E);
-  stroke-width: 1.5;
-  pointer-events: none;
-  transition: fill 0.22s ease, stroke 0.22s ease, stroke-width 0.22s ease, r 0.22s ease;
+  position: absolute;
+  inset: 8px;  /* dot 16px no centro do hit area 32px */
+  border-radius: 50%;
+  background: rgba(254, 252, 248, 0.45);
+  border: 1.5px solid var(--champagne, #C8A97E);
+  box-shadow: 0 0 0 4px rgba(200, 169, 126, 0.10);
+  transition: all 0.22s ease;
+  display: block;
 }
 .aq-check {
-  stroke: var(--ivory, #FEFCF8);
-  fill: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ivory, #FEFCF8);
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.18s ease;
+  pointer-events: none;
 }
 
-/* Hover/focus state */
-.aq-hotspot:hover .aq-dot {
-  stroke-width: 2.2;
-  fill: rgba(200, 169, 126, 0.20);
-  filter: drop-shadow(0 0 10px rgba(200, 169, 126, 0.45));
+/* Hover */
+.aq-hotspot:hover .aq-dot,
+.aq-hotspot:focus-visible .aq-dot {
+  background: rgba(200, 169, 126, 0.30);
+  border-width: 2px;
+  box-shadow:
+    0 0 0 6px rgba(200, 169, 126, 0.15),
+    0 0 16px rgba(200, 169, 126, 0.45);
+  transform: scale(1.08);
 }
 
-/* Selected state */
+/* Selected */
 .aq-hotspot.is-selected .aq-dot {
-  fill: var(--champagne, #C8A97E);
-  fill-opacity: 0.92;
-  stroke: var(--champagne-dk, #A8895E);
-  stroke-width: 2;
-  filter: drop-shadow(0 0 8px rgba(200, 169, 126, 0.55));
+  background: var(--champagne, #C8A97E);
+  border-color: var(--champagne-dk, #A8895E);
+  border-width: 2px;
+  box-shadow:
+    0 0 0 6px rgba(200, 169, 126, 0.20),
+    0 0 14px rgba(200, 169, 126, 0.55);
 }
 .aq-hotspot.is-selected .aq-check { opacity: 1; }
 
-/* Pulse inicial (3s · 1x) chamando atenção pra interação */
-@keyframes aqPulse {
+/* Pulse inicial · chama atenção pra interação */
+@keyframes aqPulseSoft {
   0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.18); }
+  50%      { transform: scale(1.15); }
 }
 .blk-aq[data-aq-root] .aq-hotspot:not(.is-selected) {
-  animation: aqPulse 1.5s ease-in-out 0s 2 both;
+  animation: aqPulseSoft 1.6s ease-in-out 0.5s 2 both;
 }
 @media (prefers-reduced-motion: reduce) {
   .blk-aq[data-aq-root] .aq-hotspot { animation: none !important; }
-  .aq-dot, .aq-check, .aq-hotspot { transition: none !important; }
+  .aq-dot, .aq-check, .aq-hotspot, .blk-aq-photo { transition: none !important; }
 }
 
 /* ──────────────────────────────────────────────────────────

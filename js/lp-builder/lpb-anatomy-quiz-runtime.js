@@ -472,6 +472,25 @@
         _toggleArea(rootEl, rm.getAttribute('data-aq-remove'))
         return
       }
+      // Onda 30: toggle antes/depois das fotos
+      var tog = e.target.closest && e.target.closest('[data-aq-toggle]')
+      if (tog && rootEl.contains(tog)) {
+        e.preventDefault()
+        var wrap = rootEl.querySelector('[data-aq-photo-wrap]')
+        if (!wrap) return
+        var before = wrap.querySelector('.blk-aq-photo-before')
+        var label  = tog.querySelector('[data-aq-tog-label]')
+        if (!before) return
+        var showing = before.style.opacity === '1'
+        if (showing) {
+          before.style.opacity = '0'
+          if (label) label.textContent = 'Ver antes'
+        } else {
+          before.style.opacity = '1'
+          if (label) label.textContent = 'Ver depois'
+        }
+        return
+      }
     })
 
     // Acessibilidade: Enter/Space no hotspot

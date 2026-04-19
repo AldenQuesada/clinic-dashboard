@@ -37,19 +37,27 @@
   }
 
   // ──────────────────────────────────────────────────────────
-  // Áreas anatômicas (metadados imutáveis)
-  // Cada área lista: label premium + protocolo Mirian + hotspots [x,y]
-  // viewBox 0 0 400 500 (proporção 4/5 retrato editorial)
+  // Fotos reais (Supabase Storage · uploaded 2026-04-19)
+  // Progressão de envelhecimento da MESMA pessoa
+  // ──────────────────────────────────────────────────────────
+  var PHOTO_BASE   = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/02.jpg'  // 40+ jovial (default)
+  var PHOTO_BEFORE = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/03.jpg'  // 55+ com sinais
+  var PHOTO_YOUNG  = 'https://oqboitkpcvuaudouwvkl.supabase.co/storage/v1/object/public/lp-assets/anatomy/01.jpg'  // 30+
+
+  // ──────────────────────────────────────────────────────────
+  // Áreas anatômicas (coordenadas percentuais sobre a foto · responsivo)
+  // x: 0-100 (esquerda→direita) · y: 0-100 (topo→base)
+  // Foto crop fechado · só rosto frontal (sem pescoço completo)
   // ──────────────────────────────────────────────────────────
   var AREAS = Object.freeze({
-    testa:         { label: 'Testa',          protocol: 'Toxina botulínica + lifting fototermal',  hotspots: [[200, 110]] },
-    tempora:       { label: 'Têmporas',       protocol: 'Volumização com AH',                       hotspots: [[105, 165], [295, 165]] },
-    olheiras:      { label: 'Olheiras',       protocol: 'Smooth Eyes (laser fracionado + AH)',     hotspots: [[160, 215], [240, 215]] },
-    bigode_chines: { label: 'Bigode chinês',  protocol: 'Preenchimento sulco nasogeniano com AH',  hotspots: [[160, 295], [240, 295]] },
-    labios:        { label: 'Lábios',         protocol: 'Preenchimento com AH',                     hotspots: [[200, 335]] },
-    mandibular:    { label: 'Mandíbula',      protocol: 'Contorno com AH',                          hotspots: [[120, 380], [280, 380]] },
-    papada:        { label: 'Papada',         protocol: 'Lipo enzimática + Fotona 4D',             hotspots: [[200, 415]] },
-    pescoco:       { label: 'Pescoço',        protocol: 'Fotona 4D + bioestimulador',              hotspots: [[200, 470]] },
+    testa:           { label: 'Testa',                protocol: 'Toxina botulínica + lifting fototermal', hotspots: [[50, 12]] },
+    entre_sobrancelhas: { label: 'Entre sobrancelhas', protocol: 'Toxina botulínica (linha do leão)',     hotspots: [[50, 22]] },
+    pe_de_galinha:   { label: 'Pés de galinha',       protocol: 'Toxina botulínica (canto dos olhos)',    hotspots: [[18, 30], [82, 30]] },
+    olheiras:        { label: 'Olheiras',             protocol: 'Smooth Eyes (laser fracionado + AH)',    hotspots: [[36, 38], [64, 38]] },
+    bochechas:       { label: 'Volume de bochecha',   protocol: 'Volumização com AH (área zigomática)',   hotspots: [[18, 50], [82, 50]] },
+    bigode_chines:   { label: 'Bigode chinês',        protocol: 'Preenchimento sulco nasogeniano com AH', hotspots: [[36, 58], [64, 58]] },
+    labios:          { label: 'Lábios',               protocol: 'Preenchimento com AH',                   hotspots: [[50, 73]] },
+    mandibular:      { label: 'Mandíbula · contorno', protocol: 'Contorno mandibular com AH',             hotspots: [[16, 86], [84, 86]] },
   })
 
   // Ícone Feather "user-check" inline · pra header empty-state
@@ -154,6 +162,10 @@
       btnHtml = '<a class="blk-aq-cta" href="#" data-aq-cta="1"><span>' + _esc(ctaLabel) + '</span></a>'
     }
 
+    // URLs configuráveis via props (defaults = fotos do Supabase)
+    var photoBase   = p.photo_url        || PHOTO_BASE
+    var photoBefore = p.photo_url_before || PHOTO_BEFORE
+
     var html = '<section class="blk-aq" data-bg="' + _esc(bg) + '"' +
                ' id="' + uid + '"' +
                ' data-aq-root="1"' +
@@ -167,16 +179,20 @@
     if (subtitle) html += '<p class="blk-aq-subtitle">' + _esc(subtitle) + '</p>'
     html += '</header>'
 
-    // Grid: SVG esquerda · painel direita
+    // Grid: foto interativa esquerda · painel direita
     html += '<div class="blk-aq-grid">'
 
-    // Coluna SVG
-    html += '<div class="blk-aq-svg-wrap">' +
-      '<svg class="blk-aq-svg" viewBox="0 0 400 500" preserveAspectRatio="xMidYMid meet"' +
-      ' role="img" aria-label="Mapa facial interativo">' +
-      _faceSvg(uid) +
-      _hotspotsSvg() +
-      '</svg>' +
+    // Coluna foto (relative · hotspots absolute %)
+    html += '<div class="blk-aq-photo-wrap" data-aq-photo-wrap="1">' +
+      // 2 fotos sobrepostas: BASE (jovial) + BEFORE (com sinais) com opacidade
+      '<img class="blk-aq-photo blk-aq-photo-base"   src="' + _esc(photoBase)   + '" alt="Rosto · após cuidados" loading="lazy" decoding="async">' +
+      '<img class="blk-aq-photo blk-aq-photo-before" src="' + _esc(photoBefore) + '" alt="Rosto · antes" loading="lazy" decoding="async" style="opacity:0">' +
+      // Toggle sutil "antes ↔ depois"
+      '<button class="blk-aq-toggle" type="button" data-aq-toggle="1" aria-label="Alternar antes/depois">' +
+        '<span class="aq-tog-label" data-aq-tog-label>Ver antes</span>' +
+      '</button>' +
+      // Hotspots (gerados via _hotspotsHtml com posições %)
+      _hotspotsHtml() +
     '</div>'
 
     // Coluna painel
@@ -194,6 +210,30 @@
     html += '<div class="blk-aq-cta-wrap">' + btnHtml + '</div>'
 
     html += '</section>'
+    return html
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Hotspots HTML · botões absolutos com top/left percentuais
+  // ──────────────────────────────────────────────────────────
+  function _hotspotsHtml() {
+    var html = ''
+    Object.keys(AREAS).forEach(function (key) {
+      var a = AREAS[key]
+      var tip = _esc(a.label + ' · ' + a.protocol)
+      a.hotspots.forEach(function (pt, idx) {
+        html += '<button type="button" class="aq-hotspot" data-area="' + _esc(key) + '"' +
+          ' style="left:' + pt[0] + '%; top:' + pt[1] + '%"' +
+          ' aria-label="' + tip + '" title="' + tip + '">' +
+          '<span class="aq-dot"></span>' +
+          '<span class="aq-check">' +
+            '<svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<polyline points="2 6 5 9 10 3"/>' +
+            '</svg>' +
+          '</span>' +
+        '</button>'
+      })
+    })
     return html
   }
 
