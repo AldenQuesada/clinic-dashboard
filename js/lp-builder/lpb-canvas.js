@@ -1292,7 +1292,9 @@
       // de igualdade — browser normaliza HTML e pode dar falso positivo)
       blocks.forEach(function (b, idx) {
         var el = existing[idx]
+        if (!el) return
         var newInner = _renderBlockInner(b, idx)
+        // Sempre re-aplica · browser normaliza HTML e check de === pode mentir
         el.innerHTML = newInner
         el.querySelectorAll('a').forEach(function (a) { a.setAttribute('href', 'javascript:void(0)') })
         // toggle selection class
@@ -1463,5 +1465,24 @@
     return fn ? fn(resolved) : ''
   }
 
-  window.LPBCanvas = { mount: mount, render: render, renderBlockForExport: renderBlockForExport }
+  // Onda 30 · update DIRETO de 1 bloco no iframe (defesa em profundidade)
+  // Usado pelo inspector quando setBlockProp roda · garante visualização
+  // imediata mesmo se pipeline state-changed → render() falhar
+  function updateBlock(idx) {
+    if (!_frame || !_frame.contentDocument) return
+    var page = LPBuilder.getCurrentPage()
+    if (!page || !page.blocks || !page.blocks[idx]) return
+    var b = page.blocks[idx]
+    var el = _frame.contentDocument.querySelector('.lpb-edit-block[data-block-idx="' + idx + '"]')
+    if (!el) return
+    try {
+      var newInner = _renderBlockInner(b, idx)
+      el.innerHTML = newInner
+      el.querySelectorAll('a').forEach(function (a) { a.setAttribute('href', 'javascript:void(0)') })
+    } catch (err) {
+      console.error('[LPBCanvas.updateBlock] erro:', err)
+    }
+  }
+
+  window.LPBCanvas = { mount: mount, render: render, renderBlockForExport: renderBlockForExport, updateBlock: updateBlock }
 })()

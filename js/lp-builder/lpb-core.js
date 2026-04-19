@@ -216,15 +216,24 @@
 
   function setBlockProp(idx, key, value) {
     var b = getBlock(idx)
-    if (!b) return
+    if (!b) {
+      console.warn('[setBlockProp] bloco não encontrado idx=', idx)
+      return
+    }
     b.props = b.props || {}
     b.props[key] = value
     _setDirty(true)
     _emit('lpb:state-changed')
-    // Defesa em profundidade: força re-render do canvas mesmo se o
-    // listener de state-changed estiver bloqueado/condicionalmente desligado
-    if (window.LPBCanvas && window.LPBCanvas.render) {
-      try { window.LPBCanvas.render() } catch (_) {}
+    // Defesa em profundidade · 2 caminhos:
+    // 1. updateBlock direto no iframe (NOVO · imediato, sem depender do pipeline)
+    // 2. render() completo como fallback
+    if (window.LPBCanvas) {
+      if (LPBCanvas.updateBlock) {
+        try { LPBCanvas.updateBlock(idx) } catch (_) {}
+      }
+      if (LPBCanvas.render) {
+        try { LPBCanvas.render() } catch (_) {}
+      }
     }
   }
 
