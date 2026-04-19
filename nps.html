@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sua opinião · Clínica Mirian de Paula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: #1A1A2E; background: linear-gradient(135deg, #F8F5F0 0%, #EFE8DB 100%);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .nps-card {
+    background: #FFFFFF; border-radius: 14px; padding: 48px 40px;
+    max-width: 520px; width: 100%;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+    text-align: center;
+  }
+  .eyebrow {
+    font-family: 'Montserrat', sans-serif; font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase; color: #B8956A; margin-bottom: 10px; font-weight: 500;
+  }
+  h1 { font-size: 34px; font-weight: 400; letter-spacing: 0.3px; margin-bottom: 12px; }
+  .partner-name { font-style: italic; color: #B8956A; }
+  .question { font-size: 17px; color: #4A4A5C; margin: 20px 0 32px; line-height: 1.6; }
+
+  .score-grid {
+    display: grid; grid-template-columns: repeat(11, 1fr); gap: 6px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 520px) { .score-grid { grid-template-columns: repeat(6, 1fr); } }
+  .score-btn {
+    padding: 14px 0; border: 1px solid #E5DDD1; background: #FAF7F2;
+    font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 16px;
+    color: #1A1A2E; cursor: pointer; border-radius: 6px;
+    transition: all 140ms ease;
+  }
+  .score-btn:hover { transform: translateY(-2px); background: #FFFFFF; }
+  .score-btn.selected {
+    background: #1A1A2E; color: #FFFFFF; border-color: #1A1A2E;
+    transform: translateY(-2px);
+  }
+  .score-scale-labels {
+    display: flex; justify-content: space-between; font-family: 'Montserrat', sans-serif;
+    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+    color: #8B7355; margin-bottom: 32px;
+  }
+
+  textarea {
+    width: 100%; min-height: 90px; padding: 14px 16px;
+    border: 1px solid #E5DDD1; border-radius: 8px; background: #FAF7F2;
+    font-family: 'Cormorant Garamond', Georgia, serif; font-size: 16px;
+    color: #1A1A2E; resize: vertical; margin-bottom: 24px;
+  }
+  textarea:focus { outline: none; border-color: #B8956A; background: #FFFFFF; }
+  textarea::placeholder { color: #8B7355; font-style: italic; }
+
+  .submit-btn {
+    padding: 16px 40px; background: #1A1A2E; color: #FFFFFF;
+    border: none; border-radius: 8px; font-family: 'Montserrat', sans-serif;
+    font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    cursor: pointer; transition: all 180ms ease; width: 100%;
+  }
+  .submit-btn:hover:not(:disabled) { background: #B8956A; }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .thanks, .error, .already {
+    padding: 40px 20px; text-align: center;
+  }
+  .thanks h1 { color: #10B981; }
+  .error h1 { color: #EF4444; }
+  .thanks p, .error p, .already p { color: #6B6B7D; margin-top: 12px; font-size: 16px; }
+  .loading { padding: 60px 20px; text-align: center; color: #8B7355; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+</style>
+</head>
+<body>
+
+<div id="npsRoot" class="nps-card loading">Carregando…</div>
+
+<script src="js/config/env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<script>
+;(function () {
+  'use strict'
+
+  var _state = { token: null, partnerName: '', score: null, submitting: false }
+
+  function _esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c]
+    })
+  }
+
+  function renderError(msg) {
+    document.getElementById('npsRoot').className = 'nps-card error'
+    document.getElementById('npsRoot').innerHTML =
+      '<div class="eyebrow">Clínica Mirian de Paula</div>' +
+      '<h1>Link inválido</h1>' +
+      '<p>' + _esc(msg || 'Peça à clínica um novo link.') + '</p>'
+  }
+
+  function renderAlready() {
+    document.getElementById('npsRoot').className = 'nps-card already'
+    document.getElementById('npsRoot').innerHTML =
+      '<div class="eyebrow">Clínica Mirian de Paula</div>' +
+      '<h1>Já respondido</h1>' +
+      '<p>Obrigada! Já recebemos sua avaliação desta rodada.</p>'
+  }
+
+  function renderThanks() {
+    document.getElementById('npsRoot').className = 'nps-card thanks'
+    document.getElementById('npsRoot').innerHTML =
+      '<div class="eyebrow">Clínica Mirian de Paula</div>' +
+      '<h1>Obrigada!</h1>' +
+      '<p>Sua opinião chegou. Ela guia a construção da nossa parceria.</p>'
+  }
+
+  function renderForm() {
+    var buttons = []
+    for (var i = 0; i <= 10; i++) {
+      buttons.push('<button type="button" class="score-btn' +
+        (_state.score === i ? ' selected' : '') + '" data-score="' + i + '">' + i + '</button>')
+    }
+    document.getElementById('npsRoot').className = 'nps-card'
+    document.getElementById('npsRoot').innerHTML =
+      '<div class="eyebrow">Clínica Mirian de Paula</div>' +
+      '<h1>Como tem sido <span class="partner-name">' + _esc(_state.partnerName) + '</span>?</h1>' +
+      '<p class="question">De 0 a 10, qual a chance de você recomendar nossa parceria a outro negócio como o seu?</p>' +
+      '<div class="score-grid">' + buttons.join('') + '</div>' +
+      '<div class="score-scale-labels"><span>0 · Nada provável</span><span>10 · Extremamente</span></div>' +
+      '<textarea id="npsComment" placeholder="Quer deixar um comentário? (opcional)"></textarea>' +
+      '<button type="button" id="npsSubmit" class="submit-btn"' +
+        (_state.score == null ? ' disabled' : '') + '>Enviar</button>'
+
+    document.querySelectorAll('[data-score]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        _state.score = Number(b.getAttribute('data-score'))
+        renderForm()
+      })
+    })
+    document.getElementById('npsSubmit').addEventListener('click', submit)
+  }
+
+  async function submit() {
+    if (_state.score == null || _state.submitting) return
+    _state.submitting = true
+    var btn = document.getElementById('npsSubmit')
+    btn.disabled = true; btn.textContent = 'Enviando…'
+
+    var comment = (document.getElementById('npsComment').value || '').trim()
+    try {
+      var r = await window._sbShared.rpc('b2b_nps_submit', {
+        p_token: _state.token,
+        p_score: _state.score,
+        p_comment: comment || null,
+      })
+      if (r.error) throw new Error(r.error.message)
+      var d = r.data
+      if (!d || !d.ok) {
+        if (d && d.error === 'token_invalid_or_used') { renderAlready(); return }
+        throw new Error((d && d.error) || 'desconhecido')
+      }
+      renderThanks()
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Enviar'
+      alert('Erro: ' + (e.message || e))
+      _state.submitting = false
+    }
+  }
+
+  function getToken() {
+    var u = new URL(window.location.href)
+    return u.searchParams.get('t') || u.searchParams.get('token')
+  }
+
+  async function boot() {
+    _state.token = getToken()
+    if (!_state.token) { renderError('Token ausente.'); return }
+
+    var tries = 0
+    while (!window._sbShared && tries < 40) {
+      await new Promise(function (r) { setTimeout(r, 100) })
+      tries++
+    }
+    if (!window._sbShared) { renderError('Conexão indisponível.'); return }
+
+    try {
+      var r = await window._sbShared.rpc('b2b_nps_get', { p_token: _state.token })
+      if (r.error) throw new Error(r.error.message)
+      var d = r.data
+      if (!d || !d.ok) { renderError((d && d.error) || 'Link não encontrado.'); return }
+      if (d.already_answered) { renderAlready(); return }
+      _state.partnerName = d.partnership_name || ''
+      renderForm()
+    } catch (e) {
+      renderError(e.message || String(e))
+    }
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot)
+  else boot()
+})()
+</script>
+
+</body>
+</html>

@@ -1047,3 +1047,144 @@ textarea.b2b-input { resize: vertical; min-height: 60px; }
   color: var(--b2b-text-muted); font-size: 14px; line-height: 1.8;
   background: rgba(10, 14, 20, 0.3); border-radius: 8px;
 }
+
+/* ═══════════════ Header buttons (Pitch + Insight) ═══════════════ */
+.b2b-pitch-launch, .b2b-insight-launch {
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--b2b-border-strong);
+  color: var(--b2b-text);
+  font-family: inherit; font-size: 11px;
+  letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;
+  border-radius: 6px; cursor: pointer;
+  transition: all 160ms ease; margin-right: 6px;
+}
+.b2b-pitch-launch:hover, .b2b-insight-launch:hover {
+  background: var(--b2b-champagne); color: #0A0E14; border-color: var(--b2b-champagne);
+}
+
+/* ═══════════════ Insight toast (WOW #9) ═══════════════ */
+.b2b-insight-host {
+  position: fixed; top: 80px; right: 16px; z-index: 850;
+  display: flex; flex-direction: column; gap: 10px;
+  max-width: 380px; width: calc(100vw - 32px);
+}
+.b2b-insight-card {
+  border: 1px solid; border-radius: 10px; padding: 14px 16px;
+  backdrop-filter: blur(12px);
+  animation: b2b-insight-in 280ms ease;
+}
+@keyframes b2b-insight-in {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.b2b-insight-hdr {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.b2b-insight-badge {
+  font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 10px; color: #0A0E14; font-weight: 700;
+}
+.b2b-insight-partner {
+  font-size: 11px; color: var(--b2b-text-muted); letter-spacing: 0.5px;
+  margin-left: auto; padding-right: 6px;
+}
+.b2b-insight-close {
+  background: transparent; border: none; color: var(--b2b-text-muted);
+  font-size: 20px; line-height: 1; cursor: pointer; padding: 0 4px;
+  margin-left: 4px;
+}
+.b2b-insight-close:hover { color: var(--b2b-text); }
+.b2b-insight-headline {
+  font-size: 14px; font-weight: 600; color: var(--b2b-text); line-height: 1.4;
+  margin-bottom: 6px;
+}
+.b2b-insight-detail {
+  font-size: 12px; color: var(--b2b-text-muted); line-height: 1.5;
+  margin-bottom: 8px;
+}
+.b2b-insight-action {
+  font-size: 12px; color: var(--b2b-text); line-height: 1.5;
+  padding: 8px 10px; background: rgba(255,255,255,0.05);
+  border-radius: 6px; margin-bottom: 8px;
+}
+.b2b-insight-open {
+  background: transparent; border: 1px solid var(--b2b-border);
+  color: var(--b2b-champagne); font-size: 11px; letter-spacing: 1px;
+  text-transform: uppercase; padding: 6px 12px; cursor: pointer;
+  border-radius: 5px; font-family: inherit;
+}
+.b2b-insight-open:hover { background: rgba(184,149,106,0.1); }
+
+/* ═══════════════ Pitch Mode (WOW #12) ═══════════════ */
+.b2b-pitch-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #0A0E14 0%, #1A1A2E 100%);
+  color: #F5F0E8; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  animation: b2b-pitch-in 400ms ease;
+}
+@keyframes b2b-pitch-in { from { opacity: 0; } to { opacity: 1; } }
+.b2b-pitch-slide {
+  text-align: center; max-width: 880px; padding: 40px;
+  animation: b2b-pitch-slide-in 500ms ease;
+}
+@keyframes b2b-pitch-slide-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.b2b-pitch-eyebrow {
+  font-family: 'Montserrat', sans-serif; font-size: 13px;
+  letter-spacing: 6px; text-transform: uppercase;
+  color: var(--b2b-champagne); margin-bottom: 28px;
+}
+.b2b-pitch-title {
+  font-size: 120px; font-weight: 300; line-height: 1;
+  letter-spacing: 2px; margin-bottom: 36px; color: #F5F0E8;
+}
+.b2b-pitch-title em { color: var(--b2b-champagne); font-style: italic; font-weight: 400; }
+.b2b-pitch-title small { font-size: 32px; display: block; margin-top: 14px; color: var(--b2b-text-muted); letter-spacing: 4px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; font-weight: 400; }
+.b2b-pitch-title [data-stat] { color: var(--b2b-champagne); }
+@media (max-width: 720px) {
+  .b2b-pitch-title { font-size: 72px; }
+  .b2b-pitch-title small { font-size: 22px; }
+}
+.b2b-pitch-subtitle {
+  font-size: 24px; font-style: italic; color: var(--b2b-text-muted);
+  max-width: 640px; margin: 0 auto; line-height: 1.5;
+}
+.b2b-pitch-dots {
+  position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px;
+}
+.b2b-pitch-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(245, 240, 232, 0.25); border: none; cursor: pointer;
+  transition: all 180ms ease; padding: 0;
+}
+.b2b-pitch-dot:hover { background: rgba(245, 240, 232, 0.5); }
+.b2b-pitch-dot.active { background: var(--b2b-champagne); width: 32px; border-radius: 5px; }
+.b2b-pitch-hints {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 20px;
+  font-family: 'Montserrat', sans-serif; font-size: 9px;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--b2b-text-muted);
+}
+.b2b-pitch-close {
+  position: absolute; top: 20px; right: 20px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(245, 240, 232, 0.08); border: 1px solid rgba(245,240,232,0.2);
+  color: #F5F0E8; font-size: 28px; cursor: pointer; line-height: 1;
+}
+.b2b-pitch-close:hover { background: rgba(245,240,232,0.15); }
+.b2b-pitch-prev, .b2b-pitch-next {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(245, 240, 232, 0.05); border: 1px solid rgba(245,240,232,0.15);
+  color: #F5F0E8; font-size: 32px; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.b2b-pitch-prev:hover, .b2b-pitch-next:hover { background: rgba(245,240,232,0.12); }
+.b2b-pitch-prev { left: 24px; }
+.b2b-pitch-next { right: 24px; }

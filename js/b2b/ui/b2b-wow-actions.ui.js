@@ -112,7 +112,9 @@
     }
   }
 
-  function _render() {
+  function _render(partnership) {
+    var showCert = partnership && (partnership.status === 'closed' || partnership.status === 'review' || partnership.status === 'paused')
+    var showNps  = partnership && partnership.status === 'active'
     return '<div class="b2b-wow-bar">' +
       '<button type="button" class="b2b-wow-btn b2b-wow-dossier" data-wow="dossier">' +
         '<span class="b2b-wow-ico">📄</span>' +
@@ -129,13 +131,63 @@
         '<span class="b2b-wow-lbl">IA conteúdo</span>' +
         '<span class="b2b-wow-sub">Carrossel + ganchos</span>' +
       '</button>' +
+      (showNps
+        ? '<button type="button" class="b2b-wow-btn b2b-wow-nps" data-wow="nps">' +
+            '<span class="b2b-wow-ico">📊</span>' +
+            '<span class="b2b-wow-lbl">Link NPS</span>' +
+            '<span class="b2b-wow-sub">Trimestral · 1 clique</span>' +
+          '</button>'
+        : '') +
+      (showCert
+        ? '<button type="button" class="b2b-wow-btn b2b-wow-cert" data-wow="cert">' +
+            '<span class="b2b-wow-ico">🏆</span>' +
+            '<span class="b2b-wow-lbl">Certificado</span>' +
+            '<span class="b2b-wow-sub">Honraria de encerramento</span>' +
+          '</button>'
+        : '') +
     '</div>'
+  }
+
+  async function _onNps(partnership) {
+    if (!window.B2BNpsRepository) return
+    try {
+      var r = await window.B2BNpsRepository.issue(partnership.id)
+      if (!r || !r.ok) throw new Error(r && r.error || 'desconhecido')
+      var url = window.location.origin + '/nps.html?t=' + encodeURIComponent(r.token)
+      try {
+        await navigator.clipboard.writeText(url)
+        _toast() && _toast().success('Link NPS copiado · ' + url.slice(0, 60) + '…')
+      } catch (_) {
+        _toast() && _toast().info('Link NPS: ' + url)
+      }
+      window.open(url, '_blank', 'noopener')
+    } catch (e) {
+      _toast() && _toast().error('Falha NPS: ' + (e.message || e))
+    }
+  }
+
+  async function _onCert(partnership) {
+    if (!window.B2BCertificateService) {
+      _toast() && _toast().error('Certificate service não carregado'); return
+    }
+    try {
+      var funnel = null
+      if (window.B2BVouchersRepository && window.B2BVouchersRepository.funnel) {
+        funnel = await window.B2BVouchersRepository.funnel(partnership.id).catch(function () { return null })
+      }
+      window.B2BCertificateService.open(partnership, {
+        closed_at: partnership.status === 'closed' ? (partnership.updated_at || new Date().toISOString()) : null,
+        funnel: funnel,
+      })
+    } catch (e) {
+      _toast() && _toast().error('Falha: ' + (e.message || e))
+    }
   }
 
   function mount(hostId, partnership) {
     var host = document.getElementById(hostId)
     if (!host || !partnership || !partnership.id) return
-    host.innerHTML = _render()
+    host.innerHTML = _render(partnership)
 
     host.querySelectorAll('[data-wow]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -145,6 +197,8 @@
         if (kind === 'dossier') return _onDossier(partnership).finally(done)
         if (kind === 'panel')   return _onPanel(partnership).finally(done)
         if (kind === 'ia')      return _onIa(partnership).finally(done)
+        if (kind === 'nps')     return _onNps(partnership).finally(done)
+        if (kind === 'cert')    return _onCert(partnership).finally(done)
         done()
       })
     })

@@ -66,6 +66,10 @@
           _renderCoverageBadge() +
         '</div>' +
         '<div class="b2b-header-ctrl">' +
+          '<button type="button" class="b2b-pitch-launch" data-pitch-enter ' +
+            'title="Modo Pitch · apresentação fullscreen">◎ Modo Pitch</button>' +
+          '<button type="button" class="b2b-insight-launch" data-insight-generate ' +
+            'title="Gerar insight semanal com IA">✨ Insight IA</button>' +
           _renderScoutToggle(enabled) +
           _renderBudgetBadge(budget, _state.consumption) +
         '</div>' +
@@ -168,6 +172,22 @@
     if (toggleBtn) {
       toggleBtn.addEventListener('click', _onToggleScout)
     }
+
+    // Modo Pitch (WOW #12)
+    var pitchBtn = root.querySelector('[data-pitch-enter]')
+    if (pitchBtn) {
+      pitchBtn.addEventListener('click', function () {
+        if (window.B2BPitchMode) window.B2BPitchMode.enter()
+      })
+    }
+
+    // Insight IA on-demand (WOW #9)
+    var insightBtn = root.querySelector('[data-insight-generate]')
+    if (insightBtn) {
+      insightBtn.addEventListener('click', function () {
+        if (window.B2BInsightToast) window.B2BInsightToast.generate()
+      })
+    }
   }
 
   function _rerenderTabs(root) {
@@ -261,6 +281,9 @@
 
     // Emite tab-change inicial pra list renderizar
     _emit('b2b:tab-change', { tab: _state.activeTab })
+
+    // Sinaliza que o shell terminou de montar (pra insight toast etc)
+    _emit('b2b:shell-mounted', {})
   }
 
   function getActiveTab() { return _state.activeTab }
