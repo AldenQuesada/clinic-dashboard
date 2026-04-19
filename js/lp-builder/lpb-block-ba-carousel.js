@@ -96,13 +96,12 @@
       var dots  = root.querySelectorAll('[data-bac-dot], .blk-bac-dot')
       if (!track || !dots.length) return
 
-      // Click nos dots → scroll
+      // Click nos dots → scroll · slide é 100% width sem gap
       dots.forEach(function (d) {
         d.addEventListener('click', function () {
           var idx = parseInt(d.dataset.bacIdx, 10) || 0
           var sw = track.children[0] ? track.children[0].offsetWidth : 1
-          var gap = 2  // gap entre slides
-          track.scrollTo({ left: idx * (sw + gap), behavior: 'smooth' })
+          track.scrollTo({ left: idx * sw, behavior: 'smooth' })
         })
       })
 
@@ -114,8 +113,7 @@
         requestAnimationFrame(function () {
           scrollPending = false
           var sw = track.children[0] ? track.children[0].offsetWidth : 1
-          var gap = 2
-          var idx = Math.round(track.scrollLeft / (sw + gap))
+          var idx = Math.round(track.scrollLeft / sw)
           dots.forEach(function (d, i) {
             d.classList.toggle('active', i === idx)
           })

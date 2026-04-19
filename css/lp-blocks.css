@@ -2366,23 +2366,29 @@
 
 .blk-bac-track {
   display: flex;
-  gap: 2px;
+  align-items: stretch;     /* todos slides com altura igual */
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  padding: 0 1.5rem 1rem;
+  padding: 0 0 1rem;        /* sem padding lateral · slide ocupa 100% */
 }
 .blk-bac-track::-webkit-scrollbar { display: none; }
 
 .blk-bac-slide {
-  min-width: calc(100% - 3rem);
-  scroll-snap-align: center;
+  min-width: 100%;          /* full viewport width · sem peek */
+  width: 100%;
+  scroll-snap-align: start;
   flex-shrink: 0;
+  display: flex;
+  padding: 0 1.5rem;        /* padding interno (era do track antes) */
+  box-sizing: border-box;
 }
 .blk-bac-card {
+  flex: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr auto;  /* fotos preenchem · info fixa embaixo */
   gap: 2px;
   background: rgba(245,240,232,.04);
   border: 1px solid rgba(200,169,126,.15);
