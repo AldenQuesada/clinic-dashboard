@@ -562,7 +562,7 @@
       // TODAS as seções abrem por default (user colapsa o que quiser)
       groupSectionsHtml += _section(sectionId, g.label, bodyHtml, {
         icon: g.icon,
-        defaultOpen: true,
+        defaultOpen: false,  // acordeão · todas fechadas por default · user abre 1 por vez
       })
     })
 
@@ -609,7 +609,20 @@
         _section(b.type + '__ajustes', 'Ajustes avançados (estilo)', _renderStyleControls(idx, b), { icon: 'sliders' }) +
       '</div>'
 
+    // Preserva scroll · innerHTML reseta scrollTop pra 0 e perde a posição do user
+    var savedScrollRoot   = _root.scrollTop
+    var contentEl         = _root.querySelector('.lpb-insp-content')
+    var savedScrollContent = contentEl ? contentEl.scrollTop : 0
+
     _root.innerHTML = html
+
+    // Restaura scroll após re-render (microtask · DOM já novo)
+    requestAnimationFrame(function () {
+      _root.scrollTop = savedScrollRoot
+      var newContentEl = _root.querySelector('.lpb-insp-content')
+      if (newContentEl) newContentEl.scrollTop = savedScrollContent
+    })
+
     try { _attach(idx) }
     catch (err) {
       console.error('[lpb-inspector] _attach falhou (handlers não bindados):', err)
@@ -667,13 +680,33 @@
     var editingLang = (window.LPBI18n && LPBI18n.getEditingLang) ? LPBI18n.getEditingLang() : 'pt-BR'
     var isI18nMode  = window.LPBI18n && editingLang !== (LPBI18n.DEFAULT_LANG || 'pt-BR')
 
-    // Section accordion toggle
+    // Section accordion toggle · MODO ACORDEÃO (uma aberta por vez)
     _root.querySelectorAll('.lpb-insp-section-h').forEach(function (h) {
       h.onclick = function () {
         var sec = h.parentElement
-        var id = sec.dataset.section
-        sec.classList.toggle('collapsed')
-        _expandedSections[id] = !sec.classList.contains('collapsed')
+        var id  = sec.dataset.section
+        var wasCollapsed = sec.classList.contains('collapsed')
+        // Fecha TODAS as outras seções primeiro (modo acordeão puro)
+        _root.querySelectorAll('.lpb-insp-section').forEach(function (s) {
+          if (s !== sec) {
+            s.classList.add('collapsed')
+            if (s.dataset.section) _expandedSections[s.dataset.section] = false
+          }
+        })
+        // Toggle a clicada
+        if (wasCollapsed) {
+          sec.classList.remove('collapsed')
+          _expandedSections[id] = true
+          // Auto-scroll suave pra trazer a seção pro topo do scroll do inspector
+          setTimeout(function () {
+            var scroller = _root.querySelector('.lpb-insp-content') || _root
+            var top = sec.offsetTop - 8
+            scroller.scrollTo({ top: top, behavior: 'smooth' })
+          }, 80)
+        } else {
+          sec.classList.add('collapsed')
+          _expandedSections[id] = false
+        }
       }
     })
 
