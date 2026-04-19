@@ -1553,14 +1553,98 @@
       description: 'Duas fotos lado a lado com labels Antes/Depois. Carrossel automático se >1 slide. Dots em rombo.',
       group: 'prova',
       fields: [
-        { k: 'eyebrow',     label: 'Eyebrow', type: 'text', max: 40, optional: true,
+        // ── Eyebrow + companions (size/color/padx) ─────────────
+        { k: 'eyebrow',       label: 'Eyebrow', type: 'text', max: 40, optional: true,
           default: 'Resultados reais' },
-        { k: 'titulo',      label: 'Título',  type: 'text', max: 60, optional: true,
+        { k: 'eyebrow_size',  label: 'Eyebrow · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (8px)' },
+            { value: 'md', label: 'Médio (9px · default)' },
+            { value: 'lg', label: 'Grande (11px)' },
+            { value: 'xl', label: 'Extra (13px)' },
+          ], default: 'md' },
+        { k: 'eyebrow_color', label: 'Eyebrow · cor (custom)', type: 'color', optional: true,
+          hint: 'Vazio = champagne padrão' },
+        { k: 'eyebrow_padx',  label: 'Eyebrow · espaçamento lateral', type: 'select',
+          options: [
+            { value: '0',  label: 'Zero (encostado nas bordas)' },
+            { value: 'sm', label: 'Pequeno (0.5rem)' },
+            { value: 'md', label: 'Médio (1.5rem · default)' },
+            { value: 'lg', label: 'Grande (2.5rem)' },
+            { value: 'xl', label: 'Extra (4rem)' },
+          ], default: 'md' },
+
+        // ── Título + companions ────────────────────────────────
+        { k: 'titulo',        label: 'Título',  type: 'text', max: 60, optional: true,
           default: 'Antes & Depois' },
-        { k: 'slides',      label: 'Slides',  type: 'list',
+        { k: 'titulo_size',   label: 'Título · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (18px)' },
+            { value: 'md', label: 'Médio (24px · default)' },
+            { value: 'lg', label: 'Grande (32px)' },
+            { value: 'xl', label: 'Extra (40px)' },
+          ], default: 'md' },
+        { k: 'titulo_color',  label: 'Título · cor (custom)', type: 'color', optional: true,
+          hint: 'Vazio = ivory/grafite conforme fundo' },
+        { k: 'titulo_padx',   label: 'Título · espaçamento lateral', type: 'select',
+          options: [
+            { value: '0',  label: 'Zero' },
+            { value: 'sm', label: 'Pequeno (0.5rem)' },
+            { value: 'md', label: 'Médio (1.5rem · default)' },
+            { value: 'lg', label: 'Grande (2.5rem)' },
+            { value: 'xl', label: 'Extra (4rem)' },
+          ], default: 'md' },
+
+        // ── Slides ─────────────────────────────────────────────
+        { k: 'slides',        label: 'Slides',  type: 'list',
           itemSchema: 'ba_carousel_slide', minItems: 1, maxItems: 12 },
-        { k: 'label_before',label: 'Texto label "antes"',  type: 'text', max: 16, default: 'Antes' },
-        { k: 'label_after', label: 'Texto label "depois"', type: 'text', max: 16, default: 'Depois' },
+
+        // ── Label "Antes" + companions ─────────────────────────
+        { k: 'label_before',       label: 'Texto label "antes"',  type: 'text', max: 16, default: 'Antes' },
+        { k: 'label_before_size',  label: 'Label "antes" · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (7px)' },
+            { value: 'md', label: 'Médio (8px · default)' },
+            { value: 'lg', label: 'Grande (10px)' },
+            { value: 'xl', label: 'Extra (12px)' },
+          ], default: 'md' },
+        { k: 'label_before_color', label: 'Label "antes" · cor (custom)', type: 'color', optional: true,
+          hint: 'Vazio = champagne padrão' },
+
+        // ── Label "Depois" + companions ────────────────────────
+        { k: 'label_after',        label: 'Texto label "depois"', type: 'text', max: 16, default: 'Depois' },
+        { k: 'label_after_size',   label: 'Label "depois" · tamanho', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (7px)' },
+            { value: 'md', label: 'Médio (8px · default)' },
+            { value: 'lg', label: 'Grande (10px)' },
+            { value: 'xl', label: 'Extra (12px)' },
+          ], default: 'md' },
+        { k: 'label_after_color',  label: 'Label "depois" · cor (custom)', type: 'color', optional: true,
+          hint: 'Vazio = champagne padrão' },
+
+        // ── Procedure (texto principal de cada slide) ──────────
+        // Aplica a TODOS os slides · controle global
+        { k: 'procedure_size',     label: 'Procedimento · tamanho (todos slides)', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (13px)' },
+            { value: 'md', label: 'Médio (15px · default)' },
+            { value: 'lg', label: 'Grande (18px)' },
+            { value: 'xl', label: 'Extra (22px)' },
+          ], default: 'md' },
+        { k: 'procedure_color',    label: 'Procedimento · cor (custom)', type: 'color', optional: true },
+
+        // ── Detail (subtexto) ──────────────────────────────────
+        { k: 'detail_size',        label: 'Detalhe · tamanho (todos slides)', type: 'select',
+          options: [
+            { value: 'sm', label: 'Pequeno (10px)' },
+            { value: 'md', label: 'Médio (11px · default)' },
+            { value: 'lg', label: 'Grande (13px)' },
+            { value: 'xl', label: 'Extra (15px)' },
+          ], default: 'md' },
+        { k: 'detail_color',       label: 'Detalhe · cor (custom)', type: 'color', optional: true },
+
+        // ── Fundo ──────────────────────────────────────────────
         { k: 'bg', label: 'Fundo do bloco', type: 'select',
           options: [
             { value: 'graphite', label: 'Grafite (escuro · default do legado)' },

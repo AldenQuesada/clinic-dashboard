@@ -511,8 +511,9 @@
     }
 
     function _isCompanion(fkey) {
-      // É companion se algum outro field do schema é o "pai" (ex: headline_size cujo pai é headline)
-      var m = fkey.match(/^(.+)_(size|color)$/)
+      // É companion se algum outro field do schema é o "pai"
+      // Sufixos: _size, _color, _padx (padding lateral)
+      var m = fkey.match(/^(.+)_(size|color|padx)$/)
       if (!m) return false
       return fieldByKey[m[1]] != null
     }
@@ -531,9 +532,9 @@
         : (b.props ? b.props[f.k] : undefined)
       var html = renderer(f, v, idx)
 
-      // Renderiza companions inline (size/color do mesmo nome do field)
+      // Renderiza companions inline (size/color/padx do mesmo nome do field)
       var companionsHtml = ''
-      ;['_size', '_color'].forEach(function (suffix) {
+      ;['_size', '_color', '_padx'].forEach(function (suffix) {
         var ck = f.k + suffix
         var cf = fieldByKey[ck]
         if (cf) {
