@@ -276,16 +276,37 @@
       })
     })
 
-    // Real-time phone preview binding
+    // Real-time phone preview binding + char counter
     var contentEl = root.querySelector('#bcContent')
+    var charCountEl = root.querySelector('#bcCharCount')
+    var charCounterWrap = root.querySelector('#bcCharCounter')
+    function _updateCharCounter(len) {
+      if (!charCountEl || !charCounterWrap) return
+      charCountEl.textContent = len
+      // reset then apply
+      charCounterWrap.style.color = 'var(--text-muted)'
+      charCounterWrap.style.fontWeight = '400'
+      if (len > 4096) {
+        charCounterWrap.style.color = '#EF4444'
+        charCounterWrap.style.fontWeight = '600'
+      } else if (len > 3500) {
+        charCounterWrap.style.color = '#F59E0B'
+        charCounterWrap.style.fontWeight = '500'
+      }
+    }
     if (contentEl) {
+      // Update once on bind for prefilled content
+      _updateCharCounter(contentEl.value.length)
       contentEl.addEventListener('input', function() {
         var curForm = window.BroadcastUI.getState().form
         curForm.content = contentEl.value
         window.BroadcastUI.setState('broadcastForm', curForm)
         window.BroadcastUI.updatePhonePreview(contentEl.value)
+        _updateCharCounter(contentEl.value.length)
       })
     }
+    // Expose updater for tag/format/emoji handlers to call after mutating textarea
+    window.BroadcastUI._updateCharCounter = _updateCharCounter
 
     // Tag insert buttons
     root.querySelectorAll('.bc-tag-btn').forEach(function(btn) {
@@ -303,6 +324,7 @@
         curForm.content = textarea.value
         window.BroadcastUI.setState('broadcastForm', curForm)
         window.BroadcastUI.updatePhonePreview(textarea.value)
+        if (window.BroadcastUI._updateCharCounter) window.BroadcastUI._updateCharCounter(textarea.value.length)
       })
     })
 
@@ -331,6 +353,7 @@
         curForm.content = textarea.value
         window.BroadcastUI.setState('broadcastForm', curForm)
         window.BroadcastUI.updatePhonePreview(textarea.value)
+        if (window.BroadcastUI._updateCharCounter) window.BroadcastUI._updateCharCounter(textarea.value.length)
         if (emojiPicker) emojiPicker.classList.remove('open')
       })
     })
@@ -388,6 +411,7 @@
         curForm.content = textarea.value
         window.BroadcastUI.setState('broadcastForm', curForm)
         window.BroadcastUI.updatePhonePreview(textarea.value)
+        if (window.BroadcastUI._updateCharCounter) window.BroadcastUI._updateCharCounter(textarea.value.length)
       })
     })
 
@@ -506,6 +530,12 @@
 
         if (!name.trim() || !content.trim()) {
           _showToast('Nome e mensagem sao obrigatorios', 'error')
+          return
+        }
+
+        // Validacao: limite WhatsApp 4096 chars
+        if (content.length > 4096) {
+          _showToast('Mensagem excede 4096 caracteres (atual: ' + content.length + '). WhatsApp nao aceita msgs maiores.', 'error')
           return
         }
 
@@ -733,27 +763,57 @@
           return
         }
         if (!confirm('Iniciar disparo para ' + targets + ' destinatarios?')) return
+        var originalLabel = btn.innerHTML
         btn.disabled = true
         btn.textContent = 'Iniciando...'
-        var result = await window.BroadcastService.startBroadcast(id)
-        if (result && result.ok) {
-          var est = result.data?.estimated_minutes || 0
-          var schedFor = result.data?.scheduled_for
-          var msg = 'Disparo iniciado! ' + (result.data?.enqueued || 0) + ' msgs'
-          if (schedFor && new Date(schedFor) > new Date(Date.now() + 60000)) {
-            msg += ' — agendado para ' + new Date(schedFor).toLocaleString('pt-BR')
-          } else if (est > 0) {
-            msg += ' (~' + est + 'min para concluir)'
+        var result = null
+        var caughtErr = null
+        try {
+          result = await window.BroadcastService.startBroadcast(id)
+        } catch (err) {
+          caughtErr = err
+        }
+        try {
+          if (caughtErr) {
+            _showToast('Erro ao iniciar: ' + (caughtErr.message || caughtErr), 'error')
+            btn.disabled = false
+            btn.innerHTML = originalLabel
+            _render()
+            return
           }
-          _showToast(msg)
-          window.BroadcastUI.setState('broadcastSelected', id)
-          window.BroadcastUI.setState('broadcastMode', 'detail')
-          window.BroadcastUI.setState('bcPanelTab', 'editor')
-          window.BroadcastUI.setState('bcConfirmSend', false)
-          await window.BroadcastUI.loadBroadcasts()
-        } else {
-          _showToast(result?.error || 'Erro ao iniciar', 'error')
-          _render()
+          if (result && result.ok) {
+            var est = result.data?.estimated_minutes || 0
+            var schedFor = result.data?.scheduled_for
+            var msg = 'Disparo iniciado! ' + (result.data?.enqueued || 0) + ' msgs'
+            if (schedFor && new Date(schedFor) > new Date(Date.now() + 60000)) {
+              msg += ' — agendado para ' + new Date(schedFor).toLocaleString('pt-BR')
+            } else if (est > 0) {
+              msg += ' (~' + est + 'min para concluir)'
+            }
+            _showToast(msg)
+            window.BroadcastUI.setState('broadcastSelected', id)
+            window.BroadcastUI.setState('broadcastMode', 'detail')
+            window.BroadcastUI.setState('bcPanelTab', 'editor')
+            window.BroadcastUI.setState('bcConfirmSend', false)
+            await window.BroadcastUI.loadBroadcasts()
+            // Sucesso: broadcast mudou de status, re-render descarta o botao.
+            // Nao reabilitamos (botao some); mas se por algum motivo o elemento
+            // continuar montado, re-habilita como fallback.
+            if (document.body.contains(btn)) {
+              btn.disabled = false
+              btn.innerHTML = originalLabel
+            }
+          } else {
+            _showToast(result?.error || 'Erro ao iniciar', 'error')
+            btn.disabled = false
+            btn.innerHTML = originalLabel
+            _render()
+          }
+        } catch (uiErr) {
+          // Garante que o botao nunca trava mesmo se o re-render falhar
+          _showToast('Erro ao atualizar UI: ' + (uiErr.message || uiErr), 'error')
+          btn.disabled = false
+          btn.innerHTML = originalLabel
         }
       })
     })

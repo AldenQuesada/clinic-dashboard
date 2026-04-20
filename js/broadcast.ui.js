@@ -436,7 +436,10 @@
         </div>
         <div class="am-field">
           <label class="am-label">Mensagem *</label>
-          <textarea class="am-input" id="bcContent" rows="8" placeholder="Digite a mensagem aqui...&#10;&#10;Use [nome] para personalizar.&#10;Quebras de linha serao mantidas.">${_esc(f.content)}</textarea>
+          <textarea class="am-input" id="bcContent" rows="8" maxlength="4096" placeholder="Digite a mensagem aqui...&#10;&#10;Use [nome] para personalizar.&#10;Quebras de linha serao mantidas.">${_esc(f.content)}</textarea>
+          <div class="bc-char-counter" id="bcCharCounter" style="font-size:11px;color:var(--text-muted);text-align:right;margin-top:4px">
+            <span id="bcCharCount">${(f.content || '').length}</span> / 4096
+          </div>
           <div class="bc-tags-bar">
             <span class="bc-tag-hint">Inserir:</span>
             <button type="button" class="bc-tag-btn" data-tag="[nome]">[nome]</button>
