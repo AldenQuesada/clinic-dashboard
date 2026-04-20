@@ -578,6 +578,50 @@ function showValidationErrors(errors, title) {
 }
 
 // ── Modal: Cancelamento com motivo ────────────────────────────────
+// Resolve lista de ids alvo conforme escopo:
+//   'one'    -> só o apptId atual
+//   'future' -> atual + todas futuras da mesma serie (data >= agora)
+//   'all'    -> todas da serie ainda cancelaveis (exclui finalizado/cancelado/no_show)
+function _resolveCancelTargets(appts, current, scope) {
+  if (scope === 'one' || !current.recurrenceGroupId) return [current.id]
+  const nowTs = Date.now()
+  const out = []
+  appts.forEach(a => {
+    if (a.recurrenceGroupId !== current.recurrenceGroupId) return
+    if (a.status === 'finalizado' || a.status === 'cancelado' || a.status === 'no_show') return
+    if (scope === 'future') {
+      if (a.id === current.id) { out.push(a.id); return }
+      const apptTs = a.data
+        ? new Date(a.data + 'T' + (a.horaInicio || '00:00') + ':00').getTime()
+        : 0
+      if (apptTs >= nowTs) out.push(a.id)
+      return
+    }
+    // scope === 'all'
+    out.push(a.id)
+  })
+  return out
+}
+
+// Calcula resumo da serie: quantas cancelaveis + quantas futuras.
+// Cancelaveis: status != finalizado (finalizado nao pode ser cancelado).
+// Futuras: data > atual OU (data=atual e horaInicio > agora).
+function _cancelSeriesInfo(appts, groupId, currentDate, currentId) {
+  if (!groupId) return null
+  const nowTs = Date.now()
+  let cancellable = 0, future = 0
+  appts.forEach(a => {
+    if (a.recurrenceGroupId !== groupId) return
+    if (a.status === 'finalizado' || a.status === 'cancelado' || a.status === 'no_show') return
+    cancellable++
+    const apptTs = a.data
+      ? new Date(a.data + 'T' + (a.horaInicio || '00:00') + ':00').getTime()
+      : 0
+    if (a.id !== currentId && apptTs >= nowTs) future++
+  })
+  return { cancellableCount: cancellable, futureCount: future }
+}
+
 function openCancelModal(apptId, statusAlvo) {
   const appts = window.getAppointments ? window.getAppointments() : []
   const appt  = appts.find(a => a.id === apptId)
@@ -588,6 +632,12 @@ function openCancelModal(apptId, statusAlvo) {
   const cor        = isNoShow ? '#DC2626' : '#EF4444'
   const reasons    = isNoShow ? NOSHOW_REASONS : CANCEL_REASONS
   const SL         = window.STATUS_LABELS || {}
+
+  // Escopo de recorrência: so faz sentido pra cancelamento (no-show e por sessao)
+  const groupId = appt.recurrenceGroupId || null
+  const seriesInfo = (!isNoShow && groupId)
+    ? _cancelSeriesInfo(appts, groupId, appt.data, appt.id)
+    : null
 
   let m = document.getElementById('cancelReasonModal')
   if (!m) { m = document.createElement('div'); m.id = 'cancelReasonModal'; document.body.appendChild(m) }
@@ -612,6 +662,38 @@ function openCancelModal(apptId, statusAlvo) {
           <textarea id="cancelReasonObs" rows="2" placeholder="Detalhes adicionais (opcional)..."
             style="width:100%;box-sizing:border-box;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:12px;resize:none;font-family:inherit;color:#374151"></textarea>
         </div>
+        ${seriesInfo ? `
+        <div style="padding:12px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px">
+          <div style="font-size:11px;font-weight:800;color:#5B21B6;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <span style="width:16px;height:16px;background:#7C3AED;color:#fff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px">∞</span>
+            Série recorrente · sessão ${appt.recurrenceIndex || '?'} de ${appt.recurrenceTotal || '?'}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer;background:#fff;font-size:12px">
+              <input type="radio" name="cancelScope" value="one" checked style="margin-top:2px">
+              <div>
+                <div style="font-weight:700;color:#111">Só essa sessão</div>
+                <div style="font-size:10px;color:#6B7280">As outras sessões da série seguem ativas</div>
+              </div>
+            </label>
+            ${seriesInfo.futureCount > 0 ? `
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer;background:#fff;font-size:12px">
+              <input type="radio" name="cancelScope" value="future" style="margin-top:2px">
+              <div>
+                <div style="font-weight:700;color:#111">Essa + ${seriesInfo.futureCount} futura${seriesInfo.futureCount>1?'s':''}</div>
+                <div style="font-size:10px;color:#6B7280">Mantém as sessões já passadas como estão</div>
+              </div>
+            </label>` : ''}
+            ${seriesInfo.cancellableCount > 1 ? `
+            <label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:8px;cursor:pointer;background:#fff;font-size:12px">
+              <input type="radio" name="cancelScope" value="all" style="margin-top:2px">
+              <div>
+                <div style="font-weight:700;color:#111">Série inteira (${seriesInfo.cancellableCount} sessão${seriesInfo.cancellableCount>1?'ões':''})</div>
+                <div style="font-size:10px;color:#6B7280">Sessões já finalizadas são preservadas</div>
+              </div>
+            </label>` : ''}
+          </div>
+        </div>` : ''}
         ${isNoShow ? `
         <div style="padding:10px 12px;background:#FEF2F2;border-radius:8px;font-size:11px;color:#7F1D1D;line-height:1.5">
           O agendamento permanecerá visível na data com cor diferenciada. Uma tarefa de recuperação será criada automaticamente.
@@ -646,41 +728,66 @@ function confirmCancelWithReason(apptId, statusAlvo) {
   const motivo    = reasonSel + (reasonObs ? ` — ${reasonObs}` : '')
   const at        = new Date().toISOString()
 
-  // Validar transição
-  if (window.AgendaValidator) {
-    const errs = AgendaValidator.validateCancelOrNoShow(appt, motivo)
-    if (errs.length) { showValidationErrors(errs, 'Não foi possível processar'); return }
-  }
+  // Escopo de recorrência (apenas pra cancelamento em série)
+  const scopeEl = document.querySelector('input[name="cancelScope"]:checked')
+  const scope = (statusAlvo === 'cancelado' && appt.recurrenceGroupId && scopeEl) ? scopeEl.value : 'one'
 
-  // Registrar histórico
-  if (!appts[idx].historicoStatus) appts[idx].historicoStatus = []
-  appts[idx].historicoStatus.push({ status: statusAlvo, at, by: 'manual', motivo })
+  // Resolve IDs alvo segundo escopo
+  const targetIds = _resolveCancelTargets(appts, appt, scope)
 
-  // Registrar log de alteração
-  if (!appts[idx].historicoAlteracoes) appts[idx].historicoAlteracoes = []
-  appts[idx].historicoAlteracoes.push({
-    action_type:  statusAlvo === 'no_show' ? 'no_show' : 'cancelamento',
-    old_value:    { status: appt.status },
-    new_value:    { status: statusAlvo, motivo },
-    changed_by:   'secretaria',
-    changed_at:   at,
-    reason:       motivo,
+  // Valida ao menos um alvo
+  if (!targetIds.length) { showValidationErrors(['Nenhum agendamento elegível pra cancelar.'], 'Não foi possível processar'); return }
+
+  // Cancela em batch — aplica mesma logica do single pra cada alvo
+  const motivoExt = scope === 'one' ? motivo : `${motivo} (série cancelada · escopo=${scope})`
+  const changed = []
+  targetIds.forEach(id => {
+    const i = appts.findIndex(a => a.id === id)
+    if (i < 0) return
+    const target = appts[i]
+
+    // Validar cada um individualmente (pula se nao pode cancelar)
+    if (window.AgendaValidator) {
+      const errs = AgendaValidator.validateCancelOrNoShow(target, motivoExt)
+      if (errs.length) return
+    }
+
+    if (!appts[i].historicoStatus) appts[i].historicoStatus = []
+    appts[i].historicoStatus.push({ status: statusAlvo, at, by: 'manual', motivo: motivoExt })
+    if (!appts[i].historicoAlteracoes) appts[i].historicoAlteracoes = []
+    appts[i].historicoAlteracoes.push({
+      action_type:  statusAlvo === 'no_show' ? 'no_show' : 'cancelamento',
+      old_value:    { status: target.status },
+      new_value:    { status: statusAlvo, motivo: motivoExt, scope },
+      changed_by:   'secretaria',
+      changed_at:   at,
+      reason:       motivoExt,
+    })
+    if (statusAlvo === 'cancelado') {
+      appts[i].canceladoEm = at
+      appts[i].motivoCancelamento = motivoExt
+    } else {
+      appts[i].noShowEm = at
+      appts[i].motivoNoShow = motivoExt
+    }
+    appts[i].status = statusAlvo
+    changed.push(appts[i])
   })
 
-  if (statusAlvo === 'cancelado') {
-    appts[idx].canceladoEm   = at
-    appts[idx].motivoCancelamento = motivo
-  } else {
-    appts[idx].noShowEm      = at
-    appts[idx].motivoNoShow  = motivo
+  if (!changed.length) {
+    showValidationErrors(['Nenhum agendamento pôde ser cancelado (todos finalizados ou em consulta).'], 'Não foi possível processar')
+    return
   }
-  appts[idx].status = statusAlvo
 
   if (window.saveAppointments) saveAppointments(appts)
 
-  // Sync Supabase (dispara trigger de phase change)
+  // Sync Supabase (cada um dispara trigger de phase change)
   if (window.AppointmentsService) {
-    AppointmentsService.syncOne(appts[idx])
+    changed.forEach(a => AppointmentsService.syncOne(a))
+  }
+
+  if (window._showToast && changed.length > 1) {
+    _showToast('Série cancelada', changed.length + ' sessões canceladas', 'success')
   }
 
   // Fechar modal
@@ -705,16 +812,17 @@ function confirmCancelWithReason(apptId, statusAlvo) {
     // No-show: manter fase atual (lead pode reagendar), criar task de recuperacao
   }
 
-  // Cancelar automações futuras
+  // Cancelar automações futuras pra TODAS as sessões canceladas (evita WA de D-1 fantasma)
   if (window._getQueue) {
-    const q = _getQueue().map(x => x.apptId === apptId ? { ...x, executed: true } : x)
+    const cancelledIds = new Set(changed.map(a => a.id))
+    const q = _getQueue().map(x => cancelledIds.has(x.apptId) ? { ...x, executed: true } : x)
     if (window._saveQueue) _saveQueue(q)
   }
 
   if (window.renderAgenda) renderAgenda()
 
-  // Abrir fluxo de recuperação
-  if (window._openRecovery) setTimeout(() => _openRecovery(appts[idx]), 300)
+  // Abrir fluxo de recuperação só pra sessão única — série toda não faz sentido abrir N janelas
+  if (scope === 'one' && window._openRecovery) setTimeout(() => _openRecovery(appts[idx]), 300)
 }
 
 // ── Audit log helper ──────────────────────────────────────────────
