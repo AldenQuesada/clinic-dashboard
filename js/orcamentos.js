@@ -433,13 +433,31 @@
   }
 
   // ── Popup Premium: Novo Orcamento ───────────────────────────
+  var _norcBlock = null
+
+  async function _norcLoadProcs() {
+    if (window.ProcedimentosRepository) {
+      try {
+        var res = await ProcedimentosRepository.getAll(true)
+        if (res.ok && Array.isArray(res.data)) {
+          return res.data.map(function (p) {
+            return {
+              nome: p.nome,
+              valor: parseFloat(p.preco) || 0,
+              categoria: p.categoria || 'Procedimentos',
+            }
+          })
+        }
+      } catch (e) { /* fallback */ }
+    }
+    // Fallback: technologies legadas
+    var techs = typeof getTechnologies === 'function' ? getTechnologies() : []
+    return techs.map(function (t) { return { nome: t.nome, valor: 0, categoria: 'Tecnologias' } })
+  }
+
   function openNewOrcamentoModal() {
     var existing = document.getElementById('novoOrcModal')
     if (existing) existing.remove()
-
-    // Carregar procedimentos para datalist
-    var techs = typeof getTechnologies === 'function' ? getTechnologies() : []
-    var procOpts = techs.map(function(t) { return '<option value="' + _esc(t.nome) + '"/>' }).join('')
 
     // Carregar leads para busca
     var allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
@@ -491,61 +509,19 @@
             '</div>' +
           '</div>' +
 
-          // Secao: Procedimento + Valor (branco)
+          // Secao: Procedimentos + Pagamentos (modulo compartilhado)
           '<div style="background:#F9FAFB;border:1px solid #F3F4F6;border-radius:12px;padding:16px;margin-bottom:16px">' +
-            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
-              '<div style="width:28px;height:28px;border-radius:8px;background:#EDE9FE;display:flex;align-items:center;justify-content:center">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>' +
-              '</div>' +
-              '<span style="font-size:12px;font-weight:800;color:#6D28D9;text-transform:uppercase;letter-spacing:.04em">Procedimento</span>' +
-            '</div>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
-              '<div style="grid-column:1/span 2">' +
-                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">PROCEDIMENTO *</label>' +
-                '<input id="norcProc" type="text" list="norcProcList" placeholder="Ex: Full Face 5D, Botox..." style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>' +
-                '<datalist id="norcProcList">' + procOpts + '</datalist>' +
-              '</div>' +
-              '<div>' +
-                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">VALOR (R$) *</label>' +
-                '<input id="norcValor" type="number" placeholder="0,00" min="0" step="0.01" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>' +
-              '</div>' +
-              '<div>' +
-                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">QUANTIDADE</label>' +
-                '<input id="norcQtd" type="number" value="1" min="1" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box"/>' +
-              '</div>' +
-            '</div>' +
+            '<div id="norcBlockHost"></div>' +
           '</div>' +
 
-          // Secao: Financeiro (vermelho suave)
-          '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:16px;margin-bottom:16px">' +
-            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
-              '<div style="width:28px;height:28px;border-radius:8px;background:#FEE2E2;display:flex;align-items:center;justify-content:center">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>' +
-              '</div>' +
-              '<span style="font-size:12px;font-weight:800;color:#DC2626;text-transform:uppercase;letter-spacing:.04em">Condicoes</span>' +
-            '</div>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          // Secao: Validade (vermelho suave)
+          '<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:14px 16px;margin-bottom:16px">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">' +
               '<div>' +
-                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">VALIDADE</label>' +
-                '<input id="norcValidade" type="date" style="width:100%;padding:9px 12px;border:1.5px solid #FECACA;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff"/>' +
+                '<div style="font-size:11px;font-weight:800;color:#DC2626;text-transform:uppercase;letter-spacing:.04em">Validade do orçamento</div>' +
+                '<div style="font-size:10px;color:#9CA3AF;margin-top:2px">Depois desta data, o orçamento expira automaticamente</div>' +
               '</div>' +
-              '<div>' +
-                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">FORMA DE PAGAMENTO</label>' +
-                '<select id="norcFormaPag" style="width:100%;padding:9px 12px;border:1.5px solid #FECACA;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff">' +
-                  '<option value="">Selecione...</option>' +
-                  '<option value="pix">PIX</option>' +
-                  '<option value="dinheiro">Dinheiro</option>' +
-                  '<option value="debito">Debito</option>' +
-                  '<option value="credito">Credito</option>' +
-                  '<option value="parcelado">Parcelado</option>' +
-                  '<option value="boleto">Boleto</option>' +
-                  '<option value="cortesia">Cortesia</option>' +
-                '</select>' +
-              '</div>' +
-              '<div style="grid-column:1/span 2">' +
-                '<label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">DESCONTO / CASHBACK</label>' +
-                '<input id="norcDesconto" type="text" placeholder="Ex: 10% cashback em procedimentos" style="width:100%;padding:9px 12px;border:1.5px solid #FECACA;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;background:#fff"/>' +
-              '</div>' +
+              '<input id="norcValidade" type="date" style="padding:9px 12px;border:1.5px solid #FECACA;border-radius:8px;font-size:13px;outline:none;background:#fff"/>' +
             '</div>' +
           '</div>' +
 
@@ -579,6 +555,21 @@
     var d30 = new Date(); d30.setDate(d30.getDate() + 30)
     var valEl = document.getElementById('norcValidade')
     if (valEl) valEl.value = d30.toISOString().slice(0, 10)
+
+    // Montar bloco de procedimentos + pagamentos (modulo compartilhado)
+    var host = document.getElementById('norcBlockHost')
+    if (host && window.ProcsPaymentsBlock) {
+      _norcLoadProcs().then(function (procs) {
+        if (_norcBlock) _norcBlock.destroy()
+        _norcBlock = window.ProcsPaymentsBlock.create({
+          availableProcs: procs,
+          initialProcs: [],
+          initialPayments: [{ forma: '', valor: 0, status: 'aberto', parcelas: 1, valorParcela: 0, comentario: '' }],
+          paymentsLabel: 'condição proposta',
+        })
+        _norcBlock.mount(host)
+      }).catch(function (e) { console.warn('[orc] load procs falhou:', e) })
+    }
   }
 
   // ── Busca paciente no popup ────────────────────────────────
@@ -633,22 +624,32 @@
   function norcSave() {
     var pacienteId = document.getElementById('norcPacienteId').value
     var pacienteNome = document.getElementById('norcPaciente').value.trim()
-    var proc = document.getElementById('norcProc').value.trim()
-    var valor = parseFloat(document.getElementById('norcValor').value || '0')
-    var qtd = parseInt(document.getElementById('norcQtd').value || '1') || 1
+    var validade = (document.getElementById('norcValidade') || {}).value || ''
+    var obs = (document.getElementById('norcObs') || {}).value.trim() || ''
 
     if (!pacienteNome) { _highlightField('norcPaciente', 'Selecione o paciente'); return }
-    if (!proc) { _highlightField('norcProc', 'Informe o procedimento'); return }
-    if (!valor || valor <= 0) { _highlightField('norcValor', 'Informe o valor'); return }
+    if (!_norcBlock) { if (window._showToast) _showToast('Aguarde', 'Carregando procedimentos...', 'warning'); return }
 
-    var validade = document.getElementById('norcValidade').value || ''
-    var formaPag = document.getElementById('norcFormaPag').value || ''
-    var desconto = document.getElementById('norcDesconto').value.trim() || ''
-    var obs = document.getElementById('norcObs').value.trim() || ''
+    var st = _norcBlock.getState()
+    // Filtra procs validos (tem nome)
+    var validProcs = (st.procs || []).filter(function (p) { return p.nome && p.nome.trim() })
+    if (!validProcs.length) {
+      if (window._showToast) _showToast('Validacao', 'Adicione ao menos 1 procedimento', 'warning')
+      return
+    }
+    // Pagamentos com forma escolhida
+    var validPayments = (st.payments || []).filter(function (p) { return p.forma })
 
-    // Buscar lead e adicionar orcamento em customFields
+    var total = st.total
+    var subtotal = st.subtotal
+    var descontoValor = parseFloat(st.desconto) || 0
+
+    // Titulo = nomes dos procs concatenados (max 80 chars)
+    var titulo = validProcs.map(function (p) { return p.nome }).join(' + ')
+    if (titulo.length > 80) titulo = titulo.slice(0, 77) + '...'
+
     var allLeads = window.LeadsService ? LeadsService.getLocal() : JSON.parse(localStorage.getItem('clinicai_leads') || '[]')
-    var lead = pacienteId ? allLeads.find(function(l) { return l.id === pacienteId }) : null
+    var lead = pacienteId ? allLeads.find(function (l) { return l.id === pacienteId }) : null
 
     if (lead) {
       if (!lead.customFields) lead.customFields = {}
@@ -656,52 +657,57 @@
 
       lead.customFields.orcamentos.push({
         id: 'orc_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-        procedimento: proc,
-        valor: valor,
-        quantidade: qtd,
-        status: 'pendente',
-        formaPagamento: formaPag,
-        desconto: desconto,
+        titulo: titulo,
+        procedimentos: validProcs,   // array completo c/ cortesia + motivo
+        pagamentos: validPayments,   // array de formas com parcelas/status
+        subtotal: subtotal,
+        desconto: descontoValor,
+        total: total,
         validade: validade,
         observacoes: obs,
+        status: 'pendente',
         created_at: new Date().toISOString(),
       })
 
-      // Se lead nao e paciente, mudar phase pra orcamento
       if (lead.phase !== 'paciente') {
         lead.phase = 'orcamento'
       }
-      // Se lead e paciente, manter phase=paciente (auto-tag cuida da segmentacao)
 
       if (window.LeadsService && LeadsService.saveLocal) {
         LeadsService.saveLocal(allLeads)
       }
-
-      // Sync Supabase
       if (window.LeadsService && LeadsService.syncOne) {
         LeadsService.syncOne(lead)
       }
 
-      // Tambem salvar via BudgetsService se disponivel
       if (window.BudgetsService) {
         BudgetsService.upsert({
-          lead_id: pacienteId,
-          title: proc,
-          status: 'draft',
+          lead_id:     pacienteId,
+          title:       titulo,
+          status:      'draft',
+          subtotal:    subtotal,
+          discount:    descontoValor,
+          total:       total,
           valid_until: validade || null,
-          items: [{ description: proc, quantity: qtd, unit_price: valor }],
+          items: validProcs.map(function (p) {
+            return {
+              description: p.nome + (p.cortesia ? ' (Cortesia' + (p.cortesiaMotivo ? ' — ' + p.cortesiaMotivo : '') + ')' : ''),
+              quantity:    1,
+              unit_price:  p.cortesia ? 0 : p.valor,
+            }
+          }),
+          payments_json: validPayments,  // custom, pode persistir em jsonb futuro
         })
       }
     }
 
     document.getElementById('novoOrcModal').remove()
+    if (_norcBlock) { _norcBlock.destroy(); _norcBlock = null }
 
-    // Toast de sucesso
     if (window._showToast) {
-      _showToast('Orcamento criado', proc + ' — R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 }), 'success')
+      _showToast('Orcamento criado', titulo + ' — R$ ' + total.toLocaleString('pt-BR', { minimumFractionDigits: 2 }), 'success')
     }
 
-    // Reload tabela
     if (typeof load === 'function') load(true)
   }
 

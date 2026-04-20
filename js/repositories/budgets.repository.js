@@ -47,13 +47,15 @@
     if (!_sb()) return _unavailable()
     try {
       const { data, error } = await _sb().rpc('sdr_upsert_budget', {
-        p_id:          budget.id          || null,
-        p_lead_id:     budget.lead_id     || null,
-        p_title:       budget.title       || null,
-        p_notes:       budget.notes       || null,
-        p_status:      budget.status      || 'draft',
-        p_items:       budget.items       || [],
-        p_valid_until: budget.valid_until || null,
+        p_id:          budget.id           || null,
+        p_lead_id:     budget.lead_id      || null,
+        p_title:       budget.title        || null,
+        p_notes:       budget.notes        || null,
+        p_status:      budget.status       || 'draft',
+        p_items:       budget.items        || [],
+        p_valid_until: budget.valid_until  || null,
+        p_discount:    parseFloat(budget.discount) || 0,
+        p_payments:    Array.isArray(budget.payments_json) ? budget.payments_json : [],
       })
       if (error) return _err(error.message || String(error))
       if (data?.ok === false) return _err(data.error || 'Erro desconhecido')
